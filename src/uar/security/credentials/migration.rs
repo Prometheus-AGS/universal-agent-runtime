@@ -182,3 +182,112 @@ impl super::ProviderService {
         Ok(MigrationPreview { observed_at: Utc::now(), policy_revision: policy.revision().to_owned(), mapping_revision, consistency: "page_observation", counts: MigrationPreviewCounts { page_total: page.len(), inventory_total, by_namespace_scope: namespaces.into_iter().map(|((namespace, scope), total)| NamespaceScopeCount { namespace, scope, total }).collect(), by_status: statuses }, items: page, next_cursor })
     }
 }
+
+/// Finalization evidence for accepted credential migration operations.
+#[derive(Clone, Debug, Default)]
+pub struct MigrationCloseReport {
+    pub completed: usize,
+    pub unresolved_operation_ids: Vec<String>,
+}
+
+type MigrationOutcome = Result<CredentialMigrationReceipt, super::CredentialMigrationError>;
+
+#[derive(Debug)]
+struct MigrationFlight {
+    fingerprint: String,
+    result: tokio::sync::watch::Receiver<Option<MigrationOutcome>>,
+}
+
+#[derive(Debug, Default)]
+struct MigrationAdmission {
+    closed: bool,
+    flights: std::collections::HashMap<String, MigrationFlight>,
+    report: MigrationCloseReport,
+}
+
+/// Host-owned transactions outlive an individual HTTP response. The same lock
+/// serializes admission and task registration, including shutdown races.
+#[derive(Debug, Default)]
+pub(super) struct MigrationCoordinator {
+    admission: std::sync::Mutex<MigrationAdmission>,
+    tasks: tokio_util::task::TaskTracker,
+}
+
+impl MigrationCoordinator {
+    pub(super) async fn execute(
+        self: &std::sync::Arc<Self>,
+        store: std::sync::Arc<dyn super::CredentialStore>,
+        principal: super::CredentialOwnerBinding,
+        authorization: super::principal_store::CredentialMigrationAuthorization,
+    ) -> anyhow::Result<CredentialMigrationReceipt> {
+        use futures::FutureExt;
+        use super::CredentialMigrationError;
+        let mapping = &authorization.mapping;
+        let key = source_key(
+            if authorization.source_owner_key.is_some() { "principal_fixed_local" } else { "legacy" },
+            authorization.source_owner_key.as_deref(), mapping.scope,
+            &mapping.legacy_scope_id, &mapping.provider_id,
+        );
+        let operation_id = metadata_digest(&key)?;
+        let fingerprint = metadata_digest(&(
+            &key, &mapping.destination_owner_key, &mapping.approval_id,
+            &authorization.required_revision, &authorization.if_match,
+            principal.storage_key(), &authorization.reason,
+        ))?;
+        let mut receiver = {
+            let mut admission = self.admission.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            if admission.closed {
+                return Err(CredentialMigrationError::Unavailable { operation_id }.into());
+            }
+            if let Some(flight) = admission.flights.get(&key) {
+                if flight.fingerprint != fingerprint {
+                    return Err(CredentialMigrationError::Contention { operation_id }.into());
+                }
+                flight.result.clone()
+            } else {
+                let (sender, receiver) = tokio::sync::watch::channel(None);
+                admission.flights.insert(key.clone(), MigrationFlight { fingerprint, result: receiver.clone() });
+                let coordinator = std::sync::Arc::clone(self);
+                let task_operation_id = operation_id.clone();
+                self.tasks.spawn(async move {
+                    let operation = std::panic::AssertUnwindSafe(store.migrate_legacy(&principal, &authorization)).catch_unwind().await;
+                    let result = match operation {
+                        Ok(Ok(receipt)) => Ok(receipt),
+                        Ok(Err(error)) => Err(error.downcast_ref::<CredentialMigrationError>().cloned()
+                            .unwrap_or_else(|| CredentialMigrationError::Unavailable { operation_id: task_operation_id.clone() })),
+                        Err(_) => Err(CredentialMigrationError::OutcomeUnknown { operation_id: task_operation_id.clone() }),
+                    };
+                    let mut admission = coordinator.admission.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                    admission.report.completed += 1;
+                    if result.is_ok() {
+                        admission.report.unresolved_operation_ids.retain(|id| id != &task_operation_id);
+                    } else if matches!(&result, Err(CredentialMigrationError::OutcomeUnknown { .. }))
+                        && !admission.report.unresolved_operation_ids.contains(&task_operation_id) {
+                        admission.report.unresolved_operation_ids.push(task_operation_id);
+                    }
+                    sender.send_replace(Some(result));
+                    admission.flights.remove(&key);
+                });
+                receiver
+            }
+        };
+        loop {
+            if let Some(result) = receiver.borrow_and_update().clone() {
+                return result.map_err(Into::into);
+            }
+            if receiver.changed().await.is_err() {
+                return Err(CredentialMigrationError::OutcomeUnknown { operation_id }.into());
+            }
+        }
+    }
+
+    pub(super) async fn shutdown(&self) -> MigrationCloseReport {
+        {
+            let mut admission = self.admission.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            admission.closed = true;
+            self.tasks.close();
+        }
+        self.tasks.wait().await;
+        self.admission.lock().unwrap_or_else(std::sync::PoisonError::into_inner).report.clone()
+    }
+}

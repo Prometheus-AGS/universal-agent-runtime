@@ -2184,3 +2184,72 @@ model latency. Timing is diagnostic until the operator disposes of the
 observed result. Source inspection and authored code are not acceptance;
 `AGENTS.md` keeps the verification gate CLOSED until every implementation
 item, new whole-phase inventory and exact operator instructions exist.
+
+
+## 2026-10-20 — Acknowledged lifecycle implementation and Windows launch contract
+
+The operator approved unified lifecycle WP1–WP8 and subsequently selected a
+mandatory cancellable Windows named pipe, including the production Boss launcher.
+Node overlapped stdin supplies the inherited named pipe; UAR joins canceled I/O
+and the parent awaits actual child close. Managed launch requires the declared
+`host_lifecycle_control_v1` capability. A stop timeout is not proof of reaping.
+
+The host supervisor owns admission, resource dependencies and retained closure.
+Physical memory close failure cannot be hidden by successful facade release.
+Uncertain remote writes remain named obligations after local cleanup. The pinned
+SurrealDB 3.3.0 overlay and exact upstream memory export carry explicit provenance
+and replacement criteria. No unrelated version upgrade is intended.
+
+Verification remains CLOSED. Source authoring and on-demand source inspection
+are not compilation, lock-release evidence or acceptance. Historical migration
+503 and individual c9 sidecar failures remain causally unresolved. Full-phase
+ledger reconciliation and exact operator authorization precede any gate.
+
+
+## Watcher-first lifecycle order — 2026-10-20T22:10:43.760000+00:00
+
+The operator explicitly corrected shutdown ordering: stop configuration/file
+watcher intake and join their actual workers before tearing down mutable runtime
+services or databases. Immutable configuration snapshots remain readable after
+watching stops. OS shutdown-signal subscriptions remain active control resources.
+External HTTP/A2A admission must close immediately, while persistence admission
+stays available for already-admitted finalizers. The supervisor now provides
+atomic `register_external` classification; its single DAG remains finalization
+authority. No timeout, abort, or ignored join certifies watcher termination.
+
+
+## Full local embedding requirement retained — 2026-10-21T00:17:37.409884+00:00
+
+Operator selected full local-only live embedding failover and incompatible-space
+fixtures, immutable Boss payload binding and scoped source commit/push/PR with
+Docker image availability. Active Execute waypoint 3155, plan
+70. Verification remains CLOSED. New canonical tasks
+6.2,8.2,8.3,9.3 are in progress; the previous saved-source inventory is superseded.
+
+Runtime owns embeddings capability, embedding config and narrow server/settings
+wiring. State owns new real-model fixture source and three settings-state literal
+compatibility spans. The Boss-root worker owns immutable candidate provenance
+producer/consumer and waits for an actual UAR source commit before final pinning.
+Lead owns global DAG, shared manifests, spec/phase records and publication.
+Existing PR418 is draft and attached; it will be updated rather than duplicated.
+
+The production embedding design uses explicit host member retirement/recovery
+and generation control; no periodic probe or per-inference whole-model polling.
+Real local inference must establish candidate readiness. Incompatible fixtures
+must use actual distinct model assets, not renamed identical vectors or skipped
+asset prerequisites. Memory's separate embedding-provider contract is not
+certified by the RAG/KB fixture.
+
+New standalone Boss candidate construction exports exact committed root and
+gitlink objects and uses an isolated target. Dirty unrelated worktree files
+remain untouched and cannot become build inputs. Existing public/platform
+payloads are never relabeled. Candidate source pinning still awaits a real SHA.
+
+Only source reads/searches, metadata reads, authorized source/docs writing and
+supported KBD/team mutations were used. No tests/checks/builds/lint/format,
+compiler probes, policy validators, packaging, review gates or image workflow
+were run. The installed UAR Git pre-commit hook invokes prohibited checks;
+AGENTS forbids bypassing the policy validator. Lead will present that exact
+conflict after preparing the concrete source changes; no hook exception is
+assumed. Existing deployment-only workflow can publish SHA-tagged Docker images
+after a source push; this is delivery, not product acceptance.

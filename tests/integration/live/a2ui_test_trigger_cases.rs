@@ -52,6 +52,8 @@ fn extract_run_id(sse_body: &str) -> String {
 async fn test_trigger_round_trips_through_real_artifact_response_endpoint() {
     let stub = start_stub_llm(content_fixture("hello a2ui test trigger", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let client = reqwest::Client::new();
 
     // 1. Complete a real chat turn to obtain a real, server-tracked run_id.
@@ -124,6 +126,9 @@ async fn test_trigger_round_trips_through_real_artifact_response_endpoint() {
     assert_eq!(submit_body["run_id"], run_id);
     assert_eq!(submit_body["artifact_id"], artifact_id);
     assert_eq!(submit_body["status"], "accepted");
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// A test-trigger against a run that was never created MUST fail clearly,
@@ -134,6 +139,8 @@ async fn test_trigger_round_trips_through_real_artifact_response_endpoint() {
 async fn test_trigger_rejects_nonexistent_run() {
     let stub = start_stub_llm(content_fixture("unused", "unused")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let client = reqwest::Client::new();
 
     let resp = client
@@ -152,4 +159,7 @@ async fn test_trigger_rejects_nonexistent_run() {
         .expect("test-trigger request");
 
     assert_eq!(resp.status(), reqwest::StatusCode::NOT_FOUND);
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

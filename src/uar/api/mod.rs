@@ -49,6 +49,8 @@ pub mod live;
 #[cfg(feature = "server")]
 pub mod mcp_admin;
 #[cfg(feature = "server")]
+pub mod tool_definitions;
+#[cfg(feature = "server")]
 pub mod mcp_interactions;
 #[cfg(feature = "server")]
 pub mod memory;

@@ -242,6 +242,10 @@ impl Default for SkillReattachmentBudget {
 
 #[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct AppConfig {
+    /// Explicit filesystem skill sources. `Some([])` excludes ambient user and
+    /// working-directory skill roots while retaining database/native sources.
+    #[serde(default)]
+    pub skill_source_roots: Option<Vec<std::path::PathBuf>>,
     pub server: ServerConfig,
     pub security: SecurityConfig,
     /// Authenticated UAR peers eligible for governed outbound A2A delegation.
@@ -583,6 +587,8 @@ pub struct ServerConfig {
     /// Exact browser origins allowed by CORS. Empty means no cross-origin access.
     #[serde(default)]
     pub cors_allowed_origins: Vec<String>,
+    /// Legacy configuration field retained for compatibility. Shutdown awaits
+    /// resource completion; this value does not force exit or certify release.
     #[serde(default = "ServerConfig::default_shutdown_timeout_secs")]
     pub shutdown_timeout_secs: u64,
     #[serde(default = "ServerConfig::default_log_format")]
@@ -864,9 +870,8 @@ pub struct ResilienceConfig {
     pub timeout_disabled: bool,
     pub requests_per_second: f32,
     pub burst_size: f32,
-    /// Timeout applied to credential and admission store lookups. Defaults to
-    /// `request_timeout_ms / 8` (clamped to a minimum of 500 ms) so existing
-    /// configs that pre-date this field behave as before.
+    /// Legacy configuration field retained for compatibility. Credential and
+    /// admission stores use authoritative results, not an implicit deadline.
     #[serde(default = "ResilienceConfig::default_admission_timeout_ms")]
     pub admission_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_request_timeout_ms")]
@@ -899,9 +904,8 @@ pub struct ResilienceConfig {
 
 impl ResilienceConfig {
     fn default_admission_timeout_ms() -> u64 {
-        // Honor `with_store_timeout` calls (provider_credentials store and
-        // authentication resolver). Keep below the request-timeout bound so a
-        // single slow store lookup does not consume the whole request budget.
+        // Preserve deserialization compatibility; lifecycle admission does not
+        // derive an outcome from this legacy value.
         8_000
     }
 
@@ -2254,6 +2258,40 @@ pub struct EmbeddingBackendConfig {
     /// Local model directory for FastEmbed/Candle.
     #[serde(default = "EmbeddingBackendConfig::default_models_dir")]
     pub models_dir: String,
+    /// Optional local-only backup member for live embedding failover.
+    ///
+    /// The primary remains the surrounding configuration for backwards
+    /// compatibility. When present, both members resolve only their configured
+    /// asset directories and must prove the same embedding space and asset
+    /// manifest before the runtime accepts the pair.
+    #[serde(default)]
+    pub failover: Option<LocalEmbeddingFailoverConfig>,
+}
+
+/// Local-only embedding backup configuration.
+///
+/// Hosted backends and credential fields are intentionally absent: this is a
+/// same-host asset failover contract, never a route to a paid provider.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct LocalEmbeddingFailoverConfig {
+    /// The only backup member. The configured `llm.embedding` member is always
+    /// primary, so a second primary selector cannot silently diverge.
+    pub backup: LocalEmbeddingMemberConfig,
+}
+
+/// One explicitly located local embedding member.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct LocalEmbeddingMemberConfig {
+    /// Local backend identifier. Current runtime support is `fastembed`.
+    pub backend: String,
+    /// Model identity represented by the local asset directory.
+    pub model: String,
+    /// Expected vector width; inference refuses a different result.
+    pub vector_dimension: usize,
+    /// Maximum texts accepted in a local inference batch.
+    pub batch_size: usize,
+    /// Exact local asset directory. No environment or ambient fallback applies.
+    pub models_dir: String,
 }
 
 impl EmbeddingBackendConfig {
@@ -2289,6 +2327,7 @@ impl Default for EmbeddingBackendConfig {
             vector_dimension: Self::default_vector_dimension(),
             batch_size: Self::default_batch_size(),
             models_dir: Self::default_models_dir(),
+            failover: None,
         }
     }
 }

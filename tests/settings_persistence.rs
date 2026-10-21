@@ -131,6 +131,7 @@ async fn make_surreal() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
 /// Build a minimal `AppConfig` that only sets the fields needed for tests.
 fn minimal_config() -> AppConfig {
     AppConfig {
+        skill_source_roots: None,
         supervisor_recovery: None,
         server: ServerConfig {
             mcp_shared_transports_enabled: true,
@@ -845,6 +846,9 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
         governance_status: None,
         settings_mutation_auth_required: true,
         settings_admin_key: Some("test-admin-key".to_string().into()),
+        embedding_backend: None,
+        embedding_base_config: None,
+        embedding_failover: None,
     }));
 
     let list_response = app
@@ -1400,6 +1404,9 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         governance_status: Some(status),
         settings_mutation_auth_required: false,
         settings_admin_key: None,
+        embedding_backend: None,
+        embedding_base_config: None,
+        embedding_failover: None,
     }));
 
     let response = app
@@ -1568,6 +1575,9 @@ async fn governance_status_api_reports_mutation_unavailable_as_fail_closed() -> 
         governance_status: Some(status),
         settings_mutation_auth_required: false,
         settings_admin_key: None,
+        embedding_backend: None,
+        embedding_base_config: None,
+        embedding_failover: None,
     }));
 
     let response = app

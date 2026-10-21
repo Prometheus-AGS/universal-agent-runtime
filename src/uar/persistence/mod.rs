@@ -1,3 +1,4 @@
+pub mod scoped;
 pub mod knowledge_namespace;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
@@ -152,6 +153,15 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     }
 
     async fn discover_ingestion(&self, _limit: usize) -> Result<Vec<ingestion_records::IngestionJob>> {
+        Err(ingestion_records::IngestionStoreError::Unsupported.into())
+    }
+
+    /// The next durable ingestion deadline, if accepted work remains.
+    ///
+    /// This is an authoritative schedule read for a one-shot wakeup after a
+    /// durable state change. It is not a polling signal and does not certify
+    /// that a processing job completed.
+    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
@@ -358,6 +368,14 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn save_session(&self, session: &Session) -> Result<()>;
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>>;
 
+    /// List every session whose serialized owner matches `owner_id`.
+    ///
+    /// This is an authenticated owner snapshot. Implementations must not
+    /// broaden it with a legacy or all-tenant fallback.
+    async fn list_sessions(&self, _owner_id: &str) -> Result<Vec<Session>> {
+        anyhow::bail!("owner_scoped_session_listing_unsupported")
+    }
+
     /// Delete a session and all owned downstream data (conversation policy,
     /// checkpoints, cost ledger entries, tool admission evidence) for the
     /// verified owner. Returns true when a session row existed.
@@ -371,6 +389,23 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         _cutoff: chrono::DateTime<chrono::Utc>,
     ) -> Result<Vec<(String, String)>> {
         Ok(Vec::new())
+    }
+
+    /// Subscribe to successful local durable session commits. This is a wakeup,
+    /// not a state transfer: receivers reread the authoritative expiry after a
+    /// generation change. `None` means this provider has no durable signal.
+    fn subscribe_persisted_session_changes(&self) -> Option<tokio::sync::watch::Receiver<u64>> {
+        None
+    }
+
+    /// Return the earliest future persisted idle deadline under the supplied
+    /// policy. The deadline schedules a one-shot wakeup; it does not prove a
+    /// session is removable until the deletion transaction rechecks it.
+    async fn next_persisted_session_expiry(
+        &self,
+        _idle_timeout: chrono::Duration,
+    ) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+        Ok(None)
     }
 
     /// Save or replace a conversation-scoped chat policy.

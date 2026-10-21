@@ -18,6 +18,11 @@ pub enum RunnerType {
 
 #[async_trait]
 pub trait SandboxRunner: Send + Sync {
+    // Effectful methods must return OutcomeUnknown when a resource or effect
+    // may exist without an authoritative acknowledgment. A transport failure
+    // does not establish rollback. Session owners quarantine such resources
+    // rather than retrying, destroying a possibly busy resource, or claiming
+    // release. Ordinary errors represent a known unsuccessful operation.
     /// Whether this backend enforces an execution boundary rather than running
     /// an ordinary host process. Capability labels alone are not isolation.
     /// Unported and custom backends must explicitly implement this contract

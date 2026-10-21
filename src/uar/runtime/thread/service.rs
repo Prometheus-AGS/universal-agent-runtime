@@ -405,12 +405,26 @@ impl ThreadService {
             "Thread host is shutting down"
         );
         jobs.entries.retain(|job| !job.is_joined());
+        let (start, registered) = tokio::sync::oneshot::channel();
+        let parent_scope = crate::uar::runtime::lifecycle::current_scope();
+        let handle = tokio::spawn(async move {
+            // A producer cannot enter remote I/O until its join handle is in
+            // the host registry protected by the shutdown admission lock.
+            if registered.await.is_ok() {
+                if let Some(scope) = parent_scope {
+                    scope.run_in_scope(job).await;
+                } else {
+                    job.await;
+                }
+            }
+        });
         jobs.entries.push(Arc::new(ThreadJob {
             state: Mutex::new(ThreadJobState {
-                handle: Some(tokio::spawn(job)),
+                handle: Some(handle),
                 failure: None,
             }),
         }));
+        start.send(()).map_err(|_| anyhow::anyhow!("Registered thread job did not start"))?;
         Ok(())
     }
 
@@ -757,6 +771,14 @@ impl ThreadService {
             .inner
             .kernel
             .trusted_a2a_peer(&request.endpoint, &target_agent_id)?;
+        // Capability discovery is read-only and precedes child identity,
+        // durable admission and budget reservation. Legacy-only peers cannot
+        // create a child that has no event-driven completion contract.
+        tokio::select! {
+            biased;
+            () = self.inner.cancellation.cancelled() => anyhow::bail!("Thread host closed before peer discovery"),
+            result = peer.client.require_streaming_peer(&peer.endpoint) => { result?; }
+        }
         let (policy, contract_policy, requested_budgets, sandbox) =
             scope.policy().for_remote_child(&target_agent_id)?;
         let policy = Arc::new(policy);
@@ -1049,9 +1071,16 @@ impl ThreadService {
         let (result, remote_settled, remote_cleanup) = match work {
             TurnWork::Local(turn) => {
                 let executor = Arc::clone(&self.inner.executor);
+                let parent_scope = crate::uar::runtime::lifecycle::current_scope();
                 // Supervise the executor: a panicking/dropped producer cannot be
                 // mistaken for empty success or leave a permanently running child.
-                let result = match tokio::spawn(async move { executor.execute(turn).await }).await {
+                let result = match tokio::spawn(async move {
+                    if let Some(scope) = parent_scope {
+                        scope.run_in_scope(executor.execute(turn)).await
+                    } else {
+                        executor.execute(turn).await
+                    }
+                }).await {
                     Ok(Ok(result)) => result,
                     Ok(Err(error)) => {
                         tracing::error!(%thread_id, %error, "Child kernel failed");
@@ -1143,6 +1172,11 @@ impl ThreadService {
                     }
                     Err(crate::uar::api::a2a::task_execution::A2AExecutionError::NotStarted) => {
                         (AgentThreadResult::Cancelled, true, true)
+                    }
+                    Err(crate::uar::api::a2a::task_execution::A2AExecutionError::UnsupportedPeer(message))
+                        if execution.lock().await.cleanup_confirmed() => {
+                        reservation.release_confirmed().await?;
+                        (AgentThreadResult::Failed { code: "remote_streaming_unsupported".into(), message }, true, true)
                     }
                     Err(error) => {
                         tracing::error!(%thread_id, %error, "Remote child cleanup is unconfirmed");
@@ -1393,6 +1427,7 @@ impl ThreadService {
                             remote.peer.endpoint.clone(),
                             remote.contract.clone(),
                             binding.task_id,
+                            binding.context_id,
                             &entry.cancellation,
                         )?));
                     remote.execution = Some(Arc::clone(&execution));
@@ -1425,7 +1460,8 @@ impl ThreadService {
                         }
                     }
                 }
-                Err(crate::uar::api::a2a::task_execution::A2AExecutionError::NotStarted)
+                Err(crate::uar::api::a2a::task_execution::A2AExecutionError::NotStarted
+                    | crate::uar::api::a2a::task_execution::A2AExecutionError::UnsupportedPeer(_))
                     if execution.cleanup_confirmed() =>
                 {
                     if !reservation.is_released() {

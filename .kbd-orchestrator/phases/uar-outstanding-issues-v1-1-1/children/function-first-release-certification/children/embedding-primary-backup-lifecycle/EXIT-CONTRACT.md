@@ -57,3 +57,8 @@ reversible.
 
 PASS only when 1–6 are each evidenced with real receipts on v4. Otherwise
 NOT READY with exactly one concrete blocker named.
+
+
+## Operator continuation — 2026-10-21T00:17:37.409884+00:00
+
+The operator preserved all frozen acceptance conditions and authorized new local-only live failover and incompatible-space implementation and fixture source. Restart resilience is still insufficient for condition5; query mismatch exercise is still required for condition3. No hosted calls, new credentials, paid usage or personal configuration mutation is authorized. Verification remains CLOSED; the older bounded-build permission above does not authorize any current execution. Existing v4/v5 receipts remain historical and cannot certify new source. The child remains NOT READY until real authorized evidence exists.

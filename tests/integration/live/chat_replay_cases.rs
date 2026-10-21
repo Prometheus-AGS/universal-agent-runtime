@@ -104,6 +104,7 @@ async fn primary_chat_reconnects_mid_run_without_repeating_execution_or_frames()
             .unwrap();
     });
     let server = boot_test_server(&provider_url, "gpt-5.4-mini", ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
     let client = reqwest::Client::new();
     let token = mint_harness_peer_token();
     let endpoint = format!("{}/api/chat/completion", server.base_url);
@@ -368,8 +369,14 @@ async fn primary_chat_reconnects_mid_run_without_repeating_execution_or_frames()
     })
     .await
     .unwrap();
-    server.trigger_shutdown();
-    server.wait_for_exit().await;
+    })).await;
+    // Release any controlled provider request even when the body panics, so
+    // server finalization can settle accepted upstream operations.
+    provider.release.add_permits(1);
+    let server_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(server.close())).await;
     shutdown.cancel();
-    provider_job.await.unwrap();
+    let provider_cleanup = provider_job.await;
+    if let Err(panic) = fixture_outcome { std::panic::resume_unwind(panic); }
+    server_cleanup.unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+    provider_cleanup.expect("join provider fixture");
 }

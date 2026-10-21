@@ -175,6 +175,8 @@ async fn l2_c06_orchestrator_delegates_with_trace() {
     let recorded = std::env::var(super::backend::BACKEND_ENV_VAR).as_deref() != Ok("live");
     let backend = super::backend::resolve(fixtures).await;
     let server = boot_test_server(&backend.base_url, &backend.model, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let peer_token = mint_harness_peer_token();
 
     let response = reqwest::Client::new()
@@ -222,6 +224,9 @@ async fn l2_c06_orchestrator_delegates_with_trace() {
     if recorded {
         assert_eq!(contribution, RECORDED_CONTRIBUTION);
     }
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 struct C19FixtureProvider;
@@ -245,6 +250,8 @@ impl universal_agent_runtime::uar::eval::CompletionProvider for C19FixtureProvid
 async fn l3_c20_health_readiness_metrics() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-20", "/healthz").await;
     assert_eq!(status, 200, "healthz should be 200, body: {body}");
@@ -267,6 +274,9 @@ async fn l3_c20_health_readiness_metrics() {
         "metrics should be Prometheus exposition format, got: {}",
         &m_body.chars().take(200).collect::<String>()
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-07 skills catalog.
@@ -281,6 +291,8 @@ async fn l3_c20_health_readiness_metrics() {
 async fn l3_c07_skills_catalog() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     // Path resolved from `server.rs`'s `.nest("/api/uar/skills", …)` + the
     // sub-router's `.route("/")`. An earlier draft used `/api/skills`, which
@@ -293,6 +305,9 @@ async fn l3_c07_skills_catalog() {
         parsed.is_array() || parsed.get("skills").is_some() || parsed.get("data").is_some(),
         "C-07: expected a skills collection, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-10 settings — the deployment configuration surface.
@@ -301,11 +316,16 @@ async fn l3_c07_skills_catalog() {
 async fn l3_c10_settings_surface() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-10", "/api/uar/settings").await;
     assert_eq!(status, 200, "settings should be 200, got: {body}");
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-10: settings body is not JSON: {e}\n{body}"));
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-11 A2UI schema registry.
@@ -314,11 +334,16 @@ async fn l3_c10_settings_surface() {
 async fn l3_c11_a2ui_schema_registry() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-11", "/api/uar/a2ui/schemas").await;
     assert_eq!(status, 200, "a2ui schemas should be 200, got: {body}");
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-11: schemas body is not JSON: {e}\n{body}"));
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-08 tools registry — the *catalog* is model-independent, so listing is L3.
@@ -328,11 +353,16 @@ async fn l3_c11_a2ui_schema_registry() {
 async fn l3_c08_tools_registry() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-08", "/api/tools").await;
     assert_eq!(status, 200, "tools registry should be 200, got: {body}");
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-08: tools body is not JSON: {e}\n{body}"));
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-03 provider registry — *listing* providers is model-independent.
@@ -342,11 +372,16 @@ async fn l3_c08_tools_registry() {
 async fn l3_c03_provider_registry() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-03", "/api/uar/providers").await;
     assert_eq!(status, 200, "providers should be 200, got: {body}");
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-03: providers body is not JSON: {e}\n{body}"));
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 // ---------------------------------------------------------------------------
@@ -364,6 +399,8 @@ async fn l3_c03_provider_registry() {
 async fn l2_c14_openai_compatible_surface() {
     let stub = start_stub_llm(content_fixture("ping", "pong")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .post(format!("{}/v1/chat/completions", server.base_url))
@@ -384,6 +421,9 @@ async fn l2_c14_openai_compatible_surface() {
         body.contains("choices"),
         "C-14: expected an OpenAI-shaped response, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-01 + C-02 run lifecycle and AG-UI streaming — **L2**.
@@ -396,6 +436,8 @@ async fn l2_c14_openai_compatible_surface() {
 async fn l2_c01_c02_run_stream_shape() {
     let stub = start_stub_llm(content_fixture("stream please", "streamed reply")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .post(format!("{}/api/chat/completion", server.base_url))
@@ -421,6 +463,9 @@ async fn l2_c01_c02_run_stream_shape() {
         body.contains("streamed reply"),
         "C-01/C-02: expected fixture content in the stream, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 // ---------------------------------------------------------------------------
@@ -529,6 +574,8 @@ async fn l4_c12_persistence_round_trip() {
 async fn l3_c04_credentials_listing() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .get(format!("{}/api/uar/credentials", server.base_url))
@@ -549,6 +596,9 @@ async fn l3_c04_credentials_listing() {
         Some("Authentication required"),
         "C-04 unauthenticated credentials guard contract changed: expected Authentication required, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-05 knowledge bases and RAG — **catalog only**.
@@ -561,11 +611,16 @@ async fn l3_c04_credentials_listing() {
 async fn l3_c05_knowledge_base_catalog() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-05", "/api/knowledge").await;
     assert_eq!(status, 200, "C-05: expected 200, got: {body}");
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-05: body is not JSON: {e}\n{body}"));
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-06 memory — requires `ServiceNeeds { memory: true }`.
@@ -578,6 +633,8 @@ async fn l3_c05_knowledge_base_catalog() {
 async fn shape_only_c06_memory_stats() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds { memory: true }).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) =
         get_capability(&server.base_url, "C-06", "/api/admin/memories/stats").await;
@@ -587,6 +644,9 @@ async fn shape_only_c06_memory_stats() {
     );
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-06: body is not JSON: {e}\n{body}"));
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-09 agent compiler — spec listing on a fresh database.
@@ -600,10 +660,15 @@ async fn shape_only_c06_memory_stats() {
 async fn l3_c09_compiler_specs() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let path = "/api/compiler/specs";
     let (status, body) = get_capability(&server.base_url, "C-09", path).await;
     assert_empty_collection("C-09", path, status, &body);
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-09b — the same contract on the `/api/uar/compiler` mount, which
@@ -613,10 +678,15 @@ async fn l3_c09_compiler_specs() {
 async fn l3_c09_uar_compiler_specs() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let path = "/api/uar/compiler/specs";
     let (status, body) = get_capability(&server.base_url, "C-09b", path).await;
     assert_empty_collection("C-09b", path, status, &body);
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-09c — compiler sessions on a fresh DB.
@@ -631,10 +701,15 @@ async fn l3_c09_uar_compiler_specs() {
 async fn l3_c09_compiler_sessions() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let path = "/api/compiler/sessions";
     let (status, body) = get_capability(&server.base_url, "C-09c", path).await;
     assert_empty_collection("C-09c", path, status, &body);
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-15 agent descriptor schema — served at the A2A well-known path.
@@ -648,6 +723,8 @@ async fn l3_c09_compiler_sessions() {
 async fn l3_c15_agent_descriptor_well_known() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-15", "/.well-known/agent.json").await;
     assert_eq!(status, 200, "C-15: expected 200, got: {body}");
@@ -657,6 +734,9 @@ async fn l3_c15_agent_descriptor_well_known() {
         parsed.get("name").is_some() || parsed.get("skills").is_some(),
         "C-15: expected an agent card, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-17 security — auth enforcement.
@@ -671,6 +751,8 @@ async fn l3_c15_agent_descriptor_well_known() {
 async fn l3_c17_security_posture() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     // No Authorization header at all.
     let resp = reqwest::Client::new()
@@ -688,6 +770,9 @@ async fn l3_c17_security_posture() {
         status == 200 || status == 401 || status == 403,
         "C-17: expected 200 (auth off) or 401/403 (auth on), got {status}: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-13 legacy sessions route — deliberately retired.
@@ -699,6 +784,8 @@ async fn l3_c17_security_posture() {
 async fn absent_c13_sessions_retired() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let (status, body) = get_capability(&server.base_url, "C-13", "/api/sessions").await;
     assert_eq!(
@@ -714,6 +801,9 @@ async fn absent_c13_sessions_retired() {
         Some("legacy_route_disabled"),
         "C-13 retired-route contract changed: expected error.code=legacy_route_disabled, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-13 session continuity — **excluded from L4**.
@@ -838,6 +928,8 @@ async fn excluded_c13_session_continuity_is_not_durable() {
 async fn l2_c16_governance_middleware() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let path = "/api/uar/settings";
     let resp = reqwest::Client::new()
         .get(format!("{}{}", server.base_url, path))
@@ -853,6 +945,9 @@ async fn l2_c16_governance_middleware() {
         status, 200,
         "C-16: default governance policy should permit the real settings handler: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C02 governed direct execution — **L3 exercised**.
@@ -866,6 +961,8 @@ async fn l2_c16_governance_middleware() {
 async fn l3_c02_direct_tool_route_binds_principal_to_authenticated_owner() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let path = "/api/tools/c02_missing_tool/execute";
     let client = reqwest::Client::new();
 
@@ -906,6 +1003,9 @@ async fn l3_c02_direct_tool_route_binds_principal_to_authenticated_owner() {
         status, 404,
         "caller-controlled agent header must not change direct-route identity: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-18 file processing / document intelligence — **L3 exercised**.
@@ -919,6 +1019,8 @@ async fn l3_c18_text_file_processing() {
     const CONTENT: &str = "C-18 deterministic document text";
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let path = "/api/upload";
     let form = reqwest::multipart::Form::new().part(
         "file",
@@ -956,6 +1058,9 @@ async fn l3_c18_text_file_processing() {
                 .join(format!("{id}.txt")),
         );
     }
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-19 evals — **L2 wired**.
@@ -971,6 +1076,8 @@ async fn l2_c19_eval_runner() {
 
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let (status, body) = get_capability(&server.base_url, "C-19", "/healthz").await;
     assert_eq!(
         status, 200,
@@ -1003,6 +1110,9 @@ async fn l2_c19_eval_runner() {
             .all(|result| result.scores.len() == suite.scorers.len()),
         "C-19: eval runner did not apply every declared scorer"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-21 tenant isolation.
@@ -1016,6 +1126,8 @@ async fn l2_c19_eval_runner() {
 async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let token = |subject: &str, tenant: &str| {
         let claims = universal_agent_runtime::uar::security::claims::UserClaims {
@@ -1146,6 +1258,9 @@ async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
         after_cancel["result"]["status"]["state"], "working",
         "C-21: cross-tenant cancel must not mutate tenant A task: {after_cancel}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-21 private user resources.
@@ -1158,6 +1273,8 @@ async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
 async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() {
     let stub = start_stub_llm(content_fixture("C-21 private thread", "C-21 private reply")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds { memory: true }).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let token = |subject: &str| {
         let claims = universal_agent_runtime::uar::security::claims::UserClaims {
             sub: subject.to_owned(),
@@ -1718,6 +1835,9 @@ async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() 
             .is_some_and(|rows| rows.iter().all(|row| row["content"] != secret)),
         "C-21: user B read user A memory: {cross_user_memories}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-24 peer mesh — **published exclusion**.
@@ -1732,11 +1852,16 @@ async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() 
 async fn excluded_c24_peer_mesh_requires_two_devices() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let (status, body) = get_capability(&server.base_url, "C-24", "/healthz").await;
     assert_eq!(
         status, 200,
         "C-24 exclusion discriminator: live runtime health handler failed: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-25 node decentralized identity — **published exclusion**.
@@ -1758,11 +1883,16 @@ async fn excluded_c25_node_did_not_consumed_by_runtime() {
 
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let (status, body) = get_capability(&server.base_url, "C-25", "/healthz").await;
     assert_eq!(
         status, 200,
         "C-25 exclusion discriminator: live runtime health handler failed: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-26 DID resolution and credential verification — **published exclusion**.
@@ -1786,11 +1916,16 @@ async fn excluded_c26_did_resolution_and_vc_verification_not_consumed() {
 
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let (status, body) = get_capability(&server.base_url, "C-26", "/healthz").await;
     assert_eq!(
         status, 200,
         "C-26 exclusion discriminator: live runtime health handler failed: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-27 credential wallet and owner-to-node delegation — **published exclusion**.
@@ -1811,11 +1946,16 @@ async fn excluded_c27_wallet_not_consumed_by_runtime() {
 
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let (status, body) = get_capability(&server.base_url, "C-27", "/healthz").await;
     assert_eq!(
         status, 200,
         "C-27 exclusion discriminator: live runtime health handler failed: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 // ---------------------------------------------------------------------------
@@ -1833,6 +1973,8 @@ async fn excluded_c27_wallet_not_consumed_by_runtime() {
 async fn absent_c22_scheduled_runs() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .get(format!("{}/api/uar/schedules", server.base_url))
@@ -1848,6 +1990,9 @@ async fn absent_c22_scheduled_runs() {
          Either the capability now exists (update SPECIFICATION.md) or this probe \
          guessed the wrong path. Body: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// C-23 peer reachability — **predicted ABSENT**.
@@ -1863,6 +2008,8 @@ async fn absent_c22_scheduled_runs() {
 async fn absent_c23_peer_reachability() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .get(format!("{}/api/uar/peers", server.base_url))
@@ -1877,4 +2024,253 @@ async fn absent_c23_peer_reachability() {
         "C-23 was predicted ABSENT but /api/uar/peers resolved to a real handler. \
          If peer support landed, SPECIFICATION.md GAP-10 is stale. Body: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
+}
+
+/// R11 (operator ruling 2026-10-20) — standalone tool-definition CRUD:
+/// create/read-back/queryable/update/delete over anonymous local REST and
+/// peer-token REST, owner-scoped governance (cross-owner reads 404), and the
+/// safe-executor-binding refusals (http transport 400; unregistered MCP
+/// server 422; reserved `__` namespace 422). Execution is NOT part of this
+/// surface: stored definitions never reach `execute_direct_tool`, and the
+/// global-MCP sidecar 409 is untouched (tests/sidecar_launch_security).
+#[tokio::test]
+#[serial]
+async fn tool_definition_crud_governance() {
+    use serde_json::Value;
+
+    let stub = start_stub_llm(FixtureSet::new()).await; // unused — no LLM call
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
+    let peer_token = mint_harness_peer_token();
+    let client = reqwest::Client::new();
+
+    let definition = |id: &str, transport: Value| {
+        serde_json::json!({
+            "tool_id": id,
+            "name": id,
+            "description": "r11 probe definition",
+            "input_schema": {"type": "object", "properties": {}},
+            "transport": transport,
+            "tags": ["r11-probe"]
+        })
+    };
+
+    // Create (peer owner), internal transport -> 201 (contract text says 200;
+    // recorded satisfied-with-notation like the R11 agent leg's 201).
+    let create = client
+        .post(format!("{}/api/tools", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&definition("td-probe", serde_json::json!("internal")))
+        .send()
+        .await
+        .expect("create request");
+    assert_eq!(
+        create.status().as_u16(),
+        201,
+        "create: {}",
+        create.text().await.unwrap_or_default()
+    );
+
+    // Read-back by owner -> 200 with the stored record.
+    let read = client
+        .get(format!("{}/api/tools/td-probe", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("read request");
+    assert_eq!(read.status().as_u16(), 200, "read-back status");
+    let read_body: Value = read.json().await.expect("read json");
+    assert_eq!(
+        read_body["definition"]["description"].as_str(),
+        Some("r11 probe definition")
+    );
+    assert!(
+        read_body["owner"].is_string(),
+        "peer-owned record carries an owner key: {read_body}"
+    );
+
+    // Queryable through the catalog surface (owner-filtered merge).
+    let catalog = client
+        .get(format!("{}/api/tools", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("catalog request");
+    assert_eq!(catalog.status().as_u16(), 200, "catalog status");
+    let catalog_body: Value = catalog.json().await.expect("catalog json");
+    assert!(
+        catalog_body["definitions"]
+            .as_array()
+            .is_some_and(|definitions| {
+                definitions.iter().any(|stored| stored["definition"]["tool_id"]
+                    .as_str()
+                    == Some("td-probe"))
+            }),
+        "created definition must be queryable in GET /api/tools: {catalog_body}"
+    );
+
+    // Update -> 200 and the change reads back.
+    let updated = client
+        .put(format!("{}/api/tools/td-probe", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&serde_json::json!({
+            "tool_id": "td-probe",
+            "name": "td-probe",
+            "description": "r11 probe definition v2",
+            "input_schema": {"type": "object", "properties": {}},
+            "transport": "internal",
+            "tags": []
+        }))
+        .send()
+        .await
+        .expect("update request");
+    assert_eq!(updated.status().as_u16(), 200, "update status");
+    let reread = client
+        .get(format!("{}/api/tools/td-probe", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("reread request");
+    let reread_body: Value = reread.json().await.expect("reread json");
+    assert_eq!(
+        reread_body["definition"]["description"].as_str(),
+        Some("r11 probe definition v2")
+    );
+
+    // Duplicate create -> 409.
+    let dup = client
+        .post(format!("{}/api/tools", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&definition("td-probe", serde_json::json!("internal")))
+        .send()
+        .await
+        .expect("duplicate create");
+    assert_eq!(dup.status().as_u16(), 409, "duplicate create must conflict");
+
+    // Safe-executor-binding refusals.
+    let http = client
+        .post(format!("{}/api/tools", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&definition(
+            "td-http",
+            serde_json::json!({"http": {"url": "http://127.0.0.1:1/x", "method": "POST"}}),
+        ))
+        .send()
+        .await
+        .expect("http transport create");
+    assert_eq!(
+        http.status().as_u16(),
+        400,
+        "http transport must be refused: {}",
+        http.text().await.unwrap_or_default()
+    );
+    let mcp = client
+        .post(format!("{}/api/tools", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&definition(
+            "td-mcp",
+            serde_json::json!({"mcp": {"server_name": "no-such-server"}}),
+        ))
+        .send()
+        .await
+        .expect("mcp transport create");
+    assert_eq!(
+        mcp.status().as_u16(),
+        422,
+        "unregistered mcp server must be refused"
+    );
+    let reserved = client
+        .post(format!("{}/api/tools", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&definition("native__evil", serde_json::json!("internal")))
+        .send()
+        .await
+        .expect("reserved namespace create");
+    assert_eq!(
+        reserved.status().as_u16(),
+        422,
+        "reserved __ namespace must be refused"
+    );
+
+    // Owner isolation: an anonymous (no-login local contract) create lands in
+    // the local bucket; the peer principal cannot see it, and vice versa.
+    let anon_create = client
+        .post(format!("{}/api/tools", server.base_url))
+        .json(&definition("td-anon", serde_json::json!("internal")))
+        .send()
+        .await
+        .expect("anonymous create");
+    assert_eq!(
+        anon_create.status().as_u16(),
+        201,
+        "anonymous local create must succeed (no-login contract)"
+    );
+    let cross = client
+        .get(format!("{}/api/tools/td-anon", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("cross-owner read");
+    assert_eq!(
+        cross.status().as_u16(),
+        404,
+        "cross-owner read must 404 without leaking existence"
+    );
+    let anon_read = client
+        .get(format!("{}/api/tools/td-anon", server.base_url))
+        .send()
+        .await
+        .expect("anonymous read");
+    assert_eq!(anon_read.status().as_u16(), 200, "owner read must succeed");
+    let peer_hidden = client
+        .get(format!("{}/api/tools/td-probe", server.base_url))
+        .send()
+        .await
+        .expect("anonymous read of peer record");
+    assert_eq!(
+        peer_hidden.status().as_u16(),
+        404,
+        "anonymous caller must not see the peer-owned record"
+    );
+
+    // Delete by owner -> 204, then gone.
+    let delete = client
+        .delete(format!("{}/api/tools/td-probe", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("delete request");
+    assert_eq!(delete.status().as_u16(), 204, "delete status");
+    let gone = client
+        .get(format!("{}/api/tools/td-probe", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("post-delete read");
+    assert_eq!(gone.status().as_u16(), 404, "deleted record must 404");
+
+    // The execute surface is unchanged: a stored definition is not executable
+    // through it (no new execution path).
+    let execute = client
+        .post(format!(
+            "{}/api/tools/td-anon/execute",
+            server.base_url
+        ))
+        .bearer_auth(&peer_token)
+        .json(&serde_json::json!({"arguments": {}}))
+        .send()
+        .await
+        .expect("execute attempt");
+    let execute_status = execute.status().as_u16();
+    assert!(
+        execute_status == 404 || execute_status == 403,
+        "stored definitions must not become executable via /execute, got {execute_status}"
+    );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

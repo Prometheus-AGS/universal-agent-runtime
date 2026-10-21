@@ -2,13 +2,12 @@
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use surrealdb::{Surreal, engine::any::Any, types::{Datetime, QueryError, RecordId, SurrealValue}};
-use surreal_memory::{Memory, SurrealStorage};
+use surreal_memory::Memory;
 use super::{CapturePolicy, CapturePolicyUpdate, Retention, MemoryService};
 use crate::uar::memory::owned::record_id;
 
 fn db(service: &MemoryService) -> Result<Surreal<Any>> {
-    service.storage.as_any().downcast_ref::<SurrealStorage>()
-        .context("Durable memory controls require the production Surreal memory store")?.db()
+    service.memory_db()
 }
 fn memory_id(id: &str) -> Result<RecordId> {
     let record = if id.contains(':') { RecordId::parse_simple(id)? } else { RecordId::new("memory", id) };
@@ -74,6 +73,7 @@ pub(super) async fn set_policy(service: &MemoryService, owner: &str, update: Cap
         .bind(("owner", owner.to_owned())).bind(("enabled", update.enabled))
         .bind(("chosen", update.retention.is_some())).bind(("days", days))
         .await?.check()?;
+    service.notify_committed_memory_change();
     policy(service, owner).await
 }
 
@@ -228,6 +228,21 @@ pub(super) async fn delete(service: &MemoryService, id: &str, owner: &str) -> Re
     // Do not depend on physical deletion to acknowledge suppression. Startup
     // and the TTL worker finish cleanup even if this request is cancelled now.
     Ok(())
+}
+
+pub(super) async fn next_expiry_due_at(
+    service: &MemoryService,
+) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+    let database = db(service)?;
+    let mut response = database.query("SELECT VALUE valid_until FROM memory WHERE valid_until != NONE AND valid_until > time::now() ORDER BY valid_until LIMIT 1; SELECT VALUE expires_at FROM uar_memory_control WHERE deleted=false AND expires_at != NONE AND expires_at > time::now() ORDER BY expires_at LIMIT 1;").await?.check()?;
+    let memory_due: Vec<Datetime> = response.take(0)?;
+    let control_due: Vec<Datetime> = response.take(1)?;
+    let into_utc = |value: Datetime| -> chrono::DateTime<chrono::Utc> { value.into() };
+    Ok([memory_due.into_iter().next(), control_due.into_iter().next()]
+        .into_iter()
+        .flatten()
+        .map(into_utc)
+        .min())
 }
 
 pub(super) async fn purge(service: &MemoryService) -> Result<u64> {

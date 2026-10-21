@@ -100,14 +100,26 @@ fn condition(headers: &HeaderMap) -> Result<Option<String>, Response> {
 }
 fn migration_result(result: anyhow::Result<crate::uar::security::credentials::CredentialMigrationReceipt>, principal_source: bool) -> Response {
     match result { Ok(receipt) => Json(receipt).into_response(), Err(error) => {
+        let operation_id = match error.downcast_ref::<CredentialMigrationError>() {
+            Some(CredentialMigrationError::Contention { operation_id }
+                | CredentialMigrationError::Unavailable { operation_id }
+                | CredentialMigrationError::OutcomeUnknown { operation_id }) => Some(operation_id),
+            _ => None,
+        };
         let (status, code) = match error.downcast_ref::<CredentialMigrationError>() {
             Some(CredentialMigrationError::MappingDenied) => (StatusCode::FORBIDDEN,"credential_mapping_denied"),
             Some(CredentialMigrationError::SourceMissing) => (StatusCode::NOT_FOUND,if principal_source {"principal_credential_missing"} else {"legacy_credential_missing"}),
             Some(CredentialMigrationError::Conflict) => (StatusCode::CONFLICT,"credential_mapping_conflict"),
             Some(CredentialMigrationError::PreconditionFailed) => (StatusCode::PRECONDITION_FAILED,"credential_migration_precondition_failed"),
             Some(CredentialMigrationError::PreconditionInvalid) => (StatusCode::BAD_REQUEST,"credential_migration_precondition_invalid"),
-            None => (StatusCode::SERVICE_UNAVAILABLE,"credential_migration_unavailable"),
-        }; safe_error(status,code)
+            Some(CredentialMigrationError::Contention { .. }) => (StatusCode::CONFLICT,"credential_migration_contention"),
+            Some(CredentialMigrationError::OutcomeUnknown { .. }) => (StatusCode::SERVICE_UNAVAILABLE,"credential_migration_outcome_unknown"),
+            Some(CredentialMigrationError::Unavailable { .. }) | None => (StatusCode::SERVICE_UNAVAILABLE,"credential_migration_unavailable"),
+        };
+        tracing::warn!(code, operation_id = operation_id.map(String::as_str), "credential migration rejected");
+        if let Some(operation_id) = operation_id {
+            (status, Json(serde_json::json!({"error": code, "operation_id": operation_id}))).into_response()
+        } else { safe_error(status,code) }
     }}
 }
 async fn migrate_legacy(State(state): State<CredentialApiState>, context: Option<axum::Extension<UserContext>>, headers: HeaderMap, body: Result<Json<LegacyMappingRequest>, JsonRejection>) -> Response {

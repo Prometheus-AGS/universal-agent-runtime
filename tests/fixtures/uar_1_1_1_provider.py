@@ -9,6 +9,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import select
+import socket
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -128,11 +131,33 @@ def main():
     parser.add_argument("--mode-file", required=True, type=Path)
     args = parser.parse_args()
     lock = threading.Lock()
+    connections_lock = threading.Lock()
+    connections = set()
+    stopping = threading.Event()
     args.trace.touch(mode=0o600)
     args.trace.chmod(0o600)
 
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
+        def setup(self):
+            super().setup()
+            with connections_lock:
+                connections.add(self.connection)
+                if stopping.is_set():
+                    self.connection.shutdown(socket.SHUT_RDWR)
+
+        def finish(self):
+            try:
+                super().finish()
+            finally:
+                with connections_lock:
+                    connections.discard(self.connection)
+                contact = getattr(self, "held_contact", None)
+                if contact:
+                    with lock:
+                        print("UAR_FIXTURE_EVENT:" + json.dumps({"version": 1, "event": "response_released",
+                              "contact_token": contact, "fixture_shutdown": stopping.is_set()}), flush=True)
+
         def log_message(self, *_args):
             pass
         def do_GET(self):
@@ -147,6 +172,7 @@ def main():
             received_at = time.monotonic()
             settings = json.loads(args.mode_file.read_text())
             mode = settings.get("mode", "complete")
+            self.held_contact = settings.get("contact_token") if mode == "cancel" else None
             body = anthropic_stream(mode, request, settings.get("newline", "\n"), settings.get("bom", False),
                                     settings.get("prompt_marker"), settings.get("skill_marker")) if self.path.endswith("/messages") else openai_stream(mode, request, settings.get("prompt_marker"), settings.get("skill_marker"))
             split = settings.get("split")
@@ -160,8 +186,14 @@ def main():
                 trace.write(json.dumps({"kind":"request","correlation_id":correlation_id,"path":self.path,"mode":mode,"request":request,"credential_source":source,"sha256":hashlib.sha256(body).hexdigest(),"chunks":[len(part) for part in pieces],"peer_received_at":received_at,"time":received_at}) + "\n")
                 trace.flush()
                 os.fsync(trace.fileno())
+                if settings.get("contact_token"):
+                    print("UAR_FIXTURE_EVENT:" + json.dumps({"version": 1, "event": "request",
+                          "contact_token": settings["contact_token"], "correlation_id": correlation_id}), flush=True)
             if settings.get("delay"):
-                time.sleep(settings["delay"])
+                # Configured latency is a business fault simulation. Host EOF
+                # can interrupt it; elapsed latency never proves cleanup.
+                if stopping.wait(settings["delay"]):
+                    return
             self.send_response(settings.get("http_status", 200))
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Transfer-Encoding", "chunked")
@@ -176,13 +208,21 @@ def main():
                         self.wfile.flush()
                         last_write_at = time.monotonic()
                         if split is not None or fixed:
-                            time.sleep(0.001)
+                            if stopping.wait(0.001):
+                                return
                 if mode == "cancel":
-                    time.sleep(120)
+                    # Keep this response incomplete until the client actually
+                    # closes it or fixture EOF explicitly releases the socket.
+                    # This worker owns the read and is joined by server_close.
+                    unexpected = self.connection.recv(1)
+                    if unexpected:
+                        raise RuntimeError("held response received unexpected pipelined bytes")
+                    self.close_connection = True
+                    return
                 self.wfile.write(b"0\r\n\r\n")
                 self.wfile.flush()
                 last_write_at = time.monotonic()
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 pass
             finally:
                 with lock, args.trace.open("a", encoding="utf-8") as trace:
@@ -193,11 +233,34 @@ def main():
                     os.fsync(trace.fileno())
 
     server = ThreadingHTTPServer(("0.0.0.0", 0), Handler)
-    server.daemon_threads = True
+    server.daemon_threads = False
     pending = args.port_file.with_suffix(".pending")
     pending.write_text(str(server.server_address[1]))
     pending.replace(args.port_file)
-    server.serve_forever()
+    print("UAR_FIXTURE_EVENT:" + json.dumps({"version": 1, "event": "ready",
+          "port": server.server_address[1]}), flush=True)
+    try:
+        while True:
+            readable, _, _ = select.select([server, sys.stdin], [], [])
+            if sys.stdin in readable:
+                command = os.read(sys.stdin.fileno(), 4096)
+                if not command:
+                    break
+                raise RuntimeError("provider fixture accepts only inherited EOF shutdown")
+            if server in readable:
+                server.handle_request()
+    finally:
+        with connections_lock:
+            stopping.set()
+            owned_connections = list(connections)
+        for connection in owned_connections:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass  # already closed; worker join below remains authoritative
+        server.server_close()
+        print("UAR_FIXTURE_EVENT:" + json.dumps({"version": 1, "event": "closed",
+              "completion": "listener_and_handlers_joined"}), flush=True)
 
 
 if __name__ == "__main__":

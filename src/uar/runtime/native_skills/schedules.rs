@@ -1,11 +1,22 @@
 //! Schedule mutations are host tools, subject to normal effect approval.
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use serde_json::{Value, json};
 use crate::uar::{runtime::{native_skill::{NativeExecutionContext, NativeSkill, NativeSkillRegistry},
     schedules::ScheduleController}, tools::descriptor::{ApprovalClass, Exposure, ToolAssemblyError, ToolEffect, ToolSource}};
 
 const NAMES: [&str; 7] = ["schedule_create", "schedule_list", "schedule_get", "schedule_update", "schedule_pause", "schedule_resume", "schedule_cancel"];
-struct ScheduleTool { controller: Arc<ScheduleController>, name: &'static str }
+/// The registry must not keep the host controller alive after the host has
+/// closed its lifecycle scope. Tool execution upgrades this command facade for
+/// the duration of one admitted call.
+struct ScheduleTool { controller: Weak<ScheduleController>, name: &'static str }
+
+impl ScheduleTool {
+    fn controller(&self) -> anyhow::Result<Arc<ScheduleController>> {
+        self.controller
+            .upgrade()
+            .ok_or_else(|| anyhow::anyhow!("schedule_unavailable"))
+    }
+}
 
 #[async_trait::async_trait]
 impl NativeSkill for ScheduleTool {
@@ -54,12 +65,13 @@ impl NativeSkill for ScheduleTool {
         let owner = context.verified_owner.as_ref().ok_or_else(|| anyhow::anyhow!("schedule_denied"))?;
         let workspace = args["workspaceId"].as_str().ok_or_else(|| anyhow::anyhow!("schedule_invalid"))?;
         let id = args["id"].as_str().unwrap_or_default();
+        let controller = self.controller()?;
         let result = match self.name {
-            "schedule_list" => return Ok(serde_json::to_value(self.controller.list(owner, workspace).await.map_err(safe)?)?),
-            "schedule_get" => self.controller.get(owner, workspace, id).await,
-            "schedule_create" => self.controller.create(owner, workspace, serde_json::from_value(args["schedule"].clone())?).await,
-            "schedule_update" => self.controller.revise(owner, workspace, id, revision(&args)?, serde_json::from_value(args["schedule"].clone())?).await,
-            _ => self.controller.control(owner, workspace, id, revision(&args)?, self.name.trim_start_matches("schedule_")).await,
+            "schedule_list" => return Ok(serde_json::to_value(controller.list(owner, workspace).await.map_err(safe)?)?),
+            "schedule_get" => controller.get(owner, workspace, id).await,
+            "schedule_create" => controller.create(owner, workspace, serde_json::from_value(args["schedule"].clone())?).await,
+            "schedule_update" => controller.revise(owner, workspace, id, revision(&args)?, serde_json::from_value(args["schedule"].clone())?).await,
+            _ => controller.control(owner, workspace, id, revision(&args)?, self.name.trim_start_matches("schedule_")).await,
         };
         Ok(serde_json::to_value(result.map_err(safe)?)?)
     }
@@ -69,6 +81,7 @@ fn safe(error: crate::uar::runtime::schedules::ScheduleError) -> anyhow::Error {
 fn revision(args: &Value) -> anyhow::Result<u64> { args["expectedRevision"].as_u64().ok_or_else(|| anyhow::anyhow!("schedule_invalid")) }
 
 pub async fn register(registry: &NativeSkillRegistry, controller: Arc<ScheduleController>) -> Result<(), ToolAssemblyError> {
+    let controller = Arc::downgrade(&controller);
     for name in NAMES { registry.register(ScheduleTool { controller: controller.clone(), name }).await?; }
     Ok(())
 }

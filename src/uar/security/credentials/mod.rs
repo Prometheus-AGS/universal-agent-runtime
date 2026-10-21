@@ -39,28 +39,24 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub struct ProviderService {
     store: Arc<dyn CredentialStore>,
+    migrations: Arc<migration::MigrationCoordinator>,
     encryption: Arc<CredentialEncryption>,
     pub(super) legacy_owner_mappings: Arc<Vec<LegacyCredentialOwnerMapping>>,
     pub(super) principal_owner_mappings: Arc<Vec<PrincipalCredentialOwnerMapping>>,
     policy: Arc<CredentialTenancyPolicy>,
-    /// Per-read store bound handed to every resolver this service builds,
-    /// sourced from `resilience.admission_timeout_ms`.
-    store_timeout: std::time::Duration,
+
 }
 
 impl ProviderService {
     /// Construct from a store and an explicit encryption handle.
     #[must_use]
     pub fn new(store: Arc<dyn CredentialStore>, encryption: Arc<CredentialEncryption>) -> Self {
-        Self { store, encryption, legacy_owner_mappings: Arc::new(Vec::new()), principal_owner_mappings: Arc::new(Vec::new()), policy: Arc::new(CredentialTenancyPolicy::default()), store_timeout: std::time::Duration::from_millis(10_000) }
+        Self { store, encryption, migrations: Arc::new(migration::MigrationCoordinator::default()), legacy_owner_mappings: Arc::new(Vec::new()), principal_owner_mappings: Arc::new(Vec::new()), policy: Arc::new(CredentialTenancyPolicy::default()) }
     }
 
-    /// Bound each credential-store read performed during run admission.
+    /// Compatibility entrypoint. Host cancellation owns operation budgets.
     #[must_use]
-    pub fn with_store_timeout(mut self, timeout: std::time::Duration) -> Self {
-        self.store_timeout = timeout.max(std::time::Duration::from_millis(500));
-        self
-    }
+    pub fn with_store_timeout(self, _timeout: std::time::Duration) -> Self { self }
 
     /// Construct from a store, reading the encryption key from
     /// `CREDENTIAL_ENCRYPTION_KEY`. Returns `Ok(None)` when the key is absent
@@ -85,7 +81,6 @@ impl ProviderService {
     #[must_use]
     pub fn resolver(&self) -> CredentialResolver {
         CredentialResolver::new(Arc::clone(&self.store), Arc::clone(&self.encryption))
-            .with_store_timeout(self.store_timeout)
     }
 
     #[must_use]
@@ -105,6 +100,11 @@ impl ProviderService {
         self.principal_owner_mappings = Arc::new(policy.principal_mappings().to_vec());
         self.policy = policy;
         Ok(self)
+    }
+
+    /// Close migration admission and await accepted transactions even when callers disconnected.
+    pub async fn shutdown_migrations(&self) -> migration::MigrationCloseReport {
+        self.migrations.shutdown().await
     }
 
     /// Install explicit owner mappings reviewed by the application operator.
@@ -156,12 +156,12 @@ impl ProviderService {
             reason: reason.to_owned(),
             source_owner_key: None, required_revision: None, if_match: migration::validate_if_match(if_match)?,
         };
-        self.store.migrate_legacy(principal, &authorization).await
+        self.migrations.execute(Arc::clone(&self.store), principal.clone(), authorization).await
     }
     pub async fn migrate_principal_credential(&self, principal: &CredentialOwnerBinding, source_owner_key: &str, scope: CredentialScope, source_scope_id: &str, provider_id: &str, reason: &str, if_match: Option<&str>) -> anyhow::Result<CredentialMigrationReceipt> {
         if reason != "operator_approved_local_namespace_migration" { return Err(CredentialMigrationError::MappingDenied.into()); }
         let mapping = self.principal_owner_mappings.iter().find(|mapping| mapping.source_owner_key == source_owner_key && mapping.scope == scope && mapping.source_scope_id == source_scope_id && mapping.provider_id == provider_id && mapping.destination_owner_key == principal.storage_key()).ok_or(CredentialMigrationError::MappingDenied)?;
-        self.store.migrate_legacy(principal, &principal_store::CredentialMigrationAuthorization {
+        self.migrations.execute(Arc::clone(&self.store), principal.clone(), principal_store::CredentialMigrationAuthorization {
             mapping: LegacyCredentialOwnerMapping { scope, legacy_scope_id: source_scope_id.to_owned(), provider_id: provider_id.to_owned(), destination_owner_key: mapping.destination_owner_key.clone(), approval_id: mapping.approval_id.clone() },
             reason: reason.to_owned(), source_owner_key: Some(source_owner_key.to_owned()), required_revision: Some(mapping.source_revision.clone()), if_match: migration::validate_if_match(if_match)?,
         }).await

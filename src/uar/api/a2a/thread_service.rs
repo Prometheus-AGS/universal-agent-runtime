@@ -576,17 +576,43 @@ impl A2AThreadService {
             // This observer retains completion correlation after an HTTP caller
             // disconnects. It never submits or executes a run.
             let observed_run = entry.run_id.clone();
-            tokio::spawn(async move {
+            let manager = Arc::clone(self.actors.run_manager());
+            let scope = manager.lifecycle_scope();
+            let Some(mut events) = manager.subscribe(observed_run.as_deref().unwrap_or_default()).await else {
+                scope.record_unresolved_effect("a2a-durable-projection:run-event-source-unavailable");
+                self.persist_projection(&mut entry).await?;
+                return Ok(task);
+            };
+            let mut committed_work = manager.subscribe_committed_work();
+            let cancellation = scope.cancellation_token();
+            if scope.spawn("a2a-durable-projection", async move {
+                let mut first_snapshot = true;
                 loop {
-                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                    if !first_snapshot {
+                        tokio::select! {
+                            _ = cancellation.cancelled() => return Ok(()),
+                            event = events.recv() => match event {
+                                Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
+                                Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                    return Err(anyhow::anyhow!("A2A durable projection lost its run event source"));
+                                }
+                            },
+                            changed = committed_work.changed() => {
+                                if changed.is_err() {
+                                    return Err(anyhow::anyhow!("A2A durable projection lost its committed-work source"));
+                                }
+                            },
+                        }
+                    }
+                    first_snapshot = false;
                     let mut entry = entry_handle.lock().await;
-                    if entry.run_id != observed_run { break; }
+                    if entry.run_id != observed_run { return Ok(()); }
                     if let Some(before) = &entry.durable {
                         match persistence.load_a2a_binding(&before.owner_key, &before.agent_id, &before.task_id).await {
                             Ok(Some(current)) if current.run_id == before.run_id && current.process_id == before.process_id => {
                                 entry.durable = Some(current);
                             }
-                            _ => break,
+                            _ => return Ok(()),
                         }
                     }
                     if entry.durable.as_ref().is_some_and(|record| record.cancellation_requested) {
@@ -608,12 +634,13 @@ impl A2AThreadService {
                     let settled = entry.turn.is_none();
                     if let Err(error) = persist_entry_projection(persistence.as_ref(), &mut entry).await {
                         if matches!(error, TaskError::Conflict) { continue; }
-                        tracing::error!(%error, "A2A durable completion projection failed");
-                        break;
+                        return Err(anyhow::anyhow!("A2A durable completion projection failed: {error}"));
                     }
-                    if settled { break; }
+                    if settled { return Ok(()); }
                 }
-            });
+            }).is_err() {
+                scope.record_unresolved_effect("a2a-durable-projection:scope-admission-closed");
+            }
         }
         self.persist_projection(&mut entry).await?;
         Ok(task)
@@ -804,6 +831,127 @@ impl A2AThreadService {
         Ok(task)
     }
 
+    /// Produce task snapshots from retained event notifications. Registration
+    /// precedes producer execution; receiver EOF and lifecycle cancellation
+    /// settle the producer without claiming the remote task was canceled.
+    pub(crate) async fn subscribe_durable(
+        self: &Arc<Self>, owner: &ActorOwner, agent: &str, initial: &Task,
+    ) -> Result<tokio::sync::mpsc::Receiver<Result<Task, TaskError>>, TaskError> {
+        let manager = Arc::clone(self.actors.run_manager());
+        let run_id = initial.metadata.get("run_id").and_then(serde_json::Value::as_str);
+        let mut run_events = match run_id {
+            Some(run_id) => manager.subscribe(run_id).await,
+            None => None,
+        };
+        let mut committed_work = manager.subscribe_committed_work();
+        let scope = manager.lifecycle_scope();
+        let cancellation = scope.cancellation_token();
+        let service = Arc::clone(self);
+        let owner = owner.clone();
+        let agent = agent.to_owned();
+        let id = initial.id.clone();
+        let (sender, receiver) = tokio::sync::mpsc::channel(16);
+        scope.spawn(format!("a2a-stream:{id}"), async move {
+            let mut previous = None;
+            loop {
+                if cancellation.is_cancelled() || sender.is_closed() { return Ok(()); }
+                // This projection can commit a durable CAS. Retain its result
+                // through cancellation rather than abandoning an accepted write.
+                let task = match service.get_durable(&owner, &agent, &id).await {
+                    Ok(task) => task,
+                    Err(error) => { let _ = sender.try_send(Err(error)); return Ok(()); }
+                };
+                let active = matches!(task.status.state, TaskState::Submitted | TaskState::Working)
+                    && task.metadata.get("execution_unconfirmed") != Some(&serde_json::Value::Bool(true));
+                let snapshot = serde_json::to_value(&task)?;
+                if previous.as_ref() != Some(&snapshot) {
+                    tokio::select! {
+                        biased;
+                        () = cancellation.cancelled() => return Ok(()),
+                        result = sender.send(Ok(task)) => if result.is_err() { return Ok(()); },
+                    }
+                    previous = Some(snapshot);
+                }
+                if !active { return Ok(()); }
+                if run_events.is_none() {
+                    let _ = sender.try_send(Err(TaskError::Conflict));
+                    return Ok(());
+                }
+                let event = tokio::select! {
+                    biased;
+                    () = cancellation.cancelled() => {
+                        let _ = sender.try_send(Err(TaskError::Conflict));
+                        return Ok(());
+                    },
+                    () = sender.closed() => return Ok(()),
+                    event = async {
+                        match &mut run_events {
+                            Some(events) => events.recv().await.map(|_| ()),
+                            None => std::future::pending::<Result<(), tokio::sync::broadcast::error::RecvError>>().await,
+                        }
+                    } => event.map_err(|_| TaskError::Conflict),
+                    changed = committed_work.changed() => changed.map_err(|_| TaskError::Conflict),
+                };
+                if let Err(error) = event {
+                    // Lag is loss of event continuity, never successful stop.
+                    let _ = sender.try_send(Err(error));
+                    return Ok(());
+                }
+            }
+        }).map_err(|error| TaskError::Host(error.into()))?;
+        Ok(receiver)
+    }
+
+    /// Wait for a durable task through retained run and committed-work events.
+    /// The task row remains authoritative; each wakeup causes one fresh read.
+    /// A receiver is installed before that read, so a transition racing setup
+    /// leaves a retained event or changed generation instead of requiring a
+    /// fixed-rate status poll.
+    pub(crate) async fn wait_durable_until_settled(
+        &self,
+        owner: &ActorOwner,
+        agent: &str,
+        id: &str,
+        initial: &Task,
+    ) -> Result<Task, TaskError> {
+        let manager = Arc::clone(self.actors.run_manager());
+        let run_id = initial
+            .metadata
+            .get("run_id")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
+        let mut run_events = match run_id {
+            Some(run_id) => manager.subscribe(&run_id).await,
+            None => None,
+        };
+        let mut committed_work = manager.subscribe_committed_work();
+        loop {
+            let task = self.get_durable(owner, agent, id).await?;
+            let active = matches!(task.status.state, TaskState::Submitted | TaskState::Working)
+                && task.metadata.get("execution_unconfirmed")
+                    != Some(&serde_json::Value::Bool(true));
+            if !active {
+                return Ok(task);
+            }
+            tokio::select! {
+                event = async {
+                    match &mut run_events {
+                        Some(events) => events.recv().await.map(|_| ()),
+                        None => std::future::pending::<Result<(), tokio::sync::broadcast::error::RecvError>>().await,
+                    }
+                } => match event {
+                    Ok(()) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => return Err(TaskError::Conflict),
+                },
+                changed = committed_work.changed() => {
+                    if changed.is_err() {
+                        return Err(TaskError::Conflict);
+                    }
+                },
+            }
+        }
+    }
+
     pub(crate) async fn cancel_durable(&self, owner: &ActorOwner, agent: &str, id: &str) -> Result<Task, TaskError> {
         let persistence = self.actors.persistence().map_err(TaskError::Host)?;
         let task = self.get_durable(owner, agent, id).await?;
@@ -818,6 +966,7 @@ impl A2AThreadService {
         if !persistence.compare_and_swap_a2a_binding(&record, &next).await.map_err(TaskError::Host)? {
             return Err(TaskError::Conflict);
         }
+        self.actors.run_manager().notify_committed_work();
         // The owning completion observer consumes this durable intent and joins
         // the exact actor. A disconnected caller does not retract cancellation.
         // A nonlocal producer without a completed exclusion receipt remains a
@@ -826,6 +975,9 @@ impl A2AThreadService {
         let local_run = if let Some(state) = &self.run_api {
             state.manager.get_run_for_owner(owner,&record.run_id).await.is_some()
         } else { false };
+        let manager = Arc::clone(self.actors.run_manager());
+        let mut run_events = manager.subscribe(&record.run_id).await;
+        let mut committed_work = manager.subscribe_committed_work();
         loop {
             let task = self.get_durable(owner, agent, id).await?;
             match task.status.state {
@@ -835,7 +987,22 @@ impl A2AThreadService {
                     || task.metadata.get("execution_unconfirmed") == Some(&serde_json::Value::Bool(true)) => {
                     return Err(TaskError::Conflict);
                 }
-                _ => tokio::time::sleep(std::time::Duration::from_millis(100)).await,
+                _ => {
+                    tokio::select! {
+                        event = async {
+                            match &mut run_events {
+                                Some(events) => events.recv().await.map(|_| ()),
+                                None => std::future::pending::<Result<(), tokio::sync::broadcast::error::RecvError>>().await,
+                            }
+                        } => match event {
+                            Ok(()) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => return Err(TaskError::Conflict),
+                        },
+                        changed = committed_work.changed() => {
+                            if changed.is_err() { return Err(TaskError::Conflict); }
+                        },
+                    }
+                }
             }
         }
     }
@@ -1011,36 +1178,61 @@ impl A2AThreadService {
         let observer_store = Arc::clone(&persistence);
         let observer_owner = owner.clone();
         let observer_manager = Arc::clone(&state.manager);
-        tokio::spawn(async move {
-            let shutdown = observer_manager.root_cancellation_token();
+        let scope = observer_manager.lifecycle_scope();
+        let events = observer_manager.subscribe(&observed.run_id).await;
+        let cancellation = scope.cancellation_token();
+        if events.is_none() {
+            scope.record_unresolved_effect(format!("a2a-continuation-projection:{}", observed.run_id));
+        } else if scope.spawn("a2a-continuation-projection", async move {
+            let mut events = events.expect("checked above");
+            let mut committed_work = observer_manager.subscribe_committed_work();
+            let mut first_snapshot = true;
             loop {
-                tokio::select! {
-                    _ = shutdown.cancelled() => break,
-                    _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => {}
+                if !first_snapshot {
+                    tokio::select! {
+                        _ = cancellation.cancelled() => return Ok(()),
+                        event = events.recv() => match event {
+                            Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                return Err(anyhow::anyhow!("A2A continuation lost its run event source"));
+                            }
+                        },
+                        changed = committed_work.changed() => {
+                            if changed.is_err() {
+                                return Err(anyhow::anyhow!("A2A continuation lost its committed-work source"));
+                            }
+                        },
+                    }
                 }
+                first_snapshot = false;
                 let current = match observer_store.load_a2a_binding(&observed.owner_key, &observed.agent_id, &observed.task_id).await {
                     Ok(Some(current)) if current.run_id == observed.run_id => current,
-                    _ => break,
+                    _ => return Ok(()),
                 };
                 if current.cancellation_requested {
                     observer_manager.cancel_run_for_owner(&observer_owner, &current.run_id).await;
                 }
                 let task = match project_durable(observer_store.as_ref(), &observer_owner, &current.agent_id, current.clone()).await {
-                    Ok(task) => task, Err(_) => break,
+                    Ok(task) => task,
+                    Err(error) => return Err(anyhow::anyhow!("A2A continuation projection failed: {error}")),
                 };
                 if matches!(task.status.state, TaskState::Completed | TaskState::Failed | TaskState::Canceled | TaskState::InputRequired) {
                     let mut updated = current.clone();
-                    let Some(revision) = updated.revision.checked_add(1) else { break; };
+                    let Some(revision) = updated.revision.checked_add(1) else {
+                        return Err(anyhow::anyhow!("A2A continuation revision overflow"));
+                    };
                     updated.revision = revision;
                     updated.task = task;
                     match observer_store.compare_and_swap_a2a_binding(&current, &updated).await {
-                        Ok(true) => break,
+                        Ok(true) => return Ok(()),
                         Ok(false) => continue,
-                        Err(error) => { tracing::error!(%error, "A2A continuation projection failed"); break; }
+                        Err(error) => return Err(anyhow::anyhow!("A2A continuation projection failed: {error}")),
                     }
                 }
             }
-        });
+        }).is_err() {
+            scope.record_unresolved_effect(format!("a2a-continuation-projection:{}", observed.run_id));
+        }
         let resumed = if let Some(approval) = approval {
             crate::uar::api::routes::resolve_host_approval(Arc::clone(state), user.clone(), Some(capture),
                 before.run_id, approval.challenge_id, true, approval.workspace_id,

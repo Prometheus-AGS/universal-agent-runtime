@@ -169,7 +169,8 @@ async fn admit_task(
             let admission_receipt = state.authority.freeze_admission_response(&task_id)?;
             state
                 .authority
-                .monitor(task_id.clone());
+                .monitor(task_id.clone())
+                .await;
             Ok((StatusCode::ACCEPTED, Json(admission_receipt)))
         }
         Err(error) => {

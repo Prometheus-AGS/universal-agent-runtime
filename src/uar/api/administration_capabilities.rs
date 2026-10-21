@@ -6,7 +6,7 @@
 use serde::Serialize;
 
 /// Schema revision for [`AdministrationCapabilities`].
-pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 5;
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 6;
 
 /// Navigation group for an administration surface.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -865,6 +865,7 @@ pub fn administration_capabilities(
                     endpoint!("team-instances.attempts.context", "GET", "/api/v1/collaboration/team-instances/{id}/attempts/{attemptId}/context", Owner, Read),
                     endpoint!("team-instances.peer-messages", "GET", "/api/v1/collaboration/team-instances/{id}/peer-messages", Owner, Read),
                     endpoint!("team-instances.execution", "GET", "/api/v1/collaboration/team-instances/{id}/execution", Owner, Read),
+                    endpoint!("team-instances.attempts.run-registration", "GET", "/api/v1/collaboration/team-instances/{id}/attempts/{attemptId}/run-registration", Owner, Read),
                     endpoint!("team-instances.attempts.cancel", "POST", "/api/v1/collaboration/team-instances/{id}/attempts/{attemptId}/cancel", Owner, Live),
                     endpoint!("team-instances.recover", "POST", "/api/v1/collaboration/team-instances/{id}/recover", Owner, Live),
                     endpoint!("team-instances.members.revoke", "POST", "/api/v1/collaboration/team-instances/{id}/members/{memberId}/revoke", Owner, Live),
@@ -1384,6 +1385,13 @@ pub fn administration_capabilities(
                         Live
                     ),
                     endpoint!(
+                        "knowledge.ingestion.events",
+                        "GET",
+                        "/api/uar/knowledge-bases/{id}/documents/{doc_id}/ingestion/events",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
                         "knowledge.search",
                         "POST",
                         "/api/uar/knowledge-bases/{id}/search",
@@ -1495,6 +1503,28 @@ pub fn administration_capabilities(
                         "tools.execute",
                         "POST",
                         "/api/tools/{name}/execute",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!("tools.definition.create", "POST", "/api/tools", Owner, Live),
+                    endpoint!(
+                        "tools.definition.read",
+                        "GET",
+                        "/api/tools/{name}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "tools.definition.update",
+                        "PUT",
+                        "/api/tools/{name}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "tools.definition.delete",
+                        "DELETE",
+                        "/api/tools/{name}",
                         Owner,
                         Live
                     ),

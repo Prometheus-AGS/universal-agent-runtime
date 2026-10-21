@@ -40,15 +40,26 @@ fn unexpected_statuses(responses: &[(String, String, RawResponse)], expected: u1
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn every_route_rejects_missing_token() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::every_route_rejects_missing_token"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let responses = request_every_route(sidecar.port(), &[("Host", &sidecar.host())]).await;
     let failures = unexpected_statuses(&responses, 401);
     assert!(failures.is_empty(), "not 401: {failures:#?}");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn every_route_rejects_wrong_token() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::every_route_rejects_wrong_token"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let mut failures = Vec::new();
     for authorization in wrong_authorizations(&sidecar.token) {
         let responses = request_every_route(
@@ -63,6 +74,11 @@ async fn every_route_rejects_wrong_token() {
         );
     }
     assert!(failures.is_empty(), "not 401: {failures:#?}");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 fn redact(authorization: &str) -> &str {
@@ -71,6 +87,7 @@ fn redact(authorization: &str) -> &str {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn previous_launch_token_is_rejected() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::previous_launch_token_is_rejected"), async {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let workspace = Workspace::new();
     let config = write_config(&workspace, &stub.base_url, "");
@@ -80,15 +97,19 @@ async fn previous_launch_token_is_rejected() {
         &LaunchOptions::new(config.clone(), "first").with_token(&first_token),
     )
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let status = first.stop_sidecar().await;
     assert!(status.success(), "first launch exit: {status}");
 
     let second_token = random_token();
-    let second = launch_sidecar(
+    let mut second = launch_sidecar(
         &workspace,
         &LaunchOptions::new(config, "second").with_token(&second_token),
     )
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let port = second.port();
     let responses = request_every_route(
         port,
@@ -115,11 +136,23 @@ async fn previous_launch_token_is_rejected() {
     )
     .await;
     assert_ne!(current.status, 401, "current token rejected");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(second.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(first.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sse_streams_reject_without_token_and_write_no_events() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sse_streams_reject_without_token_and_write_no_events"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let wrong = bearer(&random_token());
     let host = sidecar.host();
     for path in SSE_ROUTES {
@@ -138,11 +171,19 @@ async fn sse_streams_reject_without_token_and_write_no_events() {
             );
         }
     }
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn foreign_host_rejected_with_valid_token() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::foreign_host_rejected_with_valid_token"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let port = sidecar.port();
     let authorization = sidecar.bearer();
     let hosts = [
@@ -181,6 +222,11 @@ async fn foreign_host_rejected_with_valid_token() {
     )
     .await;
     assert_eq!(uppercase.status, 200, "LOCALHOST:{port} must be accepted");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 fn origin_values(port: u16) -> Vec<String> {
@@ -194,7 +240,10 @@ fn origin_values(port: u16) -> Vec<String> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn any_origin_rejected_with_valid_token() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::any_origin_rejected_with_valid_token"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let port = sidecar.port();
     let host = sidecar.host();
     let authorization = sidecar.bearer();
@@ -214,6 +263,11 @@ async fn any_origin_rejected_with_valid_token() {
     }
     let preflight = preflight(&sidecar).await;
     assert_eq!(preflight.status, 403, "preflight");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 async fn preflight(sidecar: &Sidecar) -> RawResponse {
@@ -241,7 +295,10 @@ fn cors_headers(response: &RawResponse) -> Vec<String> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn no_cors_headers_on_any_response() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::no_cors_headers_on_any_response"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let port = sidecar.port();
     let host = sidecar.host();
     let authorization = sidecar.bearer();
@@ -290,4 +347,9 @@ async fn no_cors_headers_on_any_response() {
         })
         .collect();
     assert!(offenders.is_empty(), "CORS headers present: {offenders:#?}");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }

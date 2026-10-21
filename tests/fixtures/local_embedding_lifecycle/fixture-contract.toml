@@ -1,0 +1,21 @@
+# Source fixture contract only. Paths are supplied by the operator through the
+# environment named in README.md, so this repository never stores model assets
+# or personal configuration.
+
+[primary]
+environment = "UAR_EMBEDDING_LIFECYCLE_PRIMARY_DIR"
+requires = ["local inference", "readable asset manifest"]
+
+[backup]
+environment = "UAR_EMBEDDING_LIFECYCLE_BACKUP_DIR"
+requires = ["same backend", "same model", "same dimension", "same asset manifest as primary"]
+
+[incompatible]
+environment = "UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIR"
+model_environment = "UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_MODEL"
+dimension_environment = "UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIMENSION"
+requires = ["local inference", "different model from primary", "equal dimension to primary", "different actual model-weight digest from primary"]
+
+[behavior]
+transition = "primary -> compatible backup -> primary -> retained compatible backup -> primary without restart"
+refusal = "equal-dimension different-model query refusal preserves durable knowledge-base state"

@@ -42,6 +42,7 @@ pub mod context_builder;
 pub mod mcp_server;
 pub mod scopes;
 pub mod owned;
+mod scoped_storage;
 #[cfg(feature = "surreal-backend")]
 pub mod migration;
 pub mod service;

@@ -72,6 +72,8 @@ struct ToolsCatalogResponse {
     mcp_servers: Vec<String>,
     tools: Vec<ToolEntry>,
     built_in_tools: Vec<BuiltInToolEntry>,
+    /// Owner-visible standalone tool definitions (R11 CRUD surface).
+    definitions: Vec<crate::uar::api::tool_definitions::StoredToolDefinition>,
 }
 
 #[derive(Debug, Serialize)]
@@ -200,8 +202,12 @@ async fn list_skills(State(state): State<AppState>) -> impl IntoResponse {
     Json(response)
 }
 
-pub async fn list_tools(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn list_tools(
+    State(state): State<AppState>,
+    user: Option<Extension<UserContext>>,
+) -> impl IntoResponse {
     let mcp_servers = state.mcp.server_names();
+    let definitions = crate::uar::api::tool_definitions::visible_definitions(&state, user.as_ref()).await;
     let tools = state
         .mcp
         .tools()
@@ -256,6 +262,7 @@ pub async fn list_tools(State(state): State<AppState>) -> impl IntoResponse {
         mcp_servers,
         tools,
         built_in_tools,
+        definitions,
     })
 }
 

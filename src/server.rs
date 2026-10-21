@@ -13,14 +13,15 @@ use axum::{
     routing::{any, get, post},
 };
 use chrono::Utc;
-use futures::StreamExt as _;
+use futures::{FutureExt as _, StreamExt as _};
+use http_body_util::BodyExt as _;
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::io::Write as _;
 use std::pin::Pin;
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 use tokio::time::timeout;
 use uuid::Uuid;
@@ -28,6 +29,9 @@ use uuid::Uuid;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
+mod lifecycle_snapshot;
+mod lifecycle_graph;
+mod process_signals;
 
 use tracing::{Instrument, info, warn};
 
@@ -79,6 +83,9 @@ use crate::uar::{
 };
 
 type ShutdownCleanup = Arc<dyn Fn() + Send + Sync + 'static>;
+mod lifecycle_control;
+mod lifecycle_reconnect;
+pub use lifecycle_control::{LifecycleRequest, ServerLifecycleControl};
 type ShutdownAsyncCleanup =
     Arc<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> + Send + Sync + 'static>;
 
@@ -101,63 +108,33 @@ mod windows_service;
 #[doc(hidden)]
 pub use windows_service::run as run_windows_service;
 
-const SHUTDOWN_DEADLINE_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=deadline_enforced\n";
 const SHUTDOWN_GRACEFUL_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=graceful_complete\n";
-const SHUTDOWN_HARD_STOP_ALLOWANCE: Duration = Duration::from_millis(500);
 
+/// Retained shutdown observations. No elapsed interval establishes completion.
 #[derive(Clone)]
 struct ShutdownCoordinator {
+    supervisor: uar::runtime::lifecycle::RuntimeSupervisor,
+    control: ServerLifecycleControl,
     started: tokio_util::sync::CancellationToken,
     cleanup_complete: tokio_util::sync::CancellationToken,
-    cleanup_failure: Arc<Mutex<Option<String>>>,
-    process_complete: Arc<(Mutex<bool>, Condvar)>,
-    enforce_process_deadline: bool,
+    cleanup_failure: Arc<Mutex<Vec<String>>>,
+    process_complete: tokio_util::sync::CancellationToken,
 }
 
 impl ShutdownCoordinator {
-    fn new(enforce_process_deadline: bool) -> Self {
+    fn new(_legacy_process_deadline: bool) -> Self {
         Self {
+            supervisor: uar::runtime::lifecycle::RuntimeSupervisor::new("uar-host"),
+            control: ServerLifecycleControl::default(),
             started: tokio_util::sync::CancellationToken::new(),
             cleanup_complete: tokio_util::sync::CancellationToken::new(),
-            cleanup_failure: Arc::new(Mutex::new(None)),
-            process_complete: Arc::new((Mutex::new(false), Condvar::new())),
-            enforce_process_deadline,
+            cleanup_failure: Arc::new(Mutex::new(Vec::new())),
+            process_complete: tokio_util::sync::CancellationToken::new(),
         }
     }
 
-    fn begin(&self, timeout: Duration) {
-        if self.started.is_cancelled() {
-            return;
-        }
+    fn begin(&self, _legacy_timeout: Duration) {
         self.started.cancel();
-
-        if !self.enforce_process_deadline {
-            return;
-        }
-
-        let fuse_state = Arc::clone(&self.process_complete);
-        let fuse = std::thread::Builder::new()
-            .name("uar-shutdown-hard-stop".to_string())
-            .spawn(move || {
-                if shutdown_wait_expired(&fuse_state, timeout + SHUTDOWN_HARD_STOP_ALLOWANCE) {
-                    std::process::exit(0);
-                }
-            });
-
-        let watchdog_state = Arc::clone(&self.process_complete);
-        let watchdog = std::thread::Builder::new()
-            .name("uar-shutdown-deadline".to_string())
-            .spawn(move || {
-                if shutdown_wait_expired(&watchdog_state, timeout) {
-                    emit_shutdown_marker_nonblocking(SHUTDOWN_DEADLINE_MARKER);
-                    std::process::exit(0);
-                }
-            });
-
-        if fuse.is_err() && watchdog.is_err() {
-            emit_shutdown_marker_nonblocking(SHUTDOWN_DEADLINE_MARKER);
-            std::process::exit(0);
-        }
     }
 
     fn mark_cleanup_complete(&self) {
@@ -165,23 +142,16 @@ impl ShutdownCoordinator {
     }
 
     fn record_cleanup_failure(&self, error: &anyhow::Error) {
-        let mut failure = self
-            .cleanup_failure
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        failure.get_or_insert_with(|| error.to_string());
+        self.cleanup_failure.lock().unwrap_or_else(|error| error.into_inner())
+            .push(error.to_string());
     }
 
     fn cleanup_result(&self) -> anyhow::Result<()> {
-        let failure = self
-            .cleanup_failure
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        match failure.as_ref() {
-            Some(error) => Err(anyhow::anyhow!(
-                "Runtime shutdown remains unconfirmed: {error}"
-            )),
-            None => Ok(()),
+        let failures = self.cleanup_failure.lock().unwrap_or_else(|error| error.into_inner());
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("Runtime shutdown remains unconfirmed: {}", failures.join("; ")))
         }
     }
 
@@ -192,39 +162,15 @@ impl ShutdownCoordinator {
     }
 
     fn complete(&self) {
-        if !self.started.is_cancelled() {
-            return;
+        if self.started.is_cancelled() && !self.process_complete.is_cancelled()
+            && self.cleanup_complete.is_cancelled()
+            && self.cleanup_result().is_ok()
+        {
+            self.process_complete.cancel();
+            emit_shutdown_marker_nonblocking(SHUTDOWN_GRACEFUL_MARKER);
+            info!(name: "server.shutdown.graceful_complete", "Server resource closure acknowledged");
         }
-        let (lock, wake) = &*self.process_complete;
-        let mut completed = match lock.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        if *completed {
-            return;
-        }
-        *completed = true;
-        wake.notify_all();
-        drop(completed);
-        emit_shutdown_marker_nonblocking(SHUTDOWN_GRACEFUL_MARKER);
-        info!(
-            name: "server.shutdown.graceful_complete",
-            "Server shutdown completed within the graceful deadline"
-        );
     }
-}
-
-fn shutdown_wait_expired(state: &Arc<(Mutex<bool>, Condvar)>, timeout: Duration) -> bool {
-    let (lock, wake) = &**state;
-    let completed = match lock.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
-    let (completed, _) = match wake.wait_timeout_while(completed, timeout, |done| !*done) {
-        Ok(result) => result,
-        Err(poisoned) => poisoned.into_inner(),
-    };
-    !*completed
 }
 
 #[cfg(unix)]
@@ -320,6 +266,7 @@ pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<
         None,
         true,
         None,
+        None,
     )
     .await
 }
@@ -339,6 +286,7 @@ pub(crate) async fn start_server_with_shutdown(
         Some(process_shutdown),
         true,
         None,
+        None,
     )
     .await
 }
@@ -353,108 +301,115 @@ async fn start_server_with_listener(
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
     enforce_process_deadline: bool,
     launch_token: Option<SidecarLaunchToken>,
+    control: Option<ServerLifecycleControl>,
 ) -> anyhow::Result<()> {
-    let config = config_manager.current();
-    let embedded_lock = surrealkv_lock_path(
-        &config.persistence.provider,
-        &config.persistence.database_url,
-    );
-    let shutdown_coordinator = ShutdownCoordinator::new(enforce_process_deadline);
-    let shutdown_timeout = Duration::from_secs(config.server.shutdown_timeout_secs);
-    let lifecycle = async {
-        let result = run_server_with_listener(
-            config_manager,
-            listener,
-            a2a_grpc_listener,
-            mcp_config_path,
-            ready,
-            http_shutdown,
-            process_shutdown,
-            shutdown_coordinator.clone(),
-            launch_token,
-        )
+    let mut shutdown_coordinator = ShutdownCoordinator::new(enforce_process_deadline);
+    shutdown_coordinator.control = control.unwrap_or_default();
+    shutdown_coordinator.control.attach(shutdown_coordinator.supervisor.handle());
+    // Windows service/sidecar hosts own their SCM/inherited-input cancellation.
+    // Console hosts install their own subscription; Unix also retains SIGTERM.
+    let owns_os_signals = cfg!(unix) || process_shutdown.is_none();
+    let process_shutdown = process_shutdown.unwrap_or_default();
+    // The host task owns finalization even if its caller drops this wait.
+    struct WaiterGuard(tokio_util::sync::CancellationToken);
+    impl Drop for WaiterGuard {
+        fn drop(&mut self) { self.0.cancel(); }
+    }
+    let _waiter = WaiterGuard(process_shutdown.clone());
+    let owner = tokio::spawn(async move {
+        let startup_shutdown = process_shutdown.clone();
+        let result = std::panic::AssertUnwindSafe(async {
+            // ConfigManager owns an already-running watcher before it enters
+            // this function. Register its close authority even when startup
+            // was cancelled before this owner was scheduled.
+            let configuration = Arc::clone(&config_manager);
+            let configuration_scope = shutdown_coordinator
+                .supervisor
+                .register_with_finalizer("configuration", "uar-host", async move {
+                    configuration.close_watchers().await
+                })
+                .await?;
+            // Cancellation after registration remains accountable to the
+            // supervisor. Do not publish readiness or start further startup
+            // work once the lifecycle owner has requested cancellation.
+            startup_cancellation_checkpoint(
+                &startup_shutdown,
+                "configuration watcher readiness",
+            )?;
+            configuration_scope.mark_ready()?;
+            if owns_os_signals {
+                process_signals::install(
+                    &shutdown_coordinator.supervisor, startup_shutdown.clone(),
+                ).await?;
+            }
+            startup_cancellation_checkpoint(&startup_shutdown, "server initialization")?;
+            run_server_with_listener(
+                config_manager,
+                listener,
+                a2a_grpc_listener,
+                mcp_config_path,
+                ready,
+                http_shutdown,
+                Some(process_shutdown),
+                shutdown_coordinator.clone(),
+                launch_token,
+            )
+            .await
+        })
+        .catch_unwind()
         .await;
-
-        if result.is_ok() && shutdown_coordinator.started.is_cancelled() {
-            if let Some(lock_path) = embedded_lock {
-                wait_for_surrealkv_lock_release(&lock_path).await;
-            }
-            shutdown_coordinator.complete();
-        }
-        result
-    };
-    if enforce_process_deadline {
-        lifecycle.await
-    } else {
-        tokio::pin!(lifecycle);
-        tokio::select! {
-            result = &mut lifecycle => result,
-            () = shutdown_coordinator.started.cancelled() => {
-                match tokio::time::timeout(shutdown_timeout, &mut lifecycle).await {
-                    Ok(result) => result,
-                    Err(_) => {
-                        let stage = if shutdown_coordinator.cleanup_complete.is_cancelled() {
-                            "embedded persistence lock release"
-                        } else {
-                            "listener drain or resource cleanup"
-                        };
-                        Err(anyhow::anyhow!(
-                            "embedded server {stage} exceeded its {shutdown_timeout:?} deadline"
-                        ))
-                    }
-                }
+        shutdown_coordinator.begin(Duration::ZERO);
+        if !shutdown_coordinator.cleanup_complete.is_cancelled() {
+            if let Err(error) = lifecycle_graph::configure(&shutdown_coordinator.supervisor).await {
+                shutdown_coordinator.record_cleanup_failure(&error);
             }
         }
-    }
-}
-
-fn surrealkv_lock_path(provider: &str, database_url: &str) -> Option<std::path::PathBuf> {
-    if !matches!(provider, "surreal" | "surrealdb") {
-        return None;
-    }
-    let endpoint = database_url.trim();
-    let path = endpoint
-        .strip_prefix("surrealkv://")
-        .or_else(|| endpoint.strip_prefix("rocksdb://"))
-        .or_else(|| (!endpoint.contains("://")).then_some(endpoint))?;
-    if path.is_empty() || matches!(path, "surrealkv" | "rocksdb" | "memory" | "mem") {
-        return None;
-    }
-    Some(std::path::PathBuf::from(path).join("LOCK"))
-}
-
-async fn wait_for_surrealkv_lock_release(lock_path: &std::path::Path) {
-    loop {
-        let file = match std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(lock_path)
-        {
-            Ok(file) => file,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
-            Err(error) => {
-                tracing::warn!(path = %lock_path.display(), %error, "Could not observe SurrealKV lock release yet");
-                tokio::time::sleep(Duration::from_millis(10)).await;
-                continue;
-            }
+        let report = shutdown_coordinator.supervisor.shutdown().await;
+        if !report.released || !report.failures.is_empty() || !report.unresolved_effects.is_empty() {
+            shutdown_coordinator.record_cleanup_failure(&anyhow::anyhow!(
+                "resource closure failed: {:?}; unresolved: {:?}", report.failures, report.unresolved_effects));
+        }
+        let result = match result {
+            Ok(result) => result,
+            Err(_) => Err(anyhow::anyhow!("runtime task panicked; registered resources were finalized")),
         };
-        match file.try_lock() {
-            Ok(()) => {
-                if let Err(error) = std::fs::File::unlock(&file) {
-                    tracing::warn!(path = %lock_path.display(), %error, "Could not release SurrealKV shutdown observer lock");
-                    tokio::time::sleep(Duration::from_millis(10)).await;
-                    continue;
-                }
-                info!(path = %lock_path.display(), "SurrealKV lock released before normal completion");
-                return;
-            }
-            Err(std::fs::TryLockError::WouldBlock) => {}
-            Err(std::fs::TryLockError::Error(error)) => {
-                tracing::warn!(path = %lock_path.display(), %error, "Could not observe SurrealKV lock release yet");
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(10)).await;
+        let result = result.and(shutdown_coordinator.cleanup_result());
+        if result.is_ok() { shutdown_coordinator.complete(); }
+        result
+    });
+    owner.await.map_err(|error| anyhow::anyhow!("runtime owner failed: {error}"))?
+}
+
+/// A cancellation request prevents the next startup boundary from acquiring or
+/// publishing another resource. The retained startup owner still runs the
+/// supervisor finalizer; cancellation alone is never a release acknowledgement.
+fn startup_cancellation_checkpoint(
+    process_shutdown: &tokio_util::sync::CancellationToken,
+    boundary: &'static str,
+) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        !process_shutdown.is_cancelled(),
+        "startup canceled by its lifecycle owner before {boundary}"
+    );
+    Ok(())
+}
+
+/// Reject the next startup transition once either the process owner has
+/// requested cancellation or the startup scope has closed admission. Resources
+/// already acquired remain registered and are finalized by the retained owner.
+fn startup_progress_checkpoint(
+    process_shutdown: Option<&tokio_util::sync::CancellationToken>,
+    startup_scope: &uar::runtime::lifecycle::ResourceScope,
+    boundary: &'static str,
+) -> anyhow::Result<()> {
+    if let Some(process_shutdown) = process_shutdown {
+        startup_cancellation_checkpoint(process_shutdown, boundary)?;
     }
+    anyhow::ensure!(
+        !startup_scope.cancellation_token().is_cancelled(),
+        "startup admission closed before {boundary}"
+    );
+    Ok(())
 }
 
 #[expect(clippy::expect_used, reason = "init-time fatal configuration failure")]
@@ -469,11 +424,43 @@ async fn run_server_with_listener(
     shutdown_coordinator: ShutdownCoordinator,
     launch_token: Option<SidecarLaunchToken>,
 ) -> anyhow::Result<()> {
+    if let Some(process_shutdown) = process_shutdown.as_ref() {
+        startup_cancellation_checkpoint(process_shutdown, "startup resource registration")?;
+    }
+    let startup_scope = shutdown_coordinator.supervisor.register("startup", "uar-host").await?;
+    if let Some(process_shutdown) = process_shutdown.as_ref() {
+        // If cancellation won the race with registration, retain the scope so
+        // the owner closes it, but do not admit initialization work into it.
+        startup_cancellation_checkpoint(process_shutdown, "startup resource admission")?;
+    }
+    if let Some(process_shutdown) = process_shutdown.clone() {
+        let cancellation_scope = startup_scope.clone();
+        let scope_stopping = cancellation_scope.cancellation_token();
+        startup_scope.spawn("startup-cancellation-request", async move {
+            tokio::select! {
+                () = process_shutdown.cancelled() => {
+                    info!(name: "startup.cancellation_requested", "Startup cancellation requested; admitted initialization remains owned until it acknowledges completion");
+                    cancellation_scope.close_admission();
+                }
+                () = scope_stopping.cancelled() => {}
+            }
+            Ok(())
+        })?;
+    }
+    macro_rules! startup_checkpoint {
+        ($boundary:literal) => {
+            startup_progress_checkpoint(process_shutdown.as_ref(), &startup_scope, $boundary)?
+        };
+    }
+    startup_checkpoint!("startup initialization admission");
+    let startup_operation = startup_scope.admit_named("configuration-to-admission")?;
+    startup_scope.run_in_scope(async {
     // UAR owns the process-level jsonwebtoken provider. Install it at the
     // shared startup funnel so in-process clients cannot initialize another
     // provider before the first authenticated request reaches middleware.
     crate::uar::security::jwt::ensure_rustcrypto_provider()
         .map_err(|error| anyhow::anyhow!("initializing JWT crypto provider: {error}"))?;
+    startup_checkpoint!("JWT provider initialization");
 
     // Install the Prometheus recorder before anything can record a metric.
     // `metrics::with_recorder` resolves the global recorder on every macro
@@ -488,6 +475,7 @@ async fn run_server_with_listener(
 
     let config = config_manager.current();
     config.security.validate_identity_policy().map_err(anyhow::Error::msg)?;
+    startup_checkpoint!("configuration validation");
     let mut llm_config = config.llm.clone();
     normalize_legacy_openai_base_url(&mut llm_config);
     info!(
@@ -514,6 +502,7 @@ async fn run_server_with_listener(
             tokio::net::TcpListener::bind(&addr).await?
         }
     };
+    startup_checkpoint!("primary listener acquisition");
     info!(name: "startup.step", step = 2, stage = "primary_listener_bound", "UAR startup progress");
     let primary_addr = listener.local_addr()?;
     let mut ingress_proofs =
@@ -528,6 +517,7 @@ async fn run_server_with_listener(
     } else {
         bind_companion_listener(&config.server.host, primary_addr.port()).await
     };
+    startup_checkpoint!("companion listener acquisition");
     if let Some(companion_listener) = &companion {
         governance_mutation.declare_ingress("companion-http")?;
         ingress_proofs.push(
@@ -562,6 +552,7 @@ async fn run_server_with_listener(
             .push(governance_mutation.register_bound_ingress("a2a-grpc", listener.local_addr()?)?);
         Some(listener)
     };
+    startup_checkpoint!("A2A gRPC listener acquisition");
     let governance_admission_tokens =
         governance_mutation.seal_ingress_inventory(&ingress_proofs)?;
 
@@ -569,30 +560,120 @@ async fn run_server_with_listener(
     let mut ingest_service: Option<Arc<IngestService>> = None;
     let embedding_config =
         crate::uar::rag::embeddings::EmbeddingConfig::from(&config.llm.embedding);
-    // The shared handle is swappable: persisted `llm.embedding.*` settings are
-    // authoritative after first boot (ADR-010) and a validated REST mutation
-    // repoints this handle without a restart. Consumers pin a coherent
-    // backend+metadata snapshot per job (see embeddings/swappable.rs).
-    let embedding_backend = Arc::new(
-        crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
-            match crate::uar::rag::embeddings::build_backend(&embedding_config) {
-                Ok(b) => b,
-                Err(e) => {
+    let embedding_finalizer: Arc<Mutex<Option<Weak<crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend>>>> =
+        Arc::new(Mutex::new(None));
+    let embedding_finalizer_for_close = Arc::clone(&embedding_finalizer);
+    let embedding_scope = shutdown_coordinator
+        .supervisor
+        .register_with_finalizer("local-embedding", "uar-host", async move {
+            let failover = {
+                embedding_finalizer_for_close
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .as_ref()
+                    .and_then(Weak::upgrade)
+            };
+            if let Some(failover) = failover {
+                failover
+                    .shutdown()
+                    .await
+                    .map_err(|error| anyhow::anyhow!("local embedding cleanup failed: {error}"))?;
+            }
+            Ok(())
+        })
+        .await?;
+    startup_checkpoint!("local embedding lifecycle registration");
+    // The shared handle is swappable. Opt-in local failover publishes one
+    // compatibility-pinned wrapper to every ingestion and query consumer.
+    // A failed pair is unavailable rather than silently downgrading to a raw
+    // primary without its configured backup or recovery controls.
+    let (embedding_failover, embedding_initial_error) = if let Some(failover) = config.llm.embedding.failover.as_ref() {
+        match crate::uar::rag::embeddings::failover::LocalEmbeddingFailover::build(
+            embedding_config.clone(),
+            failover,
+            embedding_scope.clone(),
+        )
+        .await
+        {
+            Ok(failover) => (Some(failover), None),
+            Err(error) => {
+                let message = error.to_string();
+                warn!(
+                    error = %message,
+                    "Local embedding failover pair is unavailable; vector retrieval will not start"
+                );
+                (None, Some(message))
+            }
+        }
+    } else {
+        (None, None)
+    };
+    let mut local_embedding_startup_failure = embedding_initial_error.clone();
+    let initial_embedding_backend: Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend> =
+        match embedding_failover.as_ref() {
+            Some(failover) => Arc::clone(failover)
+                as Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend>,
+            None if embedding_initial_error.is_some() => Arc::new(
+                crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                    embedding_config.vector_dimension,
+                    embedding_initial_error
+                        .as_deref()
+                        .unwrap_or("configured local embedding failover pair is unavailable"),
+                ),
+            ),
+            None if embedding_config.backend == "fastembed" => {
+                match crate::uar::rag::embeddings::build_local_backend(
+                    &embedding_config,
+                    embedding_scope.clone(),
+                ) {
+                    Ok(backend) => backend,
+                    Err(error) => {
+                        let message = error.to_string();
+                        warn!(
+                            backend = %embedding_config.backend,
+                            error = %message,
+                            "Local embedding backend is unavailable; vector retrieval will not start"
+                        );
+                        local_embedding_startup_failure = Some(message.clone());
+                        Arc::new(crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                            embedding_config.vector_dimension,
+                            message,
+                        ))
+                    }
+                }
+            }
+            None => match crate::uar::rag::embeddings::build_backend(&embedding_config) {
+                Ok(backend) => backend,
+                Err(error) => {
+                    let message = error.to_string();
                     warn!(
                         backend = %embedding_config.backend,
-                        error = %e,
+                        error = %message,
                         "Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval"
                     );
-                    Arc::new(
-                        crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
-                            embedding_config.vector_dimension,
-                            e.to_string(),
-                        ),
-                    )
+                    Arc::new(crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                        embedding_config.vector_dimension,
+                        message,
+                    ))
                 }
             },
+        };
+    let embedding_backend = Arc::new(
+        crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+            initial_embedding_backend,
         ),
     );
+    *embedding_finalizer
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Arc::downgrade(&embedding_backend));
+    if let Some(error) = local_embedding_startup_failure {
+        embedding_scope.record_failure(format!(
+            "local embedding warmup failed before publication: {error}"
+        ));
+    } else {
+        embedding_scope.mark_ready()?;
+    }
+    startup_checkpoint!("local embedding lifecycle readiness");
     let vector_matcher = Arc::new(VectorMatcher::new(
         Arc::clone(&embedding_backend),
         config.models.vector_threshold,
@@ -604,16 +685,16 @@ async fn run_server_with_listener(
 
     // Initialize persistence based on config.
     // All three branches produce trait-object arcs so the types unify across arms.
+    let mut persistence_reconnect_transport: Option<Arc<lifecycle_reconnect::ReconnectTransport>> = None;
     let (
         persistence_layer,
         compiler_storage,
         collaboration_storage,
         agent_registry,
-        live_bus,
+        mut live_bus,
         credential_store,
         api_key_storage,
         a2ui_design_system_store,
-        surreal_live_bus,
     ): (
         Arc<dyn PersistenceLayer>,
         Option<(
@@ -626,13 +707,19 @@ async fn run_server_with_listener(
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
         Arc<dyn uar::security::api_keys::ApiKeyStorage>,
         uar::a2ui::design_systems::store::SharedDesignSystemStore,
-        Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
     ) = if config.persistence.provider == "memory" {
         #[cfg(feature = "in-memory-backend")]
         {
             if config.security.is_remote() {
                 anyhow::bail!("Remote API-key authority requires durable persistence; memory is a local development mode");
             }
+            let persistence_scope = shutdown_coordinator
+                .supervisor
+                .register("persistence", "uar-host")
+                .await?;
+            startup_checkpoint!("in-memory persistence registration");
+            persistence_scope.mark_ready()?;
+            startup_checkpoint!("in-memory persistence readiness");
             (
                 Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>,
                 None,
@@ -643,7 +730,6 @@ async fn run_server_with_listener(
                 None,
                 Arc::new(InMemoryApiKeyStorage::new()),
                 Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
-                None,
             )
         }
         #[cfg(not(feature = "in-memory-backend"))]
@@ -675,8 +761,37 @@ async fn run_server_with_listener(
                 )
             })?;
 
-            // Create compiler storage sharing the same DB connection
+            let provider = Arc::new(provider);
+            let owner = Arc::clone(&provider);
+            let store_scope = shutdown_coordinator.supervisor.register_with_finalizer(
+                "persistence", "uar-host", async move {
+                    let report = owner.close_scope().await;
+                    anyhow::ensure!(report.scope_released, "persistence release failed: {:?}", report.failure);
+                    Ok(())
+                },
+            ).await?;
+            store_scope.retain_resource_state(Arc::clone(&provider))?;
+            startup_checkpoint!("Surreal persistence registration");
+            provider.client().query("RETURN 1").await?.check()?;
+            startup_checkpoint!("Surreal persistence readiness query");
+            store_scope.mark_ready()?;
+            startup_checkpoint!("Surreal persistence readiness");
+            // Component handles share one lifecycle owner, which closes admission
+            // across SDK clones before finalizing the underlying engine.
             let db = provider.client();
+            {
+                let observed_client = db.clone();
+                let reconnect_client = db.clone();
+                persistence_reconnect_transport = Some(lifecycle_reconnect::ReconnectTransport::new(
+                    move || lifecycle_reconnect::surreal_snapshot(
+                        observed_client.transport_generation().map_err(anyhow::Error::from),
+                        observed_client.subscribe_transport_state().map_err(anyhow::Error::from)),
+                    move |generation| {
+                        let client = reconnect_client.clone();
+                        async move { client.reconnect(generation).await.map_err(anyhow::Error::from) }
+                    },
+                ));
+            }
             if config.security.is_remote() && provider.catalog_storage_backend() == "memory" {
                 anyhow::bail!("Remote API-key authority requires durable SurrealDB; memory is a local development mode");
             }
@@ -711,14 +826,17 @@ async fn run_server_with_listener(
             )
                 as Arc<dyn uar::security::credentials::CredentialStore>);
 
-            // Start the live-query bus on the same DB connection.
-            let surreal_live_bus =
-                Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db));
+            // Keep the published embedded diagnostics stream, owning exact
+            // subscriptions rather than sweeping registrations by table.
+            let surreal_live_bus = Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(
+                db,
+                false,
+            ));
             let live_bus =
                 Some(Arc::clone(&surreal_live_bus) as Arc<dyn crate::uar::realtime::RealtimeBus>);
 
             (
-                Arc::new(provider) as Arc<dyn PersistenceLayer>,
+                provider as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 collaboration_store,
                 Some(registry),
@@ -726,7 +844,6 @@ async fn run_server_with_listener(
                 credential_store,
                 api_key_storage,
                 a2ui_store,
-                Some(surreal_live_bus),
             )
         }
         #[cfg(not(feature = "surreal-backend"))]
@@ -741,10 +858,18 @@ async fn run_server_with_listener(
         // `postgres-backend` Cargo feature is enabled at build time.
         #[cfg(feature = "postgres-backend")]
         {
-            let provider = PostgresProvider::new(&config.persistence.database_url)
-                .await
-                .expect("Failed to initialize Postgres");
+            let provider = PostgresProvider::new(&config.persistence.database_url).await?;
             let pool = provider.get_pool().clone();
+            let owned_pool = pool.clone();
+            let store_scope = shutdown_coordinator.supervisor.register_with_finalizer(
+                "persistence", "uar-host", async move { owned_pool.close().await; Ok(()) },
+            ).await?;
+            store_scope.retain_resource_state(Arc::new(pool.clone()))?;
+            startup_checkpoint!("PostgreSQL persistence registration");
+            sqlx::query("SELECT 1").execute(&pool).await?;
+            startup_checkpoint!("PostgreSQL persistence readiness query");
+            store_scope.mark_ready()?;
+            startup_checkpoint!("PostgreSQL persistence readiness");
             let api_key_storage = Arc::new(uar::security::api_keys::PostgresApiKeyStorage::new(pool.clone())
                 .with_request_timeout_ms(config.resilience.request_timeout_ms))
                 as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
@@ -792,7 +917,6 @@ async fn run_server_with_listener(
                 credential_store,
                 api_key_storage,
                 a2ui_store,
-                None,
             )
         }
         #[cfg(not(feature = "postgres-backend"))]
@@ -806,12 +930,46 @@ async fn run_server_with_listener(
             );
         }
     };
+    let persistence_scope = shutdown_coordinator.supervisor.register("persistence-access", "uar-host").await?;
+    persistence_scope.declare_dependencies(["persistence"])?;
+    startup_checkpoint!("persistence access registration");
+    let persistence_layer: Arc<dyn PersistenceLayer> = Arc::new(
+        uar::persistence::scoped::ScopedPersistence::new(persistence_layer, persistence_scope.clone()));
+    persistence_scope.mark_ready()?;
+    startup_checkpoint!("persistence access readiness");
     let persistence = Some(Arc::clone(&persistence_layer));
     let team_execution_available = persistence_layer.supports_durable_agent_instances()
         || (matches!(config.persistence.provider.as_str(), "surreal" | "surrealdb")
             && ["ws://", "wss://", "http://", "https://"]
                 .iter()
                 .any(|scheme| config.persistence.database_url.starts_with(scheme)));
+    if let Some(bus) = live_bus.as_ref().and_then(|bus| bus.lifecycle()) {
+        let owner = Arc::clone(&bus);
+        let scope = shutdown_coordinator.supervisor.register_with_finalizer(
+            "realtime", "uar-host", async move { owner.shutdown().await },
+        ).await?;
+        startup_checkpoint!("realtime lifecycle registration");
+        shutdown_coordinator.control.register_bus("realtime", Arc::clone(&bus));
+        let reconnect_pair = lifecycle_reconnect::ReconnectPair::new(persistence_reconnect_transport.clone(), Arc::clone(&bus));
+        if let Some(transport) = persistence_reconnect_transport.take() {
+            shutdown_coordinator.control.register_transport("persistence", transport);
+            let pair = Arc::clone(&reconnect_pair);
+            shutdown_coordinator.supervisor.register_reconnect("persistence", move |generation| {
+                let pair = Arc::clone(&pair);
+                async move { pair.reconnect(true, generation).await }
+            }).await?;
+        }
+        shutdown_coordinator.supervisor.register_reconnect("realtime", move |generation| {
+            let pair = Arc::clone(&reconnect_pair);
+            async move { pair.reconnect(false, generation).await }
+        }).await?;
+        startup_checkpoint!("realtime reconnect registration");
+        bus.ready().await?;
+        startup_checkpoint!("realtime readiness");
+        scope.mark_ready()?;
+        startup_checkpoint!("realtime lifecycle readiness");
+    }
+
     let mut implemented_capabilities = uar::api::capabilities::IMPLEMENTED_CAPABILITIES.to_vec();
     if sidecar_mode {
         implemented_capabilities.push(uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY);
@@ -852,6 +1010,7 @@ async fn run_server_with_listener(
             .seed_from_configs(config.providers.clone())
             .await;
     }
+    startup_checkpoint!("provider registry initialization");
 
     // Credential source authority is independent of encrypted-service availability.
     let credential_policy = Arc::new(
@@ -877,6 +1036,17 @@ async fn run_server_with_listener(
             }
         }
     };
+
+    if let Some(service) = provider_service.as_ref() {
+        let service = Arc::clone(service);
+        shutdown_coordinator.supervisor.register_with_finalizer("credential-migrations", "uar-host", async move {
+            let report = service.shutdown_migrations().await;
+            anyhow::ensure!(report.unresolved_operation_ids.is_empty(),
+                "credential migration outcomes unresolved: {:?}", report.unresolved_operation_ids);
+            Ok(())
+        }).await?;
+        startup_checkpoint!("credential migration lifecycle registration");
+    }
 
     // Resolve the durable governance preference only after the bound ingress
     // inventory is sealed, and before RunManager or any serve loop is exposed.
@@ -997,13 +1167,14 @@ async fn run_server_with_listener(
             info!("No persistence layer — settings manager disabled");
             None
         };
+    startup_checkpoint!("settings and governance initialization");
 
     // Apply persisted `llm.embedding.*` over the boot embedding config. The
     // settings DB is authoritative after first boot (ADR-010); the shared
     // swappable handle repoints every consumer atomically. An overlay that
     // fails to build keeps the config-built backend and is logged — the same
     // degradation contract as initial backend construction.
-    if let Some(mgr) = settings_manager.as_ref() {
+    if embedding_failover.is_none() && let Some(mgr) = settings_manager.as_ref() {
         let persisted_backend = mgr
             .get_typed::<String>("llm.embedding.backend")
             .await
@@ -1028,7 +1199,15 @@ async fn run_server_with_listener(
         if effective.backend != embedding_config.backend
             || effective.model != embedding_config.model
         {
-            match crate::uar::rag::embeddings::build_backend(&effective) {
+            let rebuilt = if effective.backend == "fastembed" {
+                crate::uar::rag::embeddings::build_local_backend(
+                    &effective,
+                    embedding_scope.clone(),
+                )
+            } else {
+                crate::uar::rag::embeddings::build_backend(&effective)
+            };
+            match rebuilt {
                 Ok(backend)
                     if backend.backend_name() == effective.backend
                         && backend.model_id() == effective.model =>
@@ -1074,6 +1253,12 @@ async fn run_server_with_listener(
                 }
             }
         }
+    }
+
+    if embedding_failover.is_some() {
+        info!(
+            "Persisted llm.embedding backend/model overlay is disabled while local failover owns the compatible pair"
+        );
     }
 
     // Truthful instance status at boot: which asset directory is serving and
@@ -1122,9 +1307,9 @@ async fn run_server_with_listener(
         }
         None => ChunkingStrategy::Semantic { threshold: 0.5 },
     };
+    startup_checkpoint!("effective ingestion configuration");
 
     // Initialize Ingest Service if persistence is available
-    let mut ingestion_watcher = None;
     if let Some(p) = &persistence {
         let ingest = Arc::new(IngestService::new(
             Arc::clone(p),
@@ -1133,26 +1318,35 @@ async fn run_server_with_listener(
         ));
         ingest_service = Some(Arc::clone(&ingest));
 
-        // Spawn File Watcher
-        let ingest_svc_clone = Arc::clone(&ingest);
-        ingestion_watcher = Some(tokio::spawn(async move {
-            let ingest_dir = std::path::PathBuf::from("/data/ingest");
-            if !ingest_dir.exists() {
-                let _ = tokio::fs::create_dir_all(&ingest_dir).await;
-            }
-            if ingest_dir.exists() {
-                ingest_svc_clone
-                    .watch(ingest_dir, "default".to_string())
-                    .await;
-            }
-        }));
-
-        // Ensure default knowledge base exists
+        // The subscribed initial snapshot may start ingestion immediately.
+        // Resolve its destination before starting that producer.
         if let Err(e) = ensure_default_knowledge_base(&**p, None).await {
             tracing::error!("Failed to ensure default KB: {:?}", e);
         } else {
             info!("Default knowledge base ensured.");
         }
+
+        // The host owns the watcher until its cancellation is acknowledged.
+        let ingest_svc_clone = Arc::clone(&ingest);
+        let watcher_scope = shutdown_coordinator.supervisor.register("ingestion-files", "uar-host").await?;
+        startup_checkpoint!("ingestion file watcher registration");
+        let watcher_stop = watcher_scope.cancellation_token();
+        let (watcher_ready, watcher_readiness) = tokio::sync::oneshot::channel();
+        watcher_scope.spawn("filesystem-events", async move {
+            let ingest_dir = std::path::PathBuf::from("/data/ingest");
+            if !ingest_dir.exists() {
+                tokio::fs::create_dir_all(&ingest_dir).await?;
+            }
+            ingest_svc_clone.watch_with_readiness(ingest_dir, "default".to_string(),
+                watcher_stop, Some(watcher_ready)).await?;
+            Ok(())
+        })?;
+        startup_checkpoint!("ingestion file watcher admission");
+        watcher_readiness.await
+            .map_err(|_| anyhow::anyhow!("ingestion watcher ended before native registration acknowledgment"))?
+            .map_err(anyhow::Error::msg)?;
+        watcher_scope.mark_ready()?;
+        startup_checkpoint!("ingestion file watcher readiness");
 
         // Seed built-in agents so they are persisted, realtime-backed entities.
         // They are idempotently upserted on every boot so system prompt updates
@@ -1188,6 +1382,7 @@ async fn run_server_with_listener(
 
         info!("Persistence and RAG enabled.");
     }
+    startup_checkpoint!("persistence-backed RAG initialization");
 
     // Initialise the memory system from the EFFECTIVE memory configuration:
     // persisted `memory.*` settings rows overlay the boot config (ADR-010 —
@@ -1230,6 +1425,17 @@ async fn run_server_with_listener(
             effective_memory.bm25_weight = v;
         }
     }
+    #[cfg(feature = "surreal-backend")]
+    if effective_memory.enabled && matches!(config.persistence.provider.as_str(), "surreal" | "surrealdb")
+    {
+        use uar::persistence::providers::surreal::SurrealEndpoint;
+        let persistence_path = SurrealEndpoint::parse(&config.persistence.database_url).path_identity();
+        let memory_endpoint = effective_memory.surreal_endpoint.clone()
+            .unwrap_or_else(|| format!("surrealkv://{}", effective_memory.db_path));
+        let memory_path = SurrealEndpoint::parse(&memory_endpoint).path_identity();
+        anyhow::ensure!(persistence_path.is_none() || persistence_path != memory_path,
+            "persistence and memory cannot independently own the same embedded directory");
+    }
     let memory_service: Option<Arc<MemoryService>> = if effective_memory.enabled {
         match MemoryService::new(effective_memory.clone()).await {
             Ok(svc) => {
@@ -1241,15 +1447,103 @@ async fn run_server_with_listener(
                 );
                 Some(Arc::new(svc))
             }
-            Err(e) => {
-                tracing::error!(error = %e, "Failed to initialize MemoryService — memory disabled");
-                None
-            }
+            Err(e) => return Err(e.context("configured memory service initialization failed")),
         }
     } else {
         info!("Memory system disabled (UAR_MEMORY__ENABLED not set)");
         None
     };
+
+    if let Some(memory) = memory_service.as_ref() {
+        let memory = Arc::clone(memory);
+        let retained_memory = Arc::clone(&memory);
+        let scope = shutdown_coordinator.supervisor.register_with_finalizer("memory", "uar-host", async move {
+            let report = memory.close_scope().await;
+            anyhow::ensure!(report.scope_released && report.failure.is_none()
+                && (!matches!(report.ownership, uar::memory::service::MemoryStorageOwnership::UarOwned)
+                    || report.engine_close_acknowledged), "memory closure failed: {:?}", report.failure);
+            Ok(())
+        }).await?;
+        scope.retain_resource_state(retained_memory)?;
+        startup_checkpoint!("memory lifecycle registration");
+        scope.mark_ready()?;
+        startup_checkpoint!("memory lifecycle readiness");
+    }
+
+    if let Some(memory) = memory_service.as_ref() {
+        let bus = Arc::new(uar::realtime::surreal_bus::LiveQueryBus::start_memory(memory.subscription_client()?));
+        let owner = Arc::clone(&bus);
+        let scope = shutdown_coordinator.supervisor.register_with_finalizer("memory-realtime", "uar-host",
+            async move { owner.shutdown().await }).await?;
+        scope.declare_dependencies(["memory"])?;
+        startup_checkpoint!("memory realtime lifecycle registration");
+        let lifecycle = uar::realtime::RealtimeBus::lifecycle(bus.as_ref())
+            .ok_or_else(|| anyhow::anyhow!("memory subscription lifecycle missing"))?;
+        shutdown_coordinator.control.register_bus("memory-realtime", Arc::clone(&lifecycle));
+        let observed_client = memory.subscription_client()?;
+        let observed_transport = observed_client.subscribe_transport_state()?;
+        let reconnect_memory = Arc::clone(memory);
+        let memory_transport = lifecycle_reconnect::ReconnectTransport::new(
+            move || lifecycle_reconnect::surreal_snapshot(observed_client.transport_generation(), Ok(observed_transport.clone())),
+            move |generation| {
+                let memory = Arc::clone(&reconnect_memory);
+                async move { memory.reconnect(generation).await }
+            },
+        );
+        shutdown_coordinator.control.register_transport("memory", Arc::clone(&memory_transport));
+        let reconnect_pair = lifecycle_reconnect::ReconnectPair::new(Some(memory_transport), Arc::clone(&lifecycle));
+        let subscription_reconnect = Arc::clone(&reconnect_pair);
+        shutdown_coordinator.supervisor.register_reconnect("memory-realtime", move |generation| {
+            let pair = Arc::clone(&subscription_reconnect);
+            async move { pair.reconnect(false, generation).await }
+        }).await?;
+        startup_checkpoint!("memory realtime reconnect registration");
+        bus.ready().await?;
+        startup_checkpoint!("memory realtime readiness");
+        scope.mark_ready()?;
+        startup_checkpoint!("memory realtime lifecycle readiness");
+        live_bus = Some(Arc::new(uar::realtime::CompositeRealtimeBus { primary: live_bus, memory: bus }));
+        let memory = Arc::clone(memory);
+        shutdown_coordinator.supervisor.register_reconnect("memory", move |generation| {
+            let pair = Arc::clone(&reconnect_pair);
+            async move { pair.reconnect(true, generation).await }
+        }).await?;
+        startup_checkpoint!("memory reconnect registration");
+        let ttl_scope = shutdown_coordinator.supervisor.register("memory-expiry", "uar-host").await?;
+        ttl_scope.declare_dependencies(["memory", "memory-realtime"])?;
+        startup_checkpoint!("memory expiry worker registration");
+        let stop = ttl_scope.cancellation_token();
+        let expiry_memory = Arc::clone(&memory);
+        ttl_scope.spawn("memory-expiry-due", async move {
+            let (shutdown, receiver) = tokio::sync::watch::channel(false);
+            let worker = uar::memory::background::run_ttl_worker(expiry_memory, receiver, 0);
+            tokio::pin!(worker);
+            tokio::select! {
+                () = &mut worker => {}
+                () = stop.cancelled() => {
+                    shutdown.send_replace(true);
+                    worker.await;
+                }
+            }
+            Ok(())
+        })?;
+        if let Some(mut changes) = live_bus.as_ref().and_then(|bus| bus.subscribe(uar::realtime::EntityTopic::Memory)) {
+            let stop = ttl_scope.cancellation_token();
+            ttl_scope.spawn("memory-committed-expiry", async move {
+                loop {
+                    tokio::select! {
+                        () = stop.cancelled() => return Ok(()),
+                        change = changes.recv() => match change {
+                            Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => memory.notify_committed_memory_change(),
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => anyhow::bail!("memory committed-change source ended"),
+                        }
+                    }
+                }
+            })?;
+        }
+        ttl_scope.mark_ready()?;
+        startup_checkpoint!("memory expiry worker readiness");
+    }
 
     // MCP: connect once at startup
     // We update this to include native tools if persistence is present
@@ -1339,12 +1633,18 @@ async fn run_server_with_listener(
     );
 
     let mcp = Arc::new(mcp_registry);
+    let mcp_owner = Arc::clone(&mcp);
+    shutdown_coordinator.supervisor.register_with_finalizer("mcp", "uar-host", async move {
+        mcp_owner.shutdown_report().await
+    }).await?;
+    startup_checkpoint!("MCP lifecycle registration");
     if hydrate_mcp_from_settings
         && let Some(mgr) = settings_manager.as_ref()
     {
         crate::uar::api::mcp_admin::hydrate_registry(&mcp, mgr)
             .await
             .map_err(|error| anyhow::anyhow!("Failed to establish effective MCP destination policy: {error:#}"))?;
+        startup_checkpoint!("persisted MCP policy hydration");
     }
     let mcp_environment = Arc::new(crate::mcp::binding_cache::McpBindingEnvironment::new(
         std::env::current_dir()?,
@@ -1356,6 +1656,12 @@ async fn run_server_with_listener(
         Duration::from_secs(30),
         Duration::from_secs(30),
     )?;
+    startup_checkpoint!("projected MCP runtime construction");
+
+    let projected_owner = projected_mcp_runtime.clone();
+    shutdown_coordinator.supervisor.register_with_finalizer("projected-mcp", "uar-host",
+        async move { projected_owner.shutdown().await }).await?;
+    startup_checkpoint!("projected MCP lifecycle registration");
 
     for (name, _tool) in mcp.tools() {
         info!(name: "mcp.tool.discovered", tool = %name, "MCP tool discovered");
@@ -1376,26 +1682,17 @@ async fn run_server_with_listener(
     // Skills initialization — use SkillService with filesystem provider
     let mut skill_service =
         SkillService::new(persistence.clone(), Some(Arc::clone(&vector_matcher)));
-    let fs_provider: Arc<dyn SkillStorageProvider> = Arc::new(FilesystemStorageProvider::new(
-        "fs-skills",
-        "Local Skills",
-        "skills",
-    ));
-    skill_service.add_provider(fs_provider);
-    if let Some(agent_skills_path) = standard_agent_skills_dir() {
-        info!(
-            name: "skills.standard.configured",
-            source = %agent_skills_path.display(),
-            "Configured standard agent skills source"
-        );
-        let agent_skills_provider: Arc<dyn SkillStorageProvider> = Arc::new(
-            FilesystemStorageProvider::standard_agent_directory(agent_skills_path),
-        );
-        skill_service.add_provider(agent_skills_provider);
-    } else {
-        tracing::warn!(
-            "Could not resolve the current user home; standard agent skills source is unavailable"
-        );
+    let roots = config.skill_source_roots.clone().unwrap_or_else(|| {
+        let mut roots = vec![std::path::PathBuf::from("skills")];
+        if let Some(home) = standard_agent_skills_dir() { roots.push(home); }
+        roots
+    });
+    for (index, root) in roots.into_iter().enumerate() {
+        info!(name: "skills.source.configured", source = %root.display(), "Configured explicit skill source");
+        let provider: Arc<dyn SkillStorageProvider> = Arc::new(FilesystemStorageProvider::new(
+            format!("filesystem-skills-{index}"), "Filesystem Skills", root,
+        ));
+        skill_service.add_provider(provider);
     }
     // Register the database provider so skills pushed via the API are reloaded
     // after a restart. The DB provider is added after the filesystem provider
@@ -1425,6 +1722,7 @@ async fn run_server_with_listener(
             eprintln!("Warning: Failed to initialize skills: {error:?}");
         }
     }
+    startup_checkpoint!("skill service initialization");
     let skills = skill_service.registry().clone();
     let skill_service = Arc::new(skill_service);
 
@@ -1447,6 +1745,7 @@ async fn run_server_with_listener(
             skill_service.register_builtins(builtins).await;
         }
     }
+    startup_checkpoint!("built-in skill registration");
 
     if settings_manager.is_none() && !sidecar_mode {
         for (name, entry) in mcp.server_entries() {
@@ -1464,6 +1763,7 @@ async fn run_server_with_listener(
         persistence.clone(),
     )
     .await?;
+    startup_checkpoint!("native skill registration");
     info!(
         "Native skill registry initialized with {} skills",
         native_skill_registry.len().await
@@ -1513,9 +1813,17 @@ async fn run_server_with_listener(
             Arc::new(GovernanceEngine::new())
         }
     };
+    startup_checkpoint!("governance engine initialization");
 
     let a2ui_realtime_backbone = uar::a2ui::realtime::InMemoryReplayBackbone::new();
 
+    // Reserve dependency order before acquiring manager-owned producers.
+    let execution_owner_scope = shutdown_coordinator.supervisor.register("execution-owner", "uar-host").await?;
+    startup_checkpoint!("execution owner registration");
+    let history_scope = shutdown_coordinator.supervisor.register("run-history", "uar-host").await?;
+    startup_checkpoint!("run history registration");
+    let manager_scope = shutdown_coordinator.supervisor.register("run-manager", "uar-host").await?;
+    startup_checkpoint!("run manager registration");
     let run_manager = Arc::new({
         let mut rm = RunManager::new(
             llm_config.clone(),
@@ -1526,6 +1834,7 @@ async fn run_server_with_listener(
             persistence.clone(),
         )
         .await
+        .attach_lifecycle(manager_scope.clone())
         .with_agent_graph(uar::defaults::orchestrator_graph())
         .with_skill_service(Arc::clone(&skill_service))
         .with_skill_required_roles(config.security.skill_required_roles.clone())
@@ -1559,6 +1868,14 @@ async fn run_server_with_listener(
         }
         rm
     });
+    startup_checkpoint!("run manager construction");
+
+    let history_owner = Arc::clone(&run_manager);
+    history_scope.set_finalizer(async move { history_owner.shutdown_run_history().await })?;
+    startup_checkpoint!("run history finalizer registration");
+    history_scope.mark_ready()?;
+    manager_scope.mark_ready()?;
+    startup_checkpoint!("run manager lifecycle readiness");
 
     // Root run-cancellation token: cancelling it on shutdown aborts all
     // in-flight runs (they emit a terminal `Cancelled` event) within the drain
@@ -1567,14 +1884,8 @@ async fn run_server_with_listener(
     run_manager.spawn_retention_sweeper(run_cancellation_root.clone());
     let sandbox_manager = Arc::clone(&run_manager);
 
-    // CH-03: periodic provider-health sweep, consuming the previously-dead
-    // `health_check_secs` config. Shares the same shutdown token as the other
-    // background loops (gRPC listener, run cancellation).
-    {
-        let health_check_secs = config.llm.health_check_secs.unwrap_or(30);
-        Arc::clone(provider_registry.health())
-            .spawn_monitor_loop(health_check_secs, run_cancellation_root.clone());
-    }
+    // Provider health follows actual call outcomes and explicit host commands.
+    // A periodic probe is not lifecycle evidence.
 
     // Initialize Global Rate Limiter
     #[allow(clippy::cast_sign_loss)]
@@ -1586,6 +1897,20 @@ async fn run_server_with_listener(
 
     // Initialize Actor Collaboration System
     let actor_system = Arc::new(ActorCollaboration::new(Arc::clone(&run_manager)));
+    let actor_owner = Arc::clone(&actor_system);
+    shutdown_coordinator.supervisor.register_with_finalizer("actors", "uar-host",
+        async move { actor_owner.shutdown_all().await }).await?;
+    startup_checkpoint!("actor lifecycle registration");
+    let sandbox_owner = Arc::clone(&sandbox_manager);
+    shutdown_coordinator.supervisor.register_with_finalizer("sandboxes", "uar-host", async move {
+        let mut failures = Vec::new();
+        if let Err(error) = sandbox_owner.shutdown_graph_roots().await { failures.push(error.to_string()); }
+        if let Err(error) = sandbox_owner.shutdown_terminals().await { failures.push(error.to_string()); }
+        if let Err(error) = sandbox_owner.shutdown_sandboxes().await { failures.push(error.to_string()); }
+        anyhow::ensure!(failures.is_empty(), "sandbox finalization failed: {}", failures.join("; "));
+        Ok(())
+    }).await?;
+    startup_checkpoint!("sandbox lifecycle registration");
     info!("Actor collaboration system initialized");
 
     // Initialize API Key Service
@@ -1622,6 +1947,17 @@ async fn run_server_with_listener(
             Err(error) => { tracing::warn!(%error, "Team catalog is read-only for this executor"); false }
         }
     } else { false };
+    startup_checkpoint!("collaboration execution ownership acquisition");
+    let execution_owner = Arc::clone(&collaboration_catalog);
+    execution_owner_scope.set_finalizer(async move {
+        if !_owns_team_catalog { return Ok(()); }
+        execution_owner.drain_execution_owner().await?;
+        execution_owner.release_execution_owner().await?;
+        Ok(())
+    })?;
+    startup_checkpoint!("execution owner finalizer registration");
+    execution_owner_scope.mark_ready()?;
+    startup_checkpoint!("execution owner readiness");
     info!("Collaboration package catalog initialized");
 
     // Registration must precede observer/team startup and every external
@@ -1634,6 +1970,7 @@ async fn run_server_with_listener(
         host.register(run_manager.runtime_epoch(), &identity.incarnation_id, &run_cancellation_root).await?;
         Some(host)
     } else { None };
+    startup_checkpoint!("supervisor recovery registration");
 
     let team_execution_runtime = uar::runtime::team_execution::TeamExecutionRuntime::new(
         Arc::clone(&collaboration_catalog),
@@ -1641,6 +1978,11 @@ async fn run_server_with_listener(
         Arc::clone(&persistence_layer),
         team_execution_available,
     );
+
+    let team_owner = Arc::clone(&team_execution_runtime);
+    shutdown_coordinator.supervisor.register_with_finalizer("team-execution", "uar-host",
+        async move { team_owner.shutdown().await }).await?;
+    startup_checkpoint!("team execution lifecycle registration");
 
     let agent_instance_controller = uar::runtime::instance::AgentInstanceController::new(
         Arc::clone(&run_manager),
@@ -1671,7 +2013,15 @@ async fn run_server_with_listener(
         Arc::clone(&persistence_layer),
     );
     if persistence_layer.supports_durable_observers() {
+        let observer_owner = Arc::clone(&observer_controller);
+        shutdown_coordinator.supervisor.register_with_finalizer("observers", "uar-host", async move {
+            let report = observer_owner.close().await;
+            anyhow::ensure!(report.released, "observer closure failed: {:?}", report.failures);
+            Ok(())
+        }).await?;
+        startup_checkpoint!("observer lifecycle registration");
         observer_controller.start();
+        startup_checkpoint!("observer worker admission");
     }
 
     let full_harness_authority = Arc::new(uar::api::full_harness::FullHarnessTaskAuthority::new(
@@ -1728,6 +2078,7 @@ async fn run_server_with_listener(
                 ));
             }
         };
+    startup_checkpoint!("prompt cache provider initialization");
 
     let user_settings_store = Arc::new(
         crate::uar::runtime::user_settings_store::UserSettingsStore::new(Arc::clone(
@@ -1747,7 +2098,7 @@ async fn run_server_with_listener(
         embedding_backend: Arc::clone(&embedding_backend),
         persistence: persistence.clone(),
         rate_limiter,
-        config: config_manager.current(),
+        config: Arc::clone(&config),
         config_manager: Arc::clone(&config_manager),
         skill_service: Arc::clone(&skill_service),
         provider_registry: Arc::clone(&provider_registry),
@@ -1808,16 +2159,21 @@ async fn run_server_with_listener(
     // crate revision (CR-02 fix).
     let ingestion_pool_shared: Option<Arc<IngestionWorkerPool>> =
         if let (Some(p), Some(ingest)) = (&persistence, &state.ingest_service) {
+            let ingestion_scope = shutdown_coordinator.supervisor.register("ingestion", "uar-host").await?;
+            startup_checkpoint!("ingestion worker registration");
             match IngestionWorkerPool::new(
                 0,   // auto-detect CPU count
                 100, // max queue depth
                 Arc::clone(ingest),
                 Arc::clone(p),
-                config_manager.current(),
+                Arc::clone(&config),
+                ingestion_scope,
             ) {
                 Ok(pool) => {
                     let pool = Arc::new(pool);
+                    startup_checkpoint!("ingestion worker construction");
                     pool.start_durable_dispatch();
+                    startup_checkpoint!("ingestion worker admission");
                     info!("Shared ingestion worker pool initialized (single instance)");
                     Some(pool)
                 }
@@ -1829,6 +2185,55 @@ async fn run_server_with_listener(
         } else {
             None
         };
+
+    // Subscribe before initial discovery. Committed rows remain authoritative;
+    // a reset or lag wakes the same reconciliation path as an ordinary change.
+    let work_scope = shutdown_coordinator.supervisor.register("committed-work", "uar-host").await?;
+    startup_checkpoint!("committed work registration");
+    if let Some(bus) = live_bus.as_ref() {
+        use uar::realtime::EntityTopic;
+        for topic in [EntityTopic::CollaborationState, EntityTopic::ObserverSubscriptions,
+            EntityTopic::AgentOccurrences, EntityTopic::IngestionJobs,
+            EntityTopic::PrincipalIngestionJobs, EntityTopic::A2aBindings,
+            EntityTopic::AguiRuns, EntityTopic::McpElicitations]
+        {
+            if let Some(mut changes) = bus.subscribe(topic) {
+                let observer = Arc::clone(&observer_controller);
+                let manager = Arc::clone(&state.run_manager);
+                let ingestion = ingestion_pool_shared.clone();
+                let stop = work_scope.cancellation_token();
+                work_scope.spawn(format!("committed-{topic}"), async move {
+                    loop {
+                        tokio::select! {
+                            () = stop.cancelled() => return Ok(()),
+                            event = changes.recv() => match event {
+                                Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                                    observer.notify_work();
+                                    manager.notify_committed_work();
+                                    if topic == EntityTopic::McpElicitations {
+                                        crate::mcp::interaction::McpInteractionChannel::notify_durable_change();
+                                    }
+                                    if let Some(pool) = &ingestion { pool.notify_committed(); }
+                                }
+                                Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                    anyhow::bail!("committed-work notification owner ended for {topic}");
+                                }
+                            }
+                        }
+                    }
+                })?;
+                startup_checkpoint!("committed work subscription admission");
+            }
+        }
+    }
+    observer_controller.observe_catalog_generations(&work_scope,
+        collaboration_catalog.subscribe_catalog_generation())?;
+    startup_checkpoint!("catalog generation subscription admission");
+    observer_controller.notify_work();
+    state.run_manager.notify_committed_work();
+    if let Some(pool) = &ingestion_pool_shared { pool.notify_committed(); }
+    work_scope.mark_ready()?;
+    startup_checkpoint!("committed work readiness");
 
     // Build router
     // Memory MCP router — built before the main router so type inference is unambiguous.
@@ -1943,6 +2348,7 @@ async fn run_server_with_listener(
         .route("/api/chat", any(legacy_chat_route_disabled))
         .route("/api/chat/{*path}", any(legacy_chat_route_disabled))
         .route("/api/sessions", any(legacy_sessions_route_disabled))
+        .route("/api/uar/sessions", get(owner_sessions_snapshot))
         .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
         .nest(
             "/api/uar",
@@ -2103,6 +2509,7 @@ async fn run_server_with_listener(
                     settings_admin_key: config.security.settings_admin_key.clone(),
                     embedding_backend: Some(Arc::clone(&embedding_backend)),
                     embedding_base_config: Some(embedding_config.clone()),
+                    embedding_failover: embedding_failover.clone(),
                 },
             )),
         )
@@ -2163,6 +2570,7 @@ async fn run_server_with_listener(
                         .expect("Persistence required for KB API"),
                     vector_matcher: Arc::clone(&vector_matcher),
                     ingestion_pool,
+                    realtime_bus: live_bus.clone(),
                 },
             ))
         })
@@ -2221,6 +2629,7 @@ async fn run_server_with_listener(
                         .expect("Persistence required for KB API"),
                     vector_matcher: Arc::clone(&vector_matcher),
                     ingestion_pool,
+                    realtime_bus: live_bus.clone(),
                 },
             ))
         })
@@ -2242,6 +2651,17 @@ async fn run_server_with_listener(
         .route(
             "/api/tools/{name}/execute",
             post(uar::api::discovery::execute_tool),
+        )
+        // Standalone tool-definition CRUD (R11, operator ruling 2026-10-20).
+        // Inner router owns POST /api/tools and GET/PUT/DELETE
+        // /api/tools/{name}; it deliberately declares no GET "/" (outer owns
+        // it) and no POST "/{name}/execute" (outer owns it) — axum 0.8
+        // merges same-path routes across nest boundaries only for disjoint
+        // methods, and the shared param name `{name}` keeps the matchit trie
+        // consistent.
+        .nest(
+            "/api/tools",
+            uar::api::tool_definitions::build_router().with_state(state.clone()),
         )
         .route("/api/uar/mcp/health", get(api_mcp_health))
         .nest(
@@ -2405,9 +2825,9 @@ async fn run_server_with_listener(
     // That effectively disables it without changing types.
 
     let timeout_duration = if config.resilience.timeout_disabled {
-        Duration::from_secs(365 * 24 * 60 * 60) // 1 year
+        None
     } else {
-        Duration::from_millis(config.resilience.request_timeout_ms.max(1_000))
+        Some(Duration::from_millis(config.resilience.request_timeout_ms))
     };
 
     let app = app
@@ -2420,6 +2840,7 @@ async fn run_server_with_listener(
                     if !should_apply_request_timeout(&path) {
                         return next.run(req).await;
                     }
+                    let Some(duration) = duration else { return next.run(req).await; };
                     match tokio::time::timeout(duration, next.run(req)).await {
                         Ok(res) => res,
                         Err(_) => {
@@ -2440,6 +2861,7 @@ async fn run_server_with_listener(
     } else {
         app.layer(build_cors_layer(&config.server.cors_allowed_origins)?)
     };
+    let snapshot_bus = state.live_bus.clone();
     let app = app
         .layer(axum::middleware::from_fn(
             |req: Request, next: Next| async move {
@@ -2454,6 +2876,59 @@ async fn run_server_with_listener(
             },
         ))
         .with_state(state);
+    let snapshots = lifecycle_snapshot::LifecycleSnapshotService::new(app.clone());
+    let app = app.route("/api/live/{topic}/snapshot", get(move |
+        axum::extract::Path(topic): axum::extract::Path<String>, request: Request|
+    {
+        let snapshots = snapshots.clone();
+        let bus = snapshot_bus.clone();
+        async move {
+            let Ok(topic) = topic.parse::<uar::realtime::EntityTopic>() else {
+                return StatusCode::NOT_FOUND.into_response();
+            };
+            if !topic.is_public() { return StatusCode::NOT_FOUND.into_response(); }
+            let generation = bus.as_ref().and_then(|bus| bus.topic_state(topic))
+                .map_or(0, |state| state.generation);
+            let (parts, _) = request.into_parts();
+            snapshots.response(topic, parts.headers, parts.extensions, generation).await
+        }
+    }));
+    let http_scope = shutdown_coordinator
+        .supervisor
+        .register_external("http", "uar-host")
+        .await?;
+    startup_checkpoint!("HTTP lifecycle registration");
+    let request_scope = http_scope.clone();
+    let requests_stopping = run_cancellation_root.clone();
+    let app = app.layer(axum::middleware::from_fn(move |request: Request, next: Next| {
+        let scope = request_scope.clone();
+        let stop = requests_stopping.clone();
+        async move {
+            if stop.is_cancelled() { return StatusCode::SERVICE_UNAVAILABLE.into_response(); }
+            let lease = match scope.admit() {
+                Ok(lease) => lease,
+                Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
+            };
+            let response = scope.run_in_scope(next.run(request)).await;
+            let (parts, body) = response.into_parts();
+            let stream = async_stream::stream! {
+                let _lease = lease;
+                let mut body = body;
+                loop {
+                    tokio::select! {
+                        () = stop.cancelled() => break,
+                        item = scope.run_in_scope(body.frame()) => match item {
+                            Some(item) => yield item,
+                            None => break,
+                        }
+                    }
+                }
+            };
+            Response::from_parts(parts, axum::body::Body::new(http_body_util::StreamBody::new(stream)))
+        }
+    }));
+    http_scope.mark_ready()?;
+    startup_checkpoint!("HTTP lifecycle readiness");
     // Outermost layer: the launch-token guard runs before every route, the
     // nested ACP service, the fallback and every other layer.
     let app = match sidecar_guard {
@@ -2469,7 +2944,7 @@ async fn run_server_with_listener(
     // sharing the root run-cancellation token so it drains at the same moment
     // in-flight runs are aborted (see the shutdown signal handler below).
     #[cfg(feature = "a2a-transport")]
-    let grpc_handle = if let Some(a2a_grpc_listener) = _a2a_grpc_listener {
+    let grpc_scope = if let Some(a2a_grpc_listener) = _a2a_grpc_listener {
         let grpc_addr = a2a_grpc_listener.local_addr()?;
         let grpc_admission = governance_admission_tokens
             .iter()
@@ -2486,24 +2961,40 @@ async fn run_server_with_listener(
                 .with_api_key_service(Arc::clone(&api_key_service));
         let grpc_v1_service = crate::uar::api::a2a::grpc_v1::GrpcV1Service::new(Arc::clone(&a2a_state))
             .with_api_key_service(Arc::clone(&api_key_service));
-        let grpc_shutdown = run_cancellation_root.clone();
+        let scope = shutdown_coordinator
+            .supervisor
+            .register_external("a2a-grpc", "uar-host")
+            .await?;
+        startup_checkpoint!("A2A gRPC lifecycle registration");
+        let grpc_shutdown = scope.cancellation_token();
+        let runs_stopping = run_cancellation_root.clone();
+        let process_stop = process_shutdown.clone();
         info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
-        Some(tokio::spawn(async move {
+        scope.spawn("grpc-listener", async move {
             let result = tonic::transport::Server::builder()
                 .add_service(grpc_service.into_server())
                 .add_service(grpc_v1_service.into_server())
                 .serve_with_incoming_shutdown(
                     tokio_stream::wrappers::TcpListenerStream::new(a2a_grpc_listener),
                     async move {
-                        grpc_shutdown.cancelled().await;
+                        tokio::select! {
+                            () = grpc_shutdown.cancelled() => {}
+                            () = runs_stopping.cancelled() => {}
+                        }
                         info!(name: "a2a.grpc.shutdown", "A2A gRPC transport shutting down");
                     },
                 )
                 .await;
             if let Err(e) = result {
-                tracing::error!(error = %e, "A2A gRPC server error");
+                if let Some(stop) = process_stop { stop.cancel(); }
+                return Err(e.into());
             }
-        }))
+            Ok(())
+        })?;
+        startup_checkpoint!("A2A gRPC listener admission");
+        scope.mark_ready()?;
+        startup_checkpoint!("A2A gRPC lifecycle readiness");
+        Some(scope)
     } else {
         None
     };
@@ -2515,79 +3006,55 @@ async fn run_server_with_listener(
         anyhow::bail!("HTTP admission activated before governance finalization");
     }
 
+    startup_checkpoint!("lifecycle dependency configuration");
+    lifecycle_graph::configure(&shutdown_coordinator.supervisor).await?;
+    startup_checkpoint!("lifecycle dependency configuration");
+    for resource in shutdown_coordinator.supervisor.resources().await {
+        startup_checkpoint!("resource readiness publication");
+        anyhow::ensure!(resource.failure.is_none(), "startup resource {} failed: {:?}", resource.resource_id, resource.failure);
+        if resource.state == crate::uar::runtime::lifecycle::LifecycleState::Registered {
+            shutdown_coordinator.supervisor.resource_scope(&resource.resource_id).await?.mark_ready()?;
+            startup_checkpoint!("resource readiness publication");
+        }
+    }
+    startup_checkpoint!("startup readiness publication");
+    startup_scope.mark_ready()?;
+    drop(startup_operation);
+
+    #[cfg(feature = "test-probes")]
+    if std::env::var_os("UAR_TEST_READY_STDOUT").is_some() {
+        println!("READY:{}", primary_addr.port());
+        std::io::stdout().flush()?;
+    }
+    if std::env::var_os("UAR_LIFECYCLE_STDOUT").is_some() {
+        let receipt = json!({"version": 1, "port": primary_addr.port(),
+            "process_id": std::process::id(), "startup_generation": Uuid::new_v4(),
+            "config_file": config_manager.watched_path().and_then(|path| path.file_name())
+                .map(|name| name.to_string_lossy().into_owned())});
+        println!("UAR_READY:{receipt}");
+        std::io::stdout().flush()?;
+    }
     if let Some(ready) = ready {
         ready
             .send(primary_addr)
             .map_err(|_| anyhow::anyhow!("sidecar supervisor stopped before readiness"))?;
     }
 
-    let shutdown_cleanup = ingestion_pool_shared
-        .map(|pool| Arc::new(move || pool.shutdown()) as Arc<dyn Fn() + Send + Sync + 'static>);
+    let shutdown_cleanup: Option<ShutdownCleanup> = None;
     let async_resource_cleanup = {
-        let actor_system = Arc::clone(&actor_system);
-        let team_execution_runtime = Arc::clone(&team_execution_runtime);
-        let collaboration_catalog = Arc::clone(&collaboration_catalog);
-        let sandbox_manager = Arc::clone(&sandbox_manager);
-        let mcp = Arc::clone(&mcp);
-        let projected_mcp_runtime = projected_mcp_runtime.clone();
-        let surreal_live_bus = surreal_live_bus.clone();
-        let shutdown_coordinator = shutdown_coordinator.clone();
+        let coordinator = shutdown_coordinator.clone();
         Arc::new(move || {
-            let actor_system = Arc::clone(&actor_system);
-            let team_execution_runtime = Arc::clone(&team_execution_runtime);
-            let collaboration_catalog = Arc::clone(&collaboration_catalog);
-            let sandbox_manager = Arc::clone(&sandbox_manager);
-            let mcp = Arc::clone(&mcp);
-            let projected_mcp_runtime = projected_mcp_runtime.clone();
-            let surreal_live_bus = surreal_live_bus.clone();
-            let shutdown_coordinator = shutdown_coordinator.clone();
+            let coordinator = coordinator.clone();
             Box::pin(async move {
-                if let Err(error) = team_execution_runtime.shutdown().await {
-                    shutdown_coordinator.record_cleanup_failure(&error);
-                    tracing::error!(%error, "Team execution shutdown retains unconfirmed work");
-                }
-                // Mailboxes retain kernel completion and durable thread writes.
-                // Join them before closing their shared transport dependencies.
-                if let Err(error) = actor_system.shutdown_all().await {
-                    shutdown_coordinator.record_cleanup_failure(&error);
-                    tracing::error!(%error, "Actor shutdown retains unconfirmed work");
-                }
-                if let Err(error) = sandbox_manager.shutdown_graph_roots().await {
-                    shutdown_coordinator.record_cleanup_failure(&error);
-                    tracing::error!(%error, "Graph root shutdown retains unconfirmed work");
-                }
-                if let Err(error) = sandbox_manager.shutdown_terminals().await {
-                    shutdown_coordinator.record_cleanup_failure(&error);
-                    tracing::error!(%error, "Terminal shutdown retains unconfirmed processes");
-                }
-                if let Err(error) = sandbox_manager.shutdown_sandboxes().await {
-                    shutdown_coordinator.record_cleanup_failure(&error);
-                    tracing::error!(%error, "Sandbox shutdown retains unconfirmed operations");
-                }
-                let mcp_shutdown = mcp.shutdown();
-                let projected_mcp_shutdown = projected_mcp_runtime.shutdown();
-                let live_query_shutdown = async move {
-                    if let Some(bus) = surreal_live_bus {
-                        bus.shutdown().await;
-                    }
-                };
-                let (_, projected_result, _) =
-                    tokio::join!(mcp_shutdown, projected_mcp_shutdown, live_query_shutdown,);
-                if let Err(error) = projected_result {
-                    shutdown_coordinator.record_cleanup_failure(&error);
-                    tracing::error!(%error, "Projected MCP shutdown retains unconfirmed resources");
-                }
-                if shutdown_coordinator.cleanup_result().is_ok()
-                    && collaboration_catalog.execution_ownership_view().await.is_ok_and(|v| v.claim.is_some_and(|c| c.state == "draining" && c.fence == v.current_fence)) {
-                    if let Err(error) = collaboration_catalog.release_execution_owner().await {
-                        let error = anyhow::Error::from(error);
-                        shutdown_coordinator.record_cleanup_failure(&error);
-                        tracing::error!(%error, "Execution ownership release remains unconfirmed");
-                    }
+                let report = coordinator.supervisor.shutdown().await;
+                if !report.released || !report.failures.is_empty() || !report.unresolved_effects.is_empty() {
+                    coordinator.record_cleanup_failure(&anyhow::anyhow!(
+                        "host closure failed: {:?}; unresolved: {:?}", report.failures, report.unresolved_effects));
                 }
             }) as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
         }) as ShutdownAsyncCleanup
     };
+
     let http_result = serve_on_listener(
         listener,
         companion,
@@ -2603,23 +3070,17 @@ async fn run_server_with_listener(
     .await;
 
     #[cfg(feature = "a2a-transport")]
-    if let Some(grpc_handle) = grpc_handle
-        && let Err(e) = grpc_handle.await
-    {
-        tracing::error!(error = %e, "A2A gRPC task panicked");
-    }
-
-    shutdown_coordinator.wait_for_cleanup().await;
-    if let Some(watcher) = ingestion_watcher {
-        watcher.abort();
-        if let Err(error) = watcher.await
-            && !error.is_cancelled()
-        {
-            tracing::warn!(%error, "ingestion watcher task failed during shutdown");
+    if let Some(scope) = grpc_scope {
+        let report = scope.close().await;
+        if !report.released {
+            shutdown_coordinator.record_cleanup_failure(&anyhow::anyhow!("gRPC closure failed: {:?}", report.failures));
         }
     }
 
+    shutdown_coordinator.wait_for_cleanup().await;
+
     http_result.and(shutdown_coordinator.cleanup_result())
+    }).await
 }
 
 /// Best-effort bind of the loopback companion address for dual-stack `localhost`.
@@ -2686,18 +3147,23 @@ pub async fn start_server_sidecar(
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(
-        config_manager,
-        Some(listener),
-        None,
-        None,
-        Some(ready),
-        http_shutdown.clone(),
-        http_shutdown,
-        true,
-        Some(launch_token.with_bound_principal(bound_principal)),
-    )
-    .await
+    start_server_sidecar_with_control(config_manager, listener, launch_token,
+        bound_principal, ready, http_shutdown, ServerLifecycleControl::default()).await
+}
+
+/// Start a sidecar with an inherited-pipe host management capability.
+pub async fn start_server_sidecar_with_control(
+    config_manager: Arc<ConfigManager>,
+    listener: tokio::net::TcpListener,
+    launch_token: SidecarLaunchToken,
+    bound_principal: Option<uar::security::sidecar_guard::SidecarBoundPrincipal>,
+    ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    control: ServerLifecycleControl,
+) -> anyhow::Result<()> {
+    start_server_with_listener(config_manager, Some(listener), None, None, Some(ready),
+        http_shutdown.clone(), http_shutdown, true,
+        Some(launch_token.with_bound_principal(bound_principal)), Some(control)).await
 }
 
 /// Start the server with caller-provided, already-bound HTTP and A2A gRPC listeners.
@@ -2732,6 +3198,7 @@ pub async fn start_server_with_listeners(
         None,
         true,
         None,
+        None,
     )
     .await
 }
@@ -2762,6 +3229,7 @@ pub async fn start_server_with_listeners_and_shutdowns(
         http_shutdown,
         process_shutdown,
         false,
+        None,
         None,
     )
     .await
@@ -2794,43 +3262,41 @@ async fn serve_on_listener(
     // companion serve loops from the single signal-handler task.
     let http_shutdown = http_shutdown.unwrap_or_else(tokio_util::sync::CancellationToken::new);
 
-    // Spawn the signal handler: wait for SIGINT/SIGTERM, then:
-    //   1. Shut down the ingestion worker pool (drains with timeout, detaches wedges).
-    //   2. Fire the Axum graceful-shutdown trigger.
-    {
+    // Listener failure and explicit HTTP shutdown use the same owned finalizer
+    // as process signals. Its join is required even when serving returns an error.
+    let serving_ended = tokio_util::sync::CancellationToken::new();
+    let shutdown_handler = {
         let cleanup_for_shutdown = shutdown_cleanup.clone();
         let async_cleanup_for_shutdown = shutdown_async_cleanup.clone();
         let run_cancellation_root = run_cancellation_root.clone();
         let http_shutdown = http_shutdown.clone();
         let shutdown_coordinator = shutdown_coordinator.clone();
+        let serving_ended = serving_ended.clone();
         tokio::spawn(async move {
-            match process_shutdown {
-                Some(process_shutdown) => {
-                    tokio::select! {
-                        () = prometheus_parking_lot::core::shutdown::wait_for_signal() => {}
-                        () = process_shutdown.cancelled() => {}
-                    }
-                }
-                None => prometheus_parking_lot::core::shutdown::wait_for_signal().await,
+            let process_shutdown = process_shutdown.unwrap_or_default();
+            tokio::select! {
+                () = process_shutdown.cancelled() => {}
+                () = http_shutdown.cancelled() => {}
+                () = serving_ended.cancelled() => {}
             }
             shutdown_coordinator.begin(shutdown_timeout);
             info!(
                 name: "server.shutdown",
                 timeout_secs = shutdown_timeout.as_secs(),
-                "Shutdown signal received — cancelling in-flight runs and draining ingestion pool"
+                "Shutdown requested; awaiting owned resource completion"
             );
             // Abort in-flight runs first so they stop calling the LLM / tools and
             // emit a terminal Cancelled event before connections are drained.
             run_cancellation_root.cancel();
-            // Stop both accept loops before potentially blocking cleanup so the
-            // configured timeout is a drain deadline, not a pre-drain delay.
+            // Stop both accept loops before joining work that they admitted.
             http_shutdown.cancel();
             // Start independent resource cleanup concurrently. A wedged ingestion
             // worker must not delay MCP transport cancellation and stdio closure.
+            let blocking_cleanup_coordinator = shutdown_coordinator.clone();
             let blocking_cleanup = async move {
                 if let Some(cleanup) = cleanup_for_shutdown {
                     if let Err(e) = tokio::task::spawn_blocking(move || cleanup()).await {
-                        tracing::warn!(error = %e, "ingestion pool shutdown task panicked");
+                        blocking_cleanup_coordinator.record_cleanup_failure(&anyhow::anyhow!("blocking cleanup panicked: {e}"));
                     }
                 }
                 info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down");
@@ -2851,8 +3317,8 @@ async fn serve_on_listener(
             };
             tokio::join!(blocking_cleanup, async_cleanup);
             shutdown_coordinator.mark_cleanup_complete();
-        });
-    }
+        })
+    };
 
     // Build a graceful-shutdown future bound to the shared cancellation token.
     // `log_drain` is only emitted by the primary listener to avoid duplicate logs.
@@ -2874,7 +3340,7 @@ async fn serve_on_listener(
     let primary = axum::serve(listener, app.clone().into_make_service())
         .with_graceful_shutdown(shutdown_future(true));
 
-    match companion {
+    let serving_result: std::io::Result<()> = match companion {
         Some(companion_listener) => {
             if let Ok(companion_addr) = companion_listener.local_addr() {
                 info!(
@@ -2885,12 +3351,15 @@ async fn serve_on_listener(
             }
             let secondary = axum::serve(companion_listener, app.into_make_service())
                 .with_graceful_shutdown(shutdown_future(false));
-            tokio::try_join!(primary, secondary)?;
+            tokio::try_join!(primary, secondary).map(|_| ())
         }
         None => {
-            primary.await?;
+            primary.await
         }
-    }
+    };
+    serving_ended.cancel();
+    shutdown_handler.await.map_err(|error| anyhow::anyhow!("shutdown owner failed: {error}"))?;
+    serving_result?;
 
     info!(name: "server.http_stopped", "HTTP listeners stopped");
     Ok(())
@@ -3159,6 +3628,13 @@ pub(crate) async fn readiness_handler(State(state): State<AppState>) -> Response
 }
 
 fn should_apply_request_timeout(path: &str) -> bool {
+    if ((path.starts_with("/api/uar/knowledge-bases/") || path.starts_with("/api/knowledge/"))
+        && path.ends_with("/ingestion/events"))
+        || (path.starts_with("/api/v1/collaboration/team-instances/")
+            && path.ends_with("/run-registration"))
+    {
+        return false;
+    }
     !matches!(
         path,
         "/api/chat/completion" | "/v1/chat/completions" | "/v1/messages"
@@ -3777,6 +4253,16 @@ struct AnthropicMessagesRequest {
     /// Optional UAR conversation whose persisted policy should apply.
     #[serde(default)]
     session_id: Option<String>,
+    /// Optional registered-agent id whose prompt binds to this turn.
+    ///
+    /// Plain registry ids resolve through the agent store; when the request
+    /// omits one, the persisted conversation policy's `agent_id` applies.
+    /// Bound `uar:agent:*` targets are rejected on this route because they
+    /// require the workspace-verified bound-target path used by chat
+    /// completions. When nothing is selected the turn stays unbound; there is
+    /// no implicit default agent.
+    #[serde(default)]
+    agent_id: Option<String>,
     /// Per-request prompt-caching override.
     ///
     /// When `true`, the UAR automatically injects `cache_control: {type: ephemeral}`
@@ -3939,133 +4425,90 @@ fn anthropic_error_response(status: StatusCode, message: &str) -> Response {
 
 // ── Persistence info + sync stream endpoints ─────────────────────────────
 
+/// Authoritative owner-scoped input for thread snapshot reconciliation.
+async fn owner_sessions_snapshot(
+    State(state): State<AppState>,
+    axum::Extension(user): axum::Extension<UserContext>,
+) -> Response {
+    let Ok(owner) = user.session_owner_key() else { return StatusCode::UNAUTHORIZED.into_response(); };
+    let Some(store) = state.persistence.as_ref() else { return StatusCode::SERVICE_UNAVAILABLE.into_response(); };
+    match store.list_sessions(&owner).await {
+        Ok(sessions) => Json(sessions).into_response(),
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "owner_session_snapshot_unavailable"}))).into_response(),
+    }
+}
+
 /// GET /api/config/persistence — returns the configured persistence provider info.
 async fn persistence_info_handler(State(state): State<AppState>) -> impl IntoResponse {
     let config = &state.config.persistence;
-    let mode = if config.database_url.starts_with("surrealkv://")
-        || config.database_url.starts_with("rocksdb://")
-        || config.database_url.starts_with("mem://")
-        || config.database_url.starts_with("file://")
-    {
-        "embedded"
-    } else {
-        "remote"
-    };
+    use uar::persistence::providers::surreal::SurrealEndpoint;
+    let endpoint = SurrealEndpoint::parse(&config.database_url);
+    let mode = if endpoint.is_remote() { "remote" } else { "embedded" };
+    let mut label = endpoint.connection_string();
+    if endpoint.is_remote() {
+        if let Ok(mut url) = url::Url::parse(&label) {
+            let _ = url.set_username("");
+            let _ = url.set_password(None);
+            label = url.to_string();
+        }
+    }
     Json(json!({
         "provider": config.provider,
         "mode": mode,
-        "database_url": config.database_url,
+        "database_url": label,
     }))
 }
 
-/// GET /api/uar/sync/stream — SSE stream for entity change events (embedded SurrealDB only).
-///
-/// V1: sends periodic heartbeats; real LIVE SELECT integration will come later.
+/// GET /api/uar/sync/stream — invalidations from the owned database subscriptions.
+/// Caller-scoped snapshots use the existing domain read routes.
 async fn sync_stream_handler(
     State(state): State<AppState>,
     axum::Extension(user): axum::Extension<UserContext>,
 ) -> Response {
-    let Ok(owner_key) = user.session_owner_key() else { return StatusCode::UNAUTHORIZED.into_response(); };
-    let config = &state.config.persistence;
-    let is_embedded = config.database_url.starts_with("surrealkv://")
-        || config.database_url.starts_with("rocksdb://")
-        || config.database_url.starts_with("mem://")
-        || config.database_url.starts_with("file://");
-
-    if !is_embedded {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": "SSE sync stream is only available for embedded SurrealDB mode"
-            })),
-        )
-            .into_response();
+    if user.session_owner_key().is_err() { return StatusCode::UNAUTHORIZED.into_response(); }
+    use uar::persistence::providers::surreal::SurrealEndpoint;
+    if SurrealEndpoint::parse(&state.config.persistence.database_url).is_remote() {
+        return StatusCode::NOT_FOUND.into_response();
     }
-
-    let persistence = state.persistence.clone();
-
-    let stream = async_stream::stream! {
-        let mut interval = tokio::time::interval(Duration::from_secs(5));
-        let mut last_check = chrono::Utc::now().to_rfc3339();
-
-        if let Some(ref persistence) = persistence {
-            match persistence.list_knowledge_bases(&owner_key).await {
-                Ok(kbs) => {
-                    yield Ok::<_, std::convert::Infallible>(
-                        Event::default().event("entity.snapshot").data(
-                            serde_json::json!({
-                                "table": "knowledge_bases",
-                                "records": kbs,
-                                "ts": last_check
-                            }).to_string()
-                        )
-                    );
-                }
-                Err(e) => {
-                    tracing::debug!(error = %e, "sync_stream: failed to snapshot knowledge_bases");
-                }
-            }
-        }
-
-        // Send initial connected event so the client knows the stream is live.
-        yield Ok::<_, std::convert::Infallible>(
-            Event::default()
-                .event("connected")
-                .data(serde_json::json!({
-                    "status": "connected",
-                    "ts": chrono::Utc::now().to_rfc3339(),
-                    "tables": ["knowledge_bases", "knowledge_documents", "skills", "agents", "settings"]
-                }).to_string())
-        );
-
-        loop {
-            interval.tick().await;
-
-            let now = chrono::Utc::now();
-            let now_rfc = now.to_rfc3339();
-
-            // Poll entity tables for changes since last check.
-            // KnowledgeBase has an `updated_at` RFC3339 field we can compare.
-            if let Some(ref persistence) = persistence {
-                match persistence.list_knowledge_bases(&owner_key).await {
-                    Ok(kbs) => {
-                        // Compare RFC3339 strings lexicographically (valid for ISO timestamps).
-                        let changed: Vec<_> = kbs.iter()
-                            .filter(|kb| kb.updated_at.as_str() > last_check.as_str())
-                            .collect();
-                        for kb in &changed {
-                            yield Ok(Event::default().event("entity.change").data(
-                                serde_json::json!({
-                                    "table": "knowledge_bases",
-                                    "action": "update",
-                                    "id": kb.id,
-                                    "record": kb,
-                                    "ts": now_rfc
-                                }).to_string()
-                            ));
+    let Some(bus) = state.live_bus.as_ref() else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+    let mut streams: Vec<Pin<Box<dyn futures::Stream<Item = Result<Event, std::convert::Infallible>> + Send>>> = Vec::new();
+    for &topic in uar::realtime::EntityTopic::ALL {
+        if !topic.is_public() { continue; }
+        if let Some(receiver) = bus.subscribe(topic) {
+            let initial = bus.topic_state(topic);
+            let stream = async_stream::stream! {
+                let reset = |reason: &str, generation: Option<u64>, ready: Option<bool>| {
+                    Event::default().event("reset").data(json!({
+                        "version": 1, "topic": topic.as_str(), "table": topic.table(),
+                        "generation": generation, "ready": ready, "reason": reason,
+                        "requires_snapshot": true,
+                    }).to_string())
+                };
+                yield Ok(reset("subscription_established", initial.as_ref().map(|s| s.generation), initial.as_ref().map(|s| s.ready)));
+                let mut receiver = receiver;
+                loop {
+                    match receiver.recv().await {
+                        Ok(event) => yield Ok(reset("committed_change",
+                            event.data.get("generation").and_then(Value::as_u64),
+                            event.data.get("ready").and_then(Value::as_bool))),
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            yield Ok(reset("consumer_lagged", None, None));
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                            yield Ok(reset("subscription_closed", None, Some(false)));
+                            break;
                         }
                     }
-                    Err(e) => {
-                        tracing::debug!(error = %e, "sync_stream: failed to poll knowledge_bases");
-                    }
                 }
-            }
-
-            last_check = now_rfc.clone();
-
-            // Heartbeat with timestamp so clients can detect stale connections.
-            yield Ok(Event::default().event("heartbeat").data(
-                serde_json::json!({
-                    "status": "connected",
-                    "ts": now_rfc
-                }).to_string()
-            ));
+            };
+            streams.push(Box::pin(stream));
         }
-    };
-
-    Sse::new(stream)
-        .keep_alive(KeepAlive::default())
-        .into_response()
+    }
+    Sse::new(futures::stream::select_all(streams))
+        .keep_alive(KeepAlive::default()).into_response()
 }
 
 fn anthropic_sse_event(name: &str, payload: Value) -> Event {
@@ -4498,14 +4941,15 @@ async fn api_messages(
             .unwrap_or(false),
         None => false,
     };
-    let session_override = match (&req.session_id, user_ctx.as_ref()) {
+    let conversation_policy = match (&req.session_id, user_ctx.as_ref()) {
         (Some(session_id), Some(user)) => {
-            uar::api::discovery::load_conversation_policy(&state, user, session_id)
-                .await
-                .and_then(|policy| policy.prompt_caching_enabled)
+            uar::api::discovery::load_conversation_policy(&state, user, session_id).await
         }
         _ => None,
     };
+    let session_override = conversation_policy
+        .as_ref()
+        .and_then(|policy| policy.prompt_caching_enabled);
     let jwt_principal = user_ctx
         .as_ref()
         .filter(|_| {
@@ -4546,7 +4990,56 @@ async fn api_messages(
         "Resolved Anthropic-compatible prompt-caching setting"
     );
 
-    let openai_messages = convert_anthropic_messages_to_openai(&req);
+    // Registered-agent binding: the explicit request `agent_id` wins; else the
+    // persisted conversation policy's `agent_id`; else the turn stays unbound.
+    let agent_selector = req.agent_id.as_deref().or_else(|| {
+        conversation_policy
+            .as_ref()
+            .and_then(|policy| policy.agent_id.as_deref())
+    });
+    let bound_agent = match agent_selector {
+        // Bound targets need the full resolve_bound/admit_bound path with the
+        // workspace header (see the chat-completions glue); reject instead of
+        // silently widening this route's authority.
+        Some(agent_id) if agent_id.starts_with("uar:agent:") => {
+            return anthropic_error_response(
+                StatusCode::BAD_REQUEST,
+                "Bound agent targets (uar:agent:*) are not supported on this route",
+            );
+        }
+        Some(agent_id) => {
+            match uar::api::discovery::resolve_agent_for_run(&state, agent_id).await {
+                Ok(agent) => Some(agent),
+                Err((status, message)) => return anthropic_error_response(status, &message),
+            }
+        }
+        None => None,
+    };
+
+    let mut openai_messages = convert_anthropic_messages_to_openai(&req);
+    if let Some(agent) = &bound_agent {
+        // Mirror the run pipeline's agent-identity fragments
+        // (uar/runtime/turn/builtin.rs artifact_fragments): the agent system
+        // prompt first, then its host instructions. Client-supplied system
+        // text is kept after the agent prompt, matching chat completions.
+        let mut agent_system = Vec::new();
+        if !agent.prompt.system.trim().is_empty() {
+            agent_system.push(json!({
+                "role": "system",
+                "content": agent.prompt.system
+            }));
+        }
+        for instruction in &agent.prompt.instructions {
+            if !instruction.trim().is_empty() {
+                agent_system.push(json!({
+                    "role": "system",
+                    "content": instruction
+                }));
+            }
+        }
+        agent_system.append(&mut openai_messages);
+        openai_messages = agent_system;
+    }
 
     let mut llm_request = crate::llm::LlmRequest {
         messages: openai_messages,
@@ -6573,7 +7066,7 @@ pub(crate) async fn api_chat_completion(
                         }
                         uar::domain::events::NormalizedEvent::RunDone { .. }
                         | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
-                            // --- Memory: auto-capture (fire-and-forget, post-stream) ---
+                            // --- Memory: lifecycle-owned post-stream capture ---
                             if req_memory_enabled {
                                 if let Some(ref svc) = stream_memory_service {
                                     if !assistant_text_for_capture.is_empty() {
@@ -6594,7 +7087,8 @@ pub(crate) async fn api_chat_completion(
                                                 None
                                             }
                                         };
-                                        tokio::spawn(async move {
+                                        let scope = mgr.lifecycle_scope();
+                                        if let Err(error) = scope.spawn("memory-auto-capture", async move {
                                             let captured = auto_capture::capture_from_stream_end(
                                                 &svc2, &msgs, &ctx2, &aid, &sid, admission,
                                             ).await;
@@ -6620,7 +7114,8 @@ pub(crate) async fn api_chat_completion(
                                                     },
                                                 ).await;
                                             }
-                                        });
+                                            Ok(())
+                                        }) { tracing::warn!(%error, "Memory capture admission closed"); }
                                     }
                                 }
                             }
@@ -6637,10 +7132,11 @@ pub(crate) async fn api_chat_completion(
                                 let correction_user = stream_user_ctx.clone();
                                 let correction_model = stream_model_name.clone();
                                 let correction_session = stream_session_id.clone();
-                                tokio::spawn(async move {
+                                let scope = mgr.lifecycle_scope();
+                                if let Err(error) = scope.spawn("response-quality", async move {
                                     let Some(outcome) = uar::quality::detect(&sycophancy_cfg, &text)
                                     else {
-                                        return;
+                                        return Ok(());
                                     };
                                     uar::telemetry::metrics::record_sycophancy_score(f64::from(
                                         outcome.score,
@@ -6671,7 +7167,7 @@ pub(crate) async fn api_chat_completion(
                                         if sycophancy_cfg.auto_correct && !sycophancy_cfg.log_only {
                                             let Some((provider, model)) = correction_model.split_once('/') else {
                                                 tracing::warn!(run_id = %rid, "Response correction model is unavailable");
-                                                return;
+                                                return Ok(());
                                             };
                                             let config = match authorized_http_model(
                                                 &correction_state, Some(&correction_user), provider, model,
@@ -6680,7 +7176,7 @@ pub(crate) async fn api_chat_completion(
                                                 Ok(config) => config,
                                                 Err((_, code)) => {
                                                     tracing::warn!(run_id = %rid, category = code, "Response correction credential admission refused");
-                                                    return;
+                                                    return Ok(());
                                                 }
                                             };
                                             let orchestrator = match Orchestrator::new(
@@ -6689,7 +7185,7 @@ pub(crate) async fn api_chat_completion(
                                                 Ok(orchestrator) => orchestrator,
                                                 Err(_) => {
                                                     tracing::warn!(run_id = %rid, "Response correction client construction failed");
-                                                    return;
+                                                    return Ok(());
                                                 }
                                             };
                                             match orchestrator
@@ -6719,7 +7215,8 @@ pub(crate) async fn api_chat_completion(
                                             }
                                         }
                                     }
-                                });
+                                    Ok(())
+                                }) { tracing::warn!(%error, "Response quality admission closed"); }
                             }
 
                             if emit_openai_chunks {
@@ -6973,802 +7470,4 @@ pub(crate) async fn api_chat_completion(
 }
 
 #[cfg(test)]
-mod tests {
-    #![allow(clippy::unwrap_used, clippy::expect_used)]
-    use super::*;
-    use std::convert::Infallible;
-    use std::io::Read as _;
-    use std::net::{SocketAddr, TcpStream};
-    use std::path::{Path, PathBuf};
-    use std::process::{Child, Command, ExitStatus, Stdio};
-    use std::time::Instant;
-
-    const SHUTDOWN_CHILD_ENV: &str = "UAR_SHUTDOWN_TEST_CHILD";
-
-    #[test]
-    fn governance_bootstrap_error_finalizes_fail_closed() {
-        let (mutation, gate, status) =
-            crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
-        mutation.record_installed_authentication(false);
-        mutation.declare_ingress("primary-http").expect("declare");
-        let proof = mutation
-            .register_bound_ingress("primary-http", "127.0.0.1:1906".parse().expect("address"))
-            .expect("register");
-        mutation
-            .seal_ingress_inventory(&[proof])
-            .expect("seal inventory");
-
-        finalize_failed_governance_bootstrap(&mutation, &anyhow::anyhow!("seed failed"))
-            .expect("failure finalization succeeds");
-
-        let snapshot = status.snapshot();
-        assert!(gate.effective_enabled());
-        assert!(!snapshot.mutation_available);
-        assert!(snapshot.reasons.contains(
-            &crate::uar::governance::runtime_control::GovernanceStatusReason::PersistenceUnavailable
-        ));
-    }
-    const SHUTDOWN_MCP_FIXTURE: &str = r#"
-import json
-import pathlib
-import sys
-
-marker = pathlib.Path(sys.argv[1])
-for line in sys.stdin:
-    try:
-        request = json.loads(line)
-    except json.JSONDecodeError:
-        continue
-    request_id = request.get("id")
-    if request_id is None:
-        continue
-    method = request.get("method")
-    if method == "initialize":
-        result = {
-            "protocolVersion": request.get("params", {}).get("protocolVersion", "2024-11-05"),
-            "capabilities": {"tools": {}},
-            "serverInfo": {"name": "uar-shutdown-test", "version": "1.0.0"},
-        }
-    elif method == "tools/list":
-        result = {"tools": []}
-    else:
-        print(json.dumps({
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "error": {"code": -32601, "message": "method not found"},
-        }), flush=True)
-        continue
-    print(json.dumps({"jsonrpc": "2.0", "id": request_id, "result": result}), flush=True)
-
-marker.write_bytes(b"stdin-closed")
-"#;
-
-    #[derive(Clone)]
-    struct ShutdownSseState {
-        control_dir: PathBuf,
-        hold: bool,
-    }
-
-    #[derive(Deserialize)]
-    struct ShutdownChildReady {
-        primary: SocketAddr,
-        companion: SocketAddr,
-    }
-
-    struct ShutdownChild {
-        child: Child,
-        control_dir: tempfile::TempDir,
-        ready: ShutdownChildReady,
-    }
-
-    struct ShutdownChildExit {
-        status: ExitStatus,
-        stderr: String,
-    }
-
-    impl ShutdownChild {
-        fn spawn(mode: &str, timeout_secs: u64) -> Self {
-            let control_dir = tempfile::tempdir().expect("create shutdown control directory");
-            let child = Command::new(std::env::current_exe().expect("resolve test executable"))
-                .arg("--exact")
-                .arg("server::tests::shutdown_process_child")
-                .arg("--nocapture")
-                .arg("--test-threads=1")
-                .env(SHUTDOWN_CHILD_ENV, mode)
-                .env("UAR_SHUTDOWN_TEST_TIMEOUT_SECS", timeout_secs.to_string())
-                .env("UAR_SHUTDOWN_TEST_CONTROL_DIR", control_dir.path())
-                .stdout(Stdio::null())
-                .stderr(Stdio::piped())
-                .spawn()
-                .expect("spawn shutdown child process");
-            let mut this = Self {
-                child,
-                control_dir,
-                ready: ShutdownChildReady {
-                    primary: "127.0.0.1:1".parse().expect("placeholder primary"),
-                    companion: "127.0.0.1:1".parse().expect("placeholder companion"),
-                },
-            };
-            let ready_path = this.control_dir.path().join("ready.json");
-            let deadline = Instant::now() + Duration::from_secs(10);
-            loop {
-                if let Ok(bytes) = std::fs::read(&ready_path) {
-                    this.ready = serde_json::from_slice(&bytes).expect("parse child readiness");
-                    return this;
-                }
-                assert!(
-                    this.child
-                        .try_wait()
-                        .expect("poll shutdown child")
-                        .is_none(),
-                    "shutdown child exited before readiness"
-                );
-                assert!(
-                    Instant::now() < deadline,
-                    "shutdown child readiness timeout"
-                );
-                std::thread::sleep(Duration::from_millis(10));
-            }
-        }
-
-        fn signal(&self, signal: &str) {
-            let status = Command::new("/bin/kill")
-                .arg(format!("-{signal}"))
-                .arg(self.child.id().to_string())
-                .status()
-                .expect("deliver shutdown signal");
-            assert!(status.success(), "failed to deliver {signal}: {status}");
-        }
-
-        fn wait_for_file(&mut self, name: &str) {
-            let path = self.control_dir.path().join(name);
-            let deadline = Instant::now() + Duration::from_secs(5);
-            loop {
-                if path.exists() {
-                    return;
-                }
-                assert!(
-                    self.child
-                        .try_wait()
-                        .expect("poll shutdown child")
-                        .is_none(),
-                    "shutdown child exited before publishing {name}"
-                );
-                assert!(Instant::now() < deadline, "timed out waiting for {name}");
-                std::thread::sleep(Duration::from_millis(10));
-            }
-        }
-
-        fn wait_for_exit(&mut self, limit: Duration) -> Option<ShutdownChildExit> {
-            let deadline = Instant::now() + limit;
-            loop {
-                if let Some(status) = self.child.try_wait().expect("poll shutdown child") {
-                    let mut stderr = String::new();
-                    if let Some(mut pipe) = self.child.stderr.take() {
-                        pipe.read_to_string(&mut stderr)
-                            .expect("read shutdown child stderr");
-                    }
-                    return Some(ShutdownChildExit { status, stderr });
-                }
-                if Instant::now() >= deadline {
-                    return None;
-                }
-                std::thread::sleep(Duration::from_millis(10));
-            }
-        }
-    }
-
-    impl Drop for ShutdownChild {
-        fn drop(&mut self) {
-            if self.child.try_wait().ok().flatten().is_none() {
-                let _ = self.child.kill();
-                let _ = self.child.wait();
-            }
-        }
-    }
-
-    async fn shutdown_test_sse(
-        State(state): State<ShutdownSseState>,
-    ) -> Sse<
-        std::pin::Pin<Box<dyn futures::Stream<Item = Result<Event, Infallible>> + Send + 'static>>,
-    > {
-        std::fs::write(state.control_dir.join("stream-started"), b"started")
-            .expect("publish SSE start");
-        let stream = futures::stream::unfold(0_u8, move |step| {
-            let hold = state.hold;
-            async move {
-                match step {
-                    0 => Some((Ok(Event::default().data("started")), 1)),
-                    1 if hold => {
-                        std::future::pending::<Option<(Result<Event, Infallible>, u8)>>().await
-                    }
-                    1 => {
-                        tokio::time::sleep(Duration::from_millis(250)).await;
-                        Some((Ok(Event::default().data("done")), 2))
-                    }
-                    _ => None,
-                }
-            }
-        });
-        Sse::new(Box::pin(stream))
-    }
-
-    async fn run_shutdown_process_child(mode: &str, control_dir: &Path, timeout_secs: u64) {
-        let primary = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind primary shutdown fixture");
-        let primary_addr = primary.local_addr().expect("read primary address");
-        let companion = tokio::net::TcpListener::bind(format!("[::1]:{}", primary_addr.port()))
-            .await
-            .expect("bind companion shutdown fixture");
-        let companion_addr = companion.local_addr().expect("read companion address");
-        let sse_state = ShutdownSseState {
-            control_dir: control_dir.to_path_buf(),
-            hold: matches!(mode, "held-sse"),
-        };
-        let app = Router::new()
-            .route("/health", get(|| async { "ok" }))
-            .route("/sse", get(shutdown_test_sse))
-            .with_state(sse_state);
-        let cleanup: Option<ShutdownCleanup> = if mode == "normal-cleanup" {
-            let cleanup_marker = control_dir.join("registered-cleanup-complete");
-            Some(Arc::new(move || {
-                std::fs::write(&cleanup_marker, b"complete")
-                    .expect("publish registered cleanup completion");
-            }))
-        } else if matches!(
-            mode,
-            "held-cleanup" | "held-cleanup-mcp" | "stderr-lock" | "stderr-backpressure"
-        ) {
-            Some(Arc::new(|| {
-                loop {
-                    std::thread::park_timeout(Duration::from_secs(60));
-                }
-            }))
-        } else {
-            None
-        };
-        let async_cleanup: Option<ShutdownAsyncCleanup> = if mode == "held-cleanup" {
-            let cleanup_marker = control_dir.join("async-cleanup-complete");
-            Some(Arc::new(move || {
-                let cleanup_marker = cleanup_marker.clone();
-                Box::pin(async move {
-                    std::fs::write(cleanup_marker, b"complete")
-                        .expect("publish async cleanup completion");
-                })
-            }))
-        } else if mode == "held-cleanup-mcp" {
-            let fixture_path = control_dir.join("mcp-shutdown-fixture.py");
-            let eof_marker = control_dir.join("mcp-stdin-closed");
-            std::fs::write(&fixture_path, SHUTDOWN_MCP_FIXTURE)
-                .expect("write shutdown MCP fixture");
-            let config = crate::mcp::config::McpConfig {
-                mcp_servers: HashMap::from([(
-                    "shutdown-fixture".to_string(),
-                    crate::mcp::config::McpServerEntry::Stdio {
-                        command: "python3".to_string(),
-                        args: vec![
-                            fixture_path.display().to_string(),
-                            eof_marker.display().to_string(),
-                        ],
-                        env: HashMap::new(),
-                        sandboxed: false,
-                        preapproved_tools: Default::default(),
-                    },
-                )]),
-            };
-            let registry = Arc::new(
-                McpRegistry::from_config(&config)
-                    .await
-                    .expect("connect shutdown MCP fixture"),
-            );
-            Some(Arc::new(move || {
-                let registry = Arc::clone(&registry);
-                Box::pin(async move { registry.shutdown().await })
-                    as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
-            }))
-        } else {
-            None
-        };
-
-        if mode == "stderr-lock" {
-            let (locked_tx, locked_rx) = std::sync::mpsc::sync_channel(0);
-            std::thread::spawn(move || {
-                let _stderr = std::io::stderr().lock();
-                locked_tx.send(()).expect("publish stderr lock");
-                loop {
-                    std::thread::park_timeout(Duration::from_secs(60));
-                }
-            });
-            locked_rx.recv().expect("wait for stderr lock");
-        } else if mode == "stderr-backpressure" {
-            std::thread::spawn(|| {
-                let mut stderr = std::io::stderr().lock();
-                let block = [b'x'; 4096];
-                loop {
-                    if stderr.write_all(&block).is_err() {
-                        return;
-                    }
-                }
-            });
-        }
-
-        let ready_path = control_dir.join("ready.json");
-        let ready_pending_path = control_dir.join("ready.json.pending");
-        std::fs::write(
-            &ready_pending_path,
-            serde_json::to_vec(&json!({
-                "primary": primary_addr,
-                "companion": companion_addr,
-            }))
-            .expect("serialize shutdown readiness"),
-        )
-        .expect("write pending shutdown readiness");
-        std::fs::rename(ready_pending_path, ready_path).expect("publish shutdown readiness");
-
-        let coordinator = ShutdownCoordinator::new(true);
-        serve_on_listener(
-            primary,
-            Some(companion),
-            app,
-            timeout_secs,
-            cleanup,
-            async_cleanup,
-            tokio_util::sync::CancellationToken::new(),
-            None,
-            None,
-            coordinator.clone(),
-        )
-        .await
-        .expect("serve shutdown fixture");
-        coordinator.wait_for_cleanup().await;
-        coordinator.complete();
-    }
-
-    #[test]
-    fn shutdown_process_child() {
-        let Some(mode) = std::env::var_os(SHUTDOWN_CHILD_ENV) else {
-            return;
-        };
-        let control_dir = PathBuf::from(
-            std::env::var_os("UAR_SHUTDOWN_TEST_CONTROL_DIR")
-                .expect("shutdown child control directory"),
-        );
-        let timeout_secs = std::env::var("UAR_SHUTDOWN_TEST_TIMEOUT_SECS")
-            .expect("shutdown child timeout")
-            .parse()
-            .expect("parse shutdown child timeout");
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .worker_threads(2)
-            .enable_all()
-            .build()
-            .expect("build shutdown child runtime");
-        runtime.block_on(run_shutdown_process_child(
-            &mode.to_string_lossy(),
-            &control_dir,
-            timeout_secs,
-        ));
-    }
-
-    fn read_sse(addr: SocketAddr) -> std::thread::JoinHandle<String> {
-        std::thread::spawn(move || {
-            let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(2))
-                .expect("connect SSE client");
-            stream
-                .set_read_timeout(Some(Duration::from_secs(5)))
-                .expect("set SSE read timeout");
-            write!(
-                stream,
-                "GET /sse HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n"
-            )
-            .expect("write SSE request");
-            let mut response = String::new();
-            let _ = stream.read_to_string(&mut response);
-            response
-        })
-    }
-
-    fn listener_refuses_within(addr: SocketAddr, limit: Duration) -> bool {
-        let deadline = Instant::now() + limit;
-        loop {
-            if TcpStream::connect_timeout(&addr, Duration::from_millis(50)).is_err() {
-                return true;
-            }
-            if Instant::now() >= deadline {
-                return false;
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
-    }
-
-    #[test]
-    fn shutdown_process_idle_sigterm_and_sigint_exit_within_one_second() {
-        for signal in ["TERM", "INT"] {
-            let mut child = ShutdownChild::spawn("idle", 2);
-            let started = Instant::now();
-            child.signal(signal);
-            let exit = child
-                .wait_for_exit(Duration::from_secs(1))
-                .unwrap_or_else(|| panic!("idle {signal} did not exit within one second"));
-            assert!(
-                exit.status.success(),
-                "idle {signal} status: {}",
-                exit.status
-            );
-            assert!(
-                exit.stderr
-                    .contains("UAR_SHUTDOWN outcome=graceful_complete"),
-                "idle {signal} missing graceful marker: {}",
-                exit.stderr
-            );
-            assert!(!exit.stderr.contains("deadline_enforced"));
-            assert!(started.elapsed() < Duration::from_secs(1));
-        }
-    }
-
-    #[test]
-    fn shutdown_process_real_sse_completes_and_both_listeners_refuse() {
-        let mut child = ShutdownChild::spawn("active-sse", 2);
-        let reader = read_sse(child.ready.primary);
-        child.wait_for_file("stream-started");
-        child.signal("TERM");
-        assert!(
-            listener_refuses_within(child.ready.primary, Duration::from_millis(500)),
-            "primary listener accepted connections after SIGTERM"
-        );
-        assert!(
-            listener_refuses_within(child.ready.companion, Duration::from_millis(500)),
-            "companion listener accepted connections after SIGTERM"
-        );
-        let exit = child
-            .wait_for_exit(Duration::from_secs(3))
-            .expect("active SSE child did not exit inside its graceful window");
-        let response = reader.join().expect("join SSE reader");
-        assert!(response.contains("content-type: text/event-stream"));
-        assert!(response.contains("data: started"));
-        assert!(response.contains("data: done"));
-        assert!(exit.status.success());
-        assert!(
-            exit.stderr
-                .contains("UAR_SHUTDOWN outcome=graceful_complete")
-        );
-        assert!(!exit.stderr.contains("deadline_enforced"));
-    }
-
-    #[test]
-    fn shutdown_process_held_sse_exits_at_deadline() {
-        let mut child = ShutdownChild::spawn("held-sse", 1);
-        let reader = read_sse(child.ready.primary);
-        child.wait_for_file("stream-started");
-        let started = Instant::now();
-        child.signal("TERM");
-        let exit = child
-            .wait_for_exit(Duration::from_millis(1900))
-            .expect("held SSE child did not enforce its deadline");
-        let response = reader.join().expect("join held SSE reader");
-        assert!(response.contains("data: started"));
-        assert!(exit.status.success());
-        assert!(started.elapsed() >= Duration::from_millis(900));
-        assert!(started.elapsed() < Duration::from_millis(1900));
-        assert!(
-            exit.stderr
-                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
-        );
-        assert!(!exit.stderr.contains("graceful_complete"));
-        assert!(!exit.stderr.contains("cleanup_complete"));
-    }
-
-    #[test]
-    fn shutdown_process_held_registered_cleanup_exits_at_deadline() {
-        let mut child = ShutdownChild::spawn("held-cleanup", 1);
-        let started = Instant::now();
-        child.signal("TERM");
-        child.wait_for_file("async-cleanup-complete");
-        let exit = child
-            .wait_for_exit(Duration::from_millis(1900))
-            .expect("held cleanup child did not enforce its deadline");
-        assert!(exit.status.success());
-        assert!(started.elapsed() >= Duration::from_millis(900));
-        assert!(started.elapsed() < Duration::from_millis(1900));
-        assert!(
-            exit.stderr
-                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
-        );
-        assert!(!exit.stderr.contains("graceful_complete"));
-        assert!(!exit.stderr.contains("cleanup_complete"));
-    }
-
-    #[test]
-    fn shutdown_process_mcp_eof_precedes_held_cleanup_deadline() {
-        let mut child = ShutdownChild::spawn("held-cleanup-mcp", 1);
-        let started = Instant::now();
-        child.signal("TERM");
-        child.wait_for_file("mcp-stdin-closed");
-        let exit = child
-            .wait_for_exit(Duration::from_millis(1900))
-            .expect("held cleanup with MCP child did not enforce its deadline");
-        assert!(exit.status.success());
-        assert!(started.elapsed() >= Duration::from_millis(900));
-        assert!(started.elapsed() < Duration::from_millis(1900));
-        assert!(
-            exit.stderr
-                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
-        );
-        assert!(!exit.stderr.contains("graceful_complete"));
-        assert!(!exit.stderr.contains("cleanup_complete"));
-    }
-
-    #[test]
-    fn shutdown_process_registered_cleanup_precedes_graceful_completion() {
-        let mut child = ShutdownChild::spawn("normal-cleanup", 2);
-        child.signal("TERM");
-        let exit = child
-            .wait_for_exit(Duration::from_secs(1))
-            .expect("normal registered cleanup did not finish within one second");
-        assert!(exit.status.success());
-        assert!(
-            child
-                .control_dir
-                .path()
-                .join("registered-cleanup-complete")
-                .exists(),
-            "normal process completion preceded registered cleanup"
-        );
-        assert!(
-            exit.stderr
-                .contains("UAR_SHUTDOWN outcome=graceful_complete")
-        );
-        assert!(!exit.stderr.contains("deadline_enforced"));
-    }
-
-    #[test]
-    fn shutdown_process_stderr_lock_does_not_block_deadline() {
-        let mut child = ShutdownChild::spawn("stderr-lock", 1);
-        let started = Instant::now();
-        child.signal("TERM");
-        let exit = child
-            .wait_for_exit(Duration::from_millis(1900))
-            .expect("ordinary stderr lock blocked forced exit");
-        assert!(exit.status.success());
-        assert!(started.elapsed() < Duration::from_millis(1900));
-        assert!(
-            exit.stderr
-                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
-        );
-        assert!(!exit.stderr.contains("graceful_complete"));
-    }
-
-    #[test]
-    fn shutdown_process_stderr_backpressure_does_not_block_deadline() {
-        let mut child = ShutdownChild::spawn("stderr-backpressure", 1);
-        std::thread::sleep(Duration::from_millis(200));
-        let started = Instant::now();
-        child.signal("TERM");
-        let exit = child
-            .wait_for_exit(Duration::from_millis(1900))
-            .expect("backpressured stderr blocked forced exit");
-        assert!(exit.status.success());
-        assert!(started.elapsed() < Duration::from_millis(1900));
-        assert!(!exit.stderr.contains("graceful_complete"));
-    }
-
-    #[test]
-    fn ensure_toolu_id_prefixes_non_prefixed_ids() {
-        assert_eq!(ensure_toolu_id("abc"), "toolu_abc");
-        assert_eq!(ensure_toolu_id("toolu_xyz"), "toolu_xyz");
-    }
-
-    #[tokio::test]
-    async fn security_txt_has_the_required_rfc9116_fields() {
-        let (headers, body) = security_txt_handler().await;
-        assert_eq!(headers[0].1, "text/plain; charset=utf-8");
-        assert!(body.contains("Contact: https://"));
-        assert!(body.contains("Expires: "));
-        // A real reporting channel, not a fabricated email/PGP key.
-        assert!(body.contains("security/advisories/new"));
-    }
-
-    #[test]
-    fn convert_anthropic_messages_round_trips_tool_blocks() {
-        let req = AnthropicMessagesRequest {
-            model: "claude-sonnet-4-20250514".to_string(),
-            messages: vec![
-                AnthropicMessageInput {
-                    role: "assistant".to_string(),
-                    content: AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
-                        block_type: "tool_use".to_string(),
-                        id: Some("call_1".to_string()),
-                        name: Some("edit_file".to_string()),
-                        input: Some(json!({"path":"foo.rs"})),
-                        ..AnthropicContentBlockInput::default()
-                    }]),
-                    _extra: HashMap::new(),
-                },
-                AnthropicMessageInput {
-                    role: "user".to_string(),
-                    content: AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
-                        block_type: "tool_result".to_string(),
-                        tool_use_id: Some("call_1".to_string()),
-                        content: Some(json!("ok")),
-                        ..AnthropicContentBlockInput::default()
-                    }]),
-                    _extra: HashMap::new(),
-                },
-            ],
-            system: None,
-            tools: Vec::new(),
-            stream: false,
-            session_id: None,
-            prompt_caching_enabled: None,
-            _extra: HashMap::new(),
-        };
-
-        let out = convert_anthropic_messages_to_openai(&req);
-        assert_eq!(out.len(), 2);
-        assert_eq!(
-            out[0].get("role").and_then(Value::as_str),
-            Some("assistant")
-        );
-        assert_eq!(
-            out[0]
-                .get("tool_calls")
-                .and_then(Value::as_array)
-                .map(Vec::len),
-            Some(1)
-        );
-        assert_eq!(out[1].get("role").and_then(Value::as_str), Some("tool"));
-        assert_eq!(
-            out[1].get("tool_call_id").and_then(Value::as_str),
-            Some("toolu_call_1")
-        );
-    }
-
-    #[test]
-    fn request_timeout_policy_skips_chat_stream_routes() {
-        assert!(!should_apply_request_timeout("/api/chat/completion"));
-        assert!(!should_apply_request_timeout("/v1/chat/completions"));
-        assert!(!should_apply_request_timeout("/v1/messages"));
-
-        assert!(should_apply_request_timeout("/api/generate-title"));
-        assert!(should_apply_request_timeout("/api/threads"));
-        assert!(should_apply_request_timeout("/assets/index.js"));
-    }
-
-    #[tokio::test]
-    async fn cors_layer_allows_configured_origin_methods_and_headers() {
-        use axum::{Router, body::Body, http::Method, http::header, routing::get};
-        use tower::ServiceExt;
-
-        let app = Router::new()
-            .route("/ping", get(|| async { "ok" }))
-            .layer(build_cors_layer(&["https://example.com".to_owned()]).expect("valid origin"));
-
-        let req = Request::builder()
-            .method(Method::OPTIONS)
-            .uri("/ping")
-            .header(header::ORIGIN, "https://example.com")
-            .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
-            .header(
-                header::ACCESS_CONTROL_REQUEST_HEADERS,
-                "x-custom,content-type",
-            )
-            .body(Body::empty())
-            .expect("preflight request should build");
-
-        let res = app
-            .oneshot(req)
-            .await
-            .expect("preflight request should succeed");
-        assert!(res.status().is_success());
-        assert!(
-            res.headers()
-                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
-                .is_some()
-        );
-        assert!(
-            res.headers()
-                .get(header::ACCESS_CONTROL_ALLOW_METHODS)
-                .is_some()
-        );
-        assert!(
-            res.headers()
-                .get(header::ACCESS_CONTROL_ALLOW_HEADERS)
-                .is_some()
-        );
-    }
-
-    #[test]
-    fn cors_configuration_rejects_wildcard_and_opaque_origins() {
-        for origin in ["", "*", "null"] {
-            assert!(build_cors_layer(&[origin.to_owned()]).is_err());
-        }
-    }
-
-    #[tokio::test]
-    async fn cors_layer_omits_allow_origin_for_default_and_unlisted_origins() {
-        use axum::{Router, body::Body, http::header, routing::get};
-        use tower::ServiceExt;
-
-        for allowed in [Vec::new(), vec!["https://allowed.example".to_owned()]] {
-            let app = Router::new()
-                .route("/ping", get(|| async { "ok" }))
-                .layer(build_cors_layer(&allowed).expect("valid origin configuration"));
-            let request = Request::builder()
-                .uri("/ping")
-                .header(header::ORIGIN, "https://unlisted.example")
-                .body(Body::empty())
-                .expect("origin request");
-            let response = app.oneshot(request).await.expect("response");
-            assert!(!response.headers().contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
-        }
-    }
-
-    #[test]
-    fn provider_anthropic_usage_preserves_reported_cache_fields_exactly() {
-        let usage = provider_anthropic_usage(41, 7, Some(29), Some(13));
-        assert_eq!(usage.input_tokens, 41);
-        assert_eq!(usage.output_tokens, 7);
-        assert_eq!(usage.cache_creation_input_tokens, 13);
-        assert_eq!(usage.cache_read_input_tokens, 29);
-    }
-
-    #[test]
-    fn absent_provider_usage_never_fabricates_cache_activity() {
-        let usage = finalized_anthropic_usage(None, 9);
-        assert_eq!(usage.input_tokens, 0);
-        assert_eq!(usage.output_tokens, 9);
-        assert_eq!(usage.cache_creation_input_tokens, 0);
-        assert_eq!(usage.cache_read_input_tokens, 0);
-    }
-
-    #[test]
-    fn normalize_legacy_openai_base_url_rewrites_known_non_openai_provider() {
-        let mut config = crate::config::LlmConfig {
-            model: "alibaba/qwen3.6-plus".to_string(),
-            base_url: Some("https://api.openai.com".to_string()),
-            ..crate::config::LlmConfig::default()
-        };
-
-        normalize_legacy_openai_base_url(&mut config);
-
-        assert_eq!(
-            config.base_url.as_deref(),
-            Some("https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
-        );
-    }
-
-    #[test]
-    fn normalize_legacy_openai_base_url_adds_openai_v1_path() {
-        let mut config = crate::config::LlmConfig {
-            model: "openai/gpt-5.4".to_string(),
-            base_url: Some("https://api.openai.com".to_string()),
-            ..crate::config::LlmConfig::default()
-        };
-
-        normalize_legacy_openai_base_url(&mut config);
-
-        assert_eq!(
-            config.base_url.as_deref(),
-            Some("https://api.openai.com/v1")
-        );
-    }
-
-    #[test]
-    fn provider_catalog_status_marks_moonshot_credential_blocked() {
-        let (status, detail) =
-            provider_catalog_status("moonshotai", false, Some("MOONSHOT_API_KEY"));
-
-        assert_eq!(status, "credential-blocked");
-        assert!(detail.contains("MOONSHOT_API_KEY"));
-        assert!(!detail.contains("sk-"));
-    }
-
-    #[test]
-    fn provider_catalog_status_prefers_configured_over_missing_credential() {
-        let (status, detail) =
-            provider_catalog_status("moonshotai", true, Some("MOONSHOT_API_KEY"));
-
-        assert_eq!(status, "configured");
-        assert!(detail.contains("configured"));
-    }
-}
+mod tests;

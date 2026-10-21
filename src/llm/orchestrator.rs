@@ -714,7 +714,7 @@ impl Orchestrator {
         if let Some(native) = self.native_skills.get(provider_name).await {
             self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
             let execution = match crate::uar::runtime::native_skill::execute_native(
-                native.as_ref(),
+                native,
                 arguments.clone(),
                 &self.native_execution_context(call_id),
             )

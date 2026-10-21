@@ -2,11 +2,11 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3100,
-  "derivedRevision": 3100,
+  "sourceRevision": 3157,
+  "derivedRevision": 3157,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 70,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 127,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -23,7 +23,7 @@
   "phase": "uar-outstanding-issues-v1-1-1",
   "phaseId": "uar-outstanding-issues-v1-1-1",
   "parentPhase": null,
-  "last_updated": "2026-10-19T16:54:08.471402Z",
+  "last_updated": "2026-10-21T00:38:11.156423Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 0,
@@ -62,7 +62,7 @@
     "primaryCounter": "implementation",
     "implementation": {
       "completed": 137,
-      "total": 152,
+      "total": 153,
       "status": "IN_PROGRESS"
     },
     "evidence": {
@@ -98,9 +98,9 @@
     "function-first-release-certification": {
       "status": "IN_PROGRESS",
       "changes_completed": 0,
-      "changes_total": 1,
+      "changes_total": 2,
       "implementation_completed": 0,
-      "implementation_total": 1,
+      "implementation_total": 2,
       "certification_status": "NOT_TRACKED",
       "handoff": null,
       "completed_at": null

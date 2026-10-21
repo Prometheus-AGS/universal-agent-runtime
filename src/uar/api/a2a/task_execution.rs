@@ -2,22 +2,25 @@
 //! retain this object until settlement; dropping a waiter borrows, rather than
 //! destroys, its in-flight mutation. No background task is detached here.
 
-use std::{pin::Pin, time::Duration};
+use std::pin::Pin;
 
 use tokio_util::sync::CancellationToken;
 
 use super::{
-    client::A2AClient,
+    client::{A2AClient, A2ATaskStream},
     contract::UarDelegationContract,
     types::{Message, Task, TaskState},
 };
 
 type Request = Pin<Box<dyn Future<Output = anyhow::Result<Task>> + Send>>;
+type Admission = Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send>>;
+type StreamRequest = Pin<Box<dyn Future<Output = (Option<A2ATaskStream>, anyhow::Result<Task>)> + Send>>;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RequestKind {
     Send,
-    Poll,
+    Stream,
+    Resume,
     Cancel,
     Reconcile,
 }
@@ -27,6 +30,10 @@ enum RequestKind {
 pub enum A2AExecutionError {
     #[error("A2A task cancelled before sending")]
     NotStarted,
+    #[error("A2A peer rejected before dispatch: {0}")]
+    UnsupportedPeer(String),
+    #[error("A2A event stream is unavailable; exact-task reconciliation is required")]
+    StreamUnavailable,
     #[error("A2A task creation is unconfirmed; the send must not be replayed")]
     CreationUnconfirmed,
     #[error("A2A task cleanup is unconfirmed")]
@@ -48,6 +55,10 @@ pub struct A2ATaskExecution {
     task_id: Option<String>,
     context_id: Option<String>,
     pending: Option<(RequestKind, Request)>,
+    admission: Option<Admission>,
+    admitted: bool,
+    stream: Option<A2ATaskStream>,
+    stream_request: Option<StreamRequest>,
     task: Option<Task>,
     outcome: Option<Result<Task, A2AExecutionError>>,
     cleanup_attempted: bool,
@@ -82,6 +93,10 @@ impl A2ATaskExecution {
             task_id,
             context_id,
             pending: None,
+            admission: None,
+            admitted: false,
+            stream: None,
+            stream_request: None,
             task: None,
             outcome: None,
             cleanup_attempted: false,
@@ -94,6 +109,7 @@ impl A2ATaskExecution {
         endpoint: String,
         contract: UarDelegationContract,
         task_id: String,
+        context_id: String,
         parent: &CancellationToken,
     ) -> Self {
         Self {
@@ -103,8 +119,12 @@ impl A2ATaskExecution {
             message: None,
             contract: Some(contract),
             task_id: Some(task_id),
-            context_id: None,
+            context_id: Some(context_id),
             pending: None,
+            admission: None,
+            admitted: false,
+            stream: None,
+            stream_request: None,
             task: None,
             outcome: None,
             cleanup_attempted: false,
@@ -170,14 +190,40 @@ impl A2ATaskExecution {
             if let Some(outcome) = &self.outcome {
                 return outcome.clone();
             }
+            if !self.admitted {
+                if self.admission.is_none() {
+                    let client = self.client.clone();
+                    let endpoint = self.endpoint.clone();
+                    self.admission = Some(Box::pin(async move { client.require_streaming_peer(&endpoint).await.map(|_| ()).map_err(Into::into) }));
+                }
+                let result = tokio::select! {
+                    biased;
+                    () = self.cancellation.cancelled() => {
+                        self.admission = None;
+                        self.cleanup_confirmed = self.task_id.is_none();
+                        self.outcome = Some(Err(if self.cleanup_confirmed { A2AExecutionError::NotStarted } else { A2AExecutionError::CleanupUnconfirmed }));
+                        continue;
+                    },
+                    result = async { self.admission.as_mut().ok_or_else(|| anyhow::anyhow!("missing peer discovery"))?.await } => result,
+                };
+                self.admission = None;
+                match result {
+                    Ok(()) => self.admitted = true,
+                    Err(error) => {
+                        self.cleanup_confirmed = self.task_id.is_none();
+                        self.outcome = Some(Err(A2AExecutionError::UnsupportedPeer(error.to_string())));
+                        continue;
+                    }
+                }
+            }
             if self.pending.is_none() {
                 let Some(message) = self.message.take() else {
                     self.outcome = Some(Err(A2AExecutionError::CreationUnconfirmed));
                     continue;
                 };
                 if self.cancellation.is_cancelled() {
-                    self.outcome = Some(Err(A2AExecutionError::NotStarted));
-                    self.cleanup_confirmed = true;
+                    self.cleanup_confirmed = self.task_id.is_none();
+                    self.outcome = Some(Err(if self.cleanup_confirmed { A2AExecutionError::NotStarted } else { A2AExecutionError::CleanupUnconfirmed }));
                     continue;
                 }
                 let client = self.client.clone();
@@ -225,6 +271,7 @@ impl A2ATaskExecution {
                     self.context_id = task.context_id.clone();
                     self.task = Some(task.clone());
                     if terminal && !self.cancellation.is_cancelled() {
+                        self.stream = None;
                         self.outcome = Some(Ok(task.clone()));
                     }
                     return Ok(task);
@@ -243,8 +290,8 @@ impl A2ATaskExecution {
     /// Drive this task to a terminal receipt, propagating parent cancellation.
     ///
     /// A pending send is allowed to return its task ID before cancellation is
-    /// sent. A pending cancel is likewise retained. Only read-only polling may
-    /// be interrupted. Every HTTP request uses the client's bounded timeout.
+    /// sent. A pending cancel is likewise retained. A read-only subscription may
+    /// be interrupted. Elapsed time and stream EOF are never completion receipts.
     ///
     /// # Errors
     /// A lost send response retains creation uncertainty without replaying it.
@@ -258,46 +305,68 @@ impl A2ATaskExecution {
             if let Some(outcome) = &self.outcome {
                 return outcome.clone();
             }
-            if self.pending.is_none() {
-                if let Some(task) = &self.task {
-                    let id = task.id.clone();
-                    if self.cancellation.is_cancelled() {
-                        self.request(RequestKind::Cancel, id);
-                    } else {
-                        tokio::select! {
-                            biased;
-                            () = self.cancellation.cancelled() => continue,
-                            () = tokio::time::sleep(Duration::from_millis(250)) => {},
-                        }
-                        self.request(RequestKind::Poll, id);
-                    }
-                } else {
+            let (kind, result) = if self.pending.is_none() && !self.cancellation.is_cancelled() {
+                let Some(task) = self.task.clone() else {
                     self.outcome = Some(Err(A2AExecutionError::CreationUnconfirmed));
                     continue;
+                };
+                if self.stream_request.is_none() {
+                    let client = self.client.clone();
+                    let endpoint = self.endpoint.clone();
+                    let contract = self.contract.clone();
+                    let stream = self.stream.take();
+                    self.stream_request = Some(Box::pin(async move {
+                        let mut stream = match stream {
+                            Some(stream) => stream,
+                            None => match client.subscribe_task(&endpoint, task, contract).await {
+                                Ok(stream) => stream,
+                                Err(error) => return (None, Err(error)),
+                            },
+                        };
+                        let result = stream.next_task().await;
+                        (Some(stream), result)
+                    }));
                 }
-            }
-
-            let Some((kind, request)) = self.pending.as_mut() else {
-                continue;
-            };
-            let kind = *kind;
-            let result = if kind == RequestKind::Poll {
-                tokio::select! {
+                let (stream, result) = tokio::select! {
                     biased;
                     () = self.cancellation.cancelled() => {
-                        self.pending = None;
+                        self.stream_request = None;
+                        self.stream = None;
                         continue;
                     },
-                    result = request => result,
-                }
+                    result = async {
+                        match self.stream_request.as_mut() {
+                            Some(request) => request.await,
+                            None => (None, Err(anyhow::anyhow!("missing A2A subscription"))),
+                        }
+                    } => result,
+                };
+                self.stream_request = None;
+                self.stream = stream;
+                (RequestKind::Stream, result)
             } else {
-                request.await
+                if self.pending.is_none() {
+                    if let Some(id) = self.task.as_ref().map(|task| task.id.clone()).or_else(|| self.task_id.clone()) {
+                        self.request(RequestKind::Cancel, id);
+                    } else {
+                        self.outcome = Some(Err(A2AExecutionError::CreationUnconfirmed));
+                        continue;
+                    }
+                }
+                let Some((kind, request)) = self.pending.as_mut() else { continue; };
+                (*kind, request.await)
             };
             // Consume a completed future and publish its receipt before any
             // other await. A cancelled waiter must never poll it a second time.
             self.pending = None;
             match result {
                 Ok(task) => {
+                    if super::client::validate_binding(&task, self.task_id.as_deref(), self.context_id.as_deref()).is_err() {
+                        self.outcome = Some(Err(if matches!(kind, RequestKind::Cancel | RequestKind::Reconcile) {
+                            A2AExecutionError::CleanupUnconfirmed
+                        } else { A2AExecutionError::StreamUnavailable }));
+                        continue;
+                    }
                     // UAR can finish the execution as failed while retaining
                     // unresolved cleanup. That is not a settlement receipt.
                     let cleanup_unconfirmed = task.cleanup_unconfirmed();
@@ -310,6 +379,7 @@ impl A2ATaskExecution {
                     }
                     self.task = Some(task.clone());
                     if terminal {
+                        self.stream = None;
                         let close_marker = task
                             .metadata
                             .get(super::contract::UAR_CLEANUP_CLOSED_METADATA)
@@ -346,9 +416,9 @@ impl A2ATaskExecution {
                     RequestKind::Reconcile => {
                         self.outcome = Some(Err(A2AExecutionError::CleanupUnconfirmed));
                     }
-                    RequestKind::Poll => {
-                        // Poll failure does not abandon a known live task.
-                        self.cancellation.cancel();
+                    RequestKind::Stream | RequestKind::Resume => {
+                        self.stream = None;
+                        self.outcome = Some(Err(A2AExecutionError::StreamUnavailable));
                     }
                     RequestKind::Cancel => {
                         if let Some(task_id) = self
@@ -367,6 +437,20 @@ impl A2ATaskExecution {
         }
     }
 
+    /// Explicitly reconcile one interrupted stream against the same task, then
+    /// subscribe again. This never sends a message or replays a continuation.
+    pub async fn reconnect_and_wait(&mut self) -> Result<Task, A2AExecutionError> {
+        if matches!(self.outcome, Some(Err(A2AExecutionError::StreamUnavailable))) {
+            if let Some(id) = self.task_id.clone() {
+                self.stream = None;
+                self.stream_request = None;
+                self.request(RequestKind::Resume, id);
+                self.outcome = None;
+            }
+        }
+        self.execute().await
+    }
+
     /// Request cleanup and await its receipt on this exact binding. A repeated
     /// cleanup after uncertainty only reads status; it never replays a mutation.
     ///
@@ -383,7 +467,7 @@ impl A2ATaskExecution {
         }
         if matches!(
             self.outcome,
-            Some(Ok(_)) | Some(Err(A2AExecutionError::CleanupUnconfirmed))
+            Some(Ok(_)) | Some(Err(A2AExecutionError::CleanupUnconfirmed | A2AExecutionError::StreamUnavailable | A2AExecutionError::UnsupportedPeer(_)))
         ) {
             if let Some(task_id) = self
                 .task
@@ -428,7 +512,8 @@ mod tests {
         Json, Router,
         extract::State,
         http::{HeaderMap, header::AUTHORIZATION},
-        routing::post,
+        routing::{get, post},
+        response::{IntoResponse, Response},
     };
     use serde_json::{Value, json};
 
@@ -450,13 +535,16 @@ mod tests {
         cancelled_task_ids: Vec<String>,
         authorization_headers: Vec<String>,
         contracts: HashMap<String, UarDelegationContract>,
+        endpoint: String,
+        streaming: bool,
+        end_stream_early: bool,
     }
 
     async fn peer(
         State(state): State<Arc<Mutex<PeerState>>>,
         headers: HeaderMap,
         Json(request): Json<Value>,
-    ) -> Json<Value> {
+    ) -> Response {
         let request_id = request.get("id").cloned().unwrap_or(Value::Null);
         let method = request
             .get("method")
@@ -469,7 +557,7 @@ mod tests {
             .to_owned();
 
         let result = match method {
-            "message/send" => {
+            "SendMessage" => {
                 let contract = serde_json::from_value::<UarDelegationContract>(
                     request["params"]["metadata"][UAR_DELEGATION_CONTRACT_METADATA].clone(),
                 )
@@ -480,9 +568,9 @@ mod tests {
                 state.methods.push(method.to_owned());
                 state.authorization_headers.push(authorization);
                 state.contracts.insert(task_id, contract);
-                serde_json::to_value(task).expect("working task serializes")
+                json!({"task": wire_task(&task)})
             }
-            "tasks/cancel" => {
+            "CancelTask" => {
                 let task_id = request["params"]["id"]
                     .as_str()
                     .expect("cancel carries a task id")
@@ -496,13 +584,52 @@ mod tests {
                     .get(&task_id)
                     .expect("cancel targets a task created by this peer")
                     .clone();
-                serde_json::to_value(peer_task(&task_id, TaskState::Canceled, &contract, true))
-                    .expect("canceled task serializes")
+                wire_task(&peer_task(&task_id, TaskState::Canceled, &contract, true))
+            }
+            "GetTask" => {
+                let task_id = request["params"]["id"].as_str().expect("snapshot task identity");
+                let mut peer = state.lock().expect("peer state lock");
+                peer.methods.push(method.to_owned());
+                let contract = peer.contracts.get(task_id).expect("known task");
+                wire_task(&peer_task(task_id, TaskState::Working, contract, false))
+            }
+            "SubscribeToTask" => {
+                let task_id = request["params"]["id"].as_str().expect("subscription has task identity");
+                let mut peer = state.lock().expect("peer state lock");
+                peer.methods.push(method.to_owned());
+                let contract = peer.contracts.get(task_id).expect("subscription binds existing task");
+                let working = peer_task(task_id, TaskState::Working, contract, false);
+                let completed = peer_task(task_id, TaskState::Completed, contract, false);
+                let mut events = vec![json!({"jsonrpc": "2.0", "id": request_id, "result": {"task": wire_task(&working)}})];
+                if !peer.end_stream_early {
+                    events.push(json!({"jsonrpc": "2.0", "id": request_id, "result": {"statusUpdate": {
+                        "taskId": task_id, "contextId": working.context_id,
+                        "status": {"state": "TASK_STATE_COMPLETED"}, "metadata": completed.metadata,
+                    }}}));
+                }
+                return axum::response::Sse::new(futures::stream::iter(events.into_iter().map(|event| {
+                    Ok::<_, std::convert::Infallible>(axum::response::sse::Event::default().data(event.to_string()))
+                }))).into_response();
             }
             _ => panic!("unexpected A2A method: {method}"),
         };
 
-        Json(json!({"jsonrpc": "2.0", "id": request_id, "result": result}))
+        Json(json!({"jsonrpc": "2.0", "id": request_id, "result": result})).into_response()
+    }
+
+    async fn card(State(state): State<Arc<Mutex<PeerState>>>) -> Json<Value> {
+        let state = state.lock().expect("peer state lock");
+        Json(json!({"capabilities": {"streaming": state.streaming}, "supportedInterfaces": [{
+            "url": state.endpoint, "protocolBinding": "JSONRPC", "protocolVersion": "1.0",
+        }]}))
+    }
+
+    fn wire_task(task: &Task) -> Value {
+        json!({"id": task.id, "contextId": task.context_id, "metadata": task.metadata,
+            "status": {"state": match task.status.state {
+                TaskState::Working => "TASK_STATE_WORKING", TaskState::Completed => "TASK_STATE_COMPLETED",
+                TaskState::Canceled => "TASK_STATE_CANCELED", _ => panic!("unexpected fixture state"),
+            }}})
     }
 
     fn peer_task(
@@ -587,12 +714,13 @@ mod tests {
             .await
             .expect("peer listener binds");
         let endpoint = format!("http://{}/", listener.local_addr().expect("peer address"));
-        let state = Arc::new(Mutex::new(PeerState::default()));
+        let state = Arc::new(Mutex::new(PeerState { endpoint: endpoint.clone(), streaming: true, ..PeerState::default() }));
         let peer_state = Arc::clone(&state);
         let server = tokio::spawn(async move {
             axum::serve(
                 listener,
-                Router::new().route("/", post(peer)).with_state(peer_state),
+                Router::new().route("/", post(peer))
+                    .route("/.well-known/agent-card.json", get(card)).with_state(peer_state),
             )
             .await
             .expect("peer server runs");
@@ -665,7 +793,7 @@ mod tests {
             state
                 .methods
                 .iter()
-                .filter(|method| method.as_str() == "message/send")
+                .filter(|method| method.as_str() == "SendMessage")
                 .count(),
             2
         );
@@ -673,7 +801,7 @@ mod tests {
             state
                 .methods
                 .iter()
-                .filter(|method| method.as_str() == "tasks/cancel")
+                .filter(|method| method.as_str() == "CancelTask")
                 .count(),
             2
         );
@@ -694,4 +822,76 @@ mod tests {
         server.abort();
         let _ = server.await;
     }
+    async fn fixture(streaming: bool, end_stream_early: bool) -> (String, Arc<Mutex<PeerState>>, tokio::task::JoinHandle<()>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("listener binds");
+        let endpoint = format!("http://{}/", listener.local_addr().expect("peer address"));
+        let state = Arc::new(Mutex::new(PeerState { endpoint: endpoint.clone(), streaming, end_stream_early, ..PeerState::default() }));
+        let app = Router::new().route("/", post(peer)).route("/.well-known/agent-card.json", get(card)).with_state(Arc::clone(&state));
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.expect("peer server"); });
+        (endpoint, state, server)
+    }
+
+    #[tokio::test]
+    async fn unsupported_peer_has_no_dispatch_or_cleanup_obligation() {
+        let (endpoint, state, server) = fixture(false, false).await;
+        let parent = CancellationToken::new();
+        let mut execution = A2AClient::new().with_bearer_token("peer-token")
+            .governed_task_execution(endpoint, Message::user_text("delegate"), contract("unsupported"), &parent).expect("binding");
+        assert!(matches!(execution.start().await, Err(A2AExecutionError::UnsupportedPeer(_))));
+        assert!(execution.cleanup_confirmed());
+        assert!(state.lock().expect("peer state").methods.is_empty());
+        server.abort();
+        let _ = server.await;
+    }
+
+    #[tokio::test]
+    async fn terminal_stream_receipt_completes_without_status_poll() {
+        let (endpoint, state, server) = fixture(true, false).await;
+        let parent = CancellationToken::new();
+        let mut execution = A2AClient::new().with_bearer_token("peer-token")
+            .governed_task_execution(endpoint, Message::user_text("delegate"), contract("streamed"), &parent).expect("binding");
+        assert_eq!(execution.execute().await.expect("terminal receipt").status.state, TaskState::Completed);
+        assert!(execution.terminal_confirmed());
+        assert!(!execution.cleanup_confirmed());
+        assert_eq!(state.lock().expect("peer state").methods, ["SendMessage", "SubscribeToTask"]);
+        assert_eq!(execution.cancel_and_wait().await.expect("closed receipt").status.state, TaskState::Canceled);
+        assert!(execution.cleanup_confirmed());
+        server.abort();
+        let _ = server.await;
+    }
+
+    #[tokio::test]
+    async fn stream_eof_retains_task_and_does_not_replay_send() {
+        let (endpoint, state, server) = fixture(true, true).await;
+        let parent = CancellationToken::new();
+        let mut execution = A2AClient::new().with_bearer_token("peer-token")
+            .governed_task_execution(endpoint, Message::user_text("delegate"), contract("interrupted"), &parent).expect("binding");
+        assert!(matches!(execution.execute().await, Err(A2AExecutionError::StreamUnavailable)));
+        assert_eq!(execution.snapshot().expect("retained receipt").id, "task-interrupted");
+        assert!(!execution.terminal_confirmed());
+        assert!(!execution.cleanup_confirmed());
+        assert_eq!(state.lock().expect("peer state").methods, ["SendMessage", "SubscribeToTask"]);
+        execution.cancel_and_wait().await.expect("cleanup receipt");
+        assert!(execution.cleanup_confirmed());
+        assert_eq!(state.lock().expect("peer state").methods, ["SendMessage", "SubscribeToTask", "CancelTask"]);
+        server.abort();
+        let _ = server.await;
+    }
+
+    #[tokio::test]
+    async fn explicit_reconnect_reconciles_exact_task_without_replaying_mutation() {
+        let (endpoint, state, server) = fixture(true, true).await;
+        let parent = CancellationToken::new();
+        let mut execution = A2AClient::new().with_bearer_token("peer-token")
+            .governed_task_execution(endpoint, Message::user_text("delegate"), contract("reconnect"), &parent).expect("binding");
+        assert!(matches!(execution.execute().await, Err(A2AExecutionError::StreamUnavailable)));
+        state.lock().expect("peer state").end_stream_early = false;
+        assert_eq!(execution.reconnect_and_wait().await.expect("terminal receipt").id, "task-reconnect");
+        assert_eq!(state.lock().expect("peer state").methods,
+            ["SendMessage", "SubscribeToTask", "GetTask", "SubscribeToTask"]);
+        execution.cancel_and_wait().await.expect("cleanup receipt");
+        server.abort();
+        let _ = server.await;
+    }
+
 }

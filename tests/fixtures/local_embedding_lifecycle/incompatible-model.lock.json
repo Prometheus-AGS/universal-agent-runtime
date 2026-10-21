@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Real equal-dimension, different-weight negative fixture for local embedding lifecycle refusal",
+  "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+  "repository": "sentence-transformers/all-MiniLM-L6-v2",
+  "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "metadataSourceUrl": "https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/revision/1110a243fdf4706b3f48f1d95db1a4f5529b4d41?blobs=true",
+  "expectedDimension": 384,
+  "runtimePooling": "cls",
+  "upstreamSentenceTransformerPooling": "mean",
+  "dimensionEvidenceUrls": [
+    "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/raw/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json",
+    "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/raw/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling/config.json"
+  ],
+  "assets": [
+    {
+      "sourcePath": "onnx/model.onnx",
+      "installedPath": "bg-small-en-v1.5.onnx",
+      "sizeBytes": 90405214,
+      "upstreamGitBlobSha1": "7d35d33d315a1ce897ce7cca38d42234e1d55add",
+      "integrity": {
+        "algorithm": "sha256",
+        "value": "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452"
+      },
+      "sourceUrl": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/onnx/model.onnx"
+    },
+    {
+      "sourcePath": "tokenizer.json",
+      "installedPath": "tokenizer.json",
+      "sizeBytes": 466247,
+      "upstreamGitBlobSha1": "cb202bfe2e3c98645018a6d12f182a434c9d3e02",
+      "integrity": {
+        "algorithm": "git-blob-sha1",
+        "value": "cb202bfe2e3c98645018a6d12f182a434c9d3e02"
+      },
+      "sourceUrl": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer.json"
+    },
+    {
+      "sourcePath": "config.json",
+      "installedPath": "config.json",
+      "sizeBytes": 612,
+      "upstreamGitBlobSha1": "72b987fd805cfa2b58c4c8c952b274a11bfd5a00",
+      "integrity": {
+        "algorithm": "git-blob-sha1",
+        "value": "72b987fd805cfa2b58c4c8c952b274a11bfd5a00"
+      },
+      "sourceUrl": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json"
+    },
+    {
+      "sourcePath": "special_tokens_map.json",
+      "installedPath": "special_tokens_map.json",
+      "sizeBytes": 112,
+      "upstreamGitBlobSha1": "e7b0375001f109a6b8873d756ad4f7bbb15fbaa5",
+      "integrity": {
+        "algorithm": "git-blob-sha1",
+        "value": "e7b0375001f109a6b8873d756ad4f7bbb15fbaa5"
+      },
+      "sourceUrl": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/special_tokens_map.json"
+    },
+    {
+      "sourcePath": "tokenizer_config.json",
+      "installedPath": "tokenizer_config.json",
+      "sizeBytes": 350,
+      "upstreamGitBlobSha1": "c79f2b6a0cea6f4b564fed1938984bace9d30ff0",
+      "integrity": {
+        "algorithm": "git-blob-sha1",
+        "value": "c79f2b6a0cea6f4b564fed1938984bace9d30ff0"
+      },
+      "sourceUrl": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json"
+    }
+  ]
+}

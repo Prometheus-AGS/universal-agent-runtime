@@ -1,0 +1,2 @@
+Which lifecycle documents prove that owner-scoped ingestion and retrieval
+continued through compatible local embedding recovery?

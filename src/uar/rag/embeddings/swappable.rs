@@ -92,6 +92,10 @@ impl EmbeddingBackend for BackendSlot {
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         self.backend.embed(texts).await
     }
+
+    async fn shutdown(&self) -> Result<(), EmbeddingError> {
+        self.backend.shutdown().await
+    }
 }
 
 /// Shared handle publishing the current [`BackendSlot`]. Consumers pin a slot
@@ -143,6 +147,12 @@ impl SwappableEmbeddingBackend {
             slot.model_id().to_string(),
             slot.vector_dimension(),
         )
+    }
+
+    /// Release the currently published backend after the host has drained all
+    /// users of this shared handle.
+    pub async fn shutdown(&self) -> Result<(), EmbeddingError> {
+        self.pin().shutdown().await
     }
 }
 

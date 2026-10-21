@@ -298,23 +298,60 @@ impl IngestService {
         Ok(())
     }
 
-    /// Start a watcher loop (polling)
-    pub async fn watch(&self, dir: PathBuf, kb_id: String) {
+    /// Subscribe before the initial directory snapshot. Cancellation stops new
+    /// ingestion; a file already accepted finishes before watcher release.
+    pub async fn watch(&self, dir: PathBuf, kb_id: String,
+        stop: tokio_util::sync::CancellationToken) -> Result<()> {
+        self.watch_with_readiness(dir, kb_id, stop, None).await
+    }
+
+    /// Register the native watch before reporting readiness, then subscribe
+    /// before the first authoritative directory snapshot. The readiness
+    /// receiver must be created by the caller before this task starts so
+    /// startup cannot mistake task admission for OS watcher registration.
+    pub async fn watch_with_readiness(
+        &self,
+        dir: PathBuf,
+        kb_id: String,
+        stop: tokio_util::sync::CancellationToken,
+        readiness: Option<tokio::sync::oneshot::Sender<std::result::Result<(), String>>>,
+    ) -> Result<()> {
+        use notify::Watcher as _;
         tracing::info!("Starting file watcher on {:?}", dir);
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(10));
+        let (events, mut changes) = tokio::sync::mpsc::unbounded_channel();
+        let mut readiness = readiness;
+        let mut watcher = match notify::recommended_watcher(move |event| {
+            let _ = events.send(event);
+        }) {
+            Ok(watcher) => watcher,
+            Err(error) => {
+                if let Some(readiness) = readiness.take() {
+                    let _ = readiness.send(Err(error.to_string()));
+                }
+                return Err(error.into());
+            }
+        };
+        if let Err(error) = watcher.watch(&dir, notify::RecursiveMode::Recursive) {
+            if let Some(readiness) = readiness.take() {
+                let _ = readiness.send(Err(error.to_string()));
+            }
+            return Err(error.into());
+        }
+        if let Some(readiness) = readiness.take() {
+            let _ = readiness.send(Ok(()));
+        }
 
         // State to track last modified times
         let mut file_state: HashMap<PathBuf, std::time::SystemTime> = HashMap::new();
 
         loop {
-            interval.tick().await;
-
             for entry in WalkDir::new(&dir)
                 .follow_links(true)
                 .into_iter()
                 .filter_map(Result::ok)
             {
                 if entry.file_type().is_file() {
+                    if stop.is_cancelled() { break; }
                     let path = entry.path().to_path_buf();
                     // Check modified time
                     if let Ok(metadata) = std::fs::metadata(&path)
@@ -335,6 +372,18 @@ impl IngestService {
                     }
                 }
             }
+            tokio::select! {
+                biased;
+                () = stop.cancelled() => break,
+                event = changes.recv() => match event {
+                    Some(Ok(_)) => {}
+                    Some(Err(error)) => return Err(error.into()),
+                    None => return Err(anyhow!("filesystem event source ended")),
+                }
+            }
         }
+        watcher.unwatch(&dir)?;
+        drop(watcher);
+        Ok(())
     }
 }

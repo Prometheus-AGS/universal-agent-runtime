@@ -31,6 +31,10 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         )
         .route("/team-instances/{id}/execution", get(execution))
         .route(
+            "/team-instances/{id}/attempts/{attempt}/run-registration",
+            get(run_registration),
+        )
+        .route(
             "/team-instances/{id}/attempts/{attempt}/context",
             get(context),
         )
@@ -155,6 +159,23 @@ async fn admit(
         Ok(attempt) => result_response(state.runtime.dispatch(verified, attempt).await),
         Err(error) => error_response(error),
     }
+}
+
+async fn run_registration(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path((team, attempt)): Path<(String, String)>,
+) -> Response {
+    let (_, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    let owner = match ActorOwner::from_verified_context(&user) {
+        Ok(owner) => owner,
+        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    result_response(state.runtime.await_run_registration(&owner, &workspace, &team, &attempt).await)
 }
 
 async fn execution(

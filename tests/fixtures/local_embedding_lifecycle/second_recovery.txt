@@ -1,0 +1,2 @@
+The rebuilt primary resumes service after the second recovery while the durable
+knowledge base retains documents indexed across every lifecycle generation.

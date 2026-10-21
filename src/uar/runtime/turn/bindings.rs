@@ -140,19 +140,29 @@ impl std::fmt::Debug for RunDelegationBindings {
 /// cannot keep the delegation lifetime open after root completion or unwind.
 pub(crate) struct RunDelegationLifetime(pub(crate) Option<Arc<RunDelegationBindings>>);
 
+impl RunDelegationLifetime {
+    /// Cancel borrowers and await the run-scoped MCP owner's acknowledged
+    /// close. The retained producer calls this after its kernel future settles;
+    /// a dropped reply can therefore never turn cleanup into a detached task.
+    pub(crate) async fn release(mut self) -> anyhow::Result<()> {
+        let Some(bindings) = self.0.take() else {
+            return Ok(());
+        };
+        bindings.cancellation.cancel();
+        if let Some(runtime) = bindings.run_scoped_mcp.clone() {
+            runtime.shutdown().await?;
+        }
+        Ok(())
+    }
+}
+
 impl Drop for RunDelegationLifetime {
     fn drop(&mut self) {
+        // This is only the synchronous cancellation request for an unwind path.
+        // The owned producer performs the awaited release above and records any
+        // incomplete MCP closure in its terminal cleanup result.
         if let Some(bindings) = &self.0 {
             bindings.cancellation.cancel();
-            if let Some(runtime) = bindings.run_scoped_mcp.clone()
-                && let Ok(handle) = tokio::runtime::Handle::try_current()
-            {
-                handle.spawn(async move {
-                    if let Err(error) = runtime.shutdown().await {
-                        tracing::warn!(%error, "Run-scoped MCP cleanup failed");
-                    }
-                });
-            }
         }
     }
 }

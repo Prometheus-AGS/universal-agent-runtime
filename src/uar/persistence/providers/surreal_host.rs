@@ -1,5 +1,8 @@
 //! Trusted embedded-host composition. Not an HTTP-configurable durability assertion.
-use super::{DurableStoreEligibility, SurrealDbProvider, Any, Surreal};
+use super::{
+    DurableStoreEligibility, PersistenceOwnership, SurrealDbProvider, SurrealEndpoint, Any,
+    Surreal,
+};
 use anyhow::Result;
 
 #[derive(Debug, Clone, Copy)]
@@ -10,11 +13,22 @@ impl SurrealDbProvider {
     /// The caller owns its lifecycle; this never reconnects, changes its selection,
     /// or substitutes another storage engine for existing user data.
     pub async fn from_existing_client(db: Surreal<Any>, backend: HostSurrealBackend) -> Result<Self> {
-        migrate(&db).await?;
-        Ok(Self { db, durable_instances: true,
+        if let Err(error) = migrate(&db).await {
+            // This clone owns a UAR session only. Dropping it releases that
+            // session registration without closing the host's engine.
+            drop(db);
+            return Err(error);
+        }
+        Ok(Self {
+            db,
+            endpoint: SurrealEndpoint::HostBorrowed,
+            ownership: PersistenceOwnership::BorrowedHost,
+            durable_instances: true,
             durable_store_eligibility: DurableStoreEligibility::LocalDurable,
             catalog_storage_backend: match backend { HostSurrealBackend::RocksDb => "rocksdb", HostSurrealBackend::SurrealKv => "surrealkv" },
-            remote_requires_durability_attestation: false })
+            remote_requires_durability_attestation: false,
+            session_changes: tokio::sync::watch::channel(0_u64).0,
+        })
     }
 }
 pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {

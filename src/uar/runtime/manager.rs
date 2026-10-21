@@ -37,7 +37,7 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use tokio::sync::{Mutex, RwLock, broadcast, oneshot};
+use tokio::sync::{Mutex, Notify, RwLock, broadcast, oneshot, watch};
 use tokio_util::sync::CancellationToken;
 use tracing::Instrument;
 use tracing::instrument;
@@ -171,7 +171,17 @@ impl EventHistory {
 /// upsert is queued after every event already published for that run.
 #[derive(Clone, Debug)]
 struct RunHistoryWriter {
-    sender: tokio::sync::mpsc::UnboundedSender<RunHistoryWrite>,
+    inner: Arc<RunHistoryWriterInner>,
+}
+
+#[derive(Debug)]
+struct RunHistoryWriterInner {
+    // Closing this sender under the same lock used by producers establishes the
+    // queue's admission boundary. A successful send is therefore always
+    // drained before `shutdown` returns.
+    sender: std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<RunHistoryWrite>>>,
+    scope: crate::uar::runtime::lifecycle::ResourceScope,
+    failures: Arc<std::sync::Mutex<Vec<String>>>,
 }
 
 #[derive(Debug)]
@@ -188,7 +198,14 @@ impl RunHistoryWriter {
             .clone()
             .filter(|layer| layer.supports_durable_run_history())?;
         let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
-        tokio::spawn(async move {
+        let failures = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let task_failures = Arc::clone(&failures);
+        let scope = crate::uar::runtime::lifecycle::ResourceScope::standalone(
+            "run-history-writer",
+            "run-manager",
+        );
+        let task_scope = scope.clone();
+        if let Err(error) = task_scope.spawn("run-history-writer", async move {
             while let Some(write) = receiver.recv().await {
                 let result = match &write {
                     RunHistoryWrite::Record(record) => {
@@ -202,10 +219,26 @@ impl RunHistoryWriter {
                 // still serves the in-process history for this boot.
                 if let Err(error) = result {
                     tracing::warn!(?error, "durable run history write failed");
+                    task_failures
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push(format!("{error:#}"));
                 }
             }
-        });
-        Some(Self { sender })
+            Ok(())
+        }) {
+            failures
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push(format!("history writer could not start: {error}"));
+        }
+        Some(Self {
+            inner: Arc::new(RunHistoryWriterInner {
+                sender: std::sync::Mutex::new(Some(sender)),
+                scope,
+                failures,
+            }),
+        })
     }
 
     fn write_record(
@@ -223,7 +256,7 @@ impl RunHistoryWriter {
             run: serialized,
             revision: 1,
         };
-        let _ = self.sender.send(RunHistoryWrite::Record(record));
+        self.send(RunHistoryWrite::Record(record));
     }
 
     fn write_events(&self, run_id: &str, events: Vec<StreamEvent>) {
@@ -232,13 +265,65 @@ impl RunHistoryWriter {
                 tracing::warn!("durable run history event serialization failed");
                 continue;
             };
-            let _ = self.sender.send(RunHistoryWrite::Event(
+            self.send(RunHistoryWrite::Event(
                 crate::uar::persistence::run_history::RunHistoryEvent {
                     run_id: run_id.to_owned(),
                     event_id: event.id,
                     event: serialized,
                 },
             ));
+        }
+    }
+
+    fn send(&self, write: RunHistoryWrite) {
+        let sender = self
+            .inner
+            .sender
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Some(sender) = sender.as_ref() else {
+            tracing::warn!("durable run history writer is closed");
+            return;
+        };
+        if sender.send(write).is_err() {
+            self.inner
+                .failures
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push("history writer task ended before queue drain".into());
+        }
+    }
+
+    /// Close writer admission, drain every accepted write, and join the
+    /// writer while its persistence dependency remains usable.
+    async fn shutdown(&self) -> anyhow::Result<()> {
+        self.inner
+            .sender
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        let report = self.inner.scope.close().await;
+        if !report.released {
+            self.inner
+                .failures
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .extend(report.failures);
+        }
+        let failures = std::mem::take(
+            &mut *self
+                .inner
+                .failures
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        );
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "durable run history drain failed: {}",
+                failures.join("; ")
+            ))
         }
     }
 }
@@ -358,6 +443,7 @@ struct RunEventEmitter {
     secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
     admission_projection: Arc<Mutex<crate::uar::runtime::turn::host::AdmissionProjection>>,
     run_history: Option<RunHistoryWriter>,
+    retention_work: Arc<Notify>,
 }
 
 impl RunEventEmitter {
@@ -382,6 +468,7 @@ impl RunEventEmitter {
         {
             state.terminal_at.get_or_insert_with(Instant::now);
             terminal_record = Some((state.run.clone(), state.verified_owner.clone()));
+            self.retention_work.notify_one();
         }
         let event =
             super::a2ui_output::enforce_output_ceiling(event, self.presentations.as_deref());
@@ -603,6 +690,10 @@ pub struct RunManager {
     /// Restart-durable public run history write-through; `None` when no
     /// configured store supports it (behavior stays process-local there).
     run_history: Option<RunHistoryWriter>,
+    /// Trusted-host task scope for background work started by this manager.
+    /// It is attached before serving; standalone construction remains valid
+    /// without a host scope for embedding compatibility.
+    lifecycle_scope: crate::uar::runtime::lifecycle::ResourceScope,
     /// Skill service for coordinated skill management
     skill_service: Option<Arc<SkillService>>,
     /// Configuration for the Hermes skill auto-creation/evolution post-run hook.
@@ -643,6 +734,15 @@ pub struct RunManager {
     /// `start_run` and removed when the run reaches a terminal state, so finished
     /// runs do not accumulate. `cancel_run` cancels the token found here.
     run_cancellations: Arc<RwLock<HashMap<String, CancellationToken>>>,
+    /// Retained registration generation for lifecycle commands that arrive
+    /// before a run has installed its cancellation capability.
+    run_admission_generation: Arc<watch::Sender<u64>>,
+    /// Explicit lifecycle activity wakes the one-shot retention owner.
+    retention_work: Arc<Notify>,
+    /// Monotonic durable-work generation. Persistence and realtime adapters
+    /// advance it only after a committed change; observers subscribe before
+    /// their authoritative snapshot to avoid a poll/snapshot race.
+    committed_work_generation: Arc<watch::Sender<u64>>,
     /// Shutdown waits for admission/assembly before joining every producer.
     checkpoint_assemblies: Arc<RwLock<()>>,
     checkpoint_producers: Arc<Mutex<HashMap<String, Arc<Mutex<CheckpointProducer>>>>>,
@@ -672,11 +772,6 @@ pub struct RunManager {
     /// cheap no-op warning check).
     cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker,
     resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
-    /// Bounds the persistence operations performed while admitting a run
-    /// (`resilience.admission_timeout_ms`). A hanging store surfaces as an
-    /// availability error instead of stalling admission until the HTTP
-    /// request timeout.
-    admission_timeout: std::time::Duration,
     /// Optional runtime settings source for the Global policy scope
     /// (`run_policy.global`). Built from `persistence` at construction when
     /// persistence is present. When `None`, policy resolution falls back to the
@@ -892,14 +987,13 @@ async fn await_approval(
     }
 }
 
-/// RAII guard tied to the lifetime of an SSE subscription.
+/// RAII guard tied to one SSE subscription attachment.
 ///
-/// When dropped (the SSE client disconnects and its stream is torn down), it
-/// schedules a check after a short grace period: if the run then has no
-/// remaining subscribers, it is cancelled. The grace period absorbs reconnect
-/// races (a client resuming via history replay re-subscribes within the
-/// window), and the no-subscriber check enforces last-subscriber-drop semantics
-/// so a run watched by multiple clients survives any single disconnect.
+/// A broadcast receiver count cannot prove which authenticated attachment
+/// disappeared or whether a replay is already being attached. Dropping this
+/// guard therefore records a retention transition only. A trusted host must
+/// issue an explicit, owner-scoped cancellation command when its attachment
+/// lifecycle establishes that the run itself is abandoned.
 #[derive(Debug)]
 pub struct RunDisconnectGuard {
     manager: Arc<RunManager>,
@@ -907,9 +1001,6 @@ pub struct RunDisconnectGuard {
 }
 
 impl RunDisconnectGuard {
-    /// Grace period before deciding a disconnected run is abandoned.
-    const GRACE: Duration = Duration::from_millis(250);
-
     #[must_use]
     pub fn new(manager: Arc<RunManager>, run_id: String) -> Self {
         Self { manager, run_id }
@@ -918,20 +1009,9 @@ impl RunDisconnectGuard {
 
 impl Drop for RunDisconnectGuard {
     fn drop(&mut self) {
-        let manager = Arc::clone(&self.manager);
-        let run_id = std::mem::take(&mut self.run_id);
-        if run_id.is_empty() {
-            return;
+        if !self.run_id.is_empty() {
+            self.manager.notify_retention_work();
         }
-        tokio::spawn(async move {
-            tokio::time::sleep(RunDisconnectGuard::GRACE).await;
-            if manager.cancel_run_if_no_subscribers(&run_id).await {
-                tracing::info!(
-                    run_id = %run_id,
-                    "Run cancelled: last SSE subscriber disconnected"
-                );
-            }
-        });
     }
 }
 
@@ -1031,13 +1111,14 @@ impl RunManager {
             governance_policy_revision,
             host.binding(),
         );
-        let runtime = ToolAdmissionRuntime::new(
+        let runtime = ToolAdmissionRuntime::new_in_scope(
             context,
             host,
             self.persistence.clone(),
             self.root_cancellation.child_token(),
             self.governance_engine.clone(),
             self.governance_gate.clone(),
+            self.lifecycle_scope.clone(),
         )?;
         let prepared = runtime.prepare(
             uuid::Uuid::new_v4().to_string(),
@@ -1158,6 +1239,14 @@ impl RunManager {
         );
         let approvals = ApprovalBroker::new(persistence.clone(), tool_runtime_epoch.clone());
         let run_history = RunHistoryWriter::start(&persistence);
+        let (run_admission_generation, _) = watch::channel(0);
+        let (committed_work_generation, _) = watch::channel(0);
+        let retention_work = Arc::new(Notify::new());
+        let lifecycle_scope = crate::uar::runtime::lifecycle::ResourceScope::standalone(
+            "run-manager",
+            "embedded-run-manager",
+        );
+        let root_cancellation = lifecycle_scope.cancellation_token();
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -1184,6 +1273,7 @@ impl RunManager {
             world_state_clock: Arc::new(crate::uar::runtime::world_state::sections::SystemClock),
             persistence,
             run_history,
+            lifecycle_scope,
             settings_manager,
             skill_service: None,
             skill_evolution_config: SkillEvolutionConfig::default(),
@@ -1200,8 +1290,11 @@ impl RunManager {
             primary_driver: None,
             destination_preparations: None,
             approvals,
-            root_cancellation: CancellationToken::new(),
+            root_cancellation,
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
+            run_admission_generation: Arc::new(run_admission_generation),
+            retention_work,
+            committed_work_generation: Arc::new(committed_work_generation),
             checkpoint_assemblies: Arc::new(RwLock::new(())),
             checkpoint_producers: Arc::new(Mutex::new(HashMap::new())),
             checkpoint_effect_roots: Arc::new(RwLock::new(BTreeSet::new())),
@@ -1215,7 +1308,6 @@ impl RunManager {
             failover_config: crate::config::FailoverConfig::default(),
             cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker::new(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
-            admission_timeout: std::time::Duration::from_millis(10_000),
             a2a_peers: Arc::new(crate::uar::api::a2a::peer::TrustedA2APeers::default()),
             run_retention: RunsConfig::default(),
             session_retention: SessionsConfig::default(),
@@ -1234,20 +1326,128 @@ impl RunManager {
     }
 
     /// Start the one retention owner for run replay state and conversation sessions.
+    ///
+    /// It wakes on a retained terminal/detach/activity signal or the earliest
+    /// actual expiry. The expiry sleep models business retention time; it never
+    /// certifies that work or shutdown has completed.
     pub(crate) fn spawn_retention_sweeper(self: &Arc<Self>, shutdown: CancellationToken) {
         let manager = Arc::clone(self);
-        let interval = Duration::from_secs(manager.run_retention.sweep_interval_secs.max(1));
-        tokio::spawn(async move {
-            let mut ticker = tokio::time::interval(interval);
-            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-            ticker.tick().await;
+        let work = Arc::clone(&manager.retention_work);
+        let scope = manager.lifecycle_scope.clone();
+        let scope_cancellation = scope.cancellation_token();
+        let mut session_activity = manager.sessions.subscribe_activity();
+        let mut persisted_session_activity = manager
+            .persistence
+            .as_ref()
+            .and_then(|persistence| persistence.subscribe_persisted_session_changes());
+        if let Err(error) = scope.spawn("run-retention", async move {
             loop {
-                tokio::select! {
-                    _ = shutdown.cancelled() => break,
-                    _ = ticker.tick() => manager.sweep_retained_state().await,
+                manager.sweep_retained_state().await;
+                match manager.next_retention_due().await {
+                    Some(due) => tokio::select! {
+                        _ = shutdown.cancelled() => break,
+                        _ = scope_cancellation.cancelled() => break,
+                        _ = work.notified() => {},
+                        changed = session_activity.changed() => {
+                            if changed.is_err() {
+                                break;
+                            }
+                        },
+                        changed = async {
+                            match &mut persisted_session_activity {
+                                Some(activity) => activity.changed().await,
+                                None => std::future::pending().await,
+                            }
+                        } => {
+                            if changed.is_err() { break; }
+                        },
+                        _ = tokio::time::sleep_until(due) => {},
+                    },
+                    None => tokio::select! {
+                        _ = shutdown.cancelled() => break,
+                        _ = scope_cancellation.cancelled() => break,
+                        _ = work.notified() => {},
+                        changed = session_activity.changed() => {
+                            if changed.is_err() {
+                                break;
+                            }
+                        },
+                        changed = async {
+                            match &mut persisted_session_activity {
+                                Some(activity) => activity.changed().await,
+                                None => std::future::pending().await,
+                            }
+                        } => {
+                            if changed.is_err() { break; }
+                        },
+                    },
                 }
             }
-        });
+            Ok(())
+        }) {
+            tracing::warn!(%error, "Run retention owner was rejected during lifecycle shutdown");
+        }
+    }
+
+    async fn next_retention_due(&self) -> Option<tokio::time::Instant> {
+        let retention = Duration::from_secs(self.run_retention.retention_after_terminal_secs);
+        let runs = self.active_runs.read().await;
+        let run_due = runs.values()
+            .filter_map(|state| {
+                let terminal = state.terminal_at?;
+                let detached = state.last_detached_at?;
+                let has_live_descendant = state
+                    .delegation
+                    .as_ref()
+                    .is_some_and(|delegation| delegation.upgrade().is_some());
+                let deadline = tokio::time::Instant::from_std(terminal.max(detached) + retention);
+                // The loop has already made one authoritative sweep for an
+                // expired record. Do not reschedule unchanged overdue state
+                // at `Instant::now()`: a failed cleanup must wait for a
+                // committed-work or activity event rather than poll.
+                (!has_live_descendant && deadline > tokio::time::Instant::now())
+                    .then_some(deadline)
+            })
+            .min();
+        drop(runs);
+        let idle_timeout = (self.session_retention.idle_timeout_secs > 0)
+            .then(|| Duration::from_secs(self.session_retention.idle_timeout_secs));
+        let protected = self.active_runs.read().await.values()
+            .filter(|state| !matches!(state.run.status, RunStatus::Done | RunStatus::Error | RunStatus::Cancelled))
+            .filter_map(|state| state.run.conversation_id.clone().map(|session_id| {
+                (state.dialogue.0.owner_id().to_owned(), session_id)
+            }))
+            .collect::<HashSet<_>>();
+        let session_due = self.sessions.next_idle_expiry(idle_timeout, &protected);
+        let persisted_due = if let (Some(ttl_secs), Some(persistence)) = (
+            self.session_retention.persisted_ttl_secs.filter(|ttl| *ttl > 0),
+            self.persistence.as_ref(),
+        ) {
+            match persistence
+                .next_persisted_session_expiry(chrono::Duration::seconds(
+                    i64::try_from(ttl_secs).unwrap_or(i64::MAX),
+                ))
+                .await
+            {
+                Ok(Some(deadline)) => deadline
+                    .signed_duration_since(chrono::Utc::now())
+                    .to_std()
+                    .ok()
+                    .map(|duration| tokio::time::Instant::now() + duration),
+                Ok(None) => None,
+                Err(error) => {
+                    tracing::warn!(%error, "failed to read persisted session expiry schedule");
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        [run_due, session_due, persisted_due].into_iter().flatten().min()
+    }
+
+    fn notify_retention_work(&self) {
+        self.retention_work.notify_one();
     }
 
     async fn sweep_retained_state(&self) {
@@ -1565,7 +1765,7 @@ impl RunManager {
         self
     }
 
-    async fn resolved_harness_config(&self, deadline: tokio::time::Instant) -> crate::config::HarnessConfig {
+    async fn resolved_harness_config(&self) -> crate::config::HarnessConfig {
         let mut config = self.harness_config.clone();
         if let Some(settings) = &self.settings_manager {
             let reads = async {
@@ -1579,11 +1779,7 @@ impl RunManager {
                     config.skill_reattachment = budget;
                 }
             };
-            if tokio::time::timeout_at(deadline, reads).await.is_err() {
-                // Settings read tolerance is deliberate (defaults apply); only
-                // the unbounded wait is removed.
-                tracing::warn!("harness settings unavailable at run admission; using configured defaults");
-            }
+            reads.await;
         }
         config
     }
@@ -1867,9 +2063,10 @@ impl RunManager {
         self
     }
 
-    /// Bound the persistence operations performed while admitting a run.
-    pub fn with_admission_timeout(mut self, timeout: std::time::Duration) -> Self {
-        self.admission_timeout = timeout.max(std::time::Duration::from_millis(500));
+    /// Compatibility configuration retained for callers from before lifecycle
+    /// admission was explicit. Store availability and scope cancellation now
+    /// determine admission outcomes, not elapsed time.
+    pub fn with_admission_timeout(self, _timeout: std::time::Duration) -> Self {
         self
     }
 
@@ -1943,6 +2140,51 @@ impl RunManager {
     pub fn with_native_skills(mut self, registry: Arc<NativeSkillRegistry>) -> Self {
         self.native_skills = registry;
         self
+    }
+
+    /// Attach the trusted-host resource scope before background runtime work
+    /// begins. The scope owns completion accounting; it does not grant kernel
+    /// mutation authority.
+    #[must_use]
+    pub fn attach_lifecycle(
+        mut self,
+        scope: crate::uar::runtime::lifecycle::ResourceScope,
+    ) -> Self {
+        // Every run derives from the scope cancellation capability. Closing a
+        // host scope therefore reaches producer roots before it waits for their
+        // acknowledged completion.
+        self.root_cancellation = scope.cancellation_token();
+        self.lifecycle_scope = scope;
+        self
+    }
+
+    #[must_use]
+    pub fn lifecycle_scope(&self) -> crate::uar::runtime::lifecycle::ResourceScope {
+        self.lifecycle_scope.clone()
+    }
+
+    /// Close manager-owned background admission and retain the resulting task
+    /// report. The host calls this after run producers settle and before its
+    /// persistence finalizer.
+    pub async fn shutdown_lifecycle(
+        &self,
+    ) -> crate::uar::runtime::lifecycle::CloseReport {
+        self.root_cancellation.cancel();
+        self.lifecycle_scope.close().await
+    }
+
+    /// Close durable run-history admission and join its writer before the
+    /// trusted host releases persistence.
+    ///
+    /// # Errors
+    /// Returns retained durable write failures instead of claiming a drained
+    /// history queue.
+    pub async fn shutdown_run_history(&self) -> anyhow::Result<()> {
+        if let Some(writer) = &self.run_history {
+            writer.shutdown().await
+        } else {
+            Ok(())
+        }
     }
 
     /// Bind an isolation backend resolved by the trusted embedding/server host.
@@ -2207,6 +2449,40 @@ impl RunManager {
         true
     }
 
+    /// Subscribe before inspecting an admitted attempt's local run binding.
+    pub(crate) fn subscribe_run_registrations(&self) -> watch::Receiver<u64> {
+        self.run_admission_generation.subscribe()
+    }
+
+    /// Wait for an already-admitted instance attempt to install its run
+    /// cancellation capability, without inferring completion from elapsed
+    /// time. Scope cancellation is the only local escape from an unresolved
+    /// host admission outcome.
+    pub async fn cancel_run_when_registered(
+        &self,
+        user_id: &str,
+        run_id: &str,
+        cancellation: CancellationToken,
+    ) -> bool {
+        let mut registrations = self.run_admission_generation.subscribe();
+        loop {
+            if cancellation.is_cancelled() {
+                return false;
+            }
+            if self.cancel_run_for_user(user_id, run_id).await {
+                return true;
+            }
+            tokio::select! {
+                _ = cancellation.cancelled() => return false,
+                changed = registrations.changed() => {
+                    if changed.is_err() {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
     /// Host grant installation invalidates only runs pinned to an older grant revision.
     pub(crate) async fn invalidate_representation_grant(
         &self,
@@ -2357,6 +2633,21 @@ impl RunManager {
     #[must_use]
     pub fn root_cancellation_token(&self) -> CancellationToken {
         self.root_cancellation.clone()
+    }
+
+    /// Publish a committed persistence or realtime transition to lifecycle
+    /// observers. This is a wakeup only: consumers reread their authoritative
+    /// durable row and do not infer the mutation from the generation value.
+    pub fn notify_committed_work(&self) {
+        let next = (*self.committed_work_generation.borrow()).saturating_add(1);
+        self.committed_work_generation.send_replace(next);
+    }
+
+    /// Subscribe before an authoritative durable snapshot. The retained
+    /// generation closes the event/snapshot race and replaces polling.
+    #[must_use]
+    pub fn subscribe_committed_work(&self) -> watch::Receiver<u64> {
+        self.committed_work_generation.subscribe()
     }
 
     /// Build the runtime resource universe and the persisted conversation scope
@@ -2954,28 +3245,7 @@ impl RunManager {
                     .await
             }
         };
-        // Backstop: bound admission as a whole so an unbounded persistence
-        // read cannot stall the HTTP request until the middleware timeout.
-        // Admission performs its store reads before the run task is spawned,
-        // so a dropped admission future leaves no partial write and no leaked
-        // task; the terminal failure is recorded so stream subscribers observe
-        // an availability error instead of silence.
-        let backstop = self.admission_timeout.saturating_mul(2);
-        match tokio::time::timeout(backstop, admission).await {
-            Ok(run_id) => run_id,
-            Err(_) => {
-                tracing::error!(%run_id, "run admission exceeded the configured admission timeout (persistence unavailable)");
-                self.record_host_admission_failure(
-                    &request,
-                    &run_id,
-                    "persistence_unavailable",
-                    "Run admission exceeded the configured admission timeout; persistence unavailable",
-                )
-                .await;
-                self.run_cancellations.write().await.remove(&run_id);
-                run_id
-            }
-        }
+        admission.await
     }
 
     /// Execute an ordinary agent only after its persisted private binding has
@@ -3231,6 +3501,7 @@ impl RunManager {
                 secret_scrubber: request.host_secret_scrubber.clone(),
                 admission_projection: Default::default(),
                 run_history: self.run_history.clone(),
+                retention_work: Arc::clone(&self.retention_work),
             }
         };
         emitter
@@ -3478,10 +3749,6 @@ impl RunManager {
             guard = self.checkpoint_assemblies.read() => guard,
         };
         if self.root_cancellation.is_cancelled() { return run_id; }
-        // All admission-time store reads below share this deadline so a
-        // hanging backend consumes the configured admission budget exactly
-        // once, rather than once per read.
-        let admission_deadline = tokio::time::Instant::now() + self.admission_timeout;
         let recovered_approval = if request.checkpoint_resume.is_some() {
             let permit = self.checkpoint_resume_admitted.lock().await.remove(&run_id);
             if permit.as_ref().is_none_or(|permit| !permit.accepts(&request, &run_id, &self.tool_runtime_epoch)) {
@@ -3507,7 +3774,7 @@ impl RunManager {
         let plan = crate::uar::runtime::turn::TurnAssemblyPlan::for_request(&request);
         let harness_config = match &inherited {
             Some(bindings) => bindings.harness.clone(),
-            None => self.resolved_harness_config(admission_deadline).await,
+            None => self.resolved_harness_config().await,
         };
         let crate::uar::runtime::turn::RunExecutionRequest {
             mut artifact,
@@ -3590,6 +3857,7 @@ impl RunManager {
             secret_scrubber: host_secret_scrubber,
             admission_projection: Default::default(),
             run_history: self.run_history.clone(),
+            retention_work: Arc::clone(&self.retention_work),
         };
         let completion_guard = crate::uar::runtime::thread::execution::RunCompletionGuard::new(
             emitter.completion.clone(),
@@ -3787,16 +4055,11 @@ impl RunManager {
             .as_ref()
             .map_or(artifact, |bindings| bindings.policy.artifact().clone());
         // Capture committed settings once for this turn, including team members.
-        let (turn_resilience_policy, _) = match tokio::time::timeout_at(
-            admission_deadline,
-            crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
+        let (turn_resilience_policy, _) = match crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
                 &self.resilience_policy,
                 self.settings_manager.as_deref(),
                 &artifact.id,
-            ),
-        )
-        .await
-        {
+            ).await {
             Ok(resolved) => resolved,
             Err(_) => {
                 // Unavailable settings fall back to the configured policy
@@ -4137,21 +4400,18 @@ impl RunManager {
             Some(bindings) => (bindings.presentations.narrow(&effective_policy), Vec::new()),
             None => {
                 let fallback_negotiation = presentation_negotiation.clone();
-                match tokio::time::timeout_at(
-                    admission_deadline,
-                    super::presentations::RunPresentationSnapshot::capture(
+                match super::presentations::RunPresentationSnapshot::capture(
                         self.persistence.as_ref(),
                         verified_owner.clone(),
                         &effective_policy,
                         presentation_negotiation,
-                    ),
-                )
-                .await
+                    ).await
                 {
                     Ok(captured) => captured,
                     Err(_) => {
-                        // The catalog read hung; admit without persisted
-                        // presentations rather than stalling the request.
+                        // An authoritative catalog failure admits the explicit
+                        // no-presentation fallback; elapsed time never chooses
+                        // that outcome.
                         tracing::warn!("presentation catalog unavailable at run admission; continuing without presentations");
                         super::presentations::RunPresentationSnapshot::capture(
                             None,
@@ -4414,6 +4674,9 @@ impl RunManager {
             let mut cancels = self.run_cancellations.write().await;
             cancels.insert(run_id.clone(), run_cancellation.clone());
         }
+        self.run_admission_generation.send_modify(|generation| {
+            *generation = generation.saturating_add(1);
+        });
         if run_cancellation.is_cancelled() {
             if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                 state.run.status = RunStatus::Cancelled;
@@ -4570,13 +4833,14 @@ impl RunManager {
             )
         })()
         .and_then(|context| {
-            crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new(
+            crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new_in_scope(
                 context,
                 Arc::clone(&host_tool_admission),
                 self.persistence.clone(),
                 run_cancellation.clone(),
                 self.governance_engine.clone(),
                 self.governance_gate.clone(),
+                self.lifecycle_scope.clone(),
             )
         }) {
             Ok(admission) => {
@@ -4986,6 +5250,7 @@ impl RunManager {
                 Arc::clone(store), owner, run_id.clone(), session.id().to_owned(),
                 collaboration_binding.as_ref().map(|binding| binding.workspace_id.clone()),
                 run_cancellation.clone(),
+                self.lifecycle_scope.clone(),
             ) {
                 Ok(channel) => { mcp_resources = mcp_resources.take().map(|resources| resources.with_interactions(channel)); }
                 Err(error) => {
@@ -5803,6 +6068,9 @@ impl RunManager {
         if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
             state.delegation = delegation_lifetime.0.as_ref().map(Arc::downgrade);
         }
+        // The execution keeps the captured bindings alive, while the retained
+        // producer owns the awaited release of its run-scoped MCP resources.
+        let delegation_bindings = delegation_lifetime.0.clone();
         let mut graph_controls = inherited
             .as_ref()
             .map(|bindings| Arc::clone(&bindings.controls));
@@ -6906,6 +7174,7 @@ impl RunManager {
         let execution_session = retained_session.clone();
         let skill_service_for_evolution = self.skill_service.clone();
         let skill_evolution_cfg = self.skill_evolution_config.clone();
+        let lifecycle_for_evolution = self.lifecycle_scope.clone();
         let cost_budget_for_run = self.cost_budget.clone();
         // `execute_agent_id` is moved into the `RunStart` event below; keep an
         // independent clone for the budget-scope keys used at run end (CH-06).
@@ -7064,7 +7333,7 @@ impl RunManager {
         // to Tokio so a real native-tool turn does not build that state on the
         // caller's task stack.
         let execution = Box::pin(async move {
-            let _delegation_lifetime = delegation_lifetime;
+            let _delegation_bindings = delegation_bindings;
             let _sandbox_lease = sandbox_lease;
             let _terminal_lease = terminal_lease;
             if let Some(binding) = representation_binding {
@@ -8092,23 +8361,20 @@ impl RunManager {
                 if let Some(svc) = skill_service_for_evolution {
                     let run_id_ev = evolution_run_id.clone();
                     let cfg_ev = skill_evolution_cfg.clone();
-                    tokio::spawn(async move {
+                    let evolution = async move {
                         tracing::info!(
                             run_id = %run_id_ev,
                             tool_calls = tool_call_count,
                             "Triggering skill evolution reflection"
                         );
-                        if let Err(e) = svc
+                        svc
                             .evolve_from_run(&run_id_ev, tool_call_count, &cfg_ev)
                             .await
-                        {
-                            tracing::warn!(
-                                run_id = %run_id_ev,
-                                error = %e,
-                                "Skill evolution reflection failed"
-                            );
-                        }
-                    });
+                            .map_err(anyhow::Error::from)
+                    };
+                    if let Err(error) = lifecycle_for_evolution.spawn("skill-evolution", evolution) {
+                        tracing::warn!(%error, "Skill evolution was rejected during lifecycle shutdown");
+                    }
                 } else {
                     tracing::debug!(
                         run_id = %evolution_run_id,
@@ -8124,13 +8390,15 @@ impl RunManager {
             None => None,
         };
         let mut checkpoint_producers = self.checkpoint_producers.lock().await;
-        let producer = tokio::spawn(Box::pin(
-            async move {
+        let producer_scope = self.lifecycle_scope.clone();
+        let producer = tokio::spawn(async move {
+            producer_scope.run_in_scope(Box::pin(async move {
                 use futures::FutureExt;
                 // Keep completion outside the fallible execution body so a
                 // caught unwind cannot release its actor before sandbox drain.
                 let completion_guard = completion_guard;
                 let result = std::panic::AssertUnwindSafe(execution).catch_unwind().await;
+                let delegation_cleanup = delegation_lifetime.release().await;
                 // Child graphs can have no actor root of their own. Retain
                 // their host independently of the fallible execution body.
                 let graph_cleanup = match &finalizer_graph_tools {
@@ -8147,8 +8415,9 @@ impl RunManager {
                     None => Ok(()),
                 };
                 let cleanup = finalizer_sandboxes.finish_run(&finalizer_scope).await;
-                if result.is_err() || graph_cleanup.is_err() || terminal_cleanup.is_err()
-                    || thread_cleanup.is_err() || mcp_cleanup.is_err() || cleanup.is_err() {
+                if result.is_err() || delegation_cleanup.is_err() || graph_cleanup.is_err()
+                    || terminal_cleanup.is_err() || thread_cleanup.is_err() || mcp_cleanup.is_err()
+                    || cleanup.is_err() {
                     finalizer_checkpoint_cleanup.store(true, std::sync::atomic::Ordering::Release);
                 }
                 if result.is_err() {
@@ -8169,6 +8438,13 @@ impl RunManager {
                         state.run.status = RunStatus::Error;
                     }
                     tracing::error!(run_id = %finalizer_run_id, %error, "Run retains unconfirmed sandbox operations");
+                }
+                if let Err(error) = delegation_cleanup {
+                    completion_guard.fail("run_scoped_mcp_cleanup_unconfirmed", "Run-scoped MCP cleanup remains unconfirmed");
+                    if let Some(state) = finalizer_runs.write().await.get_mut(&finalizer_run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    tracing::error!(run_id = %finalizer_run_id, %error, "Run retains unconfirmed run-scoped MCP resources");
                 }
                 if let Err(error) = graph_cleanup {
                     completion_guard.fail("thread_cleanup_unconfirmed", "Graph history settlement remains unconfirmed");
@@ -8198,8 +8474,8 @@ impl RunManager {
                     }
                     tracing::error!(run_id = %finalizer_run_id, %error, "Run retains unconfirmed terminal processes");
                 }
-            }.instrument(run_span),
-        ));
+            }.instrument(run_span))).await
+        });
         if let Some(slot) = actor_producer_slot.as_mut() {
             slot.handle = Some(producer);
             if let Some(root) = checkpoint_actor_root {
@@ -8214,7 +8490,12 @@ impl RunManager {
 
     pub async fn subscribe(&self, run_id: &str) -> Option<broadcast::Receiver<StreamEvent>> {
         let runs = self.active_runs.read().await;
-        runs.get(run_id).map(|state| state.sender.subscribe())
+        let receiver = runs.get(run_id).map(|state| state.sender.subscribe());
+        drop(runs);
+        if receiver.is_some() {
+            self.notify_retention_work();
+        }
+        receiver
     }
 
     /// Number of active subscribers to a run's event stream (SSE clients).

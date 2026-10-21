@@ -87,7 +87,13 @@ impl MemoryService {
         Ok((policy.enabled && policy.host_capture_enabled).then(|| CaptureAdmission { owner: owned.owner_key(), epoch: policy.consent_epoch }))
     }
     pub async fn auto_capture_admitted(&self, messages: Vec<serde_json::Value>, user: &UserContext, agent: Option<&str>, session: Option<&str>, admission: &CaptureAdmission) -> Result<Vec<Memory>> {
-        self.for_context(user)?.capture_admitted(messages, agent, session, admission).await
+        let memories = self.for_context(user)?
+            .capture_admitted(messages, agent, session, admission)
+            .await?;
+        if !memories.is_empty() {
+            self.notify_committed_memory_change();
+        }
+        Ok(memories)
     }
 
     pub async fn memory_control_status(&self, user: &UserContext, id: &str) -> Result<Option<serde_json::Value>> {
@@ -123,8 +129,13 @@ impl MemoryService {
     pub(crate) async fn delete_controlled_memory(&self, id: &str, owner: &str) -> Result<()> { backend::delete(self, id, owner).await }
     /// Resume expiry and content/index/history cleanup. Tombstones are retained.
     pub async fn purge_memories(&self, administrator: &UserContext) -> Result<u64> {
+        let _operation = self.admit_operation("purge_memories")?;
         self.admin_storage(administrator)?;
-        backend::purge(self).await
+        let count = backend::purge(self).await?;
+        if count > 0 {
+            self.notify_committed_memory_change();
+        }
+        Ok(count)
     }
     pub(crate) async fn summarize_controlled_memories(&self, owner: &str, sources: Vec<Memory>, summary: Memory) -> Result<Option<Memory>> {
         backend::summarize(self, owner, sources, summary).await

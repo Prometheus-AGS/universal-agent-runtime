@@ -1,0 +1,2 @@
+Refuse this equal-dimension but different-model local embedding space and keep
+the prior owner-scoped knowledge base binding and documents intact.

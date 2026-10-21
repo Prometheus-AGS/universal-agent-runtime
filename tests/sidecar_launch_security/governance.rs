@@ -1,6 +1,7 @@
 //! Governance stays mandatory for a token-authenticated sidecar
 //! (tasks 2.16–2.18).
 
+use crate::sidecar_process::ObservedRequest as _;
 use std::time::Duration;
 
 use serde_json::{Value, json};
@@ -18,7 +19,7 @@ async fn get_json(base_url: &str, bearer: Option<&str>, path: &str) -> Value {
     if let Some(token) = bearer {
         request = request.bearer_auth(token);
     }
-    let response = request.send().await.expect("GET request");
+    let response = request.observed_send().await.expect("GET request");
     let status = response.status();
     let body = response.text().await.expect("GET body");
     assert!(status.is_success(), "GET {path}: {status} {body}");
@@ -31,7 +32,10 @@ async fn persisted_governance(base_url: &str, bearer: Option<&str>) -> Value {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_governance_required_with_host_token_reason() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_governance_required_with_host_token_reason"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let base = sidecar.base_url();
     let status = get_json(
         &base,
@@ -51,10 +55,16 @@ async fn sidecar_governance_required_with_host_token_reason() {
         persisted_governance(&base, Some(&sidecar.token)).await,
         json!(true)
     );
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_normalizes_persisted_governance_off_and_refuses_off() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_normalizes_persisted_governance_off_and_refuses_off"), async {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let workspace = Workspace::new();
     let options = ConfigOptions::new(&stub.base_url);
@@ -68,17 +78,21 @@ async fn sidecar_normalizes_persisted_governance_off_and_refuses_off() {
         port,
     )
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let seeded = persisted_governance(&standalone.base_url(), None).await;
     assert_eq!(seeded, json!(false), "standalone seed");
     let status = standalone.stop_standalone().await;
     assert!(status.success(), "standalone exit: {status}");
 
     let token = random_token();
-    let sidecar = launch_sidecar(
+    let mut sidecar = launch_sidecar(
         &workspace,
         &LaunchOptions::new(config, "sidecar").with_token(&token),
     )
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let base = sidecar.base_url();
     assert_eq!(persisted_governance(&base, Some(&token)).await, json!(true));
 
@@ -86,7 +100,7 @@ async fn sidecar_normalizes_persisted_governance_off_and_refuses_off() {
         .put(format!("{base}/api/uar/settings/governance"))
         .bearer_auth(&token)
         .json(&json!({ "data": { "enabled": false } }))
-        .send()
+        .observed_send()
         .await
         .expect("save governance off");
     let body: Value = response.json().await.expect("governance save JSON");
@@ -101,6 +115,15 @@ async fn sidecar_normalizes_persisted_governance_off_and_refuses_off() {
         .unwrap_or_else(|| panic!("no governance.enabled result: {body}"));
     assert_eq!(result["status"], "validation_rejected", "{body}");
     assert_eq!(persisted_governance(&base, Some(&token)).await, json!(true));
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(standalone.stop_standalone())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 const DENIED_INPUT: &str = "call the denied tool";
@@ -120,6 +143,7 @@ async fn run_denied(sidecar: &Sidecar, policy: Value, input: &str) -> String {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_run_policy_denied_tool_is_not_executed() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_run_policy_denied_tool_is_not_executed"), async {
     let outputs = tempfile::tempdir().expect("probe output dir");
     let listed_output = outputs.path().join("listed.jsonl");
     let deny_all_output = outputs.path().join("deny-all.jsonl");
@@ -132,7 +156,9 @@ async fn sidecar_run_policy_denied_tool_is_not_executed() {
         DENY_ALL_INPUT,
         &probe_command(&deny_all_output),
     );
-    let sidecar = boot_sidecar(fixtures, "", |options| options).await;
+    let mut sidecar = boot_sidecar(fixtures, "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     // `tools.deny` removes the tool from the run's visible tool set.
     let listed = run_denied(
@@ -157,11 +183,17 @@ async fn sidecar_run_policy_denied_tool_is_not_executed() {
         deny_all.contains("event: agui.tool_call.denied"),
         "denial not recorded\n{deny_all}"
     );
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 /// Regression guard: standalone loopback without JWT stays operator-optional.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn standalone_loopback_without_jwt_remains_governance_optional() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::standalone_loopback_without_jwt_remains_governance_optional"), async {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let workspace = Workspace::new();
     let options = ConfigOptions::new(&stub.base_url);
@@ -185,4 +217,5 @@ async fn standalone_loopback_without_jwt_remains_governance_optional() {
     );
     let exit = standalone.stop_standalone().await;
     assert!(exit.success(), "standalone exit: {exit}");
+    }).await;
 }

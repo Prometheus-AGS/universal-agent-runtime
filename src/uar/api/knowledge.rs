@@ -6,12 +6,14 @@ use axum::{
     Json, Router,
     extract::{Extension, Multipart, Path, Query, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Response, sse::{Event, Sse}},
     routing::{get, post},
 };
+use futures::Stream;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionState, IngestionStoreError};
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 
 use crate::uar::{
     domain::knowledge::{
@@ -24,6 +26,7 @@ use crate::uar::{
         ingestion_worker::IngestionWorkerPool,
         pipeline::{RagRetrievalPipeline, RetrievalBackend},
     },
+    realtime::{EntityTopic, LiveAction, RealtimeBus},
     runtime::matching::VectorMatcher,
     security::claims::UserContext,
 };
@@ -38,6 +41,9 @@ pub struct KnowledgeApiState {
     pub persistence: Arc<dyn PersistenceLayer>,
     pub vector_matcher: Arc<VectorMatcher>,
     pub ingestion_pool: Option<Arc<IngestionWorkerPool>>,
+    /// Private ingestion wakeups. The API treats these as invalidations only
+    /// and always re-reads through the caller's persistence authorization.
+    pub realtime_bus: Option<Arc<dyn RealtimeBus>>,
 }
 
 // =============================================================================
@@ -173,6 +179,10 @@ pub fn build_router() -> Router<Arc<KnowledgeApiState>> {
             get(get_document).delete(delete_document),
         )
         .route("/{id}/documents/{doc_id}/ingestion", get(get_ingestion_job))
+        .route(
+            "/{id}/documents/{doc_id}/ingestion/events",
+            get(stream_ingestion_job),
+        )
         .route("/{id}/documents/{doc_id}/retry", post(retry_ingestion))
         // Search
         .route("/{id}/search", post(search_knowledge_base))
@@ -522,10 +532,156 @@ async fn get_ingestion_job(
     Path((kb_id, doc_id)): Path<(String, String)>,
 ) -> Result<Json<IngestionJob>, (StatusCode, String)> {
     let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
-    let job = state.persistence.get_ingestion_job(&owner_key, &doc_id).await
-        .map_err(ingestion_api_error)?.filter(|job| job.kb_id == kb_id)
-        .ok_or((StatusCode::NOT_FOUND, "Durable ingestion job not found; legacy documents may require reupload".to_string()))?;
+    let job = authorized_ingestion_job(&state, &owner_key, &kb_id, &doc_id).await?;
     Ok(Json(job))
+}
+
+/// Owner-authorized ingestion status stream. The private lifecycle topic is a
+/// wakeup only: its event data can describe another principal's row, so every
+/// emitted status comes from the existing owner-scoped durable read instead.
+async fn stream_ingestion_job(
+    State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
+    Path((kb_id, doc_id)): Path<(String, String)>,
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>> + Send>, (StatusCode, String)> {
+    let owner_key = user
+        .session_owner_key()
+        .map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
+    let bus = state.realtime_bus.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "private ingestion status notifications are unavailable".to_string(),
+    ))?;
+    let topic = EntityTopic::PrincipalIngestionJobs;
+    // Subscribe before the durable snapshot. The broadcast receiver buffers a
+    // commit that races that snapshot, and the stream reconciles it below.
+    let receiver = bus.subscribe(topic).ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "private ingestion status topic is unavailable".to_string(),
+    ))?;
+    let initial_topic_state = bus.topic_state(topic);
+    let initial = authorized_ingestion_job(&state, &owner_key, &kb_id, &doc_id).await?;
+    let bus = Arc::clone(bus);
+
+    let stream = async_stream::stream! {
+        let mut receiver = receiver;
+        let mut initial = Some(initial);
+        let mut initial_gap = initial_topic_state.filter(|topic_state| !topic_state.ready);
+        loop {
+            if let Some(job) = initial.take() {
+                yield Ok::<Event, Infallible>(ingestion_status_event(
+                    &job,
+                    "initial",
+                    bus.topic_state(topic),
+                ));
+                if let Some(topic_state) = initial_gap.take() {
+                    yield Ok(ingestion_gap_event(
+                        "subscription_unavailable",
+                        Some(topic_state),
+                    ));
+                }
+                continue;
+            }
+
+            let mut gap_reason = match receiver.recv().await {
+                Ok(event) if matches!(event.action, LiveAction::Reset) => {
+                    Some("lifecycle_transition")
+                }
+                Ok(_) => None,
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                    Some("consumer_lagged")
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                    yield Ok(ingestion_gap_event(
+                        "subscription_closed",
+                        bus.topic_state(topic),
+                    ));
+                    break;
+                }
+            };
+            let topic_state = bus.topic_state(topic);
+            if gap_reason.is_none() && topic_state.as_ref().is_some_and(|state| !state.ready) {
+                gap_reason = Some("subscription_unavailable");
+            }
+            if let Some(reason) = gap_reason {
+                yield Ok(ingestion_gap_event(reason, topic_state.clone()));
+            }
+
+            // Never serialize the bus event. PostgreSQL intentionally emits
+            // an opaque wildcard ID for lifecycle work, and Surreal live rows
+            // may belong to another principal. This durable read reapplies the
+            // exact owner and KB checks for this request.
+            match authorized_ingestion_job(&state, &owner_key, &kb_id, &doc_id).await {
+                Ok(job) => yield Ok(ingestion_status_event(
+                    &job,
+                    if gap_reason.is_some() { "reconciled" } else { "committed_change" },
+                    topic_state,
+                )),
+                Err((StatusCode::NOT_FOUND, _)) => {
+                    yield Ok(ingestion_gap_event(
+                        "ingestion_job_unavailable",
+                        topic_state,
+                    ));
+                    break;
+                }
+                Err(_) => {
+                    yield Ok(ingestion_gap_event(
+                        "authoritative_status_unavailable",
+                        topic_state,
+                    ));
+                    break;
+                }
+            }
+        }
+    };
+
+    Ok(Sse::new(stream))
+}
+
+async fn authorized_ingestion_job(
+    state: &KnowledgeApiState,
+    owner_key: &str,
+    kb_id: &str,
+    doc_id: &str,
+) -> Result<IngestionJob, (StatusCode, String)> {
+    state
+        .persistence
+        .get_ingestion_job(owner_key, doc_id)
+        .await
+        .map_err(ingestion_api_error)?
+        .filter(|job| job.kb_id == kb_id)
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "Durable ingestion job not found; legacy documents may require reupload".to_string(),
+        ))
+}
+
+fn ingestion_status_event(
+    job: &IngestionJob,
+    delivery: &str,
+    topic_state: Option<crate::uar::realtime::lifecycle::TopicState>,
+) -> Event {
+    Event::default().event("ingestion.status").data(json!({
+        "version": 1,
+        "topic": EntityTopic::PrincipalIngestionJobs.as_str(),
+        "delivery": delivery,
+        "generation": topic_state.as_ref().map(|state| state.generation),
+        "ready": topic_state.as_ref().map(|state| state.ready),
+        "job": job,
+    }).to_string())
+}
+
+fn ingestion_gap_event(
+    reason: &str,
+    topic_state: Option<crate::uar::realtime::lifecycle::TopicState>,
+) -> Event {
+    Event::default().event("ingestion.gap").data(json!({
+        "version": 1,
+        "topic": EntityTopic::PrincipalIngestionJobs.as_str(),
+        "reason": reason,
+        "requires_snapshot": true,
+        "generation": topic_state.as_ref().map(|state| state.generation),
+        "ready": topic_state.as_ref().map(|state| state.ready),
+    }).to_string())
 }
 
 /// Retry committed bytes after an operator has corrected the processing configuration.

@@ -1,12 +1,12 @@
 //! Host ownership of stdio children, including cancelled initialization attempts.
 
 use std::io;
+use futures::FutureExt as _;
 use std::process::Stdio;
 use std::sync::{
     Arc, RwLock,
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
 };
-use std::time::Duration;
 
 use rmcp::{
     RoleClient,
@@ -17,9 +17,18 @@ use tokio::process::{Child, ChildStdin, ChildStdout, Command};
 use tokio::sync::watch;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
-// Match the existing stdio graceful-exit budget. A child that ignores EOF must
-// be killed and reaped rather than outliving a cancelled readiness attempt.
-const STDIO_EXIT_TIMEOUT: Duration = Duration::from_secs(3);
+/// Child termination is observed independently from the signal requesting it.
+#[derive(Clone, Copy, Debug)]
+struct ChildExit {
+    forced: bool,
+    exit_code: Option<i32>,
+}
+
+/// Local resource release report; forced termination is never labelled graceful.
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct StdioShutdownReport {
+    pub(crate) forced_processes: usize,
+}
 
 #[derive(Default)]
 struct SupervisorState {
@@ -27,6 +36,7 @@ struct SupervisorState {
     cancellation: CancellationToken,
     tasks: TaskTracker,
     cleanup_failed: Arc<AtomicBool>,
+    forced_processes: Arc<AtomicUsize>,
 }
 
 impl Drop for SupervisorState {
@@ -73,15 +83,24 @@ impl StdioProcessSupervisor {
         let cancellation = self.0.cancellation.child_token();
         let process_cancellation = cancellation.clone();
         let cleanup_failed = Arc::clone(&self.0.cleanup_failed);
+        let forced_processes = Arc::clone(&self.0.forced_processes);
+        let process_id = child.id();
         let (completion, finished) = watch::channel(None);
         // The tracker owns the join barrier, including attempts that never
         // produce a RunningService. No process task retains the supervisor Arc.
         self.0.tasks.spawn(async move {
-            let success = reap_child(child, process_cancellation).await.is_ok();
-            if !success {
-                cleanup_failed.store(true, Ordering::Release);
+            let outcome = std::panic::AssertUnwindSafe(reap_child(child, process_cancellation))
+                .catch_unwind().await.unwrap_or_else(|_| Err(io::Error::other("MCP child owner panicked; reaping unconfirmed")));
+            match &outcome {
+                Ok(exit) => {
+                    if exit.forced { forced_processes.fetch_add(1, Ordering::AcqRel); }
+                    tracing::info!(name: "mcp.process.reaped", process_id,
+                        outcome = if exit.forced { "forced" } else { "exited" },
+                        exit_code = exit.exit_code, "Owned MCP child termination observed");
+                }
+                Err(_) => { cleanup_failed.store(true, Ordering::Release); }
             }
-            completion.send_replace(Some(success));
+            completion.send_replace(Some(outcome.map_err(|error| error.kind())));
         });
         Ok(SupervisedStdioTransport {
             inner: AsyncRwTransport::new(stdout, stdin),
@@ -90,7 +109,21 @@ impl StdioProcessSupervisor {
         })
     }
 
+    /// Explicit force-stop request. The shutdown barrier still awaits real exit.
+    pub(crate) fn request_force_stop(&self) {
+        self.0.cancellation.cancel();
+    }
+
     pub(crate) async fn shutdown(&self) -> io::Result<()> {
+        let report = self.shutdown_report().await?;
+        if report.forced_processes != 0 {
+            tracing::warn!(forced_processes = report.forced_processes,
+                "MCP scope released after explicit forced termination");
+        }
+        Ok(())
+    }
+
+    pub(crate) async fn shutdown_report(&self) -> io::Result<StdioShutdownReport> {
         {
             let mut closed = self
                 .0
@@ -98,7 +131,7 @@ impl StdioProcessSupervisor {
                 .write()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             *closed = true;
-            self.0.cancellation.cancel();
+            self.request_force_stop();
             self.0.tasks.close();
         }
         // Cancel-safe: another shutdown call can resume this same join barrier.
@@ -106,29 +139,56 @@ impl StdioProcessSupervisor {
         if self.0.cleanup_failed.load(Ordering::Acquire) {
             return Err(io::Error::other("MCP child cleanup failed"));
         }
-        Ok(())
+        Ok(StdioShutdownReport { forced_processes: self.0.forced_processes.load(Ordering::Acquire) })
     }
 }
 
-async fn reap_child(mut child: Child, cancellation: CancellationToken) -> io::Result<()> {
+async fn reap_child(mut child: Child, cancellation: CancellationToken) -> io::Result<ChildExit> {
     tokio::select! {
-        result = child.wait() => {
-            if result.is_ok() { return Ok(()); }
-            // A wait error is not proof that the process exited.
-            return child.kill().await;
+        // Prefer already-observed exit over a simultaneous cancellation request.
+        biased;
+        result = child.wait() => result.map(|status| ChildExit { forced: false, exit_code: status.code() }),
+        _ = cancellation.cancelled() => {
+            // Cancellation is an explicit force-stop request. Sending a signal
+            // does not release ownership; successful wait is the acknowledgement.
+            let forced = child.start_kill().is_ok();
+            if !forced {
+                tracing::warn!("MCP force-stop signal failed; retaining ownership until child exit");
+            }
+            let status = child.wait().await?;
+            Ok(ChildExit { forced, exit_code: status.code() })
         }
-        _ = cancellation.cancelled() => {}
-    }
-    match tokio::time::timeout(STDIO_EXIT_TIMEOUT, child.wait()).await {
-        Ok(Ok(_)) => Ok(()),
-        _ => child.kill().await,
     }
 }
 
 pub(crate) struct SupervisedStdioTransport {
     inner: AsyncRwTransport<RoleClient, ChildStdout, ChildStdin>,
     cancellation: CancellationToken,
-    finished: watch::Receiver<Option<bool>>,
+    finished: watch::Receiver<Option<Result<ChildExit, io::ErrorKind>>>,
+}
+
+pub(crate) struct StdioProcessReceipt {
+    finished: watch::Receiver<Option<Result<ChildExit, io::ErrorKind>>>,
+}
+
+impl StdioProcessReceipt {
+    pub(crate) async fn wait(mut self) -> io::Result<StdioShutdownReport> {
+        loop {
+            let finished = *self.finished.borrow_and_update();
+            match finished {
+                Some(Ok(exit)) => return Ok(StdioShutdownReport { forced_processes: usize::from(exit.forced) }),
+                Some(Err(kind)) => return Err(io::Error::new(kind, "MCP child cleanup failed")),
+                None => {}
+            }
+            self.finished.changed().await.map_err(|_| io::Error::other("MCP child reaper stopped without an acknowledgement"))?;
+        }
+    }
+}
+
+impl SupervisedStdioTransport {
+    pub(crate) fn receipt(&self) -> StdioProcessReceipt {
+        StdioProcessReceipt { finished: self.finished.clone() }
+    }
 }
 
 impl Drop for SupervisedStdioTransport {
@@ -152,15 +212,17 @@ impl Transport<RoleClient> for SupervisedStdioTransport {
     }
 
     async fn close(&mut self) -> io::Result<()> {
-        // Start the exit deadline before closing the writer: a blocked write
-        // must not prevent the host from killing a child that stopped reading.
-        self.cancellation.cancel();
+        // EOF is the graceful request. Keep the process owner alive until its
+        // wait operation acknowledges actual termination. Cancellation of this
+        // waiter cannot cancel the owner task or discard the retained outcome.
         let close_result = self.inner.close().await;
         loop {
             let finished = *self.finished.borrow_and_update();
             match finished {
-                Some(true) => return close_result,
-                Some(false) => return Err(io::Error::other("MCP child cleanup failed")),
+                Some(Ok(exit)) if exit.forced => return Err(io::Error::new(
+                    io::ErrorKind::Interrupted, "MCP child was forcibly terminated and reaped")),
+                Some(Ok(_)) => return close_result,
+                Some(Err(kind)) => return Err(io::Error::new(kind, "MCP child cleanup failed")),
                 None => {}
             }
             self.finished

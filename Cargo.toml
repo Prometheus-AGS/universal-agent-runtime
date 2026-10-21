@@ -4,6 +4,12 @@ exclude = [
   "crates/prometheus-skill-system",
   ".claude/worktrees",
   "vendor/crates/esaxx-rs",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-3.3.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0",
   "vendor/git/prometheus-parking-lot-rs",
   "vendor/git/surreal-memory-server",
   "vendor/git/surreal-memory-server/crates/surreal-memory",
@@ -21,12 +27,24 @@ resolver = "2"
 # /MD. The local source copy applies upstream PR #19's one-line runtime fix so
 # the production sidecar links against one MSVC runtime.
 esaxx-rs = { path = "vendor/crates/esaxx-rs" }
+# The pinned SDK has no awaited datastore-close contract. These source patches
+# retain the 3.3.0 base and expose host-owned admission and completion evidence.
+surrealdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0" }
+surrealdb-engine-api = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0" }
+surrealdb-engine-local = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0" }
+surrealdb-core = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0" }
+surrealdb-kvs-surrealkv = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-3.3.0" }
+surrealdb-kvs-rocksdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0" }
 
 [workspace.dependencies]
 jsonwebtoken = { version = "=11.0.0", default-features = false, features = ["rust_crypto"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-service = "=0.8.1"
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Threading", "Win32_System_Console", "Win32_Security"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.186"
 
 [package]
 name = "universal-agent-runtime"
@@ -238,6 +256,7 @@ host-persistence = []
 server = [
   "dep:axum",
   "dep:axum-extra",
+  "dep:http-body-util",
   "dep:tower",
   "dep:tower-http",
   "dep:utoipa",
@@ -317,6 +336,7 @@ bauar-native-admission-gate = []
 [dependencies]
 # Web framework
 axum = { version = "0.8", optional = true, features = ["multipart"] }
+http-body-util = { version = "=0.1.3", optional = true }
 tower-http = { version = "0.7.0", optional = true, features = [
   "fs",
   "cors",
@@ -327,7 +347,7 @@ tower-http = { version = "0.7.0", optional = true, features = [
 
 # Async runtime
 tokio = { version = "1", features = ["full", "process"] }
-tokio-util = { version = "0.7", features = ["codec", "io"] }
+tokio-util = { version = "0.7", features = ["codec", "io", "rt"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

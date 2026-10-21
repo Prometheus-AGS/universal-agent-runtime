@@ -5933,3 +5933,213 @@ R20 regraded PARTIAL by operator. Pump case-insensitive widening reverted. Tally
 - 2026-10-20T10:02:50Z: c6 66ccf1dc built (class reporting). R22 rerun: liability resolvable via catalog-alias loopback fixture; parent admission with child pending fails with non-conflict SurrealDB error (other_storage_error). Product finding: no production path attaches budget_contract → token budgets unusable on custom providers (trust decision for operator). Call ledger extended to 2532.
 - 2026-10-20T10:14:54Z: CHECKPOINT (operator 10:05:34Z). c7 48d30523: R21 PASS(A)* 16/16 (the one full row). R3 not graded (required test target blocked by another writer's untracked tools/seed-minimax-verification bin, E0382). R22 not graded (C1/AGG1 FAIL). v4 9/6/5/2/0/1 NOT READY. Quiescent; reboot safe for this lane (kills pre-existing 1906-1908; scratch receipts in macOS temp may be cleaned).
 - 2026-10-20T10:20:44Z: pre-reboot copy of uar-r14 scratch -> receipts/scratch-uar-r14-2026-10-20/ (5.5G, untracked; excluded .credkey and 1907's live data/ store; 1636/1636 files, 0 checksum diffs, binary hashes match).
+- 2026-10-20T12:00:19Z: R3 PASS(A)* on c7 48d30523 (native builtin_db_registration 3/3 after 2-line E0382 clone repair in tools/seed-minimax-verification; harness P0/A1-A3 from c7 run). Repairs 2 vs allowance 1 (operator-directed second). v4 unchanged NOT READY.
+- 2026-10-20T12:39:03Z: R9 on c7 PARTIAL: AG-UI route 10/10+5/5 PASS, agui_golden PASS, live uar.agui/1 (agui_spec) profile stream violates ordering/sequence contract (RUN_STARTED not first, sequence repeats, runtime.* frames). Blocker: operator ruling on R9 scope vs profile repair. dotenv gotcha recorded.
+- 2026-10-20T12:47:31Z: operator scope ruling: R9 PASS(A)* on c7 (client route); F-AGUI-PROFILE-1 and F-SIDECAR-DOTENV-1 kept open as findings.
+- 2026-10-20T12:51:21Z: R10 PASS(A)* on c7 (agui_golden + 2 boots, 10/10 R10 assertions each; state 0->1 action, callback delivered, negatives 422). c7: R3/R9/R10/R21 PASS(A)*.
+- 2026-10-20T12:58:06Z: conflict matrix recorded; launching R11 lane (uar-trust-tools, inherited model) on c7 ports 1918/18918/50158, workdir /Volumes/T7/uar-qual-work/r11-c7.
+- 2026-10-20T12:59:20Z: R7 PASS(A)* on c7 (anthropic_driver_tests 12/12 + 2 harness boots). R11 lane running in parallel (isolated).
+- 2026-10-20T13:04:30Z: R5 on c7 PARTIAL: linkage PASS (KB 201, PATCH/GET 200 shows memory.kb link); empty-KB search 500 (no embedding backend in fixture env; allowance 0, not rerun). Operator ruling requested on fixture-config rerun.
+- 2026-10-20T13:10:12Z: R7 regraded PARTIAL on c7 (and a38c3169/96e5b1f6): /v1/messages drops policy.agent_id (server.rs:4501-4507), no registered-agent binding. R6 PASS(A)* on c7: /v1/chat/completions agent_id binding + tool proven (registry-only marker in reply).
+- 2026-10-20T13:14:54Z: R5 PASS(A)* on c7 via one operator-authorized fixture-only retry (UAR_MODELS_DIR -> tracked local fastembed assets); empty-KB search 200 {"results":[]}; cap 0 overrun +1 recorded.
+- 2026-10-20T13:16:09Z: R11 PARTIAL on c7 (isolated uar-trust-tools lane): agents PASS; tool create absent (405/404); stored MCP create 409 by sidecar design, run-scoped MCP reachable (initialize/tools/list). Cumulative ~2230/2532.
+- 2026-10-20T13:18:04Z: R1 PASS(A)* on c7 from existing r7-c7 receipts (stored prompt verbatim in upstream body, 1 user turn, reply reflects, loopback/host token); RuntimeLease image fixture substituted by sidecar lane (flag).
+- 2026-10-20T13:19:22Z: call ledger extension #12 2532->2832 (cumulative ~2240).
+- 2026-10-20T13:21:27Z: operator priority: full passes; R7/R11 closure. Launched read-only diagnosis (R7 Explore/Sonnet, R11 Explore/Opus); identity harness running.
+- 2026-10-20T13:25:33Z: identity harness on c7 42/42 PASS: R4 PASS(A)*, R23 PASS(A)* on c7.
+- 2026-10-20T13:29:12Z: HANDOFF BOUNDARY Claude->OpenCode; packet OPENCODE-RESTART-PACKET-2026-10-20.md sha256 77e99271913764d92f4d6bf579039f06a890e08bb6e13b707ff05d497a2e64db; Claude quiescent.
+
+## 2026-10-20 — OpenCode resume: UAR 1.1.1 function-first qualification (Claude quiescent)
+
+- Harness: OpenCode, repo /Volumes/T7/Projects/prometheus/universal-agent-runtime, branch codex/uar-1-1-1-implementation, HEAD 98b50f6e882d758038410d21467fb5b5827460e8.
+- Restart packet sha256 verified: 77e99271913764d92f4d6bf579039f06a890e08bb6e13b707ff05d497a2e64db (OPENCODE-RESTART-PACKET-2026-10-20.md).
+- Models: lead = Qwen3.8 Max on alibaba-token-plan (live connectivity check QWEN_TOKEN_PLAN_OK; model absent from subagent catalog listing — noted, lead lane verified empirically). Grunt lanes = DeepSeek V4.1 Flash 1017, exact id alibaba-token-plan/deepseek-v4.1-flash-1017 confirmed active in models catalog. Connectivity check DEEPSEEK_TOKEN_PLAN_OK. No other providers; no fallback.
+- Ports 1915-1919/18915-18919/50155-50159 free-checked; 1906 BUSY (live, not touched); 1907/1908 not listening. /Volumes/T7/uar-qual-work/{id-c7,r5-c7,r5b-c7,r6-c7,r9-c7,r11-c7} present.
+- Operator direction (this session): full frozen-row passes first, R7 and R11 priority; routine in-scope fixes + focused verification autonomous under existing approval; security-boundary and contract-rule decisions reserved for Travis (R11 tools leg, R11 MCP bound-mode, F-SIDECAR-DOTENV-1, budget contract, F-AGUI-PROFILE-1, R1 substitution ruling). This direction is the gate instruction the packet §8 asked for.
+- Plan: lead (Qwen) is sole source/build owner — R7 fix per packet §5, one serialized build -> candidate c8, prove R7 on c8, regress R1/R6/R9/R10 (shared request path) + R3/R21 (shared build). Flash lanes (read-only, parallel): A harness-reuse inventory, B R7 edit-site recon, C R11 decision-packet citation verification. R11 stays PARTIAL pending Travis rulings; no auth widening. Append-only ledger; NOT READY until all rows full-pass.
+
+
+## 2026-10-20 — Codex deterministic lifecycle Execute work
+
+Active phase: `function-first-release-certification`, OpenSpec change
+`deterministic-lifecycle-management`. Waypoint source revision 3122 records
+137/153 implementation items; it has not been overridden by a source inventory.
+Team source writers cover runtime, state, trust/tools and console. An explicitly
+approved Boss launcher writer supplied the cross-project Windows integration.
+
+Authored supervisor/scoped access, endpoint/store ownership, SDK completion,
+event-driven consumers, migration outcomes, deterministic fixtures and launcher
+contracts. Resource inventory: `docs/operations/lifecycle-resource-inventory.md`.
+Writer handoffs are adjacent. Implementation remains in progress; constructor
+ownership, sandbox expiry, fixture event receipts and A2A peer compatibility are
+being completed. Source metadata/reads, authoring and supported team/KBD
+coordination were used. No test, build, Cargo, formatter, lint, typecheck,
+validator, compiler probe or independent review gate ran. Gate remains CLOSED.
+
+Primary memory recorded `uar-deterministic-lifecycle-implementation-2026-10-20`.
+The prior session's test receipts and approvals are historical; they do not open
+this phase's current verification gate.
+
+
+## Lifecycle implementation checkpoint — 2026-10-20T21:46:24.947209+00:00
+
+Waypoint 3124, 137/153; team revision 67. Verification CLOSED; no gate commands ran. Collected bounded writer handoffs; startup cancellation, ingestion event port, and release event-consumer integration remain in progress. Full record: docs/operations/lifecycle-implementation-checkpoint-2026-10-20.md.
+
+
+## Watcher-order correction in Execute — 2026-10-20T22:10:43.760000+00:00
+
+Task5.2 entrypoint source is authored; task5.3 records the operator-directed
+watcher-first barrier and remains in progress. Runtime writer owns graph,
+configuration/skill watcher and server wiring; root owns the generic external
+admission policy plus source inventory and metadata. Earlier saved inventory is
+stale until all new source is integrated. Verification remains CLOSED; no test,
+build, check, formatter, compiler, packaging or independent review command ran.
+The primary surreal-memory `add_observations` append returned `isError: true`;
+the update is retained here as the allowed append-only fallback. No memory
+success is claimed for that failed append. The preceding observations and
+compatibility decisions remain in source handoffs and the canonical ledger.
+
+
+## Watcher-first source handoff — 2026-10-20T22:19:44.675361+00:00
+
+Execute phase remains `function-first-release-certification`. Canonical waypoint
+3141, plan revision 67, aggregate change
+counter 138/153;
+team state revision 82. Tasks5.2 and5.3 record source completion,
+with entrypoint and watcher writer handoffs collected. The aggregate counter is
+not a count of individual lifecycle work packages.
+
+External HTTP/A2A admission closes first. Configuration and ingestion file
+watchers then stop and join before dependent work drains and databases close.
+Immutable configuration remains readable. Skill watcher construction holds an
+admitted lease and its guard closes the bounded receiver before native watcher
+destruction, releasing callbacks blocked on a full queue before native join.
+The server does not instantiate that optional skill watcher. The supervisor can
+attach acquired-prefix cleanup dependencies after startup cancellation closes
+intake, but never after resource finalization starts.
+
+Verification remains CLOSED. No test, build, formatter, lint, typecheck,
+compiler probe, policy validator, packaging, acceptance or review gate ran.
+Only source reads/searches, authorized source/documentation writing, saved-byte
+inventory authoring and supported KBD/team metadata commands were used. No
+review, compilation, physical release or historical root-cause result is claimed.
+No team writer remains active. Source handoffs and exact saved file identities
+are recorded in `docs/operations/lifecycle-implementation-inventory-2026-10-20`
+(`.md` and `.json`). The JSON is authored after the source/documentation update.
+
+Whole-phase preparation, independent review, local functional acceptance,
+reflection and publication remain pending. The frozen nested embedding blocker
+is not resolved. Earlier images, customer binaries and test receipts do not
+certify the new source. No gate opens without the operator's exact-command
+authorization. Primary memory append previously failed; this append-only
+Markdown record is the permitted fallback and does not claim server success.
+
+
+## Producer completion source handoff — 2026-10-20T23:03:28.122090+00:00
+
+Execute phase remains `function-first-release-certification`; verification is
+CLOSED. Canonical waypoint 3146, plan revision
+69, aggregate change counter
+138/153; team
+state revision 94. Lifecycle follow-up5.4 and all four producer
+team packets record source authoring complete. All current runtime, state,
+trust, Boss and model-source handoffs are collected. No writer remains active.
+The model lane changed documentation only: owned pull streams do not supply
+remote completion acknowledgement, and current durable accounting retains
+pending liability. Stronger per-attempt provenance is a documented separate
+limit, not a silently expanded implementation claim.
+
+Configuration and file watchers stop and join before downstream mutable
+resources. Blocking descendants, canceled database/native/MCP waiters, raw
+runtime task boundaries, native watcher readiness, index-builder removal,
+SDK Any/HTTP/gRPC transport ownership and explicit transport/subscription
+reconnect order have source coverage. Per-query gRPC closure joins its exact
+local delivery scope rather than awaiting an assumed terminal notification.
+The Boss consumes the correlated partial-reconnect error. Five deterministic
+ownership integration scenarios are authored but never executed.
+
+Current source evidence is in `docs/operations/lifecycle-producer-*-continuation.md`,
+`lifecycle-reconnect-continuation.md`, `lifecycle-grpc-continuation.md`,
+`lifecycle-model-stream-continuation.md`, and the two renewed lifecycle inventory
+artifacts. `lifecycle-unfinished-implementation.md` names remaining canonical
+tasks and evidence gaps. The JSON inventory is written after this append.
+
+Commands since the previous handoff were source reads/searches, dependency
+documentation retrieval, authorized source/docs writing, saved-byte inventory
+authoring and supported KBD/team metadata mutations. Metadata authoring scripts:
+`/tmp/uar-lifecycle-producer-register.py`,
+`/tmp/uar-lifecycle-producer-team-write.py`,
+`/tmp/uar-lifecycle-producer-complete.py`.
+No tests, lint, formatting, typecheck, Cargo, compiler probe, build, policy
+validator, Docker/preparation, packaging, acceptance or review gate ran. No
+verification violation is known. Documentation retrieval returned inaccessible
+versioned docs pages; no successful upstream runtime evidence is inferred.
+Primary memory append succeeded for the continuation summary before this
+boundary; this append also preserves local history.
+
+Whole-phase child4.1/4.2/4.3/5.1, parent6.2/7.1/7.2/7.3 and separate nested
+embedding frozen-provider constraints remain outstanding. Source implementation
+completion does not open execution. Any later implementation edit requires a
+new inventory and exact operator authorization before a gate. Historical 503
+response bodies and individual sidecar failures remain incompletely recorded.
+No historical root cause, compiled behavior, physical release or customer
+package result is claimed. No source was pushed, published or deployed.
+
+
+## Lifecycle terminal source-memory fallback — 2026-10-20T23:04:16.038706+00:00
+
+The final primary-memory observation append returned isError=true. The prior continuation summary append succeeded. This Markdown fallback records the current source boundary: lifecycle5.4 source-complete, waypoint3146/plan69, aggregate138/153; all writer handoffs collected; verification CLOSED and no verification executed. The exact unfinished preparation, review, acceptance, reflection, publication and nested embedding constraints remain in lifecycle-unfinished-implementation.md. No primary-memory success is claimed for the failed final append.
+
+
+## Full local embedding requirement retained — 2026-10-21T00:17:37.409884+00:00
+
+Operator selected full local-only live embedding failover and incompatible-space
+fixtures, immutable Boss payload binding and scoped source commit/push/PR with
+Docker image availability. Active Execute waypoint 3155, plan
+70. Verification remains CLOSED. New canonical tasks
+6.2,8.2,8.3,9.3 are in progress; the previous saved-source inventory is superseded.
+
+Runtime owns embeddings capability, embedding config and narrow server/settings
+wiring. State owns new real-model fixture source and three settings-state literal
+compatibility spans. The Boss-root worker owns immutable candidate provenance
+producer/consumer and waits for an actual UAR source commit before final pinning.
+Lead owns global DAG, shared manifests, spec/phase records and publication.
+Existing PR418 is draft and attached; it will be updated rather than duplicated.
+
+The production embedding design uses explicit host member retirement/recovery
+and generation control; no periodic probe or per-inference whole-model polling.
+Real local inference must establish candidate readiness. Incompatible fixtures
+must use actual distinct model assets, not renamed identical vectors or skipped
+asset prerequisites. Memory's separate embedding-provider contract is not
+certified by the RAG/KB fixture.
+
+New standalone Boss candidate construction exports exact committed root and
+gitlink objects and uses an isolated target. Dirty unrelated worktree files
+remain untouched and cannot become build inputs. Existing public/platform
+payloads are never relabeled. Candidate source pinning still awaits a real SHA.
+
+Only source reads/searches, metadata reads, authorized source/docs writing and
+supported KBD/team mutations were used. No tests/checks/builds/lint/format,
+compiler probes, policy validators, packaging, review gates or image workflow
+were run. The installed UAR Git pre-commit hook invokes prohibited checks;
+AGENTS forbids bypassing the policy validator. Lead will present that exact
+conflict after preparing the concrete source changes; no hook exception is
+assumed. Existing deployment-only workflow can publish SHA-tagged Docker images
+after a source push; this is delivery, not product acceptance.
+
+
+## Local embedding source handoffs — 2026-10-21T00:40:11.332118+00:00
+
+Execute waypoint3157, plan70; verification CLOSED.
+Runtime6.2 and fixture8.2 source handoffs are collected and canonical tasks
+record source completion only. Real local inference readiness, compatible pair,
+retained inference/controls, reusable backup, generation recovery, native
+cleanup and two-cycle/equal-dimension fixture source are integrated. No model
+weights downloaded and no inference/check/build/test/review executed. All six
+frozen embedding conditions are preserved, not certified by this new source.
+
+Boss candidate producer/consumer is authored; task8.3 still awaits a real UAR
+commit pin. Task9.3 publication awaits resolution of the installed Git hook
+conflict. Scoped source staging does not run hooks. No hooks are bypassed and
+no deployment workflow is dispatched. Exact later commands and current saved
+source inventory are documented. Existing unrelated dirty files remain.

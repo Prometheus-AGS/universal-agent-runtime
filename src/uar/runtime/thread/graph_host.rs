@@ -120,6 +120,7 @@ impl GraphRootSupervisor {
             .clone();
         let (state, _state_observer) = watch::channel(None);
         let owned_root = Arc::new(AsyncMutex::new(None));
+        let lifecycle_scope = manager.lifecycle_scope();
         let session = Arc::new(AsyncMutex::new(ActorThreadSession::new(
             owner,
             request.artifact.clone(),
@@ -149,28 +150,30 @@ impl GraphRootSupervisor {
             let worker_cancellation = cancellation.clone();
             let failure_request = request.clone();
             let handle = tokio::spawn(async move {
-                let outcome = std::panic::AssertUnwindSafe(async {
-                    execution_session
-                        .lock()
-                        .await
-                        .execute_request(request, execution_run_id.clone(), Some(prepared), artifacts)
-                        .await
-                        .map(|_| ())
-                })
-                .catch_unwind()
-                .await;
-                let result = match outcome {
-                    Ok(result) => result.map_err(|error| error.to_string()),
-                    Err(_) => Err("Graph root worker panicked".to_string()),
-                };
-                if let Err(error) = &result {
-                    worker_cancellation.cancel();
-                    tracing::error!(run_id = %execution_run_id, %error, "Graph root retains failed execution");
-                    manager
-                        .record_graph_root_failure(&failure_request, &execution_run_id)
-                        .await;
-                }
-                result
+                lifecycle_scope.run_in_scope(async move {
+                    let outcome = std::panic::AssertUnwindSafe(async {
+                        execution_session
+                            .lock()
+                            .await
+                            .execute_request(request, execution_run_id.clone(), Some(prepared), artifacts)
+                            .await
+                            .map(|_| ())
+                    })
+                    .catch_unwind()
+                    .await;
+                    let result = match outcome {
+                        Ok(result) => result.map_err(|error| error.to_string()),
+                        Err(_) => Err("Graph root worker panicked".to_string()),
+                    };
+                    if let Err(error) = &result {
+                        worker_cancellation.cancel();
+                        tracing::error!(run_id = %execution_run_id, %error, "Graph root retains failed execution");
+                        manager
+                            .record_graph_root_failure(&failure_request, &execution_run_id)
+                            .await;
+                    }
+                    result
+                }).await
             });
             // No await between launch and publication of its owned handle.
             let job = Arc::new(Job {

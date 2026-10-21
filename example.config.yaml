@@ -84,14 +84,19 @@ security:
 
 # Governed outbound A2A is disabled when this section has no trusted peers.
 # Each endpoint must also appear in the calling agent artifact's a2a.dependencies.
+# The authenticated peer card must advertise this exact A2A v1 JSON-RPC URL
+# and streaming capability. Legacy and unadvertised named-agent URLs are rejected
+# before dispatch; changing the URL must not silently change the intended agent.
 a2a:
   # Stable ID acknowledged by other UAR instances. Required when peers exist.
   instance_id: "uar-west"
   trusted_peers:
-    # Exact named-agent JSON-RPC endpoint; HTTPS is required off loopback.
+    # This UAR's global card advertises compiler-agent at /a2a/v1/compiler.
+    # Other agents need their own authoritative advertised interface.
+    # HTTPS is required off loopback.
     - instance_id: "uar-east"
-      agent_id: "general-purpose"
-      endpoint: "https://uar-east.example.com/a2a/agents/general-purpose"
+      agent_id: "compiler-agent"
+      endpoint: "https://uar-east.example.com/a2a/v1/compiler"
       # A target-issued JWT whose signed `uar_instance_id` claim is exactly
       # this instance_id ("uar-west"). Keep it out of committed production
       # config and set UAR_A2A__TRUSTED_PEERS__0__BEARER_TOKEN in the environment.

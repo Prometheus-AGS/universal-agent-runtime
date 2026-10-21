@@ -15,12 +15,12 @@ async fn initialize_backend(config: &crate::config::AppConfig) -> anyhow::Result
             #[cfg(feature = "surreal-backend")]
             {
                 use surrealdb::opt::auth::{Root, Namespace, Database};
-                let endpoint = if let Some(rest) = settings.database_url.strip_prefix("https://") { format!("wss://{rest}") }
-                    else if let Some(rest) = settings.database_url.strip_prefix("http://") { format!("ws://{rest}") } else { settings.database_url.clone() };
-                let db = surrealdb::engine::any::connect(&endpoint).await?;
+                let endpoint = crate::uar::persistence::providers::surreal::SurrealEndpoint::parse(&settings.database_url);
+                let db = surrealdb::engine::any::connect(endpoint.connection_string()).await?;
+                let result = async {
                 let namespace = settings.surreal_ns.as_deref().unwrap_or("uar");
                 let database = settings.surreal_db.as_deref().unwrap_or("uar");
-                if endpoint.starts_with("ws://") || endpoint.starts_with("wss://") {
+                if endpoint.is_remote() {
                     let username = settings.surreal_user.clone().unwrap_or_else(|| "root".to_owned());
                     let password = settings.surreal_pass.clone().unwrap_or_else(|| "root".to_owned());
                     match settings.surreal_auth_level.as_deref().unwrap_or("root") {
@@ -32,7 +32,14 @@ async fn initialize_backend(config: &crate::config::AppConfig) -> anyhow::Result
                 }
                 db.use_ns(namespace).use_db(database).await?;
                 db.query(include_str!("../../../../migrations/surrealdb/credential_revisions.surql")).await?.check()?;
-                return super::SurrealCredentialStore::new(db).initialize_revisions().await;
+                super::SurrealCredentialStore::new(db.clone()).initialize_revisions().await
+                }.await;
+                let closed = db.shutdown().await;
+                match (result, closed) {
+                    (Err(error), _) => return Err(error),
+                    (Ok(_), Err(error)) => return Err(error.into()),
+                    (Ok(summary), Ok(())) => return Ok(summary),
+                }
             }
             #[cfg(not(feature = "surreal-backend"))]
             anyhow::bail!("credential backend unavailable")

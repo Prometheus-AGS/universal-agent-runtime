@@ -23,16 +23,21 @@ pub struct McpInteractionChannel {
     cancellation: CancellationToken,
     pending: Mutex<HashMap<String, PendingAvailability>>,
     activity: tokio::sync::watch::Sender<usize>,
+    durable_changes: tokio::sync::watch::Sender<u64>,
+    scope: crate::uar::runtime::lifecycle::ResourceScope,
 }
 impl McpInteractionChannel {
     /// A host may install this only where authenticated interaction routes exist.
     /// Durable storage and a verified full principal are required capabilities.
     pub fn new(store: Arc<dyn PersistenceLayer>, owner: &ActorOwner, run_id: String,
-        session_id: String, workspace_id: Option<String>, cancellation: CancellationToken) -> anyhow::Result<Arc<Self>> {
+        session_id: String, workspace_id: Option<String>, cancellation: CancellationToken,
+        scope: crate::uar::runtime::lifecycle::ResourceScope) -> anyhow::Result<Arc<Self>> {
         anyhow::ensure!(store.supports_durable_mcp_elicitations(), "durable_elicitation_unsupported");
         let owner_key = owner.credential_principal().ok_or_else(||anyhow::anyhow!("verified_principal_required"))?.storage_key();
+        let (durable_changes, _) = tokio::sync::watch::channel(0);
         let channel = Arc::new(Self { id: uuid::Uuid::new_v4().to_string(), store, owner_key,
-            run_id, session_id, workspace_id, cancellation:cancellation.child_token(), pending: Mutex::new(HashMap::new()), activity: tokio::sync::watch::channel(0).0 });
+            run_id, session_id, workspace_id, cancellation:cancellation.child_token(), pending: Mutex::new(HashMap::new()), activity: tokio::sync::watch::channel(0).0,
+            durable_changes, scope });
         let mut channels = CHANNELS.get_or_init(Default::default).lock().map_err(|_|anyhow::anyhow!("interaction_channel_unavailable"))?;
         channels.retain(|_, channel| channel.strong_count() > 0);
         channels.insert(channel.id.clone(), Arc::downgrade(&channel));
@@ -40,6 +45,18 @@ impl McpInteractionChannel {
     }
     pub(crate) fn id(&self) -> &str { &self.id }
     pub(crate) fn close(&self) { self.cancellation.cancel(); }
+    pub(crate) fn lifecycle_scope(&self) -> crate::uar::runtime::lifecycle::ResourceScope { self.scope.clone() }
+
+    /// Wake interaction waiters after a committed durable elicitation change.
+    /// The generation carries no decision; waiters reread their own exact row.
+    pub(crate) fn notify_durable_change() {
+        let Some(channels) = CHANNELS.get() else { return; };
+        let Ok(channels) = channels.lock() else { return; };
+        for channel in channels.values().filter_map(Weak::upgrade) {
+            let next = (*channel.durable_changes.borrow()).saturating_add(1);
+            channel.durable_changes.send_replace(next);
+        }
+    }
     pub(crate) async fn settle_closed(&self) -> anyhow::Result<()> {
         self.close();
         let mut activity = self.activity.subscribe();
@@ -103,6 +120,7 @@ impl McpInteractionChannel {
         }
         let _pending = PendingRequest {channel:Arc::clone(&self),id:row.id.clone()};
         self.store.create_mcp_elicitation(&row).await?;
+        let mut durable_changes = self.durable_changes.subscribe();
         loop {
             let credential_valid = match &credential {
                 Some(lease) => lease.authorize_current(&row.server_name).await.is_ok(),
@@ -131,11 +149,23 @@ impl McpInteractionChannel {
                 }
                 continue;
             }
+            let expiry = row.expires_at
+                .signed_duration_since(Utc::now())
+                .to_std()
+                .unwrap_or_default();
             tokio::select! {
                 _ = self.cancellation.cancelled() => {},
                 _ = context.ct.cancelled() => {},
                 _ = abandoned.cancelled() => {},
-                _ = tokio::time::sleep(Duration::from_millis(100)) => {},
+                changed = durable_changes.changed() => {
+                    if changed.is_err() {
+                        return Err(anyhow::anyhow!("elicitation durable-change source closed"));
+                    }
+                },
+                // This is the actual persisted expiry due time. It requests a
+                // terminal cancellation transition; it never certifies any
+                // other resource's completion.
+                _ = tokio::time::sleep(expiry) => {},
             }
         }
     }
@@ -213,45 +243,51 @@ impl ClientHandler for RunMcpClient {
         let server = self.server.clone(); let connection = self.connection.clone();
         let credential = self.credential.clone();
         let binding = self.binding.clone();
-        // rmcp may drop the callback on disconnect. Its independently owned
-        // settlement task still commits the cancellation; process death leaves
-        // explicit pending history, never a response or replay authorization.
-        tokio::spawn(async move {
-            let result = channel.wait(server,connection,request,context,abandoned,credential,binding).await;
-            if result.is_err() { tracing::warn!("MCP elicitation settlement unconfirmed; durable pending state retained"); }
-            result
-        })
+        // rmcp may drop the callback on disconnect. The trusted run scope owns
+        // settlement, so dropping that callback cannot detach the durable
+        // cancellation attempt from host shutdown accounting.
+        let scope = channel.scope.clone();
+        let (result_sender, result_receiver) = tokio::sync::oneshot::channel();
+        let cancellation = scope.cancellation_token();
+        if scope.spawn("mcp-elicitation-settlement", async move {
+            let result = tokio::select! {
+                _ = cancellation.cancelled() => Ok(ElicitResult::new(ElicitationAction::Cancel)),
+                result = channel.wait(server,connection,request,context,abandoned,credential,binding) => result,
+            };
+            let _ = result_sender.send(result);
+            Ok(())
+        }).is_err() {
+            return Err(ErrorData::invalid_request("Run interaction channel is unavailable",None));
+        }
+        result_receiver
             .await.map_err(|_|ErrorData::internal_error("Elicitation settlement stopped",None))?
             .map_err(|_|ErrorData::internal_error("Elicitation persistence unavailable",None))
     }
 }
 
-/// Human input does not consume the ordinary tool execution budget. A call may
-/// spend at most ten additional minutes waiting, including repeated elicitations.
-/// No response, transport failure or elapsed budget causes a tool retry here.
-pub(crate) async fn interaction_timeout<F: std::future::Future>(channel: Option<&Arc<McpInteractionChannel>>,
-    budget: Duration, future: F) -> Result<F::Output, ()> {
-    let Some(channel) = channel else { return tokio::time::timeout(budget,future).await.map_err(|_|()); };
+/// Observe an explicit execution budget without owning the accepted operation.
+/// Expiry only asks the caller to cancel and join its selected connection. Human
+/// input pauses this budget; durable elicitation expiry has its own contract.
+pub(crate) async fn await_interaction_budget<F: std::future::Future>(channel: Option<&Arc<McpInteractionChannel>>,
+    budget: Duration, mut future: std::pin::Pin<&mut F>) -> Result<F::Output, ()> {
+    let Some(channel) = channel else { return tokio::time::timeout(budget, future.as_mut()).await.map_err(|_|()); };
     let mut activity = channel.activity.subscribe();
     let mut pending = *activity.borrow_and_update() > 0;
     let mut remaining = budget;
     let mut previous = tokio::time::Instant::now();
-    let deadline = previous + budget + Duration::from_secs(600);
-    tokio::pin!(future);
     loop {
         let now = tokio::time::Instant::now();
         if !pending { remaining = remaining.saturating_sub(now.duration_since(previous)); }
         previous = now;
-        let hard_remaining = deadline.saturating_duration_since(now);
-        let wait = if pending { hard_remaining } else { remaining.min(hard_remaining) };
         tokio::select! {
-            result = &mut future => return Ok(result),
-            _ = tokio::time::sleep(wait) => return Err(()),
+            result = future.as_mut() => return Ok(result),
+            _ = tokio::time::sleep(remaining), if !pending => return Err(()),
             changed = activity.changed() => {
+                if changed.is_err() { return Err(()); }
                 let now = tokio::time::Instant::now();
                 if !pending { remaining = remaining.saturating_sub(now.duration_since(previous)); }
                 previous = now;
-                pending = changed.is_ok() && *activity.borrow_and_update() > 0;
+                pending = *activity.borrow_and_update() > 0;
             }
         }
     }

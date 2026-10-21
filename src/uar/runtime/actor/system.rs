@@ -239,6 +239,13 @@ impl ActorCollaboration {
         self.manager.run_usage(run_id)
     }
 
+    /// Lifecycle access is limited to registering transport observations for a
+    /// run already admitted by the trusted host. It does not expose mutation
+    /// authority to an actor kernel.
+    pub(crate) fn run_manager(&self) -> &Arc<RunManager> {
+        &self.manager
+    }
+
     /// Create a new actor collaboration system.
     pub fn new(manager: Arc<RunManager>) -> Self {
         let persistence = manager.persistence.clone();

@@ -12,6 +12,8 @@ pub mod surreal_bus;
 #[cfg(feature = "postgres-backend")]
 pub mod postgres_bus;
 
+pub mod lifecycle;
+
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -23,6 +25,14 @@ use std::str::FromStr;
 /// `LISTEN/NOTIFY` ([`postgres_bus::PostgresNotifyBus`]) — can be swapped at
 /// startup based on the configured persistence backend.
 pub trait RealtimeBus: Send + Sync + std::fmt::Debug {
+    /// Managed lifecycle, absent only for externally supplied unmanaged buses.
+    fn lifecycle(&self) -> Option<std::sync::Arc<lifecycle::BusLifecycle>> { None }
+
+    /// Retained generation for the actual store serving this topic.
+    fn topic_state(&self, topic: EntityTopic) -> Option<lifecycle::TopicState> {
+        self.lifecycle().and_then(|owner| owner.states().borrow().get(&topic).cloned())
+    }
+
     /// Subscribe to a topic's broadcast stream. `None` when the topic is not
     /// enrolled on this bus.
     fn subscribe(&self, topic: EntityTopic) -> Option<tokio::sync::broadcast::Receiver<LiveEvent>>;
@@ -34,6 +44,35 @@ pub trait RealtimeBus: Send + Sync + std::fmt::Debug {
     /// state has been updated. A missing topic is a scheduling failure; having
     /// no active subscribers is not.
     fn publish(&self, event: LiveEvent) -> Result<(), RealtimePublishError>;
+}
+
+/// Routes memory notifications to the independently owned memory database.
+/// The composing supervisor owns and closes each constituent bus separately.
+#[derive(Debug)]
+pub struct CompositeRealtimeBus {
+    pub primary: Option<std::sync::Arc<dyn RealtimeBus>>,
+    pub memory: std::sync::Arc<dyn RealtimeBus>,
+}
+
+impl CompositeRealtimeBus {
+    fn source(&self, topic: EntityTopic) -> Option<&std::sync::Arc<dyn RealtimeBus>> {
+        if topic == EntityTopic::Memory { Some(&self.memory) } else { self.primary.as_ref() }
+    }
+}
+
+impl RealtimeBus for CompositeRealtimeBus {
+    fn topic_state(&self, topic: EntityTopic) -> Option<lifecycle::TopicState> {
+        self.source(topic).and_then(|source| source.topic_state(topic))
+    }
+    fn subscribe(&self, topic: EntityTopic) -> Option<tokio::sync::broadcast::Receiver<LiveEvent>> {
+        self.source(topic).and_then(|source| source.subscribe(topic))
+    }
+    fn subscriber_count(&self, topic: EntityTopic) -> usize {
+        self.source(topic).map_or(0, |source| source.subscriber_count(topic))
+    }
+    fn publish(&self, event: LiveEvent) -> Result<(), RealtimePublishError> {
+        self.source(event.topic).ok_or(RealtimePublishError::TopicUnavailable(event.topic))?.publish(event)
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -60,6 +99,17 @@ pub enum EntityTopic {
     Memory,
     /// Compiler sessions (ephemeral; table may not exist on first run).
     CompilerSessions,
+    /// Internal committed-work wakeups; never exposed on public entity SSE.
+    CollaborationState,
+    ObserverSubscriptions,
+    AgentOccurrences,
+    IngestionJobs,
+    PrincipalIngestionJobs,
+    PrincipalKnowledgeBases,
+    PrincipalKnowledgeDocuments,
+    A2aBindings,
+    AguiRuns,
+    McpElicitations,
 }
 
 impl EntityTopic {
@@ -75,6 +125,16 @@ impl EntityTopic {
         EntityTopic::Threads,
         EntityTopic::Memory,
         EntityTopic::CompilerSessions,
+        EntityTopic::CollaborationState,
+        EntityTopic::ObserverSubscriptions,
+        EntityTopic::AgentOccurrences,
+        EntityTopic::IngestionJobs,
+        EntityTopic::PrincipalIngestionJobs,
+        EntityTopic::PrincipalKnowledgeBases,
+        EntityTopic::PrincipalKnowledgeDocuments,
+        EntityTopic::A2aBindings,
+        EntityTopic::AguiRuns,
+        EntityTopic::McpElicitations,
     ];
 
     /// SurrealDB table name backing this topic.
@@ -91,6 +151,16 @@ impl EntityTopic {
             EntityTopic::Threads => "sessions",
             EntityTopic::Memory => "memory",
             EntityTopic::CompilerSessions => "compiler_sessions",
+            EntityTopic::CollaborationState => "uar_collaboration_state",
+            EntityTopic::ObserverSubscriptions => "observer_subscriptions",
+            EntityTopic::AgentOccurrences => "agent_instance_occurrences",
+            EntityTopic::IngestionJobs => "knowledge_ingestion",
+            EntityTopic::PrincipalIngestionJobs => "principal_knowledge_ingestion",
+            EntityTopic::PrincipalKnowledgeBases => "principal_knowledge_bases",
+            EntityTopic::PrincipalKnowledgeDocuments => "principal_knowledge_documents",
+            EntityTopic::A2aBindings => "a2a_bindings",
+            EntityTopic::AguiRuns => "agui_runs",
+            EntityTopic::McpElicitations => "mcp_elicitations",
         }
     }
 
@@ -106,7 +176,25 @@ impl EntityTopic {
             EntityTopic::Threads => "threads",
             EntityTopic::Memory => "memory",
             EntityTopic::CompilerSessions => "compiler_sessions",
+            EntityTopic::CollaborationState => "runtime_collaboration_state",
+            EntityTopic::ObserverSubscriptions => "runtime_observer_subscriptions",
+            EntityTopic::AgentOccurrences => "runtime_agent_occurrences",
+            EntityTopic::IngestionJobs => "runtime_ingestion_jobs",
+            EntityTopic::PrincipalIngestionJobs => "runtime_principal_ingestion_jobs",
+            EntityTopic::PrincipalKnowledgeBases => "runtime_principal_knowledge_bases",
+            EntityTopic::PrincipalKnowledgeDocuments => "runtime_principal_knowledge_documents",
+            EntityTopic::A2aBindings => "runtime_a2a_bindings",
+            EntityTopic::AguiRuns => "runtime_agui_runs",
+            EntityTopic::McpElicitations => "runtime_mcp_elicitations",
         }
+    }
+
+    /// Internal work notifications may carry privileged state and are host-only.
+    pub fn is_public(self) -> bool {
+        !matches!(self, Self::CollaborationState | Self::ObserverSubscriptions
+            | Self::AgentOccurrences | Self::IngestionJobs | Self::PrincipalIngestionJobs
+            | Self::PrincipalKnowledgeBases | Self::PrincipalKnowledgeDocuments
+            | Self::A2aBindings | Self::AguiRuns | Self::McpElicitations)
     }
 }
 
@@ -130,6 +218,16 @@ impl FromStr for EntityTopic {
             "threads" | "thread" | "sessions" | "session" => Ok(EntityTopic::Threads),
             "memory" | "memories" => Ok(EntityTopic::Memory),
             "compiler_sessions" | "compiler_session" => Ok(EntityTopic::CompilerSessions),
+            "runtime_collaboration_state" => Ok(EntityTopic::CollaborationState),
+            "runtime_observer_subscriptions" => Ok(EntityTopic::ObserverSubscriptions),
+            "runtime_agent_occurrences" => Ok(EntityTopic::AgentOccurrences),
+            "runtime_ingestion_jobs" => Ok(EntityTopic::IngestionJobs),
+            "runtime_principal_ingestion_jobs" => Ok(EntityTopic::PrincipalIngestionJobs),
+            "runtime_principal_knowledge_bases" => Ok(EntityTopic::PrincipalKnowledgeBases),
+            "runtime_principal_knowledge_documents" => Ok(EntityTopic::PrincipalKnowledgeDocuments),
+            "runtime_a2a_bindings" => Ok(EntityTopic::A2aBindings),
+            "runtime_agui_runs" => Ok(EntityTopic::AguiRuns),
+            "runtime_mcp_elicitations" => Ok(EntityTopic::McpElicitations),
             _ => Err(()),
         }
     }
@@ -142,6 +240,8 @@ pub enum LiveAction {
     Create,
     Update,
     Delete,
+    /// Versioned invalidation requiring a fresh authoritative snapshot.
+    Reset,
 }
 
 /// A single change event delivered by the bus.

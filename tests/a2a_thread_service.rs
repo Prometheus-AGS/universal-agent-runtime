@@ -30,7 +30,10 @@ use universal_agent_runtime::{
             actors,
         },
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
-        rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend},
+        rag::embeddings::{
+            EmbeddingBackend, UnavailableEmbeddingBackend,
+            swappable::SwappableEmbeddingBackend,
+        },
         runtime::{
             actor::{messages::ActorOwner, system::ActorCollaboration},
             manager::RunManager,
@@ -120,11 +123,19 @@ async fn harness(driver: Arc<dyn LlmDriver>) -> Harness {
     ));
     let manager = Arc::new(
         RunManager::new(
-            LlmConfig::default(),
+            LlmConfig {
+                model: "openai/gpt-4o".to_string(),
+                api_key: Some("a2a-thread-fixture-key".to_string()),
+                base_url: Some("http://a2a-thread.invalid/v1".to_string()),
+                ..LlmConfig::default()
+            },
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             Some(Arc::clone(&persistence)),
         )
         .await
@@ -256,7 +267,11 @@ fn named_agent_send_and_get_project_the_persisted_thread() {
 
         let get = get_until_terminal(&harness.app, agent_id, &task_id).await;
         assert_eq!(get["result"]["id"], task_id);
-        assert_eq!(get["result"]["status"]["state"], "completed");
+        assert_eq!(
+            get["result"]["status"]["state"], "completed",
+            "terminal status object: {}",
+            get["result"]["status"]
+        );
         let thread_id = get["result"]["metadata"]["thread_id"]
             .as_str()
             .expect("terminal task exposes persisted thread id");
@@ -388,7 +403,11 @@ fn actor_collaboration_rejection_prevents_child_dispatch() {
             }
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
-        assert_eq!(driver.calls.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            driver.calls.load(Ordering::SeqCst),
+            1,
+            "rejected child dispatch must leave exactly the source-root model call"
+        );
 
         let collaboration = Arc::clone(&harness.collaboration);
         let owner = harness.owner.clone();

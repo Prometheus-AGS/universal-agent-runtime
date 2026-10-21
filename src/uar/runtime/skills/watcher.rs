@@ -1,124 +1,193 @@
 //! Filesystem watcher for skill hot-reload.
 //!
-//! Monitors a skills directory for file changes (create, modify, remove)
-//! and triggers a full skill refresh via `SkillService::refresh()`.
+//! Monitors a skills directory for file changes and triggers a full
+//! `SkillService::refresh()` only from retained filesystem events.
 
-use super::service::SkillService;
-use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use std::sync::Arc;
-use std::time::Duration;
+
+use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::mpsc;
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
-/// Watches a skills directory for filesystem changes and triggers reloads.
+use super::service::SkillService;
+use crate::uar::runtime::lifecycle::{CloseReport, ResourceScope};
+
+/// Watches a skills directory and owns the event-processing task that refreshes
+/// its skill service. The task belongs to `scope`; dropping a caller only asks
+/// it to stop, while [`Self::close`] retains and awaits its acknowledgement.
 pub struct SkillFileWatcher {
-    /// The underlying filesystem watcher handle.
-    /// Kept alive so the watcher thread continues running.
-    _watcher: RecommendedWatcher,
+    scope: ResourceScope,
+    stop: CancellationToken,
+}
+
+/// Drop order is part of the native watcher closure contract. The notify
+/// callback may be blocked in `blocking_send` when shutdown starts; closing the
+/// receiver first releases that callback before `RecommendedWatcher::drop` can
+/// join its native thread.
+struct WatcherTaskResources {
+    receiver: mpsc::Receiver<Event>,
+    watcher: RecommendedWatcher,
+}
+
+impl Drop for WatcherTaskResources {
+    fn drop(&mut self) {
+        self.receiver.close();
+    }
 }
 
 impl std::fmt::Debug for SkillFileWatcher {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SkillFileWatcher").finish()
+        f.debug_struct("SkillFileWatcher").finish_non_exhaustive()
     }
 }
 
 impl SkillFileWatcher {
-    /// Create a new watcher that monitors `skills_dir` and reloads skills
-    /// through the given `SkillService` on any relevant file change.
-    ///
-    /// Returns the watcher handle. The watcher stops when this handle is dropped.
+    /// Compatibility constructor for embeddings that do not yet supply a host
+    /// scope. New trusted-host construction should use [`Self::new_in_scope`]
+    /// and retain the returned watcher through host shutdown.
     pub fn new(skill_service: Arc<SkillService>, skills_dir: &Path) -> anyhow::Result<Self> {
-        let (tx, rx) = mpsc::channel::<Event>(64);
+        Self::new_in_scope(
+            skill_service,
+            skills_dir,
+            ResourceScope::standalone("skill-file-watcher", "skill-runtime"),
+        )
+    }
 
-        // Create the notify watcher with a channel-based event handler.
-        // `notify` v7's `RecommendedWatcher` uses a synchronous callback,
-        // so we bridge into async via an mpsc channel.
-        let watcher_tx = tx.clone();
-        let mut watcher = RecommendedWatcher::new(
+    /// Register filesystem event processing in an already-owned lifecycle
+    /// scope before the watcher becomes available to callers.
+    pub fn new_in_scope(
+        skill_service: Arc<SkillService>,
+        skills_dir: &Path,
+        scope: ResourceScope,
+    ) -> anyhow::Result<Self> {
+        // Cover native watcher construction itself. A host close racing this
+        // constructor waits for this lease, and the lease moves into the
+        // tracked event task only after the native registration succeeds.
+        let construction = scope
+            .admit_named("skill-file-watcher-construction")
+            .map_err(|error| anyhow::anyhow!("skill file watcher lifecycle admission closed: {error}"))?;
+        let (watcher_tx, receiver) = mpsc::channel::<Event>(64);
+        let watcher = RecommendedWatcher::new(
             move |result: Result<Event, notify::Error>| match result {
                 Ok(event) => {
-                    if let Err(e) = watcher_tx.blocking_send(event) {
-                        warn!("Skill watcher channel send failed: {e}");
+                    if let Err(error) = watcher_tx.blocking_send(event) {
+                        warn!(%error, "Skill watcher event receiver is unavailable");
                     }
                 }
-                Err(e) => {
-                    error!("Skill watcher error: {e}");
+                Err(error) => {
+                    error!(%error, "Skill watcher reported an error");
                 }
             },
             Config::default(),
         )?;
-
-        watcher.watch(skills_dir, RecursiveMode::Recursive)?;
-        info!("Skill file watcher started on {}", skills_dir.display());
-
-        // Spawn background task to process events with debouncing.
-        tokio::spawn(Self::event_loop(skill_service, rx));
-
-        Ok(Self { _watcher: watcher })
+        // Keep the receiver and native handle in one drop-ordered guard from
+        // the first point at which the callback can run. If registration
+        // fails, or the later task admission is rejected, this guard closes
+        // the receiver before dropping the native watcher and unblocks an
+        // in-flight callback `blocking_send`.
+        let mut resources = WatcherTaskResources { receiver, watcher };
+        resources.watcher.watch(skills_dir, RecursiveMode::Recursive)?;
+        let stop = CancellationToken::new();
+        let scope_cancellation = scope.cancellation_token();
+        let task_stop = stop.clone();
+        scope
+            .spawn("skill-file-events", async move {
+                // The task owns the OS watcher. A host-driven scope close
+                // cancels this task and waits for it, so the native watch
+                // registration is released before the close report exists.
+                Self::event_loop(
+                    skill_service,
+                    task_stop,
+                    scope_cancellation,
+                    resources,
+                )
+                .await;
+                // The constructor lease moves with the task so a scope close
+                // cannot report release while the native registration remains
+                // owned by this admitted operation.
+                construction.complete();
+                Ok(())
+            })
+            .map_err(|error| anyhow::anyhow!("skill file watcher lifecycle admission closed: {error}"))?;
+        info!(path = %skills_dir.display(), "Skill file watcher started");
+        Ok(Self {
+            scope,
+            stop,
+        })
     }
 
-    /// Background event loop that debounces filesystem events and triggers
-    /// a skill refresh when relevant changes are detected.
-    async fn event_loop(skill_service: Arc<SkillService>, mut rx: mpsc::Receiver<Event>) {
-        // Debounce interval — coalesce rapid successive writes into one refresh.
-        let debounce = Duration::from_millis(500);
+    /// Request watcher stop and retain the joined task report. A refresh that
+    /// was already admitted is allowed to return its actual result first.
+    pub async fn close(self) -> CloseReport {
+        self.stop.cancel();
+        self.scope.close().await
+    }
 
+    async fn event_loop(
+        skill_service: Arc<SkillService>,
+        stop: CancellationToken,
+        scope_cancellation: CancellationToken,
+        mut resources: WatcherTaskResources,
+    ) {
         loop {
-            // Wait for the first event.
-            let Some(event) = rx.recv().await else {
-                info!("Skill watcher channel closed, stopping event loop");
-                return;
+            let event = tokio::select! {
+                biased;
+                _ = stop.cancelled() => break,
+                _ = scope_cancellation.cancelled() => break,
+                event = resources.receiver.recv() => event,
             };
-
-            if !Self::is_relevant(&event) {
+            let Some(event) = event else {
+                info!("Skill watcher channel closed");
+                break;
+            };
+            let mut relevant = Self::is_relevant(&event);
+            // Coalesce the already-delivered burst only. No duration is used to
+            // decide freshness or correctness; a subsequent event triggers a
+            // subsequent authoritative refresh.
+            while let Ok(event) = resources.receiver.try_recv() {
+                relevant |= Self::is_relevant(&event);
+            }
+            if !relevant {
                 continue;
             }
-
-            debug!("Skill file change detected: {:?}", event.kind);
-
-            // Drain any additional events that arrive within the debounce window.
-            tokio::time::sleep(debounce).await;
-            while rx.try_recv().is_ok() {
-                // Discard; we will do a single refresh for the whole batch.
-            }
-
-            info!("Refreshing skills after filesystem change");
+            debug!("Refreshing skills after committed filesystem events");
             match skill_service.refresh().await {
                 Ok(skills) => {
-                    info!(
-                        "Skills refreshed successfully: {} skills loaded",
-                        skills.len()
-                    );
+                    info!(count = skills.len(), "Skills refreshed after filesystem event");
                 }
-                Err(e) => {
-                    error!("Failed to refresh skills after file change: {e:?}");
+                Err(error) => {
+                    error!(%error, "Skill refresh failed after filesystem event");
                 }
             }
         }
     }
 
-    /// Returns `true` if the event is a file change we care about
-    /// (create, modify, or remove of a likely skill file).
     fn is_relevant(event: &Event) -> bool {
         match event.kind {
-            EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => {
-                // Only react to YAML/MD files (skill definitions).
-                event.paths.iter().any(|p| {
-                    let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
-                    matches!(ext, "yaml" | "yml" | "md" | "toml" | "json")
-                })
-            }
+            EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => event
+                .paths
+                .iter()
+                .any(|path| {
+                    matches!(
+                        path.extension().and_then(|extension| extension.to_str()),
+                        Some("yaml" | "yml" | "md" | "toml" | "json")
+                    )
+                }),
             _ => false,
         }
     }
 }
 
-/// Start watching the given skills directory for changes.
-///
-/// Returns a `SkillFileWatcher` handle. The watcher runs in a background
-/// tokio task and will stop when the handle is dropped.
+impl Drop for SkillFileWatcher {
+    fn drop(&mut self) {
+        self.stop.cancel();
+    }
+}
+
+/// Start watching the given skills directory with compatibility standalone
+/// ownership. Trusted hosts should call [`SkillFileWatcher::new_in_scope`].
 pub async fn start_skill_watcher(
     skill_service: Arc<SkillService>,
     skills_dir: &str,
@@ -127,6 +196,5 @@ pub async fn start_skill_watcher(
     if !path.exists() {
         anyhow::bail!("Skills directory does not exist: {}", path.display());
     }
-
     SkillFileWatcher::new(skill_service, path)
 }

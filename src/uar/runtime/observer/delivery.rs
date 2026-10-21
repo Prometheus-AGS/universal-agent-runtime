@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, atomic::Ordering},
-    time::Duration,
-};
+use std::sync::{Arc, atomic::Ordering};
 
 use chrono::Utc;
 use sha2::{Digest, Sha256};
@@ -23,34 +20,151 @@ const SCAN_BATCH: usize = 1;
 const SUBSCRIPTIONS_PER_CYCLE: usize = 128;
 
 impl ObserverController {
-    /// Start one bounded local scheduler. Restart recovery reads persisted subscriptions.
+    /// Start the controller's owned lifecycle scope for embedding callers.
     pub fn start(self: &Arc<Self>) {
+        let scope = self.lifecycle_scope.clone();
+        if let Err(error) = self.start_in_scope(&scope) {
+            tracing::warn!(%error, "Observer delivery was rejected during lifecycle shutdown");
+        }
+    }
+
+    /// Register the local delivery owner before it can begin executing. The
+    /// scope closes its admission, requests cancellation, and joins this task
+    /// before its resource finalizer releases persistence.
+    pub fn start_in_scope(
+        self: &Arc<Self>,
+        scope: &crate::uar::runtime::lifecycle::ResourceScope,
+    ) -> Result<(), crate::uar::runtime::lifecycle::AdmissionClosed> {
+        if self.started.swap(true, Ordering::AcqRel) {
+            return Ok(());
+        }
+        let controller = Arc::clone(self);
+        let scope_cancellation = scope.cancellation_token();
+        if let Err(error) = scope.spawn("observer-delivery", async move {
+            controller.delivery_task(scope_cancellation).await
+        }) {
+            self.started.store(false, Ordering::Release);
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    async fn delivery_task(
+        self: &Arc<Self>,
+        scope_cancellation: tokio_util::sync::CancellationToken,
+    ) -> anyhow::Result<()> {
         let weak = Arc::downgrade(self);
-        tokio::spawn(async move {
-            let mut ticker = tokio::time::interval(Duration::from_secs(2));
-            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-            loop {
-                ticker.tick().await;
-                let Some(controller) = weak.upgrade() else {
-                    break;
-                };
-                let schedules = controller.schedules.read().await.clone();
-                if let Some(schedules) = schedules {
-                    if let Err(error) = schedules.scan_once().await {
-                        tracing::warn!(code = error.code(), "Schedule delivery cycle failed");
+        let work = Arc::clone(&self.work);
+        let shutdown = self.shutdown.child_token();
+        // A due time can cross between the authoritative scan and arming its
+        // timer. Record its business-time identity plus the committed-work
+        // generation so that crossing gets one delivery attempt, while an
+        // unchanged failed delivery cannot form a zero-delay scan loop.
+        let mut last_due_attempt: Option<(chrono::DateTime<Utc>, u64)> = None;
+        loop {
+            let Some(controller) = weak.upgrade() else {
+                break;
+            };
+            // Capture before the snapshot-driven delivery. A commit arriving
+            // during that scan requires one more authoritative pass even if a
+            // later `Notify` permit is consumed by another wakeup.
+            let observed_generation = controller.work_generation.load(Ordering::Acquire);
+            controller.deliver_ready_work().await;
+            let work_generation = controller.work_generation.load(Ordering::Acquire);
+            if work_generation != observed_generation {
+                last_due_attempt = None;
+                continue;
+            }
+            let next_due = controller.next_due_at().await;
+            drop(controller);
+            match next_due {
+                Some(due_at) => {
+                    let due_identity = (due_at, work_generation);
+                    match due_at.signed_duration_since(Utc::now()).to_std() {
+                        Ok(delay) => {
+                            tokio::select! {
+                                _ = shutdown.cancelled() => break,
+                                _ = scope_cancellation.cancelled() => break,
+                                _ = work.notified() => {},
+                                _ = tokio::time::sleep(delay) => {
+                                    last_due_attempt = Some(due_identity);
+                                },
+                            }
+                        }
+                        Err(_) if last_due_attempt.as_ref() != Some(&due_identity) => {
+                            // The one-shot boundary became due while planning.
+                            // Loop once so delivery reads and arbitrates the
+                            // durable record after the boundary.
+                            last_due_attempt = Some(due_identity);
+                        }
+                        Err(_) => {
+                            tokio::select! {
+                                _ = shutdown.cancelled() => break,
+                                _ = scope_cancellation.cancelled() => break,
+                                _ = work.notified() => {},
+                            }
+                        }
                     }
                 }
-                let followups = controller.followups.read().await.clone();
-                if let Some(followups) = followups {
-                    if let Err(error) = followups.scan_once().await {
-                        tracing::warn!(code = error.code(), "Follow-up delivery cycle failed");
+                None => {
+                    tokio::select! {
+                        _ = shutdown.cancelled() => break,
+                        _ = scope_cancellation.cancelled() => break,
+                        _ = work.notified() => {},
                     }
-                }
-                if let Err(error) = controller.deliver_once().await {
-                    tracing::warn!(code = error.code(), "Observer delivery cycle failed");
                 }
             }
-        });
+        }
+        Ok(())
+    }
+
+    async fn next_due_at(&self) -> Option<chrono::DateTime<Utc>> {
+        let schedules = self.schedules.read().await.clone();
+        let followups = self.followups.read().await.clone();
+        let schedule_due = match schedules {
+            Some(schedules) => match schedules.next_due_at().await {
+                Ok(due_at) => due_at,
+                Err(error) => {
+                    tracing::warn!(code = error.code(), "Schedule due-time lookup failed");
+                    None
+                }
+            },
+            None => None,
+        };
+        let followup_due = match followups {
+            Some(followups) => match followups.next_due_at().await {
+                Ok(due_at) => due_at,
+                Err(error) => {
+                    tracing::warn!(code = error.code(), "Follow-up due-time lookup failed");
+                    None
+                }
+            },
+            None => None,
+        };
+        match (schedule_due, followup_due) {
+            (Some(schedule), Some(followup)) => Some(schedule.min(followup)),
+            (Some(schedule), None) => Some(schedule),
+            (None, Some(followup)) => Some(followup),
+            (None, None) => None,
+        }
+    }
+
+    async fn deliver_ready_work(&self) {
+        let schedules = self.schedules.read().await.clone();
+        if let Some(schedules) = schedules {
+            if let Err(error) = schedules.scan_once().await {
+                tracing::warn!(code = error.code(), "Schedule delivery cycle failed");
+            }
+        }
+        let followups = self.followups.read().await.clone();
+        if let Some(followups) = followups {
+            if let Err(error) = followups.scan_once().await {
+                tracing::warn!(code = error.code(), "Follow-up delivery cycle failed");
+            }
+        }
+        if let Err(error) = self.deliver_once().await {
+            tracing::warn!(code = error.code(), "Observer delivery cycle failed");
+        }
     }
 
     /// One pass admits at most one occurrence per source and processes one inbox item per subscription.

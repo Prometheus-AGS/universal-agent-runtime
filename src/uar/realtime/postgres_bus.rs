@@ -1,50 +1,19 @@
-//! Postgres `LISTEN/NOTIFY`-backed realtime bus.
-//!
-//! Mirrors [`super::surreal_bus::LiveQueryBus`]: it owns one broadcast channel
-//! per [`EntityTopic`] and fans `LiveEvent`s out to SSE subscribers. The change
-//! SOURCE is a single Postgres `LISTEN uar_entity_change` connection (opened via
-//! [`sqlx::postgres::PgListener`]) rather than per-table `SurrealDB` live queries.
-//!
-//! Database triggers (see the `*_notify_entity_change.sql` migration) emit thin
-//! `pg_notify('uar_entity_change', json)` payloads of the shape
-//! `{ "topic": "...", "id": "...", "action": "create|update|delete" }` on
-//! INSERT/UPDATE/DELETE of the entity tables. Payloads are intentionally thin
-//! (no row data) — the client refetches on signal, which also keeps us clear of
-//! the 8000-byte `NOTIFY` limit.
-//!
-//! The listener runs in one supervised task with the same exponential-backoff
-//! reconnect policy as the `SurrealDB` bus, so a dropped connection re-`LISTEN`s.
-
+//! PostgreSQL subscriptions with owned connection release and explicit recovery.
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::Result;
 use serde::Deserialize;
-use sqlx::PgPool;
-use sqlx::postgres::PgListener;
+use sqlx::{PgPool, postgres::{PgListener, PgPoolOptions}};
 use tokio::sync::broadcast;
-use tracing::{debug, info, warn};
+use tracing::debug;
+use super::{EntityTopic, LiveAction, LiveEvent, RealtimeBus, RealtimePublishError,
+    is_governance_enabled_event, lifecycle::BusLifecycle};
 
-use super::{
-    EntityTopic, LiveAction, LiveEvent, RealtimeBus, RealtimePublishError,
-    is_governance_enabled_event,
-};
-
-/// Broadcast channel capacity per topic. Matches the `SurrealDB` bus: slow
-/// consumers get a `Lagged` error but the publisher never blocks.
 const CHANNEL_CAPACITY: usize = 256;
-
-/// Single Postgres `NOTIFY` channel all entity triggers emit on.
 const NOTIFY_CHANNEL: &str = "uar_entity_change";
 
-/// Supervised reconnect bounds for a dropped listener — identical to the
-/// `SurrealDB` bus (250ms → 30s).
-const RECONNECT_INITIAL: Duration = Duration::from_millis(250);
-const RECONNECT_MAX: Duration = Duration::from_secs(30);
-
-/// Wire shape of a `uar_entity_change` notification payload.
 #[derive(Debug, Deserialize)]
 struct NotifyPayload {
     topic: String,
@@ -54,101 +23,100 @@ struct NotifyPayload {
     data: Option<serde_json::Value>,
 }
 
-#[derive(Clone)]
+/// One scope-owned LISTEN connection; it does not close the caller's pool.
+#[derive(Clone, Debug)]
 pub struct PostgresNotifyBus {
     senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>,
-}
-
-impl std::fmt::Debug for PostgresNotifyBus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PostgresNotifyBus")
-            .field("topics", &self.senders.keys().collect::<Vec<_>>())
-            .finish()
-    }
+    lifecycle: Arc<BusLifecycle>,
 }
 
 impl PostgresNotifyBus {
-    /// Build the per-topic channels and spawn one supervised `LISTEN` task.
-    ///
-    /// The constructor returns immediately; the listener starts connecting in
-    /// the background. If the listener cannot connect (or drops), it retries
-    /// with exponential backoff — the bus itself stays usable, it just won't
-    /// deliver events until the connection is healthy.
+    /// Start one attempt. Readiness must be awaited by the composing host.
     pub fn start(pool: PgPool) -> Self {
-        let mut senders = HashMap::with_capacity(EntityTopic::ALL.len());
-        for topic in EntityTopic::ALL {
-            let (tx, _) = broadcast::channel(CHANNEL_CAPACITY);
-            senders.insert(*topic, tx);
-        }
-        let senders = Arc::new(senders);
-
-        let senders_for_task = Arc::clone(&senders);
-        tokio::spawn(async move {
-            supervise_listener(pool, senders_for_task).await;
-        });
-
-        Self { senders }
+        let senders = Arc::new(EntityTopic::ALL.iter().map(|topic| {
+            (*topic, broadcast::channel(CHANNEL_CAPACITY).0)
+        }).collect::<HashMap<_, _>>());
+        let lifecycle = BusLifecycle::new(Arc::clone(&senders));
+        let owner = Arc::clone(&lifecycle);
+        let channels = Arc::clone(&senders);
+        lifecycle.spawn(async move { supervise_listener(pool, channels, owner).await });
+        Self { senders, lifecycle }
     }
+    /// Wait for LISTEN acknowledgement.
+    pub async fn ready(&self) -> Result<()> { self.lifecycle.ready().await }
+    /// Stop readers and await release of the dedicated listener pool.
+    pub async fn shutdown(&self) -> Result<()> { self.lifecycle.shutdown().await }
 }
 
 impl RealtimeBus for PostgresNotifyBus {
+    fn lifecycle(&self) -> Option<Arc<BusLifecycle>> { Some(Arc::clone(&self.lifecycle)) }
     fn subscribe(&self, topic: EntityTopic) -> Option<broadcast::Receiver<LiveEvent>> {
         self.senders.get(&topic).map(broadcast::Sender::subscribe)
     }
-
     fn subscriber_count(&self, topic: EntityTopic) -> usize {
-        self.senders
-            .get(&topic)
-            .map_or(0, broadcast::Sender::receiver_count)
+        self.senders.get(&topic).map_or(0, broadcast::Sender::receiver_count)
     }
-
     fn publish(&self, event: LiveEvent) -> std::result::Result<(), RealtimePublishError> {
-        let sender = self
-            .senders
-            .get(&event.topic)
+        let sender = self.senders.get(&event.topic)
             .ok_or(RealtimePublishError::TopicUnavailable(event.topic))?;
         let _ = sender.send(event);
         Ok(())
     }
 }
 
-async fn supervise_listener(
-    pool: PgPool,
-    senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>,
-) {
-    let mut backoff = RECONNECT_INITIAL;
+async fn supervise_listener(pool: PgPool,
+    senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>, owner: Arc<BusLifecycle>) -> Result<()>
+{
+    let stop = owner.stop_token();
+    let mut reconnect = owner.reconnect_events();
     loop {
-        match run_listener(&pool, &senders).await {
-            Ok(()) => {
-                info!("postgres NOTIFY listener ended cleanly; supervisor exiting");
-                return;
+        if stop.is_cancelled() { return Ok(()); }
+        let generation = *reconnect.borrow_and_update();
+        // PgListener::Drop returns its connection asynchronously. A dedicated
+        // owned pool provides the awaited release barrier without closing a
+        // borrowed application pool.
+        let listener_pool = PgPoolOptions::new().max_connections(1).min_connections(0)
+            .max_lifetime(None).idle_timeout(None)
+            .connect_with(pool.connect_options().as_ref().clone()).await;
+        match listener_pool {
+            Ok(listener_pool) => {
+                let result = run_listener(&listener_pool, &senders, &owner, generation,
+                    &stop, &mut reconnect).await;
+                listener_pool.close().await;
+                if stop.is_cancelled() {
+                    return result.context("PostgreSQL listener cleanup failed during shutdown");
+                }
+                if result.is_ok() { continue; }
             }
-            Err(err) => {
-                warn!(
-                    error = %err,
-                    backoff_ms = backoff.as_millis() as u64,
-                    "postgres NOTIFY listener failed; reconnecting"
-                );
-                tokio::time::sleep(backoff).await;
-                backoff = (backoff * 2).min(RECONNECT_MAX);
+            Err(_) => {}
+        }
+        for topic in EntityTopic::ALL.iter().copied() {
+            owner.transition(topic, generation, false, Some("notification connection unavailable".to_owned()));
+        }
+        tokio::select! {
+            () = stop.cancelled() => return Ok(()),
+            changed = reconnect.changed() => {
+                changed.map_err(|_| anyhow::anyhow!("notification control channel ended"))?;
             }
         }
     }
 }
 
-async fn run_listener(
-    pool: &PgPool,
-    senders: &HashMap<EntityTopic, broadcast::Sender<LiveEvent>>,
-) -> Result<()> {
+async fn run_listener(pool: &PgPool,
+    senders: &HashMap<EntityTopic, broadcast::Sender<LiveEvent>>, owner: &BusLifecycle,
+    generation: u64, stop: &tokio_util::sync::CancellationToken,
+    reconnect: &mut tokio::sync::watch::Receiver<u64>) -> Result<()>
+{
     let mut listener = PgListener::connect_with(pool).await?;
+    listener.eager_reconnect(false);
     listener.listen(NOTIFY_CHANNEL).await?;
-    info!(channel = NOTIFY_CHANNEL, "postgres NOTIFY listener opened");
-
+    for topic in EntityTopic::ALL.iter().copied() { owner.transition(topic, generation, true, None); }
     loop {
-        // `recv` resolves on the next notification or errors when the
-        // underlying connection drops — the latter bubbles up to the
-        // supervisor for backoff + reconnect.
-        let notification = listener.recv().await?;
+        let notification = tokio::select! {
+            () = stop.cancelled() => break,
+            changed = reconnect.changed() => { changed.map_err(|_| anyhow::anyhow!("control ended"))?; break; }
+            next = listener.try_recv() => next?.ok_or_else(|| anyhow::anyhow!("notification connection lost"))?,
+        };
         let raw = notification.payload();
 
         let payload: NotifyPayload = match serde_json::from_str(raw) {
@@ -190,4 +158,7 @@ async fn run_listener(
             let _ = tx.send(event);
         }
     }
+    listener.unlisten_all().await?;
+    drop(listener);
+    Ok(())
 }

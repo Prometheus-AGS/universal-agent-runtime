@@ -8,10 +8,11 @@ import hashlib
 import json
 import re
 import sys
-import threading
 import time
 import uuid
 from pathlib import Path
+
+from uar_1_1_1_support import Blocked, require
 
 TEXT = "runtime-control:λ雪😀"
 MODEL = "claude-haiku-4-5-20251001"
@@ -114,11 +115,15 @@ def _start_provider(context):
     trace = root / context["resources"].unique_name("provider-trace")
     mode = root / context["resources"].unique_name("provider-mode")
     _mode(mode)
-    context["resources"].start_process([sys.executable, str(Path(__file__).resolve().parents[2] / "tests/fixtures/uar_1_1_1_provider.py"),
+    peer = context["resources"].start_event_process([sys.executable, str(Path(__file__).resolve().parents[2] / "tests/fixtures/uar_1_1_1_provider.py"),
         "--port-file", str(port_file), "--trace", str(trace), "--mode-file", str(mode)],
         cwd=Path(__file__).resolve().parents[2], label="uar111-provider")
-    context["wait_for"]("provider ready", lambda: port_file.exists() and port_file.read_text().strip(), timeout=30)
-    return mode, trace, context["resources"].relay(int(port_file.read_text()))
+    ready = peer.wait("ready")
+    port = ready.get("port")
+    if not isinstance(port, int) or not 0 < port < 65536:
+        raise AssertionError("controlled provider emitted an invalid listener identity")
+    context.setdefault("provider_events", {})[str(trace)] = peer
+    return mode, trace, context["resources"].relay(port)
 
 
 def _config(context, relay, backend="local", provider="anthropic", model=MODEL):
@@ -155,8 +160,7 @@ def _admit(runtime, context, mode, allowed_tools=None, budgets=None, artifact=No
 
 def _finish(client, admitted, context, on_stream_text=None):
     run_id = admitted["run_id"]
-    stream = client.stream(admitted["stream_url"], timeout=240, total_timeout=240, on_text=on_stream_text)
-    status = context["wait_for"]("run settled", lambda: _terminal(client, run_id), timeout=30)
+    stream, status = _observe_until_settled(client, admitted, on_text=on_stream_text)
     terminal_observed_at = time.monotonic()
     events = client.request("GET", "/api/uar/runs/" + run_id + "/events", expected=200)
     # The AG-UI endpoint defaults an omitted cursor to the last event, then
@@ -169,30 +173,72 @@ def _finish(client, admitted, context, on_stream_text=None):
 
 def _finish_after_approval(client, admitted, context):
     run_id = admitted["run_id"]
-    observed = {}
+    approved = set()
 
-    def observe():
-        try:
-            observed["stream"] = client.stream(admitted["stream_url"], timeout=240, total_timeout=240)
-        except BaseException as error:
-            observed["error"] = error
+    def approve(event, payload):
+        if event != "agui.tool_call.approval_required":
+            return
+        require(payload.get("request_id") == run_id, "approval frame belongs to a different run")
+        approval_id = payload.get("approval_id")
+        require(isinstance(approval_id, str) and approval_id.strip(), "originating approval identity missing")
+        if approval_id in approved:
+            return
+        resolved = client.request("POST", "/api/uar/runs/" + run_id + "/tool-approval",
+            {"approved":True,"approval_id":approval_id}, expected=200)
+        require(resolved["resolved"] and resolved["decision"] == "allow", "graph approval was not resolved")
+        approved.add(approval_id)
 
-    observer = threading.Thread(target=observe)
-    observer.start()
-    pending = context["wait_for"]("graph tool approval", lambda: client.request(
-        "GET", "/api/uar/runs/" + run_id + "/tool-approval/pending", expected=200)["pending"], timeout=30)
-    approval_id = pending.get("approval_id") or pending.get("approvalId")
-    context["require"](approval_id, "graph approval did not expose its approval id")
-    resolved = client.request("POST", "/api/uar/runs/" + run_id + "/tool-approval",
-        {"approved":True,"approval_id":approval_id}, expected=200)
-    context["require"](resolved["resolved"] and resolved["decision"] == "allow", "graph approval was not resolved")
-    observer.join()
-    if "error" in observed:
-        raise observed["error"]
-    status = context["wait_for"]("run settled", lambda: _terminal(client, run_id), timeout=30)
+    stream, status = _observe_until_settled(client, admitted, on_event=approve)
+    require(approved, "graph run did not emit an originating approval request")
     events = client.request("GET", "/api/uar/runs/" + run_id + "/events", expected=200)
     spec = client.stream(admitted["stream_url"] + "?stream_mode=agui_spec&last_event_id=0", timeout=240, total_timeout=240)
-    return {"run_id":run_id,"stream":observed["stream"],"agui":spec,"status":status["status"],"events":events["events"]}
+    return {"run_id":run_id,"stream":stream,"agui":spec,"status":status["status"],"events":events["events"]}
+
+
+def _observe_until_settled(client, admitted, *, on_text=None, on_event=None):
+    """Resume retained run events; one snapshot per completed nonempty batch.
+
+    The production stream closes on business Error as well as RunDone. Error
+    alone does not certify terminal state or cleanup. An active snapshot causes
+    a cursor-bound subscription, never a repeated status probe.
+    """
+    run_id = admitted["run_id"]
+    cursor = 0
+    output = []
+    while True:
+        before = cursor
+        pending = ""
+
+        def receive(text):
+            nonlocal pending, cursor
+            if on_text is not None:
+                on_text(text)
+            pending += text
+            while boundary := re.search(r"\r\n\r\n|\n\n|\r\r", pending):
+                frame, pending = pending[:boundary.start()], pending[boundary.end():]
+                parsed = _sse_frames(frame + "\n\n")
+                if not parsed:
+                    continue  # heartbeat/comment, not a state-change authority
+                ids = [line[3:].strip() for line in frame.splitlines() if line.startswith("id:")]
+                require(len(ids) == 1 and ids[0].isdigit(), "run event omitted its retained cursor")
+                identity = int(ids[0])
+                require(identity > cursor, "run stream cursor did not advance")
+                cursor = identity
+                for event, payload in parsed:
+                    require(not (event == "agui.error" and payload.get("code") == "STREAM_GAP"),
+                            "run event retention gap requires explicit reconciliation")
+                    if on_event is not None:
+                        on_event(event, payload)
+
+        separator = "&" if "?" in admitted["stream_url"] else "?"
+        path = admitted["stream_url"] + separator + "last_event_id=" + str(cursor)
+        output.append(client.stream(path, timeout=240, total_timeout=240, on_text=receive))
+        require(not pending.strip(), "run stream ended inside an SSE frame")
+        if cursor == before:
+            raise Blocked("run event stream ended without new events; completion remains unconfirmed")
+        status = _terminal(client, run_id)
+        if status is not None:
+            return "".join(output), status
 
 
 def _terminal(client, run_id):
@@ -399,13 +445,19 @@ def _stream_scenarios(context):
         _receipt_assert(context,runtime,row,"succeeded")
         context["require"](len(_rows(effects)) == before + 1,"terminal tool loop effect count mismatch")
         observations.append(_scenario("streams-tool-terminal-control", {"receipt":_save(context,"tool-loop",row)}))
-        _mode(mode,"cancel")
+        contact_token = uuid.uuid4().hex
+        _mode(mode,"cancel", contact_token=contact_token)
         before = len(_rows(trace))
         client, admitted = _admit(runtime,context,"cancel")
-        context["wait_for"]("cancel provider request",lambda:len(_rows(trace)) > before,timeout=30)
+        context["provider_events"][str(trace)].wait("request", lambda event: event.get("contact_token") == contact_token)
+        context["require"](len(_rows(trace)) > before, "acknowledged provider request missing its durable fixture trace")
         client.request("POST","/api/uar/runs/" + admitted["run_id"] + "/cancel",{},expected=(200,204))
         cancelled = _finish(client,admitted,context)
         context["require"](cancelled["status"] == "cancelled" and bool(_events(cancelled,"agui.cancelled")), "cancellation lost precedence")
+        released = context["provider_events"][str(trace)].wait("response_released",
+            lambda event: event.get("contact_token") == contact_token)
+        context["require"](released.get("fixture_shutdown") is False,
+                           "fixture shutdown, not client cancellation, released the held response")
         _mode(mode)
         cleanup = _run(runtime,context,"after-cancel")
         _assert_terminal(context,cleanup,True)
@@ -902,10 +954,10 @@ def _team_policy_scenario(context,mode,relay,trace):
             before, fallback_before = len(_rows(trace)),len(_rows(fallback_trace))
             admitted = request("POST",path+"/tasks/capture/admit",{"commandId":"admit-"+suffix,"expectedTeamRevision":instance["revision"],"expectedTaskRevision":task_revision(instance),"memberId":member,"reservation":{"tokens":1000000,"costMicrounits":1000000,"elapsedSeconds":120},"contextArtifactIds":[]})
             run_id = admitted["runId"]
-            def registered():
-                status,_ = client.request("GET","/api/uar/runs/"+run_id,expected=(200,404),return_status=True)
-                return status == 200
-            context["wait_for"]("team run registration",registered,timeout=60)
+            registered = client.request("GET", path + "/attempts/" + admitted["id"] + "/run-registration",
+                expected=200, headers=headers, timeout=None)
+            context["require"](registered["id"] == admitted["id"] and registered["runId"] == run_id,
+                               "team registration acknowledged a different admitted attempt")
             row = _finish(client,{"run_id":run_id,"stream_url":"/api/uar/runs/"+run_id+"/stream"},context)
             _assert_terminal(context,row,allowed)
             primary_requests, fallback_requests = _rows(trace)[before:],_rows(fallback_trace)[fallback_before:]

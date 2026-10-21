@@ -51,4 +51,5 @@ class LoopbackRelay(socketserver.ThreadingTCPServer):
 with LoopbackRelay((args.listen_host, args.listen_port), RelayHandler) as relay:
     args.pid_file.write_text(str(os.getpid()), encoding="utf-8")
     args.ready_file.write_text("ready\n", encoding="utf-8")
+    print("UAR_RELAY_READY", flush=True)
     relay.serve_forever()

@@ -198,26 +198,47 @@ def _embedding(context, config):
     resources = context["resources"]
     root = resources.root / resources.unique_name("embedding")
     root.mkdir(mode=0o700)
-    process = resources.start_process([sys.executable, str(Path(__file__).resolve()), "--embedding-peer", str(root)], label="recovery-embedding")
-    port = context["wait_for"]("recovery embedding peer", lambda: int((root / "port").read_text()) if (root / "port").exists() else False)
-    require(process.poll() is None, "embedding peer exited")
+    peer = resources.start_event_process([sys.executable, str(Path(__file__).resolve()), "--embedding-peer", str(root)], label="recovery-embedding")
+    port = peer.wait("ready").get("port")
+    require(isinstance(port, int) and 0 < port < 65536, "embedding peer listener identity missing")
     url = resources.relay(port)
     config["llm"] = {"embedding": {"backend": "openai", "model": "uar111-recovery-vector", "api_key": "isolated-embedding-fixture", "base_url": url + "/v1", "vector_dimension": 384}}
-    return root
+    return peer
 
 
 def _cold_boot(context, runtime, backend):
     runtime.stop()
     resources = context["resources"]
-    db = resources.ensure_backend(backend)
-    resources.docker("restart", db["name"])
-    if backend == "surreal":
-        # restart reassigns the ephemeral published port; the cached host_url is stale
-        db["host_url"] = "http://" + resources.docker("port", db["name"], "8000/tcp").stdout.strip()
-        context["wait_for"]("restarted Surreal", lambda: context["http"](db["host_url"]).request("GET", "/health", return_status=True)[0] == 200)
-    else:
-        context["wait_for"]("restarted PostgreSQL", lambda: resources.docker("exec", db["name"], "pg_isready", "-U", db["username"], check=False).returncode == 0)
+    resources.restart_backend(backend)
     runtime.start()
+
+
+def _await_indexed(http, kb, document, generation):
+    # This owner-authorized route subscribes before its initial authoritative
+    # snapshot. Reconciled status frames are fresh reads after gaps, never raw
+    # privileged live-query rows. No unscoped internal topic is exposed here.
+    path = "/api/knowledge/%s/documents/%s/ingestion/events" % (kb, document)
+    with http.subscribe(path) as subscription:
+        while True:
+            frame = subscription.next()
+            payload = frame["data"]
+            require(payload.get("version") == 1 and payload.get("topic") == "runtime_principal_ingestion_jobs",
+                    "unsupported ingestion observation contract")
+            if frame["event"] == "ingestion.gap":
+                require(payload.get("requires_snapshot") is True, "ingestion gap omitted reconciliation requirement")
+                if payload.get("reason") not in {"consumer_lagged", "lifecycle_transition"} or payload.get("ready") is False:
+                    raise Blocked("ingestion subscription unavailable; completion remains unconfirmed")
+                # The endpoint follows this event with an owner-authorized
+                # reconciled snapshot. Continue reading that explicit event.
+                continue
+            require(frame["event"] == "ingestion.status", "unexpected ingestion event")
+            job = payload.get("job")
+            require(isinstance(job, dict) and job.get("document_id") == document and job.get("kb_id") == kb,
+                    "ingestion snapshot does not bind the requested resource")
+            require(job.get("generation") == generation, "restart replaced the admitted ingestion generation")
+            require(job.get("state") != "failed", "ingestion terminal failure")
+            if job.get("state") == "indexed":
+                return job
 
 
 def _attested(context, backend, owner, outsiders):
@@ -238,22 +259,17 @@ def _attested(context, backend, owner, outsiders):
         for suffix, method, body in (("", "GET", None), ("/ingestion", "GET", None), ("/retry", "POST", {})):
             http.request(method, "/api/knowledge/%s/documents/%s%s" % (kb, legacy_document, suffix), body, expected=404)
         document = _upload(http, kb, 202)["id"]
-        context["wait_for"]("durable worker reached embedding", lambda: (peer / "contact").exists())
+        peer.wait("contact")
         before, initial_job = _committed(context, backend, config, kb, document, base["owner_id"])
         require(initial_job["state"] in ("pending", "processing", "retryable"), "restart fixture did not interrupt a pending ingestion")
         # The peer holds the real HTTP response until the old runtime is dead.
         # A new dispatcher must rediscover the already committed job.
-        runtime.stop()
-        (peer / "release").write_text("release\n")
+        runtime.force_stop_for_fault()
+        peer.send("release")
+        peer.wait("released")
         _cold_boot(context, runtime, backend)
         http = runtime.http(owner)
-        def indexed():
-            value = _data(http.request("GET", "/api/knowledge/%s/documents/%s/ingestion" % (kb, document)))
-            if value.get("state") == "indexed":
-                return value
-            require(value.get("state") != "failed", "ingestion terminal failure")
-            return False
-        job = context["wait_for"]("durable ingestion indexing", indexed)
+        job = _await_indexed(http, kb, document, initial_job["generation"])
         require(job["generation"] == initial_job["generation"], "restart created a replacement job")
         found = _data(http.request("POST", "/api/knowledge/%s/search" % kb, {"query": SOURCE.decode(), "limit": 5, "min_score": 0.0}))
         require(any(row.get("document_id") == document and SOURCE.decode() in row.get("content", "") for row in found["results"]), "same owner retrieval missing")
@@ -576,7 +592,15 @@ def run_group(context):
 def _embedding_peer(root):
     """Independent real HTTP collaborator with a release-controlled response."""
     import http.server
-    import time
+    import os
+    import select
+    import threading
+    released = threading.Event()
+    output_lock = threading.Lock()
+
+    def emit(name, **fields):
+        with output_lock:
+            print("UAR_FIXTURE_EVENT:" + json.dumps(dict(version=1, event=name, **fields)), flush=True)
     class Handler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *_args):
             pass
@@ -590,9 +614,8 @@ def _embedding_peer(root):
             # recovery upload so startup reaches readiness before its durable
             # worker crosses the controlled restart edge.
             if any(SOURCE.decode() in value for value in inputs):
-                (root / "contact").write_text("contact\n")
-                while not (root / "release").exists():
-                    time.sleep(0.05)
+                emit("contact")
+                released.wait()
             # Controlled vector transport tests UAR durability/retrieval, not
             # semantic quality of an external embedding model.
             result = {"data": [{"index": index, "embedding": [1.0] + [0.0] * 383} for index, _ in enumerate(inputs)]}
@@ -606,9 +629,27 @@ def _embedding_peer(root):
             except (BrokenPipeError, ConnectionResetError):
                 pass
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-    (root / "port.pending").write_text(str(server.server_port))
-    (root / "port.pending").replace(root / "port")
-    server.serve_forever()
+    emit("ready", port=server.server_port)
+    pending = b""
+    try:
+        while True:
+            readable, _, _ = select.select([server, sys.stdin], [], [])
+            if sys.stdin in readable:
+                data = os.read(sys.stdin.fileno(), 4096)
+                if not data:
+                    break
+                pending += data
+                while b"\n" in pending:
+                    line, pending = pending.split(b"\n", 1)
+                    command = json.loads(line)
+                    require(command == {"version": 1, "command": "release"}, "invalid embedding control command")
+                    released.set()
+                    emit("released")
+            if server in readable:
+                server.handle_request()
+    finally:
+        released.set()
+        server.server_close()
 
 
 if __name__ == "__main__":

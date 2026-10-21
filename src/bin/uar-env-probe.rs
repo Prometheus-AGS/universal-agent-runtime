@@ -1,24 +1,20 @@
 //! Test-only child process: records what a process spawned by UAR can observe.
 //!
-//! Usage: `uar-env-probe <output-path> [--mcp] [--linger-ms <n>]`
+//! Usage: `uar-env-probe <output-path> [--mcp] [--control <address> --control-token <nonce>]`
 //!
 //! Appends one JSON line to `<output-path>` with the process id, its argv, its
-//! complete environment, and the outcome of one bounded read from stdin
-//! (`"eof"`, `"bytes:<n>"`, `"timeout"` or `"error"`). With `--mcp` the probe
+//! complete environment, and the outcome of one read from stdin
+//! (`"eof"`, `"bytes:<n>"` or `"error"`). With `--mcp` the probe
 //! skips the stdin read (stdin is the MCP protocol pipe) and then serves a
 //! minimal MCP stdio server with one tool, `probe`, which exits the process
-//! when called so a client observes transport loss. `--linger-ms` keeps the
-//! process alive after recording so a process-table inspector can read it.
+//! when called so a client observes transport loss. The optional control
+//! handshake holds the process at an inspectable point until its owner releases it.
 //!
 //! Built only with the `test-probes` feature. Never ship it.
 
 use std::io::{BufRead as _, Read as _, Write as _};
-use std::sync::mpsc;
-use std::time::Duration;
 
 use serde_json::{Value, json};
-
-const STDIN_READ_TIMEOUT: Duration = Duration::from_secs(1);
 
 fn main() {
     let argv: Vec<String> = std::env::args_os()
@@ -29,6 +25,18 @@ fn main() {
         std::process::exit(2);
     };
     let mcp_mode = argv.iter().skip(2).any(|argument| argument == "--mcp");
+
+    if let Some(index) = argv.iter().position(|argument| argument == "--control") {
+        let address = argv.get(index + 1).expect("probe control address");
+        let token = argv.iter().position(|argument| argument == "--control-token")
+            .and_then(|index| argv.get(index + 1)).expect("probe control token");
+        let mut control = std::net::TcpStream::connect(address).expect("connect probe control");
+        writeln!(control, "{token} {}", std::process::id()).expect("signal probe readiness");
+        control.flush().expect("flush probe readiness");
+        let mut release = String::new();
+        std::io::BufReader::new(control).read_line(&mut release).expect("read probe release");
+        if release != "RELEASE\n" { std::process::exit(4); }
+    }
 
     let stdin = if mcp_mode {
         "protocol".to_owned()
@@ -57,31 +65,17 @@ fn main() {
     if mcp_mode {
         serve_mcp();
     }
-    let linger = argv
-        .iter()
-        .position(|argument| argument == "--linger-ms")
-        .and_then(|index| argv.get(index + 1))
-        .and_then(|value| value.parse::<u64>().ok());
-    if let Some(milliseconds) = linger {
-        std::thread::sleep(Duration::from_millis(milliseconds));
-    }
 }
 
-/// One bounded read. A blocked read on an open, empty pipe reports `timeout`.
+/// The terminal child's stdin contract is EOF. A blocked pipe remains an
+/// outstanding obligation; elapsed time cannot establish that stdin is closed.
 fn probe_stdin() -> String {
-    let (sender, receiver) = mpsc::channel();
-    std::thread::spawn(move || {
-        let mut buffer = [0_u8; 256];
-        let outcome = match std::io::stdin().read(&mut buffer) {
-            Ok(0) => "eof".to_owned(),
-            Ok(count) => format!("bytes:{count}"),
-            Err(_) => "error".to_owned(),
-        };
-        let _ = sender.send(outcome);
-    });
-    receiver
-        .recv_timeout(STDIN_READ_TIMEOUT)
-        .unwrap_or_else(|_| "timeout".to_owned())
+    let mut buffer = [0_u8; 256];
+    match std::io::stdin().read(&mut buffer) {
+        Ok(0) => "eof".to_owned(),
+        Ok(count) => format!("bytes:{count}"),
+        Err(_) => "error".to_owned(),
+    }
 }
 
 fn append_record(path: &str, record: &Value) -> std::io::Result<()> {

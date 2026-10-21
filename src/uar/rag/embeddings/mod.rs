@@ -44,6 +44,13 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>;
+
+    /// Release local inference resources after the trusted host has closed
+    /// admission and joined all accepted work. Backends without owned local
+    /// resources retain the default no-op implementation.
+    async fn shutdown(&self) -> Result<(), EmbeddingError> {
+        Ok(())
+    }
 }
 
 /// Instance provenance for status surfaces. Deliberately NOT part of
@@ -145,6 +152,31 @@ pub fn build_backend(
     }
 }
 
+/// Build the local backend for a failover member under the supplied trusted
+/// host scope. This deliberately has no hosted-provider branch.
+pub fn build_local_backend(
+    config: &EmbeddingConfig,
+    scope: crate::uar::runtime::lifecycle::ResourceScope,
+) -> Result<Arc<dyn EmbeddingBackend>, EmbeddingError> {
+    if config.backend != "fastembed" {
+        return Err(EmbeddingError::BackendUnavailable(format!(
+            "local embedding failover supports only fastembed, not {}",
+            config.backend
+        )));
+    }
+    #[cfg(feature = "local-models")]
+    {
+        Ok(Arc::new(fastembed::FastEmbedBackend::new_with_scope(config, scope)?))
+    }
+    #[cfg(not(feature = "local-models"))]
+    {
+        let _ = scope;
+        Err(EmbeddingError::BackendUnavailable(
+            "local embedding failover requires the local-models build feature".to_string(),
+        ))
+    }
+}
+
 /// Configuration for the embedding backend.
 #[derive(Clone, Debug)]
 pub struct EmbeddingConfig {
@@ -156,6 +188,9 @@ pub struct EmbeddingConfig {
     pub vector_dimension: usize,
     pub batch_size: usize,
     pub models_dir: String,
+    /// Failover members resolve exactly this directory. Legacy single-backend
+    /// construction retains its established discovery fallbacks.
+    pub strict_models_dir: bool,
 }
 
 impl Default for EmbeddingConfig {
@@ -176,6 +211,7 @@ impl Default for EmbeddingConfig {
             vector_dimension: 384,
             batch_size: 32,
             models_dir: "src/uar/runtime/matching/models".to_string(),
+            strict_models_dir: false,
         }
     }
 }
@@ -191,13 +227,40 @@ impl From<&crate::config::EmbeddingBackendConfig> for EmbeddingConfig {
             vector_dimension: c.vector_dimension,
             batch_size: c.batch_size,
             models_dir: c.models_dir.clone(),
+            strict_models_dir: false,
         }
+    }
+}
+
+impl EmbeddingConfig {
+    /// Construct a credential-free, explicitly located local failover member.
+    #[must_use]
+    pub fn from_local_member(member: &crate::config::LocalEmbeddingMemberConfig) -> Self {
+        Self {
+            backend: member.backend.clone(),
+            model: member.model.clone(),
+            api_key: None,
+            api_key_env: None,
+            base_url: None,
+            vector_dimension: member.vector_dimension,
+            batch_size: member.batch_size,
+            models_dir: member.models_dir.clone(),
+            strict_models_dir: true,
+        }
+    }
+
+    /// Restrict an existing primary configuration to its declared asset path.
+    #[must_use]
+    pub fn strict_local_member(mut self) -> Self {
+        self.strict_models_dir = true;
+        self
     }
 }
 
 #[cfg(feature = "candle-embeddings")]
 pub mod candle;
 pub mod cohere;
+pub mod failover;
 #[cfg(feature = "local-models")]
 pub mod fastembed;
 pub mod openai;

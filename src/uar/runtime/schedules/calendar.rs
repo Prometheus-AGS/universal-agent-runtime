@@ -56,6 +56,68 @@ pub(crate) fn initial_date(recurrence: &ScheduleRecurrence, now: DateTime<Utc>) 
     }
 }
 
+/// Return the next future business-time boundary that can require a schedule
+/// scan. This is advisory wakeup planning only; [`scan`] remains the durable
+/// admission authority after the wakeup fires.
+pub(crate) fn next_due_after(
+    record: &DurableSchedule,
+    now: DateTime<Utc>,
+) -> Result<Option<DateTime<Utc>>, ScheduleError> {
+    if record.cancelled || record.paused || record.guard.is_some() {
+        return Ok(None);
+    }
+    if let Some(pending) = &record.pending {
+        return Ok((pending.due_at > now).then_some(pending.due_at));
+    }
+    match &record.recurrence {
+        ScheduleRecurrence::Once { at } => {
+            return Ok((!record.once_scanned && *at > now).then_some(*at));
+        }
+        ScheduleRecurrence::Daily { time, timezone } => {
+            let zone = zone(timezone)?;
+            let time = wall_time(time)?;
+            let mut day = record
+                .next_local_date
+                .ok_or(ScheduleError::Conflict("calendar cursor is missing"))?;
+            for _ in 0..DAYS_PER_SCAN {
+                if let Some(at) = resolve(&zone, day, time)? {
+                    if at > now && at > record.effective_at {
+                        return Ok(Some(at));
+                    }
+                }
+                day = day
+                    .succ_opt()
+                    .ok_or(ScheduleError::Invalid("calendar cursor exhausted"))?;
+            }
+            Ok(None)
+        }
+        ScheduleRecurrence::Weekly {
+            weekdays,
+            time,
+            timezone,
+        } => {
+            let zone = zone(timezone)?;
+            let time = wall_time(time)?;
+            let mut day = record
+                .next_local_date
+                .ok_or(ScheduleError::Conflict("calendar cursor is missing"))?;
+            for _ in 0..DAYS_PER_SCAN {
+                if weekdays.contains(&(day.weekday().number_from_monday() as u8)) {
+                    if let Some(at) = resolve(&zone, day, time)? {
+                        if at > now && at > record.effective_at {
+                            return Ok(Some(at));
+                        }
+                    }
+                }
+                day = day
+                    .succ_opt()
+                    .ok_or(ScheduleError::Invalid("calendar cursor exhausted"))?;
+            }
+            Ok(None)
+        }
+    }
+}
+
 /// Resolve one local calendar candidate under the schedule skip/earlier policy.
 /// The returned instant is not admission authority.
 pub fn resolve_local_time(day: NaiveDate, time: &str, timezone: &str) -> Result<Option<DateTime<Utc>>, ScheduleError> {

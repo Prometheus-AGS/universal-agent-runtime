@@ -39,9 +39,17 @@ pub struct ProviderHealthSnapshot {
 /// [`ModelRouter`](super::router::ModelRouter), and every [`Orchestrator`](super::orchestrator::Orchestrator)
 /// instance so a failure observed on one run's driver call immediately affects
 /// routing decisions for the next.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ProviderHealthMonitor {
     state: RwLock<HashMap<String, ProviderHealthState>>,
+    changed: tokio::sync::watch::Sender<()>,
+}
+
+impl Default for ProviderHealthMonitor {
+    fn default() -> Self {
+        let (changed, _) = tokio::sync::watch::channel(());
+        Self { state: RwLock::new(HashMap::new()), changed }
+    }
 }
 
 impl ProviderHealthMonitor {
@@ -62,6 +70,7 @@ impl ProviderHealthMonitor {
         }
         drop(state);
         crate::uar::telemetry::metrics::record_provider_health(provider_id, true);
+        self.changed.send_replace(());
     }
 
     /// Record a failed call to `provider_id`. Once `consecutive_errors` reaches
@@ -82,6 +91,7 @@ impl ProviderHealthMonitor {
         let healthy = entry.is_healthy(Instant::now());
         drop(state);
         crate::uar::telemetry::metrics::record_provider_health(provider_id, healthy);
+        self.changed.send_replace(());
     }
 
     /// Whether `provider_id` is currently outside its cooldown window.
@@ -116,21 +126,37 @@ impl ProviderHealthMonitor {
             .collect()
     }
 
-    /// Spawn the periodic sweep loop: every `interval_secs`, refresh the health
-    /// gauge for each tracked provider (expired cooldowns read as healthy again
-    /// without waiting for the next call to that provider). Exits when `token`
-    /// is cancelled.
+    /// Update gauges on actual health changes and the next cooldown expiry.
+    /// The legacy interval argument is ignored. Cooldowns are business expiry,
+    /// never proof of transport recovery. The caller owns the returned handle
+    /// and must join it after requesting cancellation.
     pub fn spawn_monitor_loop(
         self: Arc<Self>,
-        interval_secs: u64,
+        _interval_secs: u64,
         token: CancellationToken,
     ) -> tokio::task::JoinHandle<()> {
+        let mut changed = self.changed.subscribe();
         tokio::spawn(async move {
-            let mut ticker = tokio::time::interval(Duration::from_secs(interval_secs.max(1)));
             loop {
+                changed.borrow_and_update();
+                let now = Instant::now();
+                let next_expiry = self.state.read().await.values()
+                    .filter_map(|entry| entry.cooldown_until)
+                    .filter(|until| *until > now)
+                    .min();
+                self.sweep().await;
                 tokio::select! {
-                    _ = ticker.tick() => self.sweep().await,
+                    biased;
                     () = token.cancelled() => break,
+                    result = changed.changed() => {
+                        if result.is_err() { break; }
+                    }
+                    () = async {
+                        match next_expiry {
+                            Some(expiry) => tokio::time::sleep_until(expiry.into()).await,
+                            None => std::future::pending::<()>().await,
+                        }
+                    } => {}
                 }
             }
         })

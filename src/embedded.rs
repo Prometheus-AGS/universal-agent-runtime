@@ -7,6 +7,7 @@
 //! policy, skills, tools, run lifecycle, canonical events, and A2UI state.
 
 use std::sync::Arc;
+use futures::FutureExt as _;
 
 use crate::{
     Result, UarError,
@@ -46,6 +47,7 @@ const DEFAULT_VECTOR_THRESHOLD: f32 = 0.5;
 /// component accessors: a successful build is the readiness guarantee.
 #[derive(Clone)]
 pub struct EmbeddedRuntime {
+    lifecycle: Arc<EmbeddedLifecycle>,
     llm_config: Arc<LlmConfig>,
     orchestrator: Arc<Orchestrator>,
     run_manager: Arc<RunManager>,
@@ -62,6 +64,23 @@ pub struct EmbeddedRuntime {
     /// Owns a SECOND embedded SurrealKV store, separate from `persistence`.
     /// `None` when memory is disabled.
     memory_service: Option<Arc<MemoryService>>,
+}
+
+struct EmbeddedLifecycle {
+    supervisor: crate::uar::runtime::lifecycle::RuntimeSupervisor,
+    cancellation: tokio_util::sync::CancellationToken,
+}
+
+impl Drop for EmbeddedLifecycle {
+    fn drop(&mut self) {
+        self.cancellation.cancel();
+        if let Ok(runtime) = tokio::runtime::Handle::try_current() {
+            let supervisor = self.supervisor.clone();
+            runtime.spawn(async move { let _ = supervisor.shutdown().await; });
+        } else {
+            tracing::error!("embedded runtime dropped outside an async host; explicit shutdown acknowledgement is missing");
+        }
+    }
 }
 
 impl std::fmt::Debug for EmbeddedRuntime {
@@ -83,6 +102,17 @@ impl std::fmt::Debug for EmbeddedRuntime {
 }
 
 impl EmbeddedRuntime {
+    /// A retained host observation/control capability; it grants no tool authority.
+    pub fn lifecycle(&self) -> crate::uar::runtime::lifecycle::RuntimeHandle {
+        self.lifecycle.supervisor.handle()
+    }
+
+    /// Close UAR admission and await actual completion. Borrowed stores remain
+    /// owned and usable by their host; retained UAR facades reject new work.
+    pub async fn shutdown(&self) -> crate::uar::runtime::lifecycle::CloseReport {
+        self.lifecycle.cancellation.cancel();
+        self.lifecycle.supervisor.shutdown().await
+    }
     /// Begin constructing an embedded runtime.
     #[must_use]
     pub fn builder() -> EmbeddedRuntimeBuilder {
@@ -194,6 +224,7 @@ impl EmbeddedRuntime {
 /// back to a remote provider or ephemeral state.
 #[derive(Default)]
 pub struct EmbeddedRuntimeBuilder {
+    persistence_close: Option<std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send + 'static>>>,
     llm_config: Option<LlmConfig>,
     credential_policy: Option<Arc<crate::uar::security::credentials::CredentialTenancyPolicy>>,
     provider_service: Option<Arc<crate::uar::security::credentials::ProviderService>>,
@@ -202,9 +233,11 @@ pub struct EmbeddedRuntimeBuilder {
     persistence: Option<Arc<dyn PersistenceLayer>>,
     embedding_backend: Option<Arc<dyn EmbeddingBackend>>,
     mcp: Option<Arc<McpRegistry>>,
+    owned_mcp: bool,
     native_skills: Option<Arc<NativeSkillRegistry>>,
     a2ui_registry: Option<Arc<A2uiRegistry>>,
     memory_service: Option<Arc<MemoryService>>,
+    borrowed_memory: bool,
     governance_engine: Option<Arc<GovernanceEngine>>,
     host_tool_admission:
         Option<Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>>,
@@ -278,6 +311,15 @@ impl EmbeddedRuntimeBuilder {
         self
     }
 
+    /// Transfer physical close authority explicitly. `close` must acknowledge
+    /// actual engine/pool release, after UAR's admitted users have drained.
+    pub fn owned_persistence<F>(mut self, persistence: Arc<dyn PersistenceLayer>, close: F) -> Self
+    where F: std::future::Future<Output = anyhow::Result<()>> + Send + 'static {
+        self.persistence = Some(persistence);
+        self.persistence_close = Some(Box::pin(close));
+        self
+    }
+
     #[must_use]
     pub fn embedding_backend(mut self, backend: Arc<dyn EmbeddingBackend>) -> Self {
         self.embedding_backend = Some(backend);
@@ -287,6 +329,16 @@ impl EmbeddedRuntimeBuilder {
     #[must_use]
     pub fn mcp(mut self, registry: Arc<McpRegistry>) -> Self {
         self.mcp = Some(registry);
+        self.owned_mcp = false;
+        self
+    }
+
+    /// Transfer registry shutdown authority to UAR. Ordinary `mcp` injection
+    /// borrows the host registry and leaves it usable after UAR shutdown.
+    #[must_use]
+    pub fn owned_mcp(mut self, registry: Arc<McpRegistry>) -> Self {
+        self.mcp = Some(registry);
+        self.owned_mcp = true;
         self
     }
 
@@ -315,6 +367,14 @@ impl EmbeddedRuntimeBuilder {
     #[must_use]
     pub fn memory_service(mut self, service: Arc<MemoryService>) -> Self {
         self.memory_service = Some(service);
+        self.borrowed_memory = false;
+        self
+    }
+
+    /// Borrow the host's memory connection through an independent UAR scope.
+    pub fn borrowed_memory_service(mut self, service: Arc<MemoryService>) -> Self {
+        self.memory_service = Some(service);
+        self.borrowed_memory = true;
         self
     }
 
@@ -352,6 +412,71 @@ impl EmbeddedRuntimeBuilder {
     /// Build a ready-to-run embedded UAR kernel without starting transports or
     /// background workers.
     pub async fn build(self) -> Result<EmbeddedRuntime> {
+        let supervisor = crate::uar::runtime::lifecycle::RuntimeSupervisor::new("embedded-host");
+        let (send, receive) = tokio::sync::oneshot::channel();
+        tokio::spawn(async move {
+            let result = match std::panic::AssertUnwindSafe(async {
+                let startup = supervisor.register("embedded-startup", "uar-host").await
+                    .map_err(anyhow::Error::from)?;
+                let initialization = startup.admit_named("embedded-initialization")
+                    .map_err(anyhow::Error::from)?;
+                let result = startup.run_in_scope(self.build_in_scope(supervisor.clone())).await;
+                initialization.complete();
+                result
+            }).catch_unwind().await {
+                Ok(result) => result,
+                Err(_) => Err(anyhow::anyhow!("embedded startup panicked").into()),
+            };
+            let result = match result {
+                Ok(runtime) => Ok(runtime),
+                Err(error) => {
+                    let graph = configure_embedded_lifecycle(&supervisor).await;
+                    let report = supervisor.shutdown().await;
+                    if report.released && graph.is_ok() { Err(error) } else {
+                        Err(anyhow::Error::new(error).context(format!("embedded startup cleanup failed: {:?}; graph: {:?}; unresolved: {:?}", report.failures, graph.err(), report.unresolved_effects)).into())
+                    }
+                }
+            };
+            if let Err(Ok(runtime)) = send.send(result) {
+                let _ = runtime.shutdown().await;
+            }
+        });
+        receive.await.map_err(|_| anyhow::anyhow!("embedded startup owner ended without acknowledgement"))?
+    }
+
+    async fn build_in_scope(self, supervisor: crate::uar::runtime::lifecycle::RuntimeSupervisor) -> Result<EmbeddedRuntime> {
+        let owns_persistence = self.persistence_close.is_some();
+        if let Some(close) = self.persistence_close {
+            let scope = supervisor.register_with_finalizer("embedded-store", "uar-host", close).await.map_err(anyhow::Error::from)?;
+            if let Some(persistence) = &self.persistence {
+                scope.retain_resource_state(Arc::new(Arc::clone(persistence))).map_err(anyhow::Error::from)?;
+            }
+        }
+        let memory_service = match self.memory_service {
+            Some(memory) if self.borrowed_memory => Some(Arc::new(memory.borrowed_scope().await?)),
+            memory => memory,
+        };
+        if let Some(memory) = memory_service.as_ref() {
+            let memory = Arc::clone(memory);
+            let retained_memory = Arc::clone(&memory);
+            let scope = supervisor.register_with_finalizer("embedded-memory", "uar-host", async move {
+                let report = memory.close_scope().await;
+                anyhow::ensure!(report.scope_released && report.failure.is_none()
+                    && (!matches!(report.ownership, crate::uar::memory::service::MemoryStorageOwnership::UarOwned)
+                        || report.engine_close_acknowledged), "embedded memory release failed: {:?}", report.failure);
+                Ok(())
+            }).await.map_err(anyhow::Error::from)?;
+            scope.retain_resource_state(retained_memory).map_err(anyhow::Error::from)?;
+        }
+        let owns_mcp = self.owned_mcp || self.mcp.is_none();
+        let mcp = self.mcp.unwrap_or_else(|| Arc::new(McpRegistry::empty()));
+        if owns_mcp {
+            let owner = Arc::clone(&mcp);
+            let scope = supervisor.register_with_finalizer("embedded-mcp", "uar-host", async move {
+                owner.shutdown_report().await
+            }).await.map_err(anyhow::Error::from)?;
+            scope.retain_resource_state(Arc::clone(&mcp)).map_err(anyhow::Error::from)?;
+        }
         let driver = self.driver.ok_or_else(|| {
             UarError::config(
                 "E_EMBEDDED_LOCAL_DRIVER_REQUIRED",
@@ -370,6 +495,12 @@ impl EmbeddedRuntimeBuilder {
                 "embedded UAR requires a host persistence layer",
             )
         })?;
+        let persistence_scope = supervisor.register("embedded-persistence-access", "uar-host").await.map_err(anyhow::Error::from)?;
+        if !owns_persistence {
+            persistence_scope.set_ownership(crate::uar::runtime::lifecycle::ResourceOwnership::Borrowed).map_err(anyhow::Error::from)?;
+        }
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(crate::uar::persistence::scoped::ScopedPersistence::new(persistence, persistence_scope.clone()));
+        persistence_scope.mark_ready().map_err(anyhow::Error::from)?;
 
         let default_model = provider
             .default_model
@@ -392,7 +523,6 @@ impl EmbeddedRuntimeBuilder {
             Arc::clone(&embedding_backend),
             self.vector_threshold.unwrap_or(DEFAULT_VECTOR_THRESHOLD),
         ));
-        let mcp = self.mcp.unwrap_or_else(|| Arc::new(McpRegistry::empty()));
         let native_skills = self
             .native_skills
             .unwrap_or_else(|| Arc::new(NativeSkillRegistry::new()));
@@ -463,6 +593,8 @@ impl EmbeddedRuntimeBuilder {
         let credential_policy = self.credential_policy.unwrap_or_else(|| Arc::new(
             crate::uar::security::credentials::CredentialTenancyPolicy::default(),
         ));
+        let history_scope = supervisor.register("embedded-history", "uar-host").await.map_err(anyhow::Error::from)?;
+        let manager_scope = supervisor.register("embedded-runs", "uar-host").await.map_err(anyhow::Error::from)?;
         let mut manager = RunManager::new(
                 llm_config.clone(),
                 Arc::clone(&mcp),
@@ -472,6 +604,7 @@ impl EmbeddedRuntimeBuilder {
                 Some(Arc::clone(&persistence)),
             )
             .await
+            .attach_lifecycle(manager_scope.clone())
             .with_agent_graph(crate::uar::defaults::orchestrator_graph())
             .with_llm_driver(driver)
             .with_credential_policy(credential_policy)
@@ -486,8 +619,25 @@ impl EmbeddedRuntimeBuilder {
             manager = manager.with_provider_service(service);
         }
         let run_manager = Arc::new(manager);
+        let history_owner = Arc::clone(&run_manager);
+        history_scope.set_finalizer(async move { history_owner.shutdown_run_history().await }).map_err(anyhow::Error::from)?;
+        history_scope.mark_ready().map_err(anyhow::Error::from)?;
+        manager_scope.mark_ready().map_err(anyhow::Error::from)?;
+        let sandbox_owner = Arc::clone(&run_manager);
+        supervisor.register_with_finalizer("embedded-execution", "uar-host", async move {
+            let roots = sandbox_owner.shutdown_graph_roots().await;
+            let terminals = sandbox_owner.shutdown_terminals().await;
+            let sandboxes = sandbox_owner.shutdown_sandboxes().await;
+            roots.and(terminals).and(sandboxes)
+        }).await.map_err(anyhow::Error::from)?;
+        let cancellation = run_manager.root_cancellation_token();
+        configure_embedded_lifecycle(&supervisor).await?;
+        for resource in supervisor.resources().await {
+            supervisor.resource_scope(&resource.resource_id).await.map_err(anyhow::Error::from)?.mark_ready().map_err(anyhow::Error::from)?;
+        }
 
         Ok(EmbeddedRuntime {
+            lifecycle: Arc::new(EmbeddedLifecycle { supervisor, cancellation }),
             llm_config: Arc::new(llm_config),
             orchestrator,
             run_manager,
@@ -501,9 +651,30 @@ impl EmbeddedRuntimeBuilder {
             embedding_backend,
             a2ui_registry,
             a2ui_backbone,
-            memory_service: self.memory_service,
+            memory_service,
         })
     }
+}
+
+async fn configure_embedded_lifecycle(supervisor: &crate::uar::runtime::lifecycle::RuntimeSupervisor) -> anyhow::Result<()> {
+    let registered = supervisor.resources().await.into_iter().map(|resource| resource.resource_id)
+        .collect::<std::collections::BTreeSet<_>>();
+    if registered.contains("embedded-startup") {
+        supervisor.declare_dependencies("embedded-startup", registered.iter()
+            .filter(|resource| resource.as_str() != "embedded-startup").cloned()).await?;
+    }
+    for (resource, dependencies) in [
+        ("embedded-persistence-access", &["embedded-store"][..]),
+        ("embedded-history", &["embedded-persistence-access"][..]),
+        ("embedded-mcp", &["embedded-memory", "embedded-persistence-access"][..]),
+        ("embedded-runs", &["embedded-history", "embedded-mcp", "embedded-memory", "embedded-persistence-access"][..]),
+        ("embedded-execution", &["embedded-runs", "embedded-mcp", "embedded-memory", "embedded-persistence-access"][..]),
+    ] {
+        if registered.contains(resource) {
+            supervisor.declare_dependencies(resource, dependencies.iter().filter(|dependency| registered.contains(**dependency)).copied()).await?;
+        }
+    }
+    Ok(())
 }
 
 fn validate_local_provider(provider: ProviderConfig) -> Result<ProviderConfig> {

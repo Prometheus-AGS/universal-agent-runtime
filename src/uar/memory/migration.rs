@@ -4,7 +4,7 @@
 //! interprets a legacy subject string as a complete principal key.
 use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
-use surreal_memory::{Memory, MemoryHistory, SurrealStorage, storage::MemoryStorage};
+use surreal_memory::{Memory, MemoryHistory, storage::MemoryStorage};
 use crate::uar::security::claims::{CredentialPrincipal, UserContext};
 use super::{owned::record_id, service::MemoryService};
 
@@ -23,10 +23,11 @@ impl MemoryService {
         owner: &UserContext,
         evidence: &str,
     ) -> Result<Memory> {
+        let _operation = self.admit_operation("import_legacy_memory")?;
         self.admin_storage(administrator)?;
         let principal = CredentialPrincipal::from_verified_context(owner)?;
         anyhow::ensure!(!evidence.trim().is_empty(), "Legacy owner mapping evidence required");
-        let target = self.storage.as_any().downcast_ref::<SurrealStorage>()
+        let target = self.raw_surreal_storage()
             .context("Legacy migration requires the production Surreal memory store")?;
         // SurrealDB 3.3 Clone creates a distinct session over the same engine.
         // Selecting the quarantined DB on this handle cannot retarget live reads.
@@ -87,6 +88,7 @@ impl MemoryService {
         // A stable-key save may return a concurrent winner: never accept
         // another owner's assignment as successful migration.
         ensure_same_import(&stored, &principal, &source_digest)?;
+        self.notify_committed_memory_change();
         Ok(stored)
     }
 }

@@ -3,8 +3,7 @@ use arc_swap::ArcSwap;
 use notify::Watcher;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
@@ -33,9 +32,8 @@ pub struct ConfigManager {
     initial: Arc<AppConfig>,
     /// Handle for the background watcher task. Held so the task is cancelled
     /// when the manager is dropped.
-    watcher: Mutex<Option<tokio::task::JoinHandle<()>>>,
-    /// Shutdown signal for the watcher task.
-    watcher_shutdown: Option<tokio::sync::oneshot::Sender<()>>,
+    watcher_scope: crate::uar::runtime::lifecycle::ResourceScope,
+    watcher_stop: tokio_util::sync::CancellationToken,
 }
 
 impl ConfigManager {
@@ -52,20 +50,17 @@ impl ConfigManager {
         let initial = Arc::new(config);
         let current = ArcSwap::new(Arc::clone(&initial));
 
-        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
-
         let manager = Arc::new(Self {
             current,
             cli,
             watched_path,
             strict: AtomicBool::new(false),
             initial,
-            watcher: Mutex::new(None),
-            watcher_shutdown: Some(shutdown_tx),
+            watcher_scope: crate::uar::runtime::lifecycle::ResourceScope::standalone("configuration-watcher", "config-manager"),
+            watcher_stop: tokio_util::sync::CancellationToken::new(),
         });
 
-        let watcher_handle = manager.watch(shutdown_rx);
-        *manager.watcher.lock().expect("watcher lock poisoned") = watcher_handle;
+        manager.watch();
 
         Ok(manager)
     }
@@ -86,8 +81,8 @@ impl ConfigManager {
             watched_path: None,
             strict: AtomicBool::new(false),
             initial,
-            watcher: Mutex::new(None),
-            watcher_shutdown: None,
+            watcher_scope: crate::uar::runtime::lifecycle::ResourceScope::standalone("configuration-watcher", "config-manager"),
+            watcher_stop: tokio_util::sync::CancellationToken::new(),
         }))
     }
 
@@ -106,6 +101,14 @@ impl ConfigManager {
     /// it in. If strict mode is enabled and the new config differs from the
     /// initial snapshot, the reload is rejected.
     pub async fn reload(&self) -> Result<(), ConfigError> {
+        // Explicit reloads and filesystem reloads share this admission lease.
+        // Once watcher shutdown begins, no new reload can race the retained
+        // close operation; a reload already admitted remains accountable until
+        // its atomic publication or error is known.
+        let _reload = self
+            .watcher_scope
+            .admit_named("configuration-reload")
+            .map_err(|_| ConfigError::LifecycleClosed)?;
         #[cfg(feature = "vault")]
         let mut new_config =
             AppConfig::load_with_cli(self.cli.clone()).map_err(ConfigError::Config)?;
@@ -135,76 +138,70 @@ impl ConfigManager {
         self.watched_path.as_ref()
     }
 
-    /// Spawn a background watcher that calls `reload()` when the config file
-    /// changes. Events are debounced to avoid reloading on partial writes.
-    fn watch(
-        self: &Arc<Self>,
-        shutdown: tokio::sync::oneshot::Receiver<()>,
-    ) -> Option<tokio::task::JoinHandle<()>> {
-        let path = self.watched_path.clone()?;
-        let manager = Arc::clone(self);
-        let (tx, mut rx) = mpsc::channel::<notify::Event>(16);
+    /// Await watcher release without requiring every configuration reader to drop.
+    pub async fn close_watchers(&self) -> anyhow::Result<()> {
+        self.watcher_scope.close_admission();
+        self.watcher_stop.cancel();
+        let report = self.watcher_scope.close().await;
+        anyhow::ensure!(report.released, "configuration watcher closure failed: {:?}", report.failures);
+        Ok(())
+    }
+
+    /// Reload only in response to filesystem events. Configuration publication
+    /// is atomic; invalid intermediate writes never replace the last good value.
+    fn watch(self: &Arc<Self>) {
+        let Some(path) = self.watched_path.clone() else { return; };
+        let manager = Arc::downgrade(self);
+        let (tx, mut rx) = mpsc::unbounded_channel::<notify::Result<notify::Event>>();
 
         let mut watcher = match notify::recommended_watcher(move |event| {
-            if let Ok(event) = event {
-                let _ = tx.try_send(event);
-            }
+            let _ = tx.send(event);
         }) {
             Ok(w) => w,
             Err(e) => {
                 error!(name: "config.watcher.failed", error = %e, "Failed to start config file watcher");
-                return None;
+                return;
             }
         };
 
         if let Err(e) = watcher.watch(&path, notify::RecursiveMode::NonRecursive) {
             error!(name: "config.watcher.watch_failed", path = %path.display(), error = %e, "Failed to watch config file");
-            return None;
+            return;
         }
 
-        let mut shutdown_fut = Box::pin(shutdown);
-        let handle = tokio::spawn(async move {
-            let mut debounce = tokio::time::interval(Duration::from_millis(500));
-            debounce.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-            let mut pending = false;
-
+        let stop = self.watcher_stop.clone();
+        if let Err(error) = self.watcher_scope.spawn("filesystem-events", async move {
+            let _watcher = watcher;
             loop {
                 tokio::select! {
-                    _ = &mut shutdown_fut => break,
-                    _ = debounce.tick() => {
-                        if pending {
-                            pending = false;
-                            if let Err(e) = manager.reload().await {
-                                error!(name: "config.reload.failed", error = %e, "Automatic config reload failed");
-                            }
-                        }
-                    }
-                    Some(event) = rx.recv() => {
+                    biased;
+                    () = stop.cancelled() => break,
+                    event = rx.recv() => {
+                        let event = event.ok_or_else(|| anyhow::anyhow!("configuration event source ended"))??;
                         // We only care about content modifications or new files.
                         if matches!(
                             event.kind,
                             notify::EventKind::Modify(_) | notify::EventKind::Create(_)
                         ) {
-                            pending = true;
-                            debounce.reset_immediately();
+                            let Some(manager) = manager.upgrade() else { break; };
+                            if let Err(e) = manager.reload().await {
+                                error!(name: "config.reload.failed", error = %e, "Automatic config reload rejected");
+                            }
                         }
                     }
                 }
             }
-        });
-
-        Some(handle)
+            Ok(())
+        }) {
+            error!(%error, "configuration watcher admission closed");
+        }
     }
 }
 
 impl Drop for ConfigManager {
     fn drop(&mut self) {
-        if let Some(tx) = self.watcher_shutdown.take() {
-            let _ = tx.send(());
-        }
-        if let Some(handle) = self.watcher.lock().expect("watcher lock poisoned").take() {
-            handle.abort();
-        }
+        self.watcher_scope.close_admission();
+        self.watcher_stop.cancel();
     }
 }
 
@@ -217,6 +214,8 @@ pub enum ConfigError {
     StrictConflict(String),
     #[error("Vault error: {0}")]
     Vault(String),
+    #[error("configuration reload is unavailable while lifecycle shutdown is in progress")]
+    LifecycleClosed,
 }
 
 impl From<config::ConfigError> for ConfigError {

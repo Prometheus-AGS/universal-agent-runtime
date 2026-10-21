@@ -1,6 +1,6 @@
 //! A2A JSON-RPC 2.0 HTTP client.
 //!
-//! Sends `message/send` and `tasks/get` requests to remote agents that
+//! Sends negotiated A2A v1 requests and consumes task event streams from peers that
 //! implement the A2A protocol.  Responses are normalised into the shared
 //! domain types defined in [`super::types`].
 
@@ -15,10 +15,27 @@ use super::contract::{
 };
 use super::types::{Message, Task, TaskState};
 
+#[path = "client_stream.rs"]
+mod streaming;
+pub(super) use streaming::A2ATaskStream;
+
+/// Rejection or unavailable discovery before any task mutation was dispatched.
+#[derive(Debug, thiserror::Error)]
+#[error("required A2A streaming interface is unavailable: {0}")]
+pub struct UnsupportedStreamingPeer(#[source] anyhow::Error);
+
+/// An authoritative, exact A2A v1 JSON-RPC streaming interface.
+#[derive(Clone, Debug)]
+pub struct StreamingPeer {
+    endpoint: String,
+    tenant: Option<String>,
+}
+
 /// HTTP client for the A2A JSON-RPC 2.0 protocol.
 #[derive(Clone)]
 pub struct A2AClient {
     http: Client,
+    peers: std::sync::Arc<tokio::sync::RwLock<std::collections::HashMap<String, StreamingPeer>>>,
     /// Optional bearer token attached to every request.
     bearer_token: Option<String>,
 }
@@ -32,7 +49,8 @@ impl std::fmt::Debug for A2AClient {
 }
 
 impl A2AClient {
-    /// Create a new client with default timeout (30 s).
+    /// Create a client without a wall-clock completion deadline.
+    /// The host cancellation lifetime owns remote cancellation and settlement.
     #[expect(
         clippy::expect_used,
         reason = "reqwest default builder is infallible in practice"
@@ -40,10 +58,10 @@ impl A2AClient {
     pub fn new() -> Self {
         Self {
             http: Client::builder()
-                .timeout(std::time::Duration::from_secs(30))
                 .build()
                 .expect("failed to build reqwest client"),
             bearer_token: None,
+            peers: Default::default(),
         }
     }
 
@@ -70,7 +88,7 @@ impl A2AClient {
             "params": params,
         });
 
-        let mut req = self.http.post(url).json(&body);
+        let mut req = self.http.post(url).header("A2A-Version", "1.0").json(&body);
         if let Some(token) = &self.bearer_token {
             req = req.bearer_auth(token);
         }
@@ -204,6 +222,7 @@ impl A2AClient {
         url: String,
         contract: UarDelegationContract,
         task_id: String,
+        context_id: String,
         parent: &tokio_util::sync::CancellationToken,
     ) -> anyhow::Result<super::task_execution::A2ATaskExecution> {
         anyhow::ensure!(
@@ -212,7 +231,7 @@ impl A2AClient {
         );
         contract.validate()?;
         anyhow::ensure!(
-            !task_id.trim().is_empty(),
+            !task_id.trim().is_empty() && !context_id.trim().is_empty(),
             "persisted A2A task binding is invalid"
         );
         Ok(super::task_execution::A2ATaskExecution::for_cleanup(
@@ -220,75 +239,115 @@ impl A2AClient {
             url,
             contract,
             task_id,
+            context_id,
             parent,
         ))
     }
 
-    /// Send a message to a remote agent (`message/send`).
-    ///
-    /// Returns the `Task` that was created or updated by the remote agent.
+    /// Resolve the standard discovery card and require this exact advertised
+    /// interface before the host creates a child or dispatches a mutation.
+    /// Legacy endpoints are not rewritten to another agent's advertised URL.
+    pub async fn require_streaming_peer(&self, url: &str) -> Result<StreamingPeer, UnsupportedStreamingPeer> {
+        self.discover_streaming_peer(url).await.map_err(UnsupportedStreamingPeer)
+    }
+
+    async fn discover_streaming_peer(&self, url: &str) -> Result<StreamingPeer> {
+        let endpoint = reqwest::Url::parse(url).context("invalid A2A endpoint")?;
+        anyhow::ensure!(matches!(endpoint.scheme(), "http" | "https")
+            && endpoint.username().is_empty() && endpoint.password().is_none()
+            && endpoint.fragment().is_none(), "invalid A2A HTTP endpoint");
+        let card_url = endpoint.join("/.well-known/agent-card.json")?;
+        let mut request = self.http.get(card_url).header("A2A-Version", "1.0");
+        if let Some(token) = &self.bearer_token { request = request.bearer_auth(token); }
+        let response = request.send().await.context("A2A discovery unavailable")?;
+        anyhow::ensure!(response.status().is_success(), "A2A discovery rejected");
+        let card: serde_json::Value = response.json().await.context("invalid A2A AgentCard")?;
+        anyhow::ensure!(card.pointer("/capabilities/streaming").and_then(serde_json::Value::as_bool) == Some(true),
+            "A2A peer does not support required event streaming");
+        let interface = card.get("supportedInterfaces").and_then(serde_json::Value::as_array)
+            .and_then(|interfaces| interfaces.iter().find(|interface| {
+                interface.get("protocolBinding").and_then(serde_json::Value::as_str) == Some("JSONRPC")
+                    && interface.get("protocolVersion").and_then(serde_json::Value::as_str) == Some("1.0")
+                    && interface.get("url").and_then(serde_json::Value::as_str)
+                        .and_then(|url| reqwest::Url::parse(url).ok()).as_ref() == Some(&endpoint)
+            })).ok_or_else(|| anyhow!("A2A peer does not advertise this exact v1.0 JSONRPC interface"))?;
+        let peer = StreamingPeer {
+            endpoint: endpoint.to_string(),
+            tenant: interface.get("tenant").and_then(serde_json::Value::as_str).map(str::to_owned),
+        };
+        self.peers.write().await.insert(url.to_owned(), peer.clone());
+        Ok(peer)
+    }
+
+    async fn streaming_peer(&self, url: &str) -> Result<StreamingPeer> {
+        if let Some(peer) = self.peers.read().await.get(url).cloned() { return Ok(peer); }
+        self.require_streaming_peer(url).await.map_err(Into::into)
+    }
+
+    async fn task_params(&self, url: &str, task_id: &str) -> Result<serde_json::Value> {
+        let mut params = json!({"id": task_id});
+        if let Some(peer) = self.peers.read().await.get(url)
+            && let Some(tenant) = &peer.tenant { params["tenant"] = json!(tenant); }
+        Ok(params)
+    }
+
+    /// Send one task turn using the negotiated v1 interface. A missing response
+    /// is uncertain creation; callers must never automatically replay it.
     pub async fn send_message(&self, url: &str, message: &Message) -> Result<Task> {
-        // MessageSendParams wraps the message; sending Role/Part fields at the
-        // params root is rejected by this runtime's own inbound dispatcher.
-        let params = json!({"message": message});
-        let result = self.rpc_call(url, "message/send", params).await?;
-        let task: Task = serde_json::from_value(result)
-            .context("deserialise task from message/send response")?;
-        anyhow::ensure!(
-            !task.id.trim().is_empty(),
-            "A2A task receipt has no identity"
-        );
-        Ok(task)
+        self.send_streaming_capable_message(url, message, None, None, None).await
     }
 
     pub(super) async fn send_governed_message(
-        &self,
-        url: &str,
-        message: &Message,
-        contract: &UarDelegationContract,
-        task_id: Option<&str>,
-        context_id: Option<&str>,
+        &self, url: &str, message: &Message, contract: &UarDelegationContract,
+        task_id: Option<&str>, context_id: Option<&str>,
     ) -> Result<Task> {
-        anyhow::ensure!(
-            self.bearer_token.is_some(),
-            "governed A2A delegation requires authentication"
-        );
+        anyhow::ensure!(self.bearer_token.is_some(), "governed A2A delegation requires authentication");
         contract.validate()?;
-        let params = json!({
-            "message": message,
-            "task_id": task_id,
-            "context_id": context_id,
-            "metadata": { UAR_DELEGATION_CONTRACT_METADATA: contract },
+        self.send_streaming_capable_message(url, message, Some(contract), task_id, context_id).await
+    }
+
+    async fn send_streaming_capable_message(
+        &self, url: &str, message: &Message, contract: Option<&UarDelegationContract>,
+        task_id: Option<&str>, context_id: Option<&str>,
+    ) -> Result<Task> {
+        let peer = self.streaming_peer(url).await?;
+        let mut params = json!({
+            "message": streaming::message(message, task_id, context_id)?,
+            "configuration": {"returnImmediately": true},
         });
-        let result = self.rpc_call(url, "message/send", params).await?;
-        let task: Task = serde_json::from_value(result)
-            .context("deserialise task from governed message/send response")?;
-        anyhow::ensure!(
-            !task.id.trim().is_empty(),
-            "A2A task receipt has no identity"
-        );
-        if let Some(task_id) = task_id {
-            anyhow::ensure!(
-                task.id == task_id,
-                "A2A follow-up receipt belongs to another task"
-            );
-        }
-        if let Some(context_id) = context_id {
-            anyhow::ensure!(
-                task.context_id.as_deref() == Some(context_id),
-                "A2A follow-up receipt belongs to another context"
-            );
-        }
-        validate_governed_receipt(&task, contract)?;
+        if let Some(tenant) = peer.tenant { params["tenant"] = json!(tenant); }
+        if let Some(contract) = contract { params["metadata"] = json!({ UAR_DELEGATION_CONTRACT_METADATA: contract }); }
+        let result = self.rpc_call(&peer.endpoint, "SendMessage", params).await?;
+        let task = streaming::task(result.get("task").ok_or_else(|| anyhow!("A2A send did not return a task receipt"))?)?;
+        validate_binding(&task, task_id, context_id)?;
+        if let Some(contract) = contract { validate_governed_receipt(&task, contract)?; }
         Ok(task)
     }
 
-    /// Retrieve a task by ID from a remote agent (`tasks/get`).
+    pub(super) async fn subscribe_task(
+        &self, url: &str, initial: Task, contract: Option<UarDelegationContract>,
+    ) -> Result<A2ATaskStream> {
+        let peer = self.streaming_peer(url).await?;
+        let id = Uuid::new_v4().to_string();
+        let mut params = json!({"id": initial.id});
+        if let Some(tenant) = peer.tenant { params["tenant"] = json!(tenant); }
+        let mut request = self.http.post(&peer.endpoint).header("A2A-Version", "1.0")
+            .header(reqwest::header::ACCEPT, "text/event-stream")
+            .json(&json!({"jsonrpc": "2.0", "id": id, "method": "SubscribeToTask", "params": params}));
+        if let Some(token) = &self.bearer_token { request = request.bearer_auth(token); }
+        let response = request.send().await.context("A2A subscription unavailable")?;
+        anyhow::ensure!(response.status().is_success(), "A2A subscription rejected");
+        anyhow::ensure!(response.headers().get(reqwest::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()).is_some_and(|value| value.split(';').next() == Some("text/event-stream")),
+            "A2A subscription did not return an event stream");
+        Ok(A2ATaskStream::new(response, id, initial, contract))
+    }
+
+    /// Retrieve a task by ID from a remote agent (`GetTask`).
     pub async fn get_task(&self, url: &str, task_id: &str) -> Result<Task> {
-        let params = json!({"id": task_id});
-        let result = self.rpc_call(url, "tasks/get", params).await?;
-        let task: Task =
-            serde_json::from_value(result).context("deserialise task from tasks/get response")?;
+        let params = self.task_params(url, task_id).await?;
+        let result = self.rpc_call(url, "GetTask", params).await?;
+        let task = streaming::task(&result)?;
         anyhow::ensure!(
             task.id == task_id,
             "A2A task receipt belongs to another task"
@@ -307,7 +366,7 @@ impl A2AClient {
         Ok(task)
     }
 
-    /// Cancel a task on the remote agent (`tasks/cancel`).
+    /// Cancel a task on the remote agent (`CancelTask`).
     pub async fn cancel_task(&self, url: &str, task_id: &str) -> Result<()> {
         let task = self.cancel_task_receipt(url, task_id).await?;
         anyhow::ensure!(
@@ -331,16 +390,22 @@ impl A2AClient {
     /// Request cancellation while retaining the peer's exact terminal receipt.
     /// An HTTP success alone does not prove that remote work was cancelled.
     pub async fn cancel_task_receipt(&self, url: &str, task_id: &str) -> Result<Task> {
-        let params = json!({"id": task_id});
-        let result = self.rpc_call(url, "tasks/cancel", params).await?;
-        let task: Task = serde_json::from_value(result)
-            .context("deserialise task from tasks/cancel response")?;
+        let params = self.task_params(url, task_id).await?;
+        let result = self.rpc_call(url, "CancelTask", params).await?;
+        let task = streaming::task(&result)?;
         anyhow::ensure!(
             task.id == task_id,
             "A2A cancellation receipt belongs to another task"
         );
         Ok(task)
     }
+}
+
+pub(super) fn validate_binding(task: &Task, task_id: Option<&str>, context_id: Option<&str>) -> Result<()> {
+    anyhow::ensure!(!task.id.trim().is_empty(), "A2A task receipt has no identity");
+    if let Some(id) = task_id { anyhow::ensure!(task.id == id, "A2A receipt belongs to another task"); }
+    if let Some(id) = context_id { anyhow::ensure!(task.context_id.as_deref() == Some(id), "A2A receipt belongs to another context"); }
+    Ok(())
 }
 
 fn validate_governed_receipt(task: &Task, contract: &UarDelegationContract) -> anyhow::Result<()> {

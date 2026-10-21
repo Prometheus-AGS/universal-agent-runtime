@@ -11919,8 +11919,6 @@ dependencies = [
 [[package]]
 name = "surrealdb"
 version = "3.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f04b42991e6a01e2d01f1ea6183714cf364d3c40fa2197bd8993ec7834e0b4c4"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -12034,8 +12032,6 @@ dependencies = [
 [[package]]
 name = "surrealdb-core"
 version = "3.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1490b831b5090b9bdbdacec5e8060d9dbc1944574809d157fabb4de25e53b1aa"
 dependencies = [
  "ahash 0.8.12",
  "anyhow",
@@ -12156,8 +12152,6 @@ dependencies = [
 [[package]]
 name = "surrealdb-engine-api"
 version = "3.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dff233f2d7c1b5b0eac9f54abb01aaaa42dc466c381095d6b16588ae95482383"
 dependencies = [
  "async-channel",
  "surrealdb-rpc",
@@ -12169,8 +12163,6 @@ dependencies = [
 [[package]]
 name = "surrealdb-engine-local"
 version = "3.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a354808ead8cdaead6ba4bc00318405739d869cf249911e16013f35cd927cbfd"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -12345,8 +12337,6 @@ dependencies = [
 [[package]]
 name = "surrealdb-kvs-rocksdb"
 version = "3.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eb038db9bb586cc8ae2441ee5423ea78fe8e1941737086374262c67b772c002"
 dependencies = [
  "affinitypool",
  "futures",
@@ -12364,8 +12354,6 @@ dependencies = [
 [[package]]
 name = "surrealdb-kvs-surrealkv"
 version = "3.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d9f5f0b906db793730a7ee6baa0512189b4c07593b80b0f59e38b225c9c5b14"
 dependencies = [
  "affinitypool",
  "chrono",
@@ -14284,11 +14272,13 @@ dependencies = [
  "fastembed",
  "futures",
  "governor",
+ "http-body-util",
  "insta",
  "jiff",
  "jsonschema 0.49.4",
  "jsonwebtoken 11.0.0",
  "kreuzberg",
+ "libc",
  "liter-llm",
  "lopdf",
  "metrics",
@@ -14361,6 +14351,7 @@ dependencies = [
  "wasmtime",
  "wasmtime-wasi",
  "windows-service",
+ "windows-sys 0.61.2",
  "wiremock",
 ]
 

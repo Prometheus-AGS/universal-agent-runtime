@@ -37,6 +37,11 @@ pub struct SettingsApiState {
     pub embedding_backend:
         Option<Arc<crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend>>,
     pub embedding_base_config: Option<crate::uar::rag::embeddings::EmbeddingConfig>,
+    /// Optional owner of the configured local primary/backup pair. Its control
+    /// methods run in the trusted host lifecycle scope after this API admits
+    /// the authenticated request.
+    pub embedding_failover:
+        Option<Arc<crate::uar::rag::embeddings::failover::LocalEmbeddingFailover>>,
 }
 
 impl std::fmt::Debug for SettingsApiState {
@@ -60,6 +65,10 @@ impl std::fmt::Debug for SettingsApiState {
                 "embedding_backend",
                 &self.embedding_backend.as_ref().map(|_| "attached"),
             )
+            .field(
+                "embedding_failover",
+                &self.embedding_failover.as_ref().map(|_| "attached"),
+            )
             .finish()
     }
 }
@@ -82,6 +91,8 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
         // Drift listing
         .route("/drift", get(list_drift))
         .route("/embedding/provenance", get(get_embedding_provenance))
+        .route("/embedding/retire-primary", post(retire_embedding_primary))
+        .route("/embedding/recover", post(recover_embedding_primary))
         // Individual settings CRUD
         .route("/", get(list_settings))
         .route("/{key}", get(get_setting))
@@ -695,7 +706,59 @@ async fn get_embedding_provenance(
             "source_dir": p.source_dir,
             "asset_manifest_sha256": p.asset_manifest_sha256,
         })),
+        "failover": state.embedding_failover.as_ref().map(|failover| json!(failover.status())),
     })))
+}
+
+#[derive(Debug, Deserialize)]
+struct EmbeddingGenerationControl {
+    expected_generation: u64,
+}
+
+async fn retire_embedding_primary(
+    State(state): State<Arc<SettingsApiState>>,
+    headers: HeaderMap,
+    Json(control): Json<EmbeddingGenerationControl>,
+) -> Result<Json<crate::uar::rag::embeddings::failover::EmbeddingFailoverStatus>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
+    let failover = state.embedding_failover.as_ref().ok_or(ApiError::Unavailable)?;
+    let result = failover
+        .submit_retire_primary(control.expected_generation)
+        .map_err(|error| ApiError::Validation {
+            key: "llm.embedding.failover".to_string(),
+            message: error.to_string(),
+        })?
+        .await
+        .map_err(|_| ApiError::Internal("embedding retirement owner ended before replying".to_string()))?;
+    result
+        .map(Json)
+        .map_err(|error| ApiError::Validation {
+            key: "llm.embedding.failover".to_string(),
+            message: error.to_string(),
+        })
+}
+
+async fn recover_embedding_primary(
+    State(state): State<Arc<SettingsApiState>>,
+    headers: HeaderMap,
+    Json(control): Json<EmbeddingGenerationControl>,
+) -> Result<Json<crate::uar::rag::embeddings::failover::EmbeddingFailoverStatus>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
+    let failover = state.embedding_failover.as_ref().ok_or(ApiError::Unavailable)?;
+    let result = failover
+        .submit_recover_primary(control.expected_generation)
+        .map_err(|error| ApiError::Validation {
+            key: "llm.embedding.failover".to_string(),
+            message: error.to_string(),
+        })?
+        .await
+        .map_err(|_| ApiError::Internal("embedding recovery owner ended before replying".to_string()))?;
+    result
+        .map(Json)
+        .map_err(|error| ApiError::Validation {
+            key: "llm.embedding.failover".to_string(),
+            message: error.to_string(),
+        })
 }
 
 #[derive(Debug, Deserialize)]
@@ -859,6 +922,12 @@ async fn prevalidate_embedding_mutation(
 ) -> Result<(), ApiError> {
     if proposed_backend.is_none() && proposed_model.is_none() {
         return Ok(());
+    }
+    if state.embedding_failover.is_some() {
+        return Err(ApiError::Validation {
+            key: "llm.embedding".to_string(),
+            message: "the configured local failover pair owns the active embedding space; change both members through a validated restart configuration rather than replacing the primary live".to_string(),
+        });
     }
     let Some(candidate) =
         candidate_embedding_config(state, mgr, proposed_backend, proposed_model).await
@@ -1025,6 +1094,14 @@ async fn reset_setting(
     // config-derived default must build, or nothing is persisted).
     if let Some(error) = rejected_unsupported(&key) {
         return Err(error);
+    }
+    if state.embedding_failover.is_some()
+        && matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model")
+    {
+        return Err(ApiError::Validation {
+            key,
+            message: "the configured local failover pair owns the active embedding space; reset requires a validated restart configuration".to_string(),
+        });
     }
     if matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model")
         && let Some(base) = state.embedding_base_config.clone()
@@ -1372,6 +1449,7 @@ mod prompt_caching_authorization_tests {
             settings_admin_key: Some("configured-admin-key".to_string().into()),
             embedding_backend: None,
             embedding_base_config: None,
+            embedding_failover: None,
         }
     }
 

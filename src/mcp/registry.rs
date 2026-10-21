@@ -4,11 +4,12 @@ use crate::mcp::config::{
 };
 use anyhow::{Context, anyhow};
 use async_trait::async_trait;
+use futures::FutureExt as _;
 use rmcp::{
     model::{CallToolRequestParams, Tool, ToolAnnotations},
     service::ServiceExt,
     transport::{
-        StreamableHttpClientTransport, TokioChildProcess,
+        StreamableHttpClientTransport,
         streamable_http_client::StreamableHttpClientTransportConfig,
     },
 };
@@ -57,35 +58,6 @@ pub(crate) fn same_http_origin(left: &Url, right: &Url) -> bool {
         && left.scheme() == right.scheme()
         && left.port_or_known_default() == right.port_or_known_default()
 }
-
-/// How long one MCP server gets to complete its handshake before it is
-/// skipped.
-///
-/// **No MCP server may prevent the runtime from serving prompts.** This is a
-/// hard invariant, not a tuning knob: an agent runtime whose startup can be
-/// blocked by a third-party tool process is one bad `npx` package away from
-/// total unavailability, and the failure is silent — ports bind, nothing
-/// answers, and no log names the cause.
-///
-/// 20s is generous for a local process handshake (a cold `npx` fetch is the
-/// slow case) while bounding worst-case startup at
-/// `servers × MCP_CONNECT_TIMEOUT` rather than infinity.
-const MCP_CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
-
-/// How long a connected server gets to answer `tools/list`.
-///
-/// Separate from the connect budget because the failures differ: a handshake
-/// hangs on process startup, `tools/list` hangs on a server that connected and
-/// then stopped responding. Shorter, because the connection is already proven.
-const MCP_LIST_TOOLS_TIMEOUT: Duration = Duration::from_secs(10);
-
-/// How long any single tool call gets — MCP or native — before it is failed.
-///
-/// A tool that hangs mid-turn must surface as a failed tool result the model
-/// can react to, never as a run that never ends. This was already applied to
-/// MCP tool calls as a bare `30` and is now named and shared, so the native
-/// path cannot silently diverge from it again.
-const MCP_TOOL_CALL_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[async_trait]
 pub trait NativeTool: Send + Sync + std::fmt::Debug {
@@ -243,28 +215,88 @@ fn native_tool_descriptor(
 }
 
 type DynClientService = rmcp::service::RunningService<rmcp::service::RoleClient, super::interaction::RunMcpClient>;
+/// Cloneable borrower capability. The owning `RunningService` remains in its
+/// slot so shutdown can consume it and await `cancel()` exactly once.
+#[derive(Clone)]
+struct ClientService {
+    peer: rmcp::service::Peer<rmcp::service::RoleClient>,
+    client: super::interaction::RunMcpClient,
+    generation: u64,
+}
+
+impl ClientService {
+    fn from_owner(service: &DynClientService, generation: u64) -> Self {
+        Self {
+            peer: service.peer().clone(),
+            client: service.service().clone(),
+            generation,
+        }
+    }
+
+    fn peer(&self) -> &rmcp::service::Peer<rmcp::service::RoleClient> { &self.peer }
+    fn service(&self) -> &super::interaction::RunMcpClient { &self.client }
+    fn is_transport_closed(&self) -> bool { self.peer.is_transport_closed() }
+}
+
+impl std::ops::Deref for ClientService {
+    type Target = rmcp::service::Peer<rmcp::service::RoleClient>;
+
+    fn deref(&self) -> &Self::Target { &self.peer }
+}
 // An abandoned tool must not leave an interactive callback able to resume it.
 // Cancelling this exact connection does not replay the uncertain remote effect.
-struct ElicitationCallLifetime { service: Arc<DynClientService>, completed: bool }
+struct ElicitationCallLifetime { slot: SharedClientService, completed: bool }
 impl Drop for ElicitationCallLifetime {
     fn drop(&mut self) {
-        if !self.completed { self.service.cancellation_token().cancel(); }
+        if !self.completed { begin_service_shutdown(&self.slot); }
     }
 }
 
 struct ClientServiceState {
-    service: Arc<DynClientService>,
+    service: ClientService,
+    owner: Option<DynClientService>,
     // Replacement is synchronous, but transport close is asynchronous. Retain
     // old services here so cancellation of the replacing caller cannot detach
     // cleanup or let application shutdown overlook them.
-    retired: Vec<Arc<DynClientService>>,
+    retired: Vec<DynClientService>,
+    retired_cleanup: Vec<Arc<RetainedMcpCleanup>>,
     reconnect_entry: McpServerEntry,
     snapshot: Option<Arc<SnapshotBinding>>,
     lifecycle: Option<(McpLifecycle, Uuid)>,
     generation: u64,
     reconnects_in_flight: usize,
     updates_in_flight: usize,
+    idle: Arc<tokio::sync::Notify>,
     shutting_down: bool,
+    cleanup: Option<Arc<RetainedMcpCleanup>>,
+}
+
+/// Consuming rmcp cancellation runs in an owned task. Waiter cancellation never
+/// drops that consuming future; repeated callers observe its retained result.
+struct RetainedMcpCleanup {
+    task: tokio::sync::Mutex<tokio::task::JoinHandle<Vec<String>>>,
+    result: std::sync::OnceLock<Vec<String>>,
+}
+
+impl RetainedMcpCleanup {
+    fn start(future: impl std::future::Future<Output = Vec<String>> + Send + 'static) -> Arc<Self> {
+        Arc::new(Self {
+            task: tokio::sync::Mutex::new(tokio::spawn(async move {
+                std::panic::AssertUnwindSafe(future).catch_unwind().await
+                    .unwrap_or_else(|_| vec!["MCP cleanup task panicked; release unconfirmed".to_owned()])
+            })),
+            result: std::sync::OnceLock::new(),
+        })
+    }
+
+    async fn wait(&self) -> Vec<String> {
+        let mut task = self.task.lock().await;
+        if let Some(result) = self.result.get() { return result.clone(); }
+        let result = (&mut *task).await
+            .unwrap_or_else(|_| vec!["MCP cleanup task did not join; release unconfirmed".to_owned()]);
+        let _ = self.result.set(result.clone());
+        result
+    }
 }
 
 struct SnapshotBinding {
@@ -285,7 +317,7 @@ enum SnapshotTransport {
 type SharedClientService = Arc<RwLock<ClientServiceState>>;
 
 struct BoundServices {
-    connections: HashMap<String, Arc<DynClientService>>,
+    connections: HashMap<String, ClientService>,
     closed: tokio_util::sync::CancellationToken,
 }
 
@@ -294,11 +326,68 @@ struct RegistryAdmission {
     closed: AtomicBool,
     active: AtomicUsize,
     idle: tokio::sync::Notify,
-    retired: RwLock<Vec<Arc<DynClientService>>>,
+    retired: RwLock<Vec<DynClientService>>,
     retired_slots: RwLock<Vec<SharedClientService>>,
+    cleanup: std::sync::Mutex<Option<Arc<RetainedMcpCleanup>>>,
+    operations: tokio_util::task::TaskTracker,
+    processes: StdioProcessSupervisor,
+    failures: std::sync::Mutex<Vec<String>>,
+    acquisitions: std::sync::Mutex<Vec<Arc<RetainedMcpCleanup>>>,
 }
 
 impl RegistryAdmission {
+    async fn execute_owned<T, F>(self: &Arc<Self>, cancellation: tokio_util::sync::CancellationToken, future: F) -> anyhow::Result<T>
+    where
+        T: Send + 'static,
+        F: std::future::Future<Output = anyhow::Result<T>> + Send + 'static,
+    {
+        let admission = self.enter()?;
+        let owner = Arc::clone(self);
+        let scope = crate::uar::runtime::lifecycle::current_scope();
+        let operation_scope = scope.clone();
+        let scope_cancel = scope.as_ref().map(|scope| scope.cancellation_token()).unwrap_or_default();
+        let (mut sender, receiver) = tokio::sync::oneshot::channel();
+        let operation = async move {
+            let _admission = admission;
+            let retained = async {
+                tokio::pin!(future);
+                tokio::select! {
+                    result = &mut future => result,
+                    _ = sender.closed() => { cancellation.cancel(); future.await },
+                    _ = scope_cancel.cancelled() => { cancellation.cancel(); future.await },
+                }
+            };
+            let result = match std::panic::AssertUnwindSafe(retained).catch_unwind().await {
+                Ok(result) => result,
+                Err(_) => {
+                    owner.failures.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push("MCP/native operation panicked; effect outcome unknown".to_owned());
+                    if let Some(scope) = &operation_scope {
+                        scope.record_unresolved_effect("MCP/native operation panicked");
+                    }
+                    Err(super::outcome::McpToolFailure {
+                        outcome: super::outcome::ToolOutcome::OutcomeUnknown, result: None,
+                    }.into())
+                }
+            };
+            if result.as_ref().err().and_then(|error| error.downcast_ref::<super::outcome::McpToolFailure>())
+                .is_some_and(|error| error.outcome == super::outcome::ToolOutcome::OutcomeUnknown)
+            {
+                if let Some(scope) = &operation_scope {
+                    scope.record_unresolved_effect("MCP invocation returned outcome unknown");
+                }
+            }
+            let _ = sender.send(result);
+            Ok(())
+        };
+        if let Some(scope) = scope {
+            scope.spawn("mcp-native-invocation", operation)?;
+        } else {
+            self.operations.spawn(operation);
+        }
+        receiver.await.map_err(|_| anyhow!("MCP operation owner stopped; outcome unknown"))?
+    }
+
     fn enter(self: &Arc<Self>) -> anyhow::Result<RegistryAdmissionGuard> {
         if self.closed.load(Ordering::Acquire) {
             anyhow::bail!("MCP registry is shutting down");
@@ -327,12 +416,11 @@ impl RegistryAdmission {
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         for slot in &*slots {
-            begin_service_shutdown(slot).cancellation_token().cancel();
+            begin_service_shutdown(slot);
         }
     }
 
     fn retire(&self, service: DynClientService) {
-        let service = Arc::new(service);
         service.cancellation_token().cancel();
         self.retired
             .write()
@@ -345,7 +433,7 @@ impl RegistryAdmission {
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .push(Arc::clone(&slot));
-        begin_service_shutdown(&slot).cancellation_token().cancel();
+        begin_service_shutdown(&slot);
     }
 
     fn leave(&self) {
@@ -354,7 +442,18 @@ impl RegistryAdmission {
         }
     }
 
-    async fn join(&self) {
+    async fn join(self: &Arc<Self>) -> Vec<String> {
+        let cleanup = {
+            let mut retained = self.cleanup.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            Arc::clone(retained.get_or_insert_with(|| {
+                let admission = Arc::clone(self);
+                RetainedMcpCleanup::start(async move { admission.join_owned().await })
+            }))
+        };
+        cleanup.wait().await
+    }
+
+    async fn join_owned(&self) -> Vec<String> {
         loop {
             let idle = self.idle.notified();
             if self.active.load(Ordering::Acquire) == 0 {
@@ -362,21 +461,19 @@ impl RegistryAdmission {
             }
             idle.await;
         }
-        let retired = self
+        self.operations.close();
+        self.operations.wait().await;
+        let retired = std::mem::take(&mut *self
             .retired
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .clone();
-        for service in &retired {
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner));
+        let mut failures = self.failures.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        for service in retired {
             service.cancellation_token().cancel();
-            while !service.is_transport_closed() {
-                tokio::time::sleep(Duration::from_millis(10)).await;
+            if let Err(error) = service.cancel().await {
+                failures.push(format!("retired MCP transport did not join: {error}"));
             }
         }
-        self.retired
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .retain(|service| !retired.iter().any(|closed| Arc::ptr_eq(service, closed)));
 
         let slots = self
             .retired_slots
@@ -384,16 +481,13 @@ impl RegistryAdmission {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone();
         for slot in &slots {
-            let service = begin_service_shutdown(slot);
-            service.cancellation_token().cancel();
-            while !service_shutdown_complete(slot, &service) {
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
+            failures.extend(close_service_slot(slot).await);
         }
         self.retired_slots
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .retain(|slot| !slots.iter().any(|closed| Arc::ptr_eq(slot, closed)));
+        failures
     }
 }
 
@@ -439,12 +533,12 @@ impl Drop for PendingClientService {
 
 fn validate_bound_service(
     slot: &SharedClientService,
-    bound: &Arc<DynClientService>,
+    bound: &ClientService,
 ) -> anyhow::Result<()> {
     let state = slot
         .read()
         .map_err(|_| anyhow!("MCP binding state unavailable"))?;
-    if state.shutting_down || !Arc::ptr_eq(&state.service, bound) || bound.is_transport_closed() {
+    if state.shutting_down || state.service.generation != bound.generation || bound.is_transport_closed() {
         anyhow::bail!("Frozen MCP connection was replaced, revoked, or closed");
     }
     Ok(())
@@ -491,16 +585,21 @@ fn new_service_slot(
     service: DynClientService,
     reconnect_entry: McpServerEntry,
 ) -> SharedClientService {
+    let borrower = ClientService::from_owner(&service, 0);
     Arc::new(RwLock::new(ClientServiceState {
-        service: Arc::new(service),
+        service: borrower,
+        owner: Some(service),
         retired: Vec::new(),
+        retired_cleanup: Vec::new(),
         reconnect_entry,
         snapshot: None,
         lifecycle: None,
         generation: 0,
         reconnects_in_flight: 0,
         updates_in_flight: 0,
+        idle: Arc::new(tokio::sync::Notify::new()),
         shutting_down: false,
+        cleanup: None,
     }))
 }
 
@@ -515,6 +614,7 @@ impl Drop for SlotUpdateGuard {
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         state.updates_in_flight -= 1;
+        state.idle.notify_waiters();
     }
 }
 
@@ -529,13 +629,12 @@ fn begin_slot_update(slot: &SharedClientService) -> anyhow::Result<SlotUpdateGua
     })
 }
 
-fn current_service(slot: &SharedClientService) -> Arc<DynClientService> {
-    Arc::clone(
-        &slot
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .service,
-    )
+fn current_service(slot: &SharedClientService) -> ClientService {
+    slot
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .service
+        .clone()
 }
 
 fn current_reconnect_entry(slot: &SharedClientService) -> (McpServerEntry, u64) {
@@ -553,15 +652,19 @@ fn replace_configured_service(
     let mut state = slot
         .write()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let service = Arc::new(service);
     if state.shutting_down {
         service.cancellation_token().cancel();
         state.retired.push(service);
         return false;
     }
-    let replaced = std::mem::replace(&mut state.service, service);
-    replaced.cancellation_token().cancel();
-    state.retired.push(replaced);
+    state.generation = state.generation.wrapping_add(1);
+    let borrower = ClientService::from_owner(&service, state.generation);
+    let replaced = state.owner.replace(service);
+    state.service = borrower;
+    if let Some(replaced) = replaced {
+        replaced.cancellation_token().cancel();
+        state.retired.push(replaced);
+    }
     state.reconnect_entry = reconnect_entry;
     state.snapshot = None;
     if let Some((lifecycle, generation)) = state.lifecycle.take() {
@@ -571,7 +674,6 @@ fn replace_configured_service(
             Some(McpStateReason::Invalidated),
         );
     }
-    state.generation = state.generation.wrapping_add(1);
     true
 }
 
@@ -615,37 +717,51 @@ fn install_reconnected_service(
     let mut state = slot
         .write()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let service = Arc::new(service);
     if state.shutting_down || state.generation != expected_generation {
         service.cancellation_token().cancel();
         state.retired.push(service);
         return false;
     }
-    let replaced = std::mem::replace(&mut state.service, service);
-    replaced.cancellation_token().cancel();
-    state.retired.push(replaced);
+    let borrower = ClientService::from_owner(&service, state.generation);
+    let replaced = state.owner.replace(service);
+    state.service = borrower;
+    if let Some(replaced) = replaced {
+        replaced.cancellation_token().cancel();
+        state.retired.push(replaced);
+    }
     if let Some((lifecycle, generation)) = &state.lifecycle {
         lifecycle.transition(*generation, McpServerState::Ready, None);
     }
     true
 }
 
-async fn reap_retired_services(slot: &SharedClientService) {
-    let retired = slot
-        .read()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .retired
-        .clone();
-    for service in &retired {
-        service.cancellation_token().cancel();
-        while !service.is_transport_closed() {
-            tokio::time::sleep(Duration::from_millis(10)).await;
+async fn reap_retired_services(slot: &SharedClientService) -> anyhow::Result<()> {
+    let cleanups = {
+        let mut state = slot.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let retired = std::mem::take(&mut state.retired);
+        if !retired.is_empty() {
+            state.retired_cleanup.push(RetainedMcpCleanup::start(async move {
+                let mut failures = Vec::new();
+                for service in retired {
+                    service.cancellation_token().cancel();
+                    if service.cancel().await.is_err() {
+                        failures.push("retired MCP transport did not join".to_owned());
+                    }
+                }
+                failures
+            }));
         }
+        state.retired_cleanup.clone()
+    };
+    let mut failures = Vec::new();
+    for cleanup in cleanups {
+        failures.extend(cleanup.wait().await);
     }
-    slot.write()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .retired
-        .retain(|service| !retired.iter().any(|closed| Arc::ptr_eq(service, closed)));
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(anyhow!("retired MCP transport cleanup incomplete: {}", failures.join("; ")))
+    }
 }
 
 fn finish_reconnect(slot: &SharedClientService, expected_generation: u64) {
@@ -658,6 +774,7 @@ fn finish_reconnect(slot: &SharedClientService, expected_generation: u64) {
         lifecycle.cancel_connecting(*generation);
     }
     state.reconnects_in_flight -= 1;
+    state.idle.notify_waiters();
 }
 
 fn record_reconnect_failure(
@@ -683,7 +800,7 @@ fn record_reconnect_failure(
     }
 }
 
-fn begin_service_shutdown(slot: &SharedClientService) -> Arc<DynClientService> {
+fn begin_service_shutdown(slot: &SharedClientService) {
     let mut state = slot
         .write()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -694,20 +811,64 @@ fn begin_service_shutdown(slot: &SharedClientService) -> Arc<DynClientService> {
     for service in &state.retired {
         service.cancellation_token().cancel();
     }
-    Arc::clone(&state.service)
+    if let Some(owner) = &state.owner {
+        owner.cancellation_token().cancel();
+    }
 }
 
-fn service_shutdown_complete(slot: &SharedClientService, service: &DynClientService) -> bool {
-    let state = slot
+async fn close_service_slot(slot: &SharedClientService) -> Vec<String> {
+    let cleanup = {
+        let mut state = slot.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        Arc::clone(state.cleanup.get_or_insert_with(|| {
+            let slot = Arc::clone(slot);
+            RetainedMcpCleanup::start(async move { close_service_slot_owned(&slot).await })
+        }))
+    };
+    cleanup.wait().await
+}
+
+async fn close_service_slot_owned(slot: &SharedClientService) -> Vec<String> {
+    begin_service_shutdown(slot);
+    let idle = slot
         .read()
-        .unwrap_or_else(std::sync::PoisonError::into_inner);
-    state.reconnects_in_flight == 0
-        && state.updates_in_flight == 0
-        && service.is_transport_closed()
-        && state
-            .retired
-            .iter()
-            .all(|retired| retired.is_transport_closed())
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .idle
+        .clone();
+    loop {
+        let wait = idle.notified();
+        let idle_now = {
+            let state = slot
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.reconnects_in_flight == 0 && state.updates_in_flight == 0
+        };
+        if idle_now { break; }
+        wait.await;
+    }
+    let (owner, retired, cleanups) = {
+        let mut state = slot
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.shutting_down = true;
+        (state.owner.take(), std::mem::take(&mut state.retired), state.retired_cleanup.clone())
+    };
+    let mut failures = Vec::new();
+    if let Some(owner) = owner {
+        owner.cancellation_token().cancel();
+        if let Err(error) = owner.cancel().await {
+            failures.push(format!("MCP transport owner did not join: {error}"));
+        }
+    }
+    for retired in retired {
+        retired.cancellation_token().cancel();
+        if let Err(error) = retired.cancel().await {
+            failures.push(format!("retired MCP transport did not join: {error}"));
+        }
+    }
+    for cleanup in cleanups {
+        failures.extend(cleanup.wait().await);
+    }
+    failures
 }
 
 /// Process variables every stdio MCP child receives. Anything else, including
@@ -751,7 +912,7 @@ fn stdio_child_command(
     command
 }
 
-async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<DynClientService> {
+async fn connect_server(name: &str, entry: &McpServerEntry, processes: &StdioProcessSupervisor) -> anyhow::Result<DynClientService> {
     anyhow::ensure!(!entry.requires_agent_grant(), "MCP destination requires an agent-bound run grant");
     entry.validate_sandbox_policy(name)?;
     match entry {
@@ -759,14 +920,17 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
             command, args, env, ..
         } => {
             let cmd = stdio_child_command(resolve_mcp_command(command), args, expand_env_map(env));
-            // The rmcp builder owns stdio and otherwise overrides Command's stderr.
-            let (transport, _) = TokioChildProcess::builder(cmd)
-                .stderr(std::process::Stdio::null())
-                .spawn()
+            let transport = processes.spawn(cmd)
                 .with_context(|| format!("failed to spawn stdio MCP server '{name}'"))?;
-            super::interaction::RunMcpClient::default().serve(transport)
-                .await
-                .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
+            let receipt = transport.receipt();
+            match super::interaction::RunMcpClient::default().serve(transport).await {
+                Ok(service) => Ok(service),
+                Err(error) => {
+                    drop(error);
+                    receipt.wait().await.context("MCP failed handshake child did not reap")?;
+                    Err(anyhow!("failed to connect stdio MCP server '{name}'"))
+                }
+            }
         }
         McpServerEntry::RemoteHttp { .. } => connect_configured_http(name, entry).await,
     }
@@ -847,13 +1011,15 @@ async fn connect_stdio_snapshot(
         .map_err(|_| McpBindingError::ConnectionFailed {
             server: name.to_owned(),
         })?;
-    tokio::time::timeout(MCP_CONNECT_TIMEOUT, super::interaction::RunMcpClient::for_request(request).serve(transport))
-        .await
-        .map_err(|_| McpBindingError::ConnectionFailed {
-            server: name.to_owned(),
-        })?
-        .map_err(|error| {
-            if error.is_authorization_required() {
+    let receipt = transport.receipt();
+    match super::interaction::RunMcpClient::for_request(request).serve(transport).await {
+        Ok(service) => Ok(service),
+        Err(error) => {
+            let authorization_required = error.is_authorization_required();
+            drop(error);
+            receipt.wait().await.map_err(|_| McpBindingError::ConnectionFailed { server: name.to_owned() })?;
+            Err(
+            if authorization_required {
                 McpBindingError::AuthenticationRequired {
                     server: name.to_owned(),
                 }
@@ -861,8 +1027,9 @@ async fn connect_stdio_snapshot(
                 McpBindingError::ConnectionFailed {
                     server: name.to_owned(),
                 }
-            }
-        })
+            })
+        }
+    }
 }
 
 async fn connect_http_snapshot(
@@ -910,11 +1077,8 @@ async fn connect_http_snapshot(
         transport_config = headers.apply(transport_config);
     }
     let transport = StreamableHttpClientTransport::with_client(client, transport_config);
-    tokio::time::timeout(MCP_CONNECT_TIMEOUT, super::interaction::RunMcpClient::for_request(request).with_credential(credential).serve(transport))
+    super::interaction::RunMcpClient::for_request(request).with_credential(credential).serve(transport)
         .await
-        .map_err(|_| McpBindingError::ConnectionFailed {
-            server: name.to_owned(),
-        })?
         .map_err(|error| {
             if error.is_authorization_required() {
                 McpBindingError::AuthenticationRequired {
@@ -1082,10 +1246,14 @@ async fn reconnect_snapshot(
         );
         Ok::<_, anyhow::Error>(())
     };
-    match tokio::time::timeout(MCP_LIST_TOOLS_TIMEOUT, catalog_check).await {
-        Ok(Ok(())) => Ok(service),
-        _ => {
-            let _ = service.cancel().await;
+    match catalog_check.await {
+        Ok(()) => Ok(service),
+        Err(error) => {
+            if let Err(close_error) = service.cancel().await {
+                return Err(anyhow!(
+                    "MCP catalog validation failed ({error:#}) and temporary transport did not close: {close_error}"
+                ));
+            }
             Err(McpBindingError::IncompleteCatalog {
                 server: server.to_owned(),
             }
@@ -1134,6 +1302,7 @@ pub struct McpRegistry {
     bound_services: Option<Arc<BoundServices>>,
     shutting_down: Arc<AtomicBool>,
     admission: Arc<RegistryAdmission>,
+    cleanup: Arc<std::sync::Mutex<Option<Arc<RetainedMcpCleanup>>>>,
     server_config: Arc<RwLock<HashMap<String, McpServerEntry>>>,
     // namespaced_tool_name -> (server_name, tool_name)
     tool_index: Arc<RwLock<HashMap<String, (String, String)>>>,
@@ -1181,6 +1350,63 @@ impl std::fmt::Debug for McpRegistry {
 }
 
 impl McpRegistry {
+    /// Register startup before running it. A canceled recipient requests closure,
+    /// but the owner retains initialization until it returns and can be joined.
+    async fn acquire_owned<T, F>(&self, future: F) -> anyhow::Result<T>
+    where
+        T: Send + 'static,
+        F: std::future::Future<Output = anyhow::Result<T>> + Send + 'static,
+    {
+        let scope = crate::uar::runtime::lifecycle::current_scope();
+        let lease = scope.as_ref().map(|scope| scope.admit()).transpose()?;
+        let scope_cancel = scope.as_ref().map(|scope| scope.cancellation_token()).unwrap_or_default();
+        let owner = self.clone();
+        let (mut sender, receiver) = tokio::sync::oneshot::channel();
+        let execution_scope = scope.clone();
+        let task = RetainedMcpCleanup::start(async move {
+            let initialize = async {
+                let future = std::panic::AssertUnwindSafe(future).catch_unwind();
+                tokio::pin!(future);
+                let result = tokio::select! {
+                    result = &mut future => result,
+                    _ = sender.closed() => { owner.begin_shutdown(); future.await },
+                    _ = scope_cancel.cancelled() => { owner.begin_shutdown(); future.await },
+                };
+                result.unwrap_or_else(|_| Err(anyhow!("MCP acquisition panicked")))
+            };
+            let result = if let Some(scope) = &execution_scope {
+                scope.run_in_scope(initialize).await
+            } else { initialize.await };
+            let mut failures = Vec::new();
+            match result {
+                Ok(value) if !owner.shutting_down.load(Ordering::Acquire) => {
+                    if sender.send(Ok(value)).is_err() {
+                        if let Err(error) = owner.shutdown_report().await {
+                            failures.push(error.to_string());
+                        }
+                    }
+                }
+                result => {
+                    if let Err(error) = owner.shutdown_report().await {
+                        failures.push(error.to_string());
+                    }
+                    let error = result.err().unwrap_or_else(|| anyhow!("MCP acquisition canceled"));
+                    let error = if failures.is_empty() { error } else {
+                        error.context("MCP acquired-prefix cleanup incomplete")
+                    };
+                    let _ = sender.send(Err(error));
+                }
+            }
+            if let Some(scope) = &scope {
+                for failure in &failures { scope.record_failure(failure.clone()); }
+            }
+            if let Some(lease) = lease { lease.complete(); }
+            failures
+        });
+        self.admission.acquisitions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(task);
+        receiver.await.map_err(|_| anyhow!("MCP acquisition owner stopped; cleanup unconfirmed"))?
+    }
+
     /// Recheck ambient authority without replacing the captured launch inputs.
     /// A cached global definition cannot outlive removal/restriction, and a
     /// skill declaration cannot alias a currently restricted destination.
@@ -1241,8 +1467,14 @@ impl McpRegistry {
         request: Arc<McpBindingRequest>,
         processes: StdioProcessSupervisor,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
-        let service = connect_stdio_snapshot(&request, &processes).await?;
-        Self::connect_snapshot_binding(request, service, SnapshotTransport::Stdio(processes)).await
+        let server = request.definition().name().to_owned();
+        let owner = Self::configured_empty();
+        let initialized = owner.clone();
+        owner.acquire_owned(async move {
+            let service = connect_stdio_snapshot(&request, &processes).await?;
+            Ok(initialized.connect_snapshot_binding(request, service, SnapshotTransport::Stdio(processes)).await?)
+        }).await.map_err(|error| error.downcast_ref::<McpBindingError>().cloned()
+            .unwrap_or(McpBindingError::ConnectionFailed { server }))
     }
 
     /// Connect one run-scoped HTTP server with request-owned headers. Header
@@ -1255,25 +1487,35 @@ impl McpRegistry {
         if let Some(credential) = &credential {
             credential.authorize(request.definition().name())?;
         }
-        let service = connect_http_snapshot(&request, Some(headers), credential.clone()).await?;
-        Self::connect_snapshot_binding(
-            request,
-            service,
-            SnapshotTransport::RemoteHttp {
-                headers: Some(headers.clone()),
-                credential,
-            },
-        )
-        .await
+        let server = request.definition().name().to_owned();
+        let owner = Self::configured_empty();
+        let initialized = owner.clone();
+        let headers = headers.clone();
+        owner.acquire_owned(async move {
+            let service = connect_http_snapshot(&request, Some(&headers), credential.clone()).await?;
+            Ok(initialized.connect_snapshot_binding(request, service, SnapshotTransport::RemoteHttp {
+                headers: Some(headers), credential,
+            }).await?)
+        }).await.map_err(|error| error.downcast_ref::<McpBindingError>().cloned()
+            .unwrap_or(McpBindingError::ConnectionFailed { server }))
     }
 
     async fn connect_snapshot_binding(
+        &self,
         request: Arc<McpBindingRequest>,
         service: DynClientService,
         transport: SnapshotTransport,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
         let server = request.definition().name().to_owned();
         let compiler = Arc::new(ValidatorCompiler::default());
+        let configuration = request.definition().configuration().clone();
+        let slot = new_service_slot(service, configuration.clone());
+        self.services.write().unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(server.clone(), Arc::clone(&slot));
+        if self.shutting_down.load(Ordering::Acquire) {
+            return Err(McpBindingError::ConnectionFailed { server });
+        }
+        let service = current_service(&slot);
         let discovery = async {
             request.authorize_current_definition()?;
             if let SnapshotTransport::RemoteHttp { credential: Some(credential), .. } = &transport {
@@ -1293,16 +1535,10 @@ impl McpRegistry {
             )?;
             Ok::<_, anyhow::Error>((discovered, catalog))
         };
-        let (discovered, catalog) =
-            match tokio::time::timeout(MCP_LIST_TOOLS_TIMEOUT, discovery).await {
-                Ok(Ok(discovered)) => discovered,
-                _ => {
-                    let _ = service.cancel().await;
-                    return Err(McpBindingError::IncompleteCatalog { server });
-                }
-            };
-        let configuration = request.definition().configuration().clone();
-        let slot = new_service_slot(service, configuration.clone());
+        let (discovered, catalog) = match discovery.await {
+            Ok(discovered) => discovered,
+            Err(_) => return Err(McpBindingError::IncompleteCatalog { server }),
+        };
         slot.write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .snapshot = Some(Arc::new(SnapshotBinding {
@@ -1310,20 +1546,11 @@ impl McpRegistry {
             catalog: catalog.clone(),
             transport,
         }));
-        let registry = Self {
-            services: Arc::new(RwLock::new(HashMap::from([(server.clone(), slot)]))),
-            bound_services: None,
-            shutting_down: Arc::new(AtomicBool::new(false)),
-            admission: Arc::new(RegistryAdmission::default()),
-            server_config: Arc::new(RwLock::new(HashMap::from([(server, configuration)]))),
-            tool_index: Arc::new(RwLock::new(discovered.index)),
-            tools: Arc::new(RwLock::new(discovered.tools)),
-            descriptors: Arc::new(RwLock::new(discovered.descriptors)),
-            validator_compiler: compiler,
-            native_tools: Arc::new(HashMap::new()),
-            shared_transports_enabled: true,
-        };
-        Ok(ConnectedMcpServer::new(registry, catalog))
+        *self.server_config.write().unwrap_or_else(std::sync::PoisonError::into_inner) = HashMap::from([(server, configuration)]);
+        *self.tool_index.write().unwrap_or_else(std::sync::PoisonError::into_inner) = discovered.index;
+        *self.tools.write().unwrap_or_else(std::sync::PoisonError::into_inner) = discovered.tools;
+        *self.descriptors.write().unwrap_or_else(std::sync::PoisonError::into_inner) = discovered.descriptors;
+        Ok(ConnectedMcpServer::new(self.clone(), catalog))
     }
 
     /// Create an empty registry with no MCP servers or tools.
@@ -1334,6 +1561,7 @@ impl McpRegistry {
             bound_services: None,
             shutting_down: Arc::new(AtomicBool::new(false)),
             admission: Arc::new(RegistryAdmission::default()),
+            cleanup: Arc::default(),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(HashMap::new())),
             tools: Arc::new(RwLock::new(Vec::new())),
@@ -1389,42 +1617,33 @@ impl McpRegistry {
 
     pub async fn from_config(cfg: &crate::mcp::config::McpConfig) -> anyhow::Result<Self> {
         cfg.validate_sandbox_policy()?;
+        let owner = Self::configured_empty();
+        let initialized = owner.clone();
+        let cfg = cfg.clone();
+        owner.acquire_owned(async move {
+            initialized.initialize_configured(&cfg).await?;
+            Ok(initialized)
+        }).await
+    }
+
+    async fn initialize_configured(&self, cfg: &crate::mcp::config::McpConfig) -> anyhow::Result<()> {
+        let admission = Arc::clone(&self.admission);
         // 1) connect all servers
-        let mut services: HashMap<String, SharedClientService> = HashMap::new();
 
         for (name, entry) in &cfg.mcp_servers {
+            anyhow::ensure!(!self.shutting_down.load(Ordering::Acquire), "MCP acquisition canceled");
             if entry.requires_agent_grant() { continue; }
-            // A server that never completes its handshake must not be able to
-            // hang startup. Observed 2026-09-01: a stdio server printed
-            // "running on stdio" and neither side ever finished, so the
-            // process bound its ports and then served nothing, forever, with
-            // no log line naming the cause. Error handling below was already
-            // correct — a failure is skipped and the registry continues — but
-            // "never answers" is not an error, so it never reached it.
-            let svc = match tokio::time::timeout(
-                MCP_CONNECT_TIMEOUT,
-                Self::connect_configured_server(name, entry),
-            )
-            .await
-            {
-                Err(_elapsed) => {
-                    crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
-                    tracing::warn!(
-                        server = %name,
-                        timeout_secs = MCP_CONNECT_TIMEOUT.as_secs(),
-                        "MCP server did not complete its handshake in time; skipping it, registry continues without it"
-                    );
-                    continue;
-                }
-                Ok(Ok(svc)) => svc,
-                Ok(Err(e)) => {
+            let svc = match Self::connect_configured_server(name, entry, &admission.processes).await {
+                Ok(svc) => svc,
+                Err(e) => {
                     crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
                     tracing::warn!(server = %name, error = ?e, "MCP server failed to connect; skipping it, registry continues without it");
                     continue;
                 }
             };
             crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
-            services.insert(name.clone(), new_service_slot(svc, entry.clone()));
+            self.services.write().unwrap_or_else(std::sync::PoisonError::into_inner)
+                .insert(name.clone(), new_service_slot(svc, entry.clone()));
         }
 
         // 2) list tools + build index
@@ -1433,25 +1652,14 @@ impl McpRegistry {
         let mut descriptors = BTreeMap::new();
         let validator_compiler = Arc::new(ValidatorCompiler::default());
 
+        let services = self.services.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
         for (server_name, service_slot) in &services {
+            anyhow::ensure!(!self.shutting_down.load(Ordering::Acquire), "MCP acquisition canceled");
             let svc = current_service(service_slot);
             // list_tools exists on the rmcp running service in examples
-            let result = match tokio::time::timeout(
-                MCP_LIST_TOOLS_TIMEOUT,
-                svc.list_tools(Default::default()),
-            )
-            .await
-            {
-                Err(_elapsed) => {
-                    tracing::warn!(
-                        server = %server_name,
-                        timeout_secs = MCP_LIST_TOOLS_TIMEOUT.as_secs(),
-                        "tools/list timed out for MCP server; skipping its tools, registry continues without them"
-                    );
-                    continue;
-                }
-                Ok(Ok(result)) => result,
-                Ok(Err(e)) => {
+            let result = match svc.list_tools(Default::default()).await {
+                Ok(result) => result,
+                Err(e) => {
                     tracing::warn!(server = %server_name, error = ?e, "tools/list failed for MCP server; skipping its tools, registry continues without them");
                     continue;
                 }
@@ -1490,19 +1698,11 @@ impl McpRegistry {
             }
         }
 
-        Ok(Self {
-            services: Arc::new(RwLock::new(services)),
-            bound_services: None,
-            shutting_down: Arc::new(AtomicBool::new(false)),
-            admission: Arc::new(RegistryAdmission::default()),
-            server_config: Arc::new(RwLock::new(cfg.mcp_servers.clone())),
-            tool_index: Arc::new(RwLock::new(tool_index)),
-            tools: Arc::new(RwLock::new(all_tools)),
-            descriptors: Arc::new(RwLock::new(descriptors)),
-            validator_compiler,
-            native_tools: Arc::new(HashMap::new()),
-            shared_transports_enabled: true,
-        })
+        *self.server_config.write().unwrap_or_else(std::sync::PoisonError::into_inner) = cfg.mcp_servers.clone();
+        *self.tool_index.write().unwrap_or_else(std::sync::PoisonError::into_inner) = tool_index;
+        *self.tools.write().unwrap_or_else(std::sync::PoisonError::into_inner) = all_tools;
+        *self.descriptors.write().unwrap_or_else(std::sync::PoisonError::into_inner) = descriptors;
+        Ok(())
     }
 
     /// Connects a single configured MCP server. Split out of `from_config` so
@@ -1514,6 +1714,7 @@ impl McpRegistry {
     async fn connect_configured_server(
         name: &str,
         entry: &McpServerEntry,
+        processes: &StdioProcessSupervisor,
     ) -> anyhow::Result<DynClientService> {
         entry.validate_sandbox_policy(name)?;
         anyhow::ensure!(!entry.requires_agent_grant(), "MCP destination requires an agent-bound run grant");
@@ -1564,13 +1765,16 @@ impl McpRegistry {
                 }
                 let cmd = stdio_child_command(&command_path, args, env);
 
-                // rmcp docs show TokioChildProcess + configure pattern for adding args
-                let (transport, _) = TokioChildProcess::builder(cmd)
-                    .stderr(std::process::Stdio::null())
-                    .spawn()?;
-                super::interaction::RunMcpClient::default().serve(transport)
-                    .await
-                    .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
+                let transport = processes.spawn(cmd)?;
+                let receipt = transport.receipt();
+                match super::interaction::RunMcpClient::default().serve(transport).await {
+                    Ok(service) => Ok(service),
+                    Err(error) => {
+                        drop(error);
+                        receipt.wait().await.context("MCP failed handshake child did not reap")?;
+                        Err(anyhow!("failed to connect stdio MCP server '{name}'"))
+                    }
+                }
             }
 
             McpServerEntry::RemoteHttp { .. } => connect_configured_http(name, entry).await,
@@ -1651,6 +1855,7 @@ impl McpRegistry {
             bound_services: None,
             shutting_down: Arc::new(AtomicBool::new(false)),
             admission: Arc::new(RegistryAdmission::default()),
+            cleanup: Arc::default(),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
@@ -1787,9 +1992,10 @@ impl McpRegistry {
             if selected.is_empty() {
                 continue;
             }
-            let discovered = tokio::time::timeout(MCP_LIST_TOOLS_TIMEOUT, service.list_all_tools())
+            let discovered = service
+                .list_all_tools()
                 .await
-                .context("Frozen MCP catalog discovery timed out")??;
+                .context("Frozen MCP catalog discovery failed")?;
             for descriptor in selected {
                 let (_, raw_name) = tool_index
                     .get(&descriptor.provider_name)
@@ -1907,6 +2113,20 @@ impl McpRegistry {
         arguments: Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<Value> {
+        let registry = self.clone();
+        let name = name.to_owned();
+        let context = context.clone();
+        self.admission.execute_owned(tokio_util::sync::CancellationToken::new(), async move {
+            registry.call_native_owned(&name, arguments, &context).await
+        }).await
+    }
+
+    async fn call_native_owned(
+        &self,
+        name: &str,
+        arguments: Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<Value> {
         if self.bound_services.as_ref().is_some_and(|bindings| {
             bindings.closed.is_cancelled() || self.shutting_down.load(Ordering::Acquire)
         }) {
@@ -1926,18 +2146,9 @@ impl McpRegistry {
             );
             tool.check_thread_policy(policy)?;
         }
-        match tokio::time::timeout(
-            MCP_TOOL_CALL_TIMEOUT,
-            tool.call_with_context(arguments, context),
-        )
-        .await
-        {
-            Ok(result) => result,
-            Err(_) => Err(anyhow!(
-                "native tool {name} timed out after {}s",
-                MCP_TOOL_CALL_TIMEOUT.as_secs()
-            )),
-        }
+        // NativeTool has no cancellation acknowledgement contract. Retain the
+        // admitted future until its real result, even if its caller disappears.
+        tool.call_with_context(arguments, context).await
     }
 
     /// Resolve the backing MCP server and raw tool name for a namespaced tool.
@@ -1992,6 +2203,13 @@ impl McpRegistry {
 
     /// Add or replace one MCP server and immediately refresh its advertised tools.
     pub async fn upsert_server(&self, name: String, entry: McpServerEntry) -> anyhow::Result<()> {
+        let registry = self.clone();
+        self.admission.execute_owned(tokio_util::sync::CancellationToken::new(), async move {
+            registry.upsert_server_owned(name, entry).await
+        }).await
+    }
+
+    async fn upsert_server_owned(&self, name: String, entry: McpServerEntry) -> anyhow::Result<()> {
         if self.bound_services.is_some() {
             anyhow::bail!("Cannot replace a frozen MCP binding");
         }
@@ -2018,20 +2236,15 @@ impl McpRegistry {
             .transpose()?
             .into_iter()
             .collect::<Vec<_>>();
-        let service = tokio::time::timeout(
-            MCP_CONNECT_TIMEOUT,
-            Self::connect_configured_server(&name, &entry),
-        )
-        .await
-        .context("MCP server handshake timed out")??;
+        let service = Self::connect_configured_server(&name, &entry, &self.admission.processes)
+            .await
+            .context("MCP server handshake failed")?;
         let mut pending = PendingClientService::new(service, Arc::clone(&self.admission));
-        let result = tokio::time::timeout(
-            MCP_LIST_TOOLS_TIMEOUT,
-            pending.service().list_tools(Default::default()),
-        )
-        .await
-        .context("MCP tools/list timed out")?
-        .with_context(|| format!("tools/list failed for MCP server '{name}'"))?;
+        let result = pending
+            .service()
+            .list_tools(Default::default())
+            .await
+            .with_context(|| format!("tools/list failed for MCP server '{name}'"))?;
 
         let mut discovered = Vec::new();
         let mut indexed = Vec::new();
@@ -2098,7 +2311,7 @@ impl McpRegistry {
             }
         };
         if let Some((slot, installed)) = replaced_slot {
-            reap_retired_services(&slot).await;
+            reap_retired_services(&slot).await?;
             if !installed {
                 return Err(anyhow!("MCP server is shutting down"));
             }
@@ -2191,40 +2404,58 @@ impl McpRegistry {
         removed
     }
 
-    /// Cancel every connected MCP transport and wait for its cleanup to finish.
-    pub(crate) async fn shutdown(&self) {
+    /// Cancel every connected MCP transport and retain the joined cleanup
+    /// result. A failed join remains observable to the trusted host.
+    pub(crate) async fn shutdown_report(&self) -> anyhow::Result<()> {
         self.begin_shutdown();
         // A borrower closes its own view, never its parent's shared transport.
         if let Some(bindings) = &self.bound_services {
             bindings.closed.cancel();
-            return;
+            return Ok(());
         }
+        let cleanup = {
+            let mut retained = self.cleanup.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            Arc::clone(retained.get_or_insert_with(|| {
+                let registry = self.clone();
+                RetainedMcpCleanup::start(async move { registry.shutdown_owned().await })
+            }))
+        };
+        let failures = cleanup.wait().await;
+        if failures.is_empty() { Ok(()) }
+        else { Err(anyhow!("MCP shutdown incomplete: {}", failures.join("; "))) }
+    }
+
+    async fn shutdown_owned(&self) -> Vec<String> {
         self.shutting_down.store(true, Ordering::Release);
         let services = self
             .services
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .iter()
-            .map(|(name, slot)| {
-                let service = begin_service_shutdown(slot);
-                (name.clone(), Arc::clone(slot), service)
-            })
+            .map(|(name, slot)| (name.clone(), Arc::clone(slot)))
             .collect::<Vec<_>>();
 
-        // Initiate every close before awaiting any one transport. A slow MCP
-        // server must not delay the start of cleanup for its peers.
-        for (_, _, service) in &services {
-            service.cancellation_token().cancel();
-        }
+        // Admission closure plus this join prove no caller retains a live
+        // operation before the consuming service owners are taken.
+        let mut failures = self.admission.join().await;
 
-        for (name, slot, service) in services {
-            while !service_shutdown_complete(&slot, &service) {
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
+        for (name, slot) in services {
+            failures.extend(close_service_slot(&slot).await);
             crate::uar::telemetry::metrics::set_mcp_server_status(&name, false);
             tracing::info!(server = %name, "MCP transport shut down");
         }
-        self.admission.join().await;
+        if self.admission.processes.shutdown().await.is_err() {
+            failures.push("MCP configured child process cleanup failed".to_owned());
+        }
+        failures
+    }
+
+    /// Compatibility shutdown for owners that cannot yet propagate cleanup
+    /// reports. The report path is used by the host lifecycle finalizer.
+    pub(crate) async fn shutdown(&self) {
+        if let Err(error) = self.shutdown_report().await {
+            tracing::error!(error = %error, "MCP shutdown did not complete cleanly");
+        }
     }
 
     /// Begin revocation without awaiting, including from an owning drop guard.
@@ -2241,7 +2472,7 @@ impl McpRegistry {
         self.shutting_down.store(true, Ordering::Release);
         self.admission.close();
         for slot in services.values() {
-            begin_service_shutdown(slot).cancellation_token().cancel();
+            begin_service_shutdown(slot);
         }
     }
 
@@ -2323,6 +2554,7 @@ impl McpRegistry {
                     || other.shutting_down.load(Ordering::Acquire),
             )),
             admission: Arc::new(RegistryAdmission::default()),
+            cleanup: Arc::default(),
             server_config: Arc::new(RwLock::new(server_config)),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
@@ -2412,6 +2644,7 @@ impl McpRegistry {
             }),
             shutting_down: Arc::clone(&self.shutting_down),
             admission: Arc::clone(&self.admission),
+            cleanup: Arc::default(),
             server_config: Arc::new(RwLock::new(server_config)),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
@@ -2456,6 +2689,7 @@ impl McpRegistry {
             bound_services: self.bound_services,
             shutting_down: self.shutting_down,
             admission: self.admission,
+            cleanup: self.cleanup,
             server_config: self.server_config,
             tool_index: self.tool_index, // Keep ref
             tools: Arc::new(RwLock::new(tools)),
@@ -2508,6 +2742,35 @@ impl McpRegistry {
         arguments: serde_json::Value,
         meta: Option<rmcp::model::RequestMetaObject>,
     ) -> anyhow::Result<serde_json::Value> {
+        self.call_namespaced_tool_with_budget(namespaced_tool, arguments, meta, None).await
+    }
+
+    /// An explicitly configured budget requests cancellation; the admitted
+    /// operation still owns the result and selected connection's close barrier.
+    pub(crate) async fn call_namespaced_tool_with_budget(
+        &self,
+        namespaced_tool: &str,
+        arguments: serde_json::Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
+        budget: Option<Duration>,
+    ) -> anyhow::Result<serde_json::Value> {
+        let registry = self.clone();
+        let name = namespaced_tool.to_owned();
+        let cancellation = tokio_util::sync::CancellationToken::new();
+        let operation_cancellation = cancellation.clone();
+        self.admission.execute_owned(cancellation, async move {
+            registry.call_namespaced_tool_owned(&name, arguments, meta, operation_cancellation, budget).await
+        }).await
+    }
+
+    async fn call_namespaced_tool_owned(
+        &self,
+        namespaced_tool: &str,
+        arguments: serde_json::Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
+        cancellation: tokio_util::sync::CancellationToken,
+        budget: Option<Duration>,
+    ) -> anyhow::Result<serde_json::Value> {
         if self.bound_services.as_ref().is_some_and(|bindings| {
             bindings.closed.is_cancelled() || self.shutting_down.load(Ordering::Acquire)
         }) {
@@ -2518,18 +2781,7 @@ impl McpRegistry {
         }
 
         if let Some(tool) = self.native_tools.get(namespaced_tool) {
-            // Native tools were the one execution path with no time bound;
-            // MCP tools have had one (30s, below) all along. A native tool
-            // that never returns held the whole run open with no way to
-            // recover, which is the same class of failure as a hung MCP
-            // handshake — just later in the turn.
-            return match tokio::time::timeout(MCP_TOOL_CALL_TIMEOUT, tool.call(arguments)).await {
-                Ok(result) => result,
-                Err(_elapsed) => Err(anyhow!(
-                    "native tool {namespaced_tool} timed out after {}s",
-                    MCP_TOOL_CALL_TIMEOUT.as_secs()
-                )),
-            };
+            return tool.call(arguments).await;
         }
 
         // 1. Lookup server + raw_tool_name
@@ -2564,7 +2816,7 @@ impl McpRegistry {
                     .get(&server_name)
                     .ok_or_else(|| anyhow!("Missing frozen MCP binding: {server_name}"))?;
                 validate_bound_service(&service_slot, bound)?;
-                Arc::clone(bound)
+                bound.clone()
             }
             None => current_service(&service_slot),
         };
@@ -2586,15 +2838,44 @@ impl McpRegistry {
         // Closure racing an admitted call remains uncertain instead.
         let dispatched = !service.peer().is_transport_closed();
         let mut interaction_call = service.service().channel().map(|_| ElicitationCallLifetime {
-            service: Arc::clone(&service), completed: false,
+            slot: Arc::clone(&service_slot), completed: false,
         });
         let res = if dispatched {
-            super::interaction::interaction_timeout(service.service().channel(), MCP_TOOL_CALL_TIMEOUT, service.peer().call_tool(call_params))
-            .await
-            .map_err(|_| {
-                anyhow!("tools/call execution or interaction budget elapsed for {server_name}::{raw_tool_name}")
-            })
-            .and_then(|result| result.map_err(anyhow::Error::from))
+            anyhow::ensure!(!cancellation.is_cancelled(), "MCP invocation canceled before dispatch");
+            let request = service.peer().call_tool(call_params);
+            tokio::pin!(request);
+            let budget_result = if let Some(budget) = budget {
+                tokio::select! {
+                    result = super::interaction::await_interaction_budget(
+                        service.service().channel(), budget, request.as_mut(),
+                    ) => result,
+                    _ = cancellation.cancelled() => Err(()),
+                }
+            } else {
+                tokio::select! {
+                    result = request.as_mut() => Ok(result),
+                    _ = cancellation.cancelled() => Err(()),
+                }
+            };
+            match budget_result {
+                Ok(result) => result.map_err(anyhow::Error::from),
+                Err(()) => {
+                    // Budget expiry requests local connection cancellation.
+                    // Keep the accepted request until the SDK reports its
+                    // result or transport failure; never infer remote rollback.
+                    begin_service_shutdown(&service_slot);
+                    let result = request.await.map_err(anyhow::Error::from);
+                    let failures = close_service_slot(&service_slot).await;
+                    if !failures.is_empty() {
+                        self.admission.failures.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .push("MCP canceled invocation connection cleanup incomplete".to_owned());
+                        if let Some(scope) = crate::uar::runtime::lifecycle::current_scope() {
+                            scope.record_failure("MCP canceled invocation connection cleanup incomplete");
+                        }
+                    }
+                    result
+                }
+            }
         } else {
             Err(anyhow!("MCP request queue closed before dispatch"))
         };
@@ -2659,12 +2940,9 @@ impl McpRegistry {
                         if let Some(snapshot) = &attempt.snapshot {
                             reconnect_snapshot(snapshot, &self.validator_compiler).await
                         } else {
-                            tokio::time::timeout(
-                                MCP_CONNECT_TIMEOUT,
-                                connect_server(&server_name, &attempt.entry),
-                            )
-                            .await
-                            .context("MCP reconnect handshake timed out")?
+                            connect_server(&server_name, &attempt.entry, &self.admission.processes)
+                                .await
+                                .context("MCP reconnect handshake failed")
                         }
                     };
                     match reconnect.await {
@@ -2677,7 +2955,18 @@ impl McpRegistry {
                             // The slot retains replaced and rejected services,
                             // so cancellation here leaves shutdown a joinable
                             // cleanup record instead of a detached transport.
-                            reap_retired_services(&service_slot).await;
+                            if let Err(error) = reap_retired_services(&service_slot).await {
+                                record_reconnect_failure(
+                                    &service_slot,
+                                    attempt.generation,
+                                    &error,
+                                );
+                                tracing::warn!(
+                                    server = %server_name,
+                                    error = %error,
+                                    "retired MCP transport cleanup did not complete"
+                                );
+                            }
                             if installed {
                                 {
                                     let state = service_slot

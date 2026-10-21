@@ -48,6 +48,9 @@ struct SessionInner {
     world_state: RwLock<crate::uar::runtime::world_state::contributor::WorldStateBaseline>,
     project_instructions:
         RwLock<Option<crate::uar::runtime::project_instructions::ProjectInstructions>>,
+    /// Store-owned activity generation. Standalone deserialized sessions do
+    /// not have a retention owner and therefore carry no sender.
+    activity_generation: Option<tokio::sync::watch::Sender<u64>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -99,6 +102,14 @@ impl Clone for Session {
 impl Session {
     /// Create a new session with the given ID.
     fn new(id: String, owner_id: String) -> Self {
+        Self::new_with_activity(id, owner_id, None)
+    }
+
+    fn new_with_activity(
+        id: String,
+        owner_id: String,
+        activity_generation: Option<tokio::sync::watch::Sender<u64>>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             inner: Arc::new(SessionInner {
@@ -110,6 +121,7 @@ impl Session {
                 system_prompt: RwLock::new(None),
                 world_state: RwLock::new(Default::default()),
                 project_instructions: RwLock::new(None),
+                activity_generation,
             }),
         }
     }
@@ -143,6 +155,7 @@ impl Session {
                 system_prompt: RwLock::new(state.system_prompt),
                 world_state: RwLock::new(Default::default()),
                 project_instructions: RwLock::new(None),
+                activity_generation: None,
             }),
         }
     }
@@ -320,6 +333,12 @@ impl Session {
     pub(crate) fn touch(&self) {
         let mut guard = self.inner.last_activity.write().unwrap();
         *guard = Utc::now();
+        drop(guard);
+        if let Some(activity_generation) = &self.inner.activity_generation {
+            activity_generation.send_modify(|generation| {
+                *generation = generation.saturating_add(1);
+            });
+        }
     }
 
     /// Check if the session has expired.
@@ -368,6 +387,7 @@ pub struct SessionStore {
 #[derive(Debug)]
 struct SessionStoreInner {
     sessions: RwLock<HashMap<(String, String), Session>>,
+    activity_generation: tokio::sync::watch::Sender<u64>,
 }
 
 impl Default for SessionStore {
@@ -380,11 +400,59 @@ impl SessionStore {
     /// Create a new session store.
     #[must_use]
     pub fn new() -> Self {
+        let (activity_generation, _) = tokio::sync::watch::channel(0);
         Self {
             inner: Arc::new(SessionStoreInner {
                 sessions: RwLock::new(HashMap::new()),
+                activity_generation,
             }),
         }
+    }
+
+    fn notify_activity(&self) {
+        self.inner.activity_generation.send_modify(|generation| {
+            *generation = generation.saturating_add(1);
+        });
+    }
+
+    /// Retained generation for session creation, attachment, and removal.
+    /// Consumers inspect the authoritative session state after every change.
+    #[must_use]
+    pub(crate) fn subscribe_activity(&self) -> tokio::sync::watch::Receiver<u64> {
+        self.inner.activity_generation.subscribe()
+    }
+
+    /// Earliest local idle boundary for sessions that are not protected by an
+    /// active run. This is a business-time wakeup; `cleanup_bounded` remains
+    /// the atomic expiry decision when the wakeup fires.
+    pub(crate) fn next_idle_expiry(
+        &self,
+        idle_timeout: Option<Duration>,
+        protected: &HashSet<(String, String)>,
+    ) -> Option<tokio::time::Instant> {
+        let timeout = idle_timeout?;
+        let now = Utc::now();
+        self.inner
+            .sessions
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|(key, _)| !protected.contains(*key))
+            .filter_map(|(_, session)| {
+                let last = *session.inner.last_activity.read().unwrap();
+                let deadline = last + chrono::Duration::from_std(timeout).ok()?;
+                // An already-expired session is processed by the current
+                // authoritative cleanup pass. Returning it as an immediate
+                // timer would turn a failed or unchanged cleanup into a
+                // zero-delay scan loop; later activity supplies the next
+                // event-driven wakeup.
+                if deadline <= now {
+                    return None;
+                }
+                let remaining = deadline.signed_duration_since(now).to_std().ok()?;
+                Some(tokio::time::Instant::now() + remaining)
+            })
+            .min()
     }
 
     /// Create a new session and return it.
@@ -411,11 +479,17 @@ impl SessionStore {
     pub fn create_with_id_for_user(&self, id: impl Into<String>, owner_id: &str) -> Session {
         let id = id.into();
         let owner_id = owner_id.to_string();
-        let session = Session::new(id.clone(), owner_id.clone());
+        let session = Session::new_with_activity(
+            id.clone(),
+            owner_id.clone(),
+            Some(self.inner.activity_generation.clone()),
+        );
         let mut guard = self.inner.sessions.write().unwrap();
         guard.insert((owner_id, id), session.clone());
         #[allow(clippy::cast_precision_loss)]
         crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        drop(guard);
+        self.notify_activity();
         session
     }
 
@@ -447,6 +521,8 @@ impl SessionStore {
             if let Some(session) = guard.get(&(owner_id.to_string(), id.to_string())) {
                 let session = session.clone();
                 session.touch();
+                drop(guard);
+                self.notify_activity();
                 return session;
             }
         }
@@ -466,6 +542,10 @@ impl SessionStore {
         let removed = guard.remove(&(owner_id.to_string(), id.to_string()));
         #[allow(clippy::cast_precision_loss)]
         crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        drop(guard);
+        if removed.is_some() {
+            self.notify_activity();
+        }
         removed
     }
 
@@ -501,6 +581,9 @@ impl SessionStore {
         if removed > 0 {
             #[allow(clippy::cast_precision_loss)]
             crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+            drop(guard);
+            self.notify_activity();
+            return removed;
         }
         removed
     }
@@ -552,6 +635,10 @@ impl SessionStore {
         if !removed.is_empty() {
             #[allow(clippy::cast_precision_loss)]
             crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        }
+        drop(guard);
+        if !removed.is_empty() {
+            self.notify_activity();
         }
         removed
     }

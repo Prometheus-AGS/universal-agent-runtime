@@ -1,11 +1,12 @@
 use std::{
     collections::BTreeMap,
-    sync::{Arc, atomic::AtomicUsize},
+    sync::{Arc, atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering}},
 };
 
 use chrono::Utc;
 use serde::Serialize;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Notify};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::uar::{
@@ -51,6 +52,14 @@ pub struct ObserverController {
     pub(super) scan_offset: AtomicUsize,
     pub(super) schedules: tokio::sync::RwLock<Option<Arc<crate::uar::runtime::schedules::ScheduleController>>>,
     pub(super) followups: tokio::sync::RwLock<Option<Arc<crate::uar::runtime::followups::FollowupController>>>,
+    pub(super) work: Arc<Notify>,
+    /// Advances only with confirmed durable/realtime work. Delivery uses this
+    /// retained identity to give an overdue business boundary one attempt
+    /// without turning unchanged failed work into a scan loop.
+    pub(super) work_generation: AtomicU64,
+    pub(super) started: AtomicBool,
+    pub(super) shutdown: CancellationToken,
+    pub(super) lifecycle_scope: crate::uar::runtime::lifecycle::ResourceScope,
 }
 
 impl std::fmt::Debug for ObserverController {
@@ -66,6 +75,15 @@ impl ObserverController {
         instances: Arc<AgentInstanceController>,
         store: Arc<dyn PersistenceLayer>,
     ) -> Arc<Self> {
+        Self::new_with_lifecycle(instances, store, None)
+    }
+
+    #[must_use]
+    pub fn new_with_lifecycle(
+        instances: Arc<AgentInstanceController>,
+        store: Arc<dyn PersistenceLayer>,
+        lifecycle_scope: Option<crate::uar::runtime::lifecycle::ResourceScope>,
+    ) -> Arc<Self> {
         Arc::new(Self {
             instances,
             store,
@@ -73,16 +91,77 @@ impl ObserverController {
             scan_offset: AtomicUsize::new(0),
             schedules: tokio::sync::RwLock::new(None),
             followups: tokio::sync::RwLock::new(None),
+            work: Arc::new(Notify::new()),
+            work_generation: AtomicU64::new(0),
+            started: AtomicBool::new(false),
+            shutdown: CancellationToken::new(),
+            lifecycle_scope: lifecycle_scope.unwrap_or_else(|| {
+                crate::uar::runtime::lifecycle::ResourceScope::standalone(
+                    "observer-delivery",
+                    "embedded-observer",
+                )
+            }),
+        })
+    }
+
+    /// Wake the local observer after a confirmed durable commit or a retained
+    /// realtime-generation change. The wakeup is only a signal: delivery still
+    /// reads the authoritative catalog and occurrence records.
+    pub fn notify_work(&self) {
+        self.work_generation.fetch_add(1, Ordering::AcqRel);
+        self.work.notify_one();
+    }
+
+    /// Request the observer task to stop. This does not claim that any
+    /// persistence work has settled; the host lifecycle owns that join.
+    pub fn shutdown(&self) {
+        self.shutdown.cancel();
+    }
+
+    /// Join the local delivery task and retain its lifecycle report.
+    pub async fn close(&self) -> crate::uar::runtime::lifecycle::CloseReport {
+        self.shutdown();
+        self.lifecycle_scope.close().await
+    }
+
+    /// Forward the retained local catalog generation stream into the observer
+    /// work signal. Callers acquire the receiver before their initial durable
+    /// snapshot, then start this forwarding task in the same lifecycle scope.
+    pub fn observe_catalog_generations(
+        self: &Arc<Self>,
+        scope: &crate::uar::runtime::lifecycle::ResourceScope,
+        mut generations: tokio::sync::watch::Receiver<u64>,
+    ) -> Result<(), crate::uar::runtime::lifecycle::AdmissionClosed> {
+        let observer = Arc::downgrade(self);
+        let cancellation = scope.cancellation_token();
+        scope.spawn("observer-catalog-generation", async move {
+            loop {
+                tokio::select! {
+                    _ = cancellation.cancelled() => break,
+                    changed = generations.changed() => {
+                        if changed.is_err() {
+                            break;
+                        }
+                        let Some(observer) = observer.upgrade() else {
+                            break;
+                        };
+                        observer.notify_work();
+                    }
+                }
+            }
+            Ok(())
         })
     }
 
     /// Attach durable schedules to the existing observer wakeup loop.
     pub async fn attach_schedules(&self, schedules: Arc<crate::uar::runtime::schedules::ScheduleController>) {
         *self.schedules.write().await = Some(schedules);
+        self.notify_work();
     }
 
     pub async fn attach_followups(&self, followups: Arc<crate::uar::runtime::followups::FollowupController>) {
         *self.followups.write().await = Some(followups);
+        self.notify_work();
     }
 
     pub async fn create(

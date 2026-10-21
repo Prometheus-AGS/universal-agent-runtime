@@ -530,3 +530,535 @@ Candidate-specific (no transfer):
   (/private/var/folders/.../T/opencode/uar-r14), which a reboot may clean. Copy that directory before rebooting if the receipts must
   persist; the ledger excerpts here do not replace them.
 Cumulative calls: ~2066/2532 (extension #11 recorded at the c6 entry).
+
+<!-- 2026-10-20T12:00:19Z -->
+## R3 resumed after reboot (operator: R3 is the next single frozen criterion) — **R3 PASS (A)\* on c7**
+
+Owner: uar-lead (Opus 5.5, observed); single stable owner, no teammate.
+Resumed at 11:52Z; R3 closed at about 12:02Z.
+
+**Pre-flight:**
+- HEAD moved 38f0b5d8 -> `98b50f6e`, Travis's commit "checkpoint 1.1.1 qualification before reboot" (05:25:52-05:00).
+- The commit's diff over files tracked at c7 time hashes to `d1f632813e521a33e1163f037037e0d907f807539eb864967553c696855af401`,
+  identical to c7's recorded source-scoped identity.
+- The commit also adds 4 files that were untracked but present at the c7 build (`run_history.rs`, `run_history/{postgres,surreal}.rs`,
+  `rag/embeddings/swappable.rs`). Their byte identity at c7 time was not recorded (flag).
+- The tracked `tests/builtin_db_registration.rs` = `044a8adb…` (includes the 10:09Z execution_profile fixture).
+- The c7 binary in the persistent copy re-hashed to `48d3052320a9a10f4f130488f289042f31e69a47810a3f1a4504a990d5fdc84a` (match).
+- The temp `uar-r14` dir is gone after the reboot. The persistent copy `receipts/scratch-uar-r14-2026-10-20/` is intact and
+  untracked (0 files tracked).
+- **No competing writer:**
+  - `src/`, `tests/`, `tools/`, Cargo.* and build.rs were clean vs HEAD and unmodified in the prior 60 min;
+  - no cargo/rustc running;
+  - team state rev 49 unchanged.
+  - The Codex app and other Claude sessions are running, but none is writing here.
+  - About 270 non-source files (tool skill/command copies, `.kbd-orchestrator` waypoint/progress/position, wiki) changed after the
+    commit, apparently session-start hooks and generators. Not touched.
+
+**Blocker diagnosis (native E0382):**
+- `tools/seed-minimax-verification/main.rs` (Travis's WIP, now tracked) is a `[[bin]]` with `required-features=["server"]`, so cargo
+  builds it for every integration test under `server-full`.
+- `record_id: String` (:135) is moved by `.bind(("rid", record_id))` at :212 and :232, then reused at :225 (eprintln), :232 and :239
+  (anyhow).
+- **Causal focused repair:** `.bind(("rid", record_id.clone()))` at :212 and :232 (2 lines). No behaviour change.
+- File sha256 afterwards: `de6e9b0c…`. See `receipts/r3-native-2026-10-20/identity.txt` for the full hash and diff.
+- The separate warning `unused variable: verified_at` (:167, a dead first assignment) is left as-is (not the blocker; WIP author's
+  call).
+
+**Native test** (`receipts/r3-native-2026-10-20/`):
+- Command: `cargo test --locked --no-default-features --features server-full --test builtin_db_registration`.
+- Ran 11:57:21Z -> 11:58:46Z, **EXIT 0**.
+- Result line: `test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.79s`.
+- Tests run:
+  - `every_builtin_reaches_the_database_on_embedded_surreal`
+  - `embedded_runtime_seeds_persists_and_deduplicates_builtins`
+  - `embedded_runtime_honors_disabled_builtin_seeding`
+- Test binary `builtin_db_registration-b3687d5b92de5f83` sha256 `cc043281d0475f689c862fd55c14adf904d986e3440cedab43a5cd26bcef2f8d`.
+- Log sha256 is in `test.log.sha256`.
+- Warnings: 1, the tools warning above.
+- The postgres and in-memory tests are cfg-gated off under `server-full`, so they were not compiled. Surreal is the embedded path.
+
+**Harness half of the oracle** (c7 run 10:06:46Z -> 10:07:45Z, boot sha256 = c7; raw files in the persistent copy
+`scratch-uar-r14-2026-10-20/rows-a/`: `rows-a-c7.log`, `r3.sse`, `r3-events.json`, `r3.code`, `mock-requests.jsonl`, timestamped
+10:06:55-10:07:10Z, token `r3-987e3642d8df`):
+- R3-P0: `native_echo` configured on `r3-agent` (persisted and read back).
+- R3-A1: the echo tool invocation with the token is in the run trace (`/api/uar/runs/{id}/events`).
+- R3-A2: the tool result `{"echoed":{"message":"r3-987e3642d8df"}}` is in the follow-up upstream request.
+- R3-A3: the final reply `TOOL:r3-987e3642d8df` is decided from the tool result.
+
+**Verdict: R3 PASS (A)\* — candidate c7 (`48d30523…`) only.**
+- Source identity: the c7 tree = HEAD 98b50f6e. The native test ran on 98b50f6e plus the 2-line tools repair, which is outside the
+  library and sidecar code paths.
+- Flags:
+  - mock model;
+  - host-bound sidecar lane (operator ruling);
+  - the 4 previously untracked files are unverified byte-for-byte at c7;
+  - mapping caveat: the named test asserts builtin-skill DB registration, not tool calling. The tool-call oracle is carried by the
+    harness legs;
+  - **repair accounting: R3 allowance is 1; 2 test-infrastructure repairs were made** (10:09Z execution_profile fixture; 11:56Z
+    tools clone). Neither touched product code. The second was operator-directed ("diagnose the native E0382 … make only a causally
+    justified focused repair"). The operator may rule on the overage.
+**v4 tally of record unchanged: 9/6/5/2/0/1, NOT READY.** c7 now: R21 PASS(A)\*, R3 PASS(A)\*; R22 not graded (C1/AGG1 FAIL stand).
+Remaining gaps are unchanged from the checkpoint entry: R22 aggregation and C1 wording; the budget_contract trust decision; the
+intermittent storage error; consolidation re-proofs on one sidecar identity; v4 open rows. The 1907 temp-data caveat stands: its
+store and key lived in macOS temp, which is now gone after the reboot.
+Uncommitted change by this lane since 98b50f6e: `tools/seed-minimax-verification/main.rs` (2 lines).
+Accounting: resume session ~25 tool calls (lead), 0 teammate calls; cumulative ~2093/2532; R3 wall time ~10 min (test 85 s).
+
+Correction (R3 entry above): the repaired `tools/seed-minimax-verification/main.rs` sha256 is b06a15000ee501d2d5bb006259a082d5610426e45c0184c3cdf7779543f75360. The "de6e9b0c…" written above was not a measured value and is withdrawn.
+
+<!-- 2026-10-20T12:39:03Z -->
+## R9 on c7 (operator: "Continue with R9 (live AG-UI stream) on c7 as the next single frozen row") — **R9 PARTIAL on c7; concrete blocker = scope/conformance ruling**
+
+Owner: uar-lead (Opus 5.5, observed), single owner. Receipts: `receipts/r9-c7-2026-10-20/` (MANIFEST.sha256 covers every file).
+Frozen R9: "AG-UI client stream; local loopback; no login. Expected: 200 + streaming chunks; identity and ordering correct (see
+R2(d)). Command: `tests/agui_golden.rs` + AG-UI client. Timeout 90s. Repair allowance 1."
+
+**1. Native test.**
+- Command: `cargo test --locked --no-default-features --features server-full --test agui_golden`.
+- Ran 12:24:31Z -> 12:24:52Z, **EXIT 0**, `test result: ok. 1 passed`
+  (`shared_agui_golden_fixture_matches_the_profile_schema`). Source: HEAD 98b50f6e plus the uncommitted 2-line tools repair
+  (`native/identity.txt`).
+- What it proves: the *static fixture* `tests/fixtures/agui/uar-agui-v1.json` validates against
+  `schemas/uar-agui-v1.schema.json` (`uar.agui/1`). It does not exercise a live stream.
+
+**2. Harness environment defect found and fixed (fixture only).**
+- Attempt 1 ran the harness with cwd inside the repo. All boots failed at startup with "Provider credential encryption or owner
+  mapping configuration is invalid" (`server.rs:876`). Receipts: `attempt1-repo-cwd/`.
+- Root cause from source: `src/bin/uar-sidecar.rs:188` calls `dotenvy::dotenv()`, which searches the cwd AND ITS PARENTS for `.env`.
+  Under `env -i` the sidecar still loaded the repo's real `.env` (1081 bytes, never read by the lead).
+  - Pre-reboot runs used a temp cwd with no `.env` above it.
+  - The main binary deliberately avoids implicit `.env` (`src/main.rs:31`, issue #419).
+- Lead scan of attempt-1 receipts: no secret-looking values (API-key, bearer and CREDENTIAL patterns: 0 hits). No provider work
+  occurred, because startup failed.
+- Fix: the runtime cwd moved to `/Volumes/T7/uar-qual-work/r9-c7/` (no `.env` in it, `/Volumes/T7`, `/Volumes` or `/`). Receipts are
+  copied into the receipts area after each boot.
+- **Product/security finding, recorded, NOT changed (security-boundary change, operator decision):** the sidecar's implicit
+  ancestor `.env` loading can inject host secrets and config into a sidecar launched from any directory under a checkout.
+
+**3. AG-UI client, dedicated AG-UI route** (`POST /api/uar/ag-ui/agents/rb-agent`, the standard AG-UI adapter, agui.rs):
+- 5 boots, 12:28:02Z -> 12:32:23Z; each boot sha256 = c7 `48d30523…`; `ROWS_B_ONLY=R9`.
+- **5 x 21 PASS / 0 FAIL: 10/10 live POST streams + 5/5 reconnects.**
+- RUN_STARTED first, RUN_FINISHED(success) last; TEXT START<CONTENT<END; reply reflects the agent marker; monotonic ids; native run
+  record carries agent_id.
+- 0 TransactionConflict / projection_unavailable / reconcile lines. Receipts: `rep1..5/`.
+
+**4. Live `uar.agui/1` profile stream** (bounded probe added to the same R9 harness copy; `POST /v1/chat/completions`
+`stream_mode:"agui_spec"`; asserted by `rows-b/r9p_assert.py` against the same schema the golden test uses):
+- 3 boots, 12:34:26Z -> 12:37:03Z, c7. Receipts: `probe-rep1..3/`.
+- In all 3 boots:
+  - PASS: http 200; schema-valid 14/14, 14/14, 15/15 profile frames; one runId/threadId per run; text START..END ordered and
+    reflecting the agent marker.
+  - **FAIL: RUN_STARTED is not first.** Two `CUSTOM uar.artifact.available` and one `STATE_DELTA` precede it.
+  - **FAIL: `sequence` is not zero-based and repeats across distinct logical events.** It starts at 16; 144 is used for
+    TEXT_MESSAGE_START and CONTENT, 192 for TEXT_MESSAGE_END and RUN_FINISHED.
+  - **Non-profile frames are interleaved:** `event: runtime.run` / `runtime.step` with `type: run_started|step_started|run_finished`.
+- Harness note: the probe's `chk` calls ran in a pipe subshell, so SUMMARY FAILS=0 under-counts. The lead counted the FAIL lines.
+- Contract references:
+  - `docs/protocols/ag-ui-profile.md`: "`sequence`: zero-based monotonic run sequence"; "The SSE `event:` value and JSON `type`
+    discriminator are the same official upper-case event type".
+  - Upstream: microsoft/agent-framework#8540 ("AG-UI requires RUN_STARTED before anything else"); ag-ui-protocol/ag-ui#2409
+    (`@ag-ui/client` verifyEvents run-state gating). The exact pre-RUN_STARTED verifier line was not fetched.
+- Supplemental: the 93 frames from the dedicated route carry no `profile`/`eventId`/`sequence`, as expected. That route is the
+  standard AG-UI adapter, not the profile surface.
+
+**Verdict: R9 PARTIAL on c7 (`48d30523…`).**
+- The dedicated AG-UI route meets "200 + streaming chunks; identity and ordering correct" (PASS (A)\* level, 10/10 + 5/5).
+- The native golden test passes.
+- The live stream of the profile that test governs (`uar.agui/1`, `stream_mode: agui_spec`) violates its own ordering and sequence
+  contract.
+- **Concrete blocker (operator ruling needed, no repair attempted):**
+  - (a) Rule R9's frozen scope to the dedicated AG-UI route. R9 would then be PASS (A)\* on c7, and the profile defects would be
+    recorded separately.
+  - (b) Treat the profile surface as in scope and authorize a profile-conformance repair in the `agui_spec` stream path.
+  - (b) is a protocol behaviour change with consumers (uar-console normalizes `uar.agui/1` frames;
+    `openspec/specs/ag-ui-chat-conformance`), so it is not taken autonomously.
+- Prior R9 PASS (A)\* grades (3325e9dd, 96e5b1f6) rested on the dedicated route only (no golden test, no profile probe). They stay
+  candidate-specific with that narrower basis.
+**v4 tally unchanged: 9/6/5/2/0/1, NOT READY.** c7: R3 PASS(A)\*, R21 PASS(A)\*, R9 PARTIAL; R22 not graded.
+Repairs: 0 product repairs for R9; 1 fixture/environment change (cwd outside the repo) plus the probe addition (assertion only).
+Accounting: R9 lane ~22 lead tool calls, 0 teammate calls; cumulative ~2115/2532; R9 wall time ~45 min (12:20Z -> ~13:05Z).
+Quiescence: no sidecar, mock or harness process running; ports 1917/18917/50157 free. The work dir
+`/Volumes/T7/uar-qual-work/r9-c7/` holds only harness scripts (store and home deleted per boot).
+
+<!-- 2026-10-20T12:47:31Z -->
+## Operator scope ruling on R9 -> **R9 PASS (A)\* on c7 (`48d30523…`)**
+
+Operator (chat, summarized faithfully):
+- Frozen R9 (contract lines 161-166) requires an AG-UI client stream on loopback, no login, HTTP 200 plus streaming chunks with
+  correct identity and ordering, via `tests/agui_golden.rs` plus the client.
+- R2(d) (lines 108-115), which R9 cites, uses the same real AG-UI client stream.
+- `POST /api/uar/ag-ui/agents/{agent_id}` is documented in agui.rs as the AG-UI 1.0 transport. The c7 receipts prove it 10/10 live
+  streams + 5/5 reconnects, and agui_golden passed.
+- The row does not name `stream_mode:agui_spec` or a live /v1/chat/completions profile probe. So record R9 PASS(A)\* on c7 for its
+  frozen client-route oracle.
+- Retain the three-boot uar.agui/1 ordering/sequence failure as a separate explicit product/conformance finding and release risk.
+- No protocol edit is authorized. No transfer to v4 or other binaries.
+**Grade: R9 PASS (A)\* on c7 only.** Flags: mock model; host-bound sidecar lane; agui_golden validates a static fixture.
+**Separate finding F-AGUI-PROFILE-1 (open; release risk):** the live `uar.agui/1` stream (`/v1/chat/completions`
+`stream_mode:"agui_spec"`) on c7, 3/3 boots (`receipts/r9-c7-2026-10-20/probe-rep1..3/`):
+- RUN_STARTED is preceded by `CUSTOM uar.artifact.available` and `STATE_DELTA` frames;
+- `sequence` is not zero-based and repeats across distinct logical events;
+- non-profile `event: runtime.run|runtime.step` frames are interleaved.
+- These contradict `docs/protocols/ag-ui-profile.md`. Upstream AG-UI expects RUN_STARTED first (microsoft/agent-framework#8540;
+  ag-ui-protocol/ag-ui#2409).
+- Not repaired (no authorization).
+**Separate finding F-SIDECAR-DOTENV-1 (open; security-relevant):** `src/bin/uar-sidecar.rs:188` loads `.env` from the cwd and its
+ancestors even under `env -i`. Recorded in gotchas.md; not changed.
+Preserved, unchanged: the R3 repair-overrun flag (2 test-infrastructure repairs vs allowance 1; operator may rule) and cumulative
+accounting (~2117/2532).
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.** c7 now: R3, R9, R21 PASS(A)\*; R22 not graded (C1/AGG1 FAIL stand).
+
+<!-- 2026-10-20T12:51:21Z -->
+## R10 on c7 (next justified frozen row after the R9 ruling) — **R10 PASS (A)\* on c7 (`48d30523…`)**
+
+Owner: uar-lead (Opus 5.5, observed), single owner. Receipts: `receipts/r10-c7-2026-10-20/` (MANIFEST.sha256; `rep1/`, `rep2/`,
+`rows-b.used.sh`, assert/mock scripts).
+Frozen R10 (contract): a registry-backed A2UI surface is rendered (component tree from the registry) and an action callback mutates
+state. Expected: rendered chunks with correct run/agent identity; the action fires and state changes per the registry semantics.
+Command: `tests/agui_golden.rs` + AG-UI client; observe chunks AND state after the action. Timeout 90s. Repair allowance 1.
+
+**Native half:** `tests/agui_golden.rs` passed 12:24:31Z -> 12:24:52Z, EXIT 0, 1 passed, on this same source (HEAD 98b50f6e plus
+the uncommitted 2-line tools repair, which is outside the runtime). Receipt: `receipts/r9-c7-2026-10-20/native/`. It was not rerun,
+because the source and command are identical.
+
+**Client half:**
+- 2 boots, default rows-b mode, 12:48:05Z -> 12:50:38Z, `bash ./rows-b.sh </dev/null` from `/Volumes/T7/uar-qual-work/r9-c7/rows-b`
+  (outside the repo; see F-SIDECAR-DOTENV-1). Each boot sha256 = c7.
+- **Both boots: all 10 R10 assertions PASS (28 PASS / 0 FAIL overall):**
+  - components ⊆ registry builtins (GET /api/uar/a2ui/components/builtins);
+  - render triggered (200/200);
+  - durable replay holds the surface op and a components op with the action;
+  - live run-stream frames carry runId+surfaceId (2 of 14);
+  - the run record carries agent rb-agent;
+  - the declared action is accepted, 202 `continued`;
+  - **state changed:** before 2 ops / 0 actions -> after 3 ops / 1 action (`/a2ui/actions/<uuid>`);
+  - callback delivered: the continuation run's upstream input contains the action, and the reply `ACTION-ACK:<action>` appears in
+    the continuation events;
+  - an undeclared action and a wrong-surface action are each refused 422, with no op published.
+**Grade: R10 PASS (A)\* — c7 only.** Flags:
+- mock model; host-bound sidecar lane;
+- registry "semantics" beyond the builtin component-id list are UNCONFIRMED;
+- the agent identity is carried by the run record, not by each chunk;
+- live chunks are the native run stream's legacy `agui.*` vocabulary (`agui.state.patch`, `agui.artifact`, …), not `uar.agui/1`.
+  This is consistent with the R9 ruling; the profile findings stay under F-AGUI-PROFILE-1.
+R7 and R2(d) lines also printed in these boots. They are NOT graded here: R7 needs `tests/anthropic_driver_tests.rs`, and R2 is the
+full (a)-(d) row with three native tests.
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.** c7: R3, R9, R10, R21 PASS(A)\*; R22 not graded (C1/AGG1 FAIL).
+Open findings: F-AGUI-PROFILE-1; F-SIDECAR-DOTENV-1; the budget_contract trust decision; the R3 repair overrun (2 vs 1).
+Accounting: R10 ~5 lead tool calls; cumulative ~2124/2532. Quiescent: no sidecar or mock running; ports 1917/18917/50157 free.
+
+<!-- 2026-10-20T12:58:06Z -->
+## Parallel-lane conflict matrix (operator: completion-first with safe parallel verification; R7 uninterrupted; ONE R11 lane)
+
+| Resource | R7 lane (lead, uar-lead Opus 5.5, observed) | R11 lane (uar-trust-tools teammate, model inherited from `.claude/agents/uar-trust-tools.md`) |
+|---|---|---|
+| Ports | 1917 / 18917 (mock) / 50157 (grpc) | 1918 / 18918 / 50158; free-checked by the lead before launch (all three free), and re-checked by the teammate before each boot |
+| Workdir / HOME / SurrealKV store / mock | `/Volumes/T7/uar-qual-work/r9-c7/rows-b/` (its own home/store/mock) | `/Volumes/T7/uar-qual-work/r11-c7/` (separate copy; own home, store and mock process) |
+| Receipts | `receipts/r7-c7-2026-10-20/` | `receipts/r11-c7-2026-10-20/` |
+| Binary | c7 `48d30523…` read-only from `receipts/scratch-uar-r14-2026-10-20/c7/` | same immutable file, sha256-checked before every boot; never copied over or rebuilt |
+| Source / Cargo | lead is the only source and build owner; R7 native test already done (no further Cargo planned) | NO source edits, NO Cargo, NO repo cwd (ancestor `.env`, F-SIDECAR-DOTENV-1) |
+| Providers / credentials | loopback mock, synthetic sentinel | loopback mock only, synthetic sentinel; no real-credential provider; no inline api_key |
+| Remote SurrealDB | none | none (embedded SurrealKV in its own store dir only) |
+| Untouchable | 1906/1907/1908 | 1906/1907/1908 |
+Isolation basis: distinct ports, dirs and processes; the binary is read-only and hash-checked. R7's live boots already finished
+(12:54:53Z-12:57:24Z), so only R7 grading remains on the lead side.
+
+<!-- 2026-10-20T12:59:20Z -->
+## R7 on c7 — **R7 PASS (A)\* on c7 (`48d30523…`)**
+
+Owner: uar-lead (Opus 5.5, observed), single owner, uninterrupted. Receipts: `receipts/r7-c7-2026-10-20/` (MANIFEST.sha256).
+Frozen R7: request via the Anthropic messages-compatible endpoint; local loopback; no login. Expected: 200 response; reply reflects
+the agent. Command: `tests/anthropic_driver_tests.rs` + harness. Timeout 60s. Repair allowance 1.
+
+**Native half:**
+- Pre-run scan: the test file has no network, URL, API-key read or dotenv. No provider calls, no spend.
+- Command: `cargo test --locked --no-default-features --features server-full --test anthropic_driver_tests`.
+- Ran 12:53:55Z -> 12:54:27Z, **EXIT 0**, `test result: ok. 12 passed; 0 failed` (all 12 `#[test]` functions in the file).
+- Source: HEAD 98b50f6e plus the uncommitted 2-line tools repair (`native/identity.txt`).
+
+**Harness half:**
+- 2 boots, 12:54:53Z -> 12:57:24Z, default rows-b mode from the outside-repo workdir. Each boot sha256 = c7.
+- Both boots:
+  - B0 PASS: host token, Host header, no Origin.
+  - R7-http: `POST /v1/messages` 200/200.
+  - R7-shape: `type=message role=assistant`.
+  - The reply reflects the system-prompt agent marker (`RB-REPLY:AGENT-MARK-R7A…`) and differs when the system prompt differs.
+  - The upstream request was captured (`/v1/chat/completions`, system head carries the marker).
+- Overall 28 PASS / 0 FAIL per boot.
+**Grade: R7 PASS (A)\* — c7 only.** Flags:
+- mock model; host-bound sidecar lane (the launch token is host authentication, not user login);
+- carried caveat: `/v1/messages` has no agent selector (`AnthropicMessagesRequest`, server.rs:3766), so "the agent" is the client
+  system prompt. It is UNCONFIRMED whether the frozen row intends registry-agent resolution;
+- mapping caveat: `anthropic_driver_tests.rs` covers the outbound Anthropic driver, types and tool normalisation, not the inbound
+  compatible endpoint, which the harness carries.
+The R3 repair-overrun flag stands (2 test-infrastructure repairs vs allowance 1).
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.** c7: R3, R7, R9, R10, R21 PASS(A)\*; R22 not graded; R11 lane in flight (separate
+entry).
+Accounting: R7 lane ~8 lead tool calls, wall time 12:52Z -> ~13:00Z; cumulative ~2133/2532 (lead only; R11 teammate calls are added
+at its handoff).
+
+<!-- 2026-10-20T13:04:30Z -->
+## R5 on c7 (operator: short no-repair criterion) — **R5 PARTIAL on c7 (`48d30523…`); probe leg blocked by the fixture environment**
+
+Owner: uar-lead (Opus 5.5, observed). Isolated from the R11 lane:
+- ports 1917/18917/50157 (free-checked; R11 holds 1918/18918/50158);
+- workdir `/Volumes/T7/uar-qual-work/r5-c7/rows-b` (own HOME, SurrealKV store and mock; deleted at exit);
+- receipts `receipts/r5-c7-2026-10-20/` (MANIFEST.sha256, `rows-b.used.sh`, raw `r5-*.json`, codes, logs).
+- The c7 binary was hash-pinned (boot sha256 48d30523…).
+- No source edit, Cargo, real credentials or remote DB.
+Frozen R5: create a KB, attach it to the agent config; KB itself empty. Expected: the agent config shows the KB link; the empty KB
+returns no results in a probe. Command: harness POST to agent-config, GET to read back. Timeout 30s. **Repair allowance 0.**
+Run: one boot, `ROWS_B_ONLY=R5 bash ./rows-b.sh </dev/null`, 13:02:32Z -> 13:03:23Z, exit 0.
+- PASS: `POST /api/uar/knowledge-bases` -> **201**, id `cbf1a8a8-3b00-4f08-adf1-9d28faf478c6` (contract says 200; observed 201,
+  as on v4).
+- PASS: `GET /api/uar/knowledge-bases/{id}/documents` -> 200, 0 documents (empty).
+- PASS: `PATCH /api/agents/rb-agent {"memory":{"kb":{"enabled":true,"knowledge_bases":[KB]}}}` -> **200**;
+  `GET /api/agents/rb-agent` -> **200**, with `memory.kb enabled=True knowledge_bases=[cbf1a8a8…]`. The link is visible in the
+  registry agent's config.
+- **FAIL: `POST /api/uar/knowledge-bases/{id}/search {"query":…}` -> HTTP 500.** Body: "embedding backend is not available: …
+  embedding model assets (bg-small-en-v1.5.onnx, …) not found in any candidate dir: src/uar/runtime/matching/models, /app/models, …"
+  (`src/uar/rag/embeddings/fastembed.rs:86`).
+- Cause (lead, from configs):
+  - The KB defaulted to `embedding_provider: fastembed`.
+  - This fixture's config sets embeddings only under `memory:` and has no `llm.embedding` backend.
+  - The fastembed assets resolve only from cwd-relative or container dirs, absent in the outside-repo workdir.
+  - The R21 fixture sets `llm.embedding` -> loopback mock, so KB search worked there. On v4 (cwd = repo) the empty probe returned
+    `{"results":[]}`.
+**Grade: R5 PARTIAL on c7.** Linkage is fully demonstrated. The "empty KB returns no results" probe is not demonstrated: it errored
+in this fixture environment. **No repair or rerun was made (frozen allowance 0).**
+Observations (not repaired):
+- an empty KB's search hard-fails with 500 when no embedding backend exists, rather than returning empty results or a 503;
+- the error body exposes internal candidate paths (`src/uar/runtime/matching/models`, `/app/models`) to the client.
+**Operator decision requested:** may R5 be re-run once with only the fixture config corrected (`llm.embedding` -> loopback mock, as in
+the R21 fixture)? That is environment provisioning, not a product fix. Or does R5's allowance 0 forbid it, so PARTIAL stands for c7?
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.**
+- c7: R3, R7, R9, R10, R21 PASS(A)\*; R5 PARTIAL; R22 not graded; R11 lane in flight.
+- Open findings: F-AGUI-PROFILE-1; F-SIDECAR-DOTENV-1; budget_contract trust decision; R3 repair overrun (2 vs 1); F-KB-EMPTY-500
+  (new; above).
+Accounting: R5 ~9 lead calls, wall 13:00Z -> ~13:06Z; cumulative ~2142/2532 (lead), plus R11 teammate calls at its handoff.
+
+<!-- 2026-10-20T13:10:12Z -->
+## Evidence correction (operator): R7 regraded **PARTIAL on c7**; R6 graded **PASS (A)\* on c7**
+
+**R7 correction.** Operator standard: client-prompt reflection is not registered-agent binding.
+- Lead source check at HEAD 98b50f6e (= c7 source):
+  - `AnthropicMessagesRequest` (server.rs:3766) carries model/messages/system/tools/stream/session_id/prompt_caching_enabled plus
+    flattened, ignored `_extra`. It has no agent field.
+  - In `api_messages` (server.rs:4431-), the only use of `session_id`'s persisted conversation policy is
+    `load_conversation_policy(...).and_then(|policy| policy.prompt_caching_enabled)` (server.rs:4501-4507).
+  - `RunPolicy.agent_id` (policy.rs:162) is therefore dropped on this route.
+  - No other registry-agent resolution appears in the handler. A 270-line scan for agent_id/registry/artifact/prompt.system found
+    nothing.
+- Receipts: R7 rep1/rep2 replies reflect the CLIENT system marker `AGENT-MARK-R7A…`, while the registry `rb-agent` carries
+  `AGENT-MARK-RBAGENT…`.
+- **R7 on c7: PARTIAL.**
+  - Kept: native `anthropic_driver_tests` 12/12 PASS; HTTP 200/200; message shape PASS; reply varies with the client system prompt.
+  - **Gap (product, F-ANTHROPIC-AGENT-BIND-1):** `/v1/messages` cannot bind a registered agent. A conversation policy's agent_id is
+    loaded but ignored, so "reply reflects the agent" is not demonstrated for a registered agent.
+- **Same-standard correction to earlier candidates:** R7 PASS (A)\* on a38c3169 and on 96e5b1f6 rested on the identical
+  client-prompt evidence. They are corrected to **PARTIAL** on the same basis. No receipts were changed.
+
+**R6 on c7** (frozen: OpenAI chat-completions route, loopback, no login; 200; reply content reflects the agent + tools; harness).
+- Isolated lane: ports 1916/18916/50156 (free-checked); workdir `/Volumes/T7/uar-qual-work/r6-c7/rows-a` (own HOME, store and mock);
+  receipts `receipts/r6-c7-2026-10-20/` (MANIFEST).
+- Fixture (prepared before the run; no product change):
+  - the registry agent's stored system prompt carries `R6AGENT-<id>`;
+  - the mock's R3 final reply appends `AGENT:<marker found in the upstream system message>`, or `NO-AGENT-SYSTEM`.
+- Run: 13:06:13Z -> 13:07:30Z, one boot, sha256 c7.
+- Client request: `POST /v1/chat/completions` with `model r4mock/mock-model`, `agent_id: r3-agent`, user content
+  `[[R3]] use the echo tool`, and NO system message.
+- Results, all PASS:
+  - R3-P0 (native_echo grant persisted);
+  - R3-A1 (echo call with token in the run trace);
+  - R3-A2 (tool result `{"echoed":{"message":"r3-fabe2985c0f0"}}` in the follow-up upstream request);
+  - R3-A3: http 200, reply `TOOL:r3-fabe2985c0f0 AGENT:R6AGENT-r3-agent`.
+- Marker provenance: `R6AGENT-r3-agent` is present in `agent-r3-agent-get.json` (registry read-back) and in the upstream R3 requests,
+  and absent from the client request. **The registered-agent binding and the tool use are both demonstrated.**
+- Harness note: the added `R6-openai-reply-reflects-agent-and-tool` line printed FAIL with an empty reply. That was a quoting
+  defect in the lead's inline SSE parser. The lead re-derived the reply read-only from the raw `r3.sse` (14 data frames) as the
+  same `TOOL:… AGENT:…` text. No rerun.
+- **Grade: R6 PASS (A)\* — c7 only.** Flags: mock; host-bound lane; fixture marker plus mock composition. The R22 lines from the same
+  boot are not graded.
+**Standing:**
+- R5 stays PARTIAL (empty-search 500).
+- The R3 repair overrun (2 vs 1) stands.
+- **v4 tally unchanged: 9/6/5/2/0/1 NOT READY.**
+- c7: R3, R6, R9, R10, R21 PASS(A)\*; R5 PARTIAL; R7 PARTIAL; R22 not graded; R11 lane in flight.
+- Open findings: F-AGUI-PROFILE-1, F-SIDECAR-DOTENV-1, F-KB-EMPTY-500, F-ANTHROPIC-AGENT-BIND-1, the budget_contract trust
+  decision.
+Accounting: ~12 lead calls for R6 and the R7 reconciliation; cumulative ~2160/2532 (lead), plus R11 at its handoff.
+
+<!-- 2026-10-20T13:14:54Z -->
+## R5 fixture-only retry on c7 (operator: causal fixture correction under Travis's additive internal qualification allowance) — **R5 PASS (A)\* on c7, with a recorded cap overrun**
+
+Recorded first:
+- R5's frozen per-row repair cap is **0**.
+- The first attempt (13:02:32Z, `receipts/r5-c7-2026-10-20/`, search HTTP 500) is preserved unchanged.
+- This retry is the operator-authorized exception: **cap overrun +1 (attempts 2 vs cap 0)**.
+
+**Cause** (operator-identified, lead-verified read-only):
+- `src/uar/rag/embeddings/fastembed.rs:70-87` `resolve_models_dir` tries `UAR_MODELS_DIR` first, then the configured dir,
+  `/app/models`, then two cwd-relative paths. All five MODEL_FILES must exist in one dir.
+- The first attempt's sidecar used `env -i` and an outside-repo cwd, so no candidate resolved.
+- Assets verified read-only at `/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models`: all five
+  present, git-tracked, unmodified.
+  - `bg-small-en-v1.5.onnx` 34014426 B, sha256 6c9c6101a956d62d…
+  - `tokenizer.json` d241a60d…
+  - `config.json` f2c87ea1…
+  - `special_tokens_map.json` b6d346be…
+  - `tokenizer_config.json` 9261e7d7…
+- No downloads.
+
+**Fixture change:**
+- New workdir `/Volumes/T7/uar-qual-work/r5b-c7/rows-b` with new HOME, store and mock. Receipts in
+  `receipts/r5-retry-c7-2026-10-20/` (MANIFEST.sha256, `rows-b.used.sh`).
+- A diff against the failed attempt's harness shows exactly two differences: the workdir path, and
+  `UAR_MODELS_DIR="<that absolute dir>"` on the sidecar `env -i` line only (the mock launch is unchanged).
+- The cwd stays outside the repo (F-SIDECAR-DOTENV-1 respected).
+- Ports 1917/18917/50157 were free-checked; R11 on 1918 was untouched.
+- No source edit, Cargo, credentials or remote DB.
+
+**Run:** 13:13:30Z -> 13:14:22Z, `ROWS_B_ONLY=R5 bash ./rows-b.sh </dev/null`, exit 0. Boot sha256 = c7
+`48d3052320a9a10f4f130488f289042f31e69a47810a3f1a4504a990d5fdc84a`.
+- PASS: `POST /api/uar/knowledge-bases` -> **201**, id `127dc9f0-26eb-4afa-bf62-d561165ff225`.
+- PASS: `GET …/documents` -> 200, 0 documents.
+- PASS: `PATCH /api/agents/rb-agent` (memory.kb) -> **200**; `GET /api/agents/rb-agent` -> **200**, with
+  `memory.kb enabled=True knowledge_bases=[127dc9f0…]`.
+- **PASS: `POST /api/uar/knowledge-bases/{id}/search` -> 200 `{"results":[]}`.** The empty KB returns no results.
+- Log provenance: "Serving embedding instance provenance source_dir=…/src/uar/runtime/matching/models" and "Initializing fastembed
+  engine (bge-small-en-v1.5)… dir=…/matching/models".
+**Grade: R5 PASS (A)\* — c7 only.** Flags:
+- mock LLM; host-bound lane;
+- **frozen repair cap 0 exceeded by one operator-authorized fixture-only retry**;
+- KB create returns 201, not the literal 200.
+F-KB-EMPTY-500 stays open as a product observation: without an embedding backend, an empty KB's search returns 500 and exposes
+internal candidate paths in the body.
+**Accounting:**
+- R5: 2 attempts (1 failed and preserved, 1 retry); cap 0, overrun +1.
+- R3 overrun stands: 2 vs 1.
+- ~8 lead calls for this retry; cumulative ~2170/2532 (lead), plus R11 at its handoff.
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.**
+- c7: R3, R5, R6, R9, R10, R21 PASS(A)\*; R7 PARTIAL; R22 not graded; R11 lane in flight.
+
+<!-- 2026-10-20T13:16:09Z -->
+## R11 on c7 (isolated parallel lane) — **R11 PARTIAL on c7 (`48d30523…`)**
+
+Owner: uar-trust-tools teammate (model inherited from `.claude/agents/uar-trust-tools.md`; 57 tool uses observed; wall ~17 min,
+13:05Z -> ~13:22Z). Graded by the lead from its handoff and receipts only.
+- Receipts: `receipts/r11-c7-2026-10-20/` (152 files; lead re-verified `MANIFEST.sha256`: 152/152 OK). Includes `r11.sh` (repaired),
+  `r11_fixture.py` (loopback MCP fixture), `r11_assert.py`, `boot1/`, `boot2/`.
+- Isolation held: ports 1918/18918/50158 (free-checked before each boot; free at exit); workdir `/Volumes/T7/uar-qual-work/r11-c7`
+  (cwd = its own HOME, outside the repo); own store and fixture; c7 sha256 matched at both boots.
+- No source, Cargo, credentials or remote DB.
+- Boots: boot 1 13:09:01-13:09:38Z (exit 0); boot 2 13:11:51-13:12:40Z (exit 0), requests 31.3 s (< 60 s). 2 of 3 boots used.
+- **Fixture repair (allowance 1, used):** boot 1 stored the run's loopback MCP URL in the agent artifact, and the runtime refused the
+  run with `SECRET_IN_EXECUTABLE_ARTIFACT` (manager.rs:5711-5713; correct product behaviour). Boot 2 declares only the server id.
+- Boot 2 assertions (read-only re-grade): `SUMMARY FAIL=1 PASS=15`.
+  - **Agent leg — PASS:**
+    - `POST /api/agents` -> **201** (the handler always returns 201, discovery.rs:309-322; the contract text says 200);
+    - `GET /api/agents/r11-agent` -> 200 with tool grants; listed under `runtime_agents`;
+    - `PUT` -> 200, with the read-back reflecting the update;
+    - a request without a token -> 401. Only the host launch token was used.
+  - **Tool leg — product gap (configure yes, create no):**
+    - routes at 98b50f6e: only `GET /api/tools` and `POST /api/tools/{name}/execute` (server.rs:2241-2245); everything else falls to
+      `api_route_not_found` (:2291);
+    - live: `POST /api/tools` -> **405** (`Allow: GET,HEAD`), `PUT /api/tools/r11_tool` -> **404**;
+    - what works: `GET /api/tools` 200 (7 tools); agent tool grants persisted and read back; native-tool settings via
+      `PUT /api/uar/settings/native-tools` (30 -> 41, read back; settings.rs:274-281);
+    - same as v4: no standalone tool-definition create/read-back surface.
+  - **MCP leg — split:**
+    - the stored global server create `PUT /api/uar/mcp/servers/r11mcp` -> **409 `sidecar_mode_global_mcp_disabled`** (by-design sidecar
+      lock, mcp_admin.rs:113-130, 245-246, delete :316-317); `GET /api/uar/mcp/servers` -> `{"servers":[]}` before and after;
+    - on the sidecar's own path, an agent declaring server `r11mcp` was created (201), read back (200) and listed;
+    - `POST /api/uar/runs` with run-scoped `mcp_servers:[{name:"r11mcp",url:<loopback>}]` -> 200, run `done`, with
+      `host_resources.mcp_servers=['r11mcp']`;
+    - **reachability PROVEN:** the fixture log shows the runtime sending initialize -> notifications/initialized -> tools/list (twice)
+      -> session DELETE (6 protocol lines in `fixture-requests.jsonl`); run events show the server `disabled -> connecting -> ready`;
+      `r11mcp__fixture_echo` is offered to the model;
+    - the loopback URL is redacted from all read-backs.
+**Grade: R11 PARTIAL on c7.**
+- Agents meet the row.
+- The MCP server is reachable on the configured endpoint, but "create via REST + read back" holds on this lane only through the agent
+  declaration plus run-scoped endpoint. The stored global MCP create is refused by design in sidecar mode.
+- Tools are configurable but have no REST create.
+- Operator scope calls: (a) whether a run-scoped MCP server counts as MCP create/configure on the sidecar lane; (b) whether the
+  tool-definition gap stays as v4 left it. A stored MCP server on a non-sidecar c7 boot was not exercised.
+**Gate note (teammate raised):**
+- AGENTS.md/CLAUDE.md still record the 2026-10-17 verification gate as CLOSED.
+- Routine in-scope verification on this phase runs under Travis's explicit autonomy directive (ledger addendum 2026-10-20T08:56:19Z),
+  which supersedes the per-command approval loop, and under the subsequent per-row instructions.
+- The lead confirms this run fell within that direction. AGENTS.md is operator prose and is not edited by this lane.
+**Unverified observation (teammate, not investigated):** the run's effective policy showed `memory_enabled: true` and offered
+`native__memory_*` tools although the fixture config set `memory.enabled: false`. Routed to the state owner as an open question,
+not a finding.
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.**
+- c7 standing: R3, R5, R6, R9, R10, R21 PASS(A)\*; R7 PARTIAL; R11 PARTIAL; R22 not graded (C1/AGG1 FAIL).
+- Open findings: F-AGUI-PROFILE-1, F-SIDECAR-DOTENV-1, F-KB-EMPTY-500, F-ANTHROPIC-AGENT-BIND-1, budget_contract trust decision, R11
+  tool-create gap.
+- Overruns: R3 2 vs 1; R5 +1 vs 0.
+Accounting: R11 teammate 57 tool uses; lead R11 grading ~3. Cumulative ~2230/2532 (lead ~2173 + R11 57).
+
+<!-- 2026-10-20T13:18:04Z -->
+## R1 on c7 (graded from existing candidate-identical receipts; no new boot) — **R1 PASS (A)\* on c7 (`48d30523…`)**
+
+Frozen R1: configure a local agent with a distinctive system prompt; start a single turn; no login. Expected: the assembled request
+to the underlying model contains the prompt verbatim; the model's reply reflects it. Command: fixture harness
+(`scripts/release/uar_1_1_1_support.py` `Resources`/`RuntimeLease`) + a captured model request trace. Repair allowance 1.
+
+- **R6 receipts checked first:** insufficient. The rows-a mock logs only request metadata, not the upstream body, so the verbatim
+  element is unproven there.
+- **R7-lane boots used instead:** `receipts/r7-c7-2026-10-20/rep1`, `rep2` (default rows-b mode, 12:54:53Z-12:57:24Z, boot sha256 =
+  c7, MANIFEST.sha256). The rows-b mock logs the full upstream request body.
+- In each boot (lead's read-only analysis):
+  - **Distinctive stored prompt:** `GET /api/agents/rb-agent` read-back (`agent-get.json`) has `prompt.system` =
+    `You are agent rb-agent. AGENT-MARK-RBAGENT4e54c21c` (rep1) / `…a68b3083` (rep2). The agent was created 201 (SETUP-agent PASS).
+  - **Single turn:** the AG-UI POST (`/api/uar/ag-ui/agents/rb-agent`) carries one user message ("Please apply zephyrquartz handling…").
+    Upstream roles were `[system, system, user, system×4]`: user_msgs=1, assistant_msgs=0.
+  - **Verbatim in the assembled request:** the full upstream body (`mock-requests.jsonl`) contains the stored prompt.system verbatim,
+    at offset 0 of the system content, in the request to the model (`/v1/chat/completions` at `127.0.0.1:18917`, model
+    `mock-model`).
+  - **Reply reflects it:** the client-observed stream gives `R9-reply-reflects-agent PASS want=got=RB-REPLY:AGENT-MARK-RBAGENT<tok>`,
+    HTTP 200 SSE.
+  - **Loopback, no user login:** B0 (host launch token only, correct Host, no Origin) -> 200. All upstream traffic is on 127.0.0.1.
+**Grade: R1 PASS (A)\* — c7 only.** Flags:
+- mock model; host-bound sidecar lane;
+- **frozen-command substitution:** `RuntimeLease` launches the published Docker image (`uar_1_1_1_support.py:257`). c7 is a host
+  sidecar binary with no image, and building one is out of scope. The equivalent sidecar-lane fixture plus the full-body model
+  request trace was used. The operator may rule on the substitution;
+- the turn ran on the AG-UI route; R1 names no interface.
+**v4 tally unchanged: 9/6/5/2/0/1 NOT READY.**
+- c7 standing: R1, R3, R5, R6, R9, R10, R21 PASS(A)\*; R7 PARTIAL; R11 PARTIAL; R22 not graded.
+- Overruns: R3 2 vs 1; R5 +1 vs 0.
+Accounting: R1 ~5 lead calls, 0 boots; cumulative ~2235/2532.
+
+<!-- 2026-10-20T13:25:33Z -->
+## Identity harness on c7 — **R4 PASS (A)\*, R23 PASS (A)\* on c7 (`48d30523…`)**
+
+- Run: `bash ./proof.sh </dev/null` from `/Volumes/T7/uar-qual-work/id-c7` (outside the repo), ports 1915/18915/50155 (free-checked),
+  13:19:05Z -> 13:24:49Z, exit 0.
+- 7 boots (shared, alice1, bob, alice2, alice3, p1a, p1b); every boot sha256 = c7.
+- **SUMMARY FAILS=0 (42 PASS lines).**
+- Receipts: `receipts/id-c7-2026-10-20/` (proof.log, scripts, `run-files/` excluding home/store; MANIFEST.sha256).
+- No source, Cargo, credentials or remote DB.
+- **R4 (memory write/recall across turns): PASS (A)\*.**
+  - M0: bound-mode memory policy PUT -> 200.
+  - M1a: turn 1 auto-captured the codeword as a session-scope record.
+  - M1: the same-session turn-2 upstream request carries `[MEMORY CONTEXT]` with the record (memory_context_msgs=[0]); reply
+    `RECALL:idm-…`.
+  - M2: a new session gets no injection (NO-RECALL).
+  - M3a-c: bob has no alice records and no injection; an alice reboot recalls again (persistence plus owner partition).
+- **R23 (coordinator + 2 subagents + isolation): PASS (A)\*.**
+  - T0a: grants are read back; the child has no spawn grant.
+  - T1a/T1b: the coordinator spawns 2 children; wait_agents joins both results.
+  - T2: the interrupted child makes 0 model requests after the interrupt, 1 upstream disconnect, no event-cursor changes and no
+    approvals afterward. The cancellation leaves no orphan.
+  - T3: a concurrent same-agent-type run B completes with no marker leak and no deadlock.
+- Also PASS on c7: identity/security negatives N0-N6, N3b/N4b, N5a-c (principal_mismatch, case-sensitive), X1 (launch token absent
+  from logs on all boots), P1 (persisted memory policy overlays the launch env).
+- Flags: mock model; host-bound sidecar lane (operator ruling); bound-owner approvals by fixture approver.
+- These grades are c7-only; the a38c3169 grades do not transfer to c7, and c7's do not transfer back.
+
+## 2026-10-20T13:29:12Z — HANDOFF BOUNDARY: Claude -> OpenCode
+
+Restart packet: `receipts/OPENCODE-RESTART-PACKET-2026-10-20.md` (sha256 77e99271913764d92f4d6bf579039f06a890e08bb6e13b707ff05d497a2e64db). Claude is quiescent: no processes; ports 1915-1919/18915-18919/50155-50159 free; all teammates finished. Last Claude grades: R4 PASS(A)*, R23 PASS(A)* on c7 (identity harness 42/42). R7/R11 diagnoses are complete; their next actions await Travis decisions (packet section 9). Nothing committed. Cumulative calls ~2245/2832.

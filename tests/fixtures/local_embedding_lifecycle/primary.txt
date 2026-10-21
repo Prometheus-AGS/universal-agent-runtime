@@ -1,0 +1,2 @@
+The primary lifecycle document states that an owner-scoped knowledge base must
+preserve its durable embedding binding while its local serving member changes.

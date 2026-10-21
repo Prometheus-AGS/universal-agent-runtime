@@ -1,6 +1,6 @@
 //! AG-UI 1.0 transport over the existing run host and durable approval broker.
 //! Wire-run records correlate protocol segments; they never authorize execution.
-use std::{collections::HashSet, convert::Infallible, sync::Arc, time::Duration};
+use std::{collections::HashSet, convert::Infallible, sync::Arc};
 use axum::{Extension, Json, Router, extract::{Path, State}, http::{HeaderMap, StatusCode}, response::{IntoResponse, Response, Sse, sse::{Event, KeepAlive}}, routing::{get, post}};
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -191,14 +191,14 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     if let Err(response) = result {
         // An unknown admission/decision outcome keeps the reservation held.
         // A retry reads this mapping; it never repeats the execution command.
-        observe(Arc::clone(&state),user.clone(),row.clone());
+        observe(Arc::clone(&state),user.clone(),row.clone()).await;
         return response;
     }
     if cold_denied {
         let terminal = AguiTerminal { source_cursor:0,event:json!({"type":"RUN_ERROR","code":"approval_denied","message":"The protected tool continuation was denied"}),interrupt_ids:Vec::new() };
         if seal(&state,&row,terminal).await.is_err() { return unavailable(); }
     }
-    observe(Arc::clone(&state),user.clone(),row.clone());
+    observe(Arc::clone(&state),user.clone(),row.clone()).await;
     stream(state,user,row,&headers).await
 }
 
@@ -299,14 +299,48 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
     }
     Ok(row)
 }
-fn observe(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding) {
-    tokio::spawn(async move {
-        let shutdown = state.manager.root_cancellation_token();
+async fn observe(state: Arc<RunApiState>, user: UserContext, row: AguiRunBinding) {
+    // Subscribe before the first reconciliation. A retained broadcast receiver
+    // closes the event/snapshot race without repeatedly rereading persistence.
+    let Some(mut events) = state.manager.subscribe(&row.native_run_id).await else {
+        state.manager.lifecycle_scope().record_unresolved_effect(format!(
+            "agui-terminal-projection:{}", row.native_run_id
+        ));
+        return;
+    };
+    let mut committed_work = state.manager.subscribe_committed_work();
+    let scope = state.manager.lifecycle_scope();
+    let cancellation = scope.cancellation_token();
+    let task_row = row.clone();
+    if scope.spawn("agui-terminal-projection", async move {
         loop {
-            match reconcile(&state,&user,row.clone()).await { Ok(row) if row.terminal.is_some() => return, Err(error) => tracing::warn!(error = %format!("{error:#}"),"AG-UI terminal projection remains pending"), _ => {} }
-            tokio::select! { _ = shutdown.cancelled() => return, _ = tokio::time::sleep(Duration::from_millis(100)) => {} }
+            match reconcile(&state, &user, task_row.clone()).await {
+                Ok(updated) if updated.terminal.is_some() => return Ok(()),
+                Ok(_) => {}
+                Err(error) => {
+                    return Err(anyhow::anyhow!(
+                        "AG-UI terminal projection could not reconcile: {error:#}"
+                    ));
+                }
+            }
+            tokio::select! {
+                _ = cancellation.cancelled() => return Ok(()),
+                event = events.recv() => match event {
+                    Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                        return Err(anyhow::anyhow!("AG-UI terminal projection lost its run event source"));
+                    }
+                },
+                changed = committed_work.changed() => {
+                    if changed.is_err() {
+                        return Err(anyhow::anyhow!("AG-UI terminal projection lost its committed-work source"));
+                    }
+                },
+            }
         }
-    });
+    }).is_err() {
+        scope.record_unresolved_effect(format!("agui-terminal-projection:{}", row.native_run_id));
+    }
 }
 
 #[derive(Default)]
@@ -348,6 +382,11 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
     };
     let body = async_stream::stream! {
         let mut row = row;
+        // Subscribe before the first durable reconciliation so an event cannot
+        // be lost between snapshot and wait.
+        let mut events = state.manager.subscribe(&row.native_run_id).await;
+        let mut committed_work = state.manager.subscribe_committed_work();
+        let shutdown = state.manager.root_cancellation_token();
         let mut projector = Projector::default();
         let mut cursor = row.start_cursor;
         if after.is_none() { yield Ok::<Event,Infallible>(frame(&row,cursor,0,json!({"type":"RUN_STARTED","threadId":row.thread_id,"runId":row.wire_run_id,"protocolVersion":"1.0"}))); }
@@ -376,7 +415,26 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
                 if after.is_none_or(|after|(cursor,100)>after) { yield Ok(frame(&row,cursor,100,terminal.event.clone())); }
                 break;
             }
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            let Some(events) = events.as_mut() else {
+                yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution has no live event source"})));
+                break;
+            };
+            tokio::select! {
+                _ = shutdown.cancelled() => break,
+                event = events.recv() => match event {
+                    Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                        yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution event source closed"})));
+                        break;
+                    }
+                },
+                changed = committed_work.changed() => {
+                    if changed.is_err() {
+                        yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"The durable projection event source closed"})));
+                        break;
+                    }
+                },
+            }
         }
     };
     Sse::new(body).keep_alive(KeepAlive::default()).into_response()

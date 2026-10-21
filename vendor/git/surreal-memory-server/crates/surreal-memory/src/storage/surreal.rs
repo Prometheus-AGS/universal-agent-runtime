@@ -48,6 +48,7 @@ const MINDMAP_UPDATE_TIMEOUT: &str = "30s";
 pub struct SurrealStorage {
     connection: Arc<ArcSwap<ConnectionCell>>,
     connection_info: ConnectionInfo,
+    lifecycle_mode: SurrealLifecycleMode,
     embedding_service: Arc<dyn EmbeddingService>,
     /// Bounded-concurrency semaphore for embedded mode. RocksDB's
     /// PointLockManager defaults to 16 stripes per column family —
@@ -617,6 +618,19 @@ pub enum SurrealMode {
     Server,
 }
 
+/// Selects who owns connection replacement and final close.
+///
+/// The default preserves surreal-memory's standalone behavior. Hosts that
+/// already supervise a shared database use `HostManaged`: they provide the
+/// connection, observe transport failure, decide when to reconnect, and close
+/// the underlying engine only after all dependent scopes have drained.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SurrealLifecycleMode {
+    #[default]
+    Autonomous,
+    HostManaged,
+}
+
 #[derive(Debug, Clone)]
 pub struct SurrealConfig {
     pub mode: SurrealMode,
@@ -627,6 +641,7 @@ pub struct SurrealConfig {
     pub namespace: String,
     pub database: String,
     pub retry: RetryConfig,
+    pub lifecycle_mode: SurrealLifecycleMode,
 }
 
 impl Default for SurrealConfig {
@@ -640,6 +655,7 @@ impl Default for SurrealConfig {
             namespace: "default".to_string(),
             database: "default".to_string(),
             retry: RetryConfig::default(),
+            lifecycle_mode: SurrealLifecycleMode::Autonomous,
         }
     }
 }
@@ -655,17 +671,63 @@ impl SurrealStorage {
 
         let db = Self::connect_with_retry(config).await?;
 
-        // Run migrations on initial connection
-        run_migrations(&db).await?;
-        Self::ensure_embedding_indexes(&db, embedding_service.dimensions()).await?;
+        // This constructor owns the client. If readiness work fails after the
+        // connection succeeds, release the owned SDK scope before returning.
+        let initialization: Result<()> = async {
+            run_migrations(&db).await?;
+            Self::ensure_embedding_indexes(&db, embedding_service.dimensions()).await
+        }
+        .await;
+        if let Err(error) = initialization {
+            return match db.shutdown().await {
+                Ok(()) => Err(error),
+                Err(cleanup_error) => Err(error.context(format!(
+                    "memory initialization failed and owned SurrealDB shutdown also failed: {cleanup_error}"
+                ))),
+            };
+        }
 
         let embedded_semaphore = make_embedded_semaphore(&connection_info.config);
 
         Ok(Self {
             connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(db)))),
             connection_info,
+            lifecycle_mode: config.lifecycle_mode,
             embedding_service,
             embedded_semaphore,
+            #[cfg(feature = "palace")]
+            palace: tokio::sync::OnceCell::new(),
+        })
+    }
+
+    /// Build storage around a connection owned by the embedding host.
+    ///
+    /// The supplied client must already be authenticated and selected for the
+    /// namespace/database named in `config`. This constructor never retries,
+    /// replaces, or closes that client. It still establishes the memory schema
+    /// before returning a ready storage facade.
+    pub async fn from_host_connection(
+        config: &SurrealConfig,
+        db: Surreal<Any>,
+        embedding_service: Arc<dyn EmbeddingService>,
+    ) -> Result<Self> {
+        if config.lifecycle_mode != SurrealLifecycleMode::HostManaged {
+            anyhow::bail!(
+                "from_host_connection requires SurrealLifecycleMode::HostManaged"
+            );
+        }
+
+        run_migrations(&db).await?;
+        Self::ensure_embedding_indexes(&db, embedding_service.dimensions()).await?;
+
+        Ok(Self {
+            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(db)))),
+            connection_info: ConnectionInfo {
+                config: config.clone(),
+            },
+            lifecycle_mode: SurrealLifecycleMode::HostManaged,
+            embedding_service,
+            embedded_semaphore: make_embedded_semaphore(config),
             #[cfg(feature = "palace")]
             palace: tokio::sync::OnceCell::new(),
         })
@@ -917,6 +979,55 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
         self.live_db()
     }
 
+    /// Replace a failed host-managed client after the host has completed its
+    /// own authenticated reconnect protocol.
+    ///
+    /// This is a state publication, not a reconnect loop. The replacement is
+    /// accepted only in host-managed mode so standalone callers retain their
+    /// existing lifecycle behavior.
+    pub fn install_host_connection(&self, db: Surreal<Any>) -> Result<()> {
+        if self.lifecycle_mode != SurrealLifecycleMode::HostManaged {
+            anyhow::bail!(
+                "install_host_connection is only available in host-managed lifecycle mode"
+            );
+        }
+        self.connection
+            .store(Arc::new(ConnectionCell::Connected(db)));
+        Ok(())
+    }
+
+    /// Publish a transport failure for a host-managed client.
+    ///
+    /// Callers receive the failure until their lifecycle owner installs an
+    /// acknowledged replacement. This method intentionally performs no retry.
+    pub fn mark_host_connection_failed(&self, error: impl Into<String>) -> Result<()> {
+        if self.lifecycle_mode != SurrealLifecycleMode::HostManaged {
+            anyhow::bail!(
+                "mark_host_connection_failed is only available in host-managed lifecycle mode"
+            );
+        }
+        self.connection
+            .store(Arc::new(ConnectionCell::Failed(error.into())));
+        Ok(())
+    }
+
+    /// Release the memory facade's connection scope.
+    ///
+    /// In host-managed mode this prevents further storage access but leaves
+    /// the database client available to its host. Autonomous mode delegates to
+    /// the SDK's awaited close operation.
+    pub async fn close(&self) -> Result<()> {
+        let db = self.live_db()?;
+        self.connection
+            .store(Arc::new(ConnectionCell::Failed("memory lifecycle closed".to_string())));
+        if self.lifecycle_mode == SurrealLifecycleMode::Autonomous {
+            db.shutdown()
+                .await
+                .context("Failed to close the autonomous SurrealDB connection")?;
+        }
+        Ok(())
+    }
+
     /// Persist a fully planned and embedded logical memory under a stable key.
     ///
     /// The durable-operation coordinator derives `record_key` from its caller
@@ -1079,6 +1190,25 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
         F: Fn(Surreal<Any>) -> Fut,
         Fut: std::future::Future<Output = Result<R>>,
     {
+        if self.lifecycle_mode == SurrealLifecycleMode::HostManaged {
+            let db = self.live_db()?;
+            return match op(db).await {
+                Ok(value) => Ok(value),
+                Err(error) => {
+                    if matches!(self.classify_error(&error), RetryAction::Reconnect) {
+                        self.connection.store(Arc::new(ConnectionCell::Failed(
+                            format!("{op_name}: {error}"),
+                        )));
+                    }
+                    Err(error).with_context(|| {
+                        format!(
+                            "{op_name}: host-managed connection failed; await an explicit host reconnect"
+                        )
+                    })
+                }
+            };
+        }
+
         use tracing::Instrument as _;
 
         // Acquire an embedded-mode permit (no-op in server mode). The
@@ -3339,6 +3469,7 @@ impl SurrealStorage {
         Ok(Self {
             connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(db)))),
             connection_info,
+            lifecycle_mode: SurrealLifecycleMode::Autonomous,
             embedding_service,
             embedded_semaphore,
             #[cfg(feature = "palace")]
@@ -3885,6 +4016,7 @@ mod retry_tests {
             namespace: "test".to_string(),
             database: "test".to_string(),
             retry: RetryConfig::default(),
+            lifecycle_mode: SurrealLifecycleMode::Autonomous,
         };
 
         let connection_info = ConnectionInfo {
@@ -3896,6 +4028,7 @@ mod retry_tests {
                 "test".to_string(),
             )))),
             connection_info,
+            lifecycle_mode: SurrealLifecycleMode::Autonomous,
             embedding_service: Arc::new(MockEmbedding),
             embedded_semaphore: None,
             #[cfg(feature = "palace")]

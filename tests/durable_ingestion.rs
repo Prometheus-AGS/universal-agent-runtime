@@ -63,6 +63,7 @@ async fn app(store: Arc<dyn PersistenceLayer>) -> axum::Router {
         persistence: store,
         vector_matcher: Arc::new(VectorMatcher::new(Arc::new(UnusedEmbedding), 0.75)),
         ingestion_pool: None,
+        realtime_bus: None,
     })).layer(Extension(identity().await))
 }
 

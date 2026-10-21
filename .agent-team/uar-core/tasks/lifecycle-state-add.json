@@ -1,0 +1,17 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 53,
+  "task": {
+    "action": "add",
+    "id": "lifecycle-state",
+    "title": "Persistence endpoint/ownership and pinned engine completion",
+    "owner": "uar-state",
+    "harness": "codex",
+    "remaining": [
+      "Implementation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+    ],
+    "evidence": [
+      "openspec/changes/deterministic-lifecycle-management/design.md"
+    ]
+  }
+}

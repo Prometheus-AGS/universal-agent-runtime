@@ -1,0 +1,2 @@
+After explicit primary recovery, the original local member ingests this final
+document without restarting the runtime or changing the durable KB binding.

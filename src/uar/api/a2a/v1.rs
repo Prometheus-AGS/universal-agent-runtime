@@ -21,7 +21,7 @@ pub fn agent_card(base_url: &str, grpc_url: Option<&str>) -> Value {
         "name": legacy.name, "description": legacy.description,
         "version": env!("CARGO_PKG_VERSION"), "documentationUrl": legacy.documentation_url,
         "supportedInterfaces": interfaces,
-        "capabilities": {"streaming": false, "pushNotifications": false, "extendedAgentCard": false},
+        "capabilities": {"streaming": true, "pushNotifications": false, "extendedAgentCard": false},
         "securitySchemes": {
             "bearer": {"httpAuthSecurityScheme": {"scheme": "Bearer", "bearerFormat": "JWT"}},
             "apiKey": {"apiKeySecurityScheme": {"location": "header", "name": "X-API-Key"}}
@@ -167,7 +167,7 @@ async fn dispatch(
         return error(req.id, -32009, "A2A-Version 1.0 is required by this interface");
     }
     match req.method.as_str() {
-        "SendMessage" => {
+        "SendMessage" | "SendStreamingMessage" => {
             let Ok(params) = parse::<SendParams>(req.params) else { return error(req.id, -32602, "Invalid parameters"); };
             if !tenant_matches(&params.tenant, &user) {
                 return response(StatusCode::FORBIDDEN, JsonRpcResponse::err(req.id, -32011, "Insufficient scope"));
@@ -207,9 +207,11 @@ async fn dispatch(
                 params_legacy, &params.message.message_id, capture.map(|Extension(value)| value).unwrap_or_default()).await {
                 Ok(task) => task, Err(failure) => return task_error(req.id, failure, false),
             };
-            while !params.configuration.return_immediately && is_active(&task) {
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-                task = match state.threads.get_durable(&owner, agent, &task.id).await {
+            if req.method == "SendStreamingMessage" {
+                return task_stream(state, owner, agent.to_owned(), req.id, task, params.configuration.history_length).await;
+            }
+            if !params.configuration.return_immediately && is_active(&task) {
+                task = match state.threads.wait_durable_until_settled(&owner, agent, &task.id, &task).await {
                     Ok(task) => task, Err(failure) => return task_error(req.id, failure, false),
                 };
             }
@@ -265,9 +267,64 @@ async fn dispatch(
         }
         "GetExtendedAgentCard" => error(req.id, -32007, "Extended agent card is not configured"),
         "CreateTaskPushNotificationConfig" | "GetTaskPushNotificationConfig" | "ListTaskPushNotificationConfigs" | "DeleteTaskPushNotificationConfig" => error(req.id, -32003, "Push notifications are not supported"),
-        "SendStreamingMessage" | "SubscribeToTask" => error(req.id, -32004, "Streaming is not supported"),
+        "SubscribeToTask" => {
+            let Ok(params) = parse::<TaskParams>(req.params) else { return error(req.id, -32602, "Invalid parameters"); };
+            if params.id.trim().is_empty() { return error(req.id, -32602, "Task id is required"); }
+            if !tenant_matches(&params.tenant, &user) {
+                return response(StatusCode::FORBIDDEN, JsonRpcResponse::err(req.id, -32011, "Insufficient scope"));
+            }
+            let task = match state.threads.get_durable(&owner, agent, &params.id).await {
+                Ok(task) => task,
+                Err(failure) => return task_error(req.id, failure, false),
+            };
+            if matches!(task_state(&task), "TASK_STATE_COMPLETED" | "TASK_STATE_FAILED" | "TASK_STATE_CANCELED" | "TASK_STATE_REJECTED") {
+                return error(req.id, -32004, "Terminal tasks do not support subscription");
+            }
+            task_stream(state, owner, agent.to_owned(), req.id, task, None).await
+        },
         _ => error(req.id, -32601, "Method not found"),
     }
+}
+
+async fn task_stream(
+    state: &A2AState, owner: ActorOwner, agent: String, request_id: Option<Value>,
+    initial: Task, history_length: Option<usize>,
+) -> Response {
+    let mut updates = match state.threads.subscribe_durable(&owner, &agent, &initial).await {
+        Ok(updates) => updates,
+        Err(failure) => return task_error(request_id, failure, false),
+    };
+    let stream = async_stream::stream! {
+        let mut first = true;
+        while let Some(update) = updates.recv().await {
+            let task = match update {
+                Ok(task) => task,
+                Err(_) => {
+                    let body = JsonRpcResponse::err(request_id.clone(), -32603, "Task stream unavailable; reconcile exact task before resubscribing");
+                    yield Ok::<_, std::convert::Infallible>(axum::response::sse::Event::default().data(serde_json::to_string(&body).unwrap_or_default()));
+                    break;
+                }
+            };
+            let projected = project_task(&task, history_length);
+            let payloads = if first {
+                first = false;
+                vec![json!({"task": projected})]
+            } else {
+                let mut payloads = projected["artifacts"].as_array().into_iter().flatten().map(|artifact| json!({
+                    "artifactUpdate": {"taskId": task.id, "contextId": task.context_id,
+                        "artifact": artifact, "append": false, "lastChunk": true, "metadata": task.metadata}
+                })).collect::<Vec<_>>();
+                payloads.push(json!({"statusUpdate": {"taskId": task.id, "contextId": task.context_id,
+                    "status": projected["status"], "metadata": task.metadata}}));
+                payloads
+            };
+            for payload in payloads {
+                let body = JsonRpcResponse::ok(request_id.clone(), payload);
+                yield Ok::<_, std::convert::Infallible>(axum::response::sse::Event::default().data(serde_json::to_string(&body).unwrap_or_default()));
+            }
+        }
+    };
+    ([("a2a-version", "1.0")], axum::response::Sse::new(stream)).into_response()
 }
 
 fn is_active(task: &Task) -> bool {

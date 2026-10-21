@@ -45,13 +45,15 @@ impl SandboxRunner for RemoteRunner {
             .json(&config)
             .send()
             .await
-            .map_err(|e| SandboxError::CreationFailed(e.to_string()))?;
+            .map_err(|_| SandboxError::OutcomeUnknown("remote create acknowledgment unavailable".into()))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(SandboxError::CreationFailed(format!(
-                "HTTP {status}: {body}"
+            // This protocol has no negative acknowledgment proving rollback.
+            // A received HTTP failure is distinct from a missing response, but
+            // neither establishes whether the remote effect was committed.
+            return Err(SandboxError::OutcomeUnknown(format!(
+                "remote create returned HTTP {status} without an effect acknowledgment"
             )));
         }
 
@@ -63,7 +65,11 @@ impl SandboxRunner for RemoteRunner {
         let cr: CreateResponse = resp
             .json()
             .await
-            .map_err(|e| SandboxError::CreationFailed(e.to_string()))?;
+            .map_err(|_| SandboxError::OutcomeUnknown("remote create response has no valid resource binding".into()))?;
+
+        if cr.id.is_empty() {
+            return Err(SandboxError::OutcomeUnknown("remote create returned an empty resource binding".into()));
+        }
 
         Ok(SandboxHandle {
             id: cr.id,
@@ -91,19 +97,18 @@ impl SandboxRunner for RemoteRunner {
             })
             .send()
             .await
-            .map_err(|e| SandboxError::ExecutionFailed(e.to_string()))?;
+            .map_err(|_| SandboxError::OutcomeUnknown("remote execute acknowledgment unavailable".into()))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(SandboxError::ExecutionFailed(format!(
-                "HTTP {status}: {body}"
+            return Err(SandboxError::OutcomeUnknown(format!(
+                "remote execute returned HTTP {status} without an effect acknowledgment"
             )));
         }
 
         resp.json()
             .await
-            .map_err(|e| SandboxError::ExecutionFailed(e.to_string()))
+            .map_err(|_| SandboxError::OutcomeUnknown("remote execute response has no valid effect acknowledgment".into()))
     }
 
     async fn write_file(
@@ -131,12 +136,13 @@ impl SandboxRunner for RemoteRunner {
             })
             .send()
             .await
-            .map_err(|e| SandboxError::FileError(e.to_string()))?;
+            .map_err(|_| SandboxError::OutcomeUnknown("remote write acknowledgment unavailable".into()))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(SandboxError::FileError(format!("HTTP {status}: {body}")));
+            return Err(SandboxError::OutcomeUnknown(format!(
+                "remote write returned HTTP {status} without an effect acknowledgment"
+            )));
         }
 
         Ok(())
@@ -194,13 +200,12 @@ impl SandboxRunner for RemoteRunner {
             })
             .send()
             .await
-            .map_err(|e| SandboxError::ExecutionFailed(e.to_string()))?;
+            .map_err(|_| SandboxError::OutcomeUnknown("remote destroy acknowledgment unavailable".into()))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(SandboxError::ExecutionFailed(format!(
-                "HTTP {status}: {body}"
+            return Err(SandboxError::OutcomeUnknown(format!(
+                "remote destroy returned HTTP {status} without an effect acknowledgment"
             )));
         }
 

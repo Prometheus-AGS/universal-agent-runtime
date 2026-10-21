@@ -491,3 +491,186 @@ build, compiler/import probe, gate or product verification ran while writing it.
 No guard or product feature was added. Exact runtime compatibility, timing,
 65-scenario execution and produced artifacts remain unverified until the named
 operator-authorized gates actually run.
+
+## Operator-authorized lifecycle scope revision — 2026-10-20
+
+The operator explicitly approved implementation of the unified lifecycle plan
+WP1–WP8, tracked by the registered OpenSpec change
+`deterministic-lifecycle-management` in this same active phase. This revision
+supersedes this document's earlier restriction against runtime behavior changes
+and narrowly scoped dependency-source patches for this lifecycle work. It does
+not authorize unrelated upgrades or verification. Keep SurrealDB 3.3.0, SQLx
+0.8.6 and existing Tokio/Tokio-util resolution.
+
+Deliver resource inventory/transition diagnostics; trusted supervisor and atomic
+task admission; acyclic controllers and explicit history draining; unified
+endpoints and physical store ownership; acknowledged SDK and first-party memory
+completion; dependency-ordered startup/shutdown on every exit; event-driven
+realtime/work consumers with gap reconciliation; transactional credential
+migration joining and truthful outcomes; hermetic fixtures, process handshakes
+and panic-safe teardown. The resource map and writer handoffs live in
+`docs/operations/lifecycle-resource-inventory.md` and adjacent lifecycle handoffs.
+
+The operator subsequently approved mandatory cancellable Windows named-pipe
+input **and the production launching-host update**. The active Boss launcher
+`src/main/ai/runtime/uar/UarSidecarService.ts` participates in the same lifecycle
+compatibility contract, including `host_lifecycle_control_v1`. Its source handoff
+is `.agent-team/boss-core/handoffs/2026-10-20-uar-inherited-lifecycle.md` in the
+Boss repository. Installed platform behavior is not yet acceptance evidence.
+
+Source authors may write acceptance scenarios; execution remains closed. Do not
+start diagnostic, test, lint, formatter, typecheck, Cargo, build, validator or
+review gates. The whole phase, including this added scope and launcher, must be
+implemented and reconciled before presenting exact commands for operator
+authorization. No elapsed time, local task completion or writer conclusion opens
+the gate. A permanently pending resource is exposed as an obligation; a timeout
+does not certify its release.
+
+The operator also selected **require event streaming and reject unsupported A2A
+peers before dispatch**. WP6 therefore includes capability negotiation against
+the peer's advertised standardized interface, identity-validated streaming
+receipts, and matching UAR server producer contracts. Legacy-only or polling-only
+endpoints must fail before remote work is created; no guessed endpoint remap or
+polling fallback is permitted. Existing configurations must explicitly select
+the advertised streaming interface. This source work remains inside the same
+whole-phase implementation boundary.
+
+
+## Watcher-first source handoff — 2026-10-20T22:19:44.675361+00:00
+
+Execute phase remains `function-first-release-certification`. Canonical waypoint
+3141, plan revision 67, aggregate change
+counter 138/153;
+team state revision 82. Tasks5.2 and5.3 record source completion,
+with entrypoint and watcher writer handoffs collected. The aggregate counter is
+not a count of individual lifecycle work packages.
+
+External HTTP/A2A admission closes first. Configuration and ingestion file
+watchers then stop and join before dependent work drains and databases close.
+Immutable configuration remains readable. Skill watcher construction holds an
+admitted lease and its guard closes the bounded receiver before native watcher
+destruction, releasing callbacks blocked on a full queue before native join.
+The server does not instantiate that optional skill watcher. The supervisor can
+attach acquired-prefix cleanup dependencies after startup cancellation closes
+intake, but never after resource finalization starts.
+
+Verification remains CLOSED. No test, build, formatter, lint, typecheck,
+compiler probe, policy validator, packaging, acceptance or review gate ran.
+Only source reads/searches, authorized source/documentation writing, saved-byte
+inventory authoring and supported KBD/team metadata commands were used. No
+review, compilation, physical release or historical root-cause result is claimed.
+No team writer remains active. Source handoffs and exact saved file identities
+are recorded in `docs/operations/lifecycle-implementation-inventory-2026-10-20`
+(`.md` and `.json`). The JSON is authored after the source/documentation update.
+
+Whole-phase preparation, independent review, local functional acceptance,
+reflection and publication remain pending. The frozen nested embedding blocker
+is not resolved. Earlier images, customer binaries and test receipts do not
+certify the new source. No gate opens without the operator's exact-command
+authorization. Primary memory append previously failed; this append-only
+Markdown record is the permitted fallback and does not claim server success.
+
+
+## Producer completion source handoff — 2026-10-20T23:03:28.122090+00:00
+
+Execute phase remains `function-first-release-certification`; verification is
+CLOSED. Canonical waypoint 3146, plan revision
+69, aggregate change counter
+138/153; team
+state revision 94. Lifecycle follow-up5.4 and all four producer
+team packets record source authoring complete. All current runtime, state,
+trust, Boss and model-source handoffs are collected. No writer remains active.
+The model lane changed documentation only: owned pull streams do not supply
+remote completion acknowledgement, and current durable accounting retains
+pending liability. Stronger per-attempt provenance is a documented separate
+limit, not a silently expanded implementation claim.
+
+Configuration and file watchers stop and join before downstream mutable
+resources. Blocking descendants, canceled database/native/MCP waiters, raw
+runtime task boundaries, native watcher readiness, index-builder removal,
+SDK Any/HTTP/gRPC transport ownership and explicit transport/subscription
+reconnect order have source coverage. Per-query gRPC closure joins its exact
+local delivery scope rather than awaiting an assumed terminal notification.
+The Boss consumes the correlated partial-reconnect error. Five deterministic
+ownership integration scenarios are authored but never executed.
+
+Current source evidence is in `docs/operations/lifecycle-producer-*-continuation.md`,
+`lifecycle-reconnect-continuation.md`, `lifecycle-grpc-continuation.md`,
+`lifecycle-model-stream-continuation.md`, and the two renewed lifecycle inventory
+artifacts. `lifecycle-unfinished-implementation.md` names remaining canonical
+tasks and evidence gaps. The JSON inventory is written after this append.
+
+Commands since the previous handoff were source reads/searches, dependency
+documentation retrieval, authorized source/docs writing, saved-byte inventory
+authoring and supported KBD/team metadata mutations. Metadata authoring scripts:
+`/tmp/uar-lifecycle-producer-register.py`,
+`/tmp/uar-lifecycle-producer-team-write.py`,
+`/tmp/uar-lifecycle-producer-complete.py`.
+No tests, lint, formatting, typecheck, Cargo, compiler probe, build, policy
+validator, Docker/preparation, packaging, acceptance or review gate ran. No
+verification violation is known. Documentation retrieval returned inaccessible
+versioned docs pages; no successful upstream runtime evidence is inferred.
+Primary memory append succeeded for the continuation summary before this
+boundary; this append also preserves local history.
+
+Whole-phase child4.1/4.2/4.3/5.1, parent6.2/7.1/7.2/7.3 and separate nested
+embedding frozen-provider constraints remain outstanding. Source implementation
+completion does not open execution. Any later implementation edit requires a
+new inventory and exact operator authorization before a gate. Historical 503
+response bodies and individual sidecar failures remain incompletely recorded.
+No historical root cause, compiled behavior, physical release or customer
+package result is claimed. No source was pushed, published or deployed.
+
+
+## Full local embedding requirement retained — 2026-10-21T00:17:37.409884+00:00
+
+Operator selected full local-only live embedding failover and incompatible-space
+fixtures, immutable Boss payload binding and scoped source commit/push/PR with
+Docker image availability. Active Execute waypoint 3155, plan
+70. Verification remains CLOSED. New canonical tasks
+6.2,8.2,8.3,9.3 are in progress; the previous saved-source inventory is superseded.
+
+Runtime owns embeddings capability, embedding config and narrow server/settings
+wiring. State owns new real-model fixture source and three settings-state literal
+compatibility spans. The Boss-root worker owns immutable candidate provenance
+producer/consumer and waits for an actual UAR source commit before final pinning.
+Lead owns global DAG, shared manifests, spec/phase records and publication.
+Existing PR418 is draft and attached; it will be updated rather than duplicated.
+
+The production embedding design uses explicit host member retirement/recovery
+and generation control; no periodic probe or per-inference whole-model polling.
+Real local inference must establish candidate readiness. Incompatible fixtures
+must use actual distinct model assets, not renamed identical vectors or skipped
+asset prerequisites. Memory's separate embedding-provider contract is not
+certified by the RAG/KB fixture.
+
+New standalone Boss candidate construction exports exact committed root and
+gitlink objects and uses an isolated target. Dirty unrelated worktree files
+remain untouched and cannot become build inputs. Existing public/platform
+payloads are never relabeled. Candidate source pinning still awaits a real SHA.
+
+Only source reads/searches, metadata reads, authorized source/docs writing and
+supported KBD/team mutations were used. No tests/checks/builds/lint/format,
+compiler probes, policy validators, packaging, review gates or image workflow
+were run. The installed UAR Git pre-commit hook invokes prohibited checks;
+AGENTS forbids bypassing the policy validator. Lead will present that exact
+conflict after preparing the concrete source changes; no hook exception is
+assumed. Existing deployment-only workflow can publish SHA-tagged Docker images
+after a source push; this is delivery, not product acceptance.
+
+
+## Local embedding source handoffs — 2026-10-21T00:40:11.332118+00:00
+
+Execute waypoint3157, plan70; verification CLOSED.
+Runtime6.2 and fixture8.2 source handoffs are collected and canonical tasks
+record source completion only. Real local inference readiness, compatible pair,
+retained inference/controls, reusable backup, generation recovery, native
+cleanup and two-cycle/equal-dimension fixture source are integrated. No model
+weights downloaded and no inference/check/build/test/review executed. All six
+frozen embedding conditions are preserved, not certified by this new source.
+
+Boss candidate producer/consumer is authored; task8.3 still awaits a real UAR
+commit pin. Task9.3 publication awaits resolution of the installed Git hook
+conflict. Scoped source staging does not run hooks. No hooks are bypassed and
+no deployment workflow is dispatched. Exact later commands and current saved
+source inventory are documented. Existing unrelated dirty files remain.

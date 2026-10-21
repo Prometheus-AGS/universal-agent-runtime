@@ -49,19 +49,209 @@ use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use futures::FutureExt;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sha2::{Digest, Sha256};
+use std::panic::AssertUnwindSafe;
+use std::path::{Component, Path, PathBuf};
 use surrealdb::Surreal;
 use surrealdb::engine::any::{self, Any};
 use surrealdb::opt::auth::{Database, Namespace, Root};
 
+/// The connection shape UAR selected before it opens a SurrealDB client.
+///
+/// This is deliberately shared by connection setup, persistence diagnostics,
+/// and lifecycle ownership. Callers must not re-parse the raw configuration
+/// string, because a case-normalized scheme and a filesystem path have
+/// different normalization rules.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SurrealEndpoint {
+    /// An in-process SurrealKV database at a normalized filesystem location.
+    EmbeddedFile {
+        engine: EmbeddedSurrealEngine,
+        path: PathBuf,
+    },
+    /// An in-process transient database.
+    EmbeddedMemory,
+    /// A database reached through a network transport.
+    Remote { url: String },
+    /// An engine selected and retained by an embedding host.
+    HostBorrowed,
+}
+
+/// The engine identity selected for an embedded endpoint.
+///
+/// `RocksDbAlias` records the accepted historical spelling. UAR currently
+/// resolves that spelling through SurrealKV; it is not evidence of a
+/// host-provided RocksDB engine.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EmbeddedSurrealEngine {
+    SurrealKv,
+    RocksDbAlias,
+}
+
+impl SurrealEndpoint {
+    /// Parse a configured endpoint once, preserving path case while normalizing
+    /// case-insensitive URI schemes and historic aliases.
+    pub fn parse(connection_string: &str) -> Self {
+        let trimmed = connection_string.trim();
+        let (scheme, remainder) = match trimmed.split_once("://") {
+            Some((scheme, remainder)) => (Some(scheme.to_ascii_lowercase()), Some(remainder)),
+            None => (None, None),
+        };
+
+        match scheme.as_deref() {
+            Some("rocksdb") => Self::EmbeddedFile {
+                engine: EmbeddedSurrealEngine::RocksDbAlias,
+                path: PathBuf::from(remainder.unwrap_or_default()),
+            },
+            Some("surrealkv") => Self::EmbeddedFile {
+                engine: EmbeddedSurrealEngine::SurrealKv,
+                path: PathBuf::from(remainder.unwrap_or_default()),
+            },
+            Some("mem") | Some("memory") => Self::EmbeddedMemory,
+            Some("http") => Self::Remote {
+                url: format!("ws://{}", remainder.unwrap_or_default()),
+            },
+            Some("https") => Self::Remote {
+                url: format!("wss://{}", remainder.unwrap_or_default()),
+            },
+            Some("ws") | Some("wss") => Self::Remote {
+                url: format!("{}://{}", scheme.as_deref().unwrap_or_default(), remainder.unwrap_or_default()),
+            },
+            Some(_) => Self::Remote {
+                url: format!("{}://{}", scheme.as_deref().unwrap_or_default(), remainder.unwrap_or_default()),
+            },
+            None => match trimmed.to_ascii_lowercase().as_str() {
+                "memory" | "mem" => Self::EmbeddedMemory,
+                "surrealkv" => Self::EmbeddedFile {
+                    engine: EmbeddedSurrealEngine::SurrealKv,
+                    path: PathBuf::new(),
+                },
+                "rocksdb" => Self::EmbeddedFile {
+                    engine: EmbeddedSurrealEngine::RocksDbAlias,
+                    path: normalize_path("./data/uar.db"),
+                },
+                _ => Self::EmbeddedFile {
+                    engine: EmbeddedSurrealEngine::SurrealKv,
+                    path: normalize_path(trimmed),
+                },
+            },
+        }
+    }
+
+    /// The endpoint string consumed by the pinned SurrealDB SDK.
+    pub fn connection_string(&self) -> String {
+        match self {
+            Self::EmbeddedFile { path, .. } => format!("surrealkv://{}", path.display()),
+            Self::EmbeddedMemory => "mem://".to_string(),
+            Self::Remote { url } => url.clone(),
+            Self::HostBorrowed => "host://borrowed".to_string(),
+        }
+    }
+
+    /// Filesystem identity when this endpoint owns an embedded directory.
+    ///
+    /// Existing ancestors are canonicalized to detect aliases. The remaining
+    /// suffix is normalized lexically so startup can reject a known shared
+    /// path before either embedded engine opens it.
+    pub fn path_identity(&self) -> Option<PathBuf> {
+        let Self::EmbeddedFile { path, .. } = self else {
+            return None;
+        };
+        Some(existing_ancestor_identity(path))
+    }
+
+    pub fn is_remote(&self) -> bool {
+        matches!(self, Self::Remote { .. })
+    }
+}
+
+fn normalize_path(path: &str) -> PathBuf {
+    let path = Path::new(path);
+    let mut normalized = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if normalized.file_name().is_some() {
+                    normalized.pop();
+                } else if !normalized.has_root() {
+                    normalized.push(component.as_os_str());
+                }
+            }
+            other => normalized.push(other.as_os_str()),
+        }
+    }
+    normalized
+}
+
+fn existing_ancestor_identity(path: &Path) -> PathBuf {
+    let mut ancestor = path;
+    let mut suffix = Vec::new();
+    while !ancestor.exists() {
+        let Some(name) = ancestor.file_name() else {
+            return normalize_path(path.to_string_lossy().as_ref());
+        };
+        suffix.push(name.to_os_string());
+        let Some(parent) = ancestor.parent() else {
+            return normalize_path(path.to_string_lossy().as_ref());
+        };
+        ancestor = parent;
+    }
+
+    let mut identity = std::fs::canonicalize(ancestor)
+        .unwrap_or_else(|_| ancestor.to_path_buf());
+    for component in suffix.iter().rev() {
+        identity.push(component);
+    }
+    identity
+}
+
+/// Who is allowed to close the underlying database client.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PersistenceOwnership {
+    OwnedEmbedded,
+    OwnedRemote,
+    BorrowedHost,
+}
+
+/// The acknowledged result of releasing a persistence scope.
+///
+/// Local resource release and uncertain remote durable work stay distinct.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PersistenceCloseReport {
+    pub ownership: PersistenceOwnership,
+    pub scope_released: bool,
+    pub local_connection_released: bool,
+    pub engine_close_acknowledged: bool,
+    pub remote_durability_unresolved: bool,
+    pub failure: Option<String>,
+}
+
+impl PersistenceCloseReport {
+    fn borrowed() -> Self {
+        Self {
+            ownership: PersistenceOwnership::BorrowedHost,
+            scope_released: true,
+            local_connection_released: false,
+            engine_close_acknowledged: false,
+            remote_durability_unresolved: false,
+            failure: None,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SurrealDbProvider {
     db: Surreal<Any>,
+    endpoint: SurrealEndpoint,
+    ownership: PersistenceOwnership,
     durable_instances: bool,
     durable_store_eligibility: DurableStoreEligibility,
     catalog_storage_backend: &'static str,
     remote_requires_durability_attestation: bool,
+    session_changes: tokio::sync::watch::Sender<u64>,
 }
 
 impl SurrealDbProvider {
@@ -101,62 +291,136 @@ impl SurrealDbProvider {
         surreal_ns: Option<&str>,
         surreal_db: Option<&str>,
     ) -> Result<Self> {
-        let endpoint = normalize_endpoint(connection_string);
-        tracing::info!("Connecting to SurrealDB: {}", endpoint);
+        let endpoint = SurrealEndpoint::parse(connection_string);
+        let connection_string = endpoint.connection_string();
+        tracing::info!("Connecting to SurrealDB: {}", connection_string);
 
-        let db = any::connect(&endpoint).await?;
+        let db = any::connect(&connection_string).await?;
+        Self::initialize_retained(
+            db,
+            endpoint,
+            surreal_user.map(str::to_owned),
+            surreal_pass.map(str::to_owned),
+            surreal_auth_level.map(str::to_owned),
+            surreal_ns.map(str::to_owned),
+            surreal_db.map(str::to_owned),
+        )
+        .await
+    }
 
-        // Server-mode endpoints require signin before namespace/db selection.
-        if is_server_endpoint(&endpoint) {
-            let username = surreal_user.unwrap_or("root").to_string();
-            let password = surreal_pass.unwrap_or("root").to_string();
-            let namespace = surreal_ns.unwrap_or("uar").to_string();
-            let database = surreal_db.unwrap_or("uar").to_string();
-            match surreal_auth_level.unwrap_or("root") {
-                "root" => {
-                    db.signin(Root {
-                        username: username.clone(),
-                        password,
-                    })
-                    .await?;
+    /// Finish all work after client acquisition in a retained task. This keeps
+    /// an embedded engine or remote client owned until construction succeeds or
+    /// its shutdown acknowledgement has completed, even when the caller drops
+    /// its startup waiter.
+    async fn initialize_retained(
+        db: Surreal<Any>,
+        endpoint: SurrealEndpoint,
+        surreal_user: Option<String>,
+        surreal_pass: Option<String>,
+        surreal_auth_level: Option<String>,
+        surreal_ns: Option<String>,
+        surreal_db: Option<String>,
+    ) -> Result<Self> {
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        tokio::spawn(async move {
+            let initialized = AssertUnwindSafe(async {
+                // Server-mode endpoints require signin before namespace/db selection.
+                if endpoint.is_remote() {
+                    let username = surreal_user.as_deref().unwrap_or("root").to_string();
+                    let password = surreal_pass.as_deref().unwrap_or("root").to_string();
+                    let namespace = surreal_ns.as_deref().unwrap_or("uar").to_string();
+                    let database = surreal_db.as_deref().unwrap_or("uar").to_string();
+                    match surreal_auth_level.as_deref().unwrap_or("root") {
+                        "root" => {
+                            db.signin(Root {
+                                username: username.clone(),
+                                password,
+                            })
+                            .await?;
+                        }
+                        "namespace" => {
+                            db.signin(Namespace {
+                                namespace,
+                                username: username.clone(),
+                                password,
+                            })
+                            .await?;
+                        }
+                        "database" => {
+                            db.signin(Database {
+                                namespace,
+                                database,
+                                username: username.clone(),
+                                password,
+                            })
+                            .await?;
+                        }
+                        value => anyhow::bail!(
+                            "unsupported SurrealDB authentication scope '{value}'; expected root, namespace, or database"
+                        ),
+                    }
+                    tracing::info!("SurrealDB server signin completed as '{}'", username);
                 }
-                "namespace" => {
-                    db.signin(Namespace {
-                        namespace,
-                        username: username.clone(),
-                        password,
-                    })
-                    .await?;
-                }
-                "database" => {
-                    db.signin(Database {
-                        namespace,
-                        database,
-                        username: username.clone(),
-                        password,
-                    })
-                    .await?;
-                }
-                value => anyhow::bail!(
-                    "unsupported SurrealDB authentication scope '{value}'; expected root, namespace, or database"
+
+                let ns = surreal_ns.as_deref().unwrap_or("uar");
+                let database = surreal_db.as_deref().unwrap_or("uar");
+                db.use_ns(ns).use_db(database).await?;
+                tracing::info!("SurrealDB using ns='{}' db='{}'", ns, database);
+
+                host::migrate(&db).await
+            })
+            .catch_unwind()
+            .await;
+
+            let result = match initialized {
+                Ok(Ok(())) => Ok(Self::from_initialized_owned_client(db, endpoint)),
+                Ok(Err(error)) => Err(shutdown_failed_owned_client(&db, error).await),
+                Err(_) => Err(
+                    shutdown_failed_owned_client(
+                        &db,
+                        anyhow::anyhow!(
+                            "SurrealDB provider initialization panicked after acquiring its client"
+                        ),
+                    )
+                    .await,
                 ),
+            };
+
+            // `send` returns the provider when the constructor waiter was
+            // canceled. It has not reached the supervisor in that case, so
+            // retain responsibility through the SDK shutdown acknowledgement.
+            if let Err(result) = sender.send(result) {
+                match result {
+                    Ok(provider) => {
+                        if let Err(error) = provider.db.shutdown().await {
+                            tracing::error!(
+                                error = %error,
+                                "SurrealDB provider was undelivered and owned client shutdown failed"
+                            );
+                        }
+                    }
+                    Err(error) => tracing::error!(
+                        error = %error,
+                        "SurrealDB provider initialization failed after its waiter was canceled"
+                    ),
+                }
             }
-            tracing::info!("SurrealDB server signin completed as '{}'", username);
-        }
+        });
 
-        let ns = surreal_ns.unwrap_or("uar");
-        let database = surreal_db.unwrap_or("uar");
-        db.use_ns(ns).use_db(database).await?;
-        tracing::info!("SurrealDB using ns='{}' db='{}'", ns, database);
+        receiver.await.map_err(|_| {
+            anyhow::anyhow!(
+                "SurrealDB provider initializer ended before reporting whether its client was released"
+            )
+        })?
+    }
 
-        host::migrate(&db).await?;
-
+    fn from_initialized_owned_client(db: Surreal<Any>, endpoint: SurrealEndpoint) -> Self {
         tracing::info!("SurrealDB connected successfully");
 
         // A remote URI cannot establish persistence; the trusted supervisor
         // attests it before the shared C06/C07/C08 SQL stores become eligible.
-        let local_durable = endpoint.to_ascii_lowercase().starts_with("surrealkv://");
-        let remote = is_server_endpoint(&endpoint);
+        let local_durable = matches!(endpoint, SurrealEndpoint::EmbeddedFile { .. });
+        let remote = endpoint.is_remote();
         let attested = std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED")
             .is_ok_and(|value| value == "1");
         let durable_store_eligibility = if local_durable {
@@ -179,13 +443,21 @@ impl SurrealDbProvider {
         } else {
             "memory"
         };
-        Ok(Self {
+        let (session_changes, _) = tokio::sync::watch::channel(0_u64);
+        Self {
             db,
+            ownership: if remote {
+                PersistenceOwnership::OwnedRemote
+            } else {
+                PersistenceOwnership::OwnedEmbedded
+            },
+            endpoint,
             durable_instances,
             durable_store_eligibility,
             catalog_storage_backend,
             remote_requires_durability_attestation: remote && !attested,
-        })
+            session_changes,
+        }
     }
 
     /// Backend of the successfully initialized connection, without its endpoint.
@@ -195,6 +467,75 @@ impl SurrealDbProvider {
 
     pub fn client(&self) -> Surreal<Any> {
         self.db.clone()
+    }
+
+    /// Observe retained transport loss for this provider's current SDK client.
+    /// A loss asks the lifecycle supervisor to decide whether to reconnect; it
+    /// never certifies the outcome of an interrupted remote mutation.
+    pub fn subscribe_transport_state(
+        &self,
+    ) -> Result<tokio::sync::watch::Receiver<surrealdb::TransportState>> {
+        self.db.subscribe_transport_state().map_err(anyhow::Error::from)
+    }
+
+    /// The normalized endpoint selected for this provider.
+    pub fn endpoint(&self) -> &SurrealEndpoint {
+        &self.endpoint
+    }
+
+    /// The lifecycle authority for the database client.
+    pub fn ownership(&self) -> PersistenceOwnership {
+        self.ownership
+    }
+
+    pub fn is_owned(&self) -> bool {
+        !matches!(self.ownership, PersistenceOwnership::BorrowedHost)
+    }
+
+    /// Release this provider's scope after all registered UAR users have
+    /// drained. Borrowed clients remain open for their host.
+    ///
+    /// The pinned SDK patch supplies `Surreal::shutdown`, which closes admission
+    /// across all SDK clones and resolves only after local engine cleanup has
+    /// completed. Server composition owns the ordering of dependent workers.
+    pub async fn close_scope(&self) -> PersistenceCloseReport {
+        if matches!(self.ownership, PersistenceOwnership::BorrowedHost) {
+            return PersistenceCloseReport::borrowed();
+        }
+
+        match self.db.shutdown().await {
+            Ok(()) => PersistenceCloseReport {
+                ownership: self.ownership,
+                scope_released: true,
+                local_connection_released: true,
+                engine_close_acknowledged: matches!(
+                    self.ownership,
+                    PersistenceOwnership::OwnedEmbedded
+                ),
+                remote_durability_unresolved: false,
+                failure: None,
+            },
+            Err(error) => PersistenceCloseReport {
+                ownership: self.ownership,
+                scope_released: false,
+                local_connection_released: false,
+                engine_close_acknowledged: false,
+                remote_durability_unresolved: matches!(
+                    self.ownership,
+                    PersistenceOwnership::OwnedRemote
+                ),
+                failure: Some(error.to_string()),
+            },
+        }
+    }
+}
+
+async fn shutdown_failed_owned_client(db: &Surreal<Any>, error: anyhow::Error) -> anyhow::Error {
+    match db.shutdown().await {
+        Ok(()) => error,
+        Err(cleanup_error) => error.context(format!(
+            "SurrealDB initialization failed and owned client shutdown also failed: {cleanup_error}"
+        )),
     }
 }
 
@@ -256,45 +597,6 @@ pub(crate) fn none_when_table_missing<T, E: std::fmt::Display>(
             Err(anyhow::anyhow!(e.to_string()))
         }
     })
-}
-
-/// Returns `true` for network-accessible SurrealDB endpoints that require
-/// explicit authentication before selecting a namespace/database.
-fn is_server_endpoint(endpoint: &str) -> bool {
-    let l = endpoint.to_ascii_lowercase();
-    l.starts_with("ws://")
-        || l.starts_with("wss://")
-        || l.starts_with("http://")
-        || l.starts_with("https://")
-}
-
-fn normalize_endpoint(connection_string: &str) -> String {
-    let trimmed = connection_string.trim();
-    let lower = trimmed.to_ascii_lowercase();
-    if lower.starts_with("rocksdb://") {
-        trimmed.replacen("rocksdb://", "surrealkv://", 1)
-    } else if lower.starts_with("http://") {
-        trimmed.replacen("http://", "ws://", 1)
-    } else if lower.starts_with("https://") {
-        trimmed.replacen("https://", "wss://", 1)
-    } else if trimmed.contains("://")
-        || lower == "memory"
-        || lower == "mem"
-        || lower == "surrealkv"
-        || lower == "rocksdb"
-    {
-        if lower == "memory" || lower == "mem" {
-            "mem://".to_string()
-        } else if lower == "surrealkv" {
-            "surrealkv://".to_string()
-        } else if lower == "rocksdb" {
-            "surrealkv://./data/uar.db".to_string()
-        } else {
-            trimmed.to_string()
-        }
-    } else {
-        format!("surrealkv://{trimmed}")
-    }
 }
 
 pub(crate) fn to_db_value<T: Serialize>(value: &T) -> Result<serde_json::Value> {
@@ -660,6 +962,7 @@ impl PersistenceLayer for SurrealDbProvider {
     fn supports_durable_ingestion(&self) -> bool { self.durable_instances }
     async fn accept_ingestion(&self, document: &KnowledgeDocument, source: &[u8]) -> Result<IngestionJob> { ingestion_records::accept(self, document, source).await }
     async fn discover_ingestion(&self, limit: usize) -> Result<Vec<IngestionJob>> { ingestion_records::discover(self, limit).await }
+    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> { ingestion_records::next_due_at(self).await }
     async fn get_ingestion_job(&self, owner: &str, document: &str) -> Result<Option<IngestionJob>> { ingestion_records::get(self, owner, document).await }
     async fn get_ingestion_source(&self, job: &IngestionJob) -> Result<Option<Vec<u8>>> { ingestion_records::source(self, job).await }
     async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
@@ -1790,10 +2093,34 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     // Session Management
+    fn subscribe_persisted_session_changes(&self) -> Option<tokio::sync::watch::Receiver<u64>> {
+        Some(self.session_changes.subscribe())
+    }
+
+    async fn next_persisted_session_expiry(
+        &self,
+        idle_timeout: chrono::Duration,
+    ) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+        if idle_timeout < chrono::Duration::zero() { return Ok(None); }
+        let mut response = self.db.query("SELECT VALUE last_activity FROM sessions").await?;
+        let values: Vec<surrealdb::types::Value> = response.take(0)?;
+        let now = chrono::Utc::now();
+        Ok(values.into_iter().filter_map(|value| {
+            let json = surreal_to_json(value).ok()?;
+            let text = json.as_str()?;
+            let activity = chrono::DateTime::parse_from_rfc3339(text).ok()?.with_timezone(&chrono::Utc);
+            let deadline = activity + idle_timeout;
+            (deadline > now).then_some(deadline)
+        }).min())
+    }
+
     async fn save_session(&self, session: &Session) -> Result<()> {
         let key = crate::uar::persistence::session_storage_key(session.owner_id(), session.id());
         let payload = tenant_record_payload(session, session.id())?;
         let _: Option<surrealdb::types::Value> = self.db.upsert(("sessions", key)).content(payload).await?;
+        self.session_changes.send_modify(|generation| {
+            *generation = generation.saturating_add(1);
+        });
         Ok(())
     }
 
@@ -1815,6 +2142,23 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(Some(session))
     }
 
+    async fn list_sessions(&self, owner_id: &str) -> Result<Vec<Session>> {
+        let mut response = self
+            .db
+            .query("SELECT * FROM sessions WHERE owner_id = $owner ORDER BY logical_id")
+            .bind(("owner", owner_id.to_string()))
+            .await?
+            .check()?;
+        let rows: Vec<serde_json::Value> = response.take(0)?;
+        let mut sessions = Vec::with_capacity(rows.len());
+        for row in rows {
+            let session: Session = from_db_value(restore_tenant_record_id(row))?;
+            anyhow::ensure!(session.owner_id() == owner_id, "Session partition mismatch");
+            sessions.push(session);
+        }
+        Ok(sessions)
+    }
+
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
         if self.load_session(owner_id, id).await?.is_none() { return Ok(false); }
         let key = crate::uar::persistence::session_storage_key(owner_id, id);
@@ -1827,6 +2171,9 @@ impl PersistenceLayer for SurrealDbProvider {
             let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
             let _: Option<surrealdb::types::Value> = self.db.delete(("principal_conversation_policies", key)).await?;
         }
+        self.session_changes.send_modify(|generation| {
+            *generation = generation.saturating_add(1);
+        });
         Ok(true)
     }
 

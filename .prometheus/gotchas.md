@@ -1986,3 +1986,32 @@ config visibility, or identity defers all three costs into the acceptance run.
 
 **Stakes.** Each condition cost a full or partial qualification cycle; all
 three are cheap to settle in minutes with the right readiness checks.
+
+- 2026-10-20T12:39:03Z: uar-sidecar loads .env from cwd ANCESTORS (src/bin/uar-sidecar.rs:188 dotenvy::dotenv()), even under env -i. Never run a sidecar fixture with cwd inside a checkout that has a real .env; use a work dir outside the repo (e.g. /Volumes/T7/uar-qual-work/). Observed 2026-10-20 R9 attempt 1 (startup refused: credential encryption config invalid).
+
+- 2026-10-20T16:30Z: External-volume write stalls can wedge fixtures mid-script with zero diagnostics. rows-r20 attempt 2 hung 25 minutes on a single `cat > conf-r20.yaml <<YAML` write (file truncated to 0 bytes, heredoc body never landed, no BOOT line) while cargo compiled and a My Passport USB device (/dev/disk8s2, different device than T7) logged 190 AppleUSBIORequest pipe-stalled errors in the same window; T7 itself showed no kernel errors and the trap cleanup wrote fine at kill time. An identical rerun minutes later completed in 2m03s. Lesson: when a T7 fixture wedges pre-boot with an empty/partial file, suspect transient volume/USB-bus stall before debugging the script; rerun once on a quiet machine (no concurrent cargo) before deeper forensics; prefer lead-direct background shells over 25-min-timeout lane tools for long fixtures so timeout kills don't destroy the attempt.
+
+
+## 2026-10-20 — Scope release is not physical memory engine release
+
+Source integration found `MemoryCloseReport.scope_released` describes the storage
+facade, while `failure` can separately contain engine shutdown failure. Checking
+only that boolean lets the parent finalizer suppress a physical close error.
+Server and embedded finalizers now require a clean report and, for owned memory,
+an engine-close acknowledgment. This is source implementation only; no gate ran.
+
+A control reader that awaits a reconnect inline cannot observe parent EOF while
+the reconnect is pending. Reading and accepted-command completion need separate
+owned tasks, with EOF requesting shutdown before joining command obligations.
+
+
+## Configuration data lifetime is not watcher lifetime — 2026-10-20T22:10:43.760000+00:00
+
+The first lifecycle graph encoded persistence/memory as depending on the
+configuration-watcher resource. That incorrectly kept live reload active until
+after store teardown. Retaining a configuration snapshot does not require a live
+watcher. Stop and join producers first, then drain their consumers and stores.
+The correction is recorded as lifecycle task5.3; task5.1 cannot be reopened by
+the canonical runtime, so its earlier completion is preserved as history and a
+follow-up is registered instead. This is a source defect, not proof that a
+specific watcher caused the historical c9 lock failure.

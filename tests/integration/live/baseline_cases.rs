@@ -32,6 +32,8 @@ fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
 async fn streaming_chat_openai_mode() {
     let stub = start_stub_llm(content_fixture("hello openai mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -61,6 +63,9 @@ async fn streaming_chat_openai_mode() {
         !body.contains("agui."),
         "openai mode should not emit agui events, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.2 — Streaming chat case for `stream_mode: agui`.
@@ -69,6 +74,8 @@ async fn streaming_chat_openai_mode() {
 async fn streaming_chat_agui_mode() {
     let stub = start_stub_llm(content_fixture("hello agui mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -94,6 +101,9 @@ async fn streaming_chat_agui_mode() {
         !body.contains("chat.completion.chunk"),
         "agui mode should not emit OpenAI chunks, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.3 — Streaming chat case for `stream_mode: dual`.
@@ -102,6 +112,8 @@ async fn streaming_chat_agui_mode() {
 async fn streaming_chat_dual_mode() {
     let stub = start_stub_llm(content_fixture("hello dual mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -126,6 +138,9 @@ async fn streaming_chat_dual_mode() {
         body.contains("agui.message.delta") || body.contains("agui.stream.start"),
         "dual mode should emit agui.* events too, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.4 — MCP/native tool-loop round-trip case.
@@ -164,6 +179,8 @@ async fn tool_loop_round_trip() {
         );
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -191,6 +208,9 @@ async fn tool_loop_round_trip() {
         content, "the tool echoed it back",
         "expected the tool loop to complete and return the post-tool-call content, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.5 — Agent selection via the `agent_id` request field.
@@ -237,6 +257,8 @@ async fn agent_selection_resolves_both_builtin_agents() {
         );
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let peer_token = mint_harness_peer_token();
     let client = reqwest::Client::new();
 
@@ -279,6 +301,9 @@ async fn agent_selection_resolves_both_builtin_agents() {
         "unknown agent_id should fall back to default-agent, not error: status {}",
         resp.status()
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.6 — Memory write followed by a recall.
@@ -341,6 +366,8 @@ async fn memory_write_then_recall() {
         );
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds { memory: true }).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let write_resp = client
@@ -381,6 +408,9 @@ async fn memory_write_then_recall() {
             .any(|item| item["content"].as_str() == Some(CONTENT)),
         "expected the saved memory to be recallable via search, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.7 — RAG document ingest followed by a retrieval.
@@ -420,6 +450,8 @@ async fn memory_write_then_recall() {
 async fn rag_ingest_then_retrieve() {
     let stub = start_stub_llm(FixtureSet::new()).await; // unused — this case never calls the LLM
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let client = reqwest::Client::new();
 
     let kb_resp = client
@@ -506,6 +538,9 @@ async fn rag_ingest_then_retrieve() {
             .is_some_and(|c| c.contains("marker phrase"))),
         "expected the ingested marker content to be retrievable via search, got: {search_body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.8 — Credential-chain resolution (multi-tenant provider credentials).
@@ -540,6 +575,8 @@ async fn credential_chain_put_then_list() {
 
     let stub = start_stub_llm(FixtureSet::new()).await; // unused — no LLM call
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     // Server has now read the key into its ProviderService — safe to clear so
     // a later test's boot isn't affected even if an assertion below panics.
@@ -617,6 +654,9 @@ async fn credential_chain_put_then_list() {
         reqwest::StatusCode::UNAUTHORIZED,
         "anonymous credential access must be 401"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// 2.9 — Backend-parametric parity smoke.
@@ -649,6 +689,8 @@ async fn backend_parametric_chat_smoke() {
     // Held for the whole test so its stub (recorded backend) stays alive.
     let backend = super::backend::resolve(fixtures).await;
     let server = boot_test_server(&backend.base_url, &backend.model, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -675,4 +717,218 @@ async fn backend_parametric_chat_smoke() {
         !content.trim().is_empty(),
         "expected non-empty assistant content on either backend, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
+}
+
+/// 2.10 — Anthropic `/v1/messages` binds a registered agent (R7).
+///
+/// Proves the registered-agent binding on the Anthropic-compatible route:
+/// a created agent's `prompt.system` (and host instructions) reach the
+/// upstream model request verbatim, the reply reflects the agent, the
+/// client-supplied system text is kept after the agent prompt (mirroring
+/// the chat-completions run pipeline, where client system messages are not
+/// dropped), bound `uar:agent:*` targets are rejected with 400, and an
+/// unknown registry id surfaces 404 rather than silently falling back.
+#[tokio::test]
+#[serial]
+async fn anthropic_messages_binds_registered_agent() {
+    use serde_json::Value;
+
+    let stub = start_stub_llm(
+        FixtureSet::new().with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "hello anthropic agent".to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("hi there from the bound agent".to_string()),
+        ),
+    )
+    .await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
+    let peer_token = mint_harness_peer_token();
+    let client = reqwest::Client::new();
+
+    let agent_marker = "R7-AGENT-PROMPT-MARKER-2-10";
+    let instr_marker = "R7-INSTR-MARKER-2-10";
+    let agent = serde_json::json!({
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "r7-bind-agent",
+        "metadata": {
+            "title": "R7 bind agent",
+            "description": "baseline case 2.10 registered agent",
+            "tags": [],
+            "author": null,
+            "icon": null
+        },
+        "runtime": {"entry": "chat", "protocols": {}},
+        "policy": {
+            "provider": {
+                "default": {"provider": "stub", "model": MODEL},
+                "fallbacks": []
+            },
+            "tools": {"allow": [], "deny": [], "max_concurrent": 1, "execution_mode": "direct"},
+            "skills": {"prefer": [], "max_active": 3}
+        },
+        "schemas": {"inputs": null, "outputs": null, "state": null},
+        "prompt": {
+            "system": format!("You are the r7 bind agent. {agent_marker}"),
+            "instructions": [format!("Carry the {instr_marker} procedure.")]
+        },
+        "memory": {},
+        "tools": {},
+        "ui": {}
+    });
+    let create = client
+        .post(format!("{}/api/agents", server.base_url))
+        .bearer_auth(&peer_token)
+        .json(&agent)
+        .send()
+        .await
+        .expect("agent create request");
+    assert!(
+        create.status().is_success(),
+        "agent create: status {} body {}",
+        create.status(),
+        create.text().await.unwrap_or_default()
+    );
+    let readback = client
+        .get(format!("{}/api/agents/r7-bind-agent", server.base_url))
+        .bearer_auth(&peer_token)
+        .send()
+        .await
+        .expect("agent read-back request");
+    assert!(
+        readback.status().is_success(),
+        "agent read-back: status {}",
+        readback.status()
+    );
+
+    let client_marker = "R7-CLIENT-SYS-MARKER-2-10";
+    let resp = client
+        .post(format!("{}/v1/messages", server.base_url))
+        .bearer_auth(&peer_token)
+        .header("anthropic-version", "2023-06-01")
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "max_tokens": 64,
+            "agent_id": "r7-bind-agent",
+            "system": format!("client system text {client_marker}"),
+            "messages": [{"role": "user", "content": "hello anthropic agent"}]
+        }))
+        .send()
+        .await
+        .expect("anthropic messages request");
+    assert!(
+        resp.status().is_success(),
+        "status {} body {}",
+        resp.status(),
+        resp.text().await.unwrap_or_default()
+    );
+    let body: Value = resp.json().await.expect("json body");
+    assert_eq!(body["type"].as_str(), Some("message"), "body: {body}");
+    assert_eq!(body["role"].as_str(), Some("assistant"), "body: {body}");
+    let text = body["content"][0]["text"].as_str().unwrap_or_default();
+    assert!(
+        text.contains("hi there from the bound agent"),
+        "expected the fixture reply, got: {body}"
+    );
+
+    // The upstream model request must carry the agent prompt verbatim, the
+    // host instruction, and the kept client system text.
+    let stub_url = format!("{}/_stub/requests", stub.base_url.trim_end_matches("/v1"));
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(10);
+    let recorded = loop {
+        let observed: Value = client
+            .get(&stub_url)
+            .send()
+            .await
+            .expect("stub request log")
+            .json()
+            .await
+            .expect("stub request log JSON");
+        if observed["requests"].as_array().is_some_and(|requests| {
+            requests
+                .iter()
+                .any(|request| request.to_string().contains(agent_marker))
+        }) {
+            break observed;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "agent prompt never reached the upstream request: {observed}"
+        );
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    };
+    let upstream = recorded["requests"]
+        .as_array()
+        .expect("requests array")
+        .iter()
+        .find(|request| request.to_string().contains(agent_marker))
+        .expect("request with the agent marker")
+        .to_string();
+    assert!(
+        upstream.contains("You are the r7 bind agent."),
+        "agent system prompt not verbatim upstream: {upstream}"
+    );
+    assert!(
+        upstream.contains(instr_marker),
+        "agent host instruction missing upstream: {upstream}"
+    );
+    assert!(
+        upstream.contains(client_marker),
+        "client system text should be kept after the agent prompt: {upstream}"
+    );
+
+    // Bound `uar:agent:*` targets are rejected on this route (400), and an
+    // unknown registry id surfaces 404 instead of a silent fallback.
+    let bound = client
+        .post(format!("{}/v1/messages", server.base_url))
+        .bearer_auth(&peer_token)
+        .header("anthropic-version", "2023-06-01")
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "max_tokens": 64,
+            "agent_id": "uar:agent:r7-bind-agent",
+            "messages": [{"role": "user", "content": "hello anthropic agent"}]
+        }))
+        .send()
+        .await
+        .expect("bound-target request");
+    assert_eq!(
+        bound.status().as_u16(),
+        400,
+        "bound target must be rejected: status {} body {}",
+        bound.status(),
+        bound.text().await.unwrap_or_default()
+    );
+    let unknown = client
+        .post(format!("{}/v1/messages", server.base_url))
+        .bearer_auth(&peer_token)
+        .header("anthropic-version", "2023-06-01")
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "max_tokens": 64,
+            "agent_id": "no-such-agent-2-10",
+            "messages": [{"role": "user", "content": "hello anthropic agent"}]
+        }))
+        .send()
+        .await
+        .expect("unknown-agent request");
+    assert_eq!(
+        unknown.status().as_u16(),
+        404,
+        "unknown agent must 404: status {} body {}",
+        unknown.status(),
+        unknown.text().await.unwrap_or_default()
+    );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

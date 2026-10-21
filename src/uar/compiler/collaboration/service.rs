@@ -51,6 +51,10 @@ impl From<serde_json::Error> for CollaborationError {
 #[derive(Debug, Clone)]
 pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,
+    /// Retained local notification for a catalog generation that committed
+    /// through this service. Consumers still reload the catalog; the
+    /// generation is a wakeup, never a replacement for durable state.
+    pub(crate) catalog_generation: Arc<tokio::sync::watch::Sender<u64>>,
     pub(crate) team_execution_notify: Arc<tokio::sync::Notify>,
     pub(super) execution_identity: Arc<std::sync::RwLock<crate::uar::domain::team_execution::TeamExecutionFence>>,
     pub(super) skill_service: Option<Arc<crate::uar::runtime::skills::SkillService>>,
@@ -68,8 +72,10 @@ impl CollaborationCatalogService {
 
     #[must_use]
     pub fn new(storage: Arc<dyn CollaborationStorage>) -> Self {
+        let (catalog_generation, _) = tokio::sync::watch::channel(0);
         Self {
             storage,
+            catalog_generation: Arc::new(catalog_generation),
             team_execution_notify: Arc::new(tokio::sync::Notify::new()),
             execution_identity: Arc::new(std::sync::RwLock::new(crate::uar::domain::team_execution::TeamExecutionFence { catalog_id: "uar-collaboration-catalog".into(), service_instance_id: "unconfigured".into(), incarnation_id: uuid::Uuid::new_v4().to_string(), epoch: 0 })),
             skill_service: None,
@@ -415,10 +421,22 @@ impl CollaborationCatalogService {
         generation: u64,
         next: &CollaborationCatalogState,
     ) -> Result<bool, CollaborationError> {
-        self.storage
+        let committed = self.storage
             .compare_and_swap(generation, next)
             .await
-            .map_err(|error| CollaborationError::Storage(error.to_string()))
+            .map_err(|error| CollaborationError::Storage(error.to_string()))?;
+        if committed {
+            self.catalog_generation.send_replace(next.generation);
+        }
+        Ok(committed)
+    }
+
+    /// Subscribe before reading durable catalog state so a mutation that
+    /// commits during initialization cannot be missed locally. The receiver
+    /// retains the latest committed generation for late subscribers.
+    #[must_use]
+    pub fn subscribe_catalog_generation(&self) -> tokio::sync::watch::Receiver<u64> {
+        self.catalog_generation.subscribe()
     }
 }
 

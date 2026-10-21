@@ -1339,7 +1339,8 @@ fn build_core_schema(
                     "x-control": "text", "x-order": 2
                 },
                 "shutdown_timeout_secs": {
-                    "type": "integer", "minimum": 1, "title": "Shutdown Timeout (s)",
+                    "type": "integer", "minimum": 1, "title": "Legacy Shutdown Timeout (unused)",
+                    "description": "Retained for configuration compatibility. Shutdown awaits resource completion; this value does not force exit.",
                     "x-control": "number", "x-order": 3
                 },
                 "log_format": {
@@ -1359,7 +1360,7 @@ fn build_core_schema(
             make_setting(
                 &st,
                 "server.shutdown_timeout_secs",
-                "Shutdown Timeout (s)",
+                "Legacy Shutdown Timeout (unused)",
                 json!(config.server.shutdown_timeout_secs),
             ),
             make_setting(
@@ -3211,6 +3212,33 @@ fn build_core_schema(
             &st,
             "mcp.servers",
             "Configured MCP Servers",
+            json!({}),
+        )];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // tools — standalone tool definitions (R11 CRUD surface, operator ruling
+    // 2026-10-20). One row keyed tool_id -> StoredToolDefinition; owner
+    // governance is enforced in uar::api::tool_definitions, not here.
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "definitions": {
+                    "type": "object",
+                    "title": "Stored tool definitions",
+                    "additionalProperties": { "type": "object" }
+                }
+            }
+        });
+        let st = make_type("Tool Definitions", "tools", schema);
+        let settings = vec![make_setting(
+            &st,
+            "tools.definitions",
+            "Stored Tool Definitions",
             json!({}),
         )];
         result.push((st, settings));

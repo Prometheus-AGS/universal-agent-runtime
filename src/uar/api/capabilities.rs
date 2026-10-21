@@ -65,7 +65,7 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 32] = [
+pub const CAPABILITY_VOCABULARY: [&str; 33] = [
     crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
@@ -82,6 +82,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 32] = [
     "durable_agent_instances_v1",
     "full_harness_delegation_v1",
     "host_history",
+    "host_lifecycle_control_v1",
     "ingest_scoped_credentials",
     "local_scoped_observers_v1",
     "reasoning_effort",
@@ -102,7 +103,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 32] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 21] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 22] = [
     crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
@@ -115,6 +116,7 @@ pub const IMPLEMENTED_CAPABILITIES: [&str; 21] = [
     "collaboration_team_planning_v1",
     "full_harness_delegation_v1",
     "host_history",
+    "host_lifecycle_control_v1",
     "reasoning_effort",
     "run_scoped_credentials",
     "run_scoped_mcp_servers",

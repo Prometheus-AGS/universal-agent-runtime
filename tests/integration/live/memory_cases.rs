@@ -34,6 +34,8 @@ const MODEL: &str = "gpt-5.4-mini";
 async fn memory_stats_is_served_when_memory_is_enabled() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds { memory: true }).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .get(format!("{}/api/admin/memories/stats", server.base_url))
@@ -65,4 +67,7 @@ async fn memory_stats_is_served_when_memory_is_enabled() {
         stats.get("by_scope").is_some(),
         "stats should carry a `by_scope` breakdown, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

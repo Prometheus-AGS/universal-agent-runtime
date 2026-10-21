@@ -6,25 +6,12 @@ use super::{ApiKeyRecord, ApiKeyStorage};
 #[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
 use async_trait::async_trait;
 #[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
-use std::time::Duration;
-
-#[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
-fn authority_timeout(request_timeout_ms: u64) -> Duration {
-    // A severed DB channel was observed to wait for the outer HTTP timeout.
-    // Leave headroom for chained authentication/management queries; maintain
-    // a finite authentication boundary even when ordinary timeouts are disabled.
-    Duration::from_millis((request_timeout_ms.max(1_000) / 8).min(5_000))
-}
-
-#[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
 async fn authority_query<T, E>(
-    deadline: Duration,
     query: impl IntoFuture<Output = Result<T, E>>,
 ) -> Result<T, ApiKeyStorageError> {
-    tokio::time::timeout(deadline, query)
-        .await
-        .map_err(|_| ApiKeyStorageError::Unavailable)?
-        .map_err(|_| ApiKeyStorageError::Unavailable)
+    // Only an actual backend result establishes authority availability. Outer
+    // request cancellation is separate and never establishes mutation rollback.
+    query.await.map_err(|_| ApiKeyStorageError::Unavailable)
 }
 
 /// Sanitized persistence outcomes. Backend errors may contain credential data
@@ -41,7 +28,6 @@ pub enum ApiKeyStorageError {
 #[derive(Debug)]
 pub struct SurrealApiKeyStorage {
     db: surrealdb::Surreal<surrealdb::engine::any::Any>,
-    query_timeout: Duration,
 }
 
 #[cfg(feature = "surreal-backend")]
@@ -50,15 +36,12 @@ impl SurrealApiKeyStorage {
     pub fn new(db: surrealdb::Surreal<surrealdb::engine::any::Any>) -> Self {
         Self {
             db,
-            query_timeout: authority_timeout(30_000),
         }
     }
 
-    /// Derive the authority deadline from the host's existing request budget.
-    pub fn with_request_timeout_ms(mut self, request_timeout_ms: u64) -> Self {
-        self.query_timeout = authority_timeout(request_timeout_ms);
-        self
-    }
+    /// Compatibility entrypoint. Request budgets may cancel the caller; they
+    /// do not determine authority availability or certify persistence rollback.
+    pub fn with_request_timeout_ms(self, _request_timeout_ms: u64) -> Self { self }
 
     async fn records(
         &self,
@@ -69,7 +52,7 @@ impl SurrealApiKeyStorage {
         if let Some(parameter) = parameter {
             request = request.bind(parameter);
         }
-        let mut response = authority_query(self.query_timeout, request)
+        let mut response = authority_query(request)
             .await?
             .check()
             .map_err(|_| ApiKeyStorageError::Unavailable)?;
@@ -99,7 +82,7 @@ impl ApiKeyStorage for SurrealApiKeyStorage {
             .query("CREATE type::record('auth_api_keys', $key_id) SET data = $data")
             .bind(("key_id", record.id))
             .bind(("data", data));
-        authority_query(self.query_timeout, query)
+        authority_query(query)
             .await?
             .check()
             .map_err(|_| ApiKeyStorageError::Unavailable)?;
@@ -147,7 +130,6 @@ impl ApiKeyStorage for SurrealApiKeyStorage {
 #[derive(Debug)]
 pub struct PostgresApiKeyStorage {
     pool: sqlx::PgPool,
-    query_timeout: Duration,
 }
 
 #[cfg(feature = "postgres-backend")]
@@ -156,15 +138,12 @@ impl PostgresApiKeyStorage {
     pub fn new(pool: sqlx::PgPool) -> Self {
         Self {
             pool,
-            query_timeout: authority_timeout(30_000),
         }
     }
 
-    /// Derive the authority deadline from the host's existing request budget.
-    pub fn with_request_timeout_ms(mut self, request_timeout_ms: u64) -> Self {
-        self.query_timeout = authority_timeout(request_timeout_ms);
-        self
-    }
+    /// Compatibility entrypoint. Request budgets may cancel the caller; they
+    /// do not determine authority availability or certify persistence rollback.
+    pub fn with_request_timeout_ms(self, _request_timeout_ms: u64) -> Self { self }
 
     async fn records(
         &self,
@@ -176,7 +155,7 @@ impl PostgresApiKeyStorage {
         if let Some(parameter) = parameter {
             request = request.bind(parameter);
         }
-        let rows = authority_query(self.query_timeout, request.fetch_all(&self.pool)).await?;
+        let rows = authority_query(request.fetch_all(&self.pool)).await?;
         rows.into_iter()
             .map(|row| {
                 let json: serde_json::Value = row
@@ -195,7 +174,7 @@ impl ApiKeyStorage for PostgresApiKeyStorage {
         let data = serde_json::to_value(&record).map_err(|_| ApiKeyStorageError::Unavailable)?;
         let query = sqlx::query("INSERT INTO auth_api_keys (key_id, data) VALUES ($1, $2) ON CONFLICT (key_id) DO NOTHING")
             .bind(&record.id).bind(data);
-        let inserted = authority_query(self.query_timeout, query.execute(&self.pool)).await?;
+        let inserted = authority_query(query.execute(&self.pool)).await?;
         if inserted.rows_affected() != 1 {
             return Err(ApiKeyStorageError::AlreadyExists.into());
         }
@@ -221,7 +200,7 @@ impl ApiKeyStorage for PostgresApiKeyStorage {
     async fn revoke(&self, id: &str) -> anyhow::Result<bool> {
         let query = sqlx::query("UPDATE auth_api_keys SET data = jsonb_set(data, '{revoked}', 'true'::jsonb) WHERE key_id = $1")
             .bind(id);
-        let updated = authority_query(self.query_timeout, query.execute(&self.pool)).await?;
+        let updated = authority_query(query.execute(&self.pool)).await?;
         Ok(updated.rows_affected() == 1)
     }
 

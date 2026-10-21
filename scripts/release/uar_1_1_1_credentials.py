@@ -15,7 +15,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from uar_1_1_1_runtime import observe_native_messages_policy
-from uar_1_1_1_support import Blocked, Http, SURREAL_IMAGE, require, wait_for
+from uar_1_1_1_support import Blocked, Http, SURREAL_IMAGE, require, surreal_listening
 
 BACKENDS = ("local", "surreal", "postgres")
 MIGRATION_CASES = ("metadata-upgrade", "legacy-conditional-copy",
@@ -51,7 +51,7 @@ class Peer:
         self.seen = []
         self.paths = []
         self.labels = {}
-        self.lock = threading.Lock()
+        self.lock = threading.Condition()
         owner = self
 
         class Handler(http.server.BaseHTTPRequestHandler):
@@ -63,6 +63,7 @@ class Peer:
                 with owner.lock:
                     owner.seen.append(owner.labels.get(self.headers.get("Authorization", ""), "unknown"))
                     owner.paths.append(self.path)
+                    owner.lock.notify_all()
                 choice = {"index": 0, "delta": {"content": "credential-observed"}, "finish_reason": None}
                 chunk = dict(id="credential-peer", object="chat.completion.chunk", created=1,
                              model=body.get("model", "gpt-4o-mini"), choices=[choice])
@@ -97,8 +98,7 @@ class Peer:
     def close(self):
         self.server.shutdown()
         self.server.server_close()
-        self.thread.join(timeout=10)
-        require(not self.thread.is_alive(), "provider peer did not join")
+        self.thread.join()
 
 
 def artifact():
@@ -178,19 +178,20 @@ class Store:
                 self.r.known_secrets.add(password)
             self.r.containers.append(name)
             try:
-                self.r.docker("run", "--detach", "--name", name, "--network", self.r.network,
+                self.r.docker("create", "--name", name, "--network", self.r.network,
                     "--publish", "127.0.0.1::8000", "--user", "65532:65532", "--volume", self.node.volume + ":/data",
                     SURREAL_IMAGE, "start", "--user", user, "--pass", password, "--bind", "0.0.0.0:8000",
                     "surrealkv:///data/data/phase.db")
+                self.r.start_attached(name, surreal_listening).ready()
                 address = self.r.docker("port", name, "8000/tcp").stdout.strip()
-                # /health answers 200 with an empty body; assert the status, not a payload.
-                wait_for("quiesced SurrealKV metadata host", lambda: Http("http://" + address).request("GET", "/health", return_status=True)[0] == 200)
                 authorization = base64.b64encode((user + ":" + password).encode()).decode()
                 response = Http("http://" + address).request("POST", "/sql", surreal.encode(), headers={
                     "Authorization": "Basic " + authorization, "Surreal-NS": "uar", "Surreal-DB": self.database,
                     "Content-Type": "text/plain"})
             finally:
-                self.r.docker("rm", "--force", name, check=False)
+                self.r.stop_container(name)
+                self.r.docker("rm", name)
+                self.r.containers.remove(name)
                 self.node.start()
         require(isinstance(response, list) and all(value.get("status") == "OK" for value in response), "fixture SQL failed")
         return response[-1].get("result") if read else None
@@ -264,8 +265,21 @@ def apply(node, token, provider, tag=None, fixed=False, old_owner=None, expected
     body = dict(scope="user", provider_id=provider, reason="operator_approved_local_namespace_migration" if fixed else "phase approved nonsecret migration")
     body.update(dict(source_owner_key=old_owner, source_scope_id="source") if fixed else dict(legacy_scope_id="source"))
     body.update(extra or {})
-    return node.http(token).request("POST", PREFIX + ("/migrate-principal" if fixed else "/migrate-legacy"), body,
-        expected=expected, headers={"If-Match": tag} if tag is not None else {})
+    status, response = node.http(token).request("POST", PREFIX + ("/migrate-principal" if fixed else "/migrate-legacy"), body,
+        expected=tuple(range(100, 600)), return_status=True,
+        headers={"If-Match": tag} if tag is not None else {})
+    accepted = expected if isinstance(expected, (tuple, list, set)) else (expected,)
+    if status >= 400:
+        # Never persist arbitrary response text or credential-bearing fields.
+        # Retain the exact safe machine category and stable operation identity.
+        safe = Http.sanitized_error(response)
+        receipt = dict(status=status, body=safe, fixed_source=fixed,
+                       provider_id=node.resources.redact(provider), captured_at=time.time())
+        path = node.resources.evidence / ("migration-response-" + uuid.uuid4().hex + ".json")
+        path.write_text(json.dumps(receipt, indent=2))
+    require(status in accepted, "credential migration status %s; category=%s; expected %s"
+            % (status, Http.sanitized_error(response), accepted))
+    return response
 
 
 def migration_cases(ctx, peer, backend, results):
@@ -522,7 +536,8 @@ def identity_and_policy_cases(ctx, peer, results):
         before = len(peer.seen)
         node.http(user).request("POST", "/api/chat/completion", {"model":"openai/gpt-4o-mini", "stream":True,
             "messages":[{"role":"user","content":"controlled correction observation"}]})
-        wait_for("authorized poststream correction", lambda: len(peer.seen) >= before + 2, timeout=60)
+        with peer.lock:
+            peer.lock.wait_for(lambda: len(peer.seen) >= before + 2)
         require(all(label == "principal" for label in peer.seen[before:]), "correction selected a house account")
         result(results, "response-correction-policy", {"provider_contacts":len(peer.seen)-before, "account":"principal", "auto_correct":True})
         node.config["sycophancy"]["enabled"] = False
@@ -567,14 +582,11 @@ def identity_and_policy_cases(ctx, peer, results):
         store.query("UPDATE provider_principal_credentials SET api_key_encrypted='invalid-phase-ciphertext' WHERE owner_key=" + json.dumps(expected) + " AND provider_id='openai' RETURN NONE;", "")
         decrypt_denied = run_account(node, user, peer)
         backend = r.ensure_backend("surreal")
-        r.docker("stop", backend["name"])
+        r.stop_container(backend["name"])
         try:
             store_denied = run_account(node, user, peer)
         finally:
-            r.docker("start", backend["name"])
-            backend["host_url"] = "http://" + r.docker("port", backend["name"], "8000/tcp").stdout.strip()
-            wait_for("credential backend recovery", lambda: Http(backend["host_url"]).request(
-                "GET", "/health", return_status=True)[0] == 200)
+            r.restart_surreal(backend)
         result(results, "store-decrypt-failures", {"decrypt": decrypt_denied, "backend_outage": store_denied})
     finally:
         node.stop()

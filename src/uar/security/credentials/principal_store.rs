@@ -55,7 +55,7 @@ pub struct CredentialMigrationAuthorization {
 }
 
 /// Named failures at the legacy ownership boundary.
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum CredentialMigrationError {
     #[error("operator credential owner mapping required")]
     MappingDenied,
@@ -65,6 +65,9 @@ pub enum CredentialMigrationError {
     Conflict,
     #[error("credential migration precondition failed")] PreconditionFailed,
     #[error("credential migration precondition invalid")] PreconditionInvalid,
+    #[error("credential migration contention")] Contention { operation_id: String },
+    #[error("credential migration unavailable")] Unavailable { operation_id: String },
+    #[error("credential migration outcome unknown")] OutcomeUnknown { operation_id: String },
 }
 
 /// Principal-aware host storage. Ordinary lookup never reads the legacy table.
@@ -356,7 +359,10 @@ fn surreal_rows(values: Vec<surrealdb::types::Value>) -> anyhow::Result<Vec<Prin
 }
 
 #[cfg(feature = "surreal-backend")]
-fn migration_query_error(error: surrealdb::Error) -> anyhow::Error {
+fn migration_query_error(error: surrealdb::Error, operation_id: &str) -> anyhow::Error {
+    if matches!(error.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)) {
+        return CredentialMigrationError::Contention { operation_id: operation_id.to_owned() }.into();
+    }
     let message = error.to_string();
     if message.contains("uar_credential_source_missing") {
         CredentialMigrationError::SourceMissing.into()
@@ -365,7 +371,23 @@ fn migration_query_error(error: surrealdb::Error) -> anyhow::Error {
     } else if message.contains("uar_credential_mapping_conflict") {
         CredentialMigrationError::Conflict.into()
     } else {
-        anyhow::anyhow!("credential migration persistence failed")
+        CredentialMigrationError::Unavailable { operation_id: operation_id.to_owned() }.into()
+    }
+}
+
+#[cfg(feature = "surreal-backend")]
+impl SurrealCredentialStore {
+    async fn reconcile_migration_receipt(
+        &self, source: &str, next: &CredentialMigrationReceipt,
+        authorization: &CredentialMigrationAuthorization,
+    ) -> anyhow::Result<Option<CredentialMigrationReceipt>> {
+        use crate::uar::persistence::providers::surreal::surreal_to_json;
+        let mut response = self.db.query("SELECT * FROM type::record('provider_credential_owner_migrations', $source)")
+            .bind(("source", source.to_owned())).await?.check()?;
+        let values: Vec<surrealdb::types::Value> = response.take(0)?;
+        let Some(value) = values.into_iter().next() else { return Ok(None); };
+        let previous: CredentialMigrationReceipt = serde_json::from_value(surreal_to_json(value)?)?;
+        replay(&previous, next, authorization).map(Some)
     }
 }
 
@@ -450,9 +472,10 @@ impl PrincipalCredentialStore for SurrealCredentialStore {
     }
 
     async fn migrate_legacy(&self, principal: &CredentialOwnerBinding, authorization: &CredentialMigrationAuthorization) -> anyhow::Result<CredentialMigrationReceipt> {
-        use crate::uar::persistence::providers::surreal::{to_db_value, surreal_to_json};
+        use crate::uar::persistence::providers::surreal::to_db_value;
         let mut next = receipt(principal, authorization)?;
         let source = migration_source_key(&next);
+        let operation_id = super::policy::metadata_digest(&source)?;
         // Preflight uses only metadata. The transaction repeats the actual compare.
         let inventory = self.migration_inventory().await?;
         if let Some((_, previous)) = inventory.journals.iter().find(|(key, _)| key == &source) {
@@ -490,44 +513,43 @@ impl PrincipalCredentialStore for SurrealCredentialStore {
             .bind(("condition", authorization.if_match.clone())).bind(("compare_revision", compare_revision))
             .bind(("revision", next.source_revision.clone())).bind(("destination_revision", next.destination_revision.clone()))
             .bind(("receipt", to_db_value(&next)?)).await;
-        let outcome = match transaction {
+        match transaction {
             Ok(mut response) => {
                 let errors = response.take_errors();
-                if errors.is_empty() {
-                    Ok(())
-                } else {
-                    Err(errors.into_values().map(migration_query_error)
-                        .find(|error| error.downcast_ref::<CredentialMigrationError>().is_some())
-                        .unwrap_or_else(|| anyhow::anyhow!("credential migration persistence failed")))
+                if !errors.is_empty() {
+                    // Keep explicit transaction rejection ahead of secondary abort errors.
+                    let mapped: Vec<anyhow::Error> = errors.into_values()
+                        .map(|error| migration_query_error(error, &operation_id)).collect();
+                    let selected = mapped.into_iter().min_by_key(|error| match error.downcast_ref::<CredentialMigrationError>() {
+                        Some(CredentialMigrationError::SourceMissing | CredentialMigrationError::Conflict
+                            | CredentialMigrationError::PreconditionFailed) => 0,
+                        Some(CredentialMigrationError::Contention { .. }) => 1,
+                        _ => 2,
+                    });
+                    if let Some(error) = selected {
+                        if matches!(error.downcast_ref::<CredentialMigrationError>(), Some(CredentialMigrationError::Contention { .. })) {
+                            // Arbitration rejected this transaction. One authoritative
+                            // receipt lookup can establish a matching committed replay;
+                            // absence cannot establish that the competing work failed.
+                            match self.reconcile_migration_receipt(&source, &next, authorization).await {
+                                Ok(Some(receipt)) => return Ok(receipt),
+                                Err(reconciliation) if reconciliation.downcast_ref::<CredentialMigrationError>().is_some() => return Err(reconciliation),
+                                Ok(None) | Err(_) => {}
+                            }
+                        }
+                        return Err(error);
+                    }
                 }
             }
-            Err(error) => Err(migration_query_error(error)),
-        };
-        if let Err(error) = outcome {
-            if error.downcast_ref::<CredentialMigrationError>().is_some() {
-                return Err(error);
-            }
-            // Concurrent-attempt fallback mirroring the Postgres impl's
-            // ON CONFLICT loser path: a racing writer may have committed the
-            // journal first. Re-read it and replay the immutable receipt;
-            // replay() revalidates authorization and preconditions. Typed
-            // rejections above keep priority; without a journal the original
-            // error stands.
-            let mut raced = self.db.query("SELECT * FROM type::record('provider_credential_owner_migrations', $source)")
-                .bind(("source", source.clone())).await?.check()?;
-            let values: Vec<surrealdb::types::Value> = raced.take(0)?;
-            if let Some(value) = values.into_iter().next() {
-                let previous: CredentialMigrationReceipt =
-                    serde_json::from_value(surreal_to_json(value)?)
-                        .map_err(|_| anyhow::anyhow!("invalid credential migration receipt"))?;
-                return replay(&previous, &next, authorization);
-            }
-            return Err(error);
+            // The complete transaction was dispatched. A missing response does not
+            // establish rollback, and a second read cannot disprove a late commit.
+            Err(_) => return Err(CredentialMigrationError::OutcomeUnknown { operation_id }.into()),
         }
-        let mut response = self.db.query("SELECT * FROM type::record('provider_credential_owner_migrations', $source)").bind(("source", source)).await?.check()?;
-        let values: Vec<surrealdb::types::Value> = response.take(0)?;
-        let value = values.into_iter().next().ok_or_else(|| anyhow::anyhow!("credential migration receipt missing"))?;
-        serde_json::from_value(surreal_to_json(value)?).map_err(|_| anyhow::anyhow!("invalid credential migration receipt"))
+        match self.reconcile_migration_receipt(&source, &next, authorization).await {
+            Ok(Some(receipt)) => Ok(receipt),
+            Err(error) if error.downcast_ref::<CredentialMigrationError>().is_some() => Err(error),
+            Ok(None) | Err(_) => Err(CredentialMigrationError::OutcomeUnknown { operation_id }.into()),
+        }
     }
     async fn migration_inventory(&self) -> anyhow::Result<super::migration::MigrationInventory> {
         use crate::uar::persistence::providers::surreal::surreal_to_json;
@@ -624,15 +646,19 @@ impl PrincipalCredentialStore for PostgresCredentialStore {
 
     async fn migrate_legacy(&self, principal: &CredentialOwnerBinding, authorization: &CredentialMigrationAuthorization) -> anyhow::Result<CredentialMigrationReceipt> {
         use sqlx::Row;
+        use futures::FutureExt as _;
         let mut next = receipt(principal, authorization)?;
         let source = migration_source_key(&next);
+        let operation_id = super::policy::metadata_digest(&source)?;
+        let outcome: anyhow::Result<CredentialMigrationReceipt> = async {
         let mut tx = self.pool.begin().await?;
+        let prepared: anyhow::Result<(CredentialMigrationReceipt, bool)> = std::panic::AssertUnwindSafe(async {
         // This source-unique insertion serializes concurrent attempts even before a journal exists.
         let inserted = sqlx::query("INSERT INTO provider_credential_owner_migrations (source_key, receipt) VALUES ($1,$2) ON CONFLICT (source_key) DO NOTHING")
             .bind(&source).bind(serde_json::to_value(&next)?).execute(&mut *tx).await?.rows_affected() != 0;
         let journal = sqlx::query("SELECT receipt FROM provider_credential_owner_migrations WHERE source_key = $1 FOR UPDATE").bind(&source).fetch_one(&mut *tx).await?;
         let previous: CredentialMigrationReceipt = serde_json::from_value(journal.try_get("receipt")?)?;
-        if !inserted { let previous = replay(&previous, &next, authorization)?; tx.commit().await?; return Ok(previous); }
+        if !inserted { return Ok((replay(&previous, &next, authorization)?, false)); }
         let row = if let Some(owner) = &authorization.source_owner_key {
             sqlx::query("SELECT * FROM provider_principal_credentials WHERE owner_key = $1 AND scope = $2 AND scope_id = $3 AND provider_id = $4 FOR UPDATE")
                 .bind(owner).bind(next.scope.as_str()).bind(&next.legacy_scope_id).bind(&next.provider_id).fetch_optional(&mut *tx).await?
@@ -648,8 +674,43 @@ impl PrincipalCredentialStore for PostgresCredentialStore {
             .execute(&mut *tx).await?.rows_affected() != 0;
         if !copied { return Err(CredentialMigrationError::Conflict.into()); }
         sqlx::query("UPDATE provider_credential_owner_migrations SET receipt = $2 WHERE source_key = $1").bind(&source).bind(serde_json::to_value(&next)?).execute(&mut *tx).await?;
-        tx.commit().await?;
-        Ok(next)
+        Ok((next, true))
+        }).catch_unwind().await.unwrap_or_else(|_| Err(CredentialMigrationError::OutcomeUnknown {
+            operation_id: operation_id.clone(),
+        }.into()));
+        match prepared {
+            Ok((receipt, true)) => {
+                tx.commit().await.map_err(|_| CredentialMigrationError::OutcomeUnknown {
+                    operation_id: operation_id.clone(),
+                })?;
+                Ok(receipt)
+            }
+            Ok((receipt, false)) => {
+                tx.rollback().await?;
+                Ok(receipt)
+            }
+            Err(error) => {
+                // A rejected precondition or destination collision still owns
+                // an open SQL transaction. Await rollback rather than relying
+                // on Transaction::drop to queue driver cleanup after completion.
+                if tx.rollback().await.is_err() {
+                    return Err(CredentialMigrationError::Unavailable {
+                        operation_id: operation_id.clone(),
+                    }.into());
+                }
+                Err(error)
+            }
+        }
+        }.await;
+        outcome.map_err(|error| {
+            if error.downcast_ref::<CredentialMigrationError>().is_some() { return error; }
+            if let Some(sqlx::Error::Database(database)) = error.downcast_ref::<sqlx::Error>() {
+                if database.code().is_some_and(|code| matches!(code.as_ref(), "40001" | "40P01")) {
+                    return CredentialMigrationError::Contention { operation_id }.into();
+                }
+            }
+            CredentialMigrationError::Unavailable { operation_id }.into()
+        })
     }
     async fn migration_inventory(&self) -> anyhow::Result<super::migration::MigrationInventory> {
         use sqlx::Row;
