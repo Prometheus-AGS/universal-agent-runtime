@@ -164,7 +164,7 @@ async fn run() -> Result<()> {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .map_err(|e| anyhow!("system clock before epoch: {e}"))?;
-    let verified_at = format!("{}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}+00:00",
+    let _verified_at = format!("{}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}+00:00",
         1970 + (now / (365 * 24 * 60 * 60)) as i32,
         1, 1, 0, 0, 0, 0);
     // The above date math is crude but produces a deterministic RFC3339 string; the

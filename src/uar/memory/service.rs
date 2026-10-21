@@ -91,6 +91,23 @@ pub struct MemoryLiveStream {
     lease: Option<OperationLease>,
 }
 
+impl std::fmt::Debug for MemorySubscriptionClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MemorySubscriptionClient")
+            .field("scope_open", &self.scope_open.load(Ordering::Acquire))
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for MemoryLiveStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MemoryLiveStream")
+            .field("stream_open", &self.stream.is_some())
+            .field("lease_open", &self.lease.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
 struct PendingMemoryLiveClose {
     operation_id: String,
     stream: Option<surrealdb::method::Stream<Vec<surrealdb::types::Value>>>,
@@ -695,6 +712,7 @@ impl MemoryService {
     pub fn ownership(&self) -> MemoryStorageOwnership { self.ownership }
 
     /// The local admission scope for work performed through this facade.
+    #[allow(dead_code)] // Retained for trusted-host lifecycle wiring.
     pub(crate) fn lifecycle_scope(&self) -> ResourceScope {
         self.lifecycle_scope.clone()
     }
@@ -713,6 +731,7 @@ impl MemoryService {
 
     /// Read the SDK-retained transport generation without opening admission.
     /// The trusted host uses this for compare-and-swap reconnect control.
+    #[allow(dead_code)] // Retained for trusted-host reconnect compare-and-swap control.
     pub(crate) fn transport_generation(&self) -> Result<u64> {
         self.memory_db()?
             .transport_generation()

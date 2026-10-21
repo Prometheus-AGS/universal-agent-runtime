@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use async_channel::{Receiver, Sender};
+use async_channel::Sender;
 use tokio::sync::watch;
 // The engine interface, and the route-channel adapter that lets the WebSocket
 // and HTTP engines serve it unchanged. `Command` is that adapter's vocabulary,

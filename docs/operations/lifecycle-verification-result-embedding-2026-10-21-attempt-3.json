@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
+  "approval": "Operator-approved same embedding command only; all other gates held",
+  "command": "UAR_EMBEDDING_LIFECYCLE_PRIMARY_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models UAR_EMBEDDING_LIFECYCLE_BACKUP_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIR=/Volumes/T7/uar-local-embedding-minilm-1110a243fdf4 UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_MODEL=sentence-transformers/all-MiniLM-L6-v2 UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIMENSION=384 cargo test --locked --no-default-features --features server-full --test embedding_lifecycle_failover -- --test-threads=1",
+  "cwd": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+  "environment_repair": "PATH=/Users/gqadonis/.cargo/bin:$PATH",
+  "attempt": 3,
+  "source_inventory": "lifecycle-verification-principal-repair-inventory-2026-10-21.json",
+  "saved_records_digest": "sha256:3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a",
+  "source_waypoint_revision": 3189,
+  "source_plan_revision": 82,
+  "exit_code": 0,
+  "compiled_seconds": 40.81,
+  "test_seconds": 4.35,
+  "tests": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+  },
+  "test_name": "local_embedding_lifecycle_reuses_backup_across_two_cycles_and_refuses_an_equal_dimension_other_model",
+  "output_log": "lifecycle-verification-output-embedding-2026-10-21-attempt-3.log",
+  "verified_scope": [
+    "Real local primary/backup inference across generations1→2→3→4→5",
+    "Durable verified-principal knowledge ingestion and query continuity",
+    "Actual distinct equal-dimension model inference and embedding_space_mismatch409 refusal",
+    "Unchanged durable binding and document IDs; compatible query after refusal",
+    "Passing fixture cleanup assertion: supervisor release, persistence scope release and engine-close acknowledgement"
+  ],
+  "limitations": [
+    "One nonfatal SDK unused import warning remains",
+    "No immediate engine reopen, full-server watcher/producer teardown, credential concurrency or sidecar execution",
+    "No Windows, customer package, restart hydration or full frozen embedding evidence",
+    "Source repairs uncommitted; published image32cb3bcf excludes them",
+    "Finite shutdown observation budget not implemented; recommendation awaits operator decision"
+  ],
+  "additional_gates_started": []
+}

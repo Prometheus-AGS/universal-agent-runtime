@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use uuid::Uuid;
 
 use crate::conn::QueryRequest;
-use crate::method::{BoxFuture, OnceLockExt};
+use crate::method::BoxFuture;
 use crate::opt::{PatchOp, PatchOps, Resource};
 use crate::types::{SurrealValue, Value, Variables};
 use crate::{Connection, Result, Surreal};

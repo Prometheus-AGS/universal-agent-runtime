@@ -4,7 +4,6 @@
 //! host provider usable. The supervisor separately owns physical engine close.
 
 use super::*;
-use std::future::Future;
 use std::sync::Arc;
 use crate::uar::runtime::lifecycle::{CloseReport, ResourceScope};
 

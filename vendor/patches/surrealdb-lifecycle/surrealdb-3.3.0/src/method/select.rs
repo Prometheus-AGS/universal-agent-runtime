@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use super::transaction::WithTransaction;
 use crate::conn::ctx_txn;
-use crate::method::{BoxFuture, Live, OnceLockExt};
+use crate::method::{BoxFuture, Live};
 use crate::opt::Resource;
 use crate::types::{RecordIdKeyRange, SurrealValue, Value, Variables};
 use crate::{Connection, Result, Surreal};

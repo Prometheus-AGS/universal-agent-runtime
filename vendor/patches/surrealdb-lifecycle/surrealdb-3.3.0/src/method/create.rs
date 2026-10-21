@@ -7,7 +7,7 @@ use uuid::Uuid;
 use super::transaction::WithTransaction;
 use super::{Content, validate_data};
 use crate::conn::QueryRequest;
-use crate::method::{BoxFuture, OnceLockExt};
+use crate::method::BoxFuture;
 use crate::opt::Resource;
 use crate::types::{SurrealValue, Value, Variables};
 use crate::{Connection, Result, Surreal};

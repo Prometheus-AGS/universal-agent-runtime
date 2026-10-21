@@ -1,6 +1,5 @@
 //! One explicit recovery authority for a transport and its owned subscriptions.
 
-use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 

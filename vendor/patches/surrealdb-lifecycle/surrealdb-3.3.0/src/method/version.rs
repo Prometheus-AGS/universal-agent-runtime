@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::future::IntoFuture;
 
 use crate::conn::ctx;
-use crate::method::{BoxFuture, OnceLockExt};
+use crate::method::BoxFuture;
 use crate::{Connection, Error, Result, Surreal};
 
 /// Returned by [`Surreal::version`](crate::Surreal::version), yields the server version string.

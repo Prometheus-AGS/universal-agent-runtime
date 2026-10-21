@@ -1,0 +1,578 @@
+/usr/local/bin/bash: line 1: cargo: command not found
+   Compiling surrealdb-kvs-surrealkv v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-3.3.0)
+   Compiling surrealdb-core v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0)
+   Compiling surrealdb-engine-local v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0)
+   Compiling surrealdb-engine-api v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0)
+   Compiling surrealdb v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0)
+   Compiling surrealdb-kvs-any v3.3.0
+warning: unused import: `timeout`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0/src/kvs/ds.rs:22:29
+   |
+22 | use common::time::{Instant, timeout, timeout_at};
+   |                             ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `is_retryable_transaction_conflict`
+   --> vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0/src/kvs/ds.rs:110:2
+    |
+110 |     is_retryable_transaction_conflict,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `FutureExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0/src/kvs/tasks/mod.rs:7:26
+  |
+7 | use futures::{StreamExt, FutureExt};
+  |                          ^^^^^^^^^
+
+warning: unused import: `rand::Rng`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0/src/kvs/ds.rs:24:5
+   |
+24 | use rand::Rng;
+   |     ^^^^^^^^^
+
+warning: enum `ShutdownNodeDeleteOutcome` is never used
+   --> vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0/src/kvs/ds.rs:158:6
+    |
+158 | enum ShutdownNodeDeleteOutcome {
+    |      ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `archive_node_for_shutdown` is never used
+   --> vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0/src/kvs/ds.rs:226:4
+    |
+226 | fn archive_node_for_shutdown(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tokio_tungstenite::tungstenite::error::Error as WsError`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/engine/remote/ws/native.rs:12:5
+   |
+12 | use tokio_tungstenite::tungstenite::error::Error as WsError;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `interval::IntervalStream`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/engine/mod.rs:60:5
+   |
+60 | use interval::IntervalStream;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/live.rs:5:5
+  |
+5 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::method::OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/insert_relation.rs:7:5
+  |
+7 | use crate::method::OnceLockExt;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Receiver`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/conn/mod.rs:6:21
+  |
+6 | use async_channel::{Receiver, Sender};
+  |                     ^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/use_defaults.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/patch.rs:8:32
+  |
+8 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/select.rs:9:38
+  |
+9 | use crate::method::{BoxFuture, Live, OnceLockExt};
+  |                                      ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/unset.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/live.rs:19:38
+   |
+19 | use crate::method::{BoxFuture, Live, OnceLockExt, Select};
+   |                                      ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/signup.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/query.rs:20:32
+   |
+20 | use crate::method::{BoxFuture, OnceLockExt, Stats, WithStats};
+   |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/health.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/upsert.rs:10:48
+   |
+10 | use crate::method::{BoxFuture, Content, Merge, OnceLockExt, Patch};
+   |                                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/merge.rs:9:32
+  |
+9 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/authenticate.rs:6:32
+  |
+6 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/import.rs:7:39
+  |
+7 | use crate::method::{BoxFuture, Model, OnceLockExt};
+  |                                       ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/run.rs:6:32
+  |
+6 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/use_db.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/begin.rs:5:25
+  |
+5 | use crate::{Connection, OnceLockExt, Result, Surreal};
+  |                         ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/delete.rs:9:32
+  |
+9 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/cancel.rs:5:25
+  |
+5 | use crate::{Connection, OnceLockExt, Result, Surreal};
+  |                         ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/export.rs:14:63
+   |
+14 | use crate::method::{BoxFuture, ExportConfig as Config, Model, OnceLockExt};
+   |                                                               ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/commit.rs:5:25
+  |
+5 | use crate::{Connection, OnceLockExt, Result, Surreal};
+  |                         ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/invalidate.rs:6:32
+  |
+6 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/content.rs:8:32
+  |
+8 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/set.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/version.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/signin.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/insert.rs:11:41
+   |
+11 | use crate::method::{BoxFuture, Content, OnceLockExt};
+   |                                         ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/create.rs:10:32
+   |
+10 | use crate::method::{BoxFuture, OnceLockExt};
+   |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+ --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/use_ns.rs:5:32
+  |
+5 | use crate::method::{BoxFuture, OnceLockExt, UseDb};
+  |                                ^^^^^^^^^^^
+
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/update.rs:11:48
+   |
+11 | use crate::method::{BoxFuture, Content, Merge, OnceLockExt, Patch};
+   |                                                ^^^^^^^^^^^
+
+warning: type `SessionState` is more private than the item `all_sessions_replay_ready`
+   --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/engine/remote/ws/mod.rs:914:1
+    |
+914 | / pub(crate) fn all_sessions_replay_ready(
+915 | |     sessions: &HashMap<Uuid, Result<Arc<SessionState>, SessionError>>,
+916 | | ) -> crate::Result<bool> {
+    | |________________________^ function `all_sessions_replay_ready` is reachable at visibility `pub(crate)`
+    |
+note: but type `SessionState` is only usable at visibility `pub(self)`
+   --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/engine/remote/ws/mod.rs:48:1
+    |
+ 48 | struct SessionState {
+    | ^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: struct `IntervalStream` is never constructed
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/engine/mod.rs:39:20
+   |
+39 |     pub(crate) struct IntervalStream {
+   |                       ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: associated function `new` is never used
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/engine/mod.rs:44:17
+   |
+43 |     impl IntervalStream {
+   |     ------------------- associated function in this implementation
+44 |         pub(crate) fn new(interval: Interval) -> Self {
+   |                       ^^^
+
+warning: struct `DriverScopeClosed` is never constructed
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/conn/driver_scope.rs:16:19
+   |
+16 | pub(crate) struct DriverScopeClosed;
+   |                   ^^^^^^^^^^^^^^^^^
+
+warning: methods `spawn_stream` and `try_spawn_stream` are never used
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/conn/driver_scope.rs:22:19
+   |
+18 | impl DriverScope {
+   | ---------------- methods in this implementation
+...
+22 |     pub(crate) fn spawn_stream(&self, work: impl Future<Output = ()> + Send + 'static) {
+   |                   ^^^^^^^^^^^^
+...
+30 |     pub(crate) fn try_spawn_stream(&self, work: impl Future<Output = ()> + Send + 'static) -> Result<(), DriverScopeClosed> {
+   |                   ^^^^^^^^^^^^^^^^
+
+   Compiling surreal-memory v0.1.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/git/surreal-memory-server/crates/surreal-memory)
+   Compiling universal-agent-runtime v1.1.1 (/Volumes/T7/Projects/prometheus/universal-agent-runtime)
+warning: the item `Future` is imported redundantly
+   --> src/sandbox/session_manager.rs:2:5
+    |
+  2 | use std::future::Future;
+    |     ^^^^^^^^^^^^^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/prelude/mod.rs:166:13
+    |
+166 |     pub use core::prelude::rust_2024::*;
+    |             ------------------------ the item `Future` is already defined here
+    |
+    = note: requested on the command line with `-W redundant-imports`
+
+warning: the item `Future` is imported redundantly
+   --> src/server/lifecycle_reconnect.rs:3:5
+    |
+  3 | use std::future::Future;
+    |     ^^^^^^^^^^^^^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/prelude/mod.rs:166:13
+    |
+166 |     pub use core::prelude::rust_2024::*;
+    |             ------------------------ the item `Future` is already defined here
+
+warning: the item `Future` is imported redundantly
+   --> src/uar/memory/scoped_storage.rs:9:21
+    |
+  9 | use std::{any::Any, future::Future, sync::Arc};
+    |                     ^^^^^^^^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/prelude/mod.rs:166:13
+    |
+166 |     pub use core::prelude::rust_2024::*;
+    |             ------------------------ the item `Future` is already defined here
+
+warning: the item `Future` is imported redundantly
+   --> src/uar/persistence/scoped.rs:7:5
+    |
+  7 | use std::future::Future;
+    |     ^^^^^^^^^^^^^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/prelude/mod.rs:166:13
+    |
+166 |     pub use core::prelude::rust_2024::*;
+    |             ------------------------ the item `Future` is already defined here
+
+warning: the item `Future` is imported redundantly
+   --> src/uar/realtime/lifecycle.rs:4:5
+    |
+  4 | use std::future::Future;
+    |     ^^^^^^^^^^^^^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/prelude/mod.rs:166:13
+    |
+166 |     pub use core::prelude::rust_2024::*;
+    |             ------------------------ the item `Future` is already defined here
+
+warning: the item `Future` is imported redundantly
+   --> src/uar/runtime/lifecycle.rs:9:5
+    |
+  9 |     future::Future,
+    |     ^^^^^^^^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/prelude/mod.rs:166:13
+    |
+166 |     pub use core::prelude::rust_2024::*;
+    |             ------------------------ the item `Future` is already defined here
+
+warning: `surrealdb-core` (lib) generated 6 warnings (run `cargo fix --lib -p surrealdb-core` to apply 2 suggestions)
+warning: `surrealdb` (lib) generated 38 warnings (run `cargo fix --lib -p surrealdb` to apply 5 suggestions)
+warning: value assigned to `persistence_reconnect_transport` is never read
+   --> src/server.rs:688:101
+    |
+688 |     let mut persistence_reconnect_transport: Option<Arc<lifecycle_reconnect::ReconnectTransport>> = None;
+    |                                                                                                     ^^^^ this value is reassigned later and never used
+...
+785 |                 persistence_reconnect_transport = Some(lifecycle_reconnect::ReconnectTransport::new(
+    |                 ------------------------------- `persistence_reconnect_transport` is overwritten here before the previous value is read
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/uar/runtime/lifecycle.rs:925:23
+    |
+925 |     pub fn unresolved(mut self, effect: impl Into<String>) {
+    |                       ----^^^^
+    |                       |
+    |                       help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `shutdown` is never used
+    --> src/mcp/registry.rs:2455:25
+     |
+1352 | impl McpRegistry {
+     | ---------------- method in this implementation
+...
+2455 |     pub(crate) async fn shutdown(&self) {
+     |                         ^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: associated function `new` is never used
+   --> src/session/thread.rs:104:8
+    |
+102 | impl Session {
+    | ------------ associated function in this implementation
+103 |     /// Create a new session with the given ID.
+104 |     fn new(id: String, owner_id: String) -> Self {
+    |        ^^^
+
+warning: methods `lifecycle_scope` and `transport_generation` are never used
+   --> src/uar/memory/service.rs:698:19
+    |
+360 | impl MemoryService {
+    | ------------------ methods in this implementation
+...
+698 |     pub(crate) fn lifecycle_scope(&self) -> ResourceScope {
+    |                   ^^^^^^^^^^^^^^^
+...
+716 |     pub(crate) fn transport_generation(&self) -> Result<u64> {
+    |                   ^^^^^^^^^^^^^^^^^^^^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/server/lifecycle_control.rs:20:1
+   |
+20 | pub struct ServerLifecycleControl(Arc<Mutex<ControlState>>);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: requested on the command line with `-W missing-debug-implementations`
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/server/lifecycle_control.rs:25:1
+   |
+25 | / pub struct LifecycleRequest {
+26 | |     pub version: u8,
+27 | |     pub request_id: String,
+28 | |     pub operation: LifecycleOperation,
+29 | | }
+   | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/server/lifecycle_control.rs:34:1
+   |
+34 | / pub enum LifecycleOperation {
+35 | |     Snapshot,
+36 | |     Reconnect { resource_id: String, expected_generation: u64 },
+37 | | }
+   | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/uar/memory/service.rs:77:1
+   |
+77 | / pub struct MemorySubscriptionClient {
+78 | |     db: Surreal<Any>,
+79 | |     scope_open: Arc<AtomicBool>,
+80 | |     lifecycle_scope: ResourceScope,
+81 | | }
+   | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/uar/memory/service.rs:89:1
+   |
+89 | / pub struct MemoryLiveStream {
+90 | |     stream: Option<surrealdb::method::Stream<Vec<surrealdb::types::Value>>>,
+91 | |     lease: Option<OperationLease>,
+92 | | }
+   | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+   --> src/uar/runtime/lifecycle.rs:395:1
+    |
+395 | / pub struct WeakResourceScope {
+396 | |     inner: std::sync::Weak<ScopeInner>,
+397 | | }
+    | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+   --> src/uar/runtime/lifecycle.rs:915:1
+    |
+915 | / pub struct OperationLease {
+916 | |     inner: Arc<ScopeInner>,
+917 | |     id: String,
+918 | |     resolved: bool,
+919 | | }
+    | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+    --> src/uar/runtime/lifecycle.rs:1063:1
+     |
+1063 | / pub struct RuntimeSupervisor {
+1064 | |     inner: Arc<SupervisorInner>,
+1065 | | }
+     | |_^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+    --> src/uar/runtime/lifecycle.rs:1069:1
+     |
+1069 | / pub struct RuntimeHandle {
+1070 | |     supervisor: RuntimeSupervisor,
+1071 | | }
+     | |_^
+
+warning: `universal-agent-runtime` (lib) generated 20 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)
+warning: unused variable: `verified_at`
+   --> tools/seed-minimax-verification/main.rs:167:9
+    |
+167 |     let verified_at = format!("{}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}+00:00",
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_verified_at`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>>: LowerHex` is not satisfied
+   --> tests/embedding_lifecycle_failover.rs:518:38
+    |
+518 |         let digest = format!("{:x}", sha2::Sha256::digest(&bytes));
+    |                               ----   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>, B0>>`
+    |                               |
+    |                               required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Braced
+              Hyphenated
+              Saturating<T>
+              Simple
+              Urn
+              Uuid
+            and 375 others
+    = note: the full name for the type has been written to '/Volumes/T7/rust/cargo-build/c1/70031fb900a2a9/debug/deps/embedding_lifecycle_failover-063a370ecd808dc8.long-type-18272600244006072886.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>>: LowerHex` is not satisfied
+   --> tests/embedding_lifecycle_failover.rs:524:21
+    |
+524 |     format!("{:x}", manifest.finalize())
+    |              ----   ^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>, B0>>`
+    |              |
+    |              required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Braced
+              Hyphenated
+              Saturating<T>
+              Simple
+              Urn
+              Uuid
+            and 375 others
+    = note: the full name for the type has been written to '/Volumes/T7/rust/cargo-build/c1/70031fb900a2a9/debug/deps/embedding_lifecycle_failover-063a370ecd808dc8.long-type-18272600244006072886.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>>: LowerHex` is not satisfied
+   --> tests/embedding_lifecycle_failover.rs:534:21
+    |
+534 |     format!("{:x}", sha2::Sha256::digest(&bytes))
+    |              ----   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>, B0>>`
+    |              |
+    |              required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Braced
+              Hyphenated
+              Saturating<T>
+              Simple
+              Urn
+              Uuid
+            and 375 others
+    = note: the full name for the type has been written to '/Volumes/T7/rust/cargo-build/c1/70031fb900a2a9/debug/deps/embedding_lifecycle_failover-063a370ecd808dc8.long-type-18272600244006072886.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `universal-agent-runtime` (test "embedding_lifecycle_failover") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+warning: `universal-agent-runtime` (bin "seed-minimax-verification") generated 1 warning (run `cargo fix --bin "seed-minimax-verification" -p universal-agent-runtime` to apply 1 suggestion)
+

@@ -21,7 +21,7 @@ use futures::FutureExt as _;
 use sha2::Digest as _;
 use tower::ServiceExt as _;
 use universal_agent_runtime::{
-    config::{LocalEmbeddingFailoverConfig, LocalEmbeddingMemberConfig},
+    config::{LocalEmbeddingFailoverConfig, LocalEmbeddingMemberConfig, SecurityConfig},
     uar::{
         api::knowledge::{KnowledgeApiState, build_router},
         domain::knowledge::{DocumentStatus, KbConfig, KnowledgeBase, KnowledgeDocument},
@@ -39,11 +39,11 @@ use universal_agent_runtime::{
             lifecycle::{ResourceScope, RuntimeSupervisor},
             matching::VectorMatcher,
         },
-        security::claims::{UserClaims, UserContext},
+        security::{claims::UserContext, middleware::authenticate_bearer_context},
     },
 };
 
-const OWNER: &str = "embedding-lifecycle-owner";
+const SUBJECT: &str = "embedding-lifecycle-owner";
 const PRIMARY_MODEL: &str = "bge-small-en-v1.5";
 const DIMENSION: usize = 384;
 const MODEL_WEIGHT_FILE: &str = "bg-small-en-v1.5.onnx";
@@ -225,7 +225,11 @@ impl Fixture {
     }
 
     async fn exercise(&self) {
-        let kb = create_knowledge_base(self.persistence_layer.as_ref()).await;
+        let user = user().await;
+        let owner = user
+            .session_owner_key()
+            .expect("fixture credential must produce a verified principal storage key");
+        let kb = create_knowledge_base(self.persistence_layer.as_ref(), &owner).await;
         let ingest = IngestService::new(
             Arc::clone(&self.persistence_layer),
             Arc::clone(&self.handle),
@@ -233,9 +237,9 @@ impl Fixture {
         );
         let matcher = Arc::new(VectorMatcher::new(Arc::clone(&self.handle), 0.0));
 
-        track_document(self.persistence_layer.as_ref(), &kb.id, "primary-document").await;
+        track_document(self.persistence_layer.as_ref(), &owner, &kb.id, "primary-document").await;
         ingest
-            .ingest_text(PRIMARY_TEXT, OWNER, &kb.id, "primary-document".to_string())
+            .ingest_text(PRIMARY_TEXT, &owner, &kb.id, "primary-document".to_string())
             .await
             .expect("primary must perform actual local inference and durable ingestion");
         assert_searches(
@@ -243,12 +247,13 @@ impl Fixture {
             Arc::clone(&matcher),
             &kb.id,
             QUERY_TEXT,
+            &user,
             StatusCode::OK,
         )
         .await;
         assert_status(&self.failover.status(), "primary", 1);
         assert_eq!(
-            stored_binding(self.persistence_layer.as_ref(), &kb.id).await,
+            stored_binding(self.persistence_layer.as_ref(), &owner, &kb.id).await,
             self.handle.fingerprint(),
             "primary ingestion must persist the same space served to queries"
         );
@@ -260,9 +265,9 @@ impl Fixture {
             .expect("retire primary through its lifecycle scope");
         assert_status(&retired, "primary", 1);
 
-        track_document(self.persistence_layer.as_ref(), &kb.id, "backup-document").await;
+        track_document(self.persistence_layer.as_ref(), &owner, &kb.id, "backup-document").await;
         ingest
-            .ingest_text(BACKUP_TEXT, OWNER, &kb.id, "backup-document".to_string())
+            .ingest_text(BACKUP_TEXT, &owner, &kb.id, "backup-document".to_string())
             .await
             .expect("retired primary must promote the compatible backup and retry real ingestion");
         assert_status(&self.failover.status(), "backup", 2);
@@ -271,11 +276,12 @@ impl Fixture {
             Arc::clone(&matcher),
             &kb.id,
             QUERY_TEXT,
+            &user,
             StatusCode::OK,
         )
         .await;
         assert_eq!(
-            stored_binding(self.persistence_layer.as_ref(), &kb.id).await,
+            stored_binding(self.persistence_layer.as_ref(), &owner, &kb.id).await,
             self.handle.fingerprint(),
             "compatible backup must preserve the durable embedding space"
         );
@@ -286,9 +292,9 @@ impl Fixture {
             .await
             .expect("recover primary while retaining the compatible backup as standby");
         assert_status(&recovered, "primary", 3);
-        track_document(self.persistence_layer.as_ref(), &kb.id, "recovery-document").await;
+        track_document(self.persistence_layer.as_ref(), &owner, &kb.id, "recovery-document").await;
         ingest
-            .ingest_text(RECOVERY_TEXT, OWNER, &kb.id, "recovery-document".to_string())
+            .ingest_text(RECOVERY_TEXT, &owner, &kb.id, "recovery-document".to_string())
             .await
             .expect("recovered primary must resume actual local ingestion without a restart");
         assert_searches(
@@ -296,11 +302,12 @@ impl Fixture {
             Arc::clone(&matcher),
             &kb.id,
             QUERY_TEXT,
+            &user,
             StatusCode::OK,
         )
         .await;
         assert_eq!(
-            stored_binding(self.persistence_layer.as_ref(), &kb.id).await,
+            stored_binding(self.persistence_layer.as_ref(), &owner, &kb.id).await,
             self.handle.fingerprint(),
             "first recovery must preserve the durable embedding space"
         );
@@ -311,11 +318,11 @@ impl Fixture {
             .await
             .expect("retire recovered primary for a second lifecycle cycle");
         assert_status(&second_retirement, "primary", 3);
-        track_document(self.persistence_layer.as_ref(), &kb.id, "second-backup-document").await;
+        track_document(self.persistence_layer.as_ref(), &owner, &kb.id, "second-backup-document").await;
         ingest
             .ingest_text(
                 SECOND_BACKUP_TEXT,
-                OWNER,
+                &owner,
                 &kb.id,
                 "second-backup-document".to_string(),
             )
@@ -327,6 +334,7 @@ impl Fixture {
             Arc::clone(&matcher),
             &kb.id,
             QUERY_TEXT,
+            &user,
             StatusCode::OK,
         )
         .await;
@@ -337,11 +345,11 @@ impl Fixture {
             .await
             .expect("recover primary a second time with the backup still reusable");
         assert_status(&second_recovery, "primary", 5);
-        track_document(self.persistence_layer.as_ref(), &kb.id, "second-recovery-document").await;
+        track_document(self.persistence_layer.as_ref(), &owner, &kb.id, "second-recovery-document").await;
         ingest
             .ingest_text(
                 SECOND_RECOVERY_TEXT,
-                OWNER,
+                &owner,
                 &kb.id,
                 "second-recovery-document".to_string(),
             )
@@ -352,19 +360,20 @@ impl Fixture {
             Arc::clone(&matcher),
             &kb.id,
             QUERY_TEXT,
+            &user,
             StatusCode::OK,
         )
         .await;
         assert_eq!(
-            stored_binding(self.persistence_layer.as_ref(), &kb.id).await,
+            stored_binding(self.persistence_layer.as_ref(), &owner, &kb.id).await,
             self.handle.fingerprint(),
             "second recovery must preserve the durable embedding space"
         );
 
-        let binding_before = stored_binding(self.persistence_layer.as_ref(), &kb.id).await;
+        let binding_before = stored_binding(self.persistence_layer.as_ref(), &owner, &kb.id).await;
         let documents_before = self
             .persistence_layer
-            .list_documents(OWNER, &kb.id)
+            .list_documents(&owner, &kb.id)
             .await
             .expect("list durable documents before incompatible query");
         let incompatible_backend = build_local_backend(&self.incompatible, self.failover_scope.clone())
@@ -406,6 +415,7 @@ impl Fixture {
             incompatible_matcher,
             &kb.id,
             INCOMPATIBLE_QUERY,
+            user.clone(),
         )
         .await;
         assert_eq!(response.0, StatusCode::CONFLICT, "incompatible query body: {}", response.1);
@@ -416,13 +426,13 @@ impl Fixture {
             response.1
         );
         assert_eq!(
-            stored_binding(self.persistence_layer.as_ref(), &kb.id).await,
+            stored_binding(self.persistence_layer.as_ref(), &owner, &kb.id).await,
             binding_before,
             "incompatible refusal must not alter the durable KB binding"
         );
         let documents_after = self
             .persistence_layer
-            .list_documents(OWNER, &kb.id)
+            .list_documents(&owner, &kb.id)
             .await
             .expect("list durable documents after incompatible query");
         assert_eq!(
@@ -435,6 +445,7 @@ impl Fixture {
             Arc::clone(&matcher),
             &kb.id,
             QUERY_TEXT,
+            &user,
             StatusCode::OK,
         )
         .await;
@@ -515,13 +526,13 @@ fn asset_manifest(directory: &Path) -> String {
                 directory.join(file).display()
             )
         });
-        let digest = format!("{:x}", sha2::Sha256::digest(&bytes));
+        let digest = hex_encode(&sha2::Sha256::digest(&bytes));
         manifest.update(file.as_bytes());
         manifest.update([0]);
         manifest.update(digest.as_bytes());
         manifest.update([0]);
     }
-    format!("{:x}", manifest.finalize())
+    hex_encode(&manifest.finalize())
 }
 
 fn asset_weight_digest(directory: &Path) -> String {
@@ -531,7 +542,11 @@ fn asset_weight_digest(directory: &Path) -> String {
             directory.join(MODEL_WEIGHT_FILE).display()
         )
     });
-    format!("{:x}", sha2::Sha256::digest(&bytes))
+    hex_encode(&sha2::Sha256::digest(&bytes))
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn local_config(models_dir: &Path, model: &str, vector_dimension: usize) -> EmbeddingConfig {
@@ -548,11 +563,11 @@ fn local_config(models_dir: &Path, model: &str, vector_dimension: usize) -> Embe
     }
 }
 
-async fn create_knowledge_base(persistence: &dyn PersistenceLayer) -> KnowledgeBase {
+async fn create_knowledge_base(persistence: &dyn PersistenceLayer, owner: &str) -> KnowledgeBase {
     let now = chrono::Utc::now().to_rfc3339();
     let knowledge_base = KnowledgeBase {
         id: uuid::Uuid::new_v4().to_string(),
-        owner_id: OWNER.to_string(),
+        owner_id: owner.to_string(),
         name: "local-embedding-lifecycle".to_string(),
         description: Some("real local embedding failover fixture".to_string()),
         config: KbConfig::default(),
@@ -566,12 +581,17 @@ async fn create_knowledge_base(persistence: &dyn PersistenceLayer) -> KnowledgeB
     knowledge_base
 }
 
-async fn track_document(persistence: &dyn PersistenceLayer, kb_id: &str, document_id: &str) {
+async fn track_document(
+    persistence: &dyn PersistenceLayer,
+    owner: &str,
+    kb_id: &str,
+    document_id: &str,
+) {
     let now = chrono::Utc::now().to_rfc3339();
     persistence
         .save_document(&KnowledgeDocument {
             id: document_id.to_string(),
-            owner_id: OWNER.to_string(),
+            owner_id: owner.to_string(),
             kb_id: kb_id.to_string(),
             filename: format!("{document_id}.txt"),
             file_path: None,
@@ -587,10 +607,11 @@ async fn track_document(persistence: &dyn PersistenceLayer, kb_id: &str, documen
 
 async fn stored_binding(
     persistence: &dyn PersistenceLayer,
+    owner: &str,
     kb_id: &str,
 ) -> universal_agent_runtime::uar::domain::knowledge::EmbeddingFingerprint {
     persistence
-        .get_knowledge_base(OWNER, kb_id)
+        .get_knowledge_base(owner, kb_id)
         .await
         .expect("read owner-scoped knowledge base")
         .expect("knowledge base exists")
@@ -604,9 +625,10 @@ async fn assert_searches(
     matcher: Arc<VectorMatcher>,
     kb_id: &str,
     query: &str,
+    user: &UserContext,
     expected: StatusCode,
 ) {
-    let response = search(persistence, matcher, kb_id, query).await;
+    let response = search(persistence, matcher, kb_id, query, user.clone()).await;
     assert_eq!(response.0, expected, "knowledge search body: {}", response.1);
     assert!(
         response.1["results"].as_array().is_some_and(|results| !results.is_empty()),
@@ -620,6 +642,7 @@ async fn search(
     matcher: Arc<VectorMatcher>,
     kb_id: &str,
     query: &str,
+    user: UserContext,
 ) -> (StatusCode, serde_json::Value) {
     let state = Arc::new(KnowledgeApiState {
         persistence,
@@ -629,7 +652,7 @@ async fn search(
     });
     let response = build_router()
         .with_state(state)
-        .layer(Extension(user()))
+        .layer(Extension(user))
         .oneshot(
             Request::post(format!("/{kb_id}/search"))
                 .header("content-type", "application/json")
@@ -648,21 +671,29 @@ async fn search(
     (status, json)
 }
 
-fn user() -> UserContext {
-    UserContext {
-        host_authority: None,
-        authority: None,
-        user_id: OWNER.to_string(),
-        tenant_id: None,
-        claims: UserClaims {
-            sub: OWNER.to_string(),
-            name: None,
-            roles: Some(vec!["user".to_string()]),
-            tenant_id: None,
-            uar_instance_id: None,
-            exp: usize::MAX,
-        },
-    }
+async fn user() -> UserContext {
+    let secret = "embedding-lifecycle-fixture-only-auth-secret";
+    let config: SecurityConfig = serde_json::from_value(serde_json::json!({
+        "jwt_required": true,
+        "jwt_secret": secret,
+        "jwt_issuer": "embedding-lifecycle-fixture",
+    }))
+    .expect("construct fixture credential verifier");
+    let _ = authenticate_bearer_context(&config, "invalid").await;
+    let token = jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &serde_json::json!({
+            "iss": "embedding-lifecycle-fixture",
+            "sub": SUBJECT,
+            "roles": ["user"],
+            "exp": chrono::Utc::now().timestamp() + 3600,
+        }),
+        &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes()),
+    )
+    .expect("sign fixture-only verified principal");
+    authenticate_bearer_context(&config, &token)
+        .await
+        .expect("verify fixture principal through the production boundary")
 }
 
 fn assert_status(status: &impl serde::Serialize, member: &str, generation: u64) {

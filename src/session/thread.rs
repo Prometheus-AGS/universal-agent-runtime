@@ -101,6 +101,7 @@ impl Clone for Session {
 
 impl Session {
     /// Create a new session with the given ID.
+    #[cfg(test)]
     fn new(id: String, owner_id: String) -> Self {
         Self::new_with_activity(id, owner_id, None)
     }

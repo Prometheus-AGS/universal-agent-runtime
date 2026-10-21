@@ -911,7 +911,7 @@ where
 /// A failed session is authoritative replay failure for the reconnect request;
 /// reporting `Available` while it remains failed would certify a capability the
 /// retained router cannot provide.
-pub(crate) fn all_sessions_replay_ready(
+fn all_sessions_replay_ready(
 	sessions: &HashMap<Uuid, Result<Arc<SessionState>, SessionError>>,
 ) -> crate::Result<bool> {
 	for (_, session) in sessions.to_vec() {

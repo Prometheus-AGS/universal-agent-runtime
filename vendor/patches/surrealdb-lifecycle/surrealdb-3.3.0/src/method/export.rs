@@ -11,7 +11,7 @@ use semver::Version;
 use surrealdb_rpc::export::{Config as DbExportConfig, TableConfig};
 
 use crate::conn::{MlExportConfig, ctx};
-use crate::method::{BoxFuture, ExportConfig as Config, Model, OnceLockExt};
+use crate::method::{BoxFuture, ExportConfig as Config, Model};
 use crate::{Connection, Error, ExtraFeatures, Result, Surreal};
 
 /// Returned by [`Surreal::export`](crate::Surreal::export). File targets complete in place, while

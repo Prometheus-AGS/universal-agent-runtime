@@ -1,0 +1,38 @@
+Approved embedding command rerun; terminal exit101. Captured output follows.
+   Compiling surrealdb-core v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0)
+   Compiling surrealdb v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0)
+
+   Compiling surrealdb-engine-local v3.3.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0)
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs:12:34
+   |
+12 | use crate::{Connect, Connection, OnceLockExt, SessionClone, Surreal};
+   |                                  ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling surreal-memory v0.1.0 (/Volumes/T7/Projects/prometheus/universal-agent-runtime/vendor/git/surreal-memory-server/crates/surreal-memory)
+
+warning: `surrealdb` (lib) generated 1 warning
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14m 32s
+     Running tests/embedding_lifecycle_failover.rs (/Volumes/T7/rust/cargo-build/c1/70031fb900a2a9/debug/deps/embedding_lifecycle_failover-063a370ecd808dc8)
+
+running 1 test
+test local_embedding_lifecycle_reuses_backup_across_two_cycles_and_refuses_an_equal_dimension_other_model ... FAILED
+
+failures:
+
+---- local_embedding_lifecycle_reuses_backup_across_two_cycles_and_refuses_an_equal_dimension_other_model stdout ----
+
+thread 'local_embedding_lifecycle_reuses_backup_across_two_cycles_and_refuses_an_equal_dimension_other_model' (16339743) panicked at tests/embedding_lifecycle_failover.rs:569:10:
+save owner-scoped knowledge base: knowledge requires a verified principal or the explicit anonymous boundary
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    local_embedding_lifecycle_reuses_backup_across_two_cycles_and_refuses_an_equal_dimension_other_model
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.67s
+
+error: test failed, to rerun pass `--test embedding_lifecycle_failover`

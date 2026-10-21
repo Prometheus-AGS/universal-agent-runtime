@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::future::IntoFuture;
 
 use crate::conn::ctx;
-use crate::method::{BoxFuture, OnceLockExt};
+use crate::method::BoxFuture;
 use crate::{Connection, Result, Surreal};
 
 /// Returned by [`Surreal::use_defaults`](crate::Surreal::use_defaults), used to apply the server's

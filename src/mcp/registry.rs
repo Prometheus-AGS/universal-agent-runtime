@@ -2452,6 +2452,7 @@ impl McpRegistry {
 
     /// Compatibility shutdown for owners that cannot yet propagate cleanup
     /// reports. The report path is used by the host lifecycle finalizer.
+    #[cfg(test)]
     pub(crate) async fn shutdown(&self) {
         if let Err(error) = self.shutdown_report().await {
             tracing::error!(error = %error, "MCP shutdown did not complete cleanly");

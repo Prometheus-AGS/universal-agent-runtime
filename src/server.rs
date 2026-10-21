@@ -685,7 +685,7 @@ async fn run_server_with_listener(
 
     // Initialize persistence based on config.
     // All three branches produce trait-object arcs so the types unify across arms.
-    let mut persistence_reconnect_transport: Option<Arc<lifecycle_reconnect::ReconnectTransport>> = None;
+    let mut persistence_reconnect_transport: Option<Arc<lifecycle_reconnect::ReconnectTransport>>;
     let (
         persistence_layer,
         compiler_storage,
@@ -710,6 +710,7 @@ async fn run_server_with_listener(
     ) = if config.persistence.provider == "memory" {
         #[cfg(feature = "in-memory-backend")]
         {
+            persistence_reconnect_transport = None;
             if config.security.is_remote() {
                 anyhow::bail!("Remote API-key authority requires durable persistence; memory is a local development mode");
             }
@@ -858,6 +859,7 @@ async fn run_server_with_listener(
         // `postgres-backend` Cargo feature is enabled at build time.
         #[cfg(feature = "postgres-backend")]
         {
+            persistence_reconnect_transport = None;
             let provider = PostgresProvider::new(&config.persistence.database_url).await?;
             let pool = provider.get_pool().clone();
             let owned_pool = pool.clone();

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 115,
+  "revision": 127,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -943,6 +943,58 @@
       "evidence": [
         "docs/operations/lifecycle-delivery-startup-send-repair.md",
         "Source-only handoff collected; no compiler or runtime verification; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-state-repair",
+      "title": "Repair exact approved embedding command diagnostics: state",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-runtime-repair",
+      "title": "Repair exact approved embedding command diagnostics: runtime",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-lead-repair",
+      "title": "Repair exact approved embedding command diagnostics: lead",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-principal-repair",
+      "title": "Repair approved embedding fixture principal identity",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
       ],
       "remaining": []
     }
@@ -3199,6 +3251,218 @@
         "evidence": [
           "docs/operations/lifecycle-delivery-startup-send-repair.md",
           "Source-only handoff collected; no compiler or runtime verification; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "162c0ca6-92ff-4779-83fc-fd678744b6e3",
+      "at": "2026-10-21T08:33:55.976Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-state-repair",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "b5ecadcb-b343-4d97-b896-4a25dbe24965",
+      "at": "2026-10-21T08:33:56.155Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-state-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Complete bounded source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "caf971fa-739e-488a-8301-53117658d811",
+      "at": "2026-10-21T08:33:56.401Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-state-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "f8100a6c-c4b2-4188-b411-5f8b5b8a7fe7",
+      "at": "2026-10-21T08:33:56.729Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-runtime-repair",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "f053676b-e612-432c-9eb0-8fca7c16ecca",
+      "at": "2026-10-21T08:33:56.905Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-runtime-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Complete bounded source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "b41b2b15-baa5-4a1d-aca7-0bc676788381",
+      "at": "2026-10-21T08:33:57.146Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-runtime-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "1375fb75-4e29-4f2b-8fdc-22ecc364dd26",
+      "at": "2026-10-21T08:33:57.356Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-lead-repair",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "aa91f5b6-56b4-4b0a-a81a-2cf6d9e5b6a7",
+      "at": "2026-10-21T08:33:57.580Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-lead-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Complete bounded source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "0a4df3ff-de4c-44ce-847c-d5a9f92cb9fa",
+      "at": "2026-10-21T08:33:57.838Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-lead-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "31db5177-5214-455a-921c-fdb07eb01419",
+      "at": "2026-10-21T08:56:47.709Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-principal-repair",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "b920a750-fafb-4a18-a3ab-ec85bebadf1f",
+      "at": "2026-10-21T08:56:47.858Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-principal-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Fixture-only verified-principal source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "83dac307-c495-4260-9f6b-46dd9cd168b4",
+      "at": "2026-10-21T08:56:47.995Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-principal-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
         ],
         "remaining": []
       }

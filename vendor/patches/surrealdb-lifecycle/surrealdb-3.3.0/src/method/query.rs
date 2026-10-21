@@ -17,7 +17,7 @@ use uuid::Uuid;
 use super::transaction::WithTransaction;
 use crate::conn::ctx_txn;
 use crate::method::live::{Stream, spawn};
-use crate::method::{BoxFuture, OnceLockExt, Stats, WithStats};
+use crate::method::{BoxFuture, Stats, WithStats};
 use crate::notification::Notification;
 use crate::types::{SurrealValue, Value, Variables};
 use crate::{Connection, Error, Result, Surreal, opt};

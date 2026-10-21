@@ -8,7 +8,7 @@ use super::insert_relation::InsertRelation;
 use super::transaction::WithTransaction;
 use super::validate_data;
 use crate::conn::{QueryRequest, ctx_txn};
-use crate::method::{BoxFuture, Content, OnceLockExt};
+use crate::method::{BoxFuture, Content};
 use crate::opt::Resource;
 use crate::types::{SurrealValue, Value, Variables};
 use crate::{Connection, Error, Result, Surreal};

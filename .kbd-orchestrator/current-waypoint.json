@@ -2,11 +2,11 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3179,
-  "derivedRevision": 3179,
+  "sourceRevision": 3190,
+  "derivedRevision": 3190,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 149,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 160,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -44,10 +44,10 @@
   "completionMetric": "implementation",
   "implementationCompleted": 138,
   "implementationTotal": 153,
-  "planRevision": 78,
-  "revision": 3179,
-  "exactNextCommand": "Publish final source/image inventory and exact deferred commands for operator review. Wait for explicit approval naming commands before any preparation/test/check/native build/review/acceptance. Source32cb3bcf, Boss a609869079, image sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8; CLOSED.",
+  "planRevision": 83,
+  "revision": 3190,
+  "exactNextCommand": "Current repair cohort and exact embedding rerun complete. Keep all other commands CLOSED/HELD under latest operator instruction. Await decision on budgeted shutdown Pending observation versus acknowledgement-only wait; no broader API work without approval. Maintain final implementation/evidence checklist and receipts; no unchanged retry, passing-gate repetition, new check or scope expansion.",
   "nextChange": "uar-outstanding-issues-v1-1-1",
   "nextTask": "4.1",
-  "updatedAt": "2026-10-21T03:22:13.279679Z"
+  "updatedAt": "2026-10-21T09:01:57.635693Z"
 }

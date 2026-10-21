@@ -6,7 +6,7 @@
 //! explicit unknown outcome only when a mutating operation lacks an
 //! acknowledgement; it never infers rollback from waiter cancellation.
 
-use std::{any::Any, future::Future, sync::Arc};
+use std::{any::Any, sync::Arc};
 
 use anyhow::Result;
 use async_trait::async_trait;

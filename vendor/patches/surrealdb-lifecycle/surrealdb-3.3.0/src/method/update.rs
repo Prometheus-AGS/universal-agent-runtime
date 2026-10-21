@@ -8,7 +8,7 @@ use uuid::Uuid;
 use super::transaction::WithTransaction;
 use super::validate_data;
 use crate::conn::{QueryRequest, ctx_txn};
-use crate::method::{BoxFuture, Content, Merge, OnceLockExt, Patch};
+use crate::method::{BoxFuture, Content, Merge, Patch};
 use crate::opt::{PatchOps, Resource};
 use crate::types::{RecordId, RecordIdKeyRange, SurrealValue, Value, Variables};
 use crate::{Connection, Error, Result, Surreal};

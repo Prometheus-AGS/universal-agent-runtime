@@ -19,6 +19,8 @@
 - [x] 8.4 Renew immutable Boss source pin after Docker delivery repairs
 - [x] 9.5 Repair startup tracing awaits exposed by owned server task
 - [x] 8.5 Renew Boss pin after startup Send source repair
+- [x] 9.6 Repair observed embedding fixture digest compilation and emitted warnings
+- [x] 9.7 Repair observed embedding fixture principal identity rejection
 
 Implementation checkboxes record authored production/fixture/documentation
 source and collected writer handoffs. They do not certify compilation, execution,

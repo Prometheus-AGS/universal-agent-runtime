@@ -2,7 +2,7 @@ use std::future::IntoFuture;
 
 use crate::conn::ctx;
 use crate::method::{BoxFuture, Transaction};
-use crate::{Connection, OnceLockExt, Result, Surreal};
+use crate::{Connection, Result, Surreal};
 
 /// From [`Surreal::begin`](crate::Surreal::begin). Yields a
 /// [`Transaction`](crate::method::Transaction) that can then take

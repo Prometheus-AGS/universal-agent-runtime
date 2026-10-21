@@ -3,7 +3,7 @@ use std::future::IntoFuture;
 use std::marker::PhantomData;
 
 use crate::conn::ctx;
-use crate::method::{BoxFuture, OnceLockExt};
+use crate::method::BoxFuture;
 use crate::opt::auth::{RefreshToken, Token};
 use crate::types::SurrealValue;
 use crate::{Connection, Error, Result, Surreal};

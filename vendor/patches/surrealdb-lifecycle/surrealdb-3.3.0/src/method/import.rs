@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use crate::conn::ctx;
-use crate::method::{BoxFuture, Model, OnceLockExt};
+use crate::method::{BoxFuture, Model};
 use crate::{Connection, Error, ExtraFeatures, Result, Surreal};
 
 /// Returned by [`Surreal::import`](crate::Surreal::import) to restore from a `.surql` backup file.

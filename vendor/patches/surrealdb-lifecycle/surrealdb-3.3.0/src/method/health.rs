@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::future::IntoFuture;
 
 use crate::conn::ctx;
-use crate::method::{BoxFuture, OnceLockExt};
+use crate::method::BoxFuture;
 use crate::{Connection, Result, Surreal};
 
 /// Returned by [`Surreal::health`](crate::Surreal::health), completing successfully when the server

@@ -19,6 +19,12 @@ struct ControlState {
 #[derive(Clone, Default)]
 pub struct ServerLifecycleControl(Arc<Mutex<ControlState>>);
 
+impl std::fmt::Debug for ServerLifecycleControl {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("ServerLifecycleControl(***redacted***)")
+    }
+}
+
 /// Versioned command sent by the already authenticated launching parent.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -28,12 +34,39 @@ pub struct LifecycleRequest {
     pub operation: LifecycleOperation,
 }
 
+impl std::fmt::Debug for LifecycleRequest {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("LifecycleRequest")
+            .field("version", &self.version)
+            .field("request_id", &"***redacted***")
+            .field("operation", &self.operation)
+            .finish()
+    }
+}
+
 /// No operation changes durable ownership or bypasses business authorization.
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum LifecycleOperation {
     Snapshot,
     Reconnect { resource_id: String, expected_generation: u64 },
+}
+
+impl std::fmt::Debug for LifecycleOperation {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Snapshot => formatter.write_str("LifecycleOperation::Snapshot"),
+            Self::Reconnect {
+                expected_generation,
+                ..
+            } => formatter
+                .debug_struct("LifecycleOperation::Reconnect")
+                .field("resource_id", &"***redacted***")
+                .field("expected_generation", expected_generation)
+                .finish(),
+        }
+    }
 }
 
 impl ServerLifecycleControl {

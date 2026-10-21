@@ -2,7 +2,7 @@ use std::future::IntoFuture;
 
 use crate::conn::ctx;
 use crate::method::{BoxFuture, Transaction};
-use crate::{Connection, OnceLockExt, Result, Surreal};
+use crate::{Connection, Result, Surreal};
 
 /// From [`Transaction::commit`](crate::method::Transaction::commit); persists the open transaction
 /// and yields the [`Surreal`](crate::Surreal) client again.

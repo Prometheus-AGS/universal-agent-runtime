@@ -24,6 +24,7 @@ pub use surrealdb_engine_local::tasks;
 
 /// Compiled only where something polls on an interval: the WS ping loop.
 #[cfg(feature = "protocol-ws")]
+#[allow(dead_code)] // Retained for the protocol-ws ping-loop implementation.
 mod interval {
 	use std::pin::Pin;
 	use std::task::{Context, Poll};
@@ -56,7 +57,5 @@ mod interval {
 		}
 	}
 }
-#[cfg(feature = "protocol-ws")]
-use interval::IntervalStream;
 #[cfg(any(feature = "protocol-http", feature = "protocol-ws"))]
 pub(crate) use surrealdb_engine_api::{SessionError, session_error_to_error};

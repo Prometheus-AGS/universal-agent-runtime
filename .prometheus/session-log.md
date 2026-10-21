@@ -6207,3 +6207,27 @@ Approved run39532243053, job119000651255 completed success and exported actual c
 ## Requested lifecycle image delivery complete — 2026-10-21
 
 Approved run39532243053 completed success at `32cb3bcfc9691212ec0b0359ce22474968bc6850`; both native Linux builds and manifest merge succeeded. Actual combined digest `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`, tag `sha-32cb3bcfc9691212ec0b0359ce22474968bc6850`, platforms linux/amd64 and linux/arm64. Matching signed Boss `a609869079bf6d51af196944965e6f86ee6c0758` and both draft PRs published. Source/delivery handoffs complete; final whole-phase inventory renewed at waypoint3179, plan78, canonical run counter138/153. Routine verification CLOSED. No tests/checks, local/native builds, packaging validation, independent review or acceptance ran. Frozen embedding conditions, same-image preparation, review, functional acceptance and reflection remain.
+
+
+## Narrow ready-command approval — October21,2026 America/Chicago
+
+Operator approved ready commands in lifecycle-verification-command-proposal.md, serially, actual failure repair and reporting. Exact model preparation, embedding integration, owned-resource integration, sidecar integration, source32cb3bcf native candidate and dependent local Boss package only. Unmet-prerequisite public package/full release/Windows remain CLOSED; no extra checks. Lead is sole gate/build writer. Each repair renews inventory before rerunning its same failed command under this explicit fix-failures authorization. Prior Docker delivery is complete and not repeated.
+
+
+## 2026-10-21 — approved embedding rerun and bounded-shutdown distinction
+
+Operator continuation narrows execution to finishing the current repair batch and the same approved embedding command; no additional gates or nonblocking cleanup. Repair9.6 is source-complete at3184/plan80 and embedding rerun session91450 is live. New checklist distinguishes source implementation from execution proof. A finite shutdown observation budget is absent from acknowledgement-only close; decision requested, no broader API change authorized or implemented.
+
+Observe the existing approved embedding rerun; do not restart it. Preserve actual outcome/log. If the targeted failure recurs or command hangs, stop affected work and report evidence. Keep other commands and new shutdown-budget API work closed. Maintain lifecycle-plan-implementation-evidence-checklist.md; no extra checks.
+
+
+## 2026-10-21 — embedding runtime fixture failure
+
+Approved embedding attempt2 compiled in14m32s; prior digest errors resolved. One test failed in3.67s at tests/embedding_lifecycle_failover.rs:569 because the fixture owner is not a verified principal. State owns fixture-only use of existing verified-principal convention; no production authorization weakening, new tests, warning cleanup or extra gates. Collect handoff and exact inventory before same approved embedding command. Stop affected work if the same failure recurs.
+
+
+## 2026-10-21 — exact embedding command passed
+
+Same approved embedding command attempt3 PASSED exit0:1 passed,0 failed,0 ignored; compilation40.81s, test4.35s. Principal repair9.7 resolved the prior runtime fixture failure; digest compilation repair9.6 remains resolved. Source inventory3189/plan82 digest3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a binds these saved bytes. Scoped real local inference/continuity/mismatch and fixture cleanup assertions passed; full watcher/producer shutdown, owned-resource/sidecar, frozen embedding and release acceptance remain unverified. No new gate or warning-only cleanup. Finite caller-budgeted Pending reporting recommended but not authorized/implemented. Source repairs remain uncommitted and excluded from published32cb3bcf image; native binding held.
+
+Current repair cohort and exact embedding rerun complete. Keep all other commands CLOSED/HELD under latest operator instruction. Await decision on budgeted shutdown Pending observation versus acknowledgement-only wait; no broader API work without approval. Maintain final implementation/evidence checklist and receipts; no unchanged retry, passing-gate repetition, new check or scope expansion.

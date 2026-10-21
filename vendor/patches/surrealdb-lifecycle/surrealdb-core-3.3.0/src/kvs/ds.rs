@@ -19,9 +19,8 @@ use anyhow::{Context as _, Result, ensure};
 use arc_swap::ArcSwap;
 use async_channel::Sender;
 use bytes::{Bytes, BytesMut};
-use common::time::{Instant, timeout, timeout_at};
+use common::time::{Instant, timeout_at};
 use futures::{Future, Stream};
-use rand::Rng;
 use rand::distr::{Alphanumeric, SampleString};
 use reblessive::TreeStack;
 use surrealdb_cnf::ConfigMap;
@@ -107,7 +106,6 @@ use crate::kvs::testing::{
 use crate::kvs::{
 	CHANGEFEED_GC_PASS_KEY_BUDGET, DatastoreError, Direction, NORMAL_BATCH_SIZE,
 	RECLAIM_BATCH_SIZE, RECLAIM_PASS_ENTRY_QUOTA, RECLAIM_PASS_KEY_BUDGET, TransactionFactory,
-	is_retryable_transaction_conflict,
 };
 use crate::lq::LiveQueryRouter;
 use crate::observe::ExecutionObserver;
@@ -154,6 +152,7 @@ enum ReclaimOutcome {
 	LeaseLost,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ShutdownNodeDeleteOutcome {
 	Archived,
@@ -223,6 +222,7 @@ where
 	}
 }
 
+#[cfg(test)]
 fn archive_node_for_shutdown(
 	timeout_duration: Duration,
 	result: Result<()>,

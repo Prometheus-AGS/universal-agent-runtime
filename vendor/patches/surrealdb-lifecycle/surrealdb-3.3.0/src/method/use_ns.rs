@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::future::IntoFuture;
 
 use crate::conn::ctx;
-use crate::method::{BoxFuture, OnceLockExt, UseDb};
+use crate::method::{BoxFuture, UseDb};
 use crate::{Connection, Result, Surreal};
 
 /// Returned by [`Surreal::use_ns`](crate::Surreal::use_ns), used to set the current namespace.

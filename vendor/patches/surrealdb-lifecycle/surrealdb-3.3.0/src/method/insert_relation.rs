@@ -4,7 +4,6 @@ use std::marker::PhantomData;
 
 use super::BoxFuture;
 use crate::conn::QueryRequest;
-use crate::method::OnceLockExt;
 use crate::types::{SurrealValue, Value};
 use crate::{Connection, Result, Surreal};
 

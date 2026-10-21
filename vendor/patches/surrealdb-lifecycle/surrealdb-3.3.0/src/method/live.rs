@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::future::IntoFuture;
 use std::marker::PhantomData;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use async_channel::Receiver;
@@ -16,7 +15,7 @@ pub(crate) use wasm_bindgen_futures::spawn_local as spawn;
 
 use crate::conn::{Router, ctx, ctx_txn};
 use crate::engine::any::Any;
-use crate::method::{BoxFuture, Live, OnceLockExt, Select};
+use crate::method::{BoxFuture, Live, Select};
 use crate::notification::Notification;
 use crate::opt::Resource;
 use crate::types::{

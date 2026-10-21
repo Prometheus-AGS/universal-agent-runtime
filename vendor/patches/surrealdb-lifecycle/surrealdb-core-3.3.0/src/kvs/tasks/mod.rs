@@ -4,7 +4,9 @@ use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use common::time::{Instant, MissedTickBehavior, sleep};
-use futures::{StreamExt, FutureExt};
+use futures::StreamExt;
+#[cfg(target_family = "wasm")]
+use futures::FutureExt;
 use surrealdb_datastore::triggers::CommitTriggers;
 use surrealdb_types::Error;
 #[cfg(not(target_family = "wasm"))]

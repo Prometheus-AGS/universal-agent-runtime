@@ -12,12 +12,14 @@ pub(crate) struct DriverScope {
     admission_closed: Mutex<bool>,
 }
 
+#[cfg(any(feature = "protocol-http", feature = "protocol-grpc"))]
 #[derive(Debug)]
 pub(crate) struct DriverScopeClosed;
 
 impl DriverScope {
     /// A read-only delivery pump may stop locally during client closure.
     /// Unary operations and durable mutations continue under their own leases.
+	#[cfg(any(feature = "protocol-http", feature = "protocol-grpc"))]
     #[cfg(not(target_family = "wasm"))]
     pub(crate) fn spawn_stream(&self, work: impl Future<Output = ()> + Send + 'static) {
         if self.try_spawn_stream(work).is_err() {
@@ -26,7 +28,8 @@ impl DriverScope {
         }
     }
 
-    #[cfg(not(target_family = "wasm"))]
+	#[cfg(any(feature = "protocol-http", feature = "protocol-grpc"))]
+	#[cfg(not(target_family = "wasm"))]
     pub(crate) fn try_spawn_stream(&self, work: impl Future<Output = ()> + Send + 'static) -> Result<(), DriverScopeClosed> {
         let closed = self.admission_closed.lock().unwrap_or_else(|error| error.into_inner());
         if *closed { return Err(DriverScopeClosed); }
@@ -40,7 +43,8 @@ impl DriverScope {
         Ok(())
     }
 
-    #[cfg(target_family = "wasm")]
+	#[cfg(any(feature = "protocol-http", feature = "protocol-grpc"))]
+	#[cfg(target_family = "wasm")]
     pub(crate) fn spawn_stream(&self, work: impl Future<Output = ()> + 'static) {
         if self.try_spawn_stream(work).is_err() {
             self.failures.lock().unwrap_or_else(|error| error.into_inner())
@@ -48,7 +52,8 @@ impl DriverScope {
         }
     }
 
-    #[cfg(target_family = "wasm")]
+	#[cfg(any(feature = "protocol-http", feature = "protocol-grpc"))]
+	#[cfg(target_family = "wasm")]
     pub(crate) fn try_spawn_stream(&self, work: impl Future<Output = ()> + 'static) -> Result<(), DriverScopeClosed> {
         let closed = self.admission_closed.lock().unwrap_or_else(|error| error.into_inner());
         if *closed { return Err(DriverScopeClosed); }

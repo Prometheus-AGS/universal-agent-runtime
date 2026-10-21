@@ -6,7 +6,6 @@
 
 use std::{
     collections::{BTreeMap, BTreeSet},
-    future::Future,
     pin::Pin,
     panic::AssertUnwindSafe,
     sync::{
@@ -394,6 +393,15 @@ pub struct ResourceScope {
 #[derive(Clone)]
 pub struct WeakResourceScope {
     inner: std::sync::Weak<ScopeInner>,
+}
+
+impl std::fmt::Debug for WeakResourceScope {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("WeakResourceScope")
+            .field("upgradable", &(self.inner.strong_count() > 0))
+            .finish()
+    }
 }
 
 impl WeakResourceScope {
@@ -918,11 +926,21 @@ pub struct OperationLease {
     resolved: bool,
 }
 
+impl std::fmt::Debug for OperationLease {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("OperationLease")
+            .field("id", &"***redacted***")
+            .field("resolved", &self.resolved)
+            .finish_non_exhaustive()
+    }
+}
+
 impl OperationLease {
     #[must_use]
     pub fn id(&self) -> &str { &self.id }
     /// Retain an unresolved durable outcome for the resource's final report.
-    pub fn unresolved(mut self, effect: impl Into<String>) {
+    pub fn unresolved(self, effect: impl Into<String>) {
         {
             let mut gate = self
                 .inner
@@ -1064,10 +1082,22 @@ pub struct RuntimeSupervisor {
     inner: Arc<SupervisorInner>,
 }
 
+impl std::fmt::Debug for RuntimeSupervisor {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("RuntimeSupervisor(..)")
+    }
+}
+
 /// A cloneable command and observation capability for a supervisor.
 #[derive(Clone)]
 pub struct RuntimeHandle {
     supervisor: RuntimeSupervisor,
+}
+
+impl std::fmt::Debug for RuntimeHandle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("RuntimeHandle(..)")
+    }
 }
 
 impl RuntimeSupervisor {
