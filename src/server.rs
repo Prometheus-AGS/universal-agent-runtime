@@ -1764,9 +1764,10 @@ async fn run_server_with_listener(
     )
     .await?;
     startup_checkpoint!("native skill registration");
+    let native_skill_count = native_skill_registry.len().await;
     info!(
         "Native skill registry initialized with {} skills",
-        native_skill_registry.len().await
+        native_skill_count
     );
     governance_mutation.activate_admission_tokens()?;
     let governance_boot_status = governance_status.snapshot();
@@ -1793,8 +1794,9 @@ async fn run_server_with_listener(
     );
     let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
         Ok(engine) => {
+            let policy_count = engine.policy_count().await;
             info!(
-                policy_count = engine.policy_count().await,
+                policy_count,
                 "Governance policy engine loaded"
             );
             Arc::new(engine)
