@@ -77,7 +77,14 @@ mod backend {
         purge(service: &MemoryService) -> u64;
         status(service: &MemoryService, owner: &str, id: &str) -> Option<serde_json::Value>;
         summarize(service: &MemoryService, owner: &str, sources: Vec<Memory>, summary: Memory) -> Option<Memory>;
+        next_expiry_due_at(service: &MemoryService) -> Option<chrono::DateTime<chrono::Utc>>;
     }
+}
+
+pub(super) async fn next_expiry_due_at(
+    service: &MemoryService,
+) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+    backend::next_expiry_due_at(service).await
 }
 
 impl MemoryService {

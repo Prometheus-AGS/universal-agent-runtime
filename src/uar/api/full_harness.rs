@@ -441,6 +441,7 @@ impl FullHarnessTaskAuthority {
         };
         let scope = authority.manager.lifecycle_scope();
         let cancellation = scope.cancellation_token();
+        let unresolved_task_id = task_id.clone();
         if scope.spawn("full-harness-receipt", async move {
             let mut first_snapshot = true;
             loop {
@@ -462,7 +463,7 @@ impl FullHarnessTaskAuthority {
                 }
             }
         }).is_err() {
-            scope.record_unresolved_effect(format!("full-harness-receipt:{task_id}"));
+            scope.record_unresolved_effect(format!("full-harness-receipt:{unresolved_task_id}"));
         }
     }
 

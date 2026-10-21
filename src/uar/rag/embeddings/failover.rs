@@ -545,8 +545,8 @@ impl LocalEmbeddingFailover {
             self.scope.clone(),
         )
         .await?;
-        match {
-            let state = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let publication = {
+            let mut state = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             if state.generation != expected_generation {
                 Err(EmbeddingError::InvalidInput(format!(
                     "stale embedding failover generation {expected_generation}; active generation is {}",
@@ -559,50 +559,35 @@ impl LocalEmbeddingFailover {
             } else if let Err(error) = Self::ensure_compatible(&self.fingerprint, &candidate, &state.backup) {
                 Err(error)
             } else {
-                Ok(())
+                state.primary = candidate.clone();
+                state.active = LocalEmbeddingMember::Primary;
+                state.generation = state.generation.saturating_add(1);
+                state.transition = EmbeddingFailoverTransition::Recovery;
+                state.last_error = None;
+                self.publish_locked(&state);
+                Ok(Self::status_from_state(&state, &self.fingerprint))
             }
-        } {
-            Ok(()) => (),
+        };
+        match publication {
+            Ok(status) => Ok(status),
             Err(error) => {
-                return match candidate.retire().await {
+                let candidate_cleanup = candidate.retire().await;
+                if let Err(cleanup) = &candidate_cleanup {
+                    self.record_cleanup_failure(
+                        "unpublished primary recovery candidate cleanup failed",
+                        cleanup,
+                    );
+                }
+                match candidate_cleanup {
                     Ok(()) => Err(error),
                     Err(cleanup) => Err(Self::with_cleanup_failure(
                         "unpublished primary recovery candidate was rejected",
                         error,
                         cleanup,
                     )),
-                };
+                }
             }
-        };
-        let mut state = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        if state.generation != expected_generation || state.active != LocalEmbeddingMember::Backup {
-            let error = EmbeddingError::InvalidInput(
-            "embedding failover state changed before recovery could publish the primary".to_string(),
-            );
-            drop(state);
-            let candidate_cleanup = candidate.retire().await;
-            if let Err(cleanup) = &candidate_cleanup {
-                self.record_cleanup_failure(
-                    "primary recovery candidate cleanup failed after a stale publish check",
-                    cleanup,
-                );
-            }
-            return match candidate_cleanup {
-                Ok(()) => Err(error),
-                Err(cleanup) => Err(Self::with_cleanup_failure(
-                    "primary recovery candidate could not be published",
-                    error,
-                    cleanup,
-                )),
-            };
         }
-        state.primary = candidate;
-        state.active = LocalEmbeddingMember::Primary;
-        state.generation = state.generation.saturating_add(1);
-        state.transition = EmbeddingFailoverTransition::Recovery;
-        state.last_error = None;
-        self.publish_locked(&state);
-        Ok(Self::status_from_state(&state, &self.fingerprint))
     }
 
     /// Finalize both members after the host scope has stopped new control and

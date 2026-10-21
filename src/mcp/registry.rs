@@ -2637,7 +2637,7 @@ impl McpRegistry {
                         .connections
                         .iter()
                         .filter(|(name, _)| server_allowed(name))
-                        .map(|(name, service)| (name.clone(), Arc::clone(service)))
+                        .map(|(name, service)| (name.clone(), service.clone()))
                         .collect(),
                     closed: bindings.closed.child_token(),
                 })

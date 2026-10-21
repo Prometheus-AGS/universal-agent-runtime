@@ -50,7 +50,7 @@ impl ScheduleController {
             .schedule_records()
             .await?
             .iter()
-            .try_fold(None, |next, record| {
+            .try_fold(None::<chrono::DateTime<Utc>>, |next, record| {
                 let candidate = calendar::next_due_after(record, now)?;
                 Ok(match (next, candidate) {
                     (Some(current), Some(candidate)) => Some(current.min(candidate)),

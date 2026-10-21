@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::Deserialize;
 use sqlx::{PgPool, postgres::{PgListener, PgPoolOptions}};
 use tokio::sync::broadcast;

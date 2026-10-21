@@ -4055,22 +4055,12 @@ impl RunManager {
             .as_ref()
             .map_or(artifact, |bindings| bindings.policy.artifact().clone());
         // Capture committed settings once for this turn, including team members.
-        let (turn_resilience_policy, _) = match crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
-                &self.resilience_policy,
-                self.settings_manager.as_deref(),
-                &artifact.id,
-            ).await {
-            Ok(resolved) => resolved,
-            Err(_) => {
-                // Unavailable settings fall back to the configured policy
-                // (the same default used when no settings manager exists).
-                tracing::warn!("resilience settings unavailable at run admission; using configured policy");
-                (
-                    self.resilience_policy.clone(),
-                    crate::uar::settings::resilience_policy::PolicySource::Global,
-                )
-            }
-        };
+        let (turn_resilience_policy, _) = crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
+            &self.resilience_policy,
+            self.settings_manager.as_deref(),
+            &artifact.id,
+        )
+        .await;
         let sandbox = match &inherited {
             Some(bindings) => Ok(bindings.sandbox.clone()),
             None => self
@@ -4398,31 +4388,13 @@ impl RunManager {
 
         let (presentation_snapshot, presentation_warnings) = match &inherited {
             Some(bindings) => (bindings.presentations.narrow(&effective_policy), Vec::new()),
-            None => {
-                let fallback_negotiation = presentation_negotiation.clone();
-                match super::presentations::RunPresentationSnapshot::capture(
-                        self.persistence.as_ref(),
-                        verified_owner.clone(),
-                        &effective_policy,
-                        presentation_negotiation,
-                    ).await
-                {
-                    Ok(captured) => captured,
-                    Err(_) => {
-                        // An authoritative catalog failure admits the explicit
-                        // no-presentation fallback; elapsed time never chooses
-                        // that outcome.
-                        tracing::warn!("presentation catalog unavailable at run admission; continuing without presentations");
-                        super::presentations::RunPresentationSnapshot::capture(
-                            None,
-                            verified_owner.clone(),
-                            &effective_policy,
-                            fallback_negotiation,
-                        )
-                        .await
-                    }
-                }
-            }
+            None => super::presentations::RunPresentationSnapshot::capture(
+                self.persistence.as_ref(),
+                verified_owner.clone(),
+                &effective_policy,
+                presentation_negotiation,
+            )
+            .await,
         };
         let presentation_snapshot = Arc::new(presentation_snapshot);
         emitter.presentations = Some(Arc::clone(&presentation_snapshot));

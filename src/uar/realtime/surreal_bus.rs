@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Result;
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use surrealdb::types::Action;
 use surrealdb::{Surreal, engine::any::Any};
 use tokio::sync::broadcast;
@@ -90,6 +92,37 @@ enum SubscriptionSource {
     Memory(crate::uar::memory::service::MemorySubscriptionClient),
 }
 
+/// Subscription streams have distinct closure contracts. Persistence owns an
+/// SDK stream directly; memory owns a scope lease until its wrapper receives
+/// the SDK's close acknowledgement.
+enum SubscriptionStream {
+    Persistence(surrealdb::method::Stream<Vec<surrealdb::types::Value>>),
+    Memory(crate::uar::memory::service::MemoryLiveStream),
+}
+
+impl SubscriptionStream {
+    async fn close(&mut self) -> Result<()> {
+        match self {
+            Self::Persistence(stream) => stream.close().await.map_err(anyhow::Error::from),
+            Self::Memory(stream) => stream.close().await,
+        }
+    }
+}
+
+impl Stream for SubscriptionStream {
+    type Item = <surrealdb::method::Stream<Vec<surrealdb::types::Value>> as Stream>::Item;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        context: &mut Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        match self.get_mut() {
+            Self::Persistence(stream) => Pin::new(stream).poll_next(context),
+            Self::Memory(stream) => Pin::new(stream).poll_next(context),
+        }
+    }
+}
+
 impl SubscriptionSource {
     fn transport_events(&self) -> Result<tokio::sync::watch::Receiver<surrealdb::TransportState>> {
         match self {
@@ -130,9 +163,16 @@ async fn supervise_topic(source: SubscriptionSource, topic: EntityTopic,
                 SubscriptionSource::Persistence(db) => {
                     db.query(format!("DEFINE TABLE IF NOT EXISTS {} SCHEMALESS", topic.table()))
                         .await?.check()?;
-                    db.select::<Vec<surrealdb::types::Value>>(topic.table()).live().await.map_err(anyhow::Error::from)
+                    db.select::<Vec<surrealdb::types::Value>>(topic.table())
+                        .live()
+                        .await
+                        .map(SubscriptionStream::Persistence)
+                        .map_err(anyhow::Error::from)
                 }
-                SubscriptionSource::Memory(client) => client.subscribe_memory().await,
+                SubscriptionSource::Memory(client) => client
+                    .subscribe_memory()
+                    .await
+                    .map(SubscriptionStream::Memory),
             }
         }.await;
         match attempt {

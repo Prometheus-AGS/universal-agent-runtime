@@ -87,13 +87,13 @@ pub struct MemorySubscriptionClient {
 /// a retained runtime task; it never releases the parent lease merely because
 /// the caller stopped observing notifications.
 pub struct MemoryLiveStream {
-    stream: Option<surrealdb::method::Stream<surrealdb::types::Value>>,
+    stream: Option<surrealdb::method::Stream<Vec<surrealdb::types::Value>>>,
     lease: Option<OperationLease>,
 }
 
 struct PendingMemoryLiveClose {
     operation_id: String,
-    stream: Option<surrealdb::method::Stream<surrealdb::types::Value>>,
+    stream: Option<surrealdb::method::Stream<Vec<surrealdb::types::Value>>>,
     lease: Option<OperationLease>,
     /// A canceled caller transfers closing work once. A retained worker that
     /// is itself aborted records the obligation instead of retrying teardown.
@@ -102,7 +102,7 @@ struct PendingMemoryLiveClose {
 
 impl PendingMemoryLiveClose {
     fn new(
-        stream: surrealdb::method::Stream<surrealdb::types::Value>,
+        stream: surrealdb::method::Stream<Vec<surrealdb::types::Value>>,
         lease: OperationLease,
     ) -> Self {
         Self {
@@ -215,7 +215,7 @@ impl Drop for PendingMemoryLiveClose {
 
 impl MemoryLiveStream {
     fn new(
-        stream: surrealdb::method::Stream<surrealdb::types::Value>,
+        stream: surrealdb::method::Stream<Vec<surrealdb::types::Value>>,
         lease: OperationLease,
     ) -> Self {
         Self {
@@ -240,7 +240,7 @@ impl MemoryLiveStream {
 }
 
 impl Stream for MemoryLiveStream {
-    type Item = <surrealdb::method::Stream<surrealdb::types::Value> as Stream>::Item;
+    type Item = <surrealdb::method::Stream<Vec<surrealdb::types::Value>> as Stream>::Item;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -1036,7 +1036,7 @@ impl MemoryService {
     pub(crate) async fn next_expiry_due_at(&self) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
         self.ensure_scope_open()?;
         let _operation = self.admit_operation("next_expiry_due_at")?;
-        controls_store::next_expiry_due_at(self).await
+        super::controls::next_expiry_due_at(self).await
     }
 
     /// Expire stale memories (those past their `valid_until` TTL). Returns expired count.

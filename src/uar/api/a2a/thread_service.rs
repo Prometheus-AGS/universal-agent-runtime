@@ -1180,9 +1180,10 @@ impl A2AThreadService {
         let observer_manager = Arc::clone(&state.manager);
         let scope = observer_manager.lifecycle_scope();
         let events = observer_manager.subscribe(&observed.run_id).await;
+        let observed_run_id = observed.run_id.clone();
         let cancellation = scope.cancellation_token();
         if events.is_none() {
-            scope.record_unresolved_effect(format!("a2a-continuation-projection:{}", observed.run_id));
+            scope.record_unresolved_effect(format!("a2a-continuation-projection:{observed_run_id}"));
         } else if scope.spawn("a2a-continuation-projection", async move {
             let mut events = events.expect("checked above");
             let mut committed_work = observer_manager.subscribe_committed_work();
@@ -1231,7 +1232,7 @@ impl A2AThreadService {
                 }
             }
         }).is_err() {
-            scope.record_unresolved_effect(format!("a2a-continuation-projection:{}", observed.run_id));
+            scope.record_unresolved_effect(format!("a2a-continuation-projection:{observed_run_id}"));
         }
         let resumed = if let Some(approval) = approval {
             crate::uar::api::routes::resolve_host_approval(Arc::clone(state), user.clone(), Some(capture),

@@ -23,7 +23,7 @@ use super::{
 };
 
 impl AgentInstanceController {
-    fn spawn_owned_task(
+    pub(super) fn spawn_owned_task(
         &self,
         task_name: &'static str,
         job: Pin<Box<dyn Future<Output = ()> + Send>>,
