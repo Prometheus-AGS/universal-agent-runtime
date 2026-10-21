@@ -76,3 +76,10 @@ Renewed source inventory at waypoint3175 preceded run https://github.com/Prometh
 ## Completed requested image delivery
 
 Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053 completed success at immutable production source `32cb3bcfc9691212ec0b0359ce22474968bc6850`. ARM64 and AMD64 jobs plus manifest job119019008132 succeeded. The workflow inspection reported combined `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8` with linux/arm64 and linux/amd64, published under tag `sha-32cb3bcfc9691212ec0b0359ce22474968bc6850`. No separate local inspection/pull/smoke test ran. Both draft PRs remain draft; native Boss candidate construction, public/customer packaging, all routine verification and runtime acceptance remain CLOSED. The receipt and renewed inventory preserve every outstanding evidence obligation.
+
+
+## Approved embedding repair publication — 2026-10-21
+
+Completed9.6/9.7 source repairs and existing embedding PASS receipts published as d35234ba132988e5d64b1e19aea688c7fa978690 to existing PR418 branch. Prior operator source-only hook exception used for scoped commit; no stored hook settings or new verification. Preserved unrelated seed-tool clone/newline edits outside commit. Passing saved worktree identity remains3189/plan82 digest3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a, not clean-checkout proof for published commit. Image/Boss pin remain32cb3bcf. Budgeted Pending shutdown API still awaits operator decision; no source work remains in current embedding repair cohort.
+
+Both scoped commit and push exited0. The existing branch advanced aea2f0f34..d35234ba1. No new image or candidate was built; source publication does not reopen verification. See `lifecycle-approved-embedding-repair-publication-2026-10-21.md` for exact commands, scope and evidence limits.

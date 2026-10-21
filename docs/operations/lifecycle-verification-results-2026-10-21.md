@@ -200,8 +200,15 @@ acknowledgement. It does not exercise immediate engine reopen, every watcher,
 whole-server teardown, concurrent credential migration, sidecar security,
 Windows, process-restart hydration or the whole frozen embedding contract.
 
-The fixture and previously integrated source repairs remain uncommitted in the
-current worktree; the published32cb3bcf image/pin excludes them. No new Docker
+At execution, the fixture and integrated source repairs were uncommitted in the
+worktree; the published32cb3bcf image/pin excludes them. No new Docker
 run, native candidate, package or other gate was started. The same approved
 embedding command is now terminal; no verification process remains owned by
 this execution. All other commands stay held under the latest instruction.
+
+Publication addendum: source d35234ba132988e5d64b1e19aea688c7fa978690 was
+subsequently committed and pushed to existing draft PR418 under the prior
+source-only authorization. No additional verification ran. The exact saved
+worktree, including pre-existing seed-tool edits excluded from that scoped
+commit, remains the identity of this passing result. The image and Boss pin
+remain32cb3bcf. See `lifecycle-approved-embedding-repair-publication-2026-10-21.md`.
