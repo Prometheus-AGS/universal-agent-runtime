@@ -1,5 +1,12 @@
 # Lifecycle plan implementation and evidence checklist
 
+Latest operator closeout, 2026-10-21: testing was explicitly stopped. The new embedding attempt was canceled during compilation (Cargo SIGTERM/-15, wrapper143); no new success or test failure is claimed. Other targets never started. All further verification is CLOSED. Remaining work is tracked in https://github.com/Prometheus-AGS/universal-agent-runtime/issues/421. Earlier proposal/inventory text below records its historical state, not current authorization.
+
+Current scope correction, 2026-10-21: the operator directed UAR-only delivery.
+Boss entries below are historical and are not prerequisites for this packet.
+Current scope and commands are in lifecycle-uar-approval-inventory-2026-10-21.md
+and lifecycle-verification-command-proposal.md. Verification remains CLOSED.
+
 Execute phase: `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
 Source baseline: published budgeted API0f926ed6deee26c353278640e3d7c1f19982bc55;
 prior embedding repair d35234ba132988e5d64b1e19aea688c7fa978690;

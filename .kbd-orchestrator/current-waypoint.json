@@ -2,11 +2,11 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3197,
-  "derivedRevision": 3197,
+  "sourceRevision": 3200,
+  "derivedRevision": 3200,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 167,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 170,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -44,10 +44,10 @@
   "completionMetric": "implementation",
   "implementationCompleted": 138,
   "implementationTotal": 153,
-  "planRevision": 87,
-  "revision": 3197,
-  "exactNextCommand": "Budgeted Pending implementation and source publication complete; verification remains CLOSED. Await applicable explicit instruction before existing exact commands can run again; do not add tests/gates, repeat passing embedding or dispatch image/package builds. Keep source/image/Boss binding, full frozen embedding conditions, preparation/review/acceptance/reflection obligations open. See updated checklist and budget publication receipt.",
+  "planRevision": 90,
+  "revision": 3200,
+  "exactNextCommand": "STOP: all verification CLOSED by operator. Publish scoped UAR source/evidence records and finalize existing PR418 ready for review; carry all unverified lifecycle/release obligations in GitHub follow-up issue. Do not run additional tests/checks/builds or full release runner. No Boss work. No phase acceptance claimed.",
   "nextChange": "uar-outstanding-issues-v1-1-1",
   "nextTask": "4.1",
-  "updatedAt": "2026-10-21T09:37:50.253895Z"
+  "updatedAt": "2026-10-21T10:09:37.536876Z"
 }

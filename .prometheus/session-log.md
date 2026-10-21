@@ -6257,3 +6257,11 @@ No compiler, tests, formatter, lint, builds, policy validator, review gate or ne
 Approved budgeted shutdown API9.8 source-complete and published as0f926ed6deee26c353278640e3d7c1f19982bc55 in existing draft PR418. Exact saved-source boundary3196/plan86 digest251e9c10ee2a67d3f18164aeca6710a3136d46d2516e383da85ebd8a495ed0a6. Runtime/embedded interfaces, UUID retained owner, explicit Pending inventory, completion recheck and docs/spec handoffs complete. No tests or verification ran; no new gates, deps or wire changes. Earlier embedding pass predates this edit. Image/Boss pin unchanged32cb3bcf; uncooperative work/executor lifetime and missing execution evidence remain limits.
 
 Budgeted Pending implementation and source publication complete; verification remains CLOSED. Await applicable explicit instruction before existing exact commands can run again; do not add tests/gates, repeat passing embedding or dispatch image/package builds. Keep source/image/Boss binding, full frozen embedding conditions, preparation/review/acceptance/reflection obligations open. See updated checklist and budget publication receipt.
+
+## 2026-10-21 — UAR-only renewal; verification CLOSED
+
+Operator excluded the Boss repository from the current scope. Its pin and packaging are not UAR gate prerequisites. Renewed UAR source inventory and existing three local command proposal at waypoint3198/plan88; no code/tests/gates added or verification executed. Source handoffs complete; release preparation/review/acceptance/reflection and new budget API execution evidence remain open. Previous embedding pass and image predate current source.
+
+## 2026-10-21 — Operator stops testing and requests publication
+
+Operator revoked further verification, requested commit/push and PR418 ready for merge. Stopped owned Cargo/compiler work with SIGTERM: Cargo-15/wrapper143, no new test result. Other two targets not started. Follow-up issue421 captures all remaining gaps. KBD3200/plan90 preserves pending acceptance; verification CLOSED. Source unchanged; scoped documentation publication uses earlier authorized hook exception, no hook checks run.

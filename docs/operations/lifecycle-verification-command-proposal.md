@@ -1,131 +1,114 @@
-# Lifecycle command proposal — verification CLOSED
+# UAR lifecycle command proposal — verification CLOSED
 
-Execution addendum2026-10-21: the operator approved ready commands, then narrowed
-the active repair continuation to the same embedding command only. Model
-preparation passed; the embedding command passed after two targeted repairs.
-Actual outputs and limits are in `lifecycle-verification-results-2026-10-21.md`.
-All other commands remain held. The original proposal below records its
-prerequisites and exact arguments; it is not new authorization.
+Latest operator closeout, 2026-10-21: testing was explicitly stopped. The new embedding attempt was canceled during compilation (Cargo SIGTERM/-15, wrapper143); no new success or test failure is claimed. Other targets never started. All further verification is CLOSED. Remaining work is tracked in https://github.com/Prometheus-AGS/universal-agent-runtime/issues/421. Earlier proposal/inventory text below records its historical state, not current authorization.
 
-Budgeted shutdown addendum2026-10-21: operator-approved task9.8 adds new
-production source after that passing embedding run. This approval covers
-implementation only. Verification is CLOSED for the new bytes; no earlier pass
-certifies them, no passing command is repeated, and no new test or command is
-added to this proposal. All exact commands below remain held until a fresh
-applicable operator instruction and their prerequisites are satisfied.
+Renewed 2026-10-21 for UAR only. Boss pins, launchers, builds and packaging
+are outside this packet and are not UAR prerequisites. This replaces the earlier
+proposal; historical results remain in their existing receipts.
 
-The verification and native-preparation commands below have not run. The final section separately records the approved Docker delivery command, which completed successfully at `32cb3bcfc9691212ec0b0359ce22474968bc6850` for both Linux architectures. It published `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`. That narrow delivery exception does not authorize any command below. Run only commands the operator explicitly approves, serially, after reconciliation of the full phase and exact prerequisites. Approval for one command grants no other command or hidden preflight.
+Execute phase: `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
+Canonical waypoint3198 / plan88. See
+`lifecycle-uar-approval-inventory-2026-10-21.md` and its saved-source JSON.
+All recorded UAR production implementation rows are complete. Verification and
+release evidence are incomplete. Presenting these commands authorizes none.
 
-## Local embedding assets and actual inference
+## Ready for approval: three existing local UAR integration commands
 
-Working directory: `/Volumes/T7/Projects/prometheus/universal-agent-runtime`.
-The preparation command downloads only the five public, immutable MiniLM
-assets declared in the fixture lock. It checks byte lengths and published
-Git-blob/SHA identities, requires different primary weights, and writes a new
-external directory. It makes no hosted inference request and reads no personal
-configuration. It is a separately proposed preparation/validation command,
-not work already executed under the closed gate.
+Run only explicitly approved commands, serially in this order, from
+`/Volumes/T7/Projects/prometheus/universal-agent-runtime`.
+Required process environment: `PATH=/Users/gqadonis/.cargo/bin:$PATH`,
+the previously recorded Cargo path repair. There is no separate tool/version,
+source-identity, readiness, Docker or other preflight command in this packet.
 
-```sh
-python3 tests/fixtures/local_embedding_lifecycle/prepare_models.py --primary-dir /Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models --incompatible-dir /Volumes/T7/uar-local-embedding-minilm-1110a243fdf4
-```
-
-The real-model target uses the repository's primary assets and a second local
-engine over compatible assets. The test copies the primary into its owned
-temporary fixture directory. It requires actual incompatible-model inference;
-missing assets cannot become a passing skip.
+### 1. Real local embedding failover
 
 ```sh
 UAR_EMBEDDING_LIFECYCLE_PRIMARY_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models UAR_EMBEDDING_LIFECYCLE_BACKUP_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIR=/Volumes/T7/uar-local-embedding-minilm-1110a243fdf4 UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_MODEL=sentence-transformers/all-MiniLM-L6-v2 UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIMENSION=384 cargo test --locked --no-default-features --features server-full --test embedding_lifecycle_failover -- --test-threads=1
 ```
 
-This target covers live generations 1→2→3→4→5, durable ingestion and query
-continuity, equal-dimension incompatible-model refusal, state preservation and
-parent-owned cleanup. It does not by itself certify process-restart settings
-hydration, authenticated settings mutation, the separate MemoryService
-embedding provider, or the entire frozen child contract. Keep those evidence
-requirements intact.
+The existing immutable MiniLM preparation passed. Do not rerun its new-directory
+preparation command. This target previously passed before the budget API edit.
+It exercises real local inference, generations1→2→3→4→5, durable principal-bound
+ingestion/query, a distinct equal-dimension model, incompatible-space refusal,
+state preservation and fixture cleanup. It cannot pass by skipping absent assets.
 
-## Resource ownership and sidecar integration
-
-Same UAR working directory. These are separate proposed production-path
-integration targets; neither substitutes for complete release acceptance.
+### 2. Owned resource lifecycle
 
 ```sh
 cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend,test-probes --test lifecycle_owned_resources -- --test-threads=1
 ```
 
+Five existing cases cover retained blocking work after waiter cancellation,
+shared unbounded supervisor shutdown after canceled/concurrent waiters,
+dependency ordering plus owned-engine close/reopen, borrowed-client survival,
+and retained close failure.
+
+### 3. Sidecar launch and security
+
 ```sh
 cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend,test-probes --test sidecar_launch_security -- --test-threads=1
 ```
 
-Retain actual cleanup reports, child exits and per-case sanitized failure
-receipts. No additional polling, lock-probe loop or elapsed-time success test
-is implied. Native macOS execution does not certify Windows overlapped pipes,
-WASM, every remote transport or a physical engine-close fault.
+Uses real UAR binaries and parent-owned hermetic fixtures, private HOME/work/data/
+logs, loopback sockets and a local LLM stub; no hosted credential is required by
+source. Cargo supplies the sidecar, main and environment-probe binaries.
+macOS observations require lsof and Unix standalone stop uses /bin/kill.
+Linux branches use /proc; Windows branches use PowerShell and named pipes.
+Native execution certifies only that host's branches.
 
-## Fresh Boss payload and local customer package
+## Prerequisite and coverage limits
 
-Prerequisite: an actual UAR source commit is published and the Boss schema-2
-pin names that commit. The existing old pin is not sufficient. This source prerequisite now exists: Boss pins `32cb3bcfc9691212ec0b0359ce22474968bc6850`.
-The producer refuses a selected commit whose producer bytes do not match.
-No candidate artifact exists merely because its source pin is now recorded.
+Ready means existing source/receipts reveal no unresolved design or foreign-repo
+prerequisite. It is not a fresh environment-health claim: no availability probes
+were run. All targets require the toolchain and writable temporary storage;
+embedding requires the recorded local model assets and native ONNX execution;
+sidecar requires process/socket permissions and platform observation tools.
+An unavailable prerequisite must be reported as such, never converted to a pass.
+No extra preflight is implied.
 
-From `/Volumes/T7/Projects/prometheus/universal-agent-runtime`, on native Apple
-Silicon, propose this exact build command, using the actual pinned source:
+These three targets do not directly call `shutdown_with_budget`. They cannot
+establish budget expiry/acknowledgement races, repeated shutdown IDs,
+`SnapshotPending`, post-budget completion, or the embedded budget wrapper.
+Existing unbounded shutdown reaches the shared retained finalization path.
+No new test or gate is added.
 
-```sh
-node scripts/build-boss-candidate.mjs 32cb3bcfc9691212ec0b0359ce22474968bc6850 /Volumes/T7/uar-boss-lifecycle-candidate-20261021-01
-```
+They also do not establish the full frozen embedding contract, process-restart
+settings hydration, authenticated settings mutations, separate MemoryService
+embedding behavior, full-server watcher teardown, all database transports or
+migration lost-commit outcomes. The historical503 body and individual c9
+sidecar traces remain missing.
 
-The output directory must be new. The command exports committed Git objects
-and builds with a fresh target directory. It invokes the exact Cargo build
-documented in `lifecycle-candidate-payload.md`; that nested build is part of
-this proposed command, not a separately granted preflight.
+Retain actual exits, sanitized per-case errors and cleanup outcomes. Stop on
+failure. Any implementation repair closes verification again and requires a
+renewed inventory and instruction. No earlier pass certifies later source.
 
-From `/Volumes/T7/Projects/prometheus/the-boss`, propose:
-
-```sh
-THE_BOSS_LOCAL_UAR_SOURCE_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime THE_BOSS_LOCAL_UAR_CANDIDATE_RECORD=/Volumes/T7/uar-boss-lifecycle-candidate-20261021-01/uar-sidecar-darwin-arm64.json pnpm build:mac:arm64:local
-```
-
-This validates and packages the explicit local candidate. The required public
-customer build remains a separate gate:
-
-```sh
-pnpm build:mac:arm64
-```
-
-That public command forces public payload selection and cannot certify this
-new source until a public payload is actually bound to it. Do not substitute a
-downloaded old sidecar, fabricate an artifact receipt, or relabel other
-platforms. Windows needs its own exact command packet and real execution.
-
-## Full local release acceptance
-
-From the UAR working directory, the planned runner command remains:
+## Not ready: existing full release acceptance command
 
 ```sh
 python3 scripts/release/uar_1_1_1_acceptance.py --manifest /Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-local.json
 ```
 
-The manifest is not ready for these source bytes. Fresh actual image identity,
-qualified same-image supervisor/guest preparation and fixture inventory must
-be bound through separately authorized exact preparation commands first.
-Independent completed-artifact review is also pending. No guessed preflight,
-old receipt, unit-only pass or source inventory satisfies those prerequisites.
-The historical 503 body and individual sidecar traces remain missing.
+Keep closed. The manifest lacks current-source image binding and fresh qualified
+same-image supervisor/guest and fixture preparation. Independent completed-artifact
+review is pending. No preparation commands are invented here. Boss is not a
+prerequisite. No existing exact Windows packet is ready in this proposal.
 
-## Source publication and image delivery
-
-Source publication was requested by the operator. The operator explicitly approved source-only hook exceptions and the
-requested deployment build. Scoped source commits and draft PRs are published;
-`lifecycle-publication-approval.md` records the exact narrow authorization.
-The first two invocations failed on both architectures; their bounded source repairs and renewed Boss pins are recorded. The third invocation completed success: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, immutable source `32cb3bcfc9691212ec0b0359ce22474968bc6850`. Both Linux images and the combined index were published. Routine verification remains CLOSED:
+## Separate existing Docker delivery command — held for approval
 
 ```sh
 /opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation
 ```
 
-This is the requested Docker delivery path, not general verification. The actual combined digest is `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`, recorded from the existing workflow inspection. Its published tag is `sha-32cb3bcfc9691212ec0b0359ce22474968bc6850`. Dispatch alone was never used as publication evidence. No local
-Docker build or routine GitHub Actions test is included.
+This existing deployment command can be approved separately; it is not one of
+the three local verification commands. No dispatch occurs now. It selects the
+branch at dispatch; any later receipt must record the actual selected source
+and immutable image. Dispatch alone is not success.
+
+Earlier successful run39532243053 built source
+`32cb3bcfc9691212ec0b0359ce22474968bc6850` and published
+`ghcr.io/prometheus-ags/universal-agent-runtime@sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`.
+It predates published embedding repair d35234ba and budget API0f926ed6.
+It remains an older usable image, not evidence for current source.
+
+No tests, command flags, gates, workflows, lint/typecheck commands,
+source-identity checks or hidden preflights have been added. Verification CLOSED.

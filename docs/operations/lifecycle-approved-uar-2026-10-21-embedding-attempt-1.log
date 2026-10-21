@@ -1,0 +1,10 @@
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs:12:34
+   |
+12 | use crate::{Connect, Connection, OnceLockExt, SessionClone, Surreal};
+   |                                  ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `surrealdb` (lib) generated 1 warning
+   Compiling universal-agent-runtime v1.1.1 (/Volumes/T7/Projects/prometheus/universal-agent-runtime)
