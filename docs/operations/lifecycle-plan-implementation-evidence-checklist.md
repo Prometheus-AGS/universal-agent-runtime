@@ -1,13 +1,19 @@
 # Lifecycle plan implementation and evidence checklist
 
 Execute phase: `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
-Source baseline: published repair d35234ba132988e5d64b1e19aea688c7fa978690;
+Source baseline: published budgeted API0f926ed6deee26c353278640e3d7c1f19982bc55;
+prior embedding repair d35234ba132988e5d64b1e19aea688c7fa978690;
 published image source32cb3bcfc9691212ec0b0359ce22474968bc6850 and
 Boss a609869079bf6d51af196944965e6f86ee6c0758. Execution uses the saved repair
 inventories at waypoint3184 / plan80 and principal repair3189 / plan82.
 The latter records saved digest3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a.
 This checklist is maintained from source
 and existing receipts. It is not a new verification gate.
+
+Task9.8 source completion is recorded at3196/plan86, inventory
+`lifecycle-budget-source-inventory-2026-10-21.json`, digest
+`251e9c10ee2a67d3f18164aeca6710a3136d46d2516e383da85ebd8a495ed0a6`.
+It is published but unverified; older command receipts do not certify it.
 
 Status meanings: **Implemented** means source and writer handoff exist;
 **Verified** names actual command evidence and its narrow coverage;
@@ -42,7 +48,7 @@ not certify9.8. No passing command is rerun.
 | WP8: Windows cancellable inherited input and launcher | `src/bin/uar-sidecar/{inherited_input,control}.rs`; Boss `src/main/ai/runtime/uar/UarSidecarService.ts`; Windows branch in sidecar process support | Implemented; operator chose named pipe and launcher change; trust/Boss handoffs. Windows acceptance BLOCKED: no approved exact Windows packet. |
 | 6.2: local-only compatible embedding live failover, retained inference/control, recovery and native engine release | `src/config.rs`; `src/uar/api/settings.rs`; `src/uar/rag/embeddings/{fastembed,failover,swappable}.rs`; `src/server.rs` | Implemented. VERIFIED direct-controller integration path in attempt3: real inference, generations1→2→3→4→5, durable ingestion/query and successful fixture closure. Whole-server wiring, HTTP controls and separate MemoryService provider remain unverified. |
 | 8.2: real incompatible equal-dimension model fixture and durable generation continuity | `tests/embedding_lifecycle_failover.rs`; `tests/fixtures/local_embedding_lifecycle/` | VERIFIED scoped target: asset preparation exit0; embedding attempt3 exit0,1 passed/0 failed/0 ignored in4.35s. Actual incompatible384-dimensional inference,409 refusal, preserved binding/documents and compatible re-query passed. Broader frozen contract remains unfinished. |
-| 8.3 / 8.4 / 8.5: immutable Boss candidate binding and refreshed source pin | `scripts/build-boss-candidate.mjs`; Boss `scripts/{uar-candidate-binding,local-uar-payload,prepare-local-uar-payload}.cjs`; Boss `build/local-uar-source.json` | Implemented and published for32cb3bcf. Repair d35234ba is now published; Boss pin still predates it. Matching candidate/package remain BLOCKED under current scope; do not relabel an old candidate. |
+| 8.3 / 8.4 / 8.5: immutable Boss candidate binding and refreshed source pin | `scripts/build-boss-candidate.mjs`; Boss `scripts/{uar-candidate-binding,local-uar-payload,prepare-local-uar-payload}.cjs`; Boss `build/local-uar-source.json` | Implemented and published for32cb3bcf. Repair d35234ba and budgeted API0f926ed6 are published; Boss pin predates both. Matching candidate/package remain BLOCKED under current scope; do not relabel an old candidate. |
 | 9.3: scoped commit/push, draft PRs and usable Docker delivery | Draft UAR PR418; Boss PR74; `lifecycle-image-delivery-39532243053.md` | VERIFIED delivery at32cb3bcf: Linux AMD64/ARM64 compilation/publication succeeded; combined digest8e6fb6f4…bc1fc8. Image excludes published d35234ba repairs and current9.8 work; it certifies no runtime acceptance. No repeat dispatch. |
 | 9.4 / 9.5: delivery compiler and startup Send repairs | Delivery runtime/state/MCP/startup repair handoffs | Implemented; successful later Docker delivery verifies release compilation of that source on both Linux architectures. Native/runtime contracts remain unverified. |
 | 9.6: embedding digest/compiler-diagnostic source repairs | `tests/embedding_lifecycle_failover.rs`; exact paths in approved-gate state/runtime/lead handoffs | Implemented at3184 / plan80. VERIFIED compilation in attempts2/3; digest failure resolved. One nonfatal SDK import warning remains; no zero-warning or feature-matrix claim. |
@@ -88,7 +94,7 @@ inventories; historical handoffs retain the verification state at authoring.
   exists; no new test or verification gate was authorized. The host must keep
   its executor alive, and uncooperative work can remain pending indefinitely.
 - **Exact native source binding — BLOCKED.** The approved candidate command
-  names32cb3bcf; repair source d35234ba is now published, but Boss still pins the
+  names32cb3bcf; repair d35234ba and API0f926ed6 are published, but Boss still pins the
   old source. Publishing/rebinding repaired source does not silently authorize
   a changed build command. No old candidate may be called repaired-source proof.
 - **Full release evidence — UNFINISHED.** Canonical child4.1 same-image
@@ -131,3 +137,9 @@ verification accompanied publication. The passing saved worktree includes
 pre-existing seed-tool changes excluded from the scoped commit, so it is not
 claimed as clean-checkout proof for that commit. See
 `lifecycle-approved-embedding-repair-publication-2026-10-21.md`.
+
+Budgeted API publication:0f926ed6 is pushed to PR418. Exact source-only commit
+and push receipts are in `lifecycle-budget-publication-2026-10-21.md`. No new
+verification ran; its task/source completion does not complete whole-phase
+acceptance. The former shutdown-budget design blocker is resolved in source;
+the current limitation is missing authorized execution evidence.

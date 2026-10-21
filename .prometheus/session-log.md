@@ -6250,3 +6250,10 @@ Operator explicitly approved budgeted Pending reporting with retained cleanup. A
 Task9.8 source-complete: RuntimeSupervisor/RuntimeHandle shutdown_with_budget(Duration) returns typed Pending/Completed with per-supervisor UUID; one owner registered before any registry-lock await; expired/canceled waiters do not abort owner. Explicit SnapshotPending or current unreleased scope snapshots; failed/unresolved scopes retained. Embedded wrapper cancels existing root before request. Corrected source identity collision and missing helper by inspection. Runtime/state/lead handoffs collected; no new tests, deps, wire changes or verification. Existing embedding PASS predates this edit; not acceptance for9.8.
 
 No compiler, tests, formatter, lint, builds, policy validator, review gate or new verification command ran. Executor lifetime and uncooperative work remain explicit limits.
+
+
+## 2026-10-21 — budgeted shutdown API source published
+
+Approved budgeted shutdown API9.8 source-complete and published as0f926ed6deee26c353278640e3d7c1f19982bc55 in existing draft PR418. Exact saved-source boundary3196/plan86 digest251e9c10ee2a67d3f18164aeca6710a3136d46d2516e383da85ebd8a495ed0a6. Runtime/embedded interfaces, UUID retained owner, explicit Pending inventory, completion recheck and docs/spec handoffs complete. No tests or verification ran; no new gates, deps or wire changes. Earlier embedding pass predates this edit. Image/Boss pin unchanged32cb3bcf; uncooperative work/executor lifetime and missing execution evidence remain limits.
+
+Budgeted Pending implementation and source publication complete; verification remains CLOSED. Await applicable explicit instruction before existing exact commands can run again; do not add tests/gates, repeat passing embedding or dispatch image/package builds. Keep source/image/Boss binding, full frozen embedding conditions, preparation/review/acceptance/reflection obligations open. See updated checklist and budget publication receipt.

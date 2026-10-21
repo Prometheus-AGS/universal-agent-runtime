@@ -83,3 +83,10 @@ Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532
 Completed9.6/9.7 source repairs and existing embedding PASS receipts published as d35234ba132988e5d64b1e19aea688c7fa978690 to existing PR418 branch. Prior operator source-only hook exception used for scoped commit; no stored hook settings or new verification. Preserved unrelated seed-tool clone/newline edits outside commit. Passing saved worktree identity remains3189/plan82 digest3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a, not clean-checkout proof for published commit. Image/Boss pin remain32cb3bcf. Budgeted Pending shutdown API still awaits operator decision; no source work remains in current embedding repair cohort.
 
 Both scoped commit and push exited0. The existing branch advanced aea2f0f34..d35234ba1. No new image or candidate was built; source publication does not reopen verification. See `lifecycle-approved-embedding-repair-publication-2026-10-21.md` for exact commands, scope and evidence limits.
+
+
+## Budgeted Pending shutdown source publication — 2026-10-21
+
+Approved budgeted shutdown API9.8 source-complete and published as0f926ed6deee26c353278640e3d7c1f19982bc55 in existing draft PR418. Exact saved-source boundary3196/plan86 digest251e9c10ee2a67d3f18164aeca6710a3136d46d2516e383da85ebd8a495ed0a6. Runtime/embedded interfaces, UUID retained owner, explicit Pending inventory, completion recheck and docs/spec handoffs complete. No tests or verification ran; no new gates, deps or wire changes. Earlier embedding pass predates this edit. Image/Boss pin unchanged32cb3bcf; uncooperative work/executor lifetime and missing execution evidence remain limits.
+
+Scoped source-only commit and push exited0; branch advanced15f2fa38c..0f926ed6d. See `lifecycle-budget-publication-2026-10-21.md`. No stored hook setting changed and no verification is claimed.
