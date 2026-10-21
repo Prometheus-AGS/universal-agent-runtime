@@ -6278,3 +6278,14 @@ E0164 at provider_error.rs:135. One-line Network struct-pattern repair is comple
 next: independent source review, commit/push, repeat deployment build. Broader
 lifecycle acceptance stays closed. Detailed receipt is in the phase child
 v1.2.0-lock-repair.md; no successful image delivery is claimed yet.
+
+### v1.2.0 image delivery verified
+
+Compiler repair 75bf899b was pushed after independent source review with no
+findings; policy and commitlint hooks passed. Deployment run 39690429050 completed
+successfully on linux/amd64 and linux/arm64 and merged the published manifest.
+Tags main, 1.2.0 and sha-75bf899b7ec4e77b45861826c828dd360c034c66 were published.
+CI's imagetools inspection verified both platforms under index
+sha256:acb2f941d3749c976df6af6b2f329a496072b48b4cee83c36287b8634345c015.
+Lock repair and compiler compatibility are delivered. Broader lifecycle
+functional acceptance is still unverified and closed; no Boss work performed.

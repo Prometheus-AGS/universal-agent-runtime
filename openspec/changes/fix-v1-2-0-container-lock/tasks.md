@@ -9,5 +9,5 @@
 - [x] Independent artifact review of the lock delta.
 - [x] Validate locked production resolution and deployment policy locally.
 - [x] Commit and push the scoped lock repair to main (ce241cf5).
-- [ ] Commit and push the observed compiler repair.
-- [ ] Observe both native GHCR builds and merged manifest publication.
+- [x] Commit and push the observed compiler repair (75bf899b).
+- [x] Observe both native GHCR builds and merged manifest publication (run 39690429050).
