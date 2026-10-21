@@ -14,7 +14,7 @@
 - [x] 6.2 Local-only compatible embedding live failover and recovery
 - [x] 8.2 Real local-model failover and incompatible-space fixture source
 - [x] 8.3 Bind Boss candidate payload to immutable lifecycle source
-- [ ] 9.3 Publish scoped implementation branch and draft PR with deployment image path
+- [x] 9.3 Publish scoped implementation branch and draft PR with deployment image path
 - [x] 9.4 Repair observed integration compiler failures from authorized Docker delivery
 - [x] 8.4 Renew immutable Boss source pin after Docker delivery repairs
 - [x] 9.5 Repair startup tracing awaits exposed by owned server task

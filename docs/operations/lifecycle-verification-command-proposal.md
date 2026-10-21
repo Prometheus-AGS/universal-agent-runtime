@@ -1,10 +1,6 @@
 # Lifecycle command proposal — verification CLOSED
 
-The verification and native-preparation commands below have not run. The final
-section separately records the authorized Docker delivery command; the first attempt and replacement ARM64 build failed. The new repaired-source delivery is active: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053. Source completion does not authorize verification. Run
-only commands the operator explicitly approves, serially, after the renewed
-whole-phase inventory and immutable payload pin are reconciled. Approval for
-one row does not authorize another row or any extra preflight.
+The verification and native-preparation commands below have not run. The final section separately records the approved Docker delivery command, which completed successfully at `32cb3bcfc9691212ec0b0359ce22474968bc6850` for both Linux architectures. It published `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`. That narrow delivery exception does not authorize any command below. Run only commands the operator explicitly approves, serially, after reconciliation of the full phase and exact prerequisites. Approval for one command grants no other command or hidden preflight.
 
 ## Local embedding assets and actual inference
 
@@ -111,13 +107,11 @@ The historical 503 body and individual sidecar traces remain missing.
 Source publication was requested by the operator. The operator explicitly approved source-only hook exceptions and the
 requested deployment build. Scoped source commits and draft PRs are published;
 `lifecycle-publication-approval.md` records the exact narrow authorization.
-The first invocation failed on both architectures. The replacement ARM64 build then failed two startup Send diagnostics; its AMD64 outcome remains pending. Both bounded source repairs and renewed Boss pins are authored and pushed. The same approved command was repeated after this renewed inventory: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, head `32cb3bcfc9691212ec0b0359ce22474968bc6850`; no additional gate is included. Routine verification remains CLOSED:
+The first two invocations failed on both architectures; their bounded source repairs and renewed Boss pins are recorded. The third invocation completed success: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, immutable source `32cb3bcfc9691212ec0b0359ce22474968bc6850`. Both Linux images and the combined index were published. Routine verification remains CLOSED:
 
 ```sh
 /opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation
 ```
 
-This is the requested Docker delivery path, not general verification. Record
-the actual run URL and published immutable multi-architecture digest before
-calling the image available. Dispatch success alone is not an image. No local
+This is the requested Docker delivery path, not general verification. The actual combined digest is `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`, recorded from the existing workflow inspection. Its published tag is `sha-32cb3bcfc9691212ec0b0359ce22474968bc6850`. Dispatch alone was never used as publication evidence. No local
 Docker build or routine GitHub Actions test is included.

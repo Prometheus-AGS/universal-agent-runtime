@@ -36,3 +36,8 @@ and AMD64 terminal outcomes must be recorded when observed; do not infer them.
 
 Verification remains **CLOSED**. This failed deployment build is neither
 acceptance nor evidence that the surrounding lifecycle behavior works.
+
+
+## Terminal disposition
+
+The run completed with failure. AMD64 job118989856885 failed after43m20s and its actual log reported the same two non-Send diagnostics at server.rs1797 as ARM64. ARM64 failed after29m45s. Manifest job119002931249 was skipped. Neither architecture exported a digest; no image was published. No cancellation occurred. Source32cb3bcf and matching Boss pin already contain the bounded startup repair. Current authorized run39532243053 remains active. These durations describe observations only; they are not correctness deadlines.

@@ -1,18 +1,13 @@
 # Renewed UAR lifecycle source inventory
 
-Recorded 2026-10-21T02:17:30.912745+00:00. Execute phase:
+Recorded 2026-10-21T03:23:28.173821+00:00. Execute phase:
 `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
-Waypoint **3176**, plan **76**.
-Verification remains **CLOSED**. The canonical aggregate run counter is
-137/153; it counts changes across the run, not individual lifecycle tasks.
+Waypoint **3179**, plan **78**. Verification **CLOSED**.
+The canonical aggregate run counter is 138/153; it counts run changes, not individual lifecycle tasks.
 
-This inventory replaces the earlier task5.4 snapshot. It records authored
-source and collected handoffs, not compilation or acceptance. The companion
-JSON records saved file bytes after this documentation update and includes the
-published implementation commit separately from uncommitted documentation. No local acceptance runner, identity gate, compiler probe, test, lint,
-formatter, typecheck, native build, packaging, policy-validator or independent
-review command has run. The separately approved Docker delivery workflow is
-recorded below as failed for the previous source; its replacement failed the ARM64 build with two startup Send diagnostics; the next repaired-source run is now active at the source below. It is not routine verification or product acceptance.
+All planned lifecycle production and fixture source has collected writer handoffs. Scoped implementation and required documentation are published in both draft PRs. The approved Docker delivery completed successfully for both Linux architectures at production source `32cb3bcfc9691212ec0b0359ce22474968bc6850`. This records source authoring and artifact delivery, not runtime acceptance or whole-phase completion.
+
+The JSON companion records saved workspace bytes, including pre-existing unrelated work, separately from the published production commit and image. It is an authored inventory, not an executed source-identity acceptance gate. No local acceptance runner, compiler probe, test, lint, formatter, typecheck, native build, policy validator, packaging check or independent review ran. Only the explicitly authorized Docker delivery workflow supplied compilation and publication evidence. No further embedding design decision is pending; execution evidence remains required for the full preserved contract.
 
 ## Integrated implementation
 
@@ -45,12 +40,12 @@ and authenticated control paths are documented in the runtime handoff. Hosted
 endpoints, credentials, personal settings changes, periodic probes and timed
 success claims are absent from this new local failover path.
 
-## Source publication and remaining image delivery
+## Published source and image delivery
 
 | Task | Current state |
 | --- | --- |
 | 8.3 | Source-complete: Boss candidate pin names actual UAR commit `32cb3bcfc9691212ec0b0359ce22474968bc6850`; writer handoff collected and both repositories pushed. |
-| 9.3 | Both drafts are published. The first Docker attempt failed on both architectures; the replacement ARM64 build also failed; delivery of the new startup repair is active. No image is available. |
+| 9.3 | Complete for requested delivery: both drafts published; approved run39532243053 succeeded and published the combined Linux image `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`. Routine verification remains CLOSED. |
 
 The operator explicitly approved source-only hook exceptions. UAR hooks were
 skipped only for authorized scoped commits; no stored hook setting was changed.
@@ -79,8 +74,15 @@ noreply identity were selected per command; no account or stored identity change
 Delivery history:
 
 - Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909 at `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`: both architectures failed19 compiler diagnostics; manifest publication skipped, no image.
-- Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081 at `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`: ARM64 failed two non-Send diagnostics from one await inside startup tracing; AMD64 is still active at this boundary. ARM64 exported no digest; no multi-architecture image can be published from this run. Do not infer its remaining terminal outcomes.
-- The startup source repair and renewed Boss pin above are pushed and have writer handoffs. The next invocation of only the same authorized deployment workflow followed renewed inventory: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, confirmed at `32cb3bcfc9691212ec0b0359ce22474968bc6850`. This run is active. No image, successful compile or runtime acceptance is claimed.
+- Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081 at `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`: both architectures failed the same two non-Send diagnostics from one await inside startup tracing. Manifest publication was skipped; no image was published. Actual job logs and terminal outcome are retained in the failure receipt.
+- Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053 at `32cb3bcfc9691212ec0b0359ce22474968bc6850`: completed success. ARM64 job119000651255, AMD64 job119000614670 and manifest job119019008132 succeeded. The merged index is `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8` and the published tag is `sha-32cb3bcfc9691212ec0b0359ce22474968bc6850`. Its workflow inspection reports linux/arm64 and linux/amd64. The exact receipt is `lifecycle-image-delivery-39532243053.md`. No runtime acceptance is claimed.
+
+Use the immutable image reference:
+
+```text
+ghcr.io/prometheus-ags/universal-agent-runtime@sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8
+```
+
 
 ## Canonical phase obligations and preserved requirements
 
@@ -116,7 +118,7 @@ its own explicit operator approval and stated prerequisites. No hidden
 preflight is implied. The full release manifest is stale for these bytes;
 fresh source/image/supervisor preparation must be bound before it can run.
 
-No local or native integration has run. The new repaired-source image build is active. Inference, lifecycle races,
+No local or native integration has run. Both Linux release compilations and combined image publication succeeded in the authorized delivery workflow. Inference, lifecycle races,
 engine release/reopen, migration contention and lost replies, remote transports,
 Windows named pipes, WASM and customer packages remain unverified. The historical503 response
 body and individual c9 sidecar traces remain missing; stronger source contracts
@@ -129,5 +131,4 @@ No tests or guards were added outside the requested lifecycle/local-embedding/
 payload scope. Pre-existing unrelated changes were not reverted. Source-only
 inspection, authorized writing and supported KBD/team metadata were used. No routine
 verification result, whole-phase completion or release acceptance is claimed.
-All planned production and fixture source has writer handoffs; image delivery
-and the canonical evidence obligations remain unfinished.
+All planned lifecycle production and fixture source has writer handoffs, and requested image delivery is complete. Canonical preparation, review, functional acceptance and reflection remain unfinished.

@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-21T02:19:18.537385+00:00",
+  "recorded_at": "2026-10-21T03:24:26.894572+00:00",
   "purpose": "Saved source inventory authoring; no acceptance/identity gate imported or executed",
   "phase_id": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
   "change": "deterministic-lifecycle-management",
-  "waypoint_revision": 3176,
-  "plan_revision": 76,
+  "waypoint_revision": 3179,
+  "plan_revision": 78,
   "canonical_run_counter": {
-    "completed": 137,
+    "completed": 138,
     "total": 153,
     "meaning": "Aggregate run change counter, not the eight lifecycle task count"
   },
@@ -16,6 +16,7 @@
   "source_publication": {
     "operator_hook_exception": "Explicit source-only LEFTHOOK=0 commits and required documentation follow-ups; routine verification CLOSED",
     "uar_implementation_commit": "32cb3bcfc9691212ec0b0359ce22474968bc6850",
+    "uar_implementation_tree": "023c531f55e487adab11d70b48f84bd56394092d",
     "uar_draft_pr": "https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418",
     "boss_draft_pr": "https://github.com/Prometheus-AGS/the-boss/pull/74",
     "prior_failed_delivery": {
@@ -26,10 +27,18 @@
     "second_delivery": {
       "run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081",
       "source": "6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46",
-      "result": "ARM64 failed2 Send diagnostics from1 tracing await; AMD64 active at boundary; no ARM64 image"
+      "result": "Both architectures failed the same2 Send diagnostics from1 tracing await; merge skipped; no image"
     },
     "deployment_run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053",
-    "deployment_status": "Startup Send repair and Boss pin published; third delivery active at32cb3bcf; no image digest yet",
+    "deployment_status": "completed/success; both Linux images and merged index published; no runtime acceptance",
+    "merged_image_digest": "sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8",
+    "merged_image_tag": "sha-32cb3bcfc9691212ec0b0359ce22474968bc6850",
+    "image_platforms": [
+      "linux/arm64",
+      "linux/amd64"
+    ],
+    "amd64_image": "sha256:d76a02511d8dd566b063b9cf702f5d343161c70408a816d9ab8775ff67b9db3e",
+    "arm64_image": "sha256:3ff38b564bed0e3d544448c262dc77a67dc957da2d2a141e99a618db30521f88",
     "boss_published_commit": "a609869079bf6d51af196944965e6f86ee6c0758",
     "boss_signature_metadata": {
       "verified": true,
@@ -68,20 +77,16 @@
     ],
     "all_planned_production_fixture_source_authored": true,
     "unfinished_source_implementation_task_ids": [],
-    "unfinished_delivery_task_ids": [
-      "9.3"
-    ],
-    "unfinished_delivery": [
-      "Actual requested deployment image publication and digest receipt"
-    ],
+    "unfinished_delivery_task_ids": [],
+    "unfinished_delivery": [],
     "continuation_handoffs_collected": true,
-    "continuation_source_limit": "Authored and integrated source only; no compiler or runtime evidence",
+    "continuation_source_limit": "Authored/integrated source; approved Linux image compilation/publication separately recorded; runtime acceptance pending",
     "whole_phase_complete": false,
-    "whole_phase_limit": "Source and matching Boss pin are published as draft; actual image delivery, preparation, independent review, functional acceptance, reflection and every frozen embedding receipt remain. No inventory grants gate permission"
+    "whole_phase_limit": "Source and matching Boss pin are published as draft and actual combined image is delivered; preparation, independent review, functional acceptance, reflection and every frozen embedding receipt remain. No inventory grants gate permission"
   },
   "uar_source": {
     "root": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
-    "head": "32cb3bcfc9691212ec0b0359ce22474968bc6850",
+    "head": "64bb3919466cefd935163236c0892f4634a6c8dd",
     "scope": [
       "src",
       "Cargo.toml",
@@ -111,8 +116,8 @@
       "openspec/changes/uar-outstanding-issues-v1-1-1"
     ],
     "method": "SHA-256 of saved per-file bytes; aggregate of sorted compact JSON records; excludes this inventory itself",
-    "file_count": 29287,
-    "saved_records_digest": "sha256:a2b9a9d42213cad65fd368c5b675adad31dbc1412fc116554f92804ec4d93bad",
+    "file_count": 29288,
+    "saved_records_digest": "sha256:2d54d9d8ce7c7f1c5afce8b37f66f96a2a9f3ea9a6eaa58bf6b38579274aae98",
     "acceptance_runner_source_tree": null,
     "acceptance_runner_identity_limit": "No existing source_identity() or freeze/check helper invoked; fresh prepared manifest binding pending",
     "gitlinks": [
@@ -75012,8 +75017,8 @@
       {
         "path": "docs/operations/lifecycle-delivery-build-failure-39528865081.md",
         "kind": "file",
-        "bytes": 1755,
-        "sha256": "sha256:87c98fd553c250150af4299aa068bebeda8c440a8803d1ad753270632cd5584c"
+        "bytes": 2309,
+        "sha256": "sha256:565b2887443d59bc97a4e8feb34cc4e1b3138f3f8bd5d91700e4378acb7f0445"
       },
       {
         "path": "docs/operations/lifecycle-delivery-mcp-repair.md",
@@ -75070,6 +75075,12 @@
         "sha256": "sha256:c27024726ea80aeabead3e8019f7aac33651dcf0f5c9dc6b47fdc60ff1fed46b"
       },
       {
+        "path": "docs/operations/lifecycle-image-delivery-39532243053.md",
+        "kind": "file",
+        "bytes": 3432,
+        "sha256": "sha256:8f93c246db811ca3d0e406c9d2027c5cc686e80d1cc5aab2af19b9fbe0370430"
+      },
+      {
         "path": "docs/operations/lifecycle-implementation-checkpoint-2026-10-20.md",
         "kind": "file",
         "bytes": 2706,
@@ -75078,8 +75089,8 @@
       {
         "path": "docs/operations/lifecycle-implementation-inventory-2026-10-20.md",
         "kind": "file",
-        "bytes": 11826,
-        "sha256": "sha256:5168a391981bb29caca427fded5f55d30beccc3ce6827f6ee9aafca5ec564dc6"
+        "bytes": 12521,
+        "sha256": "sha256:077be66377ce86339e7792fb7b1547669607647cdc01f2320021309edada14a5"
       },
       {
         "path": "docs/operations/lifecycle-lead-handoff.md",
@@ -75126,8 +75137,8 @@
       {
         "path": "docs/operations/lifecycle-publication-approval.md",
         "kind": "file",
-        "bytes": 4885,
-        "sha256": "sha256:3e6113a6a46f3bf6712df22d78378f5adf23b55bf42cb1861cd8cde05e862c04"
+        "bytes": 5673,
+        "sha256": "sha256:8377b25e8dd9e8a672da7433f9801539db721c52a14dc5fe2bab912a70b511ad"
       },
       {
         "path": "docs/operations/lifecycle-publication-scope-2026-10-20.txt",
@@ -75180,14 +75191,14 @@
       {
         "path": "docs/operations/lifecycle-unfinished-implementation.md",
         "kind": "file",
-        "bytes": 3872,
-        "sha256": "sha256:52ce4420826aeee6874e791a24183a178d1be83ea65278c808da6eb7dcf0033d"
+        "bytes": 4747,
+        "sha256": "sha256:28dfa9b59f89122063bbb0bcd090b7acb7f472d93f1bcaecbdb3e33072e997d3"
       },
       {
         "path": "docs/operations/lifecycle-verification-command-proposal.md",
         "kind": "file",
-        "bytes": 7389,
-        "sha256": "sha256:7b0d3512250dcb4a38791e95dbfa96436f2a8e2bc577329e11950308ecbf527a"
+        "bytes": 7415,
+        "sha256": "sha256:3499dcdbc357c61080b39e863588cdafe5fcfa42dda10172c08e7cd402f746b2"
       },
       {
         "path": "docs/operations/lifecycle-watcher-order-handoff.md",
@@ -130921,7 +130932,7 @@
         "path": "openspec/changes/deterministic-lifecycle-management/tasks.md",
         "kind": "file",
         "bytes": 1803,
-        "sha256": "sha256:8d3ba8b763da304ae1bc1b71ae960df84a245f90bfd0e58262b96b21815ab9df"
+        "sha256": "sha256:5e1ab7f41b4698e4d744099d12b171cce9cdc7118df2798e79631fb257c4ae79"
       },
       {
         "path": "openspec/changes/uar-outstanding-issues-v1-1-1/.openspec.yaml",
@@ -176098,12 +176109,16 @@
     {
       "path": "docs/operations/lifecycle-delivery-startup-send-repair.md",
       "sha256": "sha256:dd3e22e017c1d4aa93f8cdb36ce97cb120f867ffb11f657f307d3d75a5e48c17"
+    },
+    {
+      "path": "docs/operations/lifecycle-image-delivery-39532243053.md",
+      "sha256": "sha256:8f93c246db811ca3d0e406c9d2027c5cc686e80d1cc5aab2af19b9fbe0370430"
     }
   ],
   "canonical_ledgers": [
     {
       "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/tasks.md",
-      "sha256": "sha256:b3e407e5d26c8a49ea853053901ca1879a9b854e9f8f4799b50bbd3008b09662",
+      "sha256": "sha256:7e1964dcce90a13819b950e71f2d8bcb9d5b918ba010c90369e49b1a21af8878",
       "recorded_rows": [
         "- [x] 1.1 \u2014 Record exclusive ownership and complete-phase inventory (COMPLETE)",
         "- [x] 3.1 \u2014 Capture durable-store eligibility (COMPLETE)",
@@ -176148,7 +176163,7 @@
     },
     {
       "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/tasks.md",
-      "sha256": "sha256:3f1299604fbcbd6cfed3f140040a313f662be0b0f3cb5c62f4d5940e01e2aa55",
+      "sha256": "sha256:893ef5bcdabe1a011477751ebfd7451dc59b1178f5a0d16a3769f5ff41e87cd0",
       "recorded_rows": [
         "- [x] 1.1 \u2014 Resource inventory and transition diagnostics (COMPLETE)",
         "- [x] 2.1 \u2014 Supervisor task scopes and history drain (COMPLETE)",
@@ -176164,7 +176179,7 @@
         "- [x] 6.2 \u2014 Local-only compatible embedding live failover and recovery (COMPLETE)",
         "- [x] 8.2 \u2014 Real local-model failover and incompatible-space fixture source (COMPLETE)",
         "- [x] 8.3 \u2014 Bind Boss candidate payload to immutable lifecycle source (COMPLETE)",
-        "- [ ] 9.3 \u2014 Publish scoped implementation branch and draft PR with deployment image path (IN_PROGRESS)",
+        "- [x] 9.3 \u2014 Publish scoped implementation branch and draft PR with deployment image path (COMPLETE)",
         "- [x] 9.4 \u2014 Repair observed integration compiler failures from authorized Docker delivery (COMPLETE)",
         "- [x] 8.4 \u2014 Renew immutable Boss source pin after Docker delivery repairs (COMPLETE)",
         "- [x] 9.5 \u2014 Repair startup tracing awaits exposed by owned server task (COMPLETE)",
@@ -176190,7 +176205,7 @@
     "memory_export_publication": "Local isolated first-party commits only; not pushed"
   },
   "unverified": [
-    "compilation",
+    "Compilation outside the two authorized Linux deployment targets",
     "physical resource release and immediate reopen",
     "migration concurrency and lost commit responses",
     "A2A protocol interoperability",

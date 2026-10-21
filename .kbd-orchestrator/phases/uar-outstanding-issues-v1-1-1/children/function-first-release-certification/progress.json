@@ -2,11 +2,11 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3174,
-  "derivedRevision": 3174,
+  "sourceRevision": 3178,
+  "derivedRevision": 3178,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 144,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 148,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -23,18 +23,18 @@
   "phase": "function-first-release-certification",
   "phaseId": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
   "parentPhase": "uar-outstanding-issues-v1-1-1",
-  "last_updated": "2026-10-21T02:16:26.911370Z",
+  "last_updated": "2026-10-21T03:22:09.386867Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 2,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "implementation_total": 2,
-  "implementation_completed": 0,
+  "implementation_completed": 1,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 1,
       "total": 2,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     "evidence": {
       "status": "NOT_TRACKED",
@@ -61,7 +61,7 @@
     "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 137,
+      "completed": 138,
       "total": 153,
       "status": "IN_PROGRESS"
     },
@@ -85,12 +85,12 @@
     {
       "id": "deterministic-lifecycle-management",
       "title": "Unified deterministic lifecycle management",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 19,
-      "tasks_done": 18,
+      "tasks_done": 19,
       "last_task_completed": "Renew Boss pin after startup Send source repair",
-      "next_task_pending": "Publish scoped implementation branch and draft PR with deployment image path",
+      "next_task_pending": null,
       "blockers": []
     },
     {
