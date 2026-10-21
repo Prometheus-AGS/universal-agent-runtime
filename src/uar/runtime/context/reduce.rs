@@ -253,7 +253,7 @@ pub async fn search_tools_definition() -> Option<serde_json::Value> {
 pub fn liability_message(error: &ReduceHistoryError, fixed_tokens: usize) -> String {
     match error {
         ReduceHistoryError::ContextOverflow { .. } => format!(
-            "{error}; the allowance already excludes {fixed_tokens} tokens of tool definitions and world state and the {RESPONSE_RESERVE_TOKENS}-token response reserve"
+            "{error}; the allowance already excludes {fixed_tokens} tokens of tool definitions and world state and the applicable output/reasoning reserve"
         ),
         _ => error.to_string(),
     }
@@ -306,6 +306,23 @@ pub fn reserve_fixed_request_tokens(
     Ok(context_limit - fixed)
 }
 
+/// Withhold tools and world state from an already reserved input allowance.
+/// No capacity is inferred here; the caller owns the destination contract.
+pub fn reserve_fixed_input_tokens(
+    input_allowance: usize,
+    world_tokens: usize,
+    tool_tokens: usize,
+) -> Result<usize, ReduceHistoryError> {
+    let fixed = world_tokens.saturating_add(tool_tokens);
+    if fixed >= input_allowance {
+        return Err(ReduceHistoryError::ContextOverflow {
+            required_tokens: fixed,
+            input_allowance,
+        });
+    }
+    Ok(input_allowance - fixed)
+}
+
 /// Reduce a run's history once: lossless validation, structural stage, token
 /// budget, then protected-group verification, with the system message pinned.
 ///
@@ -334,6 +351,24 @@ pub async fn reduce_history_with_marked_prose(
     request_budget_contract: Option<&super::budget::RequestBudgetContract>,
     eligible_prose: &[HostMarkedProseSpan],
 ) -> Result<(Vec<Message>, ReduceReport), ReduceHistoryError> {
+    reduce_history_with_input_allowance(
+        messages, declared, model, context_limit.saturating_sub(RESPONSE_RESERVE_TOKENS),
+        driver, request_budget_contract, eligible_prose,
+    ).await
+}
+
+/// Reduce against a host-reviewed input allowance that already excludes output,
+/// reasoning, uncertainty and fixed request content. Counts used for trimming
+/// remain estimates; the destination driver recounts the complete final wire.
+pub async fn reduce_history_with_input_allowance(
+    messages: Vec<Message>,
+    declared: &DeclaredStrategy,
+    model: &str,
+    input_allowance: usize,
+    driver: Option<&dyn LlmDriver>,
+    request_budget_contract: Option<&super::budget::RequestBudgetContract>,
+    eligible_prose: &[HostMarkedProseSpan],
+) -> Result<(Vec<Message>, ReduceReport), ReduceHistoryError> {
     let original_history = serde_json::json!(&messages);
     let normalize = normalize_history(&messages)?;
     let protected = protected_groups(&messages);
@@ -353,15 +388,13 @@ pub async fn reduce_history_with_marked_prose(
 
     // Stage 2, token budget: enforce the model's window. The manager preserves
     // system messages itself, so the pinned message can travel with the list.
-    let config = budget_config(declared, context_limit);
-    let input_allowance = config
-        .max_tokens
-        .unwrap_or(context_limit.saturating_sub(1_000));
+    let mut config = budget_config(declared, input_allowance);
+    config.max_tokens = Some(input_allowance);
     let manager = ContextManager::for_model(config, model);
     let (after_budget, context_action) = manager
         // Structural summarization has already consumed the marks. Generated
         // summaries do not inherit eligibility implicitly and cannot recurse.
-        .apply_with_marked_prose(after_structural, context_limit, driver, None, &[])
+        .apply_with_marked_prose(after_structural, input_allowance, driver, None, &[])
         .await;
 
     // Stage 3: reducers may not remove, alter, or reorder protected records.

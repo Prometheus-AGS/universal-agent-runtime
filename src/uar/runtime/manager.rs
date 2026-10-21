@@ -49,6 +49,28 @@ const EVENT_HISTORY_LIMIT: usize = 512;
 #[path = "presentation_history_tests.rs"]
 mod presentation_history_tests;
 
+/// Graph nodes own their message bodies, so retain those bodies while binding
+/// the same host-reviewed final-wire budget used by ordinary model attempts.
+struct DestinationBudgetDriver {
+    inner: Arc<dyn LlmDriver>,
+    contract: crate::uar::runtime::context::budget::RequestBudgetContract,
+}
+
+#[async_trait::async_trait]
+impl LlmDriver for DestinationBudgetDriver {
+    async fn stream(
+        &self,
+        mut request: crate::llm::LlmRequest,
+    ) -> anyhow::Result<crate::llm::ExternalDriverStream> {
+        if let Some(existing) = &request.budget_contract {
+            anyhow::ensure!(existing == &self.contract,
+                "Graph request conflicts with its captured destination budget");
+        }
+        request.budget_contract = Some(self.contract.clone());
+        self.inner.stream(request).await
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct StreamEvent {
     pub id: u64,
@@ -6147,7 +6169,10 @@ impl RunManager {
         let host_window = run_credentials.as_ref().and_then(|credentials| {
             credentials.context_window_for(&catalog_provider, &catalog_model_id)
         });
-        let model_context_window = host_window.or(configured_window).or_else(|| {
+        let destination_budget_contract = self.destination_preparations.as_ref()
+            .and_then(|preparations| preparations.budget_contract(&qualified_model))
+            .cloned();
+        let estimated_context_window = host_window.or(configured_window).or_else(|| {
             crate::llm::catalog::ModelCatalog::global()
                 .model(&catalog_provider, &catalog_model_id)
                 .map(|model| model.limits.context_window as usize)
@@ -6163,6 +6188,11 @@ impl RunManager {
                 .map(|model| model.limits.context_window as usize)
                 .filter(|window| *window > 0)
         });
+        // Only a host-installed destination profile supplies an exact capacity.
+        // The fallback remains a trimming estimate, never a fit guarantee.
+        let model_context_window = destination_budget_contract.as_ref()
+            .and_then(|contract| usize::try_from(contract.limits.context_tokens).ok())
+            .or(estimated_context_window);
         let catalog_entries = eligible_skills
             .iter()
             .map(|skill| {
@@ -6260,11 +6290,16 @@ impl RunManager {
         // (`uar::runtime::context::reduce`). The operator-declared strategy
         // drives both stages, so a run reduces once against one tokenizer.
         let context_limit = model_context_window.unwrap_or(8_192);
+        let context_input_allowance = match &destination_budget_contract {
+            Some(contract) => crate::uar::runtime::context::budget::input_allowance_for_limits(&contract.limits)
+                .ok().and_then(|allowance| usize::try_from(allowance).ok()).unwrap_or(0),
+            None => context_limit.saturating_sub(crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS),
+        };
         let mut world_contributor = world_state.contributor(plan.restore_checkpoint).await;
         let world_reserved_tokens = match world_contributor
             .reserved_tokens(&messages, &context_model)
         {
-            Ok(tokens) if tokens.saturating_add(1_000) < context_limit => tokens,
+            Ok(tokens) if tokens < context_input_allowance => tokens,
             result => {
                 let message = match result {
                     Ok(tokens) => format!(
@@ -6361,8 +6396,8 @@ impl RunManager {
             )
         };
         let history_context_limit =
-            match crate::uar::runtime::context::reduce::reserve_fixed_request_tokens(
-                context_limit,
+            match crate::uar::runtime::context::reduce::reserve_fixed_input_tokens(
+                context_input_allowance,
                 world_reserved_tokens,
                 tool_reserved_tokens,
             ) {
@@ -6393,12 +6428,14 @@ impl RunManager {
         // steps use the unreduced window and count their actual tools.
         let request_context_limit = context_limit.saturating_sub(tool_reserved_tokens);
         let legacy_reduction = if harness_config.mode != crate::config::HarnessMode::Typed {
-            match crate::uar::runtime::context::reduce::reduce_history(
+            match crate::uar::runtime::context::reduce::reduce_history_with_input_allowance(
                 messages,
                 &effective_strategy,
                 &context_model,
                 history_context_limit,
                 summarization_driver.as_deref(),
+                destination_budget_contract.as_ref(),
+                &[],
             )
             .await
             {
@@ -6468,15 +6505,15 @@ impl RunManager {
                 crate::uar::runtime::turn::builtin::ContextStage {
                     model: context_model.clone(),
                     context_limit,
+                    input_allowance: context_input_allowance,
                     strategy: effective_strategy.clone(),
                     reserved_tokens: world_reserved_tokens.saturating_add(tool_reserved_tokens),
                     options: render_options,
                     skill_budget: harness_config.skill_reattachment,
                     driver: summarization_driver.clone(),
-                    // Production summarization stays disabled until the
-                    // destination model profile supplies an exact final-wire
-                    // request contract for this helper call.
-                    summary_budget_contract: None,
+                    // An explicit destination contract is also required for a
+                    // summary call; absent host marks still protect all prose.
+                    summary_budget_contract: destination_budget_contract.clone(),
                     // Session/checkpoint messages currently carry no durable
                     // prose-eligibility metadata. Unknown content is protected
                     // until the trusted host supplies explicit marks.
@@ -6719,7 +6756,13 @@ impl RunManager {
         } else {
             None
         };
-        let primary_driver_for_graph = model_bindings.primary();
+        let primary_driver_for_graph: Arc<dyn LlmDriver> = match &destination_budget_contract {
+            Some(contract) => Arc::new(DestinationBudgetDriver {
+                inner: model_bindings.primary(),
+                contract: contract.clone(),
+            }),
+            None => model_bindings.primary(),
+        };
 
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).

@@ -1,0 +1,2176 @@
+{
+  "kind": "uar.main-boundary-scenario-recipes/v1",
+  "status": "AUTHORSHIP_COMPLETE_PENDING_CANONICAL_COUNT_AMENDMENT_AND_FINAL_RUNTIME_BINDINGS",
+  "note": "All non-COUNT scenario controls have source-derived authored operations; runtime outcomes unverified. COUNT positive remains explicit unsupported main seam; neither skipped nor auto-PASS. Use actual reviewed fixture config/credentials/identity fields; no provider registration/default changes implicit.",
+  "initialMainSetup": [
+    {
+      "action": "launch",
+      "process": "main"
+    },
+    {
+      "action": "poll",
+      "request": {
+        "method": "GET",
+        "path": "/health",
+        "headers": {
+          "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+        }
+      },
+      "attempts": 30,
+      "status": 200,
+      "pointer": "/status",
+      "value": "ok",
+      "control": "main_responds"
+    }
+  ],
+  "scenarios": {
+    "HISTORY-01": {
+      "sourceReferences": [
+        "src/uar/api/routes.rs:list_runs/read_run/create_run",
+        "src/uar/runtime/manager.rs:list_runs_for_context/get_run_for_context"
+      ],
+      "requiredControls": [
+        "get_before_one",
+        "get_before_two",
+        "list_before_restart",
+        "main_responds_after_restart",
+        "get_after_one",
+        "get_after_two",
+        "list_after_restart",
+        "other_owner_cannot_get",
+        "other_owner_cannot_list"
+      ],
+      "steps": [
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "agent_id": "{fixtureId}-open-success",
+            "input": "post-lifecycle history one",
+            "session_id": "{fixtureId}-history-one"
+          },
+          "capture": {
+            "run_one": "/run_id"
+          },
+          "control": "create_one"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_one}/stream",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "event: agui.done",
+              "count": 1
+            },
+            {
+              "kind": "text_count",
+              "text": "event: agui.error",
+              "count": 0
+            }
+          ],
+          "control": "terminal_one"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_one}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/run_id",
+              "value": "$run_one"
+            }
+          ],
+          "control": "get_before_one"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "agent_id": "{fixtureId}-open-success",
+            "input": "post-lifecycle history two",
+            "session_id": "{fixtureId}-history-two"
+          },
+          "capture": {
+            "run_two": "/run_id"
+          },
+          "control": "create_two"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_two}/stream",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "event: agui.done",
+              "count": 1
+            },
+            {
+              "kind": "text_count",
+              "text": "event: agui.error",
+              "count": 0
+            }
+          ],
+          "control": "terminal_two"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_two}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/run_id",
+              "value": "$run_two"
+            }
+          ],
+          "control": "get_before_two"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$run_one"
+            },
+            {
+              "kind": "contains_json",
+              "value": "$run_two"
+            }
+          ],
+          "control": "list_before_restart"
+        },
+        {
+          "action": "stop",
+          "process": "main"
+        },
+        {
+          "action": "launch",
+          "process": "main"
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/health",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+            }
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "ok",
+          "control": "main_responds_after_restart"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_one}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/run_id",
+              "value": "$run_one"
+            }
+          ],
+          "control": "get_after_one"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_two}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/run_id",
+              "value": "$run_two"
+            }
+          ],
+          "control": "get_after_two"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$run_one"
+            },
+            {
+              "kind": "contains_json",
+              "value": "$run_two"
+            }
+          ],
+          "control": "list_after_restart"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{run_one}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OTHER_OWNER_AUTHORIZATION"
+          },
+          "status": 404,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "control": "other_owner_cannot_get"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OTHER_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "excludes_json",
+              "value": "$run_one"
+            },
+            {
+              "kind": "excludes_json",
+              "value": "$run_two"
+            }
+          ],
+          "control": "other_owner_cannot_list"
+        }
+      ]
+    },
+    "KB-01": {
+      "sourceReferences": [
+        "src/uar/api/knowledge.rs:upload_document/list_documents/search/delete_document",
+        "src/uar/domain/knowledge.rs:DocumentStatus"
+      ],
+      "requiredControls": [
+        "positive_search_a",
+        "positive_search_b",
+        "positive_search_c",
+        "delete_a",
+        "a_document_gone",
+        "a_chunks_gone",
+        "b_preserved",
+        "separate_kb_preserved",
+        "other_owner_kb_isolation",
+        "concurrent_upload_exact_competing_writes",
+        "both_embeddings_held",
+        "competing_completion_released",
+        "concurrent_indexed_d",
+        "concurrent_indexed_e",
+        "both_competing_documents_retained"
+      ],
+      "steps": [
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 201,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "name": "{fixtureId}-ab",
+            "description": "Owned post-lifecycle fixture",
+            "config": "$existingKbConfig"
+          },
+          "capture": {
+            "kb_ab": "/id"
+          },
+          "control": "create_kb_ab"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 201,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "name": "{fixtureId}-separate",
+            "description": "Owned post-lifecycle fixture",
+            "config": "$existingKbConfig"
+          },
+          "capture": {
+            "kb_separate": "/id"
+          },
+          "control": "create_kb_separate"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/documents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 202,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "capture": {
+            "doc_a": "/id"
+          },
+          "control": "upload_a",
+          "upload": {
+            "path": "$document_a_path",
+            "sha256": "$document_a_sha256",
+            "filename": "post-lifecycle-a.txt"
+          }
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/api/uar/knowledge-bases/{kb_ab}/documents/{doc_a}",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+            }
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "indexed",
+          "control": "indexed_a"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/search",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$doc_a"
+            }
+          ],
+          "json": {
+            "query": "$document_a_marker",
+            "limit": 10,
+            "min_score": 0.0
+          },
+          "control": "positive_search_a"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/documents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 202,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "capture": {
+            "doc_b": "/id"
+          },
+          "control": "upload_b",
+          "upload": {
+            "path": "$document_b_path",
+            "sha256": "$document_b_sha256",
+            "filename": "post-lifecycle-b.txt"
+          }
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/api/uar/knowledge-bases/{kb_ab}/documents/{doc_b}",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+            }
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "indexed",
+          "control": "indexed_b"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/search",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$doc_b"
+            }
+          ],
+          "json": {
+            "query": "$document_b_marker",
+            "limit": 10,
+            "min_score": 0.0
+          },
+          "control": "positive_search_b"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_separate}/documents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 202,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "capture": {
+            "doc_c": "/id"
+          },
+          "control": "upload_c",
+          "upload": {
+            "path": "$document_c_path",
+            "sha256": "$document_c_sha256",
+            "filename": "post-lifecycle-c.txt"
+          }
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/api/uar/knowledge-bases/{kb_separate}/documents/{doc_c}",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+            }
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "indexed",
+          "control": "indexed_c"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_separate}/search",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$doc_c"
+            }
+          ],
+          "json": {
+            "query": "$document_c_marker",
+            "limit": 10,
+            "min_score": 0.0
+          },
+          "control": "positive_search_c"
+        },
+        {
+          "action": "request",
+          "method": "DELETE",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/documents/{doc_a}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 204,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "control": "delete_a"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/documents/{doc_a}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 404,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "control": "a_document_gone"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/search",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "excludes_json",
+              "value": "$doc_a"
+            }
+          ],
+          "json": {
+            "query": "$document_a_marker",
+            "limit": 10,
+            "min_score": 0.0
+          },
+          "control": "a_chunks_gone"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/search",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$doc_b"
+            }
+          ],
+          "json": {
+            "query": "$document_b_marker",
+            "limit": 10,
+            "min_score": 0.0
+          },
+          "control": "b_preserved"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/knowledge-bases/{kb_separate}/search",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$doc_c"
+            }
+          ],
+          "json": {
+            "query": "$document_c_marker",
+            "limit": 10,
+            "min_score": 0.0
+          },
+          "control": "separate_kb_preserved"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/knowledge-bases/{kb_ab}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OTHER_OWNER_AUTHORIZATION"
+          },
+          "status": 404,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_fixture_forbidden_marker__",
+              "count": 0
+            }
+          ],
+          "control": "other_owner_kb_isolation"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/armed",
+              "value": "kb-race"
+            }
+          ],
+          "json": {
+            "action": "arm_embeddings",
+            "group": "kb-race",
+            "expected": 2
+          },
+          "target": "peer"
+        },
+        {
+          "action": "concurrent_requests",
+          "requests": [
+            {
+              "action": "request",
+              "method": "POST",
+              "path": "/api/uar/knowledge-bases/{kb_ab}/documents",
+              "headers": {
+                "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+                "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+              },
+              "status": 202,
+              "assert": [
+                {
+                  "kind": "text_count",
+                  "text": "__uar_forbidden_fixture_marker__",
+                  "count": 0
+                }
+              ],
+              "capture": {
+                "doc_d": "/id"
+              },
+              "control": "concurrent_upload_d",
+              "upload": {
+                "path": "$document_d_path",
+                "sha256": "$document_d_sha256",
+                "filename": "post-lifecycle-d.txt"
+              }
+            },
+            {
+              "action": "request",
+              "method": "POST",
+              "path": "/api/uar/knowledge-bases/{kb_ab}/documents",
+              "headers": {
+                "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+                "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+              },
+              "status": 202,
+              "assert": [
+                {
+                  "kind": "text_count",
+                  "text": "__uar_forbidden_fixture_marker__",
+                  "count": 0
+                }
+              ],
+              "capture": {
+                "doc_e": "/id"
+              },
+              "control": "concurrent_upload_e",
+              "upload": {
+                "path": "$document_e_path",
+                "sha256": "$document_e_sha256",
+                "filename": "post-lifecycle-e.txt"
+              }
+            }
+          ],
+          "control": "concurrent_uploads_accepted"
+        },
+        {
+          "action": "poll",
+          "request": {
+            "target": "peer",
+            "method": "GET",
+            "path": "/__uar_fixture/status"
+          },
+          "attempts": 15,
+          "status": 200,
+          "pointer": "/held/kb-race/arrived",
+          "value": 2,
+          "control": "both_embeddings_held"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/released",
+              "value": "kb-race"
+            }
+          ],
+          "json": {
+            "action": "release_embeddings",
+            "group": "kb-race"
+          },
+          "control": "competing_completion_released",
+          "target": "peer"
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/api/uar/knowledge-bases/{kb_ab}/documents/{doc_d}",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+              "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+            }
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "indexed",
+          "control": "concurrent_indexed_d"
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/api/uar/knowledge-bases/{kb_ab}/documents/{doc_e}",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+              "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+            }
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "indexed",
+          "control": "concurrent_indexed_e"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/knowledge-bases/{kb_ab}/documents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "$doc_d"
+            },
+            {
+              "kind": "contains_json",
+              "value": "$doc_e"
+            }
+          ],
+          "control": "both_competing_documents_retained"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/__uar_fixture/status",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/held/kb-race/arrived",
+              "value": 2
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/held/kb-race/released",
+              "value": true
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/held/kb-race/expired",
+              "value": 0
+            }
+          ],
+          "control": "concurrent_upload_exact_competing_writes",
+          "target": "peer"
+        }
+      ],
+      "evidenceLabel": "Real main committed uploads and concurrently held/released ingestion workers with exact document IDs; typed job failures retained. Does not claim a guaranteed DB-internal transaction interleaving."
+    },
+    "CAS-01": {
+      "sourceReferences": [
+        "src/uar/persistence/providers/agui_runs/surreal.rs:transition",
+        "src/uar/persistence/agui_runs.rs:validate_transition"
+      ],
+      "requiredControls": [
+        "both_exact_row_orderings",
+        "unrelated_storage_error_preserved"
+      ],
+      "steps": [
+        {
+          "action": "cas_fixture",
+          "owner": "$ownerStorageKey",
+          "fixtureId": "$fixtureId",
+          "control": "both_exact_row_orderings"
+        }
+      ]
+    },
+    "LIAB-01": {
+      "sourceReferences": [
+        "tests/run_cost_settlement.rs:admission/accounting_process",
+        "src/uar/api/accounting.rs:calls/reconcile_call"
+      ],
+      "label": "Real-store collaborator seed + actual main HTTP reconciliation; not provider-dispatch proof",
+      "requiredControls": [
+        "real_store_pending_seed",
+        "pending_scope_held",
+        "settled_once",
+        "replay_identical",
+        "conflict_retained",
+        "admitted_after_settlement"
+      ],
+      "steps": [
+        {
+          "action": "accounting_fixture",
+          "owner": "$ownerStorageKey",
+          "runId": "$accountingRun",
+          "callId": "original",
+          "scopeId": "$accountingScope",
+          "reserve": 1.5,
+          "expectAdmitted": true,
+          "observeNonterminal": true,
+          "control": "real_store_pending_seed"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/accounting/scopes/session/{accountingScope}?owner={ownerStorageKeyUrlEncoded}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/reserved_cost_usd",
+              "value": 1.5
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/pending_calls",
+              "value": 1
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/settled_cost_usd",
+              "value": 0.0
+            }
+          ],
+          "control": "pending_scope_held"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/accounting/calls/{accountingRun}/original/1/reconcile?owner={ownerStorageKeyUrlEncoded}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/state",
+              "value": "settled"
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/observed_cost_usd",
+              "value": 0.5
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/observed_tokens",
+              "value": 5
+            }
+          ],
+          "json": {
+            "cost_usd": 0.5,
+            "tokens": 5,
+            "confirmed_provider_usage": true,
+            "evidence": "$fixtureTerminalEvidenceRef"
+          },
+          "capture": {
+            "settled_row": ""
+          },
+          "control": "settled_once"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/accounting/calls/{accountingRun}/original/1/reconcile?owner={ownerStorageKeyUrlEncoded}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "",
+              "value": "$settled_row"
+            }
+          ],
+          "json": {
+            "cost_usd": 0.5,
+            "tokens": 5,
+            "confirmed_provider_usage": true,
+            "evidence": "$fixtureTerminalEvidenceRef"
+          },
+          "control": "replay_identical"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/accounting/calls/{accountingRun}/original/1/reconcile?owner={ownerStorageKeyUrlEncoded}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION"
+          },
+          "status": 409,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "accounting_revision_or_identity_conflict"
+            }
+          ],
+          "json": {
+            "cost_usd": 0.5,
+            "tokens": 5,
+            "confirmed_provider_usage": true,
+            "evidence": "conflicting fixture evidence"
+          },
+          "control": "conflict_retained"
+        },
+        {
+          "action": "accounting_fixture",
+          "owner": "$ownerStorageKey",
+          "runId": "$accountingRun",
+          "callId": "after-settlement",
+          "scopeId": "$accountingScope",
+          "reserve": 1.0,
+          "expectAdmitted": true,
+          "observeNonterminal": false,
+          "control": "admitted_after_settlement"
+        }
+      ]
+    },
+    "LIAB-02": {
+      "requiredControls": [
+        "unknown_seed",
+        "main_responds_after_restart",
+        "pending_after_restart",
+        "refused_unknown"
+      ],
+      "steps": [
+        {
+          "action": "accounting_fixture",
+          "owner": "$ownerStorageKey",
+          "runId": "{fixtureId}-unknown-run",
+          "callId": "unknown",
+          "scopeId": "{fixtureId}-unknown-scope",
+          "reserve": 1.5,
+          "expectAdmitted": true,
+          "observeNonterminal": true,
+          "control": "unknown_seed"
+        },
+        {
+          "action": "stop",
+          "process": "main"
+        },
+        {
+          "action": "launch",
+          "process": "main"
+        },
+        {
+          "action": "poll",
+          "request": {
+            "method": "GET",
+            "path": "/health",
+            "headers": {}
+          },
+          "attempts": 30,
+          "status": 200,
+          "pointer": "/status",
+          "value": "ok",
+          "control": "main_responds_after_restart"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/accounting/scopes/session/{fixtureId}-unknown-scope?owner={ownerStorageKeyUrlEncoded}",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/reserved_cost_usd",
+              "value": 1.5
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/pending_calls",
+              "value": 1
+            },
+            {
+              "kind": "json_equals",
+              "pointer": "/settled_cost_usd",
+              "value": 0.0
+            }
+          ],
+          "control": "pending_after_restart"
+        },
+        {
+          "action": "accounting_fixture",
+          "owner": "$ownerStorageKey",
+          "runId": "{fixtureId}-unknown-run",
+          "callId": "blocked",
+          "scopeId": "{fixtureId}-unknown-scope",
+          "reserve": 1.0,
+          "expectAdmitted": false,
+          "observeNonterminal": false,
+          "control": "refused_unknown"
+        }
+      ],
+      "label": "Unsettled observed call retains reservation through owned main restart; no age-based refund. Does not claim actual provider effect/lost response."
+    },
+    "ERROR-02": {
+      "sourceReferences": [
+        "src/uar/api/openai/routes.rs:chat_completions",
+        "scripts/post_lifecycle/controlled_peer.py:chat"
+      ],
+      "requiredControls": [
+        "budget_error_envelope",
+        "success_distinct",
+        "provider_failure_distinct",
+        "disconnect_distinct",
+        "actual_client_disconnect_prefix"
+      ],
+      "steps": [
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-open-success",
+          "capture": "artifact_open-success",
+          "budgets": {},
+          "tools": [],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-open-budget",
+          "capture": "artifact_open-budget",
+          "budgets": {
+            "max_tokens_per_turn": 0
+          },
+          "tools": [],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/agents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 201,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/id",
+              "value": "{fixtureId}-open-success"
+            }
+          ],
+          "json": "$artifact_open-success"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/agents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 201,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/id",
+              "value": "{fixtureId}-open-budget"
+            }
+          ],
+          "json": "$artifact_open-budget"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "success"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "success",
+            "mode": "success"
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "provider-failure"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "provider-failure",
+            "mode": "provider_failure"
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "disconnect"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "disconnect",
+            "mode": "disconnect"
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/error/type": "budget_error",
+                "/error/code": "budget_admission_failed"
+              },
+              "count": 1
+            },
+            {
+              "kind": "text_count",
+              "text": "data: [DONE]",
+              "count": 1
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/choices/0/finish_reason": "stop"
+              },
+              "count": 0
+            }
+          ],
+          "json": {
+            "model": "{fixtureId}-open-budget",
+            "messages": [
+              {
+                "role": "user",
+                "content": "UAR_CASE:root-negative"
+              }
+            ],
+            "stream": true
+          },
+          "control": "budget_error_envelope"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/choices/0/finish_reason": "stop"
+              },
+              "count": 1
+            },
+            {
+              "kind": "text_count",
+              "text": "data: [DONE]",
+              "count": 1
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/error/type": "budget_error"
+              },
+              "count": 0
+            }
+          ],
+          "json": {
+            "model": "{fixtureId}-open-success",
+            "messages": [
+              {
+                "role": "user",
+                "content": "UAR_CASE:success"
+              }
+            ],
+            "stream": true
+          },
+          "control": "success_distinct"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/error/type": "budget_error"
+              },
+              "count": 0
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/choices/0/finish_reason": "stop"
+              },
+              "count": 0
+            }
+          ],
+          "json": {
+            "model": "{fixtureId}-open-success",
+            "messages": [
+              {
+                "role": "user",
+                "content": "UAR_CASE:provider-failure"
+              }
+            ],
+            "stream": true
+          },
+          "control": "provider_failure_distinct"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/__uar_fixture/status",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/cases/provider-failure/tool_intents",
+              "value": 0
+            }
+          ],
+          "control": "provider_failure_observed",
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/error/type": "budget_error"
+              },
+              "count": 0
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/choices/0/finish_reason": "stop"
+              },
+              "count": 0
+            }
+          ],
+          "json": {
+            "model": "{fixtureId}-open-success",
+            "messages": [
+              {
+                "role": "user",
+                "content": "UAR_CASE:disconnect"
+              }
+            ],
+            "stream": true
+          },
+          "control": "disconnect_distinct"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/__uar_fixture/status",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/cases/disconnect/tool_intents",
+              "value": 0
+            }
+          ],
+          "control": "disconnect_observed",
+          "target": "peer"
+        },
+        {
+          "action": "disconnect_stream",
+          "request": {
+            "method": "POST",
+            "path": "/v1/chat/completions",
+            "headers": {
+              "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+              "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+            },
+            "json": {
+              "model": "{fixtureId}-open-success",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "UAR_CASE:success"
+                }
+              ],
+              "stream": true
+            }
+          },
+          "control": "actual_client_disconnect_prefix"
+        }
+      ]
+    },
+    "ERROR-01": {
+      "sourceReferences": [
+        "src/uar/defaults.rs:default_agent",
+        "src/uar/api/discovery.rs:create_agent",
+        "src/uar/runtime/native_skills/mod.rs:register_builtins",
+        "src/uar/runtime/native_skills/echo.rs:EchoSkill",
+        "src/uar/runtime/thread/service.rs:spawn",
+        "src/uar/api/assistant_capabilities.rs:outcomes"
+      ],
+      "requiredControls": [
+        "root_closed_class",
+        "root_no_effect",
+        "positive_tool_effect",
+        "positive_canonical_receipt",
+        "tool_closed_class",
+        "tool_no_effect",
+        "child_closed_class",
+        "child_no_effect"
+      ],
+      "steps": [
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "root-negative"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "root-negative",
+            "mode": "success"
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "echo-positive"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "echo-positive",
+            "mode": "tool",
+            "tool": "native_echo",
+            "arguments": {
+              "message": "owned-fixture-echo-positive"
+            }
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "echo-denied"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "echo-denied",
+            "mode": "tool",
+            "tool": "native_echo",
+            "arguments": {
+              "message": "owned-fixture-echo-denied"
+            }
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "child-negative"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "child-negative",
+            "mode": "success"
+          },
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__uar_fixture/control",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/configured",
+              "value": "parent-child"
+            }
+          ],
+          "json": {
+            "action": "configure_chat",
+            "case": "parent-child",
+            "mode": "child",
+            "tool": "spawn_agent",
+            "arguments": {
+              "artifact_id": "{fixtureId}-child-denied",
+              "delegated_prompt": "UAR_CASE:child-negative",
+              "task_name": "fixture-child",
+              "history_fork": {
+                "mode": "none"
+              }
+            },
+            "wait_tool": "wait_agents"
+          },
+          "target": "peer"
+        },
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-root-denied",
+          "capture": "artifact_root-denied",
+          "budgets": {
+            "max_tokens_per_turn": 0
+          },
+          "tools": [],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-echo-positive",
+          "capture": "artifact_echo-positive",
+          "budgets": {
+            "max_tool_calls_per_turn": 1
+          },
+          "tools": [
+            "native_echo"
+          ],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-echo-denied",
+          "capture": "artifact_echo-denied",
+          "budgets": {
+            "max_tool_calls_per_turn": 0
+          },
+          "tools": [
+            "native_echo"
+          ],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-child-denied",
+          "capture": "artifact_child-denied",
+          "budgets": {
+            "max_tokens_per_turn": 0
+          },
+          "tools": [],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "prepare_artifact",
+          "id": "{fixtureId}-parent-child",
+          "capture": "artifact_parent-child",
+          "budgets": {},
+          "tools": [
+            "spawn_agent",
+            "wait_agents"
+          ],
+          "provider": {
+            "provider": "$approvedProviderId",
+            "model": "$approvedModelId"
+          }
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/agents",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 201,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/id",
+              "value": "{fixtureId}-child-denied"
+            }
+          ],
+          "json": "$artifact_child-denied"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_forbidden_fixture_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "artifact": "$artifact_root-denied",
+            "input": "UAR_CASE:root-negative",
+            "session_id": "{fixtureId}-root-denied"
+          },
+          "capture": {
+            "root-denied_run": "/run_id"
+          },
+          "control": "root_created"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{root-denied_run}/stream",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "error",
+                "/code": "budget_admission_failed"
+              },
+              "count": 1
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "done"
+              },
+              "count": 0
+            }
+          ],
+          "control": "root_closed_class",
+          "approveTools": [
+            "native_echo",
+            "spawn_agent",
+            "wait_agents"
+          ]
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/__uar_fixture/status",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/cases/root-negative/model_requests",
+              "value": 0
+            }
+          ],
+          "control": "root_no_effect",
+          "target": "peer"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_forbidden_fixture_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "artifact": "$artifact_echo-positive",
+            "input": "UAR_CASE:echo-positive",
+            "session_id": "{fixtureId}-echo-positive"
+          },
+          "capture": {
+            "echo-positive_run": "/run_id"
+          },
+          "control": "positive_created"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{echo-positive_run}/stream",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "tool_result",
+                "/name": "native_echo",
+                "/success": true
+              },
+              "count": 1
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "done"
+              },
+              "count": 1
+            }
+          ],
+          "control": "positive_tool_effect",
+          "approveTools": [
+            "native_echo",
+            "spawn_agent",
+            "wait_agents"
+          ]
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{echo-positive_run}/tool-outcomes",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "contains_json",
+              "value": "native_echo"
+            },
+            {
+              "kind": "json_array_length",
+              "pointer": "/receipts",
+              "length": 1
+            }
+          ],
+          "control": "positive_canonical_receipt"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_forbidden_fixture_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "artifact": "$artifact_echo-denied",
+            "input": "UAR_CASE:echo-denied",
+            "session_id": "{fixtureId}-echo-denied"
+          },
+          "capture": {
+            "echo-denied_run": "/run_id"
+          },
+          "control": "denied_created"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{echo-denied_run}/stream",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "error",
+                "/code": "budget_admission_failed"
+              },
+              "count": 1
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "tool_result",
+                "/name": "native_echo",
+                "/success": true
+              },
+              "count": 0
+            }
+          ],
+          "control": "tool_closed_class",
+          "approveTools": [
+            "native_echo",
+            "spawn_agent",
+            "wait_agents"
+          ]
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{echo-denied_run}/tool-outcomes",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_array_length",
+              "pointer": "/receipts",
+              "length": 0
+            }
+          ],
+          "control": "tool_no_effect"
+        },
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/api/uar/runs",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "text_count",
+              "text": "__uar_forbidden_fixture_marker__",
+              "count": 0
+            }
+          ],
+          "json": {
+            "artifact": "$artifact_parent-child",
+            "input": "UAR_CASE:parent-child",
+            "session_id": "{fixtureId}-parent-child"
+          },
+          "capture": {
+            "parent-child_run": "/run_id"
+          },
+          "control": "parent_created"
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/api/uar/runs/{parent-child_run}/stream",
+          "headers": {
+            "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+            "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+          },
+          "status": 200,
+          "assert": [
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "error",
+                "/code": "budget_admission_failed"
+              },
+              "count": 1
+            },
+            {
+              "kind": "sse_object_count",
+              "match": {
+                "/kind": "done"
+              },
+              "count": 0
+            }
+          ],
+          "control": "child_closed_class",
+          "approveTools": [
+            "native_echo",
+            "spawn_agent",
+            "wait_agents"
+          ]
+        },
+        {
+          "action": "request",
+          "method": "GET",
+          "path": "/__uar_fixture/status",
+          "headers": {},
+          "status": 200,
+          "assert": [
+            {
+              "kind": "json_equals",
+              "pointer": "/cases/child-negative/model_requests",
+              "value": 0
+            }
+          ],
+          "control": "child_no_effect",
+          "target": "peer"
+        }
+      ],
+      "sourceExpectationRisk": "Child AgentControlError Host may erase budget class. Keep exact closed-class assertion; a generic tool error is not an acceptance substitute."
+    },
+    "COUNT-01": {
+      "sourceReferences": [
+        "tests/model_path_resiliency.rs:exact_budget_contract/destination_preparation",
+        "src/uar/runtime/manager.rs:RunManager::new/with_destination_preparations"
+      ],
+      "requiredControls": [
+        "trusted_at_limit",
+        "trusted_one_over",
+        "tools_and_reserve",
+        "approximate_unsupported"
+      ],
+      "steps": [
+        {
+          "action": "trusted_builder_count",
+          "implementation": "tests/support/post_lifecycle_count.rs::exercise_count_boundary",
+          "note": "Dispatched by dedicated COUNT branch; existing builder + production final-wire driver and owned real loopback peer, no standalone-main proof."
+        }
+      ],
+      "evidenceScope": "trusted_rust_builder",
+      "standaloneMainExactFit": "UNSUPPORTED"
+    }
+  },
+  "initialPeerSetup": [
+    {
+      "action": "launch",
+      "process": "peer"
+    },
+    {
+      "action": "poll",
+      "request": {
+        "target": "peer",
+        "method": "GET",
+        "path": "/__uar_fixture/status"
+      },
+      "attempts": 15,
+      "status": 200,
+      "pointer": "/counts/model_requests",
+      "value": 0,
+      "control": "owned_peer_responds"
+    }
+  ],
+  "cleanupSteps": [
+    {
+      "action": "request",
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/{kb_ab}",
+      "headers": {
+        "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+        "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+      },
+      "status": 204,
+      "assert": [
+        {
+          "kind": "text_count",
+          "text": "__uar_forbidden_fixture_marker__",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "action": "request",
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/{kb_separate}",
+      "headers": {
+        "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+        "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+      },
+      "status": 204,
+      "assert": [
+        {
+          "kind": "text_count",
+          "text": "__uar_forbidden_fixture_marker__",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "action": "request",
+      "method": "DELETE",
+      "path": "/api/agents/{fixtureId}-child-denied",
+      "headers": {
+        "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+        "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+      },
+      "status": 204,
+      "assert": [
+        {
+          "kind": "text_count",
+          "text": "__uar_forbidden_fixture_marker__",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "action": "request",
+      "method": "DELETE",
+      "path": "/api/agents/{fixtureId}-open-success",
+      "headers": {
+        "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+        "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+      },
+      "status": 204,
+      "assert": [
+        {
+          "kind": "text_count",
+          "text": "__uar_forbidden_fixture_marker__",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "action": "request",
+      "method": "DELETE",
+      "path": "/api/agents/{fixtureId}-open-budget",
+      "headers": {
+        "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+        "x-uar-workspace-id": "UAR_BOUNDARY_EXISTING_WORKSPACE"
+      },
+      "status": 204,
+      "assert": [
+        {
+          "kind": "text_count",
+          "text": "__uar_forbidden_fixture_marker__",
+          "count": 0
+        }
+      ]
+    }
+  ],
+  "ownedUploadDocuments": [
+    {
+      "capture": "doc_a",
+      "fixtureVariablePath": "document_a_path"
+    },
+    {
+      "capture": "doc_b",
+      "fixtureVariablePath": "document_b_path"
+    },
+    {
+      "capture": "doc_c",
+      "fixtureVariablePath": "document_c_path"
+    },
+    {
+      "capture": "doc_d",
+      "fixtureVariablePath": "document_d_path"
+    },
+    {
+      "capture": "doc_e",
+      "fixtureVariablePath": "document_e_path"
+    }
+  ],
+  "requiredDocumentContents": {
+    "d": "UAR_HOLD:kb-race: distinct owned document D marker",
+    "e": "UAR_HOLD:kb-race: distinct owned document E marker"
+  },
+  "authorizedToolApprovals": [
+    "native_echo",
+    "spawn_agent",
+    "wait_agents"
+  ],
+  "fixtureSchemaEffects": [
+    {
+      "kind": "synchronous_event",
+      "table": "agui_runs",
+      "purpose": "unrelated_transaction_conflict",
+      "sleepMilliseconds": 100,
+      "competitorWritesMax": 12,
+      "cleanup": "remove_exact_owned_event"
+    }
+  ],
+  "cleanupAuthorized": false,
+  "cleanupAuthorizationNote": "Future exact store fixture permission must explicitly cover owned-row deletes and this declared schema effect. False is not an instruction to skip cleanup or waive teardown; final reviewed manifest receives the actual permission disposition."
+}

@@ -17,8 +17,8 @@ zod = "3.25.76"
 loro_crdt = "1.13.9"
 # Operator approved corrected Dot Liter source on 2026-10-13.
 # Migration and locked production-path acceptance remain required.
-liter_llm = "2.1.1"
-liter_llm_commit = "e446f5ef91003bbec5fce6b2f45fb94559dff335"
+liter_llm = "2.3.0"
+liter_llm_commit = "31c7e63236aa96914fccae2a5c25c4cda9ffa430"
 # Surreal Memory is pinned to the exact dependency commit rebased on the
 # reviewed documentation and native-MLX remote head.
 surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"

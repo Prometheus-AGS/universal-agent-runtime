@@ -1,0 +1,127 @@
+{
+  "kind": "uar.final-source-inventory/v1",
+  "recordedAt": "2026-10-21T20:38:18.511325+00:00",
+  "head": "eddd5508c902f892b20042ec545900cac16747c6",
+  "sourceAuthoringComplete": true,
+  "implementationComplete": true,
+  "reason": "Original13 preparation/implementation tasks complete; owner-directed dependency update pinned, lock resolution explicitly pending; source completion is not runnable/accepted status.",
+  "canonicalRevision": 111,
+  "canonicalTasksComplete": 13,
+  "canonicalTasksTotal": 13,
+  "verification": "BUILD_FAILED_RUNTIME_NOT_RUN",
+  "files": [
+    {
+      "path": "scripts/post_lifecycle/controlled_peer.py",
+      "sha256": "89d8a83dfa3f509e289a5f151c28c8b14ed3539e92fab029894ae7b6aaeef407"
+    },
+    {
+      "path": "scripts/post_lifecycle/main_boundary.py",
+      "sha256": "b55b4cc91186926ec042b486d497e68be9153bdd54f9c5fdac163e06a4eaa13b"
+    },
+    {
+      "path": "scripts/post_lifecycle/manifest-requirements.md",
+      "sha256": "7d3bd237793515fac26dc4909f79ecab17699a82bf37e190ed492ef8e4d66e7a"
+    },
+    {
+      "path": "scripts/post_lifecycle/scenario-recipes.json",
+      "sha256": "84ab60be0aa954acfed921a1a9be7c7d64ae7e28d0b33ed994d1b1b1893e95f3"
+    },
+    {
+      "path": "scripts/post_lifecycle/stream-tool-recipes.json",
+      "sha256": "67dbd36fd465500434e7dabd7bbedf3d702906602f897afc6fc777627df42bc1"
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "1d66b4a49edd24059ea24796a3da0444b5cd4fa3823e4f3e6ec3b7ab15bb96c0"
+    },
+    {
+      "path": "src/uar/api/openai/routes.rs",
+      "sha256": "2074f4c0fac68ea93b7343dbb9f0692fef50f25f2afdd87e1341f5b3e0ae1075"
+    },
+    {
+      "path": "src/uar/persistence/accounting.rs",
+      "sha256": "36eef44c6c4d6163c55793b5e0642209a231784384c446d8dfe428e6f73afa72"
+    },
+    {
+      "path": "src/uar/persistence/providers/accounting/surreal.rs",
+      "sha256": "235d830736c7747ebf49211572591c361758335237ef7fae96d7a5b801cf9829"
+    },
+    {
+      "path": "src/uar/runtime/context/budget.rs",
+      "sha256": "0da1291affee358ad6d9c43b855c1d3b638c157b0c53b64e54df527eb49c0706"
+    },
+    {
+      "path": "src/uar/runtime/context/manager.rs",
+      "sha256": "07a239817e9d9a76cc5dd437b10969dc0e592bca941e58e5dd5ea49b3bee94d3"
+    },
+    {
+      "path": "src/uar/runtime/context/reduce.rs",
+      "sha256": "c5f1f8fb64e80cb37d9ab2c2f5df56ea80179a652ed7e5cfb50976d9e220f69b"
+    },
+    {
+      "path": "src/uar/runtime/cost_budget.rs",
+      "sha256": "8ed4708d8b91a68156390f6aeecfbee3fd7a0fc8572efe8d24a8a137b4e9f900"
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "edb011047b468bc4532201d8b8075afef17005d33951953edeff57d237670290"
+    },
+    {
+      "path": "src/uar/runtime/turn/builtin.rs",
+      "sha256": "10d2df160780e38bf676203fefe2bac8ef8ff2a71880e4e206f26a4b130c3493"
+    },
+    {
+      "path": "tests/post_lifecycle_main.rs",
+      "sha256": "c7fd8193fd927d0027cadd8f2d07c01bc7d825f585e620d63938a3ba88685c23"
+    },
+    {
+      "path": "tests/run_cost_settlement.rs",
+      "sha256": "4887bdd89c22d1845b911d0b4794890df47d82ab64d6e4ff7b1f6991ef67486c"
+    },
+    {
+      "path": "tests/support/post_lifecycle_count.rs",
+      "sha256": "2df19693c0024242f4bbc060f782326b201ff9a87d41d0f9eb3dea03f0e92928"
+    },
+    {
+      "path": "tests/support/post_lifecycle_store.rs",
+      "sha256": "529536a6a1be006f5cd728891178618d717cdf9d73eb07e68d51ececb1eafbb3"
+    }
+  ],
+  "boundContractIdentity": {
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "phaseId": "uar-post-lifecycle-verification-readiness",
+    "planRevision": 90,
+    "contractDigest": "dab4675cd1d2889fbe627cf130ff2875ac2b2ab8c0dde1dddafb9042a648d0cb"
+  },
+  "candidateBuilt": false,
+  "candidateBooted": false,
+  "evidenceScopes": {
+    "COUNT-01": "trusted_rust_builder",
+    "standaloneMainExactFit": "UNSUPPORTED",
+    "otherScenarios": "unchanged adopted assertions"
+  },
+  "knownSourceRisks": [
+    "Child generic Host error may fail retained closed-class oracle",
+    "Unobserved actual CAS contention BLOCKED; swallowed unrelated conflict FAIL",
+    "Empty credentialless controlled-peer driver configuration may be rejected; no secret fallback"
+  ],
+  "runtimeResults": "One main build exit101 before compilation; missing pinned submodules subsequently restored; no rerun/tests/acceptance.",
+  "signerTrustRestored": true,
+  "checkoutCompletenessReceipt": "checkout-completeness-receipt.json",
+  "scopeDisposition": {
+    "authJwtWork": "EXCLUDED",
+    "releaseDependency": false,
+    "existingEnforcement": "UNCHANGED",
+    "assertions": "UNCHANGED"
+  },
+  "dependencyCandidate": {
+    "literLlm": "31c7e63236aa96914fccae2a5c25c4cda9ffa430",
+    "oldLiterLlm": "e446f5ef91003bbec5fce6b2f45fb94559dff335",
+    "rustMcpFilesystem": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+    "rootLockSha256": "888d0efad962353112e0dcfede372293a9c001c0c59cb35450977f758140b642",
+    "lockResolution": "PENDING: root liter-llm2.1.1 differs from pinned source2.3.0; no resolver run or fabricated lock edit",
+    "validation": "NONE for updated dependency candidate",
+    "gitlink": "staged exact commit, not committed/pushed"
+  }
+}

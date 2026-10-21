@@ -26,12 +26,14 @@ impl ContextManager {
         Self { config, model }
     }
 
-    fn count_string(&self, content: &str) -> usize {
-        TokenService::count(&self.model, content)
-    }
-
     fn count_messages(&self, messages: &[Message]) -> usize {
         TokenService::count_messages(&self.model, messages)
+    }
+
+    fn message_cost(&self, message: &Message) -> usize {
+        // Count the same tool-call-bearing message representation used by the
+        // final history estimate, excluding only the once-per-request priming.
+        self.count_messages(std::slice::from_ref(message)).saturating_sub(3)
     }
 
     /// Check if context management is needed and apply the configured strategy.
@@ -134,7 +136,7 @@ impl ContextManager {
             .cloned();
 
         if let Some(sys) = &system_msg {
-            let t = self.count_string(sys.content.as_text().unwrap_or("")) + 3;
+            let t = self.message_cost(sys);
             budget = budget.saturating_sub(t);
             final_list.push(sys.clone());
         }
@@ -147,7 +149,7 @@ impl ContextManager {
                 continue;
             }
 
-            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.message_cost(msg);
             if t <= budget {
                 tail.push(msg.clone());
                 budget -= t;
@@ -193,7 +195,7 @@ impl ContextManager {
         let mut head_end = 0;
 
         for (idx, msg) in messages.iter().enumerate() {
-            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.message_cost(msg);
             let is_system = msg.role == MessageRole::System;
             if t < budget {
                 head.push(msg.clone());
@@ -209,7 +211,7 @@ impl ContextManager {
         // Keep last messages, never walking back into the head.
         let mut tail = Vec::new();
         for msg in messages[head_end..].iter().rev() {
-            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.message_cost(msg);
             if t <= budget {
                 tail.push(msg.clone());
                 budget -= t;
@@ -254,7 +256,7 @@ impl ContextManager {
         // 1. Account for leading system messages.
         for msg in &messages {
             if msg.role == MessageRole::System {
-                let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
+                let t = self.message_cost(msg);
                 if t < budget {
                     budget -= t;
                 }
@@ -277,7 +279,7 @@ impl ContextManager {
         let mut tail = Vec::new();
         let mut tail_used = 0;
         for msg in non_system.iter().rev() {
-            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.message_cost(msg);
             if tail_used + t <= tail_budget {
                 tail.push((*msg).clone());
                 tail_used += t;

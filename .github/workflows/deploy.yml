@@ -150,6 +150,7 @@ jobs:
           tags: |
             type=sha,format=long
             type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=1.2.0,enable={{is_default_branch}}
             type=semver,pattern={{version}}
 
       - name: Create manifest list and push
