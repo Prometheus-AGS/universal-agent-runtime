@@ -2,11 +2,11 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3167,
-  "derivedRevision": 3167,
+  "sourceRevision": 3176,
+  "derivedRevision": 3176,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 137,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 146,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -44,10 +44,10 @@
   "completionMetric": "implementation",
   "implementationCompleted": 137,
   "implementationTotal": 153,
-  "planRevision": 73,
-  "revision": 3167,
-  "exactNextCommand": "Observe approved Docker run39528865081 to actual terminal outcome and published digest or concrete failure; retain exact source6d50cb8a and Boss2888c6ff. Finish scoped documentation publication; no local/native gate, tests, checks, review or acceptance.",
+  "planRevision": 76,
+  "revision": 3176,
+  "exactNextCommand": "Observe approved run39532243053 and prior AMD64 to terminal outcomes; capture actual multiarch digest or exact failure. Publish scoped receipts/inventory only; no local/native gates, tests/checks, review or acceptance.",
   "nextChange": "deterministic-lifecycle-management",
   "nextTask": "9.3",
-  "updatedAt": "2026-10-21T01:43:27.183847Z"
+  "updatedAt": "2026-10-21T02:18:54.586026Z"
 }

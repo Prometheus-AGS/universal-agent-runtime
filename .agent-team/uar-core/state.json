@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 112,
+  "revision": 115,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -929,6 +929,20 @@
         "docs/operations/lifecycle-delivery-mcp-repair.md",
         "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
         "Actual repaired UAR/Boss commits published; no runtime acceptance; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-startup-send-repair",
+      "title": "Remove awaits from startup tracing fields under owned Send boundary",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-startup-send-repair.md",
+        "Source-only handoff collected; no compiler or runtime verification; CLOSED"
       ],
       "remaining": []
     }
@@ -3131,6 +3145,60 @@
           "docs/operations/lifecycle-delivery-mcp-repair.md",
           "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
           "Actual repaired UAR/Boss commits published; no runtime acceptance; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "7b674f56-1f8f-4644-8646-b0880d1972b2",
+      "at": "2026-10-21T02:13:29.689Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-startup-send-repair",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "6e7a5220-b712-42b9-a3e0-d9dcd14c42f3",
+      "at": "2026-10-21T02:13:29.779Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-startup-send-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-startup-send-repair.md"
+        ],
+        "remaining": [
+          "Source only; no local checks/build/tests; CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "8137cbf6-d899-4bf4-a4e1-67cb5d9b382a",
+      "at": "2026-10-21T02:14:59.939Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-startup-send-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-startup-send-repair.md",
+          "Source-only handoff collected; no compiler or runtime verification; CLOSED"
         ],
         "remaining": []
       }

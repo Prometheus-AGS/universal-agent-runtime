@@ -2292,3 +2292,8 @@ approved deployment command. No old failure is relabeled as success.
 ## Repaired lifecycle Docker delivery dispatched — 2026-10-21
 
 The renewed source inventory and all repair handoffs preceded the same explicitly approved deploy.yml invocation. Actual run: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081; head `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`, Boss `2888c6ff368fbc52ec51c7ff4a59c493c4487d84`. Both architecture jobs are active. No image/digest or runtime acceptance claimed. Routine verification CLOSED; only source/docs metadata and approved delivery operations occurred.
+
+
+## Startup Send boundary repair — 2026-10-21
+
+Authorized Docker run39528865081 at6d50cb8a failed ARM64 with2 diagnostics from1 inline governance log await. Tracing temporaries cannot cross startup awaits inside the retained Send owner. Runtime writer moved both native-skill and policy count awaits before their log macros. Source `32cb3bcfc9691212ec0b0359ce22474968bc6850` and matching signed Boss pin `a609869079bf6d51af196944965e6f86ee6c0758` are pushed with handoffs; next delivery pending renewed inventory. AMD64 remains active at this boundary. No standalone compiler, test or other routine verification ran. CLOSED.

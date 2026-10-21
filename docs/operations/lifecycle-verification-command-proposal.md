@@ -1,8 +1,7 @@
 # Lifecycle command proposal — verification CLOSED
 
 The verification and native-preparation commands below have not run. The final
-section separately records the authorized Docker delivery command; its first
-attempt failed, and a replacement is active for the repaired source. Source completion does not authorize verification. Run
+section separately records the authorized Docker delivery command; the first attempt and replacement ARM64 build failed. The new repaired-source delivery is active: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053. Source completion does not authorize verification. Run
 only commands the operator explicitly approves, serially, after the renewed
 whole-phase inventory and immutable payload pin are reconciled. Approval for
 one row does not authorize another row or any extra preflight.
@@ -58,7 +57,7 @@ WASM, every remote transport or a physical engine-close fault.
 ## Fresh Boss payload and local customer package
 
 Prerequisite: an actual UAR source commit is published and the Boss schema-2
-pin names that commit. The existing old pin is not sufficient. This source prerequisite now exists: Boss pins `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`.
+pin names that commit. The existing old pin is not sufficient. This source prerequisite now exists: Boss pins `32cb3bcfc9691212ec0b0359ce22474968bc6850`.
 The producer refuses a selected commit whose producer bytes do not match.
 No candidate artifact exists merely because its source pin is now recorded.
 
@@ -66,7 +65,7 @@ From `/Volumes/T7/Projects/prometheus/universal-agent-runtime`, on native Apple
 Silicon, propose this exact build command, using the actual pinned source:
 
 ```sh
-node scripts/build-boss-candidate.mjs 6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46 /Volumes/T7/uar-boss-lifecycle-candidate-20261021-01
+node scripts/build-boss-candidate.mjs 32cb3bcfc9691212ec0b0359ce22474968bc6850 /Volumes/T7/uar-boss-lifecycle-candidate-20261021-01
 ```
 
 The output directory must be new. The command exports committed Git objects
@@ -112,8 +111,7 @@ The historical 503 body and individual sidecar traces remain missing.
 Source publication was requested by the operator. The operator explicitly approved source-only hook exceptions and the
 requested deployment build. Scoped source commits and draft PRs are published;
 `lifecycle-publication-approval.md` records the exact narrow authorization.
-The first invocation failed on both architectures. The same authorized command
-was repeated after source repairs, Boss pin and this inventory were renewed: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081. Its head SHA is `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; no other gate is included. Routine verification remains CLOSED:
+The first invocation failed on both architectures. The replacement ARM64 build then failed two startup Send diagnostics; its AMD64 outcome remains pending. Both bounded source repairs and renewed Boss pins are authored and pushed. The same approved command was repeated after this renewed inventory: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, head `32cb3bcfc9691212ec0b0359ce22474968bc6850`; no additional gate is included. Routine verification remains CLOSED:
 
 ```sh
 /opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation

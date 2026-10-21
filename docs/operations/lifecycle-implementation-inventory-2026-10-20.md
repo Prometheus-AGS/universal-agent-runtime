@@ -1,8 +1,8 @@
 # Renewed UAR lifecycle source inventory
 
-Recorded 2026-10-21T01:39:47.140717+00:00. Execute phase:
+Recorded 2026-10-21T02:17:30.912745+00:00. Execute phase:
 `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
-Waypoint **3167**, plan **73**.
+Waypoint **3176**, plan **76**.
 Verification remains **CLOSED**. The canonical aggregate run counter is
 137/153; it counts changes across the run, not individual lifecycle tasks.
 
@@ -12,7 +12,7 @@ JSON records saved file bytes after this documentation update and includes the
 published implementation commit separately from uncommitted documentation. No local acceptance runner, identity gate, compiler probe, test, lint,
 formatter, typecheck, native build, packaging, policy-validator or independent
 review command has run. The separately approved Docker delivery workflow is
-recorded below as failed for the previous source; its replacement is now active at the repaired source. It is not routine verification or product acceptance.
+recorded below as failed for the previous source; its replacement failed the ARM64 build with two startup Send diagnostics; the next repaired-source run is now active at the source below. It is not routine verification or product acceptance.
 
 ## Integrated implementation
 
@@ -29,6 +29,7 @@ recorded below as failed for the previous source; its replacement is now active 
 | 6.2 | Opt-in strict local FastEmbed pair, real readiness inference, identical space/assets, retained inference/control work, live promotion, reusable backup and generation-checked recovery, actual native-engine cleanup | lifecycle-embedding-runtime-handoff.md |
 | 8.2 | Real SurrealKV-backed ingestion/query through generations1→2→3→4→5; distinct real equal-dimension model refusal and compatible re-probe; acquired-prefix panic cleanup; pinned public MiniLM asset metadata and deferred preparation source | lifecycle-embedding-fixture-handoff.md; tests/fixtures/local_embedding_lifecycle/model-preparation.md |
 | 8.3 / 8.4 | Boss launcher and immutable candidate binding are published and renewed after delivery repairs; exact source pin, provenance and proposed bilingual note | Boss payload binding handoff; draft PR74 |
+| 9.5 / 8.5 | Awaited startup logging values are resolved before tracing macros; retained server ownership unchanged; Boss pin and proposed notes renewed to actual source | lifecycle-delivery-startup-send-repair.md; Boss binding handoff |
 | 9.4 | All19 observed delivery compiler diagnostics addressed in source: actual tuple APIs, retained IDs, borrower copies, live stream variants/closure, sealed owned proof and atomic recovery CAS | lifecycle-delivery-runtime-repair.md; lifecycle-delivery-state-repair.md; lifecycle-delivery-mcp-repair.md |
 
 All relative handoff names above resolve in `docs/operations/`. Writer handoffs
@@ -48,8 +49,8 @@ success claims are absent from this new local failover path.
 
 | Task | Current state |
 | --- | --- |
-| 8.3 | Source-complete: Boss candidate pin names actual UAR commit `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; writer handoff collected and both repositories pushed. |
-| 9.3 | Both drafts are published. The first Docker attempt failed on both architectures; replacement delivery of the repaired source is active. No image is available yet. |
+| 8.3 | Source-complete: Boss candidate pin names actual UAR commit `32cb3bcfc9691212ec0b0359ce22474968bc6850`; writer handoff collected and both repositories pushed. |
+| 9.3 | Both drafts are published. The first Docker attempt failed on both architectures; the replacement ARM64 build also failed; delivery of the new startup repair is active. No image is available. |
 
 The operator explicitly approved source-only hook exceptions. UAR hooks were
 skipped only for authorized scoped commits; no stored hook setting was changed.
@@ -70,17 +71,16 @@ helper, source pin and the three lifecycle handoffs and proposed bilingual paylo
 Published drafts:
 https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418 and
 https://github.com/Prometheus-AGS/the-boss/pull/74. Current immutable UAR
-production source/candidate pin: `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`. Current Boss source commit:
-`2888c6ff368fbc52ec51c7ff4a59c493c4487d84`, SSH-signed and DCO-signed off; GitHub reports signature
+production source/candidate pin: `32cb3bcfc9691212ec0b0359ce22474968bc6850`. Current Boss source commit:
+`a609869079bf6d51af196944965e6f86ee6c0758`, SSH-signed and DCO-signed off; GitHub reports signature
 `verified: true`, reason `valid`. Existing registered signing key and account
 noreply identity were selected per command; no account or stored identity changed.
 
-First delivery attempt: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909 at source `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`. Both architecture
-jobs failed19 compiler diagnostics; manifest publication was skipped and no
-image was published. The cancellation request reached an already terminal run
-and made no change. The observed errors and bounded repairs have source
-handoffs. The replacement run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081 was dispatched at the repaired source above. Both architecture jobs are active; no digest has been published at this boundary. Source repair does not establish a successful compile or available
-image. The next delivery uses only the same explicitly approved workflow.
+Delivery history:
+
+- Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909 at `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`: both architectures failed19 compiler diagnostics; manifest publication skipped, no image.
+- Run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081 at `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`: ARM64 failed two non-Send diagnostics from one await inside startup tracing; AMD64 is still active at this boundary. ARM64 exported no digest; no multi-architecture image can be published from this run. Do not infer its remaining terminal outcomes.
+- The startup source repair and renewed Boss pin above are pushed and have writer handoffs. The next invocation of only the same authorized deployment workflow followed renewed inventory: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, confirmed at `32cb3bcfc9691212ec0b0359ce22474968bc6850`. This run is active. No image, successful compile or runtime acceptance is claimed.
 
 ## Canonical phase obligations and preserved requirements
 
@@ -116,7 +116,7 @@ its own explicit operator approval and stated prerequisites. No hidden
 preflight is implied. The full release manifest is stale for these bytes;
 fresh source/image/supervisor preparation must be bound before it can run.
 
-No local or native integration has run. The repaired image build is active. Inference, lifecycle races,
+No local or native integration has run. The new repaired-source image build is active. Inference, lifecycle races,
 engine release/reopen, migration contention and lost replies, remote transports,
 Windows named pipes, WASM and customer packages remain unverified. The historical503 response
 body and individual c9 sidecar traces remain missing; stronger source contracts

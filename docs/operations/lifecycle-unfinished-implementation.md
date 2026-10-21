@@ -1,7 +1,7 @@
 # Lifecycle work still outstanding
 
 Execute: `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
-Waypoint3167, plan73. Verification **CLOSED**.
+Waypoint3176, plan76. Verification **CLOSED**.
 
 The unified lifecycle source tasks1.1–8.1 and follow-ups5.2/5.3/5.4 remain
 source-complete. Runtime6.2 and real-model fixture8.2 now have collected source
@@ -11,20 +11,11 @@ remaining implementation and evidence.
 
 ## Source completion and remaining delivery
 
-The first authorized image build exposed19 compiler integration errors on both
-architectures. Follow-up9.4 now records the bounded source repairs with all
-writer handoffs. Follow-up8.4 renews the actual Boss pin to repaired UAR source
-`6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; signed Boss source `2888c6ff368fbc52ec51c7ff4a59c493c4487d84` is pushed. Draft PR418 (UAR)
-and PR74 (Boss) remain published. No additional production source work is
-identified in these collected handoffs, but the repaired bytes are uncompiled
-and unaccepted. This is source authoring completion, not behavior proof.
+The first authorized delivery failed19 diagnostics on both architectures. Its bounded repair9.4 and matching Boss pin8.4 are preserved. Replacement run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081 then failed two ARM64 Send diagnostics from one inline startup tracing await; AMD64 remains active at this boundary.
 
-Lifecycle9.3 is unfinished. The initial run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909 failed on both native
-architectures, with manifest merge skipped and no image published. The same
-approved Docker delivery workflow was repeated after inventory renewal: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081. The run is active at repaired source `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; its publication outcome remains pending.
-No local/native build, test, lint, formatter, typecheck, policy validator,
-independent review or acceptance is authorized. The source-only hook exception
-remains limited to scoped commits and required documentation follow-ups.
+Follow-up9.5 moves two awaited startup log values before tracing macros, preserving the retained server owner. Follow-up8.5 pins actual UAR source `32cb3bcfc9691212ec0b0359ce22474968bc6850` in signed Boss commit `a609869079bf6d51af196944965e6f86ee6c0758`. Both writers released handoffs and both commits are pushed. No additional production source item remains in those handoffs. No successful compile or runtime result is claimed.
+
+Lifecycle9.3 remains unfinished: no image is published. The renewed inventory preceded the same approved deploy.yml command: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053, active at `32cb3bcfc9691212ec0b0359ce22474968bc6850`. Its image/digest outcome is pending. No local/native build, test, lint, formatter, typecheck, policy validator, independent review or acceptance is authorized. The source-only hook exception remains limited to scoped commits and necessary documentation follow-ups.
 
 ## Remaining canonical evidence and handoff
 

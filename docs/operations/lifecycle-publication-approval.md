@@ -61,3 +61,13 @@ bilingual Boss design note stays proposed because acceptance is unexecuted.
 
 Verification remains CLOSED. No silent source inventory, task transition,
 signature status or successful deployment build can authorize routine verification.
+
+
+## Startup Send repair publication — 2026-10-21
+
+Replacement run39528865081 failed its ARM64 build with two diagnostics from one startup tracing await; AMD64 remains active at this boundary. No multi-architecture image was published. Source-only follow-up `32cb3bcfc9691212ec0b0359ce22474968bc6850` moves awaited startup logging values before tracing macros and preserves retained ownership. Boss signed follow-up `a609869079bf6d51af196944965e6f86ee6c0758` pins that exact source and refreshes the proposed bilingual note. GitHub reports the signature valid/Verified. Writer handoffs are collected; next same-workflow delivery is pending inventory renewal. No routine verification ran; CLOSED.
+
+
+## Third authorized delivery invocation
+
+Renewed source inventory at waypoint3175 preceded run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39532243053. GitHub confirms its immutable head `32cb3bcfc9691212ec0b0359ce22474968bc6850`. Boss pin `a609869079bf6d51af196944965e6f86ee6c0758` matches. Actual image/digest outcome remains pending; no extra preflight or routine gate ran. CLOSED.
