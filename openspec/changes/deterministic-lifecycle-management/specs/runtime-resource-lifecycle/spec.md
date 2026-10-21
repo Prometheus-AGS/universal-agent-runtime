@@ -55,6 +55,29 @@ The runtime SHALL atomically admit and register work, retain completion outcomes
 - **WHEN** index removal takes a running builder out of the index lookup map
 - **THEN** the engine still joins its independently registered task before physical store closure, and rollback cleanup waits for actual exit before deleting durable build state
 
+### Requirement: Budgeted shutdown observation
+The trusted host SHALL support a caller-supplied shutdown wait budget. Expiry SHALL return Pending with a stable shutdown identity and outstanding resource obligations. The supervisor SHALL retain the same cleanup operation, cancellation and dependency ownership until actual completion. Expiry SHALL NOT establish release, rollback, termination or permission to close a prerequisite beneath an active dependent. No fixed default wait duration SHALL establish correctness.
+
+#### Scenario: An observation budget expires before a producer joins
+- **WHEN** the caller's wait budget expires while a watcher, producer, database operation or finalizer remains active
+- **THEN** the caller receives Pending and the supervisor continues owning cleanup and preserving dependencies until acknowledged completion
+
+#### Scenario: A budgeted caller disappears during shutdown initiation
+- **WHEN** a caller drops its wait before registry admission can close or before cleanup can be registered
+- **THEN** the accepted shutdown request remains retained and proceeds without that caller
+
+#### Scenario: Repeated observers see the eventual result
+- **WHEN** another caller observes or awaits the same shutdown after a prior budget expired
+- **THEN** it receives the same shutdown identity and eventually the same retained completion report, including failures and unresolved effects
+
+#### Scenario: A budget expires before inventory acquisition
+- **WHEN** the retained shutdown owner has not acquired the resource registry before the observation budget expires
+- **THEN** Pending explicitly reports inventory acquisition as pending, rather than presenting an empty resource list or asserting clean closure
+
+#### Scenario: Cleanup completion races budget expiry
+- **WHEN** a completed cleanup report is already retained at the observation boundary
+- **THEN** observation returns that actual report rather than replacing known completion with a time-derived resource outcome
+
 ### Requirement: Private host lifecycle control
 The managed sidecar SHALL advertise `host_lifecycle_control_v1`, retain the `READY:<port>` startup line, and accept versioned lifecycle snapshot and generation-checked reconnect commands through its launch-authenticated inherited input. This authority SHALL remain independent of database availability and database-backed request authorization.
 

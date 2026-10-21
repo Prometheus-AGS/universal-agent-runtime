@@ -6238,3 +6238,15 @@ Current repair cohort and exact embedding rerun complete. Keep all other command
 Completed9.6/9.7 source repairs and existing embedding PASS receipts published as d35234ba132988e5d64b1e19aea688c7fa978690 to existing PR418 branch. Prior operator source-only hook exception used for scoped commit; no stored hook settings or new verification. Preserved unrelated seed-tool clone/newline edits outside commit. Passing saved worktree identity remains3189/plan82 digest3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a, not clean-checkout proof for published commit. Image/Boss pin remain32cb3bcf. Budgeted Pending shutdown API still awaits operator decision; no source work remains in current embedding repair cohort.
 
 Current embedding repair and source publication complete. All other commands remain CLOSED/HELD. Await explicit decision authorizing caller-budgeted Pending reporting with retained cleanup/dependencies, or acknowledgement-only shutdown. Do not rerun passing embedding, implement broader API, renew payload/build or add verification without applicable operator instruction. See lifecycle-plan-implementation-evidence-checklist.md and publication receipt.
+
+
+## 2026-10-21 — budgeted shutdown implementation resumed
+
+Operator explicitly approved budgeted Pending reporting with retained cleanup. Add caller-supplied shutdown observation budget, stable shutdown identity and outstanding-resource snapshot; retain the same supervisor cleanup and dependency ordering after expiry or waiter cancellation. No fixed default, automatic abort, polling, new tests, gates or dependency changes. Runtime owns lifecycle.rs; lead owns embedded integration/spec/docs/canonical state; state inspects host integration only. All verification CLOSED, including prior embedding pass which predates new source.
+
+
+## 2026-10-21 — budgeted Pending shutdown source complete
+
+Task9.8 source-complete: RuntimeSupervisor/RuntimeHandle shutdown_with_budget(Duration) returns typed Pending/Completed with per-supervisor UUID; one owner registered before any registry-lock await; expired/canceled waiters do not abort owner. Explicit SnapshotPending or current unreleased scope snapshots; failed/unresolved scopes retained. Embedded wrapper cancels existing root before request. Corrected source identity collision and missing helper by inspection. Runtime/state/lead handoffs collected; no new tests, deps, wire changes or verification. Existing embedding PASS predates this edit; not acceptance for9.8.
+
+No compiler, tests, formatter, lint, builds, policy validator, review gate or new verification command ran. Executor lifetime and uncooperative work remain explicit limits.

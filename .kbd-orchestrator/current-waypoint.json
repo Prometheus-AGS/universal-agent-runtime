@@ -2,11 +2,11 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3191,
-  "derivedRevision": 3191,
+  "sourceRevision": 3196,
+  "derivedRevision": 3196,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 161,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 166,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -44,10 +44,10 @@
   "completionMetric": "implementation",
   "implementationCompleted": 138,
   "implementationTotal": 153,
-  "planRevision": 84,
-  "revision": 3191,
-  "exactNextCommand": "Current embedding repair and source publication complete. All other commands remain CLOSED/HELD. Await explicit decision authorizing caller-budgeted Pending reporting with retained cleanup/dependencies, or acknowledgement-only shutdown. Do not rerun passing embedding, implement broader API, renew payload/build or add verification without applicable operator instruction. See lifecycle-plan-implementation-evidence-checklist.md and publication receipt.",
+  "planRevision": 86,
+  "revision": 3196,
+  "exactNextCommand": "Author renewed budgeted-shutdown source inventory and publish scoped source/docs under existing source-only authorization. All verification remains CLOSED; no new tests/gates or rerun of earlier embedding. Full acceptance, source/image/Boss binding and release prerequisites remain unfinished.",
   "nextChange": "uar-outstanding-issues-v1-1-1",
   "nextTask": "4.1",
-  "updatedAt": "2026-10-21T09:08:40.060001Z"
+  "updatedAt": "2026-10-21T09:33:12.951294Z"
 }

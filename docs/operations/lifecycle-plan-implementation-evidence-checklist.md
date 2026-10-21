@@ -14,16 +14,17 @@ Status meanings: **Implemented** means source and writer handoff exist;
 **Unfinished** means a required deliverable or evidence is absent;
 **Blocked** names a prerequisite or operator decision. Implementation checkboxes
 do not certify runtime behavior. Canonical aggregate138/153 is not lifecycle
-acceptance. General verification is CLOSED; the operator's latest direction
-permits completing the repair batch and rerunning only the same approved
-embedding command. No tests, gates, refactors or cleanup are added here.
+acceptance. General verification is CLOSED. The earlier approved embedding
+command passed; the latest approval permits budgeted Pending source/API
+implementation only. It authorizes no test or new gate, and the old pass does
+not certify9.8. No passing command is rerun.
 
 ## Agreed implementation items
 
 | Plan item | Implementation locations | State and available evidence |
 | --- | --- | --- |
 | WP1 / 1.1: resource inventory, ownership graph, admission, generations, outstanding IDs and engine closure events | `src/uar/runtime/lifecycle.rs`; `src/server/lifecycle_graph.rs`; `docs/operations/lifecycle-resource-inventory.md`; local SDK engine overlay | Implemented; runtime/resource handoffs collected. Published Linux build evidence only; shutdown transition and release evidence unfinished. |
-| WP2 / 2.1: supervisor, scopes, registered tasks, retained outcomes, repeated/canceled shutdown waiters | `src/uar/runtime/lifecycle.rs`; `src/mcp/stdio_process.rs` | Implemented; runtime handoff. Owned-resource target authored but not run. No bounded-return claim. |
+| WP2 / 2.1: supervisor, scopes, registered tasks, retained outcomes, repeated/canceled shutdown waiters | `src/uar/runtime/lifecycle.rs`; `src/mcp/stdio_process.rs` | Implemented; runtime handoff. Owned-resource target authored but not run.9.8 adds caller-budgeted observation in source, not finite termination or execution proof. |
 | WP2: weak schedule/follow-up facades and history producer/drain ordering | `src/uar/runtime/manager.rs`; runtime schedule/follow-up controllers; `src/server/lifecycle_graph.rs` | Implemented; runtime and producer-runtime handoffs. Accepted history drain and cycle-release execution evidence unfinished. |
 | WP3 / 3.1: common endpoint, physical directory collision rejection, owned/borrowed persistence and memory | `src/uar/persistence/providers/{surreal,postgres}.rs`; `src/uar/persistence/scoped.rs`; `src/uar/security/credentials/maintenance.rs`; `src/uar/memory/{service,scoped_storage}.rs`; `src/server.rs`; `src/embedded.rs` | Implemented; state handoff. Physical release/reopen, borrowed usability and alias rejection evidence unfinished. |
 | WP4 / 4.1: SDK sessions, workers, delivery/index/maintenance, explicit engine close, remote transport/session identity and awaited subscription close | `vendor/patches/surrealdb-lifecycle/`; `vendor/patches/surrealdb-lifecycle/README.md` | Implemented source overlay; state/trust/gRPC handoffs and provenance. Published Linux compilation is evidence for32cb3bcf only. All-engine/transport/physical-close acceptance unfinished. |
@@ -42,10 +43,11 @@ embedding command. No tests, gates, refactors or cleanup are added here.
 | 6.2: local-only compatible embedding live failover, retained inference/control, recovery and native engine release | `src/config.rs`; `src/uar/api/settings.rs`; `src/uar/rag/embeddings/{fastembed,failover,swappable}.rs`; `src/server.rs` | Implemented. VERIFIED direct-controller integration path in attempt3: real inference, generations1→2→3→4→5, durable ingestion/query and successful fixture closure. Whole-server wiring, HTTP controls and separate MemoryService provider remain unverified. |
 | 8.2: real incompatible equal-dimension model fixture and durable generation continuity | `tests/embedding_lifecycle_failover.rs`; `tests/fixtures/local_embedding_lifecycle/` | VERIFIED scoped target: asset preparation exit0; embedding attempt3 exit0,1 passed/0 failed/0 ignored in4.35s. Actual incompatible384-dimensional inference,409 refusal, preserved binding/documents and compatible re-query passed. Broader frozen contract remains unfinished. |
 | 8.3 / 8.4 / 8.5: immutable Boss candidate binding and refreshed source pin | `scripts/build-boss-candidate.mjs`; Boss `scripts/{uar-candidate-binding,local-uar-payload,prepare-local-uar-payload}.cjs`; Boss `build/local-uar-source.json` | Implemented and published for32cb3bcf. Repair d35234ba is now published; Boss pin still predates it. Matching candidate/package remain BLOCKED under current scope; do not relabel an old candidate. |
-| 9.3: scoped commit/push, draft PRs and usable Docker delivery | Draft UAR PR418; Boss PR74; `lifecycle-image-delivery-39532243053.md` | VERIFIED delivery at32cb3bcf: Linux AMD64/ARM64 compilation/publication succeeded; combined digest8e6fb6f4…bc1fc8. Image excludes current uncommitted repairs and certifies no runtime acceptance. No repeat dispatch. |
+| 9.3: scoped commit/push, draft PRs and usable Docker delivery | Draft UAR PR418; Boss PR74; `lifecycle-image-delivery-39532243053.md` | VERIFIED delivery at32cb3bcf: Linux AMD64/ARM64 compilation/publication succeeded; combined digest8e6fb6f4…bc1fc8. Image excludes published d35234ba repairs and current9.8 work; it certifies no runtime acceptance. No repeat dispatch. |
 | 9.4 / 9.5: delivery compiler and startup Send repairs | Delivery runtime/state/MCP/startup repair handoffs | Implemented; successful later Docker delivery verifies release compilation of that source on both Linux architectures. Native/runtime contracts remain unverified. |
 | 9.6: embedding digest/compiler-diagnostic source repairs | `tests/embedding_lifecycle_failover.rs`; exact paths in approved-gate state/runtime/lead handoffs | Implemented at3184 / plan80. VERIFIED compilation in attempts2/3; digest failure resolved. One nonfatal SDK import warning remains; no zero-warning or feature-matrix claim. |
 | 9.7: observed fixture principal rejection | `tests/embedding_lifecycle_failover.rs`; `lifecycle-approved-gate-principal-repair-2026-10-21.md` | Implemented at3189 / plan82. VERIFIED by attempt3 passing actual principal-bound storage/search; no production guard changed. |
+| 9.8: caller-budgeted Pending shutdown observation | `src/uar/runtime/lifecycle.rs`; `src/embedded.rs`; runtime resource lifecycle spec; `lifecycle-budgeted-shutdown.md` | IMPLEMENTED source; runtime and host handoffs collected. UUID identity, retained initiation before await, explicit unknown inventory/current scope snapshots and observer-only budget. No test or compilation evidence; prior embedding pass predates this change. |
 | Delivery order, team ownership and provenance docs | Canonical KBD phase/child ledgers; collected source handoffs; SDK and memory provenance READMEs | Implemented source coordination; generated state updated through supported interfaces. Canonical release/preparation/reflection tasks remain unfinished. |
 
 Relative paths above resolve from the UAR repository, except paths explicitly
@@ -57,7 +59,7 @@ inventories; historical handoffs retain the verification state at authoring.
 
 | Covered producer | Owner / stop / join implementation | Evidence and limit |
 | --- | --- | --- |
-| Configuration filesystem and explicit reload | ConfigManager watcher scope; close admission, cancellation, actual watcher-task/reload completion | Source only; first DAG close stage after external admission closes. No finite wait budget. |
+| Configuration filesystem and explicit reload | ConfigManager watcher scope; close admission, cancellation, actual watcher-task/reload completion | Source only; first DAG close stage after external admission closes. Host9.8 observation may return Pending; actual watcher join remains required. |
 | Ingestion filesystem | IngestService watcher task and registration readiness; stop-biased event handling; accepted ingestion awaited; native handle released | Source only; second close stage. Native/file operation can remain pending. |
 | Optional skill watcher | Scope-owned event task; receiver closes before native watcher drops, releasing blocked callback | Source only; server does not instantiate compatibility API. |
 | History, retention, auto-capture, response quality, skill evolution, disconnect work, model streams | RunManager scopes/retained handles; producers finish before history admission closes and receiver drains | Source only; last persistence-dependent finalizer precedes store close. |
@@ -73,24 +75,18 @@ inventories; historical handoffs retain the verification state at authoring.
 
 ## Explicit unfinished or blocked contracts
 
-- **Finite shutdown bound — BLOCKED design distinction.** Current
-  `ResourceScope::close` and supervisor shutdown await retained acknowledgements.
-  `ScopeInner::finalize` waits on operation-count events, `TaskTracker::wait` and
-  the finalizer. `ConfigManager::close_watchers` awaits that contract. They do
-  not implement a finite observation budget or return a timed-out/pending report.
-  They do expose outstanding operations and never claim clean release while
-  those operations remain. Therefore a time-bounded stop-and-join return is not
-  implemented. Smallest decision: whether a caller-supplied shutdown budget may
-  return an explicit pending/timed-out observation while the same supervisor
-  continues owning cleanup and keeps dependencies alive. This is distinct from
-  using elapsed time to prove termination. Implementing that broader contract
-  is outside the currently permitted embedding-blocker repair batch.
-  In response to the operator's request for a recommendation, the lead
-  recommends this budgeted observation contract: return Pending with the same
-  shutdown identity and outstanding obligations; retain cleanup ownership and
-  prerequisites; permit awaiting the eventual retained result. No fixed default
-  duration or time-derived Released state. This recommendation is not approval
-  to implement the API change.
+- **Finite shutdown observation — IMPLEMENTED, UNVERIFIED.** The operator
+  approved budgeted Pending reporting with retained cleanup. Task9.8 adds
+  `shutdown_with_budget(Duration)` to supervisor, handle and embedded runtime.
+  One UUID identifies the same retained owner; initiation registers it before
+  an await. Expiry returns Pending with SnapshotPending inventory or current
+  unreleased-resource snapshots; it does not cancel the owner or release a
+  dependency. Completed carries the actual report and may still have
+  `released=false`. The embedded wrapper first cancels its existing root token.
+  Existing unbounded shutdown still awaits the same result. Runtime and lead
+  handoffs are collected. No budgeted-shutdown compilation/execution result
+  exists; no new test or verification gate was authorized. The host must keep
+  its executor alive, and uncooperative work can remain pending indefinitely.
 - **Exact native source binding — BLOCKED.** The approved candidate command
   names32cb3bcf; repair source d35234ba is now published, but Boss still pins the
   old source. Publishing/rebinding repaired source does not silently authorize
@@ -122,10 +118,11 @@ with no production guard change or new test. Attempt3 subsequently PASSED exit0:
 assertion requires supervisor release and persistence engine-close
 acknowledgement; it does not exercise immediate reopen or full-server teardown.
 Captured output and all actual commands are in the results document and logs.
-No other gate ran, no passing command was repeated and no production or fixture
-source edit was made after this pass. The finite-budget decision and other acceptance/source
-binding obligations above remain open. This checklist is not a claim that the
-full objective is complete.
+No other gate ran and no passing command was repeated. Approved9.8 production
+edits now postdate that pass and have no execution receipt. The finite-budget
+decision is resolved; its source implementation is complete and unverified. Other acceptance and
+source-binding obligations above remain open. This checklist is not a claim
+that the full objective is complete.
 
 Publication addendum: the completed repair source and receipts were committed
 and pushed as d35234ba132988e5d64b1e19aea688c7fa978690 to the existing PR418

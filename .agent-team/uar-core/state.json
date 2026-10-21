@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 127,
+  "revision": 136,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -995,6 +995,45 @@
       "dependsOn": [],
       "evidence": [
         "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-budget-runtime",
+      "title": "Retained shutdown initiation and budgeted observation",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-budget-runtime-handoff.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-budget-host-notes",
+      "title": "Read-only host shutdown integration constraints",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-budget-host-integration-notes.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-budget-lead",
+      "title": "Embedded wrapper and approved lifecycle contract integration",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-budget-lead-handoff.md"
       ],
       "remaining": []
     }
@@ -3463,6 +3502,165 @@
         "status": "complete",
         "evidence": [
           "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "1b4e5831-b2d7-463e-83f4-fec793858cf3",
+      "at": "2026-10-21T09:22:23.182Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-budget-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "1399602a-923f-42d6-ab5a-2606c18fd6db",
+      "at": "2026-10-21T09:22:23.432Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-budget-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-budget-runtime-handoff.md"
+        ],
+        "remaining": [
+          "Source implementation/handoff only; verification CLOSED; no tests or new gates"
+        ]
+      }
+    },
+    {
+      "id": "9e702edf-7c17-4dfc-a715-1484b4589164",
+      "at": "2026-10-21T09:22:23.690Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-budget-host-notes",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "52e27221-70ac-47a2-bc43-868f6e88fb4f",
+      "at": "2026-10-21T09:22:23.900Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-budget-host-notes",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-budget-host-integration-notes.md"
+        ],
+        "remaining": [
+          "Source implementation/handoff only; verification CLOSED; no tests or new gates"
+        ]
+      }
+    },
+    {
+      "id": "f4866c01-e0a7-43ef-a12e-38ca9d53596e",
+      "at": "2026-10-21T09:22:24.104Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-budget-host-notes",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-budget-host-integration-notes.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "4655d1ac-7e73-4bee-8c9a-89d46e4f41b7",
+      "at": "2026-10-21T09:22:24.331Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-budget-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "3d274784-cf94-4e08-87ba-f70e3eff7f0d",
+      "at": "2026-10-21T09:22:24.593Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-budget-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-budget-lead-handoff.md"
+        ],
+        "remaining": [
+          "Source implementation/handoff only; verification CLOSED; no tests or new gates"
+        ]
+      }
+    },
+    {
+      "id": "75fb12ba-2b15-4696-894d-fbb2936c6c75",
+      "at": "2026-10-21T09:33:01.990Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-budget-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-budget-runtime-handoff.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "3cdc3db4-0682-4158-bbb8-d418560e9ece",
+      "at": "2026-10-21T09:33:02.145Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-budget-lead",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-budget-lead-handoff.md"
         ],
         "remaining": []
       }

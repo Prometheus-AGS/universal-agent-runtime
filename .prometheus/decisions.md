@@ -2307,3 +2307,8 @@ Approved run39532243053 completed success at `32cb3bcfc9691212ec0b0359ce22474968
 ## 2026-10-21 — bounded observation recommendation, decision pending
 
 Operator asked what the lead recommends for finite shutdown bounds. Recommend a caller-supplied wait budget returning Pending with stable shutdown identity and outstanding obligations while the same supervisor owns cleanup and preserves dependencies. Elapsed time proves neither resource release nor rollback. This is a recommendation only: no finite-budget API is implemented or approved. Do not expand the embedding repair to implement it.
+
+
+## 2026-10-21 — budgeted Pending shutdown reporting approved
+
+Operator selected “Approve budgeted Pending reporting with retained cleanup.” This supersedes the pending-decision status above. Approval covers additive lifecycle API implementation only; it authorizes no tests, builds or other verification. Expiry limits the observer, never finalizer ownership, dependency retention or release evidence.

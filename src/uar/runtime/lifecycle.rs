@@ -12,6 +12,7 @@ use std::{
         Arc, Mutex,
         atomic::{AtomicU64, Ordering},
     },
+    time::Duration,
 };
 
 use futures::{FutureExt, StreamExt, stream::FuturesUnordered};
@@ -20,6 +21,7 @@ use tokio_util::{
     sync::CancellationToken,
     task::TaskTracker,
 };
+use uuid::Uuid;
 
 tokio::task_local! {
     static CURRENT_RESOURCE_SCOPE: ResourceScope;
@@ -122,6 +124,27 @@ impl CloseReport {
             dependency_failures: Vec::new(),
         }
     }
+}
+
+/// The current availability of shutdown inventory for a budget-limited
+/// observer. `SnapshotPending` never means that no resources remain.
+#[derive(Clone, Debug)]
+pub enum ShutdownOutstandingResources {
+    SnapshotPending,
+    Resources(Vec<ResourceSnapshot>),
+}
+
+/// A bounded observation of retained supervisor shutdown work.
+#[derive(Clone, Debug)]
+pub enum ShutdownObservation {
+    Pending {
+        shutdown_id: String,
+        outstanding_resources: ShutdownOutstandingResources,
+    },
+    Completed {
+        shutdown_id: String,
+        report: CloseReport,
+    },
 }
 
 /// Admission was closed before an operation could be registered.
@@ -877,11 +900,9 @@ impl ResourceScope {
         self.inner.publish_locked(&gate);
     }
 
-    /// Begin one retained finalizer and await its retained result.
-    ///
-    /// A cancelled caller only drops its wait. The spawned finalizer remains
-    /// owned by this scope and all later callers observe the same report.
-    pub async fn close(&self) -> CloseReport {
+    /// Begin one retained finalizer. It remains owned by the scope after the
+    /// caller that requested closure is canceled.
+    fn begin_close_retained(&self) {
         let start_finalizer = {
             let mut gate = self
                 .inner
@@ -896,12 +917,21 @@ impl ResourceScope {
             }
         };
         if start_finalizer {
+            self.inner.close_admission();
+            self.inner.cancellation.cancel();
             let inner = Arc::clone(&self.inner);
             tokio::spawn(async move {
                 inner.finalize().await;
             });
         }
+    }
 
+    /// Begin one retained finalizer and await its retained result.
+    ///
+    /// A cancelled caller only drops its wait. The spawned finalizer remains
+    /// owned by this scope and all later callers observe the same report.
+    pub async fn close(&self) -> CloseReport {
+        self.begin_close_retained();
         let mut result = self.inner.close_result.subscribe();
         loop {
             if let Some(report) = result.borrow().clone() {
@@ -989,6 +1019,12 @@ struct SupervisorRegistry {
     reconnect_handlers: BTreeMap<String, ReconnectHandler>,
 }
 
+#[derive(Default)]
+struct SupervisorShutdownState {
+    initiated: bool,
+    outstanding_resources: Option<BTreeMap<String, ResourceScope>>,
+}
+
 type ReconnectHandler = Arc<
     dyn Fn(u64) -> Pin<Box<dyn Future<Output = anyhow::Result<u64>> + Send>> + Send + Sync,
 >;
@@ -1074,6 +1110,8 @@ struct SupervisorInner {
     registry: AsyncMutex<SupervisorRegistry>,
     generations: AtomicU64,
     shutdown: ResourceScope,
+    shutdown_id: String,
+    shutdown_state: Mutex<SupervisorShutdownState>,
 }
 
 /// Trusted host owner for all runtime resource scopes.
@@ -1120,6 +1158,8 @@ impl RuntimeSupervisor {
                 }),
                 generations: AtomicU64::new(generation),
                 shutdown,
+                shutdown_id: format!("runtime-supervisor-shutdown-{}", Uuid::new_v4()),
+                shutdown_state: Mutex::new(SupervisorShutdownState::default()),
             }),
         }
     }
@@ -1332,19 +1372,116 @@ impl RuntimeSupervisor {
             .collect()
     }
 
-    /// Close external intake immediately, then await registered scopes in their
-    /// declared dependency order. Reverse registration is only a tie-breaker.
-    pub async fn shutdown(&self) -> CloseReport {
+    fn initiate_shutdown(&self) {
+        let inner = Arc::clone(&self.inner);
+        let supervisor_scope = inner.shutdown.clone();
+        let mut state = inner
+            .shutdown_state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if state.initiated {
+            return;
+        }
+
+        let worker_inner = Arc::clone(&inner);
+        let worker_scope = supervisor_scope.clone();
+        let spawned = supervisor_scope.spawn("runtime-supervisor-finalizer", async move {
+            RuntimeSupervisor::shutdown_worker(worker_inner, worker_scope).await
+        });
+        state.initiated = true;
+        match spawned {
+            Ok(_) => supervisor_scope.begin_close_retained(),
+            Err(error) => {
+                supervisor_scope.record_failure(format!(
+                    "runtime supervisor shutdown finalizer could not be retained: {error}"
+                ));
+                supervisor_scope.begin_close_retained();
+            }
+        }
+    }
+
+    fn outstanding_shutdown_resources(&self) -> ShutdownOutstandingResources {
+        let scopes = {
+            let state = self
+                .inner
+                .shutdown_state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state
+                .outstanding_resources
+                .as_ref()
+                .map(|resources| resources.values().cloned().collect::<Vec<_>>())
+        };
+        match scopes {
+            Some(scopes) => ShutdownOutstandingResources::Resources(
+                scopes.iter().map(ResourceScope::snapshot).collect(),
+            ),
+            None => ShutdownOutstandingResources::SnapshotPending,
+        }
+    }
+
+    /// Observe retained shutdown work for no longer than `budget`.
+    ///
+    /// The budget limits only this observer. Accepted finalization remains
+    /// owned by the supervisor until all actual joins complete.
+    pub async fn shutdown_with_budget(&self, budget: Duration) -> ShutdownObservation {
+        self.initiate_shutdown();
         let supervisor_scope = self.inner.shutdown.clone();
-        let scope = supervisor_scope.clone();
-        // Publish the one cleanup task while holding registry admission. A
-        // second shutdown caller must not close the supervisor scope between
-        // taking the resource snapshot and registering that task.
-        let mut registry = self.inner.registry.lock().await;
-        if !registry.closing {
+        let shutdown_id = self.inner.shutdown_id.clone();
+        if let Some(report) = supervisor_scope.close_report() {
+            return ShutdownObservation::Completed {
+                shutdown_id,
+                report,
+            };
+        }
+        match tokio::time::timeout(budget, supervisor_scope.close()).await {
+            Ok(report) => ShutdownObservation::Completed {
+                shutdown_id,
+                report,
+            },
+            Err(_) => {
+                let outstanding_resources = self.outstanding_shutdown_resources();
+                if let Some(report) = supervisor_scope.close_report() {
+                    ShutdownObservation::Completed {
+                        shutdown_id,
+                        report,
+                    }
+                } else {
+                    ShutdownObservation::Pending {
+                        shutdown_id,
+                        outstanding_resources,
+                    }
+                }
+            }
+        }
+    }
+
+    /// Retain shutdown work, then close external intake and await registered
+    /// scopes in their declared dependency order. Reverse registration is only
+    /// a tie-breaker.
+    pub async fn shutdown(&self) -> CloseReport {
+        self.initiate_shutdown();
+        self.inner.shutdown.close().await
+    }
+
+    async fn shutdown_worker(
+        inner: Arc<SupervisorInner>,
+        scope: ResourceScope,
+    ) -> anyhow::Result<()> {
+        let (registration_order, scopes) = {
+            let mut registry = inner.registry.lock().await;
+            if registry.closing {
+                scope.record_failure(
+                    "runtime supervisor shutdown finalizer started after registry closure",
+                );
+                return Ok(());
+            }
             registry.closing = true;
             for resource in registry.resources.values() {
-                let closes_early = resource.inner.metadata.lock()
+                let closes_early = resource
+                    .inner
+                    .metadata
+                    .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .close_admission_with_host;
                 if closes_early {
@@ -1353,162 +1490,174 @@ impl RuntimeSupervisor {
             }
             let registration_order = registry.registration_order.clone();
             let scopes = registry.resources.clone();
-            let resources = (registration_order, scopes);
-        let _ = supervisor_scope.spawn("runtime-supervisor-finalizer", async move {
-            let (registration_order, scopes) = resources;
-            let registration_index = registration_order
-                .iter()
-                .enumerate()
-                .map(|(index, resource_id)| (resource_id.clone(), index))
-                .collect::<BTreeMap<_, _>>();
-            let mut remaining = scopes.keys().cloned().collect::<BTreeSet<_>>();
-            let mut missing_roots = BTreeSet::new();
-            for (resource_id, resource) in &scopes {
-                for dependency_id in resource.snapshot().dependencies {
-                    if !scopes.contains_key(&dependency_id) {
-                        let failure = LifecycleDependencyFailure::Missing {
-                            resource_id: resource_id.clone(),
-                            dependency_id,
-                        };
-                        resource.record_dependency_failure(failure.clone());
-                        scope.record_dependency_failure(failure);
-                        missing_roots.insert(resource_id.clone());
-                    }
+            {
+                let mut state = inner
+                    .shutdown_state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                state.outstanding_resources = Some(scopes.clone());
+            }
+            (registration_order, scopes)
+        };
+        let registration_index = registration_order
+            .iter()
+            .enumerate()
+            .map(|(index, resource_id)| (resource_id.clone(), index))
+            .collect::<BTreeMap<_, _>>();
+        let mut remaining = scopes.keys().cloned().collect::<BTreeSet<_>>();
+        let mut missing_roots = BTreeSet::new();
+        for (resource_id, resource) in &scopes {
+            for dependency_id in resource.snapshot().dependencies {
+                if !scopes.contains_key(&dependency_id) {
+                    let failure = LifecycleDependencyFailure::Missing {
+                        resource_id: resource_id.clone(),
+                        dependency_id,
+                    };
+                    resource.record_dependency_failure(failure.clone());
+                    scope.record_dependency_failure(failure);
+                    missing_roots.insert(resource_id.clone());
                 }
             }
-            // A scope that cannot establish every dependency must stay open,
-            // together with all resources it still needs. Closing its known
-            // prerequisites would fabricate an ordered shutdown.
-            let missing_blocked = known_dependency_closure(&missing_roots, &scopes);
-            remaining.retain(|resource_id| !missing_blocked.contains(resource_id));
-            let mut finalizers: FuturesUnordered<
-                Pin<Box<dyn Future<Output = (String, CloseReport)> + Send>>,
-            > = FuturesUnordered::new();
-            let mut finalizing = BTreeSet::new();
+        }
+        // A scope that cannot establish every dependency must stay open,
+        // together with all resources it still needs. Closing its known
+        // prerequisites would fabricate an ordered shutdown.
+        let missing_blocked = known_dependency_closure(&missing_roots, &scopes);
+        remaining.retain(|resource_id| !missing_blocked.contains(resource_id));
+        let mut finalizers: FuturesUnordered<
+            Pin<Box<dyn Future<Output = (String, CloseReport)> + Send>>,
+        > = FuturesUnordered::new();
+        let mut finalizing = BTreeSet::new();
 
-            while !remaining.is_empty() {
-                let mut leaves = remaining
-                    .iter()
-                    .filter(|candidate| {
-                        !finalizing.contains(*candidate) && !remaining.iter().any(|resource_id| {
-                            resource_id.as_str() != candidate.as_str()
-                                && scopes
-                                    .get(resource_id)
-                                    .is_some_and(|scope| {
-                                        scope
-                                            .snapshot()
-                                            .dependencies
-                                            .iter()
-                                            .any(|dependency| dependency.as_str() == candidate.as_str())
-                                    })
-                        })
+        while !remaining.is_empty() {
+            let mut leaves = remaining
+                .iter()
+                .filter(|candidate| {
+                    !finalizing.contains(*candidate) && !remaining.iter().any(|resource_id| {
+                        resource_id.as_str() != candidate.as_str()
+                            && scopes
+                                .get(resource_id)
+                                .is_some_and(|scope| {
+                                    scope
+                                        .snapshot()
+                                        .dependencies
+                                        .iter()
+                                        .any(|dependency| dependency.as_str() == candidate.as_str())
+                                })
                     })
-                    .cloned()
-                    .collect::<Vec<_>>();
-                if !leaves.is_empty() {
-                    leaves.sort_by_key(|resource_id| {
-                        std::cmp::Reverse(*registration_index.get(resource_id).unwrap_or(&0))
-                    });
-                    for resource_id in leaves {
-                        let resource = scopes
-                            .get(&resource_id)
-                            .expect("registered resource remains in supervisor map")
-                            .clone();
-                        finalizing.insert(resource_id.clone());
-                        finalizers.push(Box::pin(async move {
-                            let report = resource.close().await;
-                            (resource_id, report)
-                        }));
-                    }
-                    continue;
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            if !leaves.is_empty() {
+                leaves.sort_by_key(|resource_id| {
+                    std::cmp::Reverse(*registration_index.get(resource_id).unwrap_or(&0))
+                });
+                for resource_id in leaves {
+                    let resource = scopes
+                        .get(&resource_id)
+                        .expect("registered resource remains in supervisor map")
+                        .clone();
+                    finalizing.insert(resource_id.clone());
+                    finalizers.push(Box::pin(async move {
+                        let report = resource.close().await;
+                        (resource_id, report)
+                    }));
                 }
-                if let Some((resource_id, report)) = finalizers.next().await {
-                    // A completed close acknowledgement, including a failure
-                    // report, releases only this resource's ordering edge.
-                    // Other independent leaves can finalize concurrently, and
-                    // a dependent becomes eligible only after this receipt.
-                    remaining.remove(&resource_id);
-                    finalizing.remove(&resource_id);
-                    for failure in &report.failures {
-                        scope.record_failure(format!(
-                            "{} cleanup failed: {failure}",
-                            report.resource_id
-                        ));
-                    }
-                    for unresolved_effect in &report.unresolved_effects {
-                        scope.record_unresolved_effect(format!(
-                            "{}: {unresolved_effect}",
-                            report.resource_id
-                        ));
-                    }
-                    scope.record_child_report(report);
-                    continue;
+                continue;
+            }
+            if let Some((resource_id, report)) = finalizers.next().await {
+                // A completed close acknowledgement, including a failure
+                // report, releases only this resource's ordering edge.
+                // Other independent leaves can finalize concurrently, and
+                // a dependent becomes eligible only after this receipt.
+                remaining.remove(&resource_id);
+                finalizing.remove(&resource_id);
+                for failure in &report.failures {
+                    scope.record_failure(format!(
+                        "{} cleanup failed: {failure}",
+                        report.resource_id
+                    ));
                 }
-                {
-                    let cycle = cycle_members(&remaining, &scopes);
-                    if cycle.is_empty() {
-                        scope.record_failure(
-                            "lifecycle dependency graph has no finalization leaf or cycle member",
-                        );
-                        for resource_id in remaining {
-                            scope.record_unresolved_effect(format!(
-                                "{resource_id}: finalization order remains unresolved"
-                            ));
-                        }
-                        break;
+                for unresolved_effect in &report.unresolved_effects {
+                    scope.record_unresolved_effect(format!(
+                        "{}: {unresolved_effect}",
+                        report.resource_id
+                    ));
+                }
+                let released = report.released;
+                scope.record_child_report(report);
+                if released {
+                    let mut state = inner
+                        .shutdown_state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    if let Some(resources) = &mut state.outstanding_resources {
+                        resources.remove(&resource_id);
                     }
-                    let cycle_ids = cycle.iter().cloned().collect::<Vec<_>>();
-                    for resource_id in &cycle {
-                        if let Some(resource) = scopes.get(resource_id) {
-                            resource.record_dependency_failure(
-                                LifecycleDependencyFailure::Cycle {
-                                    resource_ids: cycle_ids.clone(),
-                                },
-                            );
-                        }
-                    }
-                    scope.record_dependency_failure(LifecycleDependencyFailure::Cycle {
-                        resource_ids: cycle_ids.clone(),
-                    });
-                    // Resources outside the SCC are retained because a cycle
-                    // still needs them, not because they themselves form one.
-                    let cycle_blocked = known_dependency_closure(&cycle, &scopes);
-                    for resource_id in cycle_blocked.difference(&cycle) {
-                        if let Some(resource) = scopes.get(resource_id) {
-                            resource.record_unresolved_effect(format!(
-                                "required by cyclic lifecycle resources: {}",
-                                cycle_ids.join(", "),
-                            ));
-                        }
-                    }
-                    for resource_id in cycle_blocked {
+                }
+                continue;
+            }
+            {
+                let cycle = cycle_members(&remaining, &scopes);
+                if cycle.is_empty() {
+                    scope.record_failure(
+                        "lifecycle dependency graph has no finalization leaf or cycle member",
+                    );
+                    for resource_id in remaining {
                         scope.record_unresolved_effect(format!(
-                            "{resource_id}: retained because finalization cycle requires it"
+                            "{resource_id}: finalization order remains unresolved"
                         ));
                     }
                     break;
                 }
-            }
-            for resource_id in missing_blocked {
-                let reason = if missing_roots.contains(&resource_id) {
-                    "has a missing declared dependency"
-                } else {
-                    "is required by a resource with a missing declared dependency"
-                };
-                if !missing_roots.contains(&resource_id) {
-                    if let Some(resource) = scopes.get(&resource_id) {
-                        resource.record_unresolved_effect(reason);
+                let cycle_ids = cycle.iter().cloned().collect::<Vec<_>>();
+                for resource_id in &cycle {
+                    if let Some(resource) = scopes.get(resource_id) {
+                        resource.record_dependency_failure(
+                            LifecycleDependencyFailure::Cycle {
+                                resource_ids: cycle_ids.clone(),
+                            },
+                        );
                     }
                 }
-                scope.record_unresolved_effect(format!(
-                    "{resource_id}: retained because it {reason}"
-                ));
+                scope.record_dependency_failure(LifecycleDependencyFailure::Cycle {
+                    resource_ids: cycle_ids.clone(),
+                });
+                // Resources outside the SCC are retained because a cycle
+                // still needs them, not because they themselves form one.
+                let cycle_blocked = known_dependency_closure(&cycle, &scopes);
+                for resource_id in cycle_blocked.difference(&cycle) {
+                    if let Some(resource) = scopes.get(resource_id) {
+                        resource.record_unresolved_effect(format!(
+                            "required by cyclic lifecycle resources: {}",
+                            cycle_ids.join(", "),
+                        ));
+                    }
+                }
+                for resource_id in cycle_blocked {
+                    scope.record_unresolved_effect(format!(
+                        "{resource_id}: retained because finalization cycle requires it"
+                    ));
+                }
+                break;
             }
-            Ok(())
-        });
         }
-        drop(registry);
-        supervisor_scope.close().await
+        for resource_id in missing_blocked {
+            let reason = if missing_roots.contains(&resource_id) {
+                "has a missing declared dependency"
+            } else {
+                "is required by a resource with a missing declared dependency"
+            };
+            if !missing_roots.contains(&resource_id) {
+                if let Some(resource) = scopes.get(&resource_id) {
+                    resource.record_unresolved_effect(reason);
+                }
+            }
+            scope.record_unresolved_effect(format!(
+                "{resource_id}: retained because it {reason}"
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -1534,6 +1683,11 @@ impl RuntimeHandle {
 
     pub async fn shutdown(&self) -> CloseReport {
         self.supervisor.shutdown().await
+    }
+
+    /// Observe retained shutdown work for no longer than `budget`.
+    pub async fn shutdown_with_budget(&self, budget: Duration) -> ShutdownObservation {
+        self.supervisor.shutdown_with_budget(budget).await
     }
 
     /// Request an explicit host-authorized reconnect for the expected resource

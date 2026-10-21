@@ -26,6 +26,13 @@ them on demand. No periodic unchanged-state logging or lock probing is needed.
 Transitions are registered, ready, admission closed, draining, finalizing and
 released or failed. A cancellation request is never a release transition.
 
+The approved caller-budgeted host API adds observation of the same retained
+supervisor shutdown. Pending carries a per-supervisor UUID and either explicit
+pending inventory acquisition or current unreleased resource snapshots. Expiry
+does not stop joining or change this dependency graph. The embedded wrapper
+requests its run-root cancellation first. See `lifecycle-budgeted-shutdown.md`;
+this source contract has no compilation or runtime evidence yet.
+
 ## Server ownership graph
 
 | Resource / source | Authority and admission | Cancellation and completion | Finalization prerequisites |

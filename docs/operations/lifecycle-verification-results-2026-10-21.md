@@ -212,3 +212,13 @@ source-only authorization. No additional verification ran. The exact saved
 worktree, including pre-existing seed-tool edits excluded from that scoped
 commit, remains the identity of this passing result. The image and Boss pin
 remain32cb3bcf. See `lifecycle-approved-embedding-repair-publication-2026-10-21.md`.
+
+## 5. Budgeted shutdown implementation — NO VERIFICATION
+
+The operator subsequently approved caller-budgeted Pending reporting with
+retained cleanup. Task9.8 changes `src/uar/runtime/lifecycle.rs` and
+`src/embedded.rs` after the passing embedding run. The source implementation
+and docs are recorded in `lifecycle-budgeted-shutdown.md` and its runtime/lead
+handoffs. No new test, compiler, build, lint, formatter, review gate or other
+verification command ran. The earlier1/1 result remains bound to its earlier
+saved-source inventory and is not evidence for the new implementation.

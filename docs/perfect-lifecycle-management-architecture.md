@@ -167,6 +167,14 @@ An in-memory record is sufficient for resources that disappear with the process.
 
 Concurrent callers requesting close attach to one supervisor-owned finalization operation. They receive the same terminal report. A caller dropping its wait future does not cancel finalization.
 
+A caller may supply a budget for observing that close operation. Budget expiry
+returns `Pending` with the same shutdown identity and outstanding obligations;
+it does not terminate cleanup or authorize dependency release. Accept and retain
+the close request before any cancelable wait, including registry acquisition.
+An unavailable inventory is reported explicitly, never as an empty clean result.
+UAR's opt-in host API is documented in
+[budgeted shutdown observation](operations/lifecycle-budgeted-shutdown.md).
+
 The resource generation cannot reopen after reaching `Closed`. A restart creates a new generation, so a delayed event from the previous instance cannot close, authorize, or mark ready the replacement.
 
 The completion report distinguishes:

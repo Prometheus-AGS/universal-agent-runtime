@@ -7,6 +7,13 @@ Actual outputs and limits are in `lifecycle-verification-results-2026-10-21.md`.
 All other commands remain held. The original proposal below records its
 prerequisites and exact arguments; it is not new authorization.
 
+Budgeted shutdown addendum2026-10-21: operator-approved task9.8 adds new
+production source after that passing embedding run. This approval covers
+implementation only. Verification is CLOSED for the new bytes; no earlier pass
+certifies them, no passing command is repeated, and no new test or command is
+added to this proposal. All exact commands below remain held until a fresh
+applicable operator instruction and their prerequisites are satisfied.
+
 The verification and native-preparation commands below have not run. The final section separately records the approved Docker delivery command, which completed successfully at `32cb3bcfc9691212ec0b0359ce22474968bc6850` for both Linux architectures. It published `sha256:8e6fb6f453323fa921d956adb78d15b4ab4ae6137acb3cc5827a83bcd9bc1fc8`. That narrow delivery exception does not authorize any command below. Run only commands the operator explicitly approves, serially, after reconciliation of the full phase and exact prerequisites. Approval for one command grants no other command or hidden preflight.
 
 ## Local embedding assets and actual inference

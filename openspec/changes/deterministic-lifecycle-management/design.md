@@ -22,6 +22,32 @@ Surviving handle ownership leads the historical lock hypothesis; existing cleanu
 
 Lead: server.rs, manifests, realtime, release fixtures, canonical KBD and OpenSpec. Runtime: src/uar/runtime/**. State: src/uar/persistence/**, src/uar/memory/**, isolated pinned SDK patches. Trust: credential stores/API and sidecar/live fixture ownership. No overlapping writers. First-party memory export changes require an upstream source commit and normal pinned export; never patch exported bytes independently.
 
+## Approved caller-budgeted shutdown observation
+
+On2026-10-21 the operator approved an additive shutdown observation contract.
+A caller supplies its own wait budget. The observer returns Pending with a
+stable shutdown identity and outstanding resources when that budget expires.
+The same supervisor continues owning cleanup, cancellation, tasks and dependency
+ordering until actual acknowledgement. Repeated or canceled callers do not
+create a second finalizer. Completion retains failures and unresolved effects;
+completed observation does not imply a successful release report.
+
+The budget may cancel only the caller's wait. It must not own the finalization
+future, abort workers, silently detach resource obligations or close dependencies
+early. Initiation must survive cancellation even before the async registry gate
+is acquired. Pending observation must not block on that registry gate. Existing
+unbounded shutdown remains compatible; no implicit duration is introduced.
+
+Source ownership: runtime owns `src/uar/runtime/lifecycle.rs`; lead owns the
+additive embedded-host wrapper if required, OpenSpec, documentation and canonical
+coordination. Existing private sidecar framing and launcher behavior are not
+expanded merely to expose this Rust host capability. No dependency upgrade or
+new test is included.
+
+The uncomfortable limit remains: a Pending return is a bounded observation,
+not finite termination of uncooperative native or remote work. Dropping the
+executor or killing the process still cannot provide graceful closure evidence.
+
 ## Verification boundary
 
 Gate CLOSED. No tests, compiler probes, lint, format, builds, packaging, policy validators, git diff --check or artifact review until all implementation in the active phase is complete and the operator approves exact commands.

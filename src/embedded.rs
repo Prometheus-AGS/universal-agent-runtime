@@ -113,6 +113,19 @@ impl EmbeddedRuntime {
         self.lifecycle.cancellation.cancel();
         self.lifecycle.supervisor.shutdown().await
     }
+
+    /// Request shutdown and limit only this caller's wait for acknowledgement.
+    /// A pending observation retains the same supervisor cleanup and its
+    /// dependencies; it does not mean that active work has stopped. Keep the
+    /// async host alive and await `shutdown` for the eventual completion report.
+    pub async fn shutdown_with_budget(
+        &self,
+        budget: std::time::Duration,
+    ) -> crate::uar::runtime::lifecycle::ShutdownObservation {
+        self.lifecycle.cancellation.cancel();
+        self.lifecycle.supervisor.shutdown_with_budget(budget).await
+    }
+
     /// Begin constructing an embedded runtime.
     #[must_use]
     pub fn builder() -> EmbeddedRuntimeBuilder {

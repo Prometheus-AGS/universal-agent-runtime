@@ -21,6 +21,7 @@
 - [x] 8.5 Renew Boss pin after startup Send source repair
 - [x] 9.6 Repair observed embedding fixture digest compilation and emitted warnings
 - [x] 9.7 Repair observed embedding fixture principal identity rejection
+- [x] 9.8 Caller-budgeted Pending shutdown reporting with retained cleanup
 
 Implementation checkboxes record authored production/fixture/documentation
 source and collected writer handoffs. They do not certify compilation, execution,
