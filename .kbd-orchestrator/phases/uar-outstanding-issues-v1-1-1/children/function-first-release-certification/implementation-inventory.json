@@ -1,0 +1,119 @@
+{
+  "document_kind": "child_implementation_inventory",
+  "phase": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
+  "parent_inventory": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory-function-first.json",
+  "implementation_boundary": "complete",
+  "implementation_complete": true,
+  "source_commit": "38f0b5d85960e3cb8445607750538ca500efdf17",
+  "source_tree": "sha256:8486a2d4edee965efcdd68697f4b5ba10447a744b96e400bb75ee606cabf5347",
+  "fixture_tree": "sha256:387278df16cc41aab1d1e4ac588f589f556a607cd40d628ecde35690c428105d",
+  "child_items": [
+    {
+      "id": "child:1.1",
+      "stable_id": "FC1",
+      "owner": "uar-lead",
+      "required_deliverable": "Adopt reduced functional assurance, reconcile OpenSpec and parent contracts, assign exact child scope and team ownership.",
+      "files": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/scope.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/plan.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/handoffs/FC1.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/proposal.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/design.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/tasks.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/verification.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/model-path-resiliency/spec.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/knowledge-rag-product-certification/spec.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/plan.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/ownership.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/spec/runtime-contracts.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/spec/trust-contracts.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/spec/state-contracts.md",
+        "docs/operations/uar-1.1.1-acceptance.md",
+        "docs/releases/v1.1.1.md"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC1.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:2.1",
+      "stable_id": "FC2",
+      "owner": "uar-runtime",
+      "required_deliverable": "Implement prompt/explicit skill/output and timing oracle, reduced runtime scenarios, native messages fold and controlled provider trace.",
+      "files": [
+        "scripts/release/uar_1_1_1_runtime.py",
+        "scripts/release/uar_1_1_1_support.py",
+        "tests/fixtures/uar_1_1_1_provider.py"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC2.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:2.2",
+      "stable_id": "FC3",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Fold credential, compiler and recovery labels while retaining each consequential backend, authority and durability assertion.",
+      "files": [
+        "scripts/release/uar_1_1_1_credentials.py",
+        "scripts/release/uar_1_1_1_compiler.py",
+        "scripts/release/uar_1_1_1_recovery.py"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC3.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:3.1",
+      "stable_id": "FC4",
+      "owner": "uar-lead",
+      "required_deliverable": "Integrate closed prebuilt-image runner/schema, all scenario dispositions, supervisor preparation procedure and final release/contract documentation.",
+      "files": [
+        "scripts/release/uar_1_1_1_acceptance.py",
+        "scripts/release/uar_1_1_1_manifest.schema.json",
+        "scripts/release/uar_1_1_1_manifest.example.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/scenario-disposition.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/supervisor-preparation.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/handoffs/FC4.md",
+        ".prometheus/decisions.md"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC4.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:3.2",
+      "stable_id": "FC5",
+      "owner": "uar-lead",
+      "required_deliverable": "Record exact whole-phase source/fixture identity, reconcile all implementation items and canonical state, and prepare concrete non-executable manifests and operator decision packet.",
+      "files": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory-function-first.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/implementation-inventory.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/operator-gate-decision.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/handoffs/FC5.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-local.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-arm64.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-amd64.json"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC5.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    }
+  ],
+  "operator_lock": "CLOSED",
+  "remaining_nonimplementation_tasks": [
+    "child FC6/4.1",
+    "child FC7/4.2",
+    "child FC8/4.3",
+    "child FC9/5.1",
+    "parent V2/6.2",
+    "parent P1/7.1",
+    "parent P2/7.2",
+    "parent P3/7.3"
+  ]
+}

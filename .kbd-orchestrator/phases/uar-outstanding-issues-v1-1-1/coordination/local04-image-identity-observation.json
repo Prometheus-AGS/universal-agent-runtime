@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-16T22:45:25.523Z",
+  "kind": "observed-candidate-image-identity-discrepancy",
+  "source_tree": "sha256:3664d2351c10b19b0a8267ca8688daa4353c0ef133345c8e3426f3c2e4fedc4e",
+  "fixture_tree": "sha256:cb4e13ce07768d82c550907c4eff7151eecd4bb63d462a338b2df3211c464f81",
+  "staged_runtime_image": "sha256:d221cda1aacc969b0e455f69a9894fdf171bc0f33f23d5922c3f9690385775fe",
+  "local04_image": "sha256:2c48505e4a8cfbaf6341e2863cf2c4f6393595d8bbaddac71a985f22404b396b",
+  "observed_build_context_bytes": "5.02GB reported in retained command-00002.log",
+  "source_supported_findings": [
+    "Local program writes KBD evidence before unconditional candidate rebuild",
+    "Docker context includes .kbd-orchestrator and .prometheus outside runtime fingerprint",
+    "Root COPY was uncached; final binary COPY was cached; assets/model/policy COPY rebuilt",
+    "No Docker build consumer requires these operational directories; final image does not explicitly ship them"
+  ],
+  "uncertainty": "Exact changed image layer or metadata field not independently isolated",
+  "program_status": "still collecting full cohort; no repair performed",
+  "planned_disposition": "After terminal full-cohort receipt, select smallest repair for observed cause and renew entire implementation inventory before affected rerun",
+  "new_product_requirements": []
+}

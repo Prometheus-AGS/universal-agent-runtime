@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 
 use tokio::sync::{Mutex, OnceCell};
 use uuid::Uuid;
@@ -65,6 +65,7 @@ pub(super) struct AdmissionLifecycle {
     ephemeral_evidence: Mutex<Vec<ToolAdmissionEvidence>>,
     reconciled: OnceCell<()>,
     invocations: Mutex<HashMap<String, Arc<Mutex<LiveState>>>>,
+    cancellation_watchers: StdMutex<HashMap<String, tokio_util::sync::CancellationToken>>,
 }
 
 impl AdmissionLifecycle {
@@ -74,6 +75,7 @@ impl AdmissionLifecycle {
             ephemeral_evidence: Mutex::new(Vec::new()),
             reconciled: OnceCell::new(),
             invocations: Mutex::new(HashMap::new()),
+            cancellation_watchers: StdMutex::new(HashMap::new()),
         }
     }
 
@@ -121,6 +123,17 @@ impl AdmissionLifecycle {
                 .entry(invocation_id.to_owned())
                 .or_insert_with(|| Arc::new(Mutex::new(initial))),
         )
+    }
+
+    fn stop_watching(&self, invocation_id: &str) {
+        let watcher = self
+            .cancellation_watchers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(invocation_id);
+        if let Some(watcher) = watcher {
+            watcher.cancel();
+        }
     }
 
     pub(super) async fn reconcile(&self, context: &ToolAdmissionContext) -> anyhow::Result<()> {
@@ -196,6 +209,8 @@ impl AdmissionLifecycle {
             .await;
         let mut state = cell.lock().await;
         if *state == LiveState::Terminal {
+            drop(state);
+            self.stop_watching(&invocation.invocation_id);
             return Ok(());
         }
         anyhow::ensure!(
@@ -209,6 +224,8 @@ impl AdmissionLifecycle {
         ))
         .await?;
         *state = LiveState::Terminal;
+        drop(state);
+        self.stop_watching(&invocation.invocation_id);
         Ok(())
     }
 
@@ -293,6 +310,8 @@ impl AdmissionLifecycle {
         } else {
             LiveState::Terminal
         };
+        drop(state);
+        self.stop_watching(&invocation.invocation_id);
         Ok(())
     }
 
@@ -309,9 +328,13 @@ impl AdmissionLifecycle {
         let mut state = cell.lock().await;
         match *state {
             LiveState::ClaimedUnknown => {
+                drop(state);
+                self.stop_watching(&invocation.invocation_id);
                 return Ok(AdmissionCancellationOutcome::AlreadyClaimed);
             }
             LiveState::Terminal | LiveState::Cancelled => {
+                drop(state);
+                self.stop_watching(&invocation.invocation_id);
                 return Ok(AdmissionCancellationOutcome::AlreadyTerminal);
             }
             LiveState::AwaitingApproval | LiveState::Claimed | LiveState::NativeClaimed => {}
@@ -358,7 +381,10 @@ impl AdmissionLifecycle {
         } else {
             LiveState::ClaimedUnknown
         };
-        cancellation.map(|_| outcome)
+        let outcome = cancellation.map(|_| outcome)?;
+        drop(state);
+        self.stop_watching(&invocation.invocation_id);
+        Ok(outcome)
     }
 
     pub(super) fn watch_cancellation(
@@ -367,27 +393,39 @@ impl AdmissionLifecycle {
         invocation: Arc<PreparedToolInvocation>,
         admission_id: String,
         cancellation: tokio_util::sync::CancellationToken,
-    ) {
+        scope: crate::uar::runtime::lifecycle::ResourceScope,
+    ) -> Result<(), crate::uar::runtime::lifecycle::AdmissionClosed> {
+        let settled = tokio_util::sync::CancellationToken::new();
+        let invocation_id = invocation.invocation_id.clone();
+        if let Some(previous) = self
+            .cancellation_watchers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(invocation_id.clone(), settled.clone())
+        {
+            previous.cancel();
+        }
         let lifecycle = Arc::clone(self);
-        tokio::spawn(async move {
-            cancellation.cancelled().await;
-            if lifecycle
-                .cancel(
-                    host.as_ref(),
-                    invocation.as_ref(),
-                    &admission_id,
-                    AdmissionCancellationReason::Cancelled,
+        scope.spawn("tool-admission-cancellation", async move {
+            let result = tokio::select! {
+                _ = settled.cancelled() => Ok(()),
+                _ = cancellation.cancelled() => lifecycle
+                    .cancel(
+                        host.as_ref(),
+                        invocation.as_ref(),
+                        &admission_id,
+                        AdmissionCancellationReason::Cancelled,
+                    )
+                    .await
+                    .map(|_| ()),
+            };
+            lifecycle.stop_watching(&invocation_id);
+            result.map_err(|error| {
+                anyhow::anyhow!(
+                    "tool admission cancellation receipt could not be recorded for {invocation_id}: {error:#}"
                 )
-                .await
-                .is_err()
-            {
-                tracing::error!(
-                    invocation_id = %invocation.invocation_id,
-                    code = "tool_admission_cancellation_record_failed",
-                    "Tool admission cancellation could not be recorded"
-                );
-            }
-        });
+            })
+        })
     }
 }
 

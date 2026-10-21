@@ -4,6 +4,8 @@
 
 #[path = "support/credential_process.rs"]
 mod process;
+#[path = "support/uar_1_1_1_memory_fixture.rs"]
+mod memory_fixture;
 
 use axum_test::TestServer;
 use process::{Database, Node, Provider, TEST_KEY, authenticated, call, token};
@@ -11,13 +13,19 @@ use reqwest::Method;
 use serde_json::json;
 use std::sync::Arc;
 use universal_agent_runtime::uar::security::{
-    claims::{CredentialPrincipal, UserClaims, UserContext},
+    claims::{UserClaims, UserContext},
     credentials::{
-        CredentialEncryption, CredentialRecord, CredentialScope, CredentialStore,
+        CredentialOwnerBinding, CredentialEncryption, CredentialRecord, CredentialScope, CredentialStore,
         InMemoryCredentialStore, LegacyCredentialOwnerMapping, PrincipalCredentialStore,
         ProviderService, SurrealCredentialStore,
     },
 };
+
+/// Supplemental memory contract through verified ingress and the real HTTP router.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn phase_memory_credential_migration_uses_real_http_and_atomic_store() {
+    memory_fixture::conditional_migration().await;
+}
 
 #[tokio::test]
 async fn synthetic_user_context_never_confers_credential_ownership() {
@@ -44,7 +52,7 @@ async fn synthetic_user_context_never_confers_credential_ownership() {
             "/credentials",
             universal_agent_runtime::uar::api::credentials::build_router(),
         )
-        .with_state(Some(service))
+        .with_state(universal_agent_runtime::uar::api::credentials::CredentialApiState { policy: Arc::new(process::credential_policy()), service: Some(service) })
         .layer(axum::Extension(context));
     let server = TestServer::new(app);
     server
@@ -65,7 +73,7 @@ async fn local_surreal_kv_api_resolution_survives_process_restart() {
     let first = Node::boot(&database, &provider, None, &[], None).await;
     let alice = token(None, None, "alice");
     let owner = call(&first, &alice, Method::GET, "/principal", None, 200).await;
-    assert_eq!(owner["issuer"], "urn:uar:local:jwt");
+    assert_eq!(owner["issuer"], format!("urn:uar:installation:{}:jwt", process::INSTALLATION_ID));
     call(
         &first,
         &alice,
@@ -419,13 +427,14 @@ fn record(
         api_key_hint: CredentialEncryption::key_hint(key, 4),
         created_at: now,
         updated_at: now,
+        row_revision: None,
     }
 }
 
 async fn prove_scope_precedence(
     service: &ProviderService,
-    a: &CredentialPrincipal,
-    b: &CredentialPrincipal,
+    a: &CredentialOwnerBinding,
+    b: &CredentialOwnerBinding,
 ) {
     for (scope, id, key) in [
         (CredentialScope::Session, "shared-session", "session-key"),
@@ -503,7 +512,7 @@ async fn prove_scope_precedence(
     );
 }
 
-async fn prove_destination_conflict(service: &ProviderService, principal: &CredentialPrincipal) {
+async fn prove_destination_conflict(service: &ProviderService, principal: &CredentialOwnerBinding) {
     let provider = format!("occupied-{}", uuid::Uuid::new_v4());
     let existing = record(
         CredentialScope::User,
@@ -586,6 +595,7 @@ async fn postgres_principal_scope_and_atomic_legacy_mapping() {
     .execute(&pool)
     .await
     .unwrap();
+    sqlx::raw_sql(include_str!("../migrations/20261016000000_credential_revisions.sql")).execute(&pool).await.unwrap();
     let a = authenticated(Some("credential-issuer-a"), Some("tenant-a"), "same").await;
     let b = authenticated(Some("credential-issuer-a"), Some("tenant-b"), "same").await;
     let c = authenticated(Some("credential-issuer-b"), Some("tenant-a"), "same").await;
@@ -695,4 +705,75 @@ async fn postgres_principal_scope_and_atomic_legacy_mapping() {
             .is_none()
     );
     pool.close().await;
+}
+
+/// Native host capture supplement: a real SDK, durable SurrealKV and HTTP provider.
+/// This deliberately supplies a working opaque driver; denial must precede its I/O.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn phase_native_sdk_supplied_credentials_use_real_provider_and_durable_store() {
+    use universal_agent_runtime::{config::{LlmConfig, build_client_config}, embedded::EmbeddedRuntime,
+        llm::{liter_driver::LiterLlmDriver, registry::ProviderConfig},
+        uar::{security::credentials::{CredentialTenancyPolicy, ProviderCredentialPolicyConfig},
+            governance::engine::GovernanceEngine, runtime::{tool_admission::StandaloneToolAdmissionPort,
+            turn::RunExecutionRequest}, domain::runs::RunStatus,
+            persistence::providers::surreal::SurrealDbProvider}};
+    let peer = Provider::start().await;
+    let database = Database::local();
+    let persistence = Arc::new(SurrealDbProvider::new(&database.url, None, None,
+        Some(&database.namespace), Some(&database.database)).await.unwrap());
+    let service = Arc::new(ProviderService::new(Arc::new(SurrealCredentialStore::new(persistence.client())),
+        Arc::new(CredentialEncryption::from_key(TEST_KEY))));
+    let context = process::authenticated_context("credential-issuer-a", "tenant-a", "sdk-owner").await;
+    let mut llm: LlmConfig = serde_json::from_value(json!({"model":"openai/gpt-4o-mini",
+        "base_url":peer.url,"api_key":"native-sdk-account","host_supplied_connection":true})).unwrap();
+    llm.api_key_env = None;
+    llm.host_supplied_connection = true;
+    llm.provider_keys.clear();
+    let catalog: ProviderConfig = serde_json::from_value(json!({"id":"openai","display_name":"SDK real provider",
+        "base_url":peer.url,"api_key":"native-sdk-account","protocol":"auto","default_model":"gpt-4o-mini",
+        "models":[{"id":"gpt-4o-mini","context_window":8192,"supports_tools":true,
+        "supports_streaming":true,"max_output_tokens":256,"enabled":true}],"enabled":true})).unwrap();
+    for shared in [false, true] {
+        let policy = Arc::new(CredentialTenancyPolicy::from_config(serde_json::from_value::<ProviderCredentialPolicyConfig>(json!({
+            "mode":if shared {"shared"} else {"single_owner"},
+            "shared_fallbacks":[{"issuer":"credential-issuer-a","tenant_id":"tenant-a","provider_id":"openai","source":"config"}]
+        })).unwrap()).unwrap());
+        let driver = Arc::new(LiterLlmDriver::new(build_client_config(&llm), "openai/gpt-4o-mini".to_owned(), None).unwrap());
+        let runtime = EmbeddedRuntime::builder().llm_config(llm.clone()).local_provider(driver,catalog.clone())
+            .persistence(persistence.clone()).provider_service(service.clone()).credential_policy(policy)
+            .governance_engine(Arc::new(GovernanceEngine::with_default_permit().unwrap()))
+            .host_tool_admission(Arc::new(StandaloneToolAdmissionPort::new(&uuid::Uuid::new_v4().to_string())))
+            .seed_defaults(false).build().await.unwrap();
+        let mut agent = universal_agent_runtime::uar::defaults::default_agent();
+        agent.id = format!("native-credentials-{shared}");
+        agent.policy.provider.default.provider = "openai".to_owned();
+        agent.policy.provider.default.model = "gpt-4o-mini".to_owned();
+        agent.policy.tools.allow.clear();
+        agent.memory.kb.enabled = false;
+        agent.memory.conversation.enabled = false;
+        let request = RunExecutionRequest::new(agent,"native SDK credential observation".to_owned())
+            .with_user_context(&context).unwrap();
+        let before = peer.contact_count();
+        let manager = runtime.run_manager();
+        let id = manager.execute_request(request).await;
+        let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(60);
+        let terminal = loop {
+            if let Some(run) = manager.get_run(&id).await {
+                if matches!(run.status, RunStatus::Done | RunStatus::Error | RunStatus::Cancelled) { break run.status; }
+            }
+            assert!(tokio::time::Instant::now() < deadline, "native SDK run did not terminate");
+            tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+        };
+        if shared {
+            assert_eq!(terminal, RunStatus::Error);
+            assert_eq!(peer.contact_count(), before, "opaque shared SDK driver reached provider");
+        } else {
+            assert_eq!(terminal, RunStatus::Done);
+            assert!(peer.contact_count() > before);
+            assert!(peer.saw_key("native-sdk-account"));
+        }
+        manager.shutdown_graph_roots().await.unwrap();
+        manager.shutdown_terminals().await.unwrap();
+        manager.shutdown_sandboxes().await.unwrap();
+    }
 }

@@ -81,6 +81,87 @@ impl GrpcV1Service {
             .await
             .map_err(admission_error)
     }
+    async fn send_task(
+        &self, request: Request<SendMessageRequest>, force_immediate: bool,
+    ) -> Result<(Task, VerifiedGrpcCaller, Option<usize>), Status> {
+        let caller = self.caller(&request).await?;
+        let request = request.into_inner();
+        verify_tenant(&caller, &request.tenant)?;
+        self.admit(&caller).await?;
+        let configuration = request.configuration.unwrap_or_default();
+        if configuration.task_push_notification_config.is_some() {
+            return Err(Status::unimplemented("push notifications are not supported"));
+        }
+        if !configuration.accepted_output_modes.is_empty()
+            && !configuration
+                .accepted_output_modes
+                .iter()
+                .any(|mode| matches!(mode.as_str(), "text/plain" | "application/json"))
+        {
+            return Err(Status::invalid_argument("content type is not supported"));
+        }
+        let message = request
+            .message
+            .ok_or_else(|| Status::invalid_argument("message is required"))?;
+        let (message_id, mut params) = message_from_pb(message)?;
+        params.metadata = metadata_from_struct(request.metadata);
+        let mut task = self
+            .state
+            .threads
+            .send_durable(
+                &caller.owner,
+                &caller.user,
+                caller.instance_id.as_deref(),
+                &caller.agent_id,
+                params,
+                &message_id,
+                caller.credential_capture.clone(),
+            )
+            .await
+            .map_err(task_error)?;
+        if !force_immediate && !configuration.return_immediately && is_active(&task) {
+            task = self
+                .state
+                .threads
+                .wait_durable_until_settled(&caller.owner, &caller.agent_id, &task.id, &task)
+                .await
+                .map_err(task_error)?;
+        }
+        Ok((task, caller, configuration.history_length.map(|value| value.max(0) as usize)))
+    }
+
+    async fn task_stream(
+        &self, caller: VerifiedGrpcCaller, task: Task, history_length: Option<usize>,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<StreamResponse, Status>> + Send + 'static>>, Status> {
+        let mut updates = self.state.threads.subscribe_durable(&caller.owner, &caller.agent_id, &task).await.map_err(task_error)?;
+        Ok(Box::pin(async_stream::stream! {
+            let mut first = true;
+            while let Some(update) = updates.recv().await {
+                let task = match update {
+                    Ok(task) => task,
+                    Err(_) => { yield Err(Status::unavailable("task event stream lost; reconcile exact task before resubscribing")); break; }
+                };
+                let projected = task_to_pb(&task, history_length, true);
+                if first {
+                    first = false;
+                    yield Ok(StreamResponse { payload: Some(pb::stream_response::Payload::Task(projected)) });
+                } else {
+                    for artifact in projected.artifacts {
+                        yield Ok(StreamResponse { payload: Some(pb::stream_response::Payload::ArtifactUpdate(pb::TaskArtifactUpdateEvent {
+                            task_id: task.id.clone(), context_id: task.context_id.clone().unwrap_or_default(),
+                            artifact: Some(artifact), append: false, last_chunk: true,
+                            metadata: struct_from_metadata(&task.metadata),
+                        })) });
+                    }
+                    yield Ok(StreamResponse { payload: Some(pb::stream_response::Payload::StatusUpdate(pb::TaskStatusUpdateEvent {
+                        task_id: task.id.clone(), context_id: task.context_id.clone().unwrap_or_default(),
+                        status: projected.status, metadata: struct_from_metadata(&task.metadata),
+                    })) });
+                }
+            }
+        }))
+    }
+
 }
 
 fn admission_error(error: A2aAdmissionError) -> Status {
@@ -420,56 +501,9 @@ impl A2aService for GrpcV1Service {
         &self,
         request: Request<SendMessageRequest>,
     ) -> Result<Response<SendMessageResponse>, Status> {
-        let caller = self.caller(&request).await?;
-        let request = request.into_inner();
-        verify_tenant(&caller, &request.tenant)?;
-        self.admit(&caller).await?;
-        let configuration = request.configuration.unwrap_or_default();
-        if configuration.task_push_notification_config.is_some() {
-            return Err(Status::unimplemented("push notifications are not supported"));
-        }
-        if !configuration.accepted_output_modes.is_empty()
-            && !configuration
-                .accepted_output_modes
-                .iter()
-                .any(|mode| matches!(mode.as_str(), "text/plain" | "application/json"))
-        {
-            return Err(Status::invalid_argument("content type is not supported"));
-        }
-        let message = request
-            .message
-            .ok_or_else(|| Status::invalid_argument("message is required"))?;
-        let (message_id, mut params) = message_from_pb(message)?;
-        params.metadata = metadata_from_struct(request.metadata);
-        let mut task = self
-            .state
-            .threads
-            .send_durable(
-                &caller.owner,
-                &caller.user,
-                caller.instance_id.as_deref(),
-                &caller.agent_id,
-                params,
-                &message_id,
-                caller.credential_capture,
-            )
-            .await
-            .map_err(task_error)?;
-        while !configuration.return_immediately && is_active(&task) {
-            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-            task = self
-                .state
-                .threads
-                .get_durable(&caller.owner, &caller.agent_id, &task.id)
-                .await
-                .map_err(task_error)?;
-        }
+        let (task, _, history_length) = self.send_task(request, false).await?;
         Ok(Response::new(SendMessageResponse {
-            payload: Some(pb::send_message_response::Payload::Task(task_to_pb(
-                &task,
-                configuration.history_length.map(|value| value.max(0) as usize),
-                true,
-            ))),
+            payload: Some(pb::send_message_response::Payload::Task(task_to_pb(&task, history_length, true))),
         }))
     }
 
@@ -478,9 +512,10 @@ impl A2aService for GrpcV1Service {
 
     async fn send_streaming_message(
         &self,
-        _request: Request<SendMessageRequest>,
+        request: Request<SendMessageRequest>,
     ) -> Result<Response<Self::SendStreamingMessageStream>, Status> {
-        Err(Status::unimplemented("streaming is not supported"))
+        let (task, caller, history_length) = self.send_task(request, true).await?;
+        Ok(Response::new(self.task_stream(caller, task, history_length).await?))
     }
 
     async fn get_task(
@@ -604,9 +639,17 @@ impl A2aService for GrpcV1Service {
 
     async fn subscribe_to_task(
         &self,
-        _request: Request<SubscribeToTaskRequest>,
+        request: Request<SubscribeToTaskRequest>,
     ) -> Result<Response<Self::SubscribeToTaskStream>, Status> {
-        Err(Status::unimplemented("streaming is not supported"))
+        let caller = self.caller(&request).await?;
+        let request = request.into_inner();
+        verify_tenant(&caller, &request.tenant)?;
+        if request.id.trim().is_empty() { return Err(Status::invalid_argument("id is required")); }
+        let task = self.state.threads.get_durable(&caller.owner, &caller.agent_id, &request.id).await.map_err(task_error)?;
+        if matches!(task_state(&task), STATE_COMPLETED | STATE_FAILED | STATE_CANCELED | STATE_REJECTED) {
+            return Err(Status::unimplemented("terminal tasks do not support subscription"));
+        }
+        Ok(Response::new(self.task_stream(caller, task, None).await?))
     }
 
     async fn create_task_push_notification_config(

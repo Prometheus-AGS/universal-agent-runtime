@@ -42,6 +42,8 @@ async fn concurrent_agents_load_test() {
     }
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let base_url = server.base_url.clone();
 
     let client = reqwest::Client::new();
@@ -106,4 +108,7 @@ async fn concurrent_agents_load_test() {
         failures, 0,
         "{failures}/{CONCURRENCY} concurrent requests failed or returned the wrong fixture response"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

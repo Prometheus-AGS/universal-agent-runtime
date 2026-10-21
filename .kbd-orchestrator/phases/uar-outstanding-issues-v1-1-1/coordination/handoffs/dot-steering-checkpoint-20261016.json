@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-16T22:52:03.194Z",
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "stage": "execute",
+  "task": "6.2",
+  "plan_revision": 61,
+  "waypoint_revision": 3030,
+  "reason": "Dot architecture steering requested graceful turn checkpoint and finite issue reconciliation #387-396 plus #380/#385 in same thread/worktree",
+  "active_runner": {
+    "session_id": 87092,
+    "receipt": "evidence/acceptance/20261016-local-04/receipt.json",
+    "status": "started",
+    "groups": {
+      "binding": "started"
+    },
+    "must_not_start_overlapping_gate": true
+  },
+  "qualification": {
+    "operator_retained": true,
+    "normal_controller_active": true,
+    "fresh_case_staged": true,
+    "proof_not_consumed_by_setup": true
+  },
+  "image_discrepancy": "coordination/local04-image-identity-observation.json",
+  "next_steps": [
+    "Use read KBD status skill and current waypoint; preserve existing phase and uncommitted state",
+    "Read current GitHub #387-396 bodies/state plus preserved #380/#385 requirements",
+    "Read architecture-audit-main-91a091d.md candidate reconciliation; verify findings against current code as source inspection, not test results",
+    "Use actual kbd-plan instructions to amend finite per-issue checklist and existing KBD/OpenSpec tasks without speculative work",
+    "If confirmed work changes the approved phase boundary, stop/retain prior gate incomplete and finish the complete revised implementation before affected verification; project full-phase rule governs repair testing"
+  ],
+  "audit_path": "/Users/gqadonis/Documents/Codex/2026-10-16/task-2/architecture-audit-main-91a091d.md",
+  "phase_exit": "development_stopped_not_an_exit_prerequisite",
+  "checks_added": [],
+  "published": false
+}

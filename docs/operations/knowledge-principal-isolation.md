@@ -4,6 +4,12 @@ Authenticated knowledge uses the complete verified credential principal key supp
 
 The uncomfortable upgrade consequence is that preexisting authenticated knowledge remains in the legacy `knowledge_*` tables and is unavailable to authenticated requests after upgrade. There is no automatic ownership inference, copy, fallback or reassignment based on matching strings. Preserve the old data; a future explicit ownership migration needs independent authority evidence. A user can create a fresh base and reupload content through their authenticated API. Legacy anonymous knowledge remains available only through the host's explicit anonymous boundary. Nonanonymous unqualified owner strings are rejected by the adapter.
 
+Matching a legacy subject, document, chunk, ingestion job, or namespace does not
+prove owner identity. Authenticated reupload creates new principal-scoped
+records for the verified principal and never adopts legacy rows. A second
+principal, including one that changes only tenant or issuer, cannot retrieve,
+retry, delete, or search the reuploaded records.
+
 The PostgreSQL migration `20261013010000_principal_knowledge.sql` creates composite owner/resource primary and foreign keys, owner-scoped names, discovery indexes and the existing 384-dimensional vector layout. SurrealDB initialization includes `principal_knowledge.surql` through the shared ingestion migration path, including embedded existing-client startup. It creates independent tables and indexes without copying legacy rows. The existing API response models do not change. Server snapshot/poll paths use the owner-aware persistence interface and therefore select the new tables.
 
 New authenticated ingestion jobs persist `namespace: "principal_v1"`. A missing marker means legacy, never authenticated, even if `owner_id` starts with `v1:k:`. Discovery selects authenticated jobs from the principal table and anonymous jobs from the legacy table. Source reads, transitions, preparation and publication enforce that provenance. Legacy nonanonymous jobs remain preserved and undispatched. Old anonymous serialization omits the default marker, preserving existing serialized compare-and-swap values. Acceptance, source retention, generation fencing and publication remain one transaction within the selected namespace. Deletion only revokes rows in that same namespace.

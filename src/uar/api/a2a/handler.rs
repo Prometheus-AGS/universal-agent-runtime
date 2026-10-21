@@ -281,6 +281,7 @@ mod tests {
 
     fn security(jwt_required: bool) -> SecurityConfig {
         SecurityConfig {
+            provider_credentials: Default::default(),
             skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
@@ -333,7 +334,14 @@ mod tests {
                 Arc::new(McpRegistry::new_empty()),
                 SessionStore::new(),
                 Arc::new(RwLock::new(SkillRegistry::default())),
-                Arc::new(VectorMatcher::new(embeddings, 0.75)),
+                Arc::new(VectorMatcher::new(
+                    Arc::new(
+                        crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+                            embeddings,
+                        ),
+                    ),
+                    0.75,
+                )),
                 Some(persistence),
             )
             .await

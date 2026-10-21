@@ -1,0 +1,17 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-10-15T21:24:59Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json",
+    "decision-log.md",
+    "analysis/runtime.md",
+    "analysis/trust.md",
+    "analysis/state.md",
+    "evidence/analyze-research.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Five candidates: adapt pinned SSE with local framing, credential v2 and durable recovery; reference protocol docs; reject parser replacement. Select safe typed binding diagnostics, manager completion, credential-only installation identity and explicit shared fallback. KB reupload and existing fenced recovery; v1.1.1 evidence and issue reconciliation. No product checks or adversarial review: full-phase boundary closed. Missing live deployment facts are recovery/closure prerequisites. Next Spec.",
+  "skipped": false,
+  "skipReason": null
+}

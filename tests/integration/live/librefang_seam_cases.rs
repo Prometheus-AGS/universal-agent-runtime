@@ -40,6 +40,8 @@ async fn zero_code_seam_v1_chat_completions_is_openai_compatible() {
     ))
     .await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -59,6 +61,9 @@ async fn zero_code_seam_v1_chat_completions_is_openai_compatible() {
     assert_eq!(body["choices"][0]["message"]["role"], "assistant");
     assert_eq!(body["choices"][0]["message"]["content"], "hi, this is UAR");
     assert_eq!(body["choices"][0]["finish_reason"], "stop");
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// CH-18's AG-UI stream consumption contract needs `stream_mode: "agui_spec"`
@@ -69,6 +74,8 @@ async fn zero_code_seam_v1_chat_completions_is_openai_compatible() {
 async fn agui_spec_mode_emits_official_event_vocabulary() {
     let stub = start_stub_llm(content_fixture("hello agui spec mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -155,6 +162,9 @@ async fn agui_spec_mode_emits_official_event_vocabulary() {
             && !replay_body.contains("event: agui."),
         "resume must snapshot before preserving the negotiated AG-UI replay profile, got: {replay_body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// A gap found while verifying CH-18/CH-21: `to_agui_spec_event`'s remapping
@@ -189,6 +199,8 @@ async fn agui_spec_mode_maps_tool_call_lifecycle_to_official_vocabulary() {
         );
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
     let resp = client
@@ -218,4 +230,7 @@ async fn agui_spec_mode_maps_tool_call_lifecycle_to_official_vocabulary() {
         !body.contains("agui.tool_call.") && !body.contains("agui.tool_result"),
         "agui_spec mode must not leak legacy agui.tool_call.*/agui.tool_result names, got: {body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

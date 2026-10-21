@@ -65,6 +65,7 @@ fn embedded_local_provider() -> ProviderConfig {
         default_model: Some("offline-agent-model".to_string()),
         models: vec![ModelConfig {
             pricing_identity: None,
+            execution_profile: None,
             id: "offline-agent-model".to_string(),
             display_name: Some("Offline agent model".to_string()),
             context_window: Some(8_192),

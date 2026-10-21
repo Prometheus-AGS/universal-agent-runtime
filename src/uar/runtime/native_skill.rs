@@ -283,6 +283,26 @@ impl std::fmt::Debug for NativeExecutionContext {
 /// # Errors
 /// Rejects a missing/foreign owner or unenforceable child policy before I/O.
 pub(crate) async fn execute_native(
+    skill: Arc<dyn NativeSkill>,
+    args: serde_json::Value,
+    context: &NativeExecutionContext,
+) -> anyhow::Result<NativeExecutionResult> {
+    let scope = super::lifecycle::current_scope().unwrap_or_else(|| {
+        super::lifecycle::ResourceScope::standalone("native-tool", "compatibility-caller")
+    });
+    let context = context.clone();
+    let (send, receive) = tokio::sync::oneshot::channel();
+    // Admission precedes any native I/O. Dropping a canceled run's model/tool
+    // waiter cannot discard an accepted filesystem, memory, or process action.
+    scope.spawn(format!("native-tool:{}", skill.name()), async move {
+        let result = execute_native_in_scope(skill.as_ref(), args, &context).await;
+        let _ = send.send(result);
+        Ok(())
+    })?;
+    receive.await.map_err(|_| anyhow::anyhow!("native tool owner ended without an outcome"))?
+}
+
+async fn execute_native_in_scope(
     skill: &dyn NativeSkill,
     args: serde_json::Value,
     context: &NativeExecutionContext,

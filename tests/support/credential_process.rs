@@ -11,6 +11,9 @@ use std::{
     time::Duration,
 };
 use universal_agent_runtime::uar::security::claims::CredentialPrincipal;
+use universal_agent_runtime::uar::security::credentials::{CredentialOwnerBinding, CredentialTenancyPolicy, ProviderCredentialPolicyConfig};
+pub const INSTALLATION_ID: &str = "00000000-0000-0000-0000-000000000001";
+pub fn credential_policy() -> CredentialTenancyPolicy { CredentialTenancyPolicy::from_config(ProviderCredentialPolicyConfig { installation_id: Some(INSTALLATION_ID.to_owned()), ..Default::default() }).unwrap() }
 
 pub const TEST_KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
 const JWT_SECRET: &str = "credential-principal-integration-jwt";
@@ -26,7 +29,10 @@ pub struct Database {
 
 impl Database {
     pub fn local() -> Self {
-        let local = tempfile::tempdir().unwrap();
+        let local = match std::env::var_os("UAR_PHASE_RESOURCE_ROOT") {
+            Some(root) => tempfile::Builder::new().prefix("native-credential-").tempdir_in(root).unwrap(),
+            None => tempfile::tempdir().unwrap(),
+        };
         Self {
             url: format!("surrealkv://{}", local.path().join("database").display()),
             _local: Some(local),
@@ -119,12 +125,9 @@ impl Node {
             security["workspace_authorities"]=json!(subjects.iter().flat_map(|subject| ["tenant-a","tenant-b"].map(|tenant|
                 json!({"issuer":issuer,"subject":subject,"tenant_id":tenant,"workspace_id":"credential-workspace"}))).collect::<Vec<_>>());
         }
+        security["provider_credentials"] = json!({"mode":"single_owner","installation_id":INSTALLATION_ID});
         let verifier_config = serde_json::from_value(security.clone()).unwrap();
-        let _ = universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
-            &verifier_config,
-            "not-a-token",
-        )
-        .await;
+        initialize_jwt_verifier(&verifier_config).await;
         let config = json!({"security":security,"resilience":{"rate_limit_enabled":false},
             "persistence":{"provider":"surreal","database_url":database.url,"surreal_ns":database.namespace,
                 "surreal_db":database.database,"surreal_user":database.user,"surreal_pass":database.password},
@@ -244,6 +247,17 @@ impl Drop for Node {
     }
 }
 
+pub(super) async fn initialize_jwt_verifier(config: &universal_agent_runtime::config::SecurityConfig) {
+    // UAR must acquire its process provider before the fixture signs a token.
+    let status = universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
+        config,
+        "not-a-token",
+    )
+    .await
+    .expect_err("malformed initialization token must be rejected");
+    assert_eq!(status, axum::http::StatusCode::UNAUTHORIZED);
+}
+
 pub fn token(issuer: Option<&str>, tenant: Option<&str>, subject: &str) -> String {
     let mut claims =
         json!({"sub":subject,"roles":["user"],"exp":chrono::Utc::now().timestamp()+3600});
@@ -266,22 +280,18 @@ pub async fn authenticated(
     issuer: Option<&str>,
     tenant: Option<&str>,
     subject: &str,
-) -> CredentialPrincipal {
+) -> CredentialOwnerBinding {
     let config:universal_agent_runtime::config::SecurityConfig=serde_json::from_value(json!({
         "jwt_required":true,"jwt_secret":JWT_SECRET,"jwt_issuer":issuer,"jwt_audience":issuer.map(|_|"credential-runtime"),
         "settings_mutation_auth_required":false })).unwrap();
-    let _ = universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
-        &config,
-        "not-a-token",
-    )
-    .await;
+    initialize_jwt_verifier(&config).await;
     let context = universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
         &config,
         &token(issuer, tenant, subject),
     )
     .await
     .unwrap();
-    CredentialPrincipal::from_verified_context(&context).unwrap()
+    credential_policy().bind_principal(&CredentialPrincipal::from_verified_context(&context).unwrap()).unwrap()
 }
 
 pub async fn call(
@@ -452,4 +462,24 @@ impl Drop for Provider {
     fn drop(&mut self) {
         self.task.abort();
     }
+}
+
+impl Provider {
+    /// Only account labels/counts leave the private fixture; raw headers never do.
+    pub fn contact_count(&self) -> usize { self.seen.lock().unwrap().len() }
+    pub fn saw_key(&self, key: &str) -> bool {
+        let digest = auth_digest(&format!("Bearer {key}"));
+        self.seen.lock().unwrap().iter().any(|(_, observed)| observed == &digest)
+    }
+}
+
+/// Obtain actual middleware proof for an embedded host's production request API.
+pub async fn authenticated_context(issuer: &str, tenant: &str, subject: &str) -> universal_agent_runtime::uar::security::claims::UserContext {
+    let config: universal_agent_runtime::config::SecurityConfig = serde_json::from_value(json!({
+        "jwt_required":true,"jwt_secret":JWT_SECRET,"jwt_issuer":issuer,
+        "jwt_audience":"credential-runtime","settings_mutation_auth_required":false
+    })).unwrap();
+    initialize_jwt_verifier(&config).await;
+    universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
+        &config, &token(Some(issuer),Some(tenant),subject)).await.unwrap()
 }

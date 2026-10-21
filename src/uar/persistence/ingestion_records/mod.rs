@@ -107,7 +107,7 @@ pub enum IngestionStoreError {
 }
 
 /// Entire generation is prepared without storage writes, then published once.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IngestionPublication {
     pub chunks: Vec<KnowledgeChunk>,
     pub embedding: EmbeddingFingerprint,

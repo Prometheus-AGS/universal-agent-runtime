@@ -23,6 +23,19 @@ use super::{
 };
 
 impl AgentInstanceController {
+    pub(super) fn spawn_owned_task(
+        &self,
+        task_name: &'static str,
+        job: Pin<Box<dyn Future<Output = ()> + Send>>,
+    ) {
+        if let Err(error) = self.lifecycle_scope.spawn(task_name, async move {
+            job.await;
+            Ok(())
+        }) {
+            tracing::warn!(%error, task = task_name, "Instance task was rejected during lifecycle shutdown");
+        }
+    }
+
     pub(crate) fn kick(self: &Arc<Self>, owner: ActorOwner, workspace: &str, id: &str) {
         let key = InstanceKey::new(&owner, workspace, id);
         let controller = Arc::clone(self);
@@ -64,7 +77,7 @@ impl AgentInstanceController {
                 }
             }
         });
-        tokio::spawn(job);
+        self.spawn_owned_task("instance-command-pump", job);
     }
 
     async fn run_pump(
@@ -427,7 +440,7 @@ impl AgentInstanceController {
                         .passivate(&owner, &workspace, &id, &Uuid::new_v4().to_string())
                         .await;
                 });
-                tokio::spawn(job);
+                self.spawn_owned_task("instance-request-passivation", job);
             }
             InstanceActivationProfile::OnDemand => {
                 // An idle timer must not keep the controller (and its embedded
@@ -439,8 +452,12 @@ impl AgentInstanceController {
                 let epoch = record.epoch;
                 let revision = record.revision;
                 let delay = record.limits.idle_timeout_secs;
+                let cancellation = self.lifecycle_scope.cancellation_token();
                 let job: Pin<Box<dyn Future<Output = ()> + Send>> = Box::pin(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
+                    tokio::select! {
+                        _ = cancellation.cancelled() => return,
+                        _ = tokio::time::sleep(std::time::Duration::from_secs(delay)) => {},
+                    }
                     let Some(controller) = controller.upgrade() else {
                         return;
                     };
@@ -459,7 +476,7 @@ impl AgentInstanceController {
                             .await;
                     }
                 });
-                tokio::spawn(job);
+                self.spawn_owned_task("instance-idle-passivation", job);
             }
         }
     }
@@ -512,7 +529,8 @@ fn kernel_failure_code(code: &str, message: &str) -> &'static str {
         "thread_attachment_failed", "turn_assembly_rejected", "root_resource_binding_conflict",
         "kernel_completion_closed", "kernel_panicked", "thread_cleanup_unconfirmed",
         "session_persistence_unconfirmed",
-        "world_state_budget_exceeded",
+        "world_state_budget_exceeded", "context_overflow",
+        "protected_history_overflow", "invalid_history",
     ];
     CODES
         .iter()

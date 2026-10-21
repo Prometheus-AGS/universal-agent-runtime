@@ -1776,3 +1776,262 @@ Installed-image A2A acceptance r16 selected an eligible baseline skill but adver
 ## 2026-10-15 — Pin the runtime child digest without forcing every companion platform
 
 The published amd64 follow-up reproduced Docker cannot overwrite digest when DOCKER_DEFAULT_PLATFORM=linux/amd64 tried to pull a second platform of the already-cached pinned SurrealDB index. A related upstream report is https://github.com/moby/moby/issues/43188; current host causality is not independently established. The full rerun removed the global override, kept the existing arm64 companion and pinned UAR to its amd64 child manifest. Image metadata and ELF machine62 confirmed x86-64 UAR; the complete program passed. Preserve the failed attempt and disclose emulation/companion/client architectures; do not weaken assertions, delete shared images or relabel emulation as native hardware qualification.
+
+## 2026-10-15 — Explicit token limits can fail model binding on unattested remote storage
+
+Read-only know-me diagnostics show v1.1.0 failing immediately after per-agent provider selection, with durable ingestion disabled. The repository agent declares max_tokens_per_turn=16000; inspected deployment/configuration and credential key names lack remote durability attestation. Source routes configured token limits through with_durable_accounting, which rejects unsupported storage before RunModelBindings::capture; manager erases the reason. This is a strong source/configuration explanation, not captured inner-error proof: the live persisted agent and backing store were not inspected. Preserve budgets and durability requirements, improve safe typed diagnostics, and qualify the actual upgrade profile after full implementation. The existing release fixture explicitly attested storage, so its passing receipt did not cover this combination.
+
+## 2026-10-16 — phase acceptance fixture setup
+
+First v1.1.1 real program failed before image scenario completion. ClassifierConfig is public under runtime::matching, not config. New credential fixture raw JWT signing before UAR guarded verifier initialization yields ProviderConflict500; bootstrap verifier and require401 before signing, preserving production provider ownership. Surreal health readiness must use status200 rather than truthiness of decoded body; empty success otherwise never becomes ready, and stale earlier RemoteDisconnected can obscure the last false probe. All three real DB startup logs were healthy. R8 repairs authored together before L6 and affected rerun; behavior unverified until actual gate passes.
+
+## 2026-10-16 Supervisor candidate bootstrap
+
+Private supervisor reqwest PEM identities require explicitly selected rustls
+when the dependency graph also enables default/native TLS (upstream issue903:
+https://github.com/seanmonstar/reqwest/issues/903). Actual guest service UID65532
+has group uar/GID1001, not GID65532. llm.timeout_secs settings range is1..600.
+Failed pre-registration startup may retain an empty held catalog; preserve the
+failed store and select a new disposable setup DB rather than forge owner rows.
+
+## 2026-10-16 Trusted-host negative fixture identity
+
+HostAuthority::for_service matches the operator issuer/tenant/subject grant,
+not an admin role or request instance hint. An ordinary-denial token must use
+a principal absent from trusted_host_principals. The first native fixture used
+the same granted subject with user role and correctly received host authority;
+retain its failed assertion and correct the fixture principal, not production.
+
+## 2026-10-17 Release image context contains operational history unless excluded
+
+The local04 Docker build sent a 5.02 GB context while `.kbd-orchestrator/` and
+`.prometheus/` were absent from `.dockerignore` and together occupied about
+686 MB. The builder uses `COPY . .`; these directories are operational history,
+not image source. Exclude them only from Docker context, never from Git history.
+The exact cause of the candidate image-ID mismatch remains unproved until a
+fresh build and image inspection after L9.
+
+## 2026-10-17 Local05 generated Python cache changed image input
+
+The first local05 build produced image ID `sha256:f1bf2fca…bb2221`; the
+acceptance runner's rebuild of the same tag produced `sha256:dde59861…9f53616`.
+Between builds, importing the acceptance adapters wrote ignored
+`scripts/release/__pycache__/*.pyc` files. Git's source identity excludes these
+files, but the Docker context did not. Exclude Python bytecode from the Docker
+context before binding a native recovery identity to an image ID. The next
+candidate must show a stable inspected ID; the observed cache change explains
+one changed context input, not every possible image-ID cause.
+
+The local05 binding fixture compared whole Surreal `/sql` responses from
+separate queries. Its failure did not show whether the durable accounting row
+changed because response metadata was also compared. Assert successful query
+status and compare returned row data instead. The streams partition matrix
+also reread the entire growing JSONL trace twice per split; read only bytes
+appended since that split began while retaining every partition assertion.
+
+## 2026-10-17 Local06 startup fixture and MCP bootstrap
+
+The local06 fixture changed `security.jwt_issuer` while leaving the trusted
+host principal issuer unchanged. Configuration validation rejected the restart,
+so identity isolation did not run. A fixture that varies issuer must update and
+restore both fields. The recovery fixture used `/api/knowledge/`; the registered
+route and existing callers use `/api/knowledge`.
+
+On first boot, settings bootstrap writes an empty `mcp.servers` default before
+the configured MCP file is hydrated. Treating every persisted empty map as an
+operator decision hides the file's tool descriptor. Only the untouched
+bootstrap default (`updated_at` absent) can adopt file entries; an API-written
+empty map remains authoritative. The local06 tool loop ended with
+`UNKNOWN_TOOL_STATE_UNRECOVERED` and no canonical receipt. The next real gate
+must establish the connected descriptor before asserting the receipt.
+
+## 2026-10-17 Local07 fixture prerequisites
+
+The fallback fixture expected one primary 503 request, but the configured
+outer resilience policy made three attempts before authorized failover.
+Disable outer resilience retries only in the scenario that asserts a single
+dispatch; `llm.max_retries=0` does not control that outer policy.
+
+Graph child execution requires both `spawn_agent` and `wait_agents` in the
+effective run policy. Granting spawn alone fails before child admission. A
+credential correction scenario using `/api/chat/completion` also needs a
+current provider model-verification receipt; provider configuration alone does
+not create one. Verify during fixture setup and take provider-contact baselines
+after setup traffic.
+
+The recovery embedding peer is contacted during built-in skill initialization.
+Holding every embedding request prevents runtime readiness and obscures the
+durable upload/restart scenario. Hold only the uniquely identifiable upload
+batch; respond to ordinary startup skill batches. The local07 Surreal service
+was healthy while this fixture peer held startup.
+
+## 2026-10-17 Whole-phase gate violation after local08
+
+The lead treated an implementation inventory after one repair cohort as
+permission for targeted acceptance, then local08 exposed more unfinished
+production and fixture work. During the next repair cohort, two teammates ran
+`git diff --check` despite the closed full-phase boundary. Both produced no
+output; neither counts as acceptance. The root cause was a discretionary gate
+decision and team packets that did not prevent incidental checks. The operator
+now requires an explicit instruction after a fresh inventory covering **all**
+phase implementation items and exact proposed commands. At each 120-minute
+checkpoint, reconcile the whole task ledger and team commands; unknown or
+unfinished implementation keeps the gate closed. The previous note saying
+`llm.max_retries=0` does not control outer stream-open retry policy describes
+the local07 source state; a later R11 repair changed that production path and
+remains unverified.
+
+## 2026-10-17 Local08 observed repair cohort
+
+The binding scenario exposed a real mismatch between selected model
+`max_retries=0` and the outer pre-semantic stream-open resilience loop, which
+still retried the same provider. The source repair caps that loop's attempts
+at the selected model budget plus the initial call; only a later authorized
+integration gate can establish the resulting contact count.
+
+The recovery fixture counted every legacy-table row while runtime startup had
+created an anonymous default knowledge base. Owner-scoped snapshots retain
+the exact seeded legacy-row proof without treating startup data as corruption.
+After a Docker restart, a dynamically published Surreal host port can differ
+from the cached port; reread `docker port` and require HTTP 200 readiness
+before continuing the credentials fixture. The streams graph scenario reached
+an owner-required `spawn_agent` approval and held its observer until deadline;
+the fixture must resolve that exact pending approval through the owner API.
+Do not weaken the trusted-host approval policy or infer any scenario passed
+from source inspection.
+
+## 2026-10-17 Named gate approval did not cover standalone preflights
+
+After the operator named four local09 gate commands and then explicitly named
+a binding retry with the remaining gates, the lead ran standalone
+`source_identity(...)` and `docker info --format '{{.ServerVersion}}'` before
+the retry. Both completed, but neither command was named by the operator.
+No retry, build, or remaining gate started in that turn. The root cause was
+treating necessary preparation as implied gate authorization. The `AGENTS.md`
+operator lock now states that a named gate does not authorize additional
+standalone checks or probes. Source inspection and authored preparation may
+continue while closed; each executable preflight requires its own named
+instruction or must already be inside the approved gate command. This entry
+does not retroactively certify any acceptance result.
+
+## 2026-10-17 Pre-build failure is not a group repair parent
+
+The local09 binding receipt stopped at Docker network creation and records
+`groups={}`. The acceptance runner's single-group manifest contract requires
+the selected `repair_parent.groups[group].status` to be failed, blocked or
+interrupted. Therefore the local09 receipt cannot be the binding group's
+`repair_parent`, despite L10's proposed wording. The last failed binding
+group receipt is local08; use that as the single-group repair parent, disclose
+all later source changes, and retain local09 separately as an infrastructure
+failure. This was found by source inspection during L11 preparation. No gate
+was run to establish the corrected manifest behavior.
+
+## 2026-10-18 — Acceptance fixtures must capture failure diagnostics and prove dependency readiness before expensive qualification runs
+
+**Follow-up for the skills packages (recorded, NOT implemented in this phase).**
+No matching follow-up existed before this entry (checked
+`evidence/open-issues.json`, this file, and `docs/proactive-followups.md`).
+
+**Observed behavior.** UAR 1.1.1 round-2 qualification lost two groups to
+undifferentiated `Blocked`/`failed` dispositions: 33 credential scenarios
+reported only "runtime exited before health", and the recovery PostgreSQL leg
+reported "no public port published". The round-2 report even claimed "no log
+was captured" when captures existed in the evidence root but were not
+consulted. Round-3 added a `.diag.json` sidecar per capture (redacted launch
+command, container state/exit code, health-probe result, attempt number) and
+the root causes were named within minutes: a shared host file view serving a
+stale config generation (runtime read EOF at column 1355 of a valid 1458-byte
+file), and a dependency init window where `pg_isready` passed while the
+Supabase entrypoint was still running migrations and cycling its temporary
+server (published endpoint accepted TCP then dropped handshakes).
+
+**Lesson.** Before an expensive qualification run: (1) every fixture failure
+path must retain the launch command (secrets redacted), exit status,
+stdout/stderr, dependency logs, and probe results BEFORE cleanup; (2)
+dependency readiness must be established through the real consumption path —
+an authenticated end-to-end query that is stable across the dependency's own
+init/restart windows — not an internal liveness probe that a half-initialized
+dependency can pass. Consult retained captures before declaring evidence
+missing.
+
+**Stakes.** Without this, qualification rounds burn their whole budget on
+symptom-level reruns; with it, round 3 named and repaired both causes inside
+one bounded allowance.
+
+## 2026-10-18 — Readiness must establish authenticated dependency access, correct configuration, and candidate/build identity before expensive acceptance begins
+
+**Recorded for the skills packages; implementation left to the skills project.**
+(Second of the two qualification lessons; the round-3 lesson covered failure
+diagnostics and dependency readiness probes.)
+
+**Observed behavior.** UAR 1.1.1 rounds 3–4 burned acceptance and near-
+acceptance cycles on three conditions that readiness should have settled
+first: (1) the fixture authenticated to a re-opened SurrealKV store with a
+random password while the store carried its initialization credential
+(401 at the first store call); (2) containers started against a shared file
+view that transiently served a stale config generation (parse EOF at the
+previous version's length), which post-mortem probes could not observe; (3)
+the candidate's frozen source trees did not match the identity embedded in an
+un-rebuilt image (FC6 failed closed).
+
+**Lesson.** Before any expensive acceptance: prove **authenticated dependency
+access** with the real consumption path (not merely that a dependency
+process is up), prove **correct configuration** at the container's own view
+(content-addressed config names remove the staleness class; record
+intended-vs-visible hashes on failure; retries must never paper over the
+difference), and prove **candidate/build identity** by rebuilding from the
+exact frozen content manifest and reading the embedded identity back before
+the run. A readiness gate that checks liveness but not authenticated access,
+config visibility, or identity defers all three costs into the acceptance run.
+
+**Stakes.** Each condition cost a full or partial qualification cycle; all
+three are cheap to settle in minutes with the right readiness checks.
+
+- 2026-10-20T12:39:03Z: uar-sidecar loads .env from cwd ANCESTORS (src/bin/uar-sidecar.rs:188 dotenvy::dotenv()), even under env -i. Never run a sidecar fixture with cwd inside a checkout that has a real .env; use a work dir outside the repo (e.g. /Volumes/T7/uar-qual-work/). Observed 2026-10-20 R9 attempt 1 (startup refused: credential encryption config invalid).
+
+- 2026-10-20T16:30Z: External-volume write stalls can wedge fixtures mid-script with zero diagnostics. rows-r20 attempt 2 hung 25 minutes on a single `cat > conf-r20.yaml <<YAML` write (file truncated to 0 bytes, heredoc body never landed, no BOOT line) while cargo compiled and a My Passport USB device (/dev/disk8s2, different device than T7) logged 190 AppleUSBIORequest pipe-stalled errors in the same window; T7 itself showed no kernel errors and the trap cleanup wrote fine at kill time. An identical rerun minutes later completed in 2m03s. Lesson: when a T7 fixture wedges pre-boot with an empty/partial file, suspect transient volume/USB-bus stall before debugging the script; rerun once on a quiet machine (no concurrent cargo) before deeper forensics; prefer lead-direct background shells over 25-min-timeout lane tools for long fixtures so timeout kills don't destroy the attempt.
+
+
+## 2026-10-20 — Scope release is not physical memory engine release
+
+Source integration found `MemoryCloseReport.scope_released` describes the storage
+facade, while `failure` can separately contain engine shutdown failure. Checking
+only that boolean lets the parent finalizer suppress a physical close error.
+Server and embedded finalizers now require a clean report and, for owned memory,
+an engine-close acknowledgment. This is source implementation only; no gate ran.
+
+A control reader that awaits a reconnect inline cannot observe parent EOF while
+the reconnect is pending. Reading and accepted-command completion need separate
+owned tasks, with EOF requesting shutdown before joining command obligations.
+
+
+## Configuration data lifetime is not watcher lifetime — 2026-10-20T22:10:43.760000+00:00
+
+The first lifecycle graph encoded persistence/memory as depending on the
+configuration-watcher resource. That incorrectly kept live reload active until
+after store teardown. Retaining a configuration snapshot does not require a live
+watcher. Stop and join producers first, then drain their consumers and stores.
+The correction is recorded as lifecycle task5.3; task5.1 cannot be reopened by
+the canonical runtime, so its earlier completion is preserved as history and a
+follow-up is registered instead. This is a source defect, not proof that a
+specific watcher caused the historical c9 lock failure.
+
+
+## Retained source boundaries require actual owned types — 2026-10-21T01:39:47.140717+00:00
+
+The first authorized Docker build found19 integration compiler errors after
+lifecycle source authoring. Two retained dispatch inputs called clone on types
+without Clone, copying only a borrowed reference and escaping the caller's
+lifetime. Prepared payload and sealed immutable proof ownership now preserve
+private validation and atomic durable challenge consumption. The original proof
+API already borrowed the proof; immutable copying does not create fresh authority.
+Other observed errors include stale tuple/Result assumptions, moved diagnostic
+IDs and SDK live-stream wrapper mismatch. Ending a mutex guard before await
+must retain atomic generation validation/publication under one lexical lock;
+a split no-await check and later relock is still a threaded race. These repairs
+are source-only; neither compilation success nor runtime correctness is claimed.
+
+
+## Startup Send boundary repair — 2026-10-21
+
+Authorized Docker run39528865081 at6d50cb8a failed ARM64 with2 diagnostics from1 inline governance log await. Tracing temporaries cannot cross startup awaits inside the retained Send owner. Runtime writer moved both native-skill and policy count awaits before their log macros. Source `32cb3bcfc9691212ec0b0359ce22474968bc6850` and matching signed Boss pin `a609869079bf6d51af196944965e6f86ee6c0758` are pushed with handoffs; next delivery pending renewed inventory. AMD64 remains active at this boundary. No standalone compiler, test or other routine verification ran. CLOSED.

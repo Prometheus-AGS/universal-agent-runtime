@@ -37,6 +37,7 @@ pub const SECRET: &str = "dot04-synthetic-provider-key";
 pub async fn user() -> UserContext {
     let secret = "dot04-signed-principal-fixture";
     let config = universal_agent_runtime::config::SecurityConfig {
+        provider_credentials: Default::default(),
         deployment_profile: Default::default(), jwt_algorithm: None,
         workspace_authorities: Vec::new(),
         skill_required_roles: Default::default(),

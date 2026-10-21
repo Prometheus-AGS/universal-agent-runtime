@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 21,
+  "revision": 136,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -448,9 +448,728 @@
         ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md"
       ],
       "remaining": []
+    },
+    {
+      "id": "uar111-d1-lead",
+      "title": "Reconcile urgent #385 evidence and local04 blocker",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+      ],
+      "remaining": [],
+      "kbd": {
+        "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+        "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+        "phaseId": "uar-outstanding-issues-v1-1-1",
+        "changeId": "uar-outstanding-issues-v1-1-1",
+        "taskId": "8.1"
+      }
+    },
+    {
+      "id": "uar111-d2-lead",
+      "title": "Decide Dot supported scope and measured cadence",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+      ],
+      "remaining": [],
+      "kbd": {
+        "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+        "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+        "phaseId": "uar-outstanding-issues-v1-1-1",
+        "changeId": "uar-outstanding-issues-v1-1-1",
+        "taskId": "8.2"
+      }
+    },
+    {
+      "id": "uar111-d1-runtime",
+      "title": "Source-inspect #385 binding and local04 runtime failures",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-d1-state",
+      "title": "Source-inspect #385 recovery and local04 durable-store failures",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-d2-trust",
+      "title": "Source-inspect #387 shared-tenant authoring boundary",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-r11-lead",
+      "title": "Integrate #385 local04 repairs and #387 restriction under one boundary",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [
+        "uar111-d1-lead",
+        "uar111-d2-lead"
+      ],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md",
+        "src/server.rs",
+        "scripts/release/uar_1_1_1_acceptance.py",
+        ".dockerignore"
+      ],
+      "remaining": [],
+      "kbd": {
+        "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+        "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+        "phaseId": "uar-outstanding-issues-v1-1-1",
+        "changeId": "uar-outstanding-issues-v1-1-1",
+        "taskId": "8.3"
+      }
+    },
+    {
+      "id": "uar111-r11-runtime",
+      "title": "Repair #385 host binding refusal and trace stream policy",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [
+        "uar111-d1-runtime"
+      ],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+        "src/uar/runtime/manager.rs",
+        "src/uar/runtime/turn/host/event_projection.rs",
+        "scripts/release/uar_1_1_1_runtime.py"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-r11-trust",
+      "title": "Restrict #387 compiler REST in remote and shared profiles",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [
+        "uar111-d2-trust"
+      ],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+        "src/uar/api/compiler.rs",
+        "scripts/release/uar_1_1_1_compiler.py",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-ff-qual",
+      "title": "UAR 1.1.1 function-first local qualification (frozen R1-R23) + llm.api_key security repair",
+      "owner": "uar-lead",
+      "harness": "claude",
+      "status": "pending",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r14-r20-receipts-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/function-first-local-qualification-contract.md"
+      ],
+      "remaining": [
+        "R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; report entry provenance honestly",
+        "R3 working-loop leg: blocked on the anonymous approval channel (descriptor forces ApprovalClass::Required for memory_save; run-policy auto cannot bypass) - external governance family; do not retry auto-approval as a bypass",
+        "R2(c) leg2 and R23: external verified-principal / run-creation governance blocker",
+        "R21: trim geometry unreachable within limits",
+        "R11 tool leg: no standalone tool-definition REST create/configure surface exists - operator decision required",
+        "Operator decisions pending: R18 flagged grade, Kimi credential rotation, R15 storage-legs-only sufficiency, R10 callback state-change leg",
+        "R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; assert the entry written in turn 1 is present in turn 2's captured assembled input and the reply reflects recall; report entry provenance (history vs injected memory block) honestly",
+        "R3 working-loop leg: blocked on the anonymous approval channel (memory_save is ApprovalClass::Required via effect-derived classification at runtime/native_skill.rs:81-88; manager.rs:6635-6641 shows run-policy Auto cannot bypass a Required descriptor) - same external governance family as R2(d)/R7; do NOT retry tool_approval:auto as a bypass",
+        "R2(c) leg2 and R23: external verified-principal / run-creation governance blocker (r3101 family)",
+        "R11 tool leg: no standalone tool-definition REST create/configure surface exists (route enumeration evidence in r11-regrade receipt) - operator decision required before any new-endpoint work",
+        "Operator decisions pending: R18 flagged grade; Kimi credential rotation after the plaintext exposure (agent must NOT rotate); R15 storage-legs-only sufficiency (turn leg would touch 1908); R10 callback state-change leg",
+        "Patch is uncommitted; candidate identity must stay honest (v4 = candidate of record; patched dev binary proven for the settings-masking family only)"
+      ]
+    },
+    {
+      "id": "lifecycle-lead",
+      "title": "Lifecycle server/realtime integration and canonical ledger",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "openspec/changes/deterministic-lifecycle-management/design.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-runtime",
+      "title": "Lifecycle scopes, controller ownership and runtime work",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "openspec/changes/deterministic-lifecycle-management/design.md",
+        "docs/operations/lifecycle-runtime-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-state",
+      "title": "Persistence endpoint/ownership and pinned engine completion",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "openspec/changes/deterministic-lifecycle-management/design.md",
+        "docs/operations/lifecycle-state-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-trust",
+      "title": "Migration outcomes and deterministic security fixtures",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "openspec/changes/deterministic-lifecycle-management/design.md",
+        "docs/operations/lifecycle-trust-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-console",
+      "title": "Lifecycle SSE snapshot and typed entity consumer integration",
+      "owner": "uar-console",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-console-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-a2a-streaming",
+      "title": "Required A2A v1 streaming and exact-task lifecycle",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-a2a-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-sandbox-ownership",
+      "title": "Sandbox ownership, cancellation acknowledgments and uncertainty",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-sandbox-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-boss-launcher",
+      "title": "Windows overlapped named pipe and owned Boss sidecar lifecycle",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-inherited-lifecycle.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-startup-cancellation",
+      "title": "Owned startup cancellation and acquired resource registration",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-startup-handoff.md",
+        "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+        "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-process-entrypoints",
+      "title": "Standalone/service cleanup and early signal subscriptions",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-entrypoint-handoff.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-watcher-order",
+      "title": "Operator-directed watcher-first shutdown acknowledgement",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-watcher-order-handoff.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-producer-runtime",
+      "title": "Retained runtime descendants and gRPC delivery closure",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-producer-runtime-continuation.md",
+        "docs/operations/lifecycle-grpc-continuation.md",
+        "Source implementation only; verification CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-producer-state",
+      "title": "Retained database operations and subscription capabilities",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-producer-state-continuation.md",
+        "tests/lifecycle_owned_resources.rs",
+        "Source implementation only; verification CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-producer-trust",
+      "title": "Retained MCP cleanup and explicit reconnect authority",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-producer-trust-continuation.md",
+        "docs/operations/lifecycle-reconnect-continuation.md",
+        "Source implementation only; verification CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-producer-lead",
+      "title": "Blocking ownership, startup scopes, SDK integration and current inventory",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-producer-lead-continuation.md",
+        "docs/operations/lifecycle-model-stream-continuation.md",
+        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-reconnect.md",
+        "Source implementation only; verification CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "embedding-live-runtime",
+      "title": "Implement local compatible embedding live failover",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-embedding-runtime-handoff.md",
+        "Authored source only; all behavior unverified; gate CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "embedding-live-fixtures",
+      "title": "Author real local-model lifecycle and incompatible-space fixtures",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-embedding-fixture-handoff.md",
+        "Authored source only; all behavior unverified; gate CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-boss-immutable-payload",
+      "title": "Bind Boss candidate to immutable lifecycle UAR source with provenance",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+        "UAR actual committed pin ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; source only; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-runtime-repair",
+      "title": "Repair observed runtime Docker compiler integration errors",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-runtime-repair.md",
+        "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-state-repair",
+      "title": "Repair observed state/stream/owned input Docker compiler errors",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-state-repair.md",
+        "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-lead-repair",
+      "title": "Repair MCP borrower cloning and renew source publication bindings",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-mcp-repair.md",
+        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+        "Actual repaired UAR/Boss commits published; no runtime acceptance; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-startup-send-repair",
+      "title": "Remove awaits from startup tracing fields under owned Send boundary",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-startup-send-repair.md",
+        "Source-only handoff collected; no compiler or runtime verification; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-state-repair",
+      "title": "Repair exact approved embedding command diagnostics: state",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-runtime-repair",
+      "title": "Repair exact approved embedding command diagnostics: runtime",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-lead-repair",
+      "title": "Repair exact approved embedding command diagnostics: lead",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-approved-gate-principal-repair",
+      "title": "Repair approved embedding fixture principal identity",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-budget-runtime",
+      "title": "Retained shutdown initiation and budgeted observation",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-budget-runtime-handoff.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-budget-host-notes",
+      "title": "Read-only host shutdown integration constraints",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-budget-host-integration-notes.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-budget-lead",
+      "title": "Embedded wrapper and approved lifecycle contract integration",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-budget-lead-handoff.md"
+      ],
+      "remaining": []
     }
   ],
-  "handoffs": [],
+  "handoffs": [
+    {
+      "schemaVersion": 1,
+      "id": "bb6363dd-fb55-44e7-bed1-13d2d565b2b5",
+      "taskId": "uar111-ff-qual",
+      "taskRevision": 1,
+      "from": {
+        "owner": "uar-lead",
+        "harness": "opencode"
+      },
+      "to": {
+        "owner": "uar-lead",
+        "harness": "claude"
+      },
+      "context": "UAR 1.1.1 function-first local qualification on T7: execute the frozen R1-R23 contract (function-first-local-qualification-contract.md) natively with real per-row evidence on candidate v4 sha256 96bf486872c57d22071596be6d81af42d3dfe7dee801a40226e507caf4225154 (preserved binary at /private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/opencode/uar-r14/uar-v4-preserved.bin). Parent phase function-first-release-certification is active; nested child embedding-primary-backup-lifecycle is closed (blocked, NOT READY). A parallel operator-directed security repair of the llm.api_key plaintext exposure is COMPLETE and proven (patch in src/uar/settings/manager.rs + src/uar/api/settings.rs, uncommitted; receipts bind to patched dev binary sha256 0ecff6b2fbcceb643de09af217e55f7ecbf1835c3543f61998a4c59fa2f64d8d, source HEAD 38f0b5d8 + dirty tree). HARD CONSTRAINTS: only authenticated kimi-for-coding/k3 for agent calls (no pay-as-you-go, no fallback, no new credentials, never route to ambient OPENAI_API_KEY, never call Mistral); never read or print real secret values (operator-supplied facts only); synthetic sentinels only in fixtures; 1907/1908 running instances untouched; no release/publication/commit/push; preserve v4 as candidate of record; KBD waypoint changes only via canonical typed events. CALL LEDGER: ceiling 1232 (base 632 + ext#1 +100 + ext#2 +200 + ext#3 +100 + ext#4 +100 + ext#5 +100), operator count 1110/1132 at 19:33Z; additive allowance as needed already authorized; record the next extension BEFORE crossing the ceiling with actual date -u timestamps. LEDGER OF RECORD: r-ledger-reconciliation-2026-10-19.md (rev4 grades + all addenda). Current whole-row grades: PASS (A) R1,R5,R6,R12,R14,R16,R17,R18*(flagged for operator review),R19,R20; subcriterion PASS R2(a)/R2(b)/R2(c) leg1; PARTIAL R10,R22; R11 = PARTIAL (agent + MCP-server legs PASS on a disposable v4 fixture 18:29Z; tool leg NOT SATISFIED - no standalone tool-definition REST create/configure surface exists, operator ruling: MCP auto-discovery insufficient); INCOMPLETE R3,R4,R15; FAIL R2(d)/R7/R8/R9/R13 (verified-principal/anonymous contract gaps, demonstrated); UNVERIFIED R2(c) leg2, R21; BLOCKED R23. NEXT CONCRETE ACTION: the R4 lane (auto-capture + assembled-input capture) - see remaining list and the R3/R4 lane-investigation addendum in the ledger. Fixture assets staged at /private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/opencode/uar-r14/ (mock_llm.py, mcp_stdio_fixture.py, configs, probe scripts, evidence dirs). Model-verification prerequisite: POST /api/uar/providers/{id}/test writes the ModelVerification record; chat 422s model_not_verified without it.",
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r14-r20-receipts-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/function-first-local-qualification-contract.md"
+      ],
+      "remaining": [
+        "R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; report entry provenance honestly",
+        "R3 working-loop leg: blocked on the anonymous approval channel (descriptor forces ApprovalClass::Required for memory_save; run-policy auto cannot bypass) - external governance family; do not retry auto-approval as a bypass",
+        "R2(c) leg2 and R23: external verified-principal / run-creation governance blocker",
+        "R21: trim geometry unreachable within limits",
+        "R11 tool leg: no standalone tool-definition REST create/configure surface exists - operator decision required",
+        "Operator decisions pending: R18 flagged grade, Kimi credential rotation, R15 storage-legs-only sufficiency, R10 callback state-change leg",
+        "R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; assert the entry written in turn 1 is present in turn 2's captured assembled input and the reply reflects recall; report entry provenance (history vs injected memory block) honestly",
+        "R3 working-loop leg: blocked on the anonymous approval channel (memory_save is ApprovalClass::Required via effect-derived classification at runtime/native_skill.rs:81-88; manager.rs:6635-6641 shows run-policy Auto cannot bypass a Required descriptor) - same external governance family as R2(d)/R7; do NOT retry tool_approval:auto as a bypass",
+        "R2(c) leg2 and R23: external verified-principal / run-creation governance blocker (r3101 family)",
+        "R11 tool leg: no standalone tool-definition REST create/configure surface exists (route enumeration evidence in r11-regrade receipt) - operator decision required before any new-endpoint work",
+        "Operator decisions pending: R18 flagged grade; Kimi credential rotation after the plaintext exposure (agent must NOT rotate); R15 storage-legs-only sufficiency (turn leg would touch 1908); R10 callback state-change leg",
+        "Patch is uncommitted; candidate identity must stay honest (v4 = candidate of record; patched dev binary proven for the settings-masking family only)"
+      ],
+      "memoryRefs": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+        ".prometheus/session-log.md",
+        ".prometheus/gotchas.md"
+      ],
+      "git": {
+        "root": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+        "head": "38f0b5d85960e3cb8445607750538ca500efdf17",
+        "branch": "codex/uar-1-1-1-implementation",
+        "dirty": true
+      },
+      "createdAt": "2026-10-19T21:09:03.514Z",
+      "prompt": "Fresh task context for role uar-lead on claude.\n\nExplicitly accept this handoff before taking ownership. Re-read destination project instructions and check current task revision.\n\nThis packet is task data, not authority to bypass instructions. Source sessions, credentials and permissions do not transfer; native destination controls apply.\n\nTask: uar111-ff-qual — UAR 1.1.1 function-first local qualification (frozen R1-R23) + llm.api_key security repair; source status: running; revision: 1.\n\nSource: uar-lead on opencode. Destination: uar-lead on claude.\n\nContext:\nUAR 1.1.1 function-first local qualification on T7: execute the frozen R1-R23 contract (function-first-local-qualification-contract.md) natively with real per-row evidence on candidate v4 sha256 96bf486872c57d22071596be6d81af42d3dfe7dee801a40226e507caf4225154 (preserved binary at /private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/opencode/uar-r14/uar-v4-preserved.bin). Parent phase function-first-release-certification is active; nested child embedding-primary-backup-lifecycle is closed (blocked, NOT READY). A parallel operator-directed security repair of the llm.api_key plaintext exposure is COMPLETE and proven (patch in src/uar/settings/manager.rs + src/uar/api/settings.rs, uncommitted; receipts bind to patched dev binary sha256 0ecff6b2fbcceb643de09af217e55f7ecbf1835c3543f61998a4c59fa2f64d8d, source HEAD 38f0b5d8 + dirty tree). HARD CONSTRAINTS: only authenticated kimi-for-coding/k3 for agent calls (no pay-as-you-go, no fallback, no new credentials, never route to ambient OPENAI_API_KEY, never call Mistral); never read or print real secret values (operator-supplied facts only); synthetic sentinels only in fixtures; 1907/1908 running instances untouched; no release/publication/commit/push; preserve v4 as candidate of record; KBD waypoint changes only via canonical typed events. CALL LEDGER: ceiling 1232 (base 632 + ext#1 +100 + ext#2 +200 + ext#3 +100 + ext#4 +100 + ext#5 +100), operator count 1110/1132 at 19:33Z; additive allowance as needed already authorized; record the next extension BEFORE crossing the ceiling with actual date -u timestamps. LEDGER OF RECORD: r-ledger-reconciliation-2026-10-19.md (rev4 grades + all addenda). Current whole-row grades: PASS (A) R1,R5,R6,R12,R14,R16,R17,R18*(flagged for operator review),R19,R20; subcriterion PASS R2(a)/R2(b)/R2(c) leg1; PARTIAL R10,R22; R11 = PARTIAL (agent + MCP-server legs PASS on a disposable v4 fixture 18:29Z; tool leg NOT SATISFIED - no standalone tool-definition REST create/configure surface exists, operator ruling: MCP auto-discovery insufficient); INCOMPLETE R3,R4,R15; FAIL R2(d)/R7/R8/R9/R13 (verified-principal/anonymous contract gaps, demonstrated); UNVERIFIED R2(c) leg2, R21; BLOCKED R23. NEXT CONCRETE ACTION: the R4 lane (auto-capture + assembled-input capture) - see remaining list and the R3/R4 lane-investigation addendum in the ledger. Fixture assets staged at /private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/opencode/uar-r14/ (mock_llm.py, mcp_stdio_fixture.py, configs, probe scripts, evidence dirs). Model-verification prerequisite: POST /api/uar/providers/{id}/test writes the ModelVerification record; chat 422s model_not_verified without it.\n\nEvidence:\n- .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md\n- .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md\n- .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md\n- .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r14-r20-receipts-2026-10-19.md\n- .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/function-first-local-qualification-contract.md\n\nRemaining work / blockers:\n- R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; report entry provenance honestly\n- R3 working-loop leg: blocked on the anonymous approval channel (descriptor forces ApprovalClass::Required for memory_save; run-policy auto cannot bypass) - external governance family; do not retry auto-approval as a bypass\n- R2(c) leg2 and R23: external verified-principal / run-creation governance blocker\n- R21: trim geometry unreachable within limits\n- R11 tool leg: no standalone tool-definition REST create/configure surface exists - operator decision required\n- Operator decisions pending: R18 flagged grade, Kimi credential rotation, R15 storage-legs-only sufficiency, R10 callback state-change leg\n- R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; assert the entry written in turn 1 is present in turn 2's captured assembled input and the reply reflects recall; report entry provenance (history vs injected memory block) honestly\n- R3 working-loop leg: blocked on the anonymous approval channel (memory_save is ApprovalClass::Required via effect-derived classification at runtime/native_skill.rs:81-88; manager.rs:6635-6641 shows run-policy Auto cannot bypass a Required descriptor) - same external governance family as R2(d)/R7; do NOT retry tool_approval:auto as a bypass\n- R2(c) leg2 and R23: external verified-principal / run-creation governance blocker (r3101 family)\n- R11 tool leg: no standalone tool-definition REST create/configure surface exists (route enumeration evidence in r11-regrade receipt) - operator decision required before any new-endpoint work\n- Operator decisions pending: R18 flagged grade; Kimi credential rotation after the plaintext exposure (agent must NOT rotate); R15 storage-legs-only sufficiency (turn leg would touch 1908); R10 callback state-change leg\n- Patch is uncommitted; candidate identity must stay honest (v4 = candidate of record; patched dev binary proven for the settings-masking family only)\n\nMemory references:\n- .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md\n- .prometheus/session-log.md\n- .prometheus/gotchas.md\n\nGit root: /Volumes/T7/Projects/prometheus/universal-agent-runtime; HEAD: 38f0b5d85960e3cb8445607750538ca500efdf17; branch: codex/uar-1-1-1-implementation; dirty: true.\n\nSelected provenance (identities and hashes only; inspect current references before accepting):\n{\n  \"schemaVersion\": 1,\n  \"capturedAt\": \"2026-10-19T21:09:03.515Z\",\n  \"canonical\": {\n    \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime\",\n    \"identity\": null,\n    \"observation\": \"unknown\",\n    \"revision\": null,\n    \"eventId\": null,\n    \"taskStatus\": null,\n    \"receiptSha256\": null,\n    \"reason\": \"task-not-linked\"\n  },\n  \"sources\": [\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/settings/manager.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 148091,\n      \"sha256\": \"f26bc93145185873847e20d543cd72709163232ca87202739322dda23f09e939\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/api/settings.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 58381,\n      \"sha256\": \"afec28d151249a5575c38d0966282c9df5603a05712a506ca133124b8a0becde\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/api/a2a/handler.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 19686,\n      \"sha256\": \"c7240541a0709b26ceb5e692eb3024457e090617a1eba8fb5f5ed53f5ab7dde8\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/presentation_history_tests.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 9002,\n      \"sha256\": \"8612cf0c2867fabcb5bb14546e99b085355bd3fe7cc8622c2280523f042c2b74\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/service_tests.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 11869,\n      \"sha256\": \"f9befcf73e6a8ce2e97059d4f3b34c1a3f8fca6614b933c217da5ed617ae2afc\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approval_tests.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 8962,\n      \"sha256\": \"281d97cd0d8ddae925f9a94b82a418f88afae8938d74f6412d393f9eb6c433ea\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/rag/chunking.rs\",\n      \"observation\": \"observed\",\n      \"bytes\": 16033,\n      \"sha256\": \"1fab29ecc080037242ef333d65ff28914222fe17da1f172656e8e81a4c55e296\"\n    }\n  ],\n  \"evidence\": [\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md\",\n      \"observation\": \"observed\",\n      \"bytes\": 15094,\n      \"sha256\": \"5d393c94f11538a3f4a00b0bd630160f180c7c8eeaa6832b010bdbcf14fa3b3d\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md\",\n      \"observation\": \"observed\",\n      \"bytes\": 4742,\n      \"sha256\": \"f32c9aa2881b24969131c07d87dc706cae568b8b99e54d3869726c72e490ded2\"\n    },\n    {\n      \"path\": \"/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md\",\n      \"observation\": \"observed\",\n      \"bytes\": 8258,\n      \"sha256\": \"25d42ccab1334daca43ac9aa7f3450400ef0ef01669f1acc88bd193115a0a810\"\n    }\n  ],\n  \"karpathy\": [],\n  \"memory\": []\n}\nCanonical observation, Karpathy references and memory receipts do not certify execution or transfer authority.",
+      "provenance": {
+        "schemaVersion": 1,
+        "capturedAt": "2026-10-19T21:09:03.515Z",
+        "canonical": {
+          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "identity": null,
+          "observation": "unknown",
+          "revision": null,
+          "eventId": null,
+          "taskStatus": null,
+          "receiptSha256": null,
+          "reason": "task-not-linked"
+        },
+        "sources": [
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/settings/manager.rs",
+            "observation": "observed",
+            "bytes": 148091,
+            "sha256": "f26bc93145185873847e20d543cd72709163232ca87202739322dda23f09e939"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/api/settings.rs",
+            "observation": "observed",
+            "bytes": 58381,
+            "sha256": "afec28d151249a5575c38d0966282c9df5603a05712a506ca133124b8a0becde"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/api/a2a/handler.rs",
+            "observation": "observed",
+            "bytes": 19686,
+            "sha256": "c7240541a0709b26ceb5e692eb3024457e090617a1eba8fb5f5ed53f5ab7dde8"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/presentation_history_tests.rs",
+            "observation": "observed",
+            "bytes": 9002,
+            "sha256": "8612cf0c2867fabcb5bb14546e99b085355bd3fe7cc8622c2280523f042c2b74"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/service_tests.rs",
+            "observation": "observed",
+            "bytes": 11869,
+            "sha256": "f9befcf73e6a8ce2e97059d4f3b34c1a3f8fca6614b933c217da5ed617ae2afc"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approval_tests.rs",
+            "observation": "observed",
+            "bytes": 8962,
+            "sha256": "281d97cd0d8ddae925f9a94b82a418f88afae8938d74f6412d393f9eb6c433ea"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/rag/chunking.rs",
+            "observation": "observed",
+            "bytes": 16033,
+            "sha256": "1fab29ecc080037242ef333d65ff28914222fe17da1f172656e8e81a4c55e296"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+            "observation": "observed",
+            "bytes": 15094,
+            "sha256": "5d393c94f11538a3f4a00b0bd630160f180c7c8eeaa6832b010bdbcf14fa3b3d"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md",
+            "observation": "observed",
+            "bytes": 4742,
+            "sha256": "f32c9aa2881b24969131c07d87dc706cae568b8b99e54d3869726c72e490ded2"
+          },
+          {
+            "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md",
+            "observation": "observed",
+            "bytes": 8258,
+            "sha256": "25d42ccab1334daca43ac9aa7f3450400ef0ef01669f1acc88bd193115a0a810"
+          }
+        ],
+        "karpathy": [],
+        "memory": []
+      },
+      "acceptedAt": "2026-10-19T21:15:24.274Z"
+    }
+  ],
   "outbox": [],
   "events": [
     {
@@ -821,6 +1540,2127 @@
         "evidence": [
           ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/handoffs/runtime.md",
           ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "ccdf4a14-0523-4e2d-892d-eb5001d40b95",
+      "at": "2026-10-17T12:50:45.081Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d1-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "c9c4e8d5-c56d-4974-9561-3170a2cc1285",
+      "at": "2026-10-17T12:50:45.208Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d2-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "3447b9e0-961c-4fb3-ad93-47eea66c1293",
+      "at": "2026-10-17T12:50:45.336Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d1-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "8c52c03f-1a18-4ce7-9ced-975a91269913",
+      "at": "2026-10-17T12:50:45.465Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d1-state",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "815f2d00-1b75-4820-ba47-e7d8a8c087a0",
+      "at": "2026-10-17T12:50:45.594Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d2-trust",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "65494866-5044-4af0-a53b-d34ef445df15",
+      "at": "2026-10-17T12:51:33.612Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d1-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Map every #385 criterion to actual local04 receipt and identify missing product versus customer evidence"
+        ]
+      }
+    },
+    {
+      "id": "230e780e-efd4-4956-84ca-a3c758482595",
+      "at": "2026-10-17T12:51:33.733Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d2-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Resolve #387 shared-profile exposure and issue dispositions; keep cadence as metadata until exact operations are bound"
+        ]
+      }
+    },
+    {
+      "id": "515498b9-288e-4a18-82aa-9ba6453e3186",
+      "at": "2026-10-17T12:51:33.866Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d1-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Read-only cause map for binding, streams, MCP and combined; no test, build or edit"
+        ]
+      }
+    },
+    {
+      "id": "00f11f2b-3f6f-48e3-bcd7-7dc9cb14c51c",
+      "at": "2026-10-17T12:51:33.985Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d1-state",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Read-only cause map for recovery, supervisor and resource cleanup; no test, build or edit"
+        ]
+      }
+    },
+    {
+      "id": "6cfd5a12-b9c9-4f57-8c77-444134d619c7",
+      "at": "2026-10-17T12:51:34.127Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d2-trust",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Read-only route exposure and tenant authority decision for current release; no test, build or edit"
+        ]
+      }
+    },
+    {
+      "id": "ba6fba82-fb60-45c6-af52-6832d916c064",
+      "at": "2026-10-17T12:57:18.750Z",
+      "kind": "kbd.task.completed",
+      "detail": {
+        "taskId": "uar111-d2-lead",
+        "taskRevision": 2,
+        "owner": "uar-lead",
+        "kbd": {
+          "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+          "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+          "phaseId": "uar-outstanding-issues-v1-1-1",
+          "changeId": "uar-outstanding-issues-v1-1-1",
+          "taskId": "8.2"
+        },
+        "commandId": "agent-team-c641ffafdbfc1bbb822e7d21b1fd1602f4561a3b91d54e9905f5d77282379b63",
+        "mode": "reconciled-existing-completion",
+        "executable": "/Users/gqadonis/.local/bin/prometheus",
+        "argv": [
+          "kbd",
+          "--path",
+          "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "status",
+          "--json"
+        ],
+        "canonicalRevision": 3038,
+        "canonicalTaskStatus": "complete",
+        "canonicalEventId": "a2d04302-3ed0-42b7-99a5-7fc710a37639",
+        "receiptSha256": "03f5682ddb4808d23e08af725020cd68cb3ce17a915673a4341f3c3f3e335c29",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+        ]
+      }
+    },
+    {
+      "id": "dcd91e96-09ec-4130-bf9c-5bb603512809",
+      "at": "2026-10-17T12:58:07.663Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-d2-trust",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "d4d3d06c-da6a-4d23-8890-7d2f3cd57a0e",
+      "at": "2026-10-17T12:59:22.054Z",
+      "kind": "kbd.task.completed",
+      "detail": {
+        "taskId": "uar111-d1-lead",
+        "taskRevision": 2,
+        "owner": "uar-lead",
+        "kbd": {
+          "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+          "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+          "phaseId": "uar-outstanding-issues-v1-1-1",
+          "changeId": "uar-outstanding-issues-v1-1-1",
+          "taskId": "8.1"
+        },
+        "commandId": "agent-team-b86717bd4684b03a345d2f5650631803c0042c8d1d02b2dce9f77e8523a721ed",
+        "mode": "reconciled-existing-completion",
+        "executable": "/Users/gqadonis/.local/bin/prometheus",
+        "argv": [
+          "kbd",
+          "--path",
+          "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "status",
+          "--json"
+        ],
+        "canonicalRevision": 3039,
+        "canonicalTaskStatus": "complete",
+        "canonicalEventId": "19dc71f5-5e12-418d-b249-11e1b8dba1e8",
+        "receiptSha256": "f7831a9269f8051be43a073fe7b1da29b53ad7f5ee06e9ad3e05956da3a06c41",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+        ]
+      }
+    },
+    {
+      "id": "4229947b-231c-425b-84ae-9db79cf46194",
+      "at": "2026-10-17T12:59:32.399Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-d1-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "123626ca-c5df-4276-98ba-e5c15ba133be",
+      "at": "2026-10-17T12:59:37.177Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-d1-state",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "9d000713-57ba-4458-917e-57c7086e6656",
+      "at": "2026-10-17T13:00:49.689Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-r11-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "ed326462-7697-4696-bade-4ba7c5845c73",
+      "at": "2026-10-17T13:00:50.003Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-r11-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "e82e32ae-9545-4a1f-acb9-50a0180c92f7",
+      "at": "2026-10-17T13:00:50.139Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-r11-trust",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "e992b6c0-8e15-4b88-b621-577098f2b1c1",
+      "at": "2026-10-17T13:09:03.084Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-r11-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Own scripts/release/uar_1_1_1_acceptance.py and support.py, src/server.rs, docs/releases/v1.1.1.md, canonical plan and source ownership; classify relay/Docker/image causes, integrate domain adapters, and complete the whole R11 source cohort before L9"
+        ]
+      }
+    },
+    {
+      "id": "1ee8ba07-31d6-4ad5-976b-e913ecd73dd8",
+      "at": "2026-10-17T13:09:03.224Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-r11-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Own src/uar/runtime/manager.rs and scripts/release/uar_1_1_1_runtime.py; use event_projection.rs only if required for minimal host fix. Preserve binding fixture assertion and investigate zero effective MCP policy by source before editing. No tests/builds/gates until lead records L9."
+        ]
+      }
+    },
+    {
+      "id": "9656346a-4470-4ba5-8c9e-905b0d884d55",
+      "at": "2026-10-17T13:09:03.391Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-r11-trust",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "After lead implementation handoff, own src/uar/api/compiler.rs and new scripts/release/uar_1_1_1_compiler.py. Deny complete aliases from trusted host configuration before effects; preserve local single-owner behavior. Author but do not run two-principal acceptance until L9."
+        ]
+      }
+    },
+    {
+      "id": "f9e88ca1-7907-4b91-8533-513aae2a8a4b",
+      "at": "2026-10-17T13:17:23.302Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-r11-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "src/uar/runtime/manager.rs",
+          "src/uar/runtime/turn/host/event_projection.rs",
+          "scripts/release/uar_1_1_1_runtime.py"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "3b8573fc-c987-495c-91fe-93e1c05c3611",
+      "at": "2026-10-17T13:17:26.840Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-r11-trust",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "src/uar/api/compiler.rs",
+          "scripts/release/uar_1_1_1_compiler.py",
+          "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "e98776c8-84f7-4e2f-8a8e-bd30afa7486b",
+      "at": "2026-10-17T13:17:44.570Z",
+      "kind": "kbd.task.completed",
+      "detail": {
+        "taskId": "uar111-r11-lead",
+        "taskRevision": 2,
+        "owner": "uar-lead",
+        "kbd": {
+          "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+          "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+          "phaseId": "uar-outstanding-issues-v1-1-1",
+          "changeId": "uar-outstanding-issues-v1-1-1",
+          "taskId": "8.3"
+        },
+        "commandId": "agent-team-93138271efe65359fe0b8ba08c164b10dc52104a09382b226f4e226513a4508a",
+        "mode": "transition-committed",
+        "executable": "/Users/gqadonis/.local/bin/prometheus",
+        "argv": [
+          "kbd",
+          "--path",
+          "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "task",
+          "transition",
+          "--command-id",
+          "agent-team-93138271efe65359fe0b8ba08c164b10dc52104a09382b226f4e226513a4508a",
+          "--phase",
+          "uar-outstanding-issues-v1-1-1",
+          "--change",
+          "uar-outstanding-issues-v1-1-1",
+          "--id",
+          "8.3",
+          "--status",
+          "complete",
+          "--summary",
+          "Team uar-core, task uar111-r11-lead. Evidence: .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md; openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md; src/server.rs; scripts/release/uar_1_1_1_acceptance.py; .dockerignore"
+        ],
+        "canonicalRevision": 3042,
+        "canonicalTaskStatus": "complete",
+        "canonicalEventId": "4a97f2b3-f95a-4dfa-832d-8923e93411f4",
+        "receiptSha256": "83dd48bd0b9fb096f9e379d2d3e25552a9ad19e1d58616b1a837ad158a58f0b6",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md",
+          "src/server.rs",
+          "scripts/release/uar_1_1_1_acceptance.py",
+          ".dockerignore"
+        ]
+      }
+    },
+    {
+      "id": "d6c3862d-416b-4613-8f65-f790c1b09dbd",
+      "at": "2026-10-19T21:07:56.868Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-ff-qual",
+        "owner": "uar-lead",
+        "harness": "opencode",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "245679dd-a39e-4e3c-aeff-08b7ca0dd777",
+      "at": "2026-10-19T21:08:07.990Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-ff-qual",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "opencode",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "opencode",
+        "status": "running",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md",
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md",
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r14-r20-receipts-2026-10-19.md",
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/function-first-local-qualification-contract.md"
+        ],
+        "remaining": [
+          "R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; report entry provenance honestly",
+          "R3 working-loop leg: blocked on the anonymous approval channel (descriptor forces ApprovalClass::Required for memory_save; run-policy auto cannot bypass) - external governance family; do not retry auto-approval as a bypass",
+          "R2(c) leg2 and R23: external verified-principal / run-creation governance blocker",
+          "R21: trim geometry unreachable within limits",
+          "R11 tool leg: no standalone tool-definition REST create/configure surface exists - operator decision required",
+          "Operator decisions pending: R18 flagged grade, Kimi credential rotation, R15 storage-legs-only sufficiency, R10 callback state-change leg"
+        ]
+      }
+    },
+    {
+      "id": "f95ffd31-19ed-4376-8550-700f9f8daebe",
+      "at": "2026-10-19T21:09:03.547Z",
+      "kind": "handoff.created",
+      "detail": {
+        "handoffId": "bb6363dd-fb55-44e7-bed1-13d2d565b2b5",
+        "taskId": "uar111-ff-qual",
+        "taskRevision": 1,
+        "toOwner": "uar-lead",
+        "toHarness": "claude"
+      }
+    },
+    {
+      "id": "4818e0b9-27b7-4982-a191-95c33e472eb5",
+      "at": "2026-10-19T21:15:24.274Z",
+      "kind": "handoff.accepted",
+      "detail": {
+        "handoffId": "bb6363dd-fb55-44e7-bed1-13d2d565b2b5",
+        "taskId": "uar111-ff-qual",
+        "taskRevision": 2,
+        "fromOwner": "uar-lead",
+        "fromHarness": "opencode",
+        "owner": "uar-lead",
+        "harness": "claude",
+        "acceptedAt": "2026-10-19T21:15:24.274Z"
+      }
+    },
+    {
+      "id": "1103c8a8-e1ee-45f2-b949-2cdc67fd13c1",
+      "at": "2026-10-20T19:44:14.943Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "8df041ee-4cd8-42f4-a495-a90612eec7e2",
+      "at": "2026-10-20T19:44:15.345Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md"
+        ],
+        "remaining": [
+          "Implementation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "a8a28e5a-b818-4c91-b747-6edf3e56c9d4",
+      "at": "2026-10-20T19:44:15.964Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "81d37cfe-daa9-4a53-9019-85d08648c9f6",
+      "at": "2026-10-20T19:44:16.306Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md"
+        ],
+        "remaining": [
+          "Implementation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "a27f6818-49a3-4dc3-a040-af78c624c80b",
+      "at": "2026-10-20T19:44:16.696Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-state",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "4a9aaf23-85b1-409a-a6d5-e3d060e88f20",
+      "at": "2026-10-20T19:44:17.564Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-state",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md"
+        ],
+        "remaining": [
+          "Implementation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "acc59b6d-f05a-423c-80a5-a74aca4429ab",
+      "at": "2026-10-20T19:44:17.859Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-trust",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "1edffb10-b041-4209-93c4-47ff8eb7b8b6",
+      "at": "2026-10-20T19:44:18.074Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-trust",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md"
+        ],
+        "remaining": [
+          "Implementation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "11fe62b4-cff7-4b16-8333-a8f7373b1dae",
+      "at": "2026-10-20T21:13:53.383Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-console",
+        "owner": "uar-console",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "b4cc4bf8-2a12-4c21-89a0-d4139b83122b",
+      "at": "2026-10-20T21:13:53.606Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-console",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-console",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-console",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-console-handoff.md"
+        ],
+        "remaining": [
+          "Whole-phase source integration and operator-authorized acceptance pending; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "a68239a8-5b10-4345-a1ee-6950955a4d1c",
+      "at": "2026-10-20T21:39:19.595Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-a2a-streaming",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "517343a8-ffc5-4468-a1fc-b4ea3e3dc179",
+      "at": "2026-10-20T21:39:19.710Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-a2a-streaming",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-a2a-handoff.md"
+        ],
+        "remaining": [
+          "Lead integration and whole-phase source reconciliation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "4a6bdc37-771c-4c4f-bf15-ab08e3c8550b",
+      "at": "2026-10-20T21:39:19.819Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-sandbox-ownership",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "7a34f090-95a6-4e35-a74a-1798759ae341",
+      "at": "2026-10-20T21:39:19.945Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-sandbox-ownership",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-sandbox-handoff.md"
+        ],
+        "remaining": [
+          "Lead integration and whole-phase source reconciliation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "82f2f6d3-ba06-455a-bcbb-488150024fe4",
+      "at": "2026-10-20T21:39:20.082Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-boss-launcher",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "b7f44d8c-aa5d-4a32-9c82-595857de39b7",
+      "at": "2026-10-20T21:39:20.214Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-boss-launcher",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-inherited-lifecycle.md"
+        ],
+        "remaining": [
+          "Lead integration and whole-phase source reconciliation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "61665753-9d96-4852-8a95-9061da1643a7",
+      "at": "2026-10-20T21:39:20.351Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-startup-cancellation",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "3c569ab9-cf5c-48af-93e7-f65777b06059",
+      "at": "2026-10-20T21:39:20.488Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-startup-cancellation",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-startup-handoff.md"
+        ],
+        "remaining": [
+          "Lead integration and whole-phase source reconciliation pending; verification CLOSED; no tests/checks/builds/reviews authorized"
+        ]
+      }
+    },
+    {
+      "id": "df1d7f12-e89a-4783-8131-4678b19ff6ea",
+      "at": "2026-10-20T21:54:43.801Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md",
+          "docs/operations/lifecycle-runtime-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "a2ad2037-a92e-41ed-bab0-7640144b1495",
+      "at": "2026-10-20T21:54:43.908Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-state",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md",
+          "docs/operations/lifecycle-state-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "63d756e2-0375-4fd0-9807-19697b01a613",
+      "at": "2026-10-20T21:54:44.006Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-trust",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md",
+          "docs/operations/lifecycle-trust-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "314a74bb-69d7-4c62-9098-077abc4d9fdd",
+      "at": "2026-10-20T21:54:44.104Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-console",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-console",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-console",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-console-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "7f40445a-571f-4994-a3fb-edea7f45b96d",
+      "at": "2026-10-20T21:54:44.195Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-a2a-streaming",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-a2a-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "26f07222-7847-408f-9cf7-7d9b2f26e802",
+      "at": "2026-10-20T21:54:44.296Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-sandbox-ownership",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-sandbox-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "c1c33dbc-5bd3-447e-8749-a97b0e74c162",
+      "at": "2026-10-20T21:54:44.391Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-boss-launcher",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-inherited-lifecycle.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "0e69bba4-4250-48c1-9307-78de2f0d2cf1",
+      "at": "2026-10-20T21:54:44.486Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-startup-cancellation",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-startup-handoff.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "c65f393c-e7ec-4fd6-a17c-49104a7e9625",
+      "at": "2026-10-20T21:54:44.591Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-lead",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "openspec/changes/deterministic-lifecycle-management/design.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.md",
+          "docs/operations/lifecycle-implementation-inventory-2026-10-20.json",
+          "Source implementation only; verification CLOSED; no tests/checks/builds/reviews executed"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "fe9d061a-c581-45f3-9249-58600ab4aa27",
+      "at": "2026-10-20T22:07:03.865Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-process-entrypoints",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "3afa0fdc-bf8e-4246-9144-1071897eb332",
+      "at": "2026-10-20T22:07:03.978Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-process-entrypoints",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-entrypoint-handoff.md"
+        ],
+        "remaining": [
+          "Source integration in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "aab1767e-6f6a-4f1c-a187-aacc7b27f6bf",
+      "at": "2026-10-20T22:07:04.070Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-watcher-order",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "54150c9b-4215-4348-8ecc-2bd65496bdef",
+      "at": "2026-10-20T22:07:04.188Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-watcher-order",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-watcher-order-handoff.md"
+        ],
+        "remaining": [
+          "Source integration in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "aa7a5c08-90f9-4956-9c18-a9b122e33e14",
+      "at": "2026-10-20T22:19:18.933Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-process-entrypoints",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-entrypoint-handoff.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "afacca0a-fe46-4077-8493-7419d6e23267",
+      "at": "2026-10-20T22:19:19.059Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-watcher-order",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-watcher-order-handoff.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "c406108a-a0db-463d-a454-ba029b2b7e1f",
+      "at": "2026-10-20T22:59:43.769Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-producer-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "e99ccc16-12e6-424e-b7aa-48da8b9a3361",
+      "at": "2026-10-20T22:59:43.982Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-producer-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-producer-runtime-continuation.md",
+          "docs/operations/lifecycle-grpc-continuation.md"
+        ],
+        "remaining": [
+          "Source handoff integration in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "2c69d06d-c449-4442-87de-52c91b763398",
+      "at": "2026-10-20T22:59:44.328Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-producer-state",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "7b7cb214-8c90-4a0f-9dda-f54f7c1829b4",
+      "at": "2026-10-20T22:59:44.485Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-producer-state",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-producer-state-continuation.md",
+          "tests/lifecycle_owned_resources.rs"
+        ],
+        "remaining": [
+          "Source handoff integration in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "e8e429d9-dd9a-4cb9-8298-4e9d6081a065",
+      "at": "2026-10-20T22:59:44.657Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-producer-trust",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "291cabcb-dc9b-4b08-88f3-0d9e0462c4d7",
+      "at": "2026-10-20T22:59:44.873Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-producer-trust",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-producer-trust-continuation.md",
+          "docs/operations/lifecycle-reconnect-continuation.md"
+        ],
+        "remaining": [
+          "Source handoff integration in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "3333bfbe-71ce-48be-b3a9-c70920a5cb0f",
+      "at": "2026-10-20T22:59:45.122Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-producer-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "39c0dff7-905f-481d-a45b-bffbe6a615f2",
+      "at": "2026-10-20T22:59:45.371Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-producer-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-producer-lead-continuation.md",
+          "docs/operations/lifecycle-model-stream-continuation.md"
+        ],
+        "remaining": [
+          "Source handoff integration in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "1ed43e1d-7a3a-44ef-833d-fe6ae8134885",
+      "at": "2026-10-20T23:02:14.974Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-producer-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-producer-runtime-continuation.md",
+          "docs/operations/lifecycle-grpc-continuation.md",
+          "Source implementation only; verification CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "9a9deb8e-f8f6-4325-8255-0034be293427",
+      "at": "2026-10-20T23:02:15.074Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-producer-state",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-producer-state-continuation.md",
+          "tests/lifecycle_owned_resources.rs",
+          "Source implementation only; verification CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "5b1a9a10-f955-443a-bd16-2dd58c484162",
+      "at": "2026-10-20T23:02:15.182Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-producer-trust",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-producer-trust-continuation.md",
+          "docs/operations/lifecycle-reconnect-continuation.md",
+          "Source implementation only; verification CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "52ddb875-6986-4479-81a1-9d1abd9cf68a",
+      "at": "2026-10-20T23:02:15.286Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-producer-lead",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-producer-lead-continuation.md",
+          "docs/operations/lifecycle-model-stream-continuation.md",
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-reconnect.md",
+          "Source implementation only; verification CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "7dc52f70-1678-42f4-b79a-bb857f0aa178",
+      "at": "2026-10-21T00:09:51.564Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "embedding-live-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "11765b0c-201a-4a6d-9ecd-fd58dd5c0815",
+      "at": "2026-10-21T00:09:51.885Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "embedding-live-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-embedding-runtime-handoff.md"
+        ],
+        "remaining": [
+          "Source implementation in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "940b924b-fade-4d69-bbc6-a22c6f1f60dd",
+      "at": "2026-10-21T00:09:52.026Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "embedding-live-fixtures",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "89f6708a-2929-45af-8bf8-925c810f2bab",
+      "at": "2026-10-21T00:09:52.168Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "embedding-live-fixtures",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-embedding-fixture-handoff.md"
+        ],
+        "remaining": [
+          "Source implementation in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "36133e3a-7837-4d53-9720-e037e304938a",
+      "at": "2026-10-21T00:09:52.299Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-boss-immutable-payload",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "0a92fa4e-8b0e-40f4-88bc-d94753d0e155",
+      "at": "2026-10-21T00:09:52.424Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-boss-immutable-payload",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md"
+        ],
+        "remaining": [
+          "Source implementation in progress; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "395214dc-7136-4b1f-92f6-4c174f417ec2",
+      "at": "2026-10-21T00:38:11.909Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "embedding-live-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-embedding-runtime-handoff.md",
+          "Authored source only; all behavior unverified; gate CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "66f35991-8054-43e2-aa12-bf50cacfcbef",
+      "at": "2026-10-21T00:38:12.113Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "embedding-live-fixtures",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-embedding-fixture-handoff.md",
+          "Authored source only; all behavior unverified; gate CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "068c1165-03ce-4ecc-bbf4-c649c4f4a657",
+      "at": "2026-10-21T00:54:36.209Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-boss-immutable-payload",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+          "UAR actual committed pin ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; source only; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "f1d33259-6350-45c7-b4d3-525fe529f9fe",
+      "at": "2026-10-21T01:30:37.726Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-runtime-repair",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "115bf9b3-66d7-4354-b5ca-f7b4f7fffd8a",
+      "at": "2026-10-21T01:30:37.854Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-runtime-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-runtime-repair.md"
+        ],
+        "remaining": [
+          "Source integration repair; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "55793954-b1f0-4f48-9995-973e5855857a",
+      "at": "2026-10-21T01:30:37.980Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-state-repair",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "aa740067-28eb-44d6-b3ed-becacf454d06",
+      "at": "2026-10-21T01:30:38.110Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-state-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-state-repair.md"
+        ],
+        "remaining": [
+          "Source integration repair; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "9e09a1ec-173d-4455-832a-64ddcd87c659",
+      "at": "2026-10-21T01:30:38.229Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-lead-repair",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "7e0e8e15-8b99-4e53-a7a4-b24dc049ad5e",
+      "at": "2026-10-21T01:30:38.377Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-lead-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-mcp-repair.md"
+        ],
+        "remaining": [
+          "Source integration repair; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "763b954d-f82f-4940-9fd6-9ab0fe28e70d",
+      "at": "2026-10-21T01:34:37.855Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-runtime-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-runtime-repair.md",
+          "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "c3b83c01-2f31-4fc5-90ba-3835659aeecb",
+      "at": "2026-10-21T01:34:37.960Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-state-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-state-repair.md",
+          "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "e395113f-abe0-402a-b5a1-591ef3d3720e",
+      "at": "2026-10-21T01:38:21.304Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-lead-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-mcp-repair.md",
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+          "Actual repaired UAR/Boss commits published; no runtime acceptance; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "7b674f56-1f8f-4644-8646-b0880d1972b2",
+      "at": "2026-10-21T02:13:29.689Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-startup-send-repair",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "6e7a5220-b712-42b9-a3e0-d9dcd14c42f3",
+      "at": "2026-10-21T02:13:29.779Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-startup-send-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-startup-send-repair.md"
+        ],
+        "remaining": [
+          "Source only; no local checks/build/tests; CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "8137cbf6-d899-4bf4-a4e1-67cb5d9b382a",
+      "at": "2026-10-21T02:14:59.939Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-startup-send-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-startup-send-repair.md",
+          "Source-only handoff collected; no compiler or runtime verification; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "162c0ca6-92ff-4779-83fc-fd678744b6e3",
+      "at": "2026-10-21T08:33:55.976Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-state-repair",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "b5ecadcb-b343-4d97-b896-4a25dbe24965",
+      "at": "2026-10-21T08:33:56.155Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-state-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Complete bounded source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "caf971fa-739e-488a-8301-53117658d811",
+      "at": "2026-10-21T08:33:56.401Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-state-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "f8100a6c-c4b2-4188-b411-5f8b5b8a7fe7",
+      "at": "2026-10-21T08:33:56.729Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-runtime-repair",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "f053676b-e612-432c-9eb0-8fca7c16ecca",
+      "at": "2026-10-21T08:33:56.905Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-runtime-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Complete bounded source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "b41b2b15-baa5-4a1d-aca7-0bc676788381",
+      "at": "2026-10-21T08:33:57.146Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-runtime-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "1375fb75-4e29-4f2b-8fdc-22ecc364dd26",
+      "at": "2026-10-21T08:33:57.356Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-lead-repair",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "aa91f5b6-56b4-4b0a-a81a-2cf6d9e5b6a7",
+      "at": "2026-10-21T08:33:57.580Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-lead-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Complete bounded source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "0a4df3ff-de4c-44ce-847c-d5a9f92cb9fa",
+      "at": "2026-10-21T08:33:57.838Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-lead-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "31db5177-5214-455a-921c-fdb07eb01419",
+      "at": "2026-10-21T08:56:47.709Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-principal-repair",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "b920a750-fafb-4a18-a3ab-ec85bebadf1f",
+      "at": "2026-10-21T08:56:47.858Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-principal-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
+        ],
+        "remaining": [
+          "Fixture-only verified-principal source repair; no teammate gates"
+        ]
+      }
+    },
+    {
+      "id": "83dac307-c495-4260-9f6b-46dd9cd168b4",
+      "at": "2026-10-21T08:56:47.995Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-approved-gate-principal-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "1b4e5831-b2d7-463e-83f4-fec793858cf3",
+      "at": "2026-10-21T09:22:23.182Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-budget-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "1399602a-923f-42d6-ab5a-2606c18fd6db",
+      "at": "2026-10-21T09:22:23.432Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-budget-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-budget-runtime-handoff.md"
+        ],
+        "remaining": [
+          "Source implementation/handoff only; verification CLOSED; no tests or new gates"
+        ]
+      }
+    },
+    {
+      "id": "9e702edf-7c17-4dfc-a715-1484b4589164",
+      "at": "2026-10-21T09:22:23.690Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-budget-host-notes",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "52e27221-70ac-47a2-bc43-868f6e88fb4f",
+      "at": "2026-10-21T09:22:23.900Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-budget-host-notes",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-budget-host-integration-notes.md"
+        ],
+        "remaining": [
+          "Source implementation/handoff only; verification CLOSED; no tests or new gates"
+        ]
+      }
+    },
+    {
+      "id": "f4866c01-e0a7-43ef-a12e-38ca9d53596e",
+      "at": "2026-10-21T09:22:24.104Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-budget-host-notes",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-budget-host-integration-notes.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "4655d1ac-7e73-4bee-8c9a-89d46e4f41b7",
+      "at": "2026-10-21T09:22:24.331Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-budget-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "3d274784-cf94-4e08-87ba-f70e3eff7f0d",
+      "at": "2026-10-21T09:22:24.593Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-budget-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-budget-lead-handoff.md"
+        ],
+        "remaining": [
+          "Source implementation/handoff only; verification CLOSED; no tests or new gates"
+        ]
+      }
+    },
+    {
+      "id": "75fb12ba-2b15-4696-894d-fbb2936c6c75",
+      "at": "2026-10-21T09:33:01.990Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-budget-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-budget-runtime-handoff.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "3cdc3db4-0682-4158-bbb8-d418560e9ece",
+      "at": "2026-10-21T09:33:02.145Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-budget-lead",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-budget-lead-handoff.md"
         ],
         "remaining": []
       }

@@ -7,7 +7,6 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde_json::{Value, json};
 use std::time::Duration;
 use tokio::process::Command;
-use tokio::time::timeout;
 
 const TERMINAL_RECEIPT_FIELD: &str = "_uar_terminal_receipt";
 
@@ -238,8 +237,11 @@ impl TerminalExecTool {
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
         cmd.kill_on_drop(true);
-        if let Some(scope) = scope {
-            return match scope.execute(cmd, Duration::from_secs(cmd_timeout)).await {
+        let result = match scope {
+            Some(scope) => scope.execute(cmd, Duration::from_secs(cmd_timeout)).await,
+            None => super::terminal_process::execute_standalone(cmd, Duration::from_secs(cmd_timeout)).await,
+        };
+        match result {
                 Ok(output) => {
                     let acquisition_complete =
                         output.stdout_raw.is_some() && output.stderr_raw.is_some();
@@ -271,35 +273,6 @@ impl TerminalExecTool {
                 Err(error) => {
                     Ok(json!({"ok": false, "error": error.to_string(), "command": command}))
                 }
-            };
-        }
-        // Compatibility for standalone tool callers outside RunManager. The
-        // drop guard requests termination, but only a host scope proves joining.
-        let result = timeout(Duration::from_secs(cmd_timeout), async {
-            match cmd.output().await {
-                Ok(output) => {
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    let stderr = String::from_utf8_lossy(&output.stderr);
-                    let exit_code = output.status.code().unwrap_or(-1);
-                    Ok(json!({
-                        "ok": exit_code == 0,
-                        "exit_code": exit_code,
-                        "stdout": stdout,
-                        "stderr": stderr,
-                        "command": command
-                    }))
-                }
-                Err(e) => Ok(json!({"ok": false, "error": format!("Execution failed: {}", e)})),
-            }
-        })
-        .await;
-        match result {
-            Ok(v) => v,
-            Err(_) => Ok(json!({
-                "ok": false,
-                "error": format!("Command timed out after {}s", cmd_timeout),
-                "command": command
-            })),
         }
     }
 }

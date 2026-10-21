@@ -447,15 +447,15 @@ def assert_tenant_mismatch_without_reservation():
     assert peer_tool_calls() == before_calls, "tenant mismatch reached the controlled MCP peer"
 
 
-def assert_grpc_streaming_without_reservation():
+def assert_grpc_streaming_role_denied_without_reservation():
     before = list_tasks(token)
     before_calls = peer_tool_calls()
-    params = send_params("streaming-unsupported-" + str(uuid.uuid4()), input_text)
+    params = send_params("streaming-role-denied-" + str(uuid.uuid4()), input_text)
     params["message"]["parts"][0]["mediaType"] = "text/plain"
-    returncode, stdout, stderr = grpc("SendStreamingMessage", params, token, True)
-    assert returncode != 0 and "Unimplemented" in (stdout + stderr), (stdout, stderr)
-    assert list_tasks(token) == before, "unsupported gRPC streaming reserved a durable task"
-    assert peer_tool_calls() == before_calls, "unsupported gRPC streaming reached the controlled MCP peer"
+    returncode, stdout, stderr = grpc("SendStreamingMessage", params, role_limited_token, True)
+    assert returncode != 0 and "PermissionDenied" in (stdout + stderr), (stdout, stderr)
+    assert list_tasks(token) == before, "role-denied gRPC streaming reserved a durable task"
+    assert peer_tool_calls() == before_calls, "role-denied gRPC streaming reached the controlled MCP peer"
 
 
 def assert_cross_transport_projection(task_id):
@@ -486,7 +486,7 @@ assert peer_tool_calls() == 0, "fixture process must begin with no MCP tool invo
 assert_role_denied_without_reservation()
 assert_authentication_required_without_reservation()
 assert_tenant_mismatch_without_reservation()
-assert_grpc_streaming_without_reservation()
+assert_grpc_streaming_role_denied_without_reservation()
 task = submit(input_text)
 task = get_task(task["id"])
 immediate_get_state = task_state(task)

@@ -12,16 +12,40 @@ use crate::{bearer, boot_sidecar, host};
 const ROUTE: &str = "/api/uar/capabilities";
 
 /// The closed capability vocabulary of design Decision 12.
-const VOCABULARY: [&str; 9] = [
+const VOCABULARY: [&str; 33] = [
+    "collaboration_representation_execution_v1",
+    "team_execution_host_workspace_v1",
+    "prometheus.workflow-execution/1.0.0",
     "agui_stream_fidelity",
+    "approval_lifecycle_v1",
+    "collaboration_definition_packages_v1",
+    "collaboration_definition_packages_v2",
+    "collaboration_deployment_bindings_v1",
+    "collaboration_deployment_bindings_v2",
+    "collaboration_conversion_reports_v1",
+    "collaboration_representation_grant_refs_v1",
+    "collaboration_team_planning_v1",
+    "collaboration_team_execution_v1",
+    "durable_agent_instances_v1",
+    "full_harness_delegation_v1",
     "host_history",
+    "host_lifecycle_control_v1",
     "ingest_scoped_credentials",
+    "local_scoped_observers_v1",
     "reasoning_effort",
     "run_scoped_credentials",
     "run_scoped_mcp_servers",
+    "scoped_delegation_grants_v1",
     "secrets_at_rest",
     "session_principal",
+    "service_instance_placement_v1",
+    "tool_admission_v2",
+    "uar_target_catalog_v1",
+    "uar_target_model_override_v1",
     "working_directory",
+    "team_execution_peer_tools_v1",
+    "team_execution_shared_instructions_v1",
+    "team_execution_continuations_v1",
 ];
 
 /// AG-UI profile revision of the runs stream before `agui-runs-stream-fidelity`.
@@ -52,7 +76,10 @@ fn assert_capabilities_shape(body: &Value) {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn capabilities_route_requires_launch_token_and_reports_version() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::capabilities_route_requires_launch_token_and_reports_version"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let port = sidecar.port();
     let host = sidecar.host();
 
@@ -109,6 +136,20 @@ async fn capabilities_route_requires_launch_token_and_reports_version() {
     assert_eq!(authorized.status, 200, "{}", authorized.body_text());
     let body: Value = serde_json::from_slice(&authorized.body).expect("capabilities JSON");
     assert_capabilities_shape(&body);
+    assert!(body["capabilities"].as_array().unwrap().iter().any(|name| name == "host_lifecycle_control_v1"));
+    let snapshot = sidecar.process.lifecycle(serde_json::json!({"kind":"snapshot"})).await;
+    assert_eq!(snapshot["version"], 1);
+    assert!(snapshot["error"].is_null(), "launch control failed: {snapshot}");
+    assert!(snapshot["result"]["resources"].as_array().is_some_and(|resources| !resources.is_empty()));
+    assert!(snapshot["result"]["subscriptions"].is_object());
+    let rejected = sidecar.process.lifecycle(serde_json::json!({"kind":"reconnect",
+        "resource_id":"unregistered-fixture-resource", "expected_generation":0})).await;
+    assert_eq!(rejected["error"], "lifecycle_command_failed");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 fn mint_jwt() -> String {
@@ -131,6 +172,7 @@ fn mint_jwt() -> String {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn capabilities_route_is_not_auth_exempt_in_standalone() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::capabilities_route_is_not_auth_exempt_in_standalone"), async {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let workspace = Workspace::new();
     let provider_key = format!("sk-capabilities-{}", uuid::Uuid::new_v4().simple());
@@ -169,4 +211,5 @@ async fn capabilities_route_is_not_auth_exempt_in_standalone() {
     }
     let status = standalone.stop_standalone().await;
     assert!(status.success(), "standalone exit: {status}");
+    }).await;
 }

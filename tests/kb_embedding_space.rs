@@ -175,6 +175,7 @@ async fn search(
         persistence: Arc::clone(persistence),
         vector_matcher: Arc::new(VectorMatcher::new(query_backend, 0.75)),
         ingestion_pool: None,
+        realtime_bus: None,
     });
     let app = build_router().with_state(state).layer(Extension(user()));
     let body = serde_json::json!({ "query": query, "limit": 5, "min_score": 0.3 });

@@ -263,7 +263,12 @@ impl ContextContributor for ContextStage {
                 .await
                 .map_err(|error| AssemblyError::ContributorFailed {
                     name: self.name().to_string(),
-                    message: error.to_string(),
+                    // The stable reduction code and liability text survive the
+                    // codeless `AssemblyError`; the manager restores the code.
+                    message: crate::uar::runtime::context::reduce::tag_assembly_failure(
+                        &error,
+                        self.reserved_tokens,
+                    ),
                 })?;
             (history, Some(report))
         };
@@ -340,9 +345,15 @@ impl LifecycleContributor for LifecycleStage {
 }
 
 pub fn registry(context: ContextStage) -> ContributorRegistry {
+    registry_with_tool_tokens(context, 0)
+}
+
+/// As [`registry`], with the run's tool-definition tokens withheld from the
+/// skill-body window. World state is not subtracted: it is already in history.
+pub fn registry_with_tool_tokens(context: ContextStage, tool_tokens: usize) -> ContributorRegistry {
     let bodies = SkillBodiesStage {
         model: context.model.clone(),
-        context_limit: context.context_limit,
+        context_limit: context.context_limit.saturating_sub(tool_tokens),
         budget: context.skill_budget,
         options: context.options,
     };

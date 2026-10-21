@@ -63,9 +63,13 @@ impl Harness {
                 Arc::new(tokio::sync::RwLock::new(SkillRegistry::default())),
                 Arc::new(VectorMatcher::new(
                     Arc::new(
-                        crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
-                            384,
-                            "host lifecycle fixture",
+                        crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+                            Arc::new(
+                                crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                                    384,
+                                    "host lifecycle fixture",
+                                ),
+                            ),
                         ),
                     ),
                     0.75,

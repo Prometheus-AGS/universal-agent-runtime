@@ -1,0 +1,1122 @@
+{
+  "document_kind": "implementation_complete_inventory",
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "boundary": "closed_pending_operator_instruction",
+  "implementation_complete": true,
+  "source_commit": "91a091d647fe2ce63651c07140172aba2c6c6302",
+  "source_tree": "sha256:6d3b80446df3db3d21ae403a7f70a0f39174dc5f4d398d1dec50ec2d476f06f8",
+  "fixture_tree": "sha256:3297d4a60bb39968b468ffac7be0b1495c3dd6def42420056fc581072724ae87",
+  "source_paths": [
+    "src",
+    "Cargo.toml",
+    "Cargo.lock",
+    "build.rs",
+    "Dockerfile",
+    "migrations",
+    "policies",
+    "versions.toml",
+    "proto",
+    "static",
+    "catalog",
+    "package.json",
+    "pnpm-lock.yaml",
+    "vendor",
+    "crates",
+    "frontend",
+    "docs/agents",
+    "scripts",
+    ".cargo",
+    ".dockerignore",
+    ".gitmodules",
+    "rust-toolchain.toml"
+  ],
+  "fixture_paths": [
+    "tests",
+    "scripts/release"
+  ],
+  "recorded_by": "uar-lead; R12 source-only handoffs complete, L10 authoring before operator gate instruction",
+  "recorded_at": "2026-10-17T16:46:11.083925+00:00",
+  "items": [
+    {
+      "id": "1.1",
+      "stable_id": "L1",
+      "owner": "uar-lead",
+      "required_deliverable": "Lead records the candidate baseline, exclusive file/build ownership, dependency handoffs and the complete implementation inventory template for this change, preserving prior work and cancelled Dot scope. Completion artifact: canonical execution ledger and source ownership map; no product check.",
+      "files": [
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/execution.md",
+          "sha256": "sha256:ffcd2a215a3c4f7a9403ac1b13b0121b5791322765d5fb03c153bb421e8e1863"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/execution-ledger.json",
+          "sha256": "sha256:fd570078ee8bb45622b2a554eb7538a663a4c2333507b83a31d8a7e5084f4653"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/ownership.md",
+          "sha256": "sha256:3bcc395c7669a5658c3626c637d27d44456d83f1fe9e85d364ab1af3d2c5c807"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory.template.json",
+          "sha256": "sha256:9b734ffa7b95f87027ac64ccafba9dfc22b8a0da66af0702f26a4e88301dc51f"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/L1.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/L1.md"
+      ]
+    },
+    {
+      "id": "3.1",
+      "stable_id": "S1",
+      "owner": "uar-state",
+      "required_deliverable": "State adds safe captured store eligibility to existing persistence capabilities; runtime consumes it under R1. Preserve durable accounting, explicit budgets, owner partitioning, unknown liabilities and exact reconciliation. Deliver typed interface and diagnostic documentation inputs; deferred `binding`/`recovery` acceptance covers unattested refusal, qualified success and restart.",
+      "files": [
+        {
+          "path": "src/uar/persistence/mod.rs",
+          "sha256": "sha256:c75b7b53ee31b16dda956fc91d94389ffc68ad0ba8115fb7faed56e9f960f42c"
+        },
+        {
+          "path": "src/uar/persistence/providers/surreal.rs",
+          "sha256": "sha256:63d6333680912d9f48349342d721d548e705fecc0704bf7904157ff6fee87891"
+        },
+        {
+          "path": "src/uar/persistence/providers/surreal_host.rs",
+          "sha256": "sha256:19861f6a9d4b7a176e6daa367f9413ef785e5d1f11142e8beef1b3dcc33770f0"
+        },
+        {
+          "path": "src/uar/persistence/providers/postgres.rs",
+          "sha256": "sha256:a285800a6dd08ff0b84a130bce8d236b911774032d94d3220e3547369cec7140"
+        },
+        {
+          "path": "src/uar/persistence/providers/memory.rs",
+          "sha256": "sha256:6753b2969b9bde27b2f2dfabaa917f009800d1352eacd11b2d92824a801ab722"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/S1.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/S1.md"
+      ]
+    },
+    {
+      "id": "2.1",
+      "stable_id": "T1",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Trust implements `security.provider_credentials` policy types and private credential-owner binding: omitted single-owner compatibility, explicit shared issuer/tenant eligibility, exact issuer/tenant/provider/source grants, local-only stable installation UUID, unchanged external/general principal keys and safe errors. Deliver source plus policy documentation inputs; acceptance is the deferred `credentials` group.",
+      "files": [
+        {
+          "path": "src/uar/security/credentials/policy.rs",
+          "sha256": "sha256:5e32d1f42713233da64e6f5b2452c17d83a047cc33ad0efa7b0ed3c34ca2f8d7"
+        },
+        {
+          "path": "src/uar/security/credentials/owner.rs",
+          "sha256": "sha256:50b52d3fca17dfcba91429d51583dd406a449380584c0e545cdfee6512b1dd6a"
+        },
+        {
+          "path": "src/uar/security/credentials/mod.rs",
+          "sha256": "sha256:305f667a98da7dd6c76c5628418d06cc19d1a2078fe73f62b0313ce1c857d8da"
+        },
+        {
+          "path": "src/uar/security/credentials/resolver.rs",
+          "sha256": "sha256:a96e9111d58ea9668cad6cf6473a41a96ed2db124cf76a23c1de20f48f935a27"
+        },
+        {
+          "path": "src/uar/security/credentials/principal_store.rs",
+          "sha256": "sha256:23e07f5e4dd052b48217f21f42c2576501f5bc6f970a7d751c230f58b3664732"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/T1.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/T1.md"
+      ]
+    },
+    {
+      "id": "4.3",
+      "stable_id": "R3",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime implements a local native-Anthropic adapter for initial BOM and CR/LF/CRLF with bounded incremental state around the pinned Liter decoder; tolerate only well-formed unknown top-level kinds and retain known-error/terminal semantics. Deliver source and framing documentation; deferred `streams` covers all two-way splits, bytewise/fixed partitions, UTF-8/escapes, fields, limits and EOF.",
+      "files": [
+        {
+          "path": "src/llm/anthropic_sse.rs",
+          "sha256": "sha256:373c234f754e862c846e8559e64e839dfc8669b0e2fdacfadfc4fee294cd6546"
+        },
+        {
+          "path": "src/llm/anthropic_driver.rs",
+          "sha256": "sha256:0473880aa4e91091f3bfe7d497cec207fd594640e599589afb9d2a57bd6cd9d7"
+        },
+        {
+          "path": "src/llm/anthropic_types.rs",
+          "sha256": "sha256:cb54f51cc537db96d1e2bf534bbb3e944aaf0e0e512e0436f7f1e3f774b7d1d0"
+        },
+        {
+          "path": "docs/operations/provider-stream-completion.md",
+          "sha256": "sha256:ea841d9ff70eb17effcbe71e3407596eb383c41ac826b9f3ca95de125e81220c"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R3.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/R3.md"
+      ]
+    },
+    {
+      "id": "2.3",
+      "stable_id": "S3",
+      "owner": "uar-state",
+      "required_deliverable": "State delivers additive credential row-revision and journal metadata schema upgrades for the T3 contract, preserving ciphertext, hints, timestamps, original owner rows and legacy receipt keys; initialize revisions through explicit supported upgrade under quiescence, never in preview. Hand exact schema/revision interfaces to the sole trust store writer. Deferred acceptance: migration, restart and old-receipt cases on actual Surreal and PostgreSQL plus the memory contract supplement.",
+      "files": [
+        {
+          "path": "migrations/20261016000000_credential_revisions.sql",
+          "sha256": "sha256:2524474923fec82042ae2f06fa5275282dd096f03268f4d9f3a4327b59cf7860"
+        },
+        {
+          "path": "migrations/surrealdb/credential_revisions.surql",
+          "sha256": "sha256:0036dc61e9da5579858a86a6fcdd875e5a8e5dc8bb41be7da20064f5a2e8c7df"
+        },
+        {
+          "path": "src/uar/persistence/providers/surreal_host.rs",
+          "sha256": "sha256:19861f6a9d4b7a176e6daa367f9413ef785e5d1f11142e8beef1b3dcc33770f0"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/S3.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/S3.md"
+      ]
+    },
+    {
+      "id": "3.2",
+      "stable_id": "S2",
+      "owner": "uar-state",
+      "required_deliverable": "State integrates safe eligibility diagnostics into knowledge upload/dispatcher and writes durable-ingestion/knowledge recovery guidance, incorporating runtime text by handoff. Describe authenticated reupload, retained legacy rows, unavailable originals, separate model verification, existing qualified quiesce/exclusion/reclaim and blocked takeover without proof. Deliver docs/source with no new KB import or fencing bypass; deferred `recovery` controls establish behavior.",
+      "files": [
+        {
+          "path": "src/uar/api/knowledge.rs",
+          "sha256": "sha256:7670fd3afc49f1ffe82079fc0473eb6ec900c8c707f8f859bc26ad6b237725b9"
+        },
+        {
+          "path": "src/uar/rag/ingestion_worker.rs",
+          "sha256": "sha256:0db90262f9bb6bf422652359c687fa744661f65272e86ebda076cafb81e2809c"
+        },
+        {
+          "path": "docs/operations/durable-ingestion.md",
+          "sha256": "sha256:5064df6f1f3aad651ee414976acc74f944130eddd31571c12f6dd9668a440709"
+        },
+        {
+          "path": "docs/operations/knowledge-principal-isolation.md",
+          "sha256": "sha256:88ad64f6207a16c91df1d2f84abe50e04ce7acbe016614c36737888e6093c536"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/S2.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/S2.md"
+      ]
+    },
+    {
+      "id": "2.4",
+      "stable_id": "T3",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Trust extends credential stores/API with exact fixed-local mapping and `/migrate-principal`, metadata-only trusted-host `/migration-preview`, bounded pagination/counts, transactional source revision/preconditions, compatible optional legacy If-Match, immutable replay and explicit unresolved-source quarantine. Include all supported writers in revision maintenance and preserve strict legacy bodies. Deferred `credentials` acceptance proves conflict/drift/no-partial-copy/no-leak/rotation/deletion/replay controls.",
+      "files": [
+        {
+          "path": "src/uar/security/credentials/migration.rs",
+          "sha256": "sha256:6d97c1ad87de9e47218acc8d3f4917dc8621736dc18c1d4f6767e95d64b6667a"
+        },
+        {
+          "path": "src/uar/security/credentials/maintenance.rs",
+          "sha256": "sha256:c9eb31243c503fd2100e7b0781fb920e9ece6e0dc0c44ba7cdd56f4d91d49b20"
+        },
+        {
+          "path": "src/uar/security/credentials/store.rs",
+          "sha256": "sha256:4d1d38904102aa505203f5b4a78d811411f4b56259a03b39ffb022f57f9468c3"
+        },
+        {
+          "path": "src/uar/security/credentials/principal_store.rs",
+          "sha256": "sha256:23e07f5e4dd052b48217f21f42c2576501f5bc6f970a7d751c230f58b3664732"
+        },
+        {
+          "path": "src/uar/security/credentials/mod.rs",
+          "sha256": "sha256:305f667a98da7dd6c76c5628418d06cc19d1a2078fe73f62b0313ce1c857d8da"
+        },
+        {
+          "path": "src/uar/security/credentials/policy.rs",
+          "sha256": "sha256:5e32d1f42713233da64e6f5b2452c17d83a047cc33ad0efa7b0ed3c34ca2f8d7"
+        },
+        {
+          "path": "src/uar/api/credentials.rs",
+          "sha256": "sha256:289d3c150b5debb97d84164ec6e70668de552dd77a22815f0a3c9dc2dd81b28a"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/T3.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/T3.md"
+      ]
+    },
+    {
+      "id": "2.2",
+      "stable_id": "T2",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime integrates the trust source-decision interface across primary, ordinary fallback, team, graph, summarization, SDK-supplied, inherited/delegated and credential-free bindings, including absent encrypted service; lead wires shared construction roots and administrative paths under L2. Preserve timeout/retry inheritance and do not turn a policy denial into fallback. Completion evidence is zero denied provider contact and allowed controls in deferred `credentials`/`combined` groups.",
+      "files": [
+        {
+          "path": "src/uar/runtime/manager.rs",
+          "sha256": "sha256:c57de09fa18243e1360a6bccae00b42ab833bb2d37a16f76d90a7653333f8da1"
+        },
+        {
+          "path": "src/uar/runtime/turn/bindings.rs",
+          "sha256": "sha256:9f40561c487c05b89b9b29ddcd940aa7a2a5044a0e1440a56c5b8d694f00acd2"
+        },
+        {
+          "path": "src/uar/runtime/thread/policy_intersection.rs",
+          "sha256": "sha256:a290214331d14e1958846336704ac85e181b8e0300e5bcced65faa3c1e96d9c5"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/T2.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/T2.md"
+      ]
+    },
+    {
+      "id": "4.1",
+      "stable_id": "R1",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime classifies originating budget/accounting/inherited/team/client binding failures with typed safe stages/categories/references, maps S1 eligibility without raw error chains, retains ordinary/team public codes and AG-UI code/message fields, and preserves #384 settings. Deliver source and diagnostic guidance; deferred `binding` verifies safe public/log output and zero effects before refusal.",
+      "files": [
+        {
+          "path": "src/uar/runtime/manager.rs",
+          "sha256": "sha256:c57de09fa18243e1360a6bccae00b42ab833bb2d37a16f76d90a7653333f8da1"
+        },
+        {
+          "path": "src/uar/runtime/cost_budget.rs",
+          "sha256": "sha256:c5942374381a1f26d808a34c966658b2c3ca8faab1cc876abbfa13539aeb2dfc"
+        },
+        {
+          "path": "docs/operations/durable-accounting.md",
+          "sha256": "sha256:56f0e714fc4552b19a272a52c489dc731656d2e7d4015f472f68f9607a1d6df0"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R1.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/R1.md"
+      ]
+    },
+    {
+      "id": "4.2",
+      "stable_id": "R2",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime requires observed orchestration completion before ordinary-manager success, preserving cancellation, joined cleanup, interrupted history, reservation ownership and existing graph/provider terminal guards. Deliver source and completion documentation; deferred `streams`/`combined` prove EOF failures and valid text/tool-loop controls.",
+      "files": [
+        {
+          "path": "src/uar/runtime/manager.rs",
+          "sha256": "sha256:c57de09fa18243e1360a6bccae00b42ab833bb2d37a16f76d90a7653333f8da1"
+        },
+        {
+          "path": "docs/operations/provider-stream-completion.md",
+          "sha256": "sha256:ea841d9ff70eb17effcbe71e3407596eb383c41ac826b9f3ca95de125e81220c"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R2.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/R2.md"
+      ]
+    },
+    {
+      "id": "4.4",
+      "stable_id": "R4",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime preserves the existing typed MCP production path and completes missing peer scenario support for true/false/omitted isError, protocol error, timeout and uncertain effects, native incidental fields and later independent recovery. Do not rewrite already-correct outcome code without an observed defect. Deliver scenario fixtures and truthful-tool-outcomes documentation; deferred `mcp-outcomes` proves contact counts, payload meaning and immutable receipts.",
+      "files": [
+        {
+          "path": "tests/fixtures/truthful_tool_outcome_mcp.py",
+          "sha256": "sha256:0b6ec0e9eb57c916c7b06d679645836c828abe816e31f100e857679e853bc7c4"
+        },
+        {
+          "path": "tests/support/truthful_tool_outcome_peer.rs",
+          "sha256": "sha256:29e05efeeb38370d090941b6b7a1b5b62dc98e0bd90311ed83602ed8d63f3990"
+        },
+        {
+          "path": "docs/operations/truthful-tool-outcomes.md",
+          "sha256": "sha256:f5d3d32d6773c14672482e49d06404b3c7f3ba51adad4b5fd56e6783bd042b35"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R4.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/R4.md"
+      ]
+    },
+    {
+      "id": "2.5",
+      "stable_id": "T4",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Trust authors the credential real-process and installed-image scenario adapters plus `principal-provider-credentials.md` cutover/rollback/preview guidance before the full-phase boundary. Include every T2 source seam, both migration sources, issuer/tenant/installation isolation, exact positive/negative grants and all backend cases. Delivered fixtures/docs establish implementation inventory only; run the phase `credentials` and `combined` groups through L3 at V2/P2.",
+      "files": [
+        {
+          "path": "tests/credentials_api_integration_test.rs",
+          "sha256": "sha256:f18d2b57100e14e5cfaa6a543752d161e32729f5dccd4f607ac1ef44d97c68d3"
+        },
+        {
+          "path": "tests/support/credential_process.rs",
+          "sha256": "sha256:a8f8c46b6949312753c8183cea2bd4dc2c7976d39f8b1b2326323480910f8f86"
+        },
+        {
+          "path": "tests/support/uar_1_1_1_memory_fixture.rs",
+          "sha256": "sha256:954119a77a185f45bd97cbb1b4fb8b32f9162d29cdbe75d65b84caa481736ae6"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_credentials.py",
+          "sha256": "sha256:8b5cf0247787ee5a6d8c6f3993ac13b827d65b96f73a469a91e9007c9388ed46"
+        },
+        {
+          "path": "docs/operations/principal-provider-credentials.md",
+          "sha256": "sha256:df93b73f4517c11959d4dabf4c4329454732b074ddc0ff51b44f4412ddebf330"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/T4.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/T4.md",
+        "coordination/handoffs/T4-memory-integration.md"
+      ]
+    },
+    {
+      "id": "3.3",
+      "stable_id": "S4",
+      "owner": "uar-state",
+      "required_deliverable": "State authors durable-upload, owner-isolated reupload/retrieval, restart/liability and bounded existing recovery proof fixtures plus installed-image adapters; actual Surreal/PostgreSQL and owned process/volume boundaries are mandatory where supported. Include legacy retention, other-owner denial, absent/replayed proof and missing-source documentation cases. Fixtures remain unexecuted until V2/P2 `recovery` and `combined`.",
+      "files": [
+        {
+          "path": "tests/durable_ingestion.rs",
+          "sha256": "sha256:d70bad2d29ef0ac246464d6f41bb4f5792f19625ef5e88fd2c354d2ab88831f0"
+        },
+        {
+          "path": "tests/principal_knowledge_namespace.rs",
+          "sha256": "sha256:eaf7f1049af401fe37378d4b50cbbf3e07caaa14f3c1e6887c34e962fd4322f4"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_recovery.py",
+          "sha256": "sha256:f431de3c271278cf1dce4917b3ba0f6c854e40a2511783dbc7719de6e27360a0"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/S4.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/S4-integration.md"
+      ]
+    },
+    {
+      "id": "5.1",
+      "stable_id": "L2",
+      "owner": "uar-lead",
+      "required_deliverable": "Lead completes shared config/server/module-export and provider-admin/settings handoffs, operator examples, runtime Cargo package/lock version 1.1.1, and new `docs/releases/v1.1.1.md` setup/upgrade/compatibility text. Keep pins and existing workflow unchanged. Documentation source must be complete now; later observed receipt values are publication evidence. Deferred V2 exercises config/identity compatibility and production image version.",
+      "files": [
+        {
+          "path": "src/config.rs",
+          "sha256": "sha256:22d3e1692955ec66cef83e88f96a4472ff9d1558bd556b64de751086ef71faaf"
+        },
+        {
+          "path": "src/main.rs",
+          "sha256": "sha256:e41bdfc367c84aaeb66fe50181d872d81f72e85c7b7bcd5545119905450662ee"
+        },
+        {
+          "path": "src/server.rs",
+          "sha256": "sha256:55c003b5fd3ce5967690ab170836ab4852be9adbaa0b9e1bba17334ca90799ba"
+        },
+        {
+          "path": "src/lib.rs",
+          "sha256": "sha256:0d7b25fa5ce929308b4c10c04c109f84f2b4107005a35da8c69440381369b436"
+        },
+        {
+          "path": "src/embedded.rs",
+          "sha256": "sha256:93e2258209d83525665badf0114af82cd335a7e14188032f9290e679b77bf385"
+        },
+        {
+          "path": "src/llm/mod.rs",
+          "sha256": "sha256:763d72b2e7c7370fe2fead7725251dace0b3b3b74f1b40e50f83d76663fcd8bd"
+        },
+        {
+          "path": "src/uar/security/claims.rs",
+          "sha256": "sha256:a269f6dc7c05f14c2419a7e70f0b0cda89c67a0d0cb4de3fe3210f0fd95a5ded"
+        },
+        {
+          "path": "src/uar/settings/manager.rs",
+          "sha256": "sha256:4e4b110a22281c7183c22deb51bce880465cac223c206e75959df52d7e6459fb"
+        },
+        {
+          "path": "Cargo.toml",
+          "sha256": "sha256:d6c966b70398b99d8d02802c461dc7cfba17eae19563f54b9201d1782b6f9e14"
+        },
+        {
+          "path": "Cargo.lock",
+          "sha256": "sha256:d595e47e4a1028e3838a9022afd9caacafadb4202968631829dfe07b6dd32f09"
+        },
+        {
+          "path": "example.config.yaml",
+          "sha256": "sha256:9591c1a4c6429f568a73244a77005a58150926b81e771f9797c2d9b9d22c9618"
+        },
+        {
+          "path": "docs/releases/v1.1.1.md",
+          "sha256": "sha256:c8ac420dc1621bf943921e3662d905bf6436ac3b511c5382c23594f554c98fd9"
+        },
+        {
+          "path": "src/uar/security/middleware.rs",
+          "sha256": "sha256:96e189872dae4a46c89332e84a99687a69902126c6cf8577646eceee3415a0d2"
+        },
+        {
+          "path": "src/uar/api/a2a/handler.rs",
+          "sha256": "sha256:bfa3bd302153db02451a435c289fb0c8e6132cc3906cfdd506608b6d27217df4"
+        },
+        {
+          "path": "src/uar/api/a2a/grpc.rs",
+          "sha256": "sha256:7efe6695144771a850d352d0f618189ca57bc251247554440cdf0a97a2562bff"
+        },
+        {
+          "path": "tests/jwks_es256_verification.rs",
+          "sha256": "sha256:da58bf334297ce5db3625cc8248f6ca58d2f53a8a355419d978ec473ae39ef47"
+        },
+        {
+          "path": "tests/test_a2a_grpc.rs",
+          "sha256": "sha256:441847df41139463663d759941b43604a320707a77369c659ead076c87f030be"
+        },
+        {
+          "path": "tests/a2a_thread_service.rs",
+          "sha256": "sha256:e06931c1a328920747ae266fd24ebaac3dc9ef9e739f35acb538b76dc3fd62eb"
+        },
+        {
+          "path": "tests/settings_persistence.rs",
+          "sha256": "sha256:1d39bfbda5a134158f515a706cdfd861f64ef25ec25a972ae5ae9af55c7c55f0"
+        },
+        {
+          "path": "tests/context_history_integrity.rs",
+          "sha256": "sha256:263dcdf418d5ae0d89831ee233bc39d489b1a98e0cbb5eae0a3833e06a58f093"
+        },
+        {
+          "path": "tests/stream_terminal_contract.rs",
+          "sha256": "sha256:37a7a0ffbbe2dd80af470005790f3f1871c4169777d4f5688a9405521c6b64ab"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/L2.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/L2.md"
+      ]
+    },
+    {
+      "id": "4.5",
+      "stable_id": "R5",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime authors and integrates the full-harness diagnostic/completion/framing and combined failed-MCP/incomplete-stream scenarios with R4/T4/S4 adapters and required operator docs. Include sanitized resolved-root/path/error skill-warning triage without speculative pack edits. Deliver complete fixtures/docs; acceptance remains deferred to all applicable L3 groups.",
+      "files": [
+        {
+          "path": "scripts/release/uar_1_1_1_runtime.py",
+          "sha256": "sha256:c3704c4d510a9933e570c5da3a51896b3a73b45173147b92395da7958e5b4c22"
+        },
+        {
+          "path": "tests/fixtures/uar_1_1_1_provider.py",
+          "sha256": "sha256:38c34b02b9441dcf0e4444fa658ee2e78b866b98afde29a133ade00ea3c93c47"
+        },
+        {
+          "path": "tests/support/uar_1_1_1_runtime_fixture.rs",
+          "sha256": "sha256:f02045e169b6d2ac923cc49fdd92cdfc0fc519eecac962f1d60d479c8008e25f"
+        },
+        {
+          "path": "tests/bauar_full_harness_cursor.rs",
+          "sha256": "sha256:cf0a64870a2dc747e6d997f12a78d32a5251bbdbd6cbd9e3fa3f4eb08c30af8a"
+        },
+        {
+          "path": "docs/skill-pack-installation.md",
+          "sha256": "sha256:5dc0c17405ec891d01e6743958fc56f4861e577f538c9171e2899afa0f361659"
+        },
+        {
+          "path": "docs/operations/truthful-tool-outcomes.md",
+          "sha256": "sha256:f5d3d32d6773c14672482e49d06404b3c7f3ba51adad4b5fd56e6783bd042b35"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R5.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/R5-integration.md",
+        "coordination/handoffs/R5-budget-followup.md"
+      ]
+    },
+    {
+      "id": "4.6",
+      "stable_id": "R6",
+      "owner": "uar-lead",
+      "required_deliverable": "Implement safe per-call conservative-reservation refusal diagnostics and persisted bounded-agent startup warning; complete remote-Surreal upgrade and historical advisory guidance; author actual eligible16000 refusal/startup observations and truthful unsupported-memory source control. Preserve budgets and timeout inheritance; include complete issue385 coverage before L4.",
+      "files": [
+        {
+          "path": "src/server.rs",
+          "sha256": "sha256:55c003b5fd3ce5967690ab170836ab4852be9adbaa0b9e1bba17334ca90799ba"
+        },
+        {
+          "path": "src/uar/runtime/cost_budget.rs",
+          "sha256": "sha256:c5942374381a1f26d808a34c966658b2c3ca8faab1cc876abbfa13539aeb2dfc"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_runtime.py",
+          "sha256": "sha256:c3704c4d510a9933e570c5da3a51896b3a73b45173147b92395da7958e5b4c22"
+        },
+        {
+          "path": "tests/fixtures/uar_1_1_1_provider.py",
+          "sha256": "sha256:38c34b02b9441dcf0e4444fa658ee2e78b866b98afde29a133ade00ea3c93c47"
+        },
+        {
+          "path": "tests/support/uar_1_1_1_runtime_fixture.rs",
+          "sha256": "sha256:f02045e169b6d2ac923cc49fdd92cdfc0fc519eecac962f1d60d479c8008e25f"
+        },
+        {
+          "path": "docs/operations/remote-surreal-upgrade.md",
+          "sha256": "sha256:13e556ff9223bb636edc4e6e2469df136363e274e18215c8c2d790a92c46471e"
+        },
+        {
+          "path": "docs/operations/durable-accounting.md",
+          "sha256": "sha256:56f0e714fc4552b19a272a52c489dc731656d2e7d4015f472f68f9607a1d6df0"
+        },
+        {
+          "path": "docs/releases/v1.1.0-kubo.md",
+          "sha256": "sha256:65a6153cd81728d58b8a37942176b82bdebc2c5edc9f17838c0cc16dbe608676"
+        },
+        {
+          "path": "docs/releases/v1.1.1.md",
+          "sha256": "sha256:c8ac420dc1621bf943921e3662d905bf6436ac3b511c5382c23594f554c98fd9"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/issue-385-coverage.md",
+          "sha256": "sha256:722b2d74c52f1e2e0593147f65cb0c86074756ea31b6b720cd59f1bec2b173a1"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R6.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/R6.md"
+      ]
+    },
+    {
+      "id": "5.2",
+      "stable_id": "L3",
+      "owner": "uar-lead",
+      "required_deliverable": "Lead authors the NEW `scripts/release/uar_1_1_1_acceptance.py` runner and manifest contract/templates specified in verification.md; integrate domain adapters covering every known phase scenario. Deliver six phase integration groups, serial source/candidate/published modes, isolation/cleanup, exact identity checks, blocked/failed/interrupted receipts, single-failed-group rerun support and usage docs. No invocation, import probe or packaging check occurs while implementation is incomplete.",
+      "files": [
+        {
+          "path": "scripts/release/uar_1_1_1_acceptance.py",
+          "sha256": "sha256:46300f3ccf45e3279465b325d8442475c030f98b1f4beec8de9cfedd7226e91a"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_support.py",
+          "sha256": "sha256:584aaa49b8dda4eb4606e54882cdf8a450c9c1e562c844c84e106303d23d042d"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_manifest.schema.json",
+          "sha256": "sha256:1092b2de3f0d8e46941c1601786b8cdcb26449a2136df441c5326ac4460df165"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_manifest.example.json",
+          "sha256": "sha256:f842509ea96eec1858bc35a6e9002150e96c1cddb4bce81629ebde3423bdc344"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-acceptance.md",
+          "sha256": "sha256:f9e8700f658c2bfcd88adae95cb9366f8b81935b7b057d8c02b8a005677ae070"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/verification.md",
+          "sha256": "sha256:0e042cc7df99d681570f7c7797ea408f1f99f13ac299978dac0fe54ad77ff655"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/L3.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "effective_handoffs": [
+        "coordination/handoffs/L3.md"
+      ]
+    },
+    {
+      "id": "4.7",
+      "stable_id": "R7",
+      "owner": "uar-lead with exclusive runtime handoff",
+      "required_deliverable": "Correct team fallback provider identity and disabled fallback authority, require real positive/negative controls, detect leaks on raw transient logs and bind published image children to actual successful workflow/source artifacts. Finish all four findings before a renewed inventory. No verification while repairs remain.",
+      "files": [
+        {
+          "path": "src/uar/runtime/turn/bindings.rs",
+          "sha256": "sha256:9f40561c487c05b89b9b29ddcd940aa7a2a5044a0e1440a56c5b8d694f00acd2"
+        },
+        {
+          "path": "src/uar/runtime/manager.rs",
+          "sha256": "sha256:c57de09fa18243e1360a6bccae00b42ab833bb2d37a16f76d90a7653333f8da1"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_runtime.py",
+          "sha256": "sha256:c3704c4d510a9933e570c5da3a51896b3a73b45173147b92395da7958e5b4c22"
+        },
+        {
+          "path": "tests/fixtures/uar_1_1_1_provider.py",
+          "sha256": "sha256:38c34b02b9441dcf0e4444fa658ee2e78b866b98afde29a133ade00ea3c93c47"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_support.py",
+          "sha256": "sha256:584aaa49b8dda4eb4606e54882cdf8a450c9c1e562c844c84e106303d23d042d"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_acceptance.py",
+          "sha256": "sha256:46300f3ccf45e3279465b325d8442475c030f98b1f4beec8de9cfedd7226e91a"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_manifest.schema.json",
+          "sha256": "sha256:1092b2de3f0d8e46941c1601786b8cdcb26449a2136df441c5326ac4460df165"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-acceptance.md",
+          "sha256": "sha256:f9e8700f658c2bfcd88adae95cb9366f8b81935b7b057d8c02b8a005677ae070"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/verification.md",
+          "sha256": "sha256:0e042cc7df99d681570f7c7797ea408f1f99f13ac299978dac0fe54ad77ff655"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/tasks.md",
+          "sha256": "sha256:0a677a3eca78739e77f47db02b2a41b9639d44fe5c75ca9c8a7987d8f68f8b7b"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R7.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false
+    },
+    {
+      "id": "4.8",
+      "stable_id": "R8",
+      "owner": "uar-lead and exclusive trust fixture/API writer",
+      "required_deliverable": "Correct runtime fixture public classifier import, fixture JWT initialization before signing with exact401 preflight, disposable backend HTTP-status readiness and stale timeout cause, and safe credential API state Debug. Preserve all production authority. Complete fixtures/docs before renewed L6; no checks during repair.",
+      "files": [
+        {
+          "path": "tests/support/uar_1_1_1_runtime_fixture.rs",
+          "sha256": "sha256:f02045e169b6d2ac923cc49fdd92cdfc0fc519eecac962f1d60d479c8008e25f"
+        },
+        {
+          "path": "tests/support/credential_process.rs",
+          "sha256": "sha256:a8f8c46b6949312753c8183cea2bd4dc2c7976d39f8b1b2326323480910f8f86"
+        },
+        {
+          "path": "src/uar/api/credentials.rs",
+          "sha256": "sha256:289d3c150b5debb97d84164ec6e70668de552dd77a22815f0a3c9dc2dd81b28a"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_support.py",
+          "sha256": "sha256:584aaa49b8dda4eb4606e54882cdf8a450c9c1e562c844c84e106303d23d042d"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-acceptance.md",
+          "sha256": "sha256:f9e8700f658c2bfcd88adae95cb9366f8b81935b7b057d8c02b8a005677ae070"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R8.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false
+    },
+    {
+      "id": "4.9",
+      "stable_id": "R9",
+      "owner": "uar-lead with exclusive runtime/trust/state writers",
+      "required_deliverable": "Preserve terminal local-02 evidence. Resolve binding diagnostic assertion, stream interruption, native MCP stack overflow, memory auth500, Docker availability/owned cleanup and genuine isolated supervisor qualification setup. Complete production, fixtures, docs and Phase Exit revision integration before any further verification. No third artifact review or production mutation.",
+      "files": [
+        {
+          "path": "src/uar/runtime/manager.rs",
+          "sha256": "sha256:c57de09fa18243e1360a6bccae00b42ab833bb2d37a16f76d90a7653333f8da1"
+        },
+        {
+          "path": "src/uar/runtime/turn/host/event_projection.rs",
+          "sha256": "sha256:2fbca218435659f527aa01197c524fa7bd277cd2263a91582519de024fc0d80e"
+        },
+        {
+          "path": "tests/support/uar_1_1_1_runtime_fixture.rs",
+          "sha256": "sha256:f02045e169b6d2ac923cc49fdd92cdfc0fc519eecac962f1d60d479c8008e25f"
+        },
+        {
+          "path": "tests/support/credential_process.rs",
+          "sha256": "sha256:a8f8c46b6949312753c8183cea2bd4dc2c7976d39f8b1b2326323480910f8f86"
+        },
+        {
+          "path": "tests/support/uar_1_1_1_memory_fixture.rs",
+          "sha256": "sha256:954119a77a185f45bd97cbb1b4fb8b32f9162d29cdbe75d65b84caa481736ae6"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_runtime.py",
+          "sha256": "sha256:c3704c4d510a9933e570c5da3a51896b3a73b45173147b92395da7958e5b4c22"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_support.py",
+          "sha256": "sha256:584aaa49b8dda4eb4606e54882cdf8a450c9c1e562c844c84e106303d23d042d"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_acceptance.py",
+          "sha256": "sha256:46300f3ccf45e3279465b325d8442475c030f98b1f4beec8de9cfedd7226e91a"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_recovery.py",
+          "sha256": "sha256:f431de3c271278cf1dce4917b3ba0f6c854e40a2511783dbc7719de6e27360a0"
+        },
+        {
+          "path": "docs/operations/principal-provider-credentials.md",
+          "sha256": "sha256:df93b73f4517c11959d4dabf4c4329454732b074ddc0ff51b44f4412ddebf330"
+        },
+        {
+          "path": "docs/operations/supervisor-recovery.md",
+          "sha256": "sha256:9f44358387761bf41d514f9ffc6b80ff12d448781061bcfe86f41d50069be2d3"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-supervisor-setup.md",
+          "sha256": "sha256:1d7dbde172301da0c6955b4faa9bdba08d7d07762877c219787f3665b10bb113"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-acceptance.md",
+          "sha256": "sha256:f9e8700f658c2bfcd88adae95cb9366f8b81935b7b057d8c02b8a005677ae070"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/native-team-staging-20261016.md",
+          "sha256": "sha256:2e8a3df98f2ce85530bfcc4cc3e43ab90ef59b3f01e2cc4b1bc093aa82ddb7d0"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R9.md",
+          "sha256": "sha256:44de87c08d25c4cd253bb9563de626adec09ed9f455a4903f096c0e12d404535"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/supervisor-guest-setup-20261016.json",
+          "sha256": "sha256:acf57aa9568e30fa1f034c9457d5100f3fe8c0e844147bf4bf930dab8036615f"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R9.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false
+    },
+    {
+      "id": "4.10",
+      "stable_id": "R10",
+      "owner": "uar-state supervisor writer; lead integration/config/records",
+      "required_deliverable": "Pin supervisor rustls backend for its PEM identity under actual native-TLS feature unification; correct documented/private timeout range and actual service-group permissions; preserve failed stores and stage a fresh disposable predecessor store. Finish all code/config/docs before renewed L8. No extra tests, dependency pins, TLS relaxation or new qualification matrix.",
+      "files": [
+        {
+          "path": "src/uar/runtime/supervisor.rs",
+          "sha256": "sha256:7566639bdd0ca91d80b7f1d4109d8e678af13cd101876d33922c805f876cdc43"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-supervisor-setup.md",
+          "sha256": "sha256:1d7dbde172301da0c6955b4faa9bdba08d7d07762877c219787f3665b10bb113"
+        },
+        {
+          "path": "docs/operations/supervisor-recovery.md",
+          "sha256": "sha256:9f44358387761bf41d514f9ffc6b80ff12d448781061bcfe86f41d50069be2d3"
+        },
+        {
+          "path": "docs/releases/v1.1.1.md",
+          "sha256": "sha256:c8ac420dc1621bf943921e3662d905bf6436ac3b511c5382c23594f554c98fd9"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/native-team-staging-20261016.md",
+          "sha256": "sha256:2e8a3df98f2ce85530bfcc4cc3e43ab90ef59b3f01e2cc4b1bc093aa82ddb7d0"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R10.md",
+          "sha256": "sha256:630f8eeededc27f7b60813f4326f5a411d793c3d2bc60d6cd38b25ca0558da9e"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/r10-bootstrap-authoring-20261016.json",
+          "sha256": "sha256:d2a668b0f46bc0d4817c71516c8dd5a3f2e14e00e23abbb2bd886596f8515e0c"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R10.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false
+    },
+    {
+      "id": "8.3",
+      "stable_id": "R11",
+      "owner": "uar-lead with exclusive uar-runtime, uar-trust-tools and uar-state writers",
+      "required_deliverable": "Repair the observed #385 reduced host event-history presentation bypass; bind the mounted MCP config in the streams fixture; restrict both ownerless compiler REST aliases for remote or shared profiles and author a real two-principal profile acceptance adapter; disclose the profile limit; exclude two operational directories from Docker context. Preserve unproven Docker recovery, relay, cleanup, image identity and #387 owner-scoped authoring as unresolved acceptance or successor work, not unresolved implementation. Local07 observed fixture corrections preserve passed MCP/combined evidence: one-primary fallback setup, paired child spawn/wait permission, explicit model verification before correction, and startup-safe recovery embedding peer.",
+      "files": [
+        {
+          "path": "src/uar/runtime/manager.rs",
+          "sha256": "sha256:c57de09fa18243e1360a6bccae00b42ab833bb2d37a16f76d90a7653333f8da1"
+        },
+        {
+          "path": "src/uar/runtime/turn/host/event_projection.rs",
+          "sha256": "sha256:2fbca218435659f527aa01197c524fa7bd277cd2263a91582519de024fc0d80e"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_runtime.py",
+          "sha256": "sha256:c3704c4d510a9933e570c5da3a51896b3a73b45173147b92395da7958e5b4c22"
+        },
+        {
+          "path": "src/uar/api/compiler.rs",
+          "sha256": "sha256:17ba645f12dc1abe64d4895d715c78dbe0c4c6b308e2c8f7601b849ab73dd601"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_compiler.py",
+          "sha256": "sha256:bbcbe4d9ecd896872a49d28e095b64a79a4bf357f023ae892ddbfbf218f0abb6"
+        },
+        {
+          "path": "src/server.rs",
+          "sha256": "sha256:55c003b5fd3ce5967690ab170836ab4852be9adbaa0b9e1bba17334ca90799ba"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_acceptance.py",
+          "sha256": "sha256:46300f3ccf45e3279465b325d8442475c030f98b1f4beec8de9cfedd7226e91a"
+        },
+        {
+          "path": ".dockerignore",
+          "sha256": "sha256:dc05bad2bf2c5c140cb1b1f1f3b36e911b0e431ea0291e5a316530f10769355e"
+        },
+        {
+          "path": "docs/releases/v1.1.1.md",
+          "sha256": "sha256:c8ac420dc1621bf943921e3662d905bf6436ac3b511c5382c23594f554c98fd9"
+        },
+        {
+          "path": "docs/operations/uar-1.1.1-acceptance.md",
+          "sha256": "sha256:f9e8700f658c2bfcd88adae95cb9366f8b81935b7b057d8c02b8a005677ae070"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md",
+          "sha256": "sha256:8517bc22b205a14378ebbc9be5881815b9c2889520a3553558670ba4a3ffb01d"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/verification.md",
+          "sha256": "sha256:0e042cc7df99d681570f7c7797ea408f1f99f13ac299978dac0fe54ad77ff655"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/tasks.md",
+          "sha256": "sha256:0a677a3eca78739e77f47db02b2a41b9639d44fe5c75ca9c8a7987d8f68f8b7b"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/plan.md",
+          "sha256": "sha256:69fa5f92f85f916dedb94900d2bf31ba38d1d4422d8a079b0427af9c5c849ab9"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/ownership.md",
+          "sha256": "sha256:3bcc395c7669a5658c3626c637d27d44456d83f1fe9e85d364ab1af3d2c5c807"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/planning/issue-queue-and-cadence.md",
+          "sha256": "sha256:7ddfa24ace36556644fa02d49dc8471b6179526a8540740aeef0779f1a54cfdd"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/execution-ledger.json",
+          "sha256": "sha256:fd570078ee8bb45622b2a554eb7538a663a4c2333507b83a31d8a7e5084f4653"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/execution.md",
+          "sha256": "sha256:ffcd2a215a3c4f7a9403ac1b13b0121b5791322765d5fb03c153bb421e8e1863"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "sha256": "sha256:1ec2e99784f8804eec0a0a6af07083a45424d8201a4a736c6e6ce6892e071f10"
+        },
+        {
+          "path": "src/uar/admin/mcp.rs",
+          "sha256": "sha256:f96922233e43f9ecc4d5bd5559ce82988e8fafbb71d3ce7e9fd280181df1385d"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/specs/tool-call-protocol/spec.md",
+          "sha256": "sha256:c669ceb44e83a5fcf47d16dbd1bae7d4ad8d22abd542477a8b708331a928098c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/V2-local06-repair.md",
+          "sha256": "sha256:34b84ec76a172192344eba187ee394cf9dec6981e9d234c52a16fd10ff6c027b"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_credentials.py",
+          "sha256": "sha256:8b5cf0247787ee5a6d8c6f3993ac13b827d65b96f73a469a91e9007c9388ed46"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_recovery.py",
+          "sha256": "sha256:f431de3c271278cf1dce4917b3ba0f6c854e40a2511783dbc7719de6e27360a0"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/V2-local07-repair.md",
+          "sha256": "sha256:71e3faca9f2b8564c7234980b6c407e285a8987b12e3a6757f4a1d28060a1be6"
+        },
+        {
+          "path": ".prometheus/gotchas.md",
+          "sha256": "sha256:692a9d513069ab35e756f7f40648e982f4b30df35c8c2bdc4154787be0eda360"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/R11.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false,
+      "local07_repair_handoff": "coordination/handoffs/V2-local07-repair.md"
+    },
+    {
+      "id": "8.5",
+      "stable_id": "R12",
+      "owner": "uar-lead with exclusive binding_local08_triage, recovery_local08_triage and streams_local08_triage source owners",
+      "required_deliverable": "Repair only the four terminal local08 findings: model retry inheritance in pre-semantic stream opening, owner-scoped legacy recovery fixture snapshots, restarted credential backend host-port readiness, and explicit owner approval in the streams graph fixture. Record complete source handoffs and operator verification lock. No test, check or build during implementation.",
+      "files": [
+        {
+          "path": "src/llm/orchestrator.rs",
+          "sha256": "sha256:5636b9ccdddf4ae1e33713ce665be61f2140c86061e7b2c3b728f6e14e7eef03"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_recovery.py",
+          "sha256": "sha256:f431de3c271278cf1dce4917b3ba0f6c854e40a2511783dbc7719de6e27360a0"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_credentials.py",
+          "sha256": "sha256:8b5cf0247787ee5a6d8c6f3993ac13b827d65b96f73a469a91e9007c9388ed46"
+        },
+        {
+          "path": "scripts/release/uar_1_1_1_runtime.py",
+          "sha256": "sha256:c3704c4d510a9933e570c5da3a51896b3a73b45173147b92395da7958e5b4c22"
+        },
+        {
+          "path": "AGENTS.md",
+          "sha256": "sha256:97a49597f879cbe0f499a4cbfe0cac60e568c64b9264ab8b8e070ca8ff7ed3c7"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/plan.md",
+          "sha256": "sha256:69fa5f92f85f916dedb94900d2bf31ba38d1d4422d8a079b0427af9c5c849ab9"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/execution.md",
+          "sha256": "sha256:ffcd2a215a3c4f7a9403ac1b13b0121b5791322765d5fb03c153bb421e8e1863"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/execution-ledger.json",
+          "sha256": "sha256:fd570078ee8bb45622b2a554eb7538a663a4c2333507b83a31d8a7e5084f4653"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/V2-local08-repair.md",
+          "sha256": "sha256:61a7f416e32695751bd08fee5fce546dfc5bf5bdcd08827b4bdff797fd92d52c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/V2-verification-lock.md",
+          "sha256": "sha256:1238754db86f836d1b0bfabf8979cb105106567c48c10eeb1c24c9300f183000"
+        },
+        {
+          "path": "openspec/changes/uar-outstanding-issues-v1-1-1/tasks.md",
+          "sha256": "sha256:0a677a3eca78739e77f47db02b2a41b9639d44fe5c75ca9c8a7987d8f68f8b7b"
+        },
+        {
+          "path": ".prometheus/decisions.md",
+          "sha256": "sha256:2636281a74651c643bb3dfbbeb1f1732479c478917792ac29344fa7f4e70119b"
+        },
+        {
+          "path": ".prometheus/gotchas.md",
+          "sha256": "sha256:692a9d513069ab35e756f7f40648e982f4b30df35c8c2bdc4154787be0eda360"
+        }
+      ],
+      "source_handoff": "coordination/handoffs/V2-local08-repair.md",
+      "effective_handoffs": [
+        "coordination/handoffs/V2-local08-repair.md",
+        "coordination/handoffs/V2-verification-lock.md"
+      ],
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed": false
+    }
+  ],
+  "implementation_item_count": 23,
+  "verification_executed": false,
+  "acceptance": "local08 binding/recovery/streams failed and credentials blocked on prior identity; no gate on current source",
+  "publication": "withheld pending authorized V2, published child gates and release receipts",
+  "supersedes": {
+    "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory-20261017-11.json",
+    "digest": "sha256:d7cda478eb2662a49f9dbb8418b92be111ae260315de62e14eabd5ef76bdbe9f",
+    "reason": "R12 observed local08 production/fixture repairs and operator verification lock require a renewed whole-phase source inventory"
+  },
+  "local08_receipts": [
+    {
+      "group": "binding",
+      "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261017-local-08-binding/receipt.json",
+      "digest": "sha256:bf5be389034a8a9cbcc6af18693381536ee4f0dfb40d188748a43ae9f03b1031",
+      "status": "failed"
+    },
+    {
+      "group": "recovery",
+      "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261017-local-08-recovery/receipt.json",
+      "digest": "sha256:fcad172b18ee10576365dc3832e006347e36eb58e55d3ec73611ddcd8797180f",
+      "status": "failed"
+    },
+    {
+      "group": "credentials",
+      "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261017-local-08-credentials/receipt.json",
+      "digest": "sha256:2b6d26fd0b35b65fd4193822534b2ff97dc416ead26be9300b1a2fec7734390e",
+      "status": "blocked"
+    },
+    {
+      "group": "streams",
+      "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261017-local-08-streams/receipt.json",
+      "digest": "sha256:bc2b8b8051bc25800c23db137c2e7e7b91164e28747a5fdf8678bb5dc67df6e5",
+      "status": "failed"
+    }
+  ],
+  "current_source_certified": false,
+  "unrequested_production_additions": [],
+  "operator_lock": {
+    "status": "closed",
+    "instruction": "Present this complete inventory and exact proposed gate commands to operator; await explicit instruction before any check, test or build",
+    "memory_id": "e78788af-cb74-444a-9ce9-fa86a8d7cfee"
+  },
+  "prior_early_checks": [
+    {
+      "command": "git diff --check -- src/llm/orchestrator.rs",
+      "result": "empty output before L10",
+      "counts_as_acceptance": false
+    },
+    {
+      "command": "git diff --check -- scripts/release/uar_1_1_1_recovery.py",
+      "result": "empty output before L10",
+      "counts_as_acceptance": false
+    }
+  ],
+  "canonical_task_snapshot": {
+    "R12": "complete",
+    "L10": "in_progress",
+    "V2": "in_progress",
+    "P1": "pending",
+    "P2": "pending",
+    "P3": "pending"
+  },
+  "verification_note": "All 23 implementation rows are source complete as of this inventory. No test, check, build or candidate identity was run for the current bytes. This inventory is intentionally gate-closed until the operator explicitly authorizes named commands."
+}

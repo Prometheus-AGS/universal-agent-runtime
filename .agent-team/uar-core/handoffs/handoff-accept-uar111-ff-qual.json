@@ -1,0 +1,9 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 48,
+  "id": "bb6363dd-fb55-44e7-bed1-13d2d565b2b5",
+  "destination": {
+    "owner": "uar-lead",
+    "harness": "claude"
+  }
+}

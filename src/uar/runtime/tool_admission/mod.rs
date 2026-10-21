@@ -682,6 +682,7 @@ pub struct ToolAdmissionRuntime {
     context: Arc<ToolAdmissionContext>,
     host: Arc<dyn HostToolAdmissionPort>,
     lifecycle: Arc<lifecycle::AdmissionLifecycle>,
+    lifecycle_scope: crate::uar::runtime::lifecycle::ResourceScope,
     cancellation: tokio_util::sync::CancellationToken,
     governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
     governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
@@ -712,6 +713,10 @@ impl ToolAdmissionRuntime {
         let lease_id = format!("uar-lease:standalone:{runtime_epoch}");
         let budget_id = format!("uar-budget:standalone:{runtime_epoch}");
         let expires_at = default_effect_authority_expiry();
+        let lifecycle_scope = crate::uar::runtime::lifecycle::ResourceScope::standalone(
+            format!("tool-admission:{runtime_epoch}"),
+            "standalone-tool-admission",
+        );
         Self {
             context: Arc::new(ToolAdmissionContext {
                 root_run_id: format!("standalone:{runtime_epoch}"),
@@ -737,6 +742,7 @@ impl ToolAdmissionRuntime {
             }),
             host,
             lifecycle: Arc::new(lifecycle::AdmissionLifecycle::ephemeral()),
+            lifecycle_scope,
             cancellation: tokio_util::sync::CancellationToken::new(),
             governance_engine: None,
             governance_gate: None,
@@ -752,6 +758,32 @@ impl ToolAdmissionRuntime {
         governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
         governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
     ) -> anyhow::Result<Self> {
+        let lifecycle_scope = crate::uar::runtime::lifecycle::ResourceScope::standalone(
+            format!("tool-admission:{}", context.executing_run_id),
+            "tool-admission",
+        );
+        Self::new_in_scope(
+            context,
+            host,
+            persistence,
+            cancellation,
+            governance_engine,
+            governance_gate,
+            lifecycle_scope,
+        )
+    }
+
+    /// Build a tool-admission runtime whose cancellation receipts belong to
+    /// the same trusted host scope as the operation that admitted the tool.
+    pub fn new_in_scope(
+        context: ToolAdmissionContext,
+        host: Arc<dyn HostToolAdmissionPort>,
+        persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+        cancellation: tokio_util::sync::CancellationToken,
+        governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
+        governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
+        lifecycle_scope: crate::uar::runtime::lifecycle::ResourceScope,
+    ) -> anyhow::Result<Self> {
         anyhow::ensure!(
             context.host.version == TOOL_ADMISSION_PROTOCOL_VERSION
                 && context.host == host.binding(),
@@ -763,6 +795,7 @@ impl ToolAdmissionRuntime {
             context,
             host,
             lifecycle: Arc::new(lifecycle::AdmissionLifecycle::new(persistence)),
+            lifecycle_scope,
             cancellation,
             governance_engine,
             governance_gate,
@@ -855,12 +888,15 @@ impl ToolAdmissionRuntime {
                 )),
             });
         }
-        self.lifecycle.watch_cancellation(
-            Arc::clone(&self.host),
-            invocation,
-            prepared.admission_id.clone(),
-            self.cancellation.clone(),
-        );
+        self.lifecycle
+            .watch_cancellation(
+                Arc::clone(&self.host),
+                invocation,
+                prepared.admission_id.clone(),
+                self.cancellation.clone(),
+                self.lifecycle_scope.clone(),
+            )
+            .map_err(|error| anyhow::anyhow!("tool admission cancellation owner is unavailable: {error}"))?;
         Ok(prepared)
     }
 

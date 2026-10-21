@@ -117,13 +117,21 @@ fn decode_proc_address(field: &str, ipv6: bool) -> String {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_owns_exactly_one_listening_socket() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_owns_exactly_one_listening_socket"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let sockets = listening_sockets(sidecar.process.pid());
     assert_eq!(
         sockets,
         vec![format!("127.0.0.1:{}", sidecar.port())],
         "listening sockets"
     );
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 fn html_like(body: &str) -> bool {
@@ -133,12 +141,15 @@ fn html_like(body: &str) -> bool {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn operator_ui_not_served_in_sidecar_mode() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::operator_ui_not_served_in_sidecar_mode"), async {
     let mut static_dir = PathBuf::new();
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| {
         static_dir = spa_fixture(options.config_path.parent().expect("config has a parent"));
         options.env("UAR_STATIC_DIR", static_dir.to_string_lossy().into_owned())
     })
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     assert!(static_dir.join("index.html").exists(), "fixture present");
     for path in [
         "/",
@@ -164,12 +175,18 @@ async fn operator_ui_not_served_in_sidecar_mode() {
             "{path} served SPA content"
         );
     }
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 /// Regression guard: the standalone server keeps its companion listener,
 /// A2A gRPC listener and SPA.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn standalone_server_keeps_companion_grpc_and_spa() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::standalone_server_keeps_companion_grpc_and_spa"), async {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let workspace = Workspace::new();
     let static_dir = spa_fixture(workspace.path());
@@ -179,6 +196,8 @@ async fn standalone_server_keeps_companion_grpc_and_spa() {
     let launch = LaunchOptions::new(config, "standalone")
         .env("UAR_STATIC_DIR", static_dir.to_string_lossy().into_owned());
     let mut standalone = launch_standalone(&workspace, &launch, port).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let ipv6_loopback = std::net::TcpListener::bind("[::1]:0").is_ok();
     if ipv6_loopback {
@@ -200,4 +219,9 @@ async fn standalone_server_keeps_companion_grpc_and_spa() {
 
     let status = standalone.stop_standalone().await;
     assert!(status.success(), "standalone exit: {status}");
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(standalone.stop_standalone())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }

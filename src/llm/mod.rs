@@ -15,6 +15,7 @@
 
 pub mod anthropic_cache;
 pub mod anthropic_driver;
+mod anthropic_sse;
 pub mod anthropic_streaming;
 pub mod anthropic_types;
 pub mod benchmarks;

@@ -38,6 +38,13 @@ pub(super) async fn discover(store: &PostgresProvider, limit: usize) -> Result<V
     }).collect()
 }
 
+pub(super) async fn next_due_at(store: &PostgresProvider) -> Result<Option<i64>> {
+    let row = sqlx::query("SELECT MIN(next_attempt_at) AS due_at FROM (SELECT next_attempt_at FROM principal_knowledge_ingestion WHERE state IN ('pending','processing','retryable') AND next_attempt_at > EXTRACT(EPOCH FROM clock_timestamp()) UNION ALL SELECT next_attempt_at FROM knowledge_ingestion WHERE owner_id='anonymous' AND state IN ('pending','processing','retryable') AND next_attempt_at > EXTRACT(EPOCH FROM clock_timestamp())) jobs")
+        .fetch_one(&store.pool)
+        .await?;
+    Ok(row.try_get("due_at")?)
+}
+
 pub(super) async fn get(store: &PostgresProvider, owner: &str, document: &str) -> Result<Option<IngestionJob>> {
     let namespace = KnowledgeNamespace::for_owner(owner)?;
     sqlx::query(&namespace.query("SELECT data FROM knowledge_ingestion WHERE owner_id=$1 AND document_id=$2"))

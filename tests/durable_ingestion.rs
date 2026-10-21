@@ -63,6 +63,7 @@ async fn app(store: Arc<dyn PersistenceLayer>) -> axum::Router {
         persistence: store,
         vector_matcher: Arc::new(VectorMatcher::new(Arc::new(UnusedEmbedding), 0.75)),
         ingestion_pool: None,
+        realtime_bus: None,
     })).layer(Extension(identity().await))
 }
 
@@ -85,6 +86,18 @@ fn publication(document: &str) -> IngestionPublication {
 async fn child(stage: &str) {
     let store = provider().await;
     let manifest = std::env::var("UAR_DOT08_MANIFEST").unwrap();
+    if stage == "unattested" {
+        let now = chrono::Utc::now().to_rfc3339();
+        store.save_knowledge_base(&KnowledgeBase { id: KB.into(), owner_id: OWNER.into(), name: KB.into(),
+            description: None, config: KbConfig::default(), created_at: now.clone(), updated_at: now }).await.unwrap();
+        let body = format!("--dot08\r\nContent-Disposition: form-data; name=\"file\"; filename=\"source.txt\"\r\nContent-Type: text/plain\r\n\r\n{}\r\n--dot08--\r\n", String::from_utf8_lossy(SOURCE));
+        let response = app(Arc::clone(&store)).await.oneshot(Request::post(format!("/{KB}/documents"))
+            .header("content-type", "multipart/form-data; boundary=dot08").body(Body::from(body)).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert!(store.list_documents(OWNER, KB).await.unwrap().is_empty());
+        assert!(store.get_ingestion_job(OWNER, "unattested").await.unwrap().is_none());
+        return;
+    }
     if stage == "accept" {
         let now = chrono::Utc::now().to_rfc3339();
         store.save_knowledge_base(&KnowledgeBase { id: KB.into(), owner_id: OWNER.into(), name: KB.into(),
@@ -160,6 +173,24 @@ async fn durable_ingestion_contract() {
     databases.push(process::Database::postgres());
     for database in databases {
         let manifest = tempfile::NamedTempFile::new().unwrap();
+        let remote_surreal = database.provider == "surreal"
+            && ["ws://", "wss://", "http://", "https://"]
+                .iter()
+                .any(|prefix| database.url.starts_with(prefix));
+        if remote_surreal {
+            let mut command = Command::new(std::env::current_exe().unwrap());
+            command.args(["--nocapture", "--test-threads=1"])
+                .env_clear().env("PATH", std::env::var_os("PATH").unwrap_or_default())
+                .env("UAR_DOT08_CHILD", "unattested").env("UAR_DOT08_URL", &database.url)
+                .env("UAR_DOT08_PROVIDER", database.provider).env("UAR_DOT08_NS", &database.namespace)
+                .env("UAR_DOT08_MANIFEST", manifest.path());
+            for name in ["DYLD_LIBRARY_PATH", "LD_LIBRARY_PATH"] {
+                if let Some(value) = std::env::var_os(name) { command.env(name, value); }
+            }
+            if let Some(user) = &database.user { command.env("UAR_DOT08_USER", user); }
+            if let Some(password) = &database.password { command.env("UAR_DOT08_PASS", password); }
+            assert!(command.status().unwrap().success(), "unattested remote ingestion child failed");
+        }
         for stage in ["accept", "claim", "publish"] {
             let mut command = Command::new(std::env::current_exe().unwrap());
             command.args(["--nocapture", "--test-threads=1"])

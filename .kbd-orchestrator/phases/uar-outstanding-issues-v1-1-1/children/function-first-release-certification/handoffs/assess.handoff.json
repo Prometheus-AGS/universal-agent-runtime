@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-10-17T21:04:32Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "80 labels include broad duplication, but prompt-dependent answer and installed skill activation are absent; preserve distinct authority, migration, tool and recovery outcomes, and identify published-image assurance lost by any reduction. Four review warnings incorporated.",
+  "skipped": false,
+  "skipReason": null
+}

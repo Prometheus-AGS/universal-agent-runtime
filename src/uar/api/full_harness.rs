@@ -8,7 +8,6 @@
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
-    time::Duration,
 };
 
 use axum::http::StatusCode;
@@ -425,17 +424,47 @@ impl FullHarnessTaskAuthority {
         Some(terminal)
     }
 
-    fn monitor(self: &Arc<Self>, task_id: String) {
+    async fn monitor(self: &Arc<Self>, task_id: String) {
         let authority = Arc::clone(self);
-        tokio::spawn(async move {
+        let run_id = {
+            let Ok(records) = authority.records.lock() else { return; };
+            let Some(record) = records.tasks.get(&task_id) else { return; };
+            record.receipt.run_id.clone()
+        };
+        // Subscribe before the first receipt refresh so a terminal transition
+        // cannot land in the snapshot/event gap.
+        let Some(mut events) = authority.manager.subscribe(&run_id).await else {
+            authority.manager.lifecycle_scope().record_unresolved_effect(format!(
+                "full-harness-receipt:{task_id}"
+            ));
+            return;
+        };
+        let scope = authority.manager.lifecycle_scope();
+        let cancellation = scope.cancellation_token();
+        let unresolved_task_id = task_id.clone();
+        if scope.spawn("full-harness-receipt", async move {
+            let mut first_snapshot = true;
             loop {
-                tokio::time::sleep(Duration::from_millis(250)).await;
+                if !first_snapshot {
+                    tokio::select! {
+                        _ = cancellation.cancelled() => return Ok(()),
+                        event = events.recv() => match event {
+                            Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                return Err(anyhow::anyhow!("full-harness receipt lost its run event source"));
+                            }
+                        },
+                    }
+                }
+                first_snapshot = false;
                 if authority.refresh_receipt(&task_id).await == Some(true) {
                     authority.prune();
-                    break;
+                    return Ok(());
                 }
             }
-        });
+        }).is_err() {
+            scope.record_unresolved_effect(format!("full-harness-receipt:{unresolved_task_id}"));
+        }
     }
 
     pub(crate) fn is_task_id(&self, task_id: &str) -> bool {

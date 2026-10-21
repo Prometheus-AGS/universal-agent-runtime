@@ -215,16 +215,25 @@ pub async fn hydrate(
             )
         })
         .collect::<HashMap<_, _>>();
-    let stored = manager
-        .load_optional_persisted_value(SETTINGS_KEY)
-        .await?
-        .map(serde_json::from_value::<HashMap<String, StoredMcpServer>>)
+    let persisted = manager.load_optional_persisted_setting(SETTINGS_KEY).await?;
+    // Settings bootstrap inserts an empty default before this file catalog can
+    // seed the row. An API-written empty map has an updated_at marker and stays
+    // authoritative; the untouched bootstrap default can adopt file entries.
+    let bootstrap_default_empty = persisted.as_ref().is_some_and(|setting| {
+        setting.updated_at.is_none() && setting.data == serde_json::json!({})
+    });
+    let stored = persisted
+        .map(|setting| serde_json::from_value::<HashMap<String, StoredMcpServer>>(setting.data))
         .transpose()?;
 
-    // Only an absent setting adopts the file configuration. An explicitly
-    // empty persisted map is authoritative; storage/decoding errors fail closed.
-    let seed = stored.is_none() && !current.is_empty();
-    let effective = stored.unwrap_or(current);
+    // Only a missing row or untouched bootstrap default adopts file entries.
+    // Explicitly persisted empty maps and storage/decoding errors stay authoritative.
+    let seed = (stored.is_none() || bootstrap_default_empty) && !current.is_empty();
+    let effective = if bootstrap_default_empty {
+        current
+    } else {
+        stored.unwrap_or(current)
+    };
     for (name, server) in &effective {
         server.entry.validate_sandbox_policy(name)?;
     }

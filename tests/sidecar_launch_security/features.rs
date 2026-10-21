@@ -1,5 +1,6 @@
 //! Logging, cross-session shared features and identity (tasks 2.24–2.28).
 
+use crate::sidecar_process::ObservedRequest as _;
 use std::time::Duration;
 
 use serde_json::{Value, json};
@@ -25,10 +26,13 @@ fn log_file_env(options: LaunchOptions) -> LaunchOptions {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_default_logs_contain_no_prompt_or_tool_argument_canary() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_default_logs_contain_no_prompt_or_tool_argument_canary"), async {
     let canary = format!("CANARY-{}", uuid::Uuid::new_v4().simple());
     let input = format!("please echo {canary}");
     let fixtures = with_terminal_call(FixtureSet::new(), &input, &format!("echo {canary}"));
     let mut sidecar = boot_sidecar(fixtures, "", log_file_env).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let transcript = drive_run(
         &sidecar.base_url(),
         Some(&sidecar.token),
@@ -61,17 +65,25 @@ async fn sidecar_default_logs_contain_no_prompt_or_tool_argument_canary() {
             "{name} carries conversation content: {lines:#?}"
         );
     }
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 /// Regression guard: an explicit `RUST_LOG` stays authoritative.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_honors_explicit_rust_log() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_honors_explicit_rust_log"), async {
     let input = "debug logging probe";
     let fixtures = with_reply(FixtureSet::new(), input, "ok");
-    let sidecar = boot_sidecar(fixtures, "", |options| {
+    let mut sidecar = boot_sidecar(fixtures, "", |options| {
         options.env("RUST_LOG", "universal_agent_runtime=debug")
     })
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let transcript = drive_run(
         &sidecar.base_url(),
         Some(&sidecar.token),
@@ -93,6 +105,11 @@ async fn sidecar_honors_explicit_rust_log() {
                 && line.contains("\"target\":\"universal_agent_runtime")),
         "no universal_agent_runtime debug event on stdout"
     );
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 fn feature_yaml(workspace: &Workspace) -> String {
@@ -110,7 +127,7 @@ async fn server_names(base_url: &str, bearer: Option<&str>) -> Vec<String> {
         request = request.bearer_auth(token);
     }
     let body: Value = request
-        .send()
+        .observed_send()
         .await
         .expect("list MCP servers")
         .json()
@@ -128,7 +145,7 @@ async fn skill_ids(base_url: &str, token: &str) -> Vec<String> {
     let body: Value = reqwest::Client::new()
         .get(format!("{base_url}/api/uar/skills"))
         .bearer_auth(token)
-        .send()
+        .observed_send()
         .await
         .expect("list skills")
         .json()
@@ -146,6 +163,7 @@ async fn skill_ids(base_url: &str, token: &str) -> Vec<String> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_forces_skill_evolution_memory_and_global_mcp_off() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_forces_skill_evolution_memory_and_global_mcp_off"), async {
     let input = "evolve a skill from this run";
     let fixtures = with_terminal_call(FixtureSet::new(), input, "echo evolution");
     let stub = start_stub_llm(fixtures).await;
@@ -173,6 +191,8 @@ async fn sidecar_forces_skill_evolution_memory_and_global_mcp_off() {
         port,
     )
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let seeded = reqwest::Client::new()
         .put(format!(
             "{}/api/uar/mcp/servers/seeded-probe",
@@ -184,7 +204,7 @@ async fn sidecar_forces_skill_evolution_memory_and_global_mcp_off() {
             "command": probe_binary(),
             "args": [seeded_probe.to_string_lossy(), "--mcp"],
         }))
-        .send()
+        .observed_send()
         .await
         .expect("seed MCP server");
     assert!(seeded.status().is_success(), "seed: {}", seeded.status());
@@ -198,11 +218,13 @@ async fn sidecar_forces_skill_evolution_memory_and_global_mcp_off() {
     let spawned_before = probe_records(&file_probe).len() + probe_records(&seeded_probe).len();
 
     let token = random_token();
-    let sidecar = launch_sidecar(
+    let mut sidecar = launch_sidecar(
         &workspace,
-        &LaunchOptions::new(config, "sidecar").with_token(&token),
+        &LaunchOptions::new(config.clone(), "sidecar").with_token(&token),
     )
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let base = sidecar.base_url();
     assert_eq!(
         server_names(&base, Some(&token)).await,
@@ -212,7 +234,7 @@ async fn sidecar_forces_skill_evolution_memory_and_global_mcp_off() {
     let memory = reqwest::Client::new()
         .get(format!("{base}/api/memory?q=anything"))
         .bearer_auth(&token)
-        .send()
+        .observed_send()
         .await
         .expect("memory search");
     assert_eq!(memory.status(), 503, "memory service constructed");
@@ -231,28 +253,45 @@ async fn sidecar_forces_skill_evolution_memory_and_global_mcp_off() {
         "run made no tool call\n{}",
         transcript.stream
     );
-    tokio::time::sleep(Duration::from_secs(3)).await;
-    assert_eq!(
-        skill_ids(&base, &token).await,
-        skills_before,
-        "skill evolved"
-    );
     assert!(
         !transcript.stream.contains("skill_evolution"),
         "skill evolution event emitted"
     );
+    // The terminal stream does not prove all background producers finished.
+    // Join the owning runtime, then reopen once and inspect durable skill state.
+    let status = sidecar.stop_sidecar().await;
+    assert!(status.success(), "sidecar cleanup failed: {status}");
     assert_eq!(
         probe_records(&file_probe).len() + probe_records(&seeded_probe).len(),
         spawned_before,
         "sidecar spawned a global MCP server"
     );
+    let mut reopened = launch_sidecar(
+        &workspace,
+        &LaunchOptions::new(config, "sidecar-reopened").with_token(&token),
+    ).await;
+    let reopened_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+        assert_eq!(skill_ids(&reopened.base_url(), &token).await, skills_before,
+                   "skill evolved before acknowledged runtime closure");
+    })).await;
+    let reopened_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(reopened.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(reopened_outcome, reopened_cleanup);
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(standalone.stop_standalone())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 async fn settings_value(base: &str, token: &str, key: &str) -> Value {
     let body: Value = reqwest::Client::new()
         .get(format!("{base}/api/uar/settings/{key}"))
         .bearer_auth(token)
-        .send()
+        .observed_send()
         .await
         .expect("read setting")
         .json()
@@ -263,7 +302,10 @@ async fn settings_value(base: &str, token: &str, key: &str) -> Value {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_rejects_global_mcp_mutation_and_feature_enable() {
-    let sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_rejects_global_mcp_mutation_and_feature_enable"), async {
+    let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let base = sidecar.base_url();
     let client = reqwest::Client::new();
     let probe_output = sidecar.workspace.path().join("mutation-probe.jsonl");
@@ -277,7 +319,7 @@ async fn sidecar_rejects_global_mcp_mutation_and_feature_enable() {
             "command": probe_binary(),
             "args": [probe_output.to_string_lossy(), "--mcp"],
         }))
-        .send()
+        .observed_send()
         .await
         .expect("PUT MCP server");
     assert_eq!(put.status(), 409, "PUT status");
@@ -289,7 +331,7 @@ async fn sidecar_rejects_global_mcp_mutation_and_feature_enable() {
     let delete = client
         .delete(format!("{base}/api/uar/mcp/servers/x"))
         .bearer_auth(&sidecar.token)
-        .send()
+        .observed_send()
         .await
         .expect("DELETE MCP server");
     assert_eq!(delete.status(), 409, "DELETE status");
@@ -315,7 +357,7 @@ async fn sidecar_rejects_global_mcp_mutation_and_feature_enable() {
             .put(format!("{base}/api/uar/settings/{namespace}"))
             .bearer_auth(&sidecar.token)
             .json(&json!({ "data": { "enabled": true } }))
-            .send()
+            .observed_send()
             .await
             .expect("save feature setting")
             .json()
@@ -328,18 +370,26 @@ async fn sidecar_rejects_global_mcp_mutation_and_feature_enable() {
             "{key} effective value"
         );
     }
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 /// Regression guard: the launch token authenticates the host, not a user.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn sidecar_authorized_request_is_anonymous_principal() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::sidecar_authorized_request_is_anonymous_principal"), async {
     let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| options).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let name = format!("owner-probe-{}", uuid::Uuid::new_v4().simple());
     let created = reqwest::Client::new()
         .post(format!("{}/api/uar/knowledge-bases", sidecar.base_url()))
         .bearer_auth(&sidecar.token)
         .json(&json!({ "name": name, "description": "owner probe" }))
-        .send()
+        .observed_send()
         .await
         .expect("create knowledge base");
     assert!(
@@ -361,10 +411,17 @@ async fn sidecar_authorized_request_is_anonymous_principal() {
     .expect("reopen sidecar database");
     let stored = provider
         .get_knowledge_base_by_name("anonymous", &name)
-        .await
-        .expect("query knowledge base");
+        .await;
+    let close = provider.close_scope().await;
+    assert!(close.engine_close_acknowledged && close.failure.is_none(),
+            "reopened provider cleanup failed: {close:?}");
     assert!(
-        stored.is_some(),
+        stored.expect("query knowledge base").is_some(),
         "record not owned by the anonymous principal"
     );
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }

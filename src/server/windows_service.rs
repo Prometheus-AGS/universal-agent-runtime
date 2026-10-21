@@ -1,6 +1,7 @@
 use std::ffi::OsString;
 use std::sync::OnceLock;
 use std::time::Duration;
+use futures::FutureExt as _;
 
 use crate::config::{Cli, LogFormat};
 use crate::config_manager::ConfigManager;
@@ -56,14 +57,8 @@ fn status(state: ServiceState, accepted: ServiceControlAccept, code: u32) -> Ser
             state,
             ServiceState::StartPending | ServiceState::StopPending
         )),
-        wait_hint: if matches!(
-            state,
-            ServiceState::StartPending | ServiceState::StopPending
-        ) {
-            Duration::from_secs(30)
-        } else {
-            Duration::ZERO
-        },
+        // No estimated duration certifies initialization or release.
+        wait_hint: Duration::ZERO,
         process_id: None,
     }
 }
@@ -91,61 +86,104 @@ fn run_service() -> anyhow::Result<()> {
         0,
     ))?;
 
-    let otel_provider =
-        match uar::telemetry::init(&bootstrap.log_format, "info,universal_agent_runtime=debug") {
-            Ok(provider) => provider,
-            Err(error) => {
-                status_handle.set_service_status(status(
-                    ServiceState::Stopped,
-                    ServiceControlAccept::empty(),
-                    1,
-                ))?;
-                return Err(error);
+    let result = (|| -> anyhow::Result<()> {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .map_err(|error| anyhow::anyhow!("creating Windows service runtime: {error}"))?;
+        runtime.block_on(async {
+            let otel_provider = uar::telemetry::init(
+                &bootstrap.log_format, "info,universal_agent_runtime=debug",
+            )?;
+            let mut configuration_owner = None;
+            let outcome = std::panic::AssertUnwindSafe(async {
+                uar::telemetry::metrics::init();
+                let strict_config = bootstrap.cli.strict_config;
+                let config_manager = ConfigManager::load(bootstrap.cli).await?;
+                configuration_owner = Some(std::sync::Arc::clone(&config_manager));
+                if strict_config { config_manager.set_strict(true); }
+                let (ready_tx, mut ready_rx) = tokio::sync::oneshot::channel();
+                let server = super::start_server_with_listener(
+                    config_manager, None, None, None, Some(ready_tx), None,
+                    Some(shutdown.clone()), false, None, None,
+                );
+                tokio::pin!(server);
+                let mut status_errors = Vec::new();
+                let server_result = tokio::select! {
+                    result = &mut server => result,
+                    ready = &mut ready_rx => {
+                        if ready.is_err() {
+                            status_errors.push("Windows service readiness was not acknowledged".to_owned());
+                            shutdown.cancel();
+                        } else if let Err(error) = status_handle.set_service_status(status(
+                            ServiceState::Running,
+                            ServiceControlAccept::STOP | ServiceControlAccept::SHUTDOWN,
+                            0,
+                        )) {
+                            status_errors.push(format!("publishing Windows service readiness: {error}"));
+                            shutdown.cancel();
+                        }
+                        tokio::select! {
+                            result = &mut server => result,
+                            () = shutdown.cancelled() => {
+                                if let Err(error) = status_handle.set_service_status(status(
+                                    ServiceState::StopPending, ServiceControlAccept::empty(), 0,
+                                )) {
+                                    status_errors.push(format!("publishing Windows service shutdown: {error}"));
+                                }
+                                server.await
+                            }
+                        }
+                    },
+                    () = shutdown.cancelled() => {
+                        if let Err(error) = status_handle.set_service_status(status(
+                            ServiceState::StopPending, ServiceControlAccept::empty(), 0,
+                        )) {
+                            status_errors.push(format!("publishing Windows service shutdown: {error}"));
+                        }
+                        server.await
+                    }
+                };
+                if let Err(error) = server_result { status_errors.push(error.to_string()); }
+                anyhow::ensure!(status_errors.is_empty(), "{}", status_errors.join("; "));
+                Ok::<(), anyhow::Error>(())
+            }).catch_unwind().await;
+            let mut failures = Vec::new();
+            match outcome {
+                Ok(Ok(())) => {},
+                Ok(Err(error)) => failures.push(error.to_string()),
+                Err(_) => failures.push("Windows service startup/runtime panicked".to_owned()),
             }
-        };
-    uar::telemetry::metrics::init();
-
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .map_err(|error| anyhow::anyhow!("creating Windows service runtime: {error}"))?;
-    let strict_config = bootstrap.cli.strict_config;
-    let config_manager = runtime.block_on(ConfigManager::load(bootstrap.cli))?;
-    if strict_config {
-        config_manager.set_strict(true);
-    }
-
-    status_handle.set_service_status(status(
-        ServiceState::Running,
-        ServiceControlAccept::STOP | ServiceControlAccept::SHUTDOWN,
-        0,
-    ))?;
-
-    let monitor_shutdown = shutdown.clone();
-    let result = runtime.block_on(async move {
-        let server = super::start_server_with_shutdown(config_manager, shutdown);
-        tokio::pin!(server);
-        tokio::select! {
-            result = &mut server => result,
-            () = monitor_shutdown.cancelled() => {
-                status_handle.set_service_status(status(
-                    ServiceState::StopPending,
-                    ServiceControlAccept::empty(),
-                    0,
-                ))?;
-                server.await
+            if let Some(configuration) = configuration_owner {
+                match std::panic::AssertUnwindSafe(configuration.close_watchers()).catch_unwind().await {
+                    Ok(Ok(())) => {},
+                    Ok(Err(error)) => failures.push(format!("configuration cleanup: {error}")),
+                    Err(_) => failures.push("configuration cleanup panicked; release unconfirmed".to_owned()),
+                }
             }
-        }
-    });
-
-    if let Some(provider) = &otel_provider {
-        let _ = provider.shutdown();
-    }
+            if let Some(provider) = &otel_provider {
+                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| provider.shutdown())) {
+                    Ok(Ok(())) => {},
+                    Ok(Err(error)) => failures.push(format!("telemetry cleanup: {error}")),
+                    Err(_) => failures.push("telemetry cleanup panicked; release unconfirmed".to_owned()),
+                }
+            }
+            anyhow::ensure!(failures.is_empty(), "{}", failures.join("; "));
+            Ok(())
+        })
+    })();
     let exit_code = u32::from(result.is_err());
-    status_handle.set_service_status(status(
+    let stopped = status_handle.set_service_status(status(
         ServiceState::Stopped,
         ServiceControlAccept::empty(),
         exit_code,
-    ))?;
-    result
+    ));
+    match (result, stopped) {
+        (Ok(()), Ok(())) => Ok(()),
+        (Err(error), Ok(())) => Err(error),
+        (Ok(()), Err(error)) => Err(error.into()),
+        (Err(runtime), Err(status)) => Err(anyhow::anyhow!(
+            "{runtime}; publishing Windows service stopped state: {status}"
+        )),
+    }
 }

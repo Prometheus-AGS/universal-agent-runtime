@@ -475,8 +475,9 @@ impl McpBindingCache {
     ///
     /// The connector receives the exact snapshot, must return an exclusively
     /// owned single-server registry, and must unwind partial resources on drop.
-    /// It owns connect/list timeouts and credential resolution against the pinned
-    /// identity. This function does not spawn, retry or substitute global inputs.
+    /// It owns connector completion and credential resolution against the
+    /// pinned identity. This function does not spawn, retry, synthesize a
+    /// readiness timeout, or substitute global inputs.
     ///
     /// # Errors
     /// Returns authentication, connector, identity, invalidation or cancellation
@@ -714,35 +715,58 @@ impl McpBindingCache {
         self.invalidate_matching(|key|key.interaction_channel.as_deref() == Some(channel));
     }
 
-    pub(crate) async fn retire_interaction(&self, channel: &str) {
+    pub(crate) async fn retire_interaction(&self, channel: &str) -> anyhow::Result<()> {
         self.invalidate_interaction(channel);
-        self.reap_retired().await;
+        let result = self.reap_retired_report().await;
         self.state.write().unwrap_or_else(std::sync::PoisonError::into_inner).entries
             .retain(|key,entry|key.interaction_channel.as_deref() != Some(channel) || entry.refresh.is_some());
+        result
     }
 
     /// Join retired transports outside the cache lock; safe to cancel and resume.
     /// Newly retired bindings remain queued for the next call.
-    pub async fn reap_retired(&self) {
+    pub async fn reap_retired_report(&self) -> anyhow::Result<()> {
         let retired = self
             .state
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .retired
             .clone();
+        let mut failures = Vec::new();
+        let mut released = Vec::new();
         for binding in &retired {
-            binding.registry.shutdown().await;
+            if let Err(error) = binding.registry.shutdown_report().await {
+                failures.push(error.to_string());
+            } else {
+                released.push(Arc::clone(binding));
+            }
         }
         self.state
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .retired
-            .retain(|binding| !retired.iter().any(|closed| Arc::ptr_eq(binding, closed)));
+            .retain(|binding| !released.iter().any(|closed| Arc::ptr_eq(binding, closed)));
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "retired MCP binding cleanup incomplete: {}",
+                failures.join("; ")
+            ))
+        }
+    }
+
+    /// Compatibility reaping for callers that cannot yet propagate the
+    /// retained cleanup report.
+    pub async fn reap_retired(&self) {
+        if let Err(error) = self.reap_retired_report().await {
+            tracing::error!(error = %error, "retired MCP binding cleanup did not complete");
+        }
     }
 
     /// Permanently close admission, unwind refreshes, then join all transports.
     /// Retired handles stay in shared state if this future is cancelled.
-    pub async fn shutdown(&self) {
+    pub async fn shutdown_report(&self) -> anyhow::Result<()> {
         let refreshes = {
             let mut state = self
                 .state
@@ -772,7 +796,15 @@ impl McpBindingCache {
         for refresh in refreshes {
             let _ = wait_for_refresh(&refresh).await;
         }
-        self.reap_retired().await;
+        self.reap_retired_report().await
+    }
+
+    /// Compatibility shutdown for callers that cannot yet propagate the
+    /// retained cleanup report.
+    pub async fn shutdown(&self) {
+        if let Err(error) = self.shutdown_report().await {
+            tracing::error!(error = %error, "MCP binding cache shutdown did not complete");
+        }
     }
 }
 

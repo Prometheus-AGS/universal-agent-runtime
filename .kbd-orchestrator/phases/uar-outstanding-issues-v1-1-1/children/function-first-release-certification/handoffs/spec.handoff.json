@@ -1,0 +1,11 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-10-17T21:16:49Z",
+  "outputs": [
+    "spec.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "Existing OpenSpec change will be amended to local 65-label six-group certificate and ten-label streams/recovery on each published child; public prompt plus explicit skill oracle, #385/#387/trust/recovery controls and honest timing are specified. Two review warnings corrected in spec.",
+  "skipped": false,
+  "skipReason": null
+}

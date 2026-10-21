@@ -41,6 +41,25 @@ impl ScheduleController {
 
     pub fn supported(&self) -> bool { self.require_store().is_ok() }
 
+    /// The next actual business-time boundary. This does not poll or certify
+    /// execution; the scan after the one-shot wakeup rechecks durable state.
+    pub async fn next_due_at(&self) -> Result<Option<chrono::DateTime<Utc>>, ScheduleError> {
+        self.require_store()?;
+        let now = Utc::now();
+        self.catalog
+            .schedule_records()
+            .await?
+            .iter()
+            .try_fold(None::<chrono::DateTime<Utc>>, |next, record| {
+                let candidate = calendar::next_due_after(record, now)?;
+                Ok(match (next, candidate) {
+                    (Some(current), Some(candidate)) => Some(current.min(candidate)),
+                    (current, None) => current,
+                    (None, candidate) => candidate,
+                })
+            })
+    }
+
     async fn destination(&self, owner: &ActorOwner, workspace: &str, instance: &str) -> Result<(), ScheduleError> {
         // Management can run on a non-owning runtime. Read without triggering
         // instance orphan recovery; only the fenced scanner may do that.

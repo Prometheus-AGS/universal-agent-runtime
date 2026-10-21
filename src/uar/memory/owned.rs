@@ -4,11 +4,13 @@ use sha2::{Digest, Sha256};
 use super::controls::{CaptureAdmission, CapturePolicy, CapturePolicyUpdate};
 use surreal_memory::{Memory, MemoryHistory, MemoryScope, MemoryType, task_stream::{ContextWindow, TaskStream}};
 use crate::uar::security::claims::CredentialPrincipal;
+use crate::uar::runtime::lifecycle::OperationLease;
 use super::service::MemoryService;
 
 pub struct OwnedMemory<'a> {
     pub(super) service: &'a MemoryService,
     pub(super) principal: CredentialPrincipal,
+    pub(super) _lease: OperationLease,
 }
 
 impl std::fmt::Debug for OwnedMemory<'_> {

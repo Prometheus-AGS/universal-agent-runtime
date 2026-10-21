@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UAR 1.1.1 phase integration manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "phase",
+    "version",
+    "stage",
+    "source_commit",
+    "source_tree",
+    "fixture_tree",
+    "image",
+    "platform",
+    "groups",
+    "resource_root",
+    "evidence_root",
+    "infrastructure_file",
+    "implementation_inventory"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "phase": {
+      "const": "uar-outstanding-issues-v1-1-1"
+    },
+    "version": {
+      "const": "1.1.1"
+    },
+    "stage": {
+      "enum": [
+        "local",
+        "published"
+      ]
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "source_tree": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "fixture_tree": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "image": {
+      "type": "string",
+      "minLength": 1
+    },
+    "platform": {
+      "enum": [
+        "linux/arm64",
+        "linux/amd64"
+      ]
+    },
+    "index_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "image_preparation": {
+      "const": "prebuilt"
+    },
+    "prepared_image_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "image_preparation_receipt": {
+      "type": "object",
+      "required": ["path", "digest"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"},
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "binding",
+          "streams",
+          "mcp-outcomes",
+          "credentials",
+          "recovery",
+          "combined"
+        ]
+      }
+    },
+    "resource_root": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "evidence_root": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "infrastructure_file": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "implementation_inventory": {
+      "type": "object",
+      "required": [
+        "path",
+        "digest"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "publication_receipt": {
+      "type": "object",
+      "required": ["path", "digest"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"},
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "repair_parent": {
+      "type": "object",
+      "required": [
+        "path",
+        "digest"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "repair_source_change": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"image_preparation": {"const": "prebuilt"}}, "required": ["image_preparation"]},
+      "then": {"required": ["prepared_image_id", "image_preparation_receipt"]}
+    },
+    {
+      "if": {"properties": {"stage": {"const": "local"}}},
+      "then": {"oneOf": [
+        {"properties": {"groups": {"const": ["binding", "streams", "mcp-outcomes", "credentials", "recovery", "combined"]}}, "not": {"required": ["repair_parent"]}},
+        {"properties": {"groups": {"type": "array", "minItems": 1, "maxItems": 1}}, "required": ["repair_parent"]}
+      ]}
+    },
+    {
+      "if": {"properties": {"stage": {"const": "published"}}},
+      "then": {"required": ["index_digest", "publication_receipt"], "oneOf": [
+        {"properties": {"groups": {"const": ["streams", "recovery"]}}, "not": {"required": ["repair_parent"]}},
+        {"properties": {"groups": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"enum": ["streams", "recovery"]}}}, "required": ["repair_parent"]}
+      ]}
+    }
+  ]
+}

@@ -15,11 +15,135 @@ pub use approval_events::approval_ids;
 
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
+use tokio::process::Child;
 use std::time::{Duration, Instant};
 
 use serde_json::Value;
-use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+use tokio::io::{AsyncBufReadExt as _, AsyncReadExt as _, AsyncWriteExt as _};
+
+tokio::task_local! {
+    static CHECK_DIAGNOSTICS: std::sync::Arc<std::sync::Mutex<CheckDiagnostics>>;
+}
+
+struct CheckDiagnostics {
+    name: &'static str,
+    id: String,
+    directory: PathBuf,
+    outcome: &'static str,
+    events: Vec<Value>,
+    persistence_error: Option<std::io::ErrorKind>,
+}
+
+impl CheckDiagnostics {
+    fn publish(&mut self) {
+        let receipt = serde_json::json!({"version":1, "check":self.name,
+            "receipt_id":self.id, "outcome":self.outcome, "events":self.events});
+        let pending = self.directory.join(format!("{}.pending", self.id));
+        let destination = self.directory.join(format!("{}.json", self.id));
+        let saved = std::fs::create_dir_all(&self.directory)
+            .and_then(|()| std::fs::write(&pending, receipt.to_string()))
+            .and_then(|()| std::fs::rename(&pending, &destination));
+        if let Err(error) = saved {
+            self.persistence_error = Some(error.kind());
+            eprintln!("sidecar diagnostic receipt persistence failed: {}", error.kind());
+        }
+        if self.outcome != "in_progress" {
+            eprintln!("UAR_CHECK_RECEIPT:{receipt}");
+        }
+    }
+}
+
+fn diagnostic(event: Value) {
+    let _ = CHECK_DIAGNOSTICS.try_with(|events| {
+        let mut receipt = events.lock().unwrap_or_else(|error| error.into_inner());
+        receipt.events.push(event);
+        receipt.publish();
+    });
+}
+
+fn sanitized_body(body: &[u8]) -> Value {
+    const CODES: &[&str] = &["unauthorized", "forbidden", "unavailable", "conflict",
+        "outcome_unknown", "precondition_failed", "invalid_request", "not_found",
+        "sidecar_mode_global_mcp_disabled", "sidecar_mode_feature_disabled",
+        "lifecycle_command_failed", "invalid_lifecycle_command"];
+    fn retain(value: &Value) -> Value {
+        match value {
+            Value::String(code) if CODES.contains(&code.as_str()) => value.clone(),
+            Value::Number(_) | Value::Bool(_) | Value::Null => value.clone(),
+            Value::Object(fields) => Value::Object(fields.iter()
+                .filter(|(key, _)| ["error", "code", "kind", "category", "status"].contains(&key.as_str()))
+                .map(|(key, value)| (key.clone(), retain(value))).collect()),
+            _ => Value::String("[redacted]".into()),
+        }
+    }
+    serde_json::from_slice::<Value>(body).map(|value| retain(&value))
+        .unwrap_or_else(|_| serde_json::json!({"format":"non_json", "content":"[redacted]"}))
+}
+
+fn record_response(status: u16, body: &[u8]) {
+    diagnostic(serde_json::json!({"kind":"http_response", "status":status,
+        "body_bytes":body.len(), "body":sanitized_body(body)}));
+}
+
+/// One retained receipt per check, including panic and independently observed
+/// process cleanup. Raw request/response secrets and panic payloads are excluded.
+pub async fn record_check(name: &'static str, body: impl std::future::Future<Output = ()>) {
+    use futures::FutureExt as _;
+    let directory = std::env::var_os("UAR_SIDECAR_DIAGNOSTICS_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| std::env::temp_dir().join("uar-sidecar-check-receipts"));
+    let mut receipt = CheckDiagnostics { name, id: uuid::Uuid::new_v4().to_string(),
+        directory, outcome: "in_progress", events: Vec::new(), persistence_error: None };
+    receipt.publish();
+    let events = std::sync::Arc::new(std::sync::Mutex::new(receipt));
+    let outcome = CHECK_DIAGNOSTICS.scope(events.clone(),
+        std::panic::AssertUnwindSafe(body).catch_unwind()).await;
+    let persistence_error = {
+        let mut receipt = events.lock().unwrap_or_else(|error| error.into_inner());
+        receipt.outcome = if outcome.is_ok() && receipt.persistence_error.is_none() { "passed" } else { "failed" };
+        receipt.publish();
+        receipt.persistence_error
+    };
+    if let Err(panic) = outcome { std::panic::resume_unwind(panic); }
+    assert!(persistence_error.is_none(), "diagnostic receipt not retained: {persistence_error:?}");
+}
+
+/// Buffer ordinary JSON HTTP responses before assertions, retaining sanitized
+/// evidence even when a status assertion panics before reading the body.
+pub struct ObservedResponse {
+    status: reqwest::StatusCode,
+    body: Vec<u8>,
+}
+
+impl ObservedResponse {
+    pub fn status(&self) -> reqwest::StatusCode { self.status }
+    pub async fn text(self) -> Result<String, std::string::FromUtf8Error> {
+        String::from_utf8(self.body)
+    }
+    pub async fn json<T: serde::de::DeserializeOwned>(self) -> Result<T, serde_json::Error> {
+        serde_json::from_slice(&self.body)
+    }
+}
+
+pub trait ObservedRequest {
+    fn observed_send(self) -> impl std::future::Future<Output = Result<ObservedResponse, reqwest::Error>> + Send;
+}
+
+impl ObservedRequest for reqwest::RequestBuilder {
+    async fn observed_send(self) -> Result<ObservedResponse, reqwest::Error> {
+        diagnostic(serde_json::json!({"kind":"http_request", "completion":"pending"}));
+        let response = self.send().await.map_err(|error| {
+            diagnostic(serde_json::json!({"kind":"http_transport_failure", "category":
+                if error.is_connect() { "connect" } else if error.is_timeout() { "observation_interrupted" } else { "request" }}));
+            error
+        })?;
+        let status = response.status();
+        let body = response.bytes().await?.to_vec();
+        record_response(status.as_u16(), &body);
+        Ok(ObservedResponse { status, body })
+    }
+}
 
 /// Model the stub LLM serves. The runtime strips the provider prefix, so the
 /// stub fingerprints the bare name.
@@ -145,7 +269,7 @@ impl ConfigOptions {
 /// Render a complete configuration for `workspace`.
 pub fn render_config(workspace: &Workspace, options: &ConfigOptions) -> String {
     format!(
-        "security:\n  jwt_required: {jwt}\n  jwt_secret: \"{JWT_SECRET}\"\n  settings_mutation_auth_required: false\n\
+        "skill_source_roots: []\nsecurity:\n  jwt_required: {jwt}\n  jwt_secret: \"{JWT_SECRET}\"\n  settings_mutation_auth_required: false\n\
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{data}\"\n\
          acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\
@@ -163,6 +287,7 @@ pub fn render_config(workspace: &Workspace, options: &ConfigOptions) -> String {
 }
 
 /// Everything needed to start one process.
+#[derive(Clone)]
 pub struct LaunchOptions {
     pub config_path: PathBuf,
     pub extra_args: Vec<String>,
@@ -202,7 +327,12 @@ impl LaunchOptions {
 /// A running (or exited) child process with captured output.
 pub struct ServerProcess {
     child: Child,
-    stdin: Option<ChildStdin>,
+    pid: u32,
+    exit_status: Option<ExitStatus>,
+    ready: Option<tokio::sync::oneshot::Receiver<Result<u16, String>>>,
+    output_reader: Option<tokio::task::JoinHandle<std::io::Result<()>>>,
+    stdin: Option<Box<dyn tokio::io::AsyncWrite + Send + Sync + Unpin>>,
+    lifecycle: tokio::sync::mpsc::UnboundedReceiver<Value>,
     pub stdout_path: PathBuf,
     pub stderr_path: PathBuf,
     pub port: Option<u16>,
@@ -242,30 +372,83 @@ fn base_command(program: &str, workspace: &Workspace, options: &LaunchOptions) -
 }
 
 /// Start `program` in `workspace` with captured output.
-pub fn spawn(program: &str, workspace: &Workspace, options: &LaunchOptions) -> ServerProcess {
+pub async fn spawn(program: &str, workspace: &Workspace, options: &LaunchOptions) -> ServerProcess {
     let stdout_path = workspace.logs().join(format!("{}.stdout", options.tag));
     let stderr_path = workspace.logs().join(format!("{}.stderr", options.tag));
-    let stdout = std::fs::File::create(&stdout_path).expect("create stdout capture");
+    let mut stdout_capture = std::fs::File::create(&stdout_path).expect("create stdout capture");
     let stderr = std::fs::File::create(&stderr_path).expect("create stderr capture");
-    let mut child = base_command(program, workspace, options)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::from(stdout))
-        .stderr(Stdio::from(stderr))
-        .spawn()
+    let mut command = base_command(program, workspace, options);
+    command.stdin(Stdio::piped());
+    #[cfg(windows)]
+    let parent_pipe = if program == sidecar_binary() {
+        // Mandatory Windows launch contract: the child reads this inherited
+        // named-pipe handle with overlapped I/O and joins canceled reads.
+        use std::os::windows::fs::OpenOptionsExt as _;
+        use tokio::net::windows::named_pipe::ServerOptions;
+        use windows_sys::Win32::Storage::FileSystem::FILE_FLAG_OVERLAPPED;
+        let name = format!(r"\\.\pipe\uar-sidecar-control-{}", uuid::Uuid::new_v4());
+        let parent = ServerOptions::new().first_pipe_instance(true).max_instances(1)
+            .reject_remote_clients(true).access_inbound(false).create(&name)
+            .expect("create private overlapped input");
+        let child_input = std::fs::OpenOptions::new().read(true)
+            .custom_flags(FILE_FLAG_OVERLAPPED).open(&name).expect("open child input handle");
+        command.stdin(Stdio::from(child_input)).env("UAR_SIDECAR_STDIN_OVERLAPPED", "1");
+        Some(parent)
+    } else { None };
+    let mut command = tokio::process::Command::from(command);
+    let mut child = command.kill_on_drop(true)
+        .stdout(Stdio::piped()).stderr(Stdio::from(stderr)).spawn()
         .unwrap_or_else(|error| panic!("spawn {program}: {error}"));
-    let mut stdin = child.stdin.take();
+    drop(command);
+    let mut stdin: Option<Box<dyn tokio::io::AsyncWrite + Send + Sync + Unpin>> = child.stdin.take()
+        .map(|pipe| Box::new(pipe) as Box<dyn tokio::io::AsyncWrite + Send + Sync + Unpin>);
+    #[cfg(windows)]
+    if let Some(parent) = parent_pipe {
+        parent.connect().await.expect("connect inherited child input");
+        stdin = Some(Box::new(parent));
+    }
     if let Some(bytes) = &options.stdin_bytes
         && let Some(pipe) = stdin.as_mut()
     {
-        pipe.write_all(bytes).expect("write stdin bytes");
-        pipe.flush().expect("flush stdin");
+        pipe.write_all(bytes).await.expect("write stdin bytes");
+        pipe.flush().await.expect("flush stdin");
     }
     if options.stdin_bytes.is_none() || !options.keep_stdin_open {
         stdin = None;
     }
+    let pid = child.id().expect("spawned child pid");
+    let stdout = child.stdout.take().expect("child stdout pipe");
+    let (ready_sender, ready) = tokio::sync::oneshot::channel();
+    let (lifecycle_sender, lifecycle) = tokio::sync::mpsc::unbounded_channel();
+    let output_reader = tokio::spawn(async move {
+        let mut ready_sender = Some(ready_sender);
+        let mut reader = tokio::io::BufReader::new(stdout);
+        let mut line = Vec::new();
+        loop {
+            line.clear();
+            if reader.read_until(b'\n', &mut line).await? == 0 { break; }
+            std::io::Write::write_all(&mut stdout_capture, &line)?;
+            std::io::Write::flush(&mut stdout_capture)?;
+            if let Some(response) = std::str::from_utf8(&line).ok().and_then(|line| line.strip_prefix("LIFECYCLE:")) {
+                if let Ok(response) = serde_json::from_str(response) { let _ = lifecycle_sender.send(response); }
+            }
+            if let Some(port) = std::str::from_utf8(&line).ok().and_then(|line| line.strip_prefix("READY:")) {
+                if let Some(sender) = ready_sender.take() {
+                    let _ = sender.send(port.trim().parse::<u16>().map_err(|_| "invalid READY port".to_owned()));
+                }
+            }
+        }
+        if let Some(sender) = ready_sender { let _ = sender.send(Err("stdout closed before READY".to_owned())); }
+        Ok(())
+    });
     ServerProcess {
         child,
+        pid,
+        exit_status: None,
+        ready: Some(ready),
+        output_reader: Some(output_reader),
         stdin,
+        lifecycle,
         stdout_path,
         stderr_path,
         port: None,
@@ -274,11 +457,15 @@ pub fn spawn(program: &str, workspace: &Workspace, options: &LaunchOptions) -> S
 
 /// Start the sidecar and wait for its `READY:{port}` line.
 pub async fn launch_sidecar(workspace: &Workspace, options: &LaunchOptions) -> ServerProcess {
-    let mut process = spawn(sidecar_binary(), workspace, options);
-    let port = process
-        .wait_for_ready(READY_TIMEOUT)
-        .await
-        .unwrap_or_else(|error| panic!("sidecar did not become ready: {error}"));
+    let mut process = spawn(sidecar_binary(), workspace, options).await;
+    let port = match process.wait_for_ready(READY_TIMEOUT).await {
+        Ok(port) => port,
+        Err(error) => {
+            process.close_stdin();
+            let exit = process.wait_exit(READY_TIMEOUT).await;
+            panic!("sidecar did not become ready: {error}; exit={exit:?}");
+        }
+    };
     process.port = Some(port);
     process
 }
@@ -289,37 +476,24 @@ pub async fn launch_standalone(
     options: &LaunchOptions,
     port: u16,
 ) -> ServerProcess {
-    let mut process = spawn(standalone_binary(), workspace, options);
-    let client = reqwest::Client::new();
-    let deadline = Instant::now() + READY_TIMEOUT;
-    loop {
-        if let Ok(response) = client
-            .get(format!("http://127.0.0.1:{port}/health"))
-            .send()
-            .await
-            && response.status().is_success()
-        {
-            process.port = Some(port);
-            return process;
+    let mut options = options.clone();
+    options.extra_env.push(("UAR_TEST_READY_STDOUT".to_owned(), "1".to_owned()));
+    let mut process = spawn(standalone_binary(), workspace, &options).await;
+    let reported = match process.wait_for_ready(READY_TIMEOUT).await {
+        Ok(port) => port,
+        Err(error) => {
+            let exit = process.wait_exit(READY_TIMEOUT).await;
+            panic!("standalone did not become ready: {error}; exit={exit:?}");
         }
-        if let Some(status) = process.child.try_wait().expect("poll standalone") {
-            panic!(
-                "standalone server exited before readiness: {status}\n{}",
-                process.stderr()
-            );
-        }
-        assert!(
-            Instant::now() < deadline,
-            "standalone server not healthy in time\n{}",
-            process.stderr()
-        );
-        tokio::time::sleep(Duration::from_millis(100)).await;
-    }
+    };
+    assert_eq!(reported, port, "standalone bound port");
+    process.port = Some(reported);
+    process
 }
 
 impl ServerProcess {
     pub fn pid(&self) -> u32 {
-        self.child.id()
+        self.pid
     }
 
     pub fn port(&self) -> u16 {
@@ -347,23 +521,39 @@ impl ServerProcess {
             .collect()
     }
 
-    async fn wait_for_ready(&mut self, timeout: Duration) -> Result<u16, String> {
-        let deadline = Instant::now() + timeout;
+    async fn wait_for_ready(&mut self, _timeout: Duration) -> Result<u16, String> {
+        diagnostic(serde_json::json!({"kind":"process_readiness", "process_id":self.pid, "completion":"pending"}));
+        let ready = self.ready.take().ok_or_else(|| "readiness already consumed".to_owned())?;
+        let outcome = tokio::select! {
+            result = ready => result.map_err(|_| "readiness reader stopped".to_owned())?,
+            status = self.child.wait() => Err(format!("exited before READY: {status:?}\n{}", self.stderr())),
+        };
+        diagnostic(serde_json::json!({"kind":"process_readiness", "process_id":self.pid,
+            "completion":if outcome.is_ok() { "ready" } else { "failed" }}));
+        outcome
+    }
+
+    /// Issue one launch-authorized management command independently of HTTP/DB auth.
+    pub async fn lifecycle(&mut self, operation: Value) -> Value {
+        let identity = uuid::Uuid::new_v4().to_string();
+        diagnostic(serde_json::json!({"kind":"lifecycle_command", "process_id":self.pid,
+            "request_id":identity, "completion":"pending"}));
+        let mut command = serde_json::to_vec(&serde_json::json!({
+            "version": 1, "request_id": identity, "operation": operation,
+        })).expect("serialize control request");
+        command.push(b'\n');
+        let input = self.stdin.as_mut().expect("launch channel is open");
+        input.write_all(&command).await.expect("write lifecycle request");
+        input.flush().await.expect("flush lifecycle request");
         loop {
-            if let Some(line) = self.ready_lines().first() {
-                return line
-                    .trim_start_matches("READY:")
-                    .trim()
-                    .parse::<u16>()
-                    .map_err(|error| format!("bad READY line {line:?}: {error}"));
+            let response = self.lifecycle.recv().await.expect("child exited before lifecycle receipt");
+            if response.get("request_id").and_then(Value::as_str) == Some(identity.as_str()) {
+                assert_eq!(response["version"], 1, "lifecycle protocol version");
+                diagnostic(serde_json::json!({"kind":"lifecycle_command", "process_id":self.pid,
+                    "request_id":identity, "completion":"acknowledged",
+                    "error":sanitized_body(&serde_json::to_vec(&serde_json::json!({"error":response.get("error")})).expect("serialize sanitized control category"))}));
+                return response;
             }
-            if let Some(status) = self.child.try_wait().map_err(|error| error.to_string())? {
-                return Err(format!("exited with {status}\n{}", self.stderr()));
-            }
-            if Instant::now() >= deadline {
-                return Err(format!("no READY within {timeout:?}\n{}", self.stderr()));
-            }
-            tokio::time::sleep(Duration::from_millis(50)).await;
         }
     }
 
@@ -372,34 +562,30 @@ impl ServerProcess {
         self.stdin = None;
     }
 
-    /// Wait up to `timeout` for exit.
-    pub async fn wait_exit(&mut self, timeout: Duration) -> Option<ExitStatus> {
-        let deadline = Instant::now() + timeout;
-        loop {
-            if let Some(status) = self.child.try_wait().expect("poll child") {
-                return Some(status);
-            }
-            if Instant::now() >= deadline {
-                return None;
-            }
-            tokio::time::sleep(Duration::from_millis(50)).await;
+    /// Await the owned child and stdout reader. The legacy duration argument
+    /// does not establish completion; an outer verification interruption is separate.
+    pub async fn wait_exit(&mut self, _timeout: Duration) -> Option<ExitStatus> {
+        diagnostic(serde_json::json!({"kind":"process_cleanup", "process_id":self.pid,
+            "completion":"pending"}));
+        let status = self.child.wait().await.expect("wait for owned child");
+        self.exit_status = Some(status);
+        if let Some(reader) = self.output_reader.take() {
+            reader.await.expect("join child stdout reader").expect("capture child stdout");
         }
+        diagnostic(serde_json::json!({"kind":"process_cleanup", "process_id":self.pid,
+            "completion":"exited_and_output_joined", "success":status.success(), "exit_code":status.code()}));
+        Some(status)
     }
 
     /// Stop a sidecar through its stdin-EOF contract.
     pub async fn stop_sidecar(&mut self) -> ExitStatus {
         self.close_stdin();
-        match self.wait_exit(Duration::from_secs(30)).await {
-            Some(status) => status,
-            None => {
-                let _ = self.child.kill();
-                panic!("sidecar did not exit after stdin EOF\n{}", self.stderr());
-            }
-        }
+        self.wait_exit(Duration::ZERO).await.expect("owned child exit")
     }
 
     /// Stop a standalone server with SIGTERM (Unix) and wait for exit.
     pub async fn stop_standalone(&mut self) -> ExitStatus {
+        if let Some(status) = self.exit_status { return status; }
         #[cfg(unix)]
         {
             let status = Command::new("/bin/kill")
@@ -411,24 +597,39 @@ impl ServerProcess {
         }
         #[cfg(not(unix))]
         {
-            let _ = self.child.kill();
+            let _ = self.child.start_kill();
         }
-        match self.wait_exit(Duration::from_secs(30)).await {
-            Some(status) => status,
-            None => {
-                let _ = self.child.kill();
-                panic!("standalone server did not exit\n{}", self.stderr());
-            }
-        }
+        self.wait_exit(Duration::ZERO).await.expect("owned child exit")
     }
 }
 
 impl Drop for ServerProcess {
     fn drop(&mut self) {
+        if self.exit_status.is_none() {
+            diagnostic(serde_json::json!({"kind":"process_cleanup", "process_id":self.pid,
+                "completion":"cancellation_requested_unconfirmed"}));
+        }
         self.stdin = None;
-        if self.child.try_wait().ok().flatten().is_none() {
-            let _ = self.child.kill();
-            let _ = self.child.wait();
+        // Emergency cancellation only. Explicit close paths await child.wait;
+        // Tokio also owns platform reaping when a canceled fixture drops Child.
+        let _ = self.child.start_kill();
+        if let Some(reader) = self.output_reader.take() { reader.abort(); }
+    }
+}
+
+/// Preserve the test body's original failure after awaited fixture finalization.
+pub fn finish_fixture<T>(body: std::thread::Result<T>, cleanup: std::thread::Result<ExitStatus>) -> T {
+    diagnostic(serde_json::json!({"kind":"fixture_finalization", "body_panicked":body.is_err(),
+        "cleanup_panicked":cleanup.is_err(), "cleanup_success":cleanup.as_ref().ok().map(ExitStatus::success)}));
+    match body {
+        Err(panic) => {
+            if cleanup.is_err() { eprintln!("fixture cleanup also failed; original test failure retained"); }
+            std::panic::resume_unwind(panic)
+        }
+        Ok(value) => {
+            let status = cleanup.unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+            assert!(status.success(), "fixture process shutdown failed: {status}");
+            value
         }
     }
 }
@@ -478,6 +679,7 @@ pub async fn raw_request(
     target: &str,
     headers: &[(&str, &str)],
 ) -> RawResponse {
+    diagnostic(serde_json::json!({"kind":"http_request", "completion":"pending"}));
     let mut request = format!("{method} {target} HTTP/1.1\r\n");
     for (name, value) in headers {
         request.push_str(&format!("{name}: {value}\r\n"));
@@ -493,25 +695,20 @@ pub async fn raw_request(
         .write_all(request.as_bytes())
         .await
         .expect("write request");
-    read_response(&mut stream).await
+    let response = read_response(&mut stream).await;
+    record_response(response.status, &response.body);
+    response
 }
 
 async fn read_response(stream: &mut tokio::net::TcpStream) -> RawResponse {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
     let mut buffer = Vec::new();
     let mut chunk = [0_u8; 8192];
     loop {
-        if let Some(parsed) = parse_complete(&buffer) {
-            return parsed;
-        }
-        let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-        if remaining.is_zero() {
-            break;
-        }
-        match tokio::time::timeout(remaining, stream.read(&mut chunk)).await {
-            Ok(Ok(0)) | Err(_) => break,
-            Ok(Ok(count)) => buffer.extend_from_slice(&chunk[..count]),
-            Ok(Err(_)) => break,
+        if let Some(parsed) = parse_complete(&buffer) { return parsed; }
+        match stream.read(&mut chunk).await {
+            Ok(0) => break,
+            Ok(count) => buffer.extend_from_slice(&chunk[..count]),
+            Err(error) => panic!("HTTP response transport failed before completion: {}", error.kind()),
         }
     }
     parse_partial(&buffer).unwrap_or_else(|| {
@@ -728,28 +925,35 @@ pub async fn drive_run(
         .expect("create run");
     let status = created.status();
     let create_body = created.text().await.expect("create run body");
-    assert!(status.is_success(), "create run: {status} {create_body}");
+    record_response(status.as_u16(), create_body.as_bytes());
+    if !status.is_success() {
+        let safe = bearer.map_or_else(|| create_body.clone(), |token| create_body.replace(token, "[redacted]"));
+        panic!("create run: {status} {safe}");
+    }
     let created: Value = serde_json::from_str(&create_body).expect("create run JSON");
     let run_id = created["run_id"].as_str().expect("run id").to_owned();
     let mut response = with_auth(client.get(format!("{base_url}/api/uar/runs/{run_id}/stream")))
         .send()
         .await
         .expect("open run stream");
-    assert!(
-        response.status().is_success(),
-        "run stream: {}",
-        response.status()
-    );
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.expect("run stream error body");
+        record_response(status.as_u16(), body.as_bytes());
+        let body = bearer.map_or_else(|| body.clone(), |token| body.replace(token, "[redacted]"));
+        panic!("run stream: {status} {body}");
+    }
     let mut stream = String::new();
     let mut approvals = 0;
     let deadline = tokio::time::Instant::now() + timeout;
     loop {
         let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-        if remaining.is_zero() {
-            break;
-        }
-        let Ok(Ok(Some(chunk))) = tokio::time::timeout(remaining, response.chunk()).await else {
-            break;
+        assert!(!remaining.is_zero(), "verification interrupted before run completion: {run_id}");
+        let chunk = match tokio::time::timeout(remaining, response.chunk()).await {
+            Ok(Ok(Some(chunk))) => chunk,
+            Ok(Ok(None)) => panic!("stream ended without terminal event: {run_id} {stream}"),
+            Ok(Err(_)) => panic!("run stream transport failed: {run_id} {stream}"),
+            Err(_) => panic!("verification interrupted before run completion: {run_id} {stream}"),
         };
         stream.push_str(&String::from_utf8_lossy(&chunk));
         let requested = approval_ids(&stream, &run_id);
@@ -760,11 +964,13 @@ pub async fn drive_run(
                     .send()
                     .await
                     .expect("approve tool call");
-            assert!(
-                decision.status().is_success(),
-                "approval: {}",
-                decision.status()
-            );
+            if !decision.status().is_success() {
+                let status = decision.status();
+                let body = decision.text().await.expect("approval error body");
+                record_response(status.as_u16(), body.as_bytes());
+                let body = bearer.map_or_else(|| body.clone(), |token| body.replace(token, "[redacted]"));
+                panic!("approval: {status} {body}");
+            }
             approvals += 1;
         }
         if [

@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 
 trace_path = sys.argv[1]
 
@@ -38,6 +39,12 @@ for line in sys.stdin:
             os.fsync(trace.fileno())
         if mode == "unknown":
             os._exit(23)
+        if mode == "timeout":
+            time.sleep(90)
+        if mode == "protocol":
+            print(json.dumps({"jsonrpc": "2.0", "id": request_id,
+                              "error": {"code": -32099, "message": "fixture protocol refusal"}}), flush=True)
+            continue
         result = {
             "content": [
                 {"type": "text", "text": "fixture-response-control:λ"},
@@ -48,9 +55,10 @@ for line in sys.stdin:
                 }},
             ],
             "structuredContent": {"mode": mode, "nested": {"control": 42}},
-            "isError": mode == "application",
             "_meta": {"fixture": "metadata-control"},
         }
+        if mode != "omitted":
+            result["isError"] = mode == "application"
     else:
         print(json.dumps({"jsonrpc": "2.0", "id": request_id,
                           "error": {"code": -32601, "message": "method not found"}}), flush=True)

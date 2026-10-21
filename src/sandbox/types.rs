@@ -97,6 +97,10 @@ pub enum ExecutionMode {
 
 #[derive(Debug, thiserror::Error)]
 pub enum SandboxError {
+    /// An effect may have happened but its acknowledgment was not established.
+    /// Callers must retain ownership and must not infer rollback or retry safety.
+    #[error("Sandbox outcome unknown: {0}")]
+    OutcomeUnknown(String),
     #[error("Sandbox creation failed: {0}")]
     CreationFailed(String),
     #[error("Execution failed: {0}")]

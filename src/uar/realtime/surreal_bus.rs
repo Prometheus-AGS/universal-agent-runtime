@@ -1,233 +1,232 @@
-//! SurrealDB-backed live-query bus.
-//!
-//! Opens one `.select(table).live()` stream per [`EntityTopic`] at startup and
-//! forwards `Notification<Value>` events into a per-topic broadcast channel.
-//! SSE handlers subscribe to the receiver side. Streams are wrapped in a
-//! supervised reconnect loop with exponential backoff to survive transient
-//! SurrealDB disconnects.
+//! Scope-owned Surreal subscriptions with explicit reconnect generations.
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::Result;
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use surrealdb::types::Action;
-use surrealdb::{Notification, Surreal, engine::any::Any};
-use tokio::sync::{Mutex, broadcast};
-use tokio::task::JoinHandle;
-use tokio_util::sync::CancellationToken;
-use tracing::{debug, info, warn};
+use surrealdb::{Surreal, engine::any::Any};
+use tokio::sync::broadcast;
 
-use super::{
-    EntityTopic, LiveAction, LiveEvent, RealtimeBus, RealtimePublishError,
-    is_governance_enabled_event,
-};
+use super::{EntityTopic, LiveAction, LiveEvent, RealtimeBus, RealtimePublishError,
+    is_governance_enabled_event, lifecycle::BusLifecycle};
 
-/// Broadcast channel capacity per topic. Slow consumers get a `Lagged` error
-/// but the publisher never blocks.
 const CHANNEL_CAPACITY: usize = 256;
 
-/// Supervised reconnect bounds for a dropped live stream.
-const RECONNECT_INITIAL: Duration = Duration::from_millis(250);
-const RECONNECT_MAX: Duration = Duration::from_secs(30);
-
-#[derive(Clone)]
+/// Owns only subscriptions registered by this bus, including their cleanup.
+#[derive(Clone, Debug)]
 pub struct LiveQueryBus {
     senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>,
-    lifecycle: Arc<LiveQueryLifecycle>,
-}
-
-struct LiveQueryLifecycle {
-    shutdown: CancellationToken,
-    tasks: Mutex<Option<Vec<JoinHandle<()>>>>,
-}
-
-impl std::fmt::Debug for LiveQueryBus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LiveQueryBus")
-            .field("topics", &self.senders.keys().collect::<Vec<_>>())
-            .field("shutting_down", &self.lifecycle.shutdown.is_cancelled())
-            .finish()
-    }
+    lifecycle: Arc<BusLifecycle>,
 }
 
 impl LiveQueryBus {
-    /// Construct the bus and spawn a supervised task per topic.
-    ///
-    /// The `db` handle must already have a namespace + database selected. The
-    /// constructor returns immediately; live streams start opening in the
-    /// background. If a topic's stream cannot be opened, that topic's tasks
-    /// retry with exponential backoff — the bus itself stays usable for any
-    /// topics whose streams are healthy.
-    pub fn start(db: Surreal<Any>) -> Self {
-        let mut senders = HashMap::with_capacity(EntityTopic::ALL.len());
-        let shutdown = CancellationToken::new();
-        let mut tasks = Vec::with_capacity(EntityTopic::ALL.len());
-        for topic in EntityTopic::ALL {
-            let (tx, _) = broadcast::channel(CHANNEL_CAPACITY);
-            senders.insert(*topic, tx.clone());
-            let db = db.clone();
-            let topic = *topic;
-            let topic_shutdown = shutdown.clone();
-            tasks.push(tokio::spawn(async move {
+    /// Start one initial subscription attempt per topic. Await `ready` before
+    /// advertising readiness. The legacy sweep argument is intentionally ignored:
+    /// table-wide query deletion cannot establish ownership on shared stores.
+    pub fn start(db: Surreal<Any>, _legacy_sweep: bool) -> Self {
+        Self::start_source(SubscriptionSource::Persistence(db),
+            EntityTopic::ALL.iter().copied().filter(|topic| *topic != EntityTopic::Memory).collect())
+    }
+
+    /// Memory has a separate authenticated database and independent ownership.
+    pub fn start_memory(client: crate::uar::memory::service::MemorySubscriptionClient) -> Self {
+        Self::start_source(SubscriptionSource::Memory(client), vec![EntityTopic::Memory])
+    }
+
+    fn start_source(source: SubscriptionSource, topics: Vec<EntityTopic>) -> Self {
+        let senders = Arc::new(topics.iter().map(|topic| {
+            (*topic, broadcast::channel(CHANNEL_CAPACITY).0)
+        }).collect::<HashMap<_, _>>());
+        let lifecycle = BusLifecycle::new(Arc::clone(&senders));
+        let transport_source = source.clone();
+        let transport_owner = Arc::clone(&lifecycle);
+        lifecycle.spawn(async move {
+            let mut transport = transport_source.transport_events()?;
+            let stop = transport_owner.stop_token();
+            loop {
                 tokio::select! {
-                    () = topic_shutdown.cancelled() => {
-                        info!(topic = %topic, "live stream supervisor shutting down");
+                    () = stop.cancelled() => return Ok(()),
+                    changed = transport.changed() => {
+                        changed.map_err(|_| anyhow::anyhow!("transport state owner ended"))?;
+                        let state = transport.borrow_and_update().clone();
+                        match state {
+                            // Availability is evidence for the trusted host,
+                            // not authority to recreate subscriptions. Only a
+                            // host-issued `request_reconnect` advances their
+                            // generation and starts another registration.
+                            surrealdb::TransportState::Available => {}
+                            _ => {
+                                let states = transport_owner.states().borrow().clone();
+                                for (topic, state) in states {
+                                    transport_owner.transition(topic, state.generation, false, Some("transport unavailable".to_owned()));
+                                }
+                            }
+                        }
                     }
-                    () = supervise_topic(db, topic, tx) => {}
                 }
-            }));
-        }
-        Self {
-            senders: Arc::new(senders),
-            lifecycle: Arc::new(LiveQueryLifecycle {
-                shutdown,
-                tasks: Mutex::new(Some(tasks)),
-            }),
-        }
-    }
-
-    /// Cancel and join every UAR-owned live-query supervisor.
-    pub(crate) async fn shutdown(&self) {
-        self.lifecycle.shutdown.cancel();
-        let tasks = self.lifecycle.tasks.lock().await.take().unwrap_or_default();
-        for task in tasks {
-            if let Err(error) = task.await {
-                warn!(%error, "live stream supervisor task failed during shutdown");
             }
+        });
+        for topic in topics {
+            let source = source.clone();
+            let owner = Arc::clone(&lifecycle);
+            let sender = senders[&topic].clone();
+            lifecycle.spawn(async move { supervise_topic(source, topic, sender, owner).await });
+        }
+        Self { senders, lifecycle }
+    }
+
+    /// Observe database-acknowledged readiness for all enrolled topics.
+    pub async fn ready(&self) -> Result<()> { self.lifecycle.ready().await }
+
+    /// Stop, explicitly close each stream, and join every owned worker.
+    pub async fn shutdown(&self) -> Result<()> { self.lifecycle.shutdown().await }
+}
+
+#[derive(Clone)]
+enum SubscriptionSource {
+    Persistence(Surreal<Any>),
+    Memory(crate::uar::memory::service::MemorySubscriptionClient),
+}
+
+/// Subscription streams have distinct closure contracts. Persistence owns an
+/// SDK stream directly; memory owns a scope lease until its wrapper receives
+/// the SDK's close acknowledgement.
+enum SubscriptionStream {
+    Persistence(surrealdb::method::Stream<Vec<surrealdb::types::Value>>),
+    Memory(crate::uar::memory::service::MemoryLiveStream),
+}
+
+impl SubscriptionStream {
+    async fn close(&mut self) -> Result<()> {
+        match self {
+            Self::Persistence(stream) => stream.close().await.map_err(anyhow::Error::from),
+            Self::Memory(stream) => stream.close().await,
         }
     }
+}
 
-    /// Subscribe to a topic's broadcast stream.
-    pub fn subscribe(&self, topic: EntityTopic) -> Option<broadcast::Receiver<LiveEvent>> {
-        self.senders.get(&topic).map(|s| s.subscribe())
+impl Stream for SubscriptionStream {
+    type Item = <surrealdb::method::Stream<Vec<surrealdb::types::Value>> as Stream>::Item;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        context: &mut Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        match self.get_mut() {
+            Self::Persistence(stream) => Pin::new(stream).poll_next(context),
+            Self::Memory(stream) => Pin::new(stream).poll_next(context),
+        }
     }
+}
 
-    /// Number of active subscribers on a topic (for observability).
-    pub fn subscriber_count(&self, topic: EntityTopic) -> usize {
-        self.senders
-            .get(&topic)
-            .map(|s| s.receiver_count())
-            .unwrap_or(0)
+impl SubscriptionSource {
+    fn transport_events(&self) -> Result<tokio::sync::watch::Receiver<surrealdb::TransportState>> {
+        match self {
+            Self::Persistence(db) => db.subscribe_transport_state().map_err(anyhow::Error::from),
+            Self::Memory(client) => client.subscribe_transport_state(),
+        }
     }
 }
 
 impl RealtimeBus for LiveQueryBus {
+    fn lifecycle(&self) -> Option<Arc<BusLifecycle>> { Some(Arc::clone(&self.lifecycle)) }
     fn subscribe(&self, topic: EntityTopic) -> Option<broadcast::Receiver<LiveEvent>> {
-        LiveQueryBus::subscribe(self, topic)
+        self.senders.get(&topic).map(broadcast::Sender::subscribe)
     }
-
     fn subscriber_count(&self, topic: EntityTopic) -> usize {
-        LiveQueryBus::subscriber_count(self, topic)
+        self.senders.get(&topic).map_or(0, broadcast::Sender::receiver_count)
     }
-
     fn publish(&self, event: LiveEvent) -> std::result::Result<(), RealtimePublishError> {
-        let sender = self
-            .senders
-            .get(&event.topic)
+        let sender = self.senders.get(&event.topic)
             .ok_or(RealtimePublishError::TopicUnavailable(event.topic))?;
         let _ = sender.send(event);
         Ok(())
     }
 }
 
-async fn supervise_topic(db: Surreal<Any>, topic: EntityTopic, tx: broadcast::Sender<LiveEvent>) {
-    let mut backoff = RECONNECT_INITIAL;
+async fn supervise_topic(source: SubscriptionSource, topic: EntityTopic,
+    sender: broadcast::Sender<LiveEvent>, owner: Arc<BusLifecycle>) -> Result<()>
+{
+    let stop = owner.stop_token();
+    let mut reconnect = owner.reconnect_events();
     loop {
-        match run_live_stream(&db, topic, &tx).await {
-            Ok(()) => {
-                // Stream ended cleanly (host shutdown, table dropped, etc.).
-                info!(topic = %topic, "live stream ended cleanly; topic supervisor exiting");
-                return;
-            }
-            Err(err) => {
-                let err_str = err.to_string();
-                // "table does not exist" is normal early-life for empty tables;
-                // log at debug and use the maximum backoff so we don't spam.
-                if err_str.contains("does not exist") {
-                    debug!(
-                        topic = %topic,
-                        "table not yet created; waiting for first write"
-                    );
-                    tokio::time::sleep(RECONNECT_MAX).await;
-                } else {
-                    warn!(
-                        topic = %topic,
-                        error = %err,
-                        backoff_ms = backoff.as_millis() as u64,
-                        "live stream failed; reconnecting"
-                    );
-                    tokio::time::sleep(backoff).await;
-                    backoff = (backoff * 2).min(RECONNECT_MAX);
+        if stop.is_cancelled() { return Ok(()); }
+        let generation = *reconnect.borrow_and_update();
+        let attempt = async {
+            // Required subscriptions cannot depend on a later write creating a
+            // table. This idempotent schema operation is part of initialization.
+            match &source {
+                SubscriptionSource::Persistence(db) => {
+                    db.query(format!("DEFINE TABLE IF NOT EXISTS {} SCHEMALESS", topic.table()))
+                        .await?.check()?;
+                    db.select::<Vec<surrealdb::types::Value>>(topic.table())
+                        .live()
+                        .await
+                        .map(SubscriptionStream::Persistence)
+                        .map_err(anyhow::Error::from)
                 }
+                SubscriptionSource::Memory(client) => client
+                    .subscribe_memory()
+                    .await
+                    .map(SubscriptionStream::Memory),
+            }
+        }.await;
+        match attempt {
+            Ok(mut stream) => {
+                owner.transition(topic, generation, true, None);
+                let disconnected = loop {
+                    tokio::select! {
+                        () = stop.cancelled() => break false,
+                        changed = reconnect.changed() => {
+                            if changed.is_err() { break false; }
+                            break false;
+                        }
+                        next = stream.next() => {
+                            match next {
+                                Some(Ok(notification)) => {
+                                    let action = match notification.action {
+                                        Action::Create => LiveAction::Create,
+                                        Action::Update => LiveAction::Update,
+                                        Action::Delete => LiveAction::Delete,
+                                        _ => continue,
+                                    };
+                                    let json = crate::uar::persistence::providers::surreal::value_to_json(notification.data)?;
+                                    let id = json.get("id").and_then(serde_json::Value::as_str)
+                                        .unwrap_or_default().to_owned();
+                                    let event = LiveEvent { action, topic, id, data: json };
+                                    if !is_governance_enabled_event(&event) { let _ = sender.send(event); }
+                                }
+                                Some(Err(_)) | None => break true,
+                            }
+                        }
+                    }
+                };
+                // Patched SDK closes in the original registration session and
+                // acknowledges command/local registration cleanup. No Killed
+                // notification is required or assumed to arrive.
+                if disconnected {
+                    owner.transition(topic, generation, false, Some("subscription ended".to_owned()));
+                }
+                if stream.close().await.is_err() {
+                    owner.record_failure(format!("subscription cleanup outcome unknown: {topic}, generation {generation}"));
+                }
+                if stop.is_cancelled() { return Ok(()); }
+                if !disconnected { continue; }
+                owner.transition(topic, generation, false, Some("subscription ended".to_owned()));
+            }
+            Err(_) => owner.transition(topic, generation, false, Some("subscription registration failed".to_owned())),
+        }
+        tokio::select! {
+            () = stop.cancelled() => return Ok(()),
+            changed = reconnect.changed() => {
+                changed.map_err(|_| anyhow::anyhow!("subscription control channel ended"))?;
             }
         }
     }
-}
-
-async fn run_live_stream(
-    db: &Surreal<Any>,
-    topic: EntityTopic,
-    tx: &broadcast::Sender<LiveEvent>,
-) -> Result<()> {
-    let mut stream = db
-        .select::<Vec<surrealdb::types::Value>>(topic.table())
-        .live()
-        .await?;
-    info!(topic = %topic, table = %topic.table(), "live stream opened");
-
-    while let Some(notification) = stream.next().await {
-        let notification: Notification<surrealdb::types::Value> = match notification {
-            Ok(n) => n,
-            Err(err) => {
-                warn!(topic = %topic, error = %err, "notification error");
-                return Err(anyhow::anyhow!(err));
-            }
-        };
-
-        let action = match notification.action {
-            Action::Create => LiveAction::Create,
-            Action::Update => LiveAction::Update,
-            Action::Delete => LiveAction::Delete,
-            _ => continue,
-        };
-
-        let json = match crate::uar::persistence::providers::surreal::value_to_json(
-            notification.data.clone(),
-        ) {
-            Ok(v) => v,
-            Err(err) => {
-                debug!(topic = %topic, error = %err, "could not serialize notification payload");
-                continue;
-            }
-        };
-        let id = json
-            .get("id")
-            .and_then(|v| v.as_str())
-            .map(str::to_string)
-            .unwrap_or_default();
-
-        let event = LiveEvent {
-            action,
-            topic,
-            id,
-            data: json,
-        };
-
-        // Governance publishes this event explicitly only after the coherent
-        // runtime snapshot has advanced. Forwarding the database notification
-        // here could make clients refetch the old snapshot in the write→publish
-        // interval.
-        if is_governance_enabled_event(&event) {
-            continue;
-        }
-
-        // `send` only errors when there are no subscribers — that's fine, just
-        // means nobody is listening yet.
-        let _ = tx.send(event);
-    }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -238,19 +237,15 @@ mod tests {
     async fn shutdown_is_idempotent_and_joins_topic_supervisors() {
         let scratch = tempfile::tempdir().expect("create SurrealKV scratch directory");
         let endpoint = format!("surrealkv://{}", scratch.path().join("db").display());
-        let db = surrealdb::engine::any::connect(&endpoint)
-            .await
-            .expect("connect temporary SurrealKV database");
-        db.use_ns("test")
-            .use_db("test")
-            .await
-            .expect("select test namespace and database");
-        let bus = LiveQueryBus::start(db);
-
-        bus.shutdown().await;
-        bus.shutdown().await;
-
-        assert!(bus.lifecycle.shutdown.is_cancelled());
-        assert!(bus.lifecycle.tasks.lock().await.is_none());
+        let db = surrealdb::engine::any::connect(&endpoint).await.expect("connect temporary database");
+        db.use_ns("test").use_db("test").await.expect("select namespace and database");
+        let bus = LiveQueryBus::start(db.clone(), false);
+        bus.ready().await.expect("subscriptions ready");
+        bus.shutdown().await.expect("subscriptions closed");
+        bus.shutdown().await.expect("same closure result");
+        assert!(bus.lifecycle.states().borrow().values().all(|state| !state.ready));
+        db.shutdown().await.expect("embedded engine closed");
+        let reopened = surrealdb::engine::any::connect(&endpoint).await.expect("immediate reopen after close acknowledgement");
+        reopened.shutdown().await.expect("close reopened engine");
     }
 }

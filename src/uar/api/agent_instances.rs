@@ -1,7 +1,7 @@
 //! Authenticated administration of durable ordinary-agent instances.
 
 use std::sync::Arc;
-use std::{convert::Infallible, time::Duration};
+use std::convert::Infallible;
 
 use axum::{
     Json, Router,
@@ -9,7 +9,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{
         IntoResponse, Response,
-        sse::{Event, KeepAlive, Sse},
+        sse::{Event, Sse},
     },
     routing::{get, post},
 };
@@ -193,6 +193,10 @@ async fn stream_events(
             .and_then(|value| value.to_str().ok())
             .and_then(|value| value.parse::<u64>().ok())
     });
+    // Subscribe before the authoritative snapshot. A committed mutation that
+    // races the snapshot leaves the watch receiver changed, so the stream
+    // performs a second durable read instead of relying on a timed poll.
+    let mut committed_work = controller.subscribe_committed_work();
     let initial = match controller.get(&owner, &workspace, &id).await {
         Ok(view) => view,
         Err(error) => return error_response(error),
@@ -200,13 +204,16 @@ async fn stream_events(
     let stream = async_stream::stream! {
         let mut initial = Some(initial);
         let mut live = false;
-        let mut ticker = tokio::time::interval(Duration::from_millis(500));
-        ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
-            ticker.tick().await;
             let view = if let Some(view) = initial.take() {
                 view
             } else {
+                if committed_work.changed().await.is_err() {
+                    yield Ok::<Event, Infallible>(Event::default()
+                        .event("instance.error")
+                        .data(json!({"code": "committed_work_source_closed"}).to_string()));
+                    break;
+                }
                 match controller.get(&owner, &workspace, &id).await {
                     Ok(view) => view,
                     Err(error) => {
@@ -249,9 +256,7 @@ async fn stream_events(
             live = true;
         }
     };
-    Sse::new(stream)
-        .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
-        .into_response()
+    Sse::new(stream).into_response()
 }
 
 async fn submit_turn(

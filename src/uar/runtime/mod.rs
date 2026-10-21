@@ -8,6 +8,7 @@ pub mod context;
 pub mod cost_budget;
 pub mod graph;
 pub mod instance;
+pub mod lifecycle;
 pub mod manager;
 pub mod matching;
 pub mod native_skill;

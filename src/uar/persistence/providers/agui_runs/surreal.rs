@@ -38,8 +38,20 @@ pub(super) async fn list(store: &SurrealDbProvider, owner: &str, agent: &str, th
 pub(super) async fn transition(store: &SurrealDbProvider, before: &AguiRunBinding, after: &AguiRunBinding) -> anyhow::Result<bool> {
     anyhow::ensure!(store.durable_instances, "durable_agui_unsupported");
     before.validate_transition(after)?;
-    let mut response = store.db.query("UPDATE type::record('agui_runs',$key) SET data=$after WHERE data=$before RETURN VALUE data")
-        .bind(("key",before.storage_key())).bind(("before",serde_json::to_string(before)?)).bind(("after",serde_json::to_string(after)?)).await?.check()?;
+    let response = store.db.query("UPDATE type::record('agui_runs',$key) SET data=$after WHERE data=$before RETURN VALUE data")
+        .bind(("key",before.storage_key())).bind(("before",serde_json::to_string(before)?)).bind(("after",serde_json::to_string(after)?)).await?;
+    // A concurrent writer that commits the same row first makes this implicit transaction fail at COMMIT with the
+    // typed `QueryError::TransactionConflict` (surrealdb-types 3.3.0 error.rs:924; surrealkv `TransactionWriteConflict`
+    // -> kvs `TransactionConflict`, surrealdb-kvs-surrealkv 3.3.0 lib.rs:37; executor.rs:1469/1944 keep the kind).
+    // That is a lost compare-and-swap, not a failure: report `false` so the caller reloads. Any other error stays fatal.
+    let mut response = match response.check() {
+        Ok(response) => response,
+        Err(error) if matches!(error.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)) => {
+            tracing::debug!(kind = "TransactionConflict", "AG-UI run transition lost a write race; reporting compare-and-swap miss");
+            return Ok(false);
+        }
+        Err(error) => return Err(error.into()),
+    };
     let rows: Vec<String> = response.take(0)?;
     Ok(rows.len() == 1)
 }

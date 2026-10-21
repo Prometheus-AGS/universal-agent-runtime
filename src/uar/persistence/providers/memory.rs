@@ -30,7 +30,7 @@ use crate::{
             prompt_caching::UserPromptCachingSettings,
             skills::{Skill, SkillMatch},
         },
-        persistence::{CostEntry, PersistenceLayer},
+        persistence::{CostEntry, DurableStoreEligibility, PersistenceLayer},
         settings::schema::{Settings, SettingsType},
     },
 };
@@ -110,6 +110,12 @@ fn write<T>(lock: &RwLock<T>) -> Result<std::sync::RwLockWriteGuard<'_, T>> {
 
 #[async_trait]
 impl PersistenceLayer for InMemoryProvider {
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        DurableStoreEligibility::UnsupportedBackend
+    }
+    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> {
+        Ok(None)
+    }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> {
         anyhow::ensure!(record.state == ApprovalState::Pending && record.decision.is_none(), "New approval must be pending");
         let mut records = write(&self.approval_records)?;
@@ -422,6 +428,16 @@ impl PersistenceLayer for InMemoryProvider {
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
         let key = crate::uar::persistence::session_storage_key(owner_id, id);
         Ok(read(&self.sessions)?.get(&key).cloned())
+    }
+
+    async fn list_sessions(&self, owner_id: &str) -> Result<Vec<Session>> {
+        let mut sessions = read(&self.sessions)?
+            .values()
+            .filter(|session| session.owner_id() == owner_id)
+            .cloned()
+            .collect::<Vec<_>>();
+        sessions.sort_by(|left, right| left.id().cmp(right.id()));
+        Ok(sessions)
     }
 
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {

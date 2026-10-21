@@ -312,7 +312,7 @@ mod tests {
         let chunker = Chunker::new(strategy, None);
         // Generate enough text to produce multiple chunks.
         let text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(30);
-        let chunks = chunker.chunk(text).await.unwrap();
+        let chunks = chunker.chunk(&text).await.unwrap();
         assert!(chunks.len() > 1, "expected multiple chunks from long text");
         // All chunks except possibly the last should be at least size/2.
         for (i, chunk) in chunks.iter().enumerate() {

@@ -53,6 +53,13 @@ impl CheckpointHost {
         }
     }
 
+    /// Whether this host can mint resume authority at all. Anonymous runs have
+    /// no verified checkpoint principal, so no envelope they produce could ever
+    /// be resumed; callers must skip the write instead of failing the run.
+    pub(crate) fn has_resume_authority(&self) -> bool {
+        self.owner_key.is_some()
+    }
+
     /// Handle a checkpoint intent on the host, preserving exact projected bytes.
     /// # Errors
     /// Refuses absent owner/durability, revoked bindings, cancellation, or a

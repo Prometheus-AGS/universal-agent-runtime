@@ -79,7 +79,8 @@ pub async fn build_context_with_hits(
         };
     }
 
-    // Rank and format memories up to the token budget.
+    // Rank and format memories up to the token budget; a record that does not fit
+    // is skipped so lower-ranked records that do fit are still included.
     let mut total_tokens = 0u32;
     let mut lines: Vec<String> = Vec::with_capacity(memories.len());
     let mut hits: Vec<Memory> = Vec::new();
@@ -92,7 +93,7 @@ pub async fn build_context_with_hits(
         });
 
         if total_tokens + token_estimate > effective_max {
-            break;
+            continue;
         }
 
         total_tokens += token_estimate;

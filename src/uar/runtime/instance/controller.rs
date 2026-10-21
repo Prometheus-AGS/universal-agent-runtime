@@ -64,6 +64,8 @@ pub struct AgentInstanceController {
     pub(crate) actors: Arc<ActorCollaboration>,
     pub(crate) store: Arc<dyn PersistenceLayer>,
     pub(crate) catalog: Arc<CollaborationCatalogService>,
+    /// Host lifecycle accounting for pumps and one-shot passivation work.
+    pub(super) lifecycle_scope: crate::uar::runtime::lifecycle::ResourceScope,
     booted_at: chrono::DateTime<Utc>,
     pub(super) active: Mutex<HashMap<InstanceKey, ActiveActor>>,
     pub(super) pumps: Mutex<HashSet<InstanceKey>>,
@@ -85,11 +87,24 @@ impl AgentInstanceController {
         store: Arc<dyn PersistenceLayer>,
         catalog: Arc<CollaborationCatalogService>,
     ) -> Arc<Self> {
+        Self::new_with_lifecycle(manager, actors, store, catalog, None)
+    }
+
+    #[must_use]
+    pub fn new_with_lifecycle(
+        manager: Arc<RunManager>,
+        actors: Arc<ActorCollaboration>,
+        store: Arc<dyn PersistenceLayer>,
+        catalog: Arc<CollaborationCatalogService>,
+        lifecycle_scope: Option<crate::uar::runtime::lifecycle::ResourceScope>,
+    ) -> Arc<Self> {
+        let lifecycle_scope = lifecycle_scope.unwrap_or_else(|| manager.lifecycle_scope());
         Arc::new(Self {
             manager,
             actors,
             store,
             catalog,
+            lifecycle_scope,
             booted_at: Utc::now(),
             active: Mutex::new(HashMap::new()),
             pumps: Mutex::new(HashSet::new()),
@@ -151,6 +166,7 @@ impl AgentInstanceController {
             .create_agent_instance(&record)
             .await
             .map_err(store_error)?;
+        self.manager.notify_committed_work();
         if profile == InstanceActivationProfile::Resident {
             return self
                 .activate(
@@ -173,6 +189,14 @@ impl AgentInstanceController {
         Ok(AgentInstanceView::from(
             &self.load(owner, workspace, id).await?,
         ))
+    }
+
+    /// Subscribe before reading an instance snapshot. The generation is only a
+    /// committed-work wakeup; consumers must reread the durable instance after
+    /// every change or gap.
+    #[must_use]
+    pub fn subscribe_committed_work(&self) -> tokio::sync::watch::Receiver<u64> {
+        self.manager.subscribe_committed_work()
     }
 
     pub async fn list(
@@ -398,6 +422,7 @@ impl AgentInstanceController {
                 .await
                 .map_err(store_error)?
             {
+                self.manager.notify_committed_work();
                 return Ok(next);
             }
         }
@@ -439,6 +464,7 @@ impl AgentInstanceController {
                 .await
                 .map_err(store_error)?;
             if saved {
+                self.manager.notify_committed_work();
                 return Ok(next);
             }
         }

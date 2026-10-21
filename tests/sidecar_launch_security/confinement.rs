@@ -1,8 +1,9 @@
 //! The launch token never leaves sidecar memory (tasks 2.19–2.20).
 
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
+use futures::FutureExt;
+use tokio::io::{AsyncBufReadExt as _, AsyncWriteExt as _};
 
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 
@@ -71,16 +72,17 @@ const CONFINEMENT_INPUT: &str = "run the environment probe";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn token_absent_from_argv_and_env_of_sidecar_and_children() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::token_absent_from_argv_and_env_of_sidecar_and_children"), async {
     let sentinel = format!("sentinel{}", uuid::Uuid::new_v4().simple());
     let outputs = tempfile::tempdir().expect("probe output dir");
     let probe_output = outputs.path().join("terminal.jsonl");
-    // The probe lingers so the process-table walk can read it. macOS hides the
-    // environment of platform binaries such as /bin/sh, so the probe (not the
-    // shell) is the child whose inherited environment proves readability.
-    let command = format!("{} --linger-ms 3000", probe_command(&probe_output));
+    let control = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("probe control listener");
+    let control_token = random_token();
+    let command = format!("{} --control {} --control-token {}", probe_command(&probe_output),
+        control.local_addr().expect("probe control address"), control_token);
     let fixtures = with_terminal_call(FixtureSet::new(), CONFINEMENT_INPUT, &command);
     let sentinel_for_launch = sentinel.clone();
-    let sidecar = boot_sidecar(fixtures, "", move |mut options| {
+    let mut sidecar = boot_sidecar(fixtures, "", move |mut options| {
         let renamed = options
             .config_path
             .with_file_name(format!("config-{sentinel_for_launch}.yaml"));
@@ -89,6 +91,8 @@ async fn token_absent_from_argv_and_env_of_sidecar_and_children() {
         options.env("UAR_PROBE_SENTINEL", sentinel_for_launch)
     })
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let sidecar_pid = sidecar.process.pid();
 
     // Sentinel control: the inspector must be able to read argv and environ,
@@ -108,34 +112,35 @@ async fn token_absent_from_argv_and_env_of_sidecar_and_children() {
         "sidecar argv unreadable: {own:?}"
     );
 
-    let observed = Arc::new(Mutex::new(Vec::<ProcessView>::new()));
-    let stop = Arc::new(AtomicBool::new(false));
-    let watcher = {
-        let observed = Arc::clone(&observed);
-        let stop = Arc::clone(&stop);
-        tokio::task::spawn_blocking(move || {
-            while !stop.load(Ordering::Relaxed) {
-                let tree = process_tree(sidecar_pid);
-                observed
-                    .lock()
-                    .expect("observation lock")
-                    .extend(tree.into_iter().filter(|view| view.pid != sidecar_pid));
-                std::thread::sleep(Duration::from_millis(100));
-            }
-        })
-    };
-    let transcript = drive_run(
-        &sidecar.base_url(),
-        Some(&sidecar.token),
-        test_agent(None),
-        CONFINEMENT_INPUT,
+    let base_url = sidecar.base_url();
+    let run = std::panic::AssertUnwindSafe(drive_run(
+        &base_url, Some(&sidecar.token), test_agent(None), CONFINEMENT_INPUT,
         Duration::from_secs(90),
-    )
-    .await;
-    stop.store(true, Ordering::Relaxed);
-    watcher.await.expect("process watcher");
+    )).catch_unwind();
+    tokio::pin!(run);
+    let (stream, _) = tokio::select! {
+        accepted = control.accept() => accepted.expect("accept probe control"),
+        outcome = &mut run => match outcome {
+            Err(panic) => std::panic::resume_unwind(panic),
+            Ok(transcript) => panic!("run ended before probe readiness: {}", transcript.stream),
+        },
+    };
+    let mut control = tokio::io::BufReader::new(stream);
+    let mut ready = String::new();
+    control.read_line(&mut ready).await.expect("read probe readiness");
+    let (nonce, pid) = ready.trim().split_once(' ').expect("probe readiness frame");
+    assert_eq!(nonce, control_token, "probe control identity");
+    let probe_pid: u32 = pid.parse().expect("probe pid");
+    let children: Vec<_> = process_tree(sidecar_pid).into_iter()
+        .filter(|view| view.pid != sidecar_pid).collect();
+    let saw_probe = children.iter().any(|view| view.pid == probe_pid);
+    control.get_mut().write_all(b"RELEASE\n").await.expect("release probe");
+    let transcript = match run.await {
+        Ok(transcript) => transcript,
+        Err(panic) => std::panic::resume_unwind(panic),
+    };
+    assert!(saw_probe, "ready probe was not a sidecar descendant");
 
-    let children = observed.lock().expect("observation lock").clone();
     assert!(
         children
             .iter()
@@ -167,10 +172,16 @@ async fn token_absent_from_argv_and_env_of_sidecar_and_children() {
             "token visible to the terminal child"
         );
     }
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn token_absent_from_output_logs_files_and_responses() {
+    crate::sidecar_process::record_check(concat!(module_path!(), "::token_absent_from_output_logs_files_and_responses"), async {
     let mut sidecar = boot_sidecar(FixtureSet::new(), "", |options| {
         let log_file = options
             .config_path
@@ -181,6 +192,8 @@ async fn token_absent_from_output_logs_files_and_responses() {
         options.env("UAR_LOG_FILE", log_file.to_string_lossy().into_owned())
     })
     .await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
     let port = sidecar.port();
     let host_value = sidecar.host();
     let host = host_value.as_str();
@@ -256,4 +269,9 @@ async fn token_absent_from_output_logs_files_and_responses() {
             );
         }
     }
+    })).await;
+    let fixture_cleanup = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sidecar.process.stop_sidecar())).await;
+    crate::sidecar_process::finish_fixture(fixture_outcome, fixture_cleanup)
+
+    }).await;
 }

@@ -30,10 +30,39 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
         None
     }
 
+    /// Operator-visible provenance of the serving INSTANCE (where its assets
+    /// were resolved from, plus their digest). This is instance identity, not
+    /// space identity: two byte-identical asset copies are one embedding
+    /// space served by two instances, and a failover between them must stay
+    /// visible in status surfaces instead of silent. Defaults to `None` for
+    /// backends without local assets.
+    fn provenance(&self) -> Option<BackendProvenance> {
+        None
+    }
+
     /// Embed a batch of texts. The returned outer vector has the same length as
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>;
+
+    /// Release local inference resources after the trusted host has closed
+    /// admission and joined all accepted work. Backends without owned local
+    /// resources retain the default no-op implementation.
+    async fn shutdown(&self) -> Result<(), EmbeddingError> {
+        Ok(())
+    }
+}
+
+/// Instance provenance for status surfaces. Deliberately NOT part of
+/// `EmbeddingFingerprint`: an instance change is not a space change, so the
+/// KB space guard must never compare these fields.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct BackendProvenance {
+    /// Directory the serving assets were resolved from.
+    pub source_dir: String,
+    /// SHA-256 over the sorted asset filenames and their per-file SHA-256
+    /// digests. Byte-identical mirrors produce an identical manifest.
+    pub asset_manifest_sha256: String,
 }
 
 /// Non-fatal placeholder used when an optional embedding implementation is
@@ -123,6 +152,31 @@ pub fn build_backend(
     }
 }
 
+/// Build the local backend for a failover member under the supplied trusted
+/// host scope. This deliberately has no hosted-provider branch.
+pub fn build_local_backend(
+    config: &EmbeddingConfig,
+    scope: crate::uar::runtime::lifecycle::ResourceScope,
+) -> Result<Arc<dyn EmbeddingBackend>, EmbeddingError> {
+    if config.backend != "fastembed" {
+        return Err(EmbeddingError::BackendUnavailable(format!(
+            "local embedding failover supports only fastembed, not {}",
+            config.backend
+        )));
+    }
+    #[cfg(feature = "local-models")]
+    {
+        Ok(Arc::new(fastembed::FastEmbedBackend::new_with_scope(config, scope)?))
+    }
+    #[cfg(not(feature = "local-models"))]
+    {
+        let _ = scope;
+        Err(EmbeddingError::BackendUnavailable(
+            "local embedding failover requires the local-models build feature".to_string(),
+        ))
+    }
+}
+
 /// Configuration for the embedding backend.
 #[derive(Clone, Debug)]
 pub struct EmbeddingConfig {
@@ -134,6 +188,9 @@ pub struct EmbeddingConfig {
     pub vector_dimension: usize,
     pub batch_size: usize,
     pub models_dir: String,
+    /// Failover members resolve exactly this directory. Legacy single-backend
+    /// construction retains its established discovery fallbacks.
+    pub strict_models_dir: bool,
 }
 
 impl Default for EmbeddingConfig {
@@ -154,6 +211,7 @@ impl Default for EmbeddingConfig {
             vector_dimension: 384,
             batch_size: 32,
             models_dir: "src/uar/runtime/matching/models".to_string(),
+            strict_models_dir: false,
         }
     }
 }
@@ -169,14 +227,42 @@ impl From<&crate::config::EmbeddingBackendConfig> for EmbeddingConfig {
             vector_dimension: c.vector_dimension,
             batch_size: c.batch_size,
             models_dir: c.models_dir.clone(),
+            strict_models_dir: false,
         }
+    }
+}
+
+impl EmbeddingConfig {
+    /// Construct a credential-free, explicitly located local failover member.
+    #[must_use]
+    pub fn from_local_member(member: &crate::config::LocalEmbeddingMemberConfig) -> Self {
+        Self {
+            backend: member.backend.clone(),
+            model: member.model.clone(),
+            api_key: None,
+            api_key_env: None,
+            base_url: None,
+            vector_dimension: member.vector_dimension,
+            batch_size: member.batch_size,
+            models_dir: member.models_dir.clone(),
+            strict_models_dir: true,
+        }
+    }
+
+    /// Restrict an existing primary configuration to its declared asset path.
+    #[must_use]
+    pub fn strict_local_member(mut self) -> Self {
+        self.strict_models_dir = true;
+        self
     }
 }
 
 #[cfg(feature = "candle-embeddings")]
 pub mod candle;
 pub mod cohere;
+pub mod failover;
 #[cfg(feature = "local-models")]
 pub mod fastembed;
 pub mod openai;
+pub mod swappable;
 pub mod voyage;

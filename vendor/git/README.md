@@ -6,7 +6,7 @@ exports with VCS metadata, tests, documentation, and agent state removed.
 
 | Package | Upstream | Commit | License |
 |---|---|---|---|
-| `surreal-memory` | `https://github.com/Prometheus-AGS/surreal-memory-server.git` | `432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8` | MIT (declared in crate manifest) |
+| `surreal-memory` | `https://github.com/Prometheus-AGS/surreal-memory-server.git` | `9e36b1cd8b83a657366eb1e3ef8cd837178336de` | MIT (declared in crate manifest) |
 | `prometheus_parking_lot` | `https://github.com/Prometheus-AGS/prometheus-parking-lot-rs` | `ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0` | MIT (`prometheus-parking-lot-rs/LICENSE-MIT`) |
 | `sycophancy-core` | `https://github.com/Know-Me-Tools/sycophancy-correction-skill.git` | `01150389c10169816fbd4cc4ef4145fbe052ad90` | MIT (declared in workspace manifest) |
 
@@ -20,3 +20,5 @@ from the recorded upstream commit. Its manifest exact-pins `surrealdb`,
 `surrealdb-types`, and `hf-hub` while retaining the empty, disabled `palace`
 compatibility feature because UAR does not ship the upstream workspace's
 `mempalace-core` dependency.
+
+The lifecycle integration advances the memory export by the upstream storage changes at `9e36b1cd8b83a657366eb1e3ef8cd837178336de`, through its parent 3a767608d53481ebc3c9085b8f5b4b82316ad8cb from the prior pin. It introduces opt-in host-managed connection ownership. Existing standalone manifest adaptations are preserved; upstream source is copied byte-for-byte. No upstream push or verification is implied.

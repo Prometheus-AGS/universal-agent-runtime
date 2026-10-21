@@ -1,0 +1,34 @@
+{
+  "document_kind": "non-executable-template",
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "version": "1.1.1",
+  "stage": "local",
+  "source_commit": null,
+  "source_tree": null,
+  "fixture_tree": null,
+  "image": null,
+  "platform": null,
+  "image_preparation": "prebuilt",
+  "prepared_image_id": null,
+  "image_preparation_receipt": {
+    "path": null,
+    "digest": null
+  },
+  "groups": [
+    "binding",
+    "streams",
+    "mcp-outcomes",
+    "credentials",
+    "recovery",
+    "combined"
+  ],
+  "resource_root": null,
+  "evidence_root": null,
+  "infrastructure_file": null,
+  "implementation_inventory": {
+    "path": null,
+    "digest": null
+  },
+  "instructions": "After the new whole-phase inventory, populate actual frozen identities and new absolute owned paths in a separate manifest. Fill image fields only from separately authorized same-image preparation. Never execute this template."
+}

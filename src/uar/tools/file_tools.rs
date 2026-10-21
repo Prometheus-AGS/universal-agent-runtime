@@ -164,7 +164,7 @@ pub(super) async fn open_confined_file(
             )
         })?;
 
-    let standard_file = tokio::task::spawn_blocking(move || -> io::Result<std::fs::File> {
+    let standard_file = crate::uar::runtime::lifecycle::spawn_blocking("confined-file-open", move || -> io::Result<std::fs::File> {
         let (directory, relative, _) = selected;
         if matches!(mode, ConfinedOpenMode::Write { .. })
             && let Some(parent) = relative.parent()
@@ -191,7 +191,7 @@ pub(super) async fn open_confined_file(
         directory
             .open_with(relative, &options)
             .map(cap_std::fs::File::into_std)
-    })
+    }).map_err(io::Error::other)?
     .await
     .map_err(io::Error::other)??;
     Ok(fs::File::from_std(standard_file))

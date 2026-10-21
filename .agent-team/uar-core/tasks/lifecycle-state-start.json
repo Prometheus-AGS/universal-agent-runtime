@@ -1,0 +1,10 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 54,
+  "task": {
+    "action": "start",
+    "id": "lifecycle-state",
+    "owner": "uar-state",
+    "expectedTaskRevision": 0
+  }
+}

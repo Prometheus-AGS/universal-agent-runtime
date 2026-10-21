@@ -22,7 +22,7 @@ liter_llm_commit = "e446f5ef91003bbec5fce6b2f45fb94559dff335"
 # Surreal Memory is pinned to the exact dependency commit rebased on the
 # reviewed documentation and native-MLX remote head.
 surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"
-surreal_memory_server_commit = "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
+surreal_memory_server_commit = "9e36b1cd8b83a657366eb1e3ef8cd837178336de"
 # Operator approved UAR main 2cc9a182's exact skill-resource gitlink on 2026-10-11.
 # Effective runtime overrides and migration acceptance are recorded separately.
 prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"

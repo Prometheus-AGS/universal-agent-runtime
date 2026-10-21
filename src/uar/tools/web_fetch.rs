@@ -121,13 +121,13 @@ impl WebFetchTool {
         }
 
         let lookup_host = host.clone();
-        let resolved = tokio::task::spawn_blocking(move || {
+        let resolved = crate::uar::runtime::lifecycle::spawn_blocking("web-fetch-dns", move || {
             use std::net::ToSocketAddrs;
             (lookup_host.as_str(), port)
                 .to_socket_addrs()
                 .map(|addrs| addrs.collect::<Vec<_>>())
                 .unwrap_or_default()
-        })
+        }).map_err(|_| FetchDenial::UnresolvableHost(host.clone()))?
         .await
         .unwrap_or_default();
 

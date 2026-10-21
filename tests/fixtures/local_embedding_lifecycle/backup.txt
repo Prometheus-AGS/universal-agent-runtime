@@ -1,0 +1,2 @@
+The compatible backup lifecycle document is ingested while the backup member
+serves the same local embedding space without restarting the runtime.

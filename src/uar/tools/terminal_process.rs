@@ -204,6 +204,34 @@ impl TerminalSupervisor {
 
 struct CancelOperation(CancellationToken);
 
+/// Compatibility direct calls still have one retained cleanup owner. A caller
+/// disappearing requests cancellation; the owner joins and reaps the command
+/// before releasing its host task lease or publishing its result.
+pub(crate) async fn execute_standalone(
+    command: Command,
+    budget: Duration,
+) -> Result<TerminalOutput, TerminalProcessError> {
+    let supervisor = TerminalSupervisor::default();
+    let cancellation = CancellationToken::new();
+    let _cancel_on_drop = CancelOperation(cancellation.clone());
+    let lease = supervisor.open_run(uuid::Uuid::new_v4().to_string(), &cancellation, None).await?;
+    let run = lease.scope();
+    let owner = crate::uar::runtime::lifecycle::current_scope().unwrap_or_else(|| {
+        crate::uar::runtime::lifecycle::ResourceScope::standalone("standalone-terminal", "compatibility-caller")
+    });
+    let (send, receive) = tokio::sync::oneshot::channel();
+    owner.spawn("standalone-terminal-owner", async move {
+        let result = std::panic::AssertUnwindSafe(run.execute(command, budget))
+            .catch_unwind().await.unwrap_or(Err(TerminalProcessError::WorkerFailed));
+        let cleanup = supervisor.finish_run(&run).await;
+        drop(lease);
+        let cleanup_failure = cleanup.as_ref().err().cloned();
+        let _ = send.send(match cleanup { Ok(()) => result, Err(error) => Err(error) });
+        cleanup_failure.map_or(Ok(()), |error| Err(anyhow::anyhow!(error)))
+    }).map_err(|_| TerminalProcessError::Unavailable)?;
+    receive.await.unwrap_or(Err(TerminalProcessError::WorkerFailed))
+}
+
 impl Drop for CancelOperation {
     fn drop(&mut self) {
         self.0.cancel();
@@ -348,11 +376,19 @@ async fn execute_owned(
     };
     // The losing I/O future is gone and pipes are closed before killing. Await
     // this exact child, not a detached PID; a failed reap remains host-owned.
-    if result.is_err() && child.kill().await.is_err() {
-        return Outcome {
-            result: Err(TerminalProcessError::CleanupUnconfirmed(id)),
-            reaped: false,
-        };
+    if result.is_err() {
+        // A failed signal can race natural exit. Only the exact child's wait
+        // establishes reaping; signal success or failure cannot replace it.
+        if let Err(error) = child.start_kill() {
+            tracing::warn!(operation_id = %id, error_kind = ?error.kind(),
+                "Terminal termination request failed; awaiting exact child exit");
+        }
+        if child.wait().await.is_err() {
+            return Outcome {
+                result: Err(TerminalProcessError::CleanupUnconfirmed(id)),
+                reaped: false,
+            };
+        }
     }
     slot.take();
     Outcome {

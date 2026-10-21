@@ -1,0 +1,2 @@
+The retained compatible backup serves a second lifecycle transition without
+restarting the runtime or changing the knowledge base embedding space.

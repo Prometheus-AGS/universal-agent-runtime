@@ -16,6 +16,38 @@ configuration, independent lifecycle, TLS identities, retained qualification
 record, and durable SQLite journal. No controller or runtime qualification has
 been executed for this change yet.
 
+## R10 candidate startup cohort — 2026-10-16
+
+A frozen rc03 UAR executable failed its startup registration with `supervisor
+controller is unavailable`. The independent controller service was running, and
+a native Python TLS 1.3 mTLS handshake using the same CA and runtime client
+identity succeeded. Its journal had zero registrations and it retained no UAR
+request-transport trace. Those observations rule out neither a UAR client
+construction failure nor another runtime-local failure.
+
+The supervisor client builds `reqwest::Identity` from PEM bytes. Source evidence
+for the candidate cause is specific: the root manifest unconditionally includes
+`prometheus_parking_lot`; its vendored manifest enables reqwest 0.12 defaults,
+and the root also selects reqwest 0.12.28 with `rustls-tls-native-roots`. The
+pinned reqwest source documents that TLS backends are additive, defaults to its
+native backend, and rejects a PEM identity through the incompatible backend.
+The supervisor builder now explicitly selects rustls before installing the
+dedicated CA and PEM identity. It retains custom-CA-only trust, mTLS, no proxy,
+redirect refusal, timeout, and cancellation semantics. This follows the
+[documented reqwest backend mismatch](https://github.com/seanmonstar/reqwest/issues/903).
+A successful runtime registration has not been observed after this change, so
+this source-based diagnosis remains unverified in the running candidate.
+
+The guest runtime runs as UID 65532 in group `uar` (GID 1001). Runtime-private
+configuration and client TLS paths must be readable by that exact group under
+restrictive modes; controller-only server key and journal paths remain private
+to the controller administrator. The held configuration keeps
+`llm.timeout_secs: 600`, the existing provider delay of 601 seconds, and the
+existing 3,000,000 budgets with 3,000 reservations. A failed registration can
+leave an empty durable catalog claim. Preserve it and use a fresh disposable
+database path for the first successful predecessor; never erase or fabricate
+catalog state.
+
 The two implemented mechanisms are:
 
 * `native-boot-exclusion-v1`: macOS LaunchAgent
@@ -264,3 +296,18 @@ Both durable profiles, all 24 production items, all nine reliability requirement
 The local OCI build exports the actual regular ELF runtime executable from each verified image filesystem. Its `local-two-architecture-image` observation records `source_content_sha256` and `runtime_binaries` for amd64 and arm64, including each executable path, SHA-256, size, architecture and image digest. These are candidate artifacts; no publication is claimed.
 
 For Linux guest qualification, install the selected arm64 executable and run the source-bound acceptance driver inside that guest. Copy the genuine same-inventory OCI receipt, observation, archive and exported executable without relabeling their paths or results. The host configuration selects `candidate_runtime_origin: "oci"`, `os: "linux"`, `architecture: "arm64"` and the genuine `oci_build_receipt`. The runner checks the receipt/source binding, archive, exported executable, actual installed executable bytes and current host architecture. The guest's installed path may differ from the export path. Native macOS candidate validation retains its existing local build receipt. Source/plan inventory and every operational stage still require their actual inputs and observations; exporting an executable proves no recovery behavior.
+
+## v1.1.1 isolated supervisor setup
+
+The v1.1.1 recovery adapter has a mandatory qualified-supervisor scenario. Its
+disposable target, exact retained evidence, and operator actions are defined in
+[the v1.1.1 setup contract](uar-1.1.1-supervisor-setup.md). The current setup
+selects one replacement isolated Linux guest for native recovery. It does not
+treat a historical guest name as evidence that a controller, journal, runtime
+identity, or containment observation currently exists.
+
+The historical Dot qualification cancellation does not create the evidence
+required by `scripts/release/uar_1_1_1_recovery.py`. The adapter continues to
+block until the operator supplies the qualified controller's immutable record,
+same-image setup identity, and read-only journal. No fixture, acceptance
+manifest, or documentation record may create `production_qualified: true`.

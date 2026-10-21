@@ -22,9 +22,11 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
+    body::Body,
     extract::{Path, State},
-    http::StatusCode,
-    response::IntoResponse,
+    http::{Request, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
@@ -127,8 +129,10 @@ pub struct CompletenessResponse {
 // Router
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Build the compiler API router.
-pub fn build_router() -> Router<Arc<CompilerApiState>> {
+/// Build the compiler API router with availability derived from trusted host configuration.
+///
+/// Ownerless compiler resources are available only in a local single-owner profile.
+pub fn build_router(rest_available: bool) -> Router<Arc<CompilerApiState>> {
     Router::new()
         // Spec management
         .route("/specs", post(submit_spec).get(list_specs))
@@ -146,6 +150,30 @@ pub fn build_router() -> Router<Arc<CompilerApiState>> {
         .route("/sessions/{id}", get(get_session))
         .route("/sessions/{id}/cancel", post(cancel_session))
         .route("/sessions/{id}/compile", post(compile_session))
+        .route_layer(middleware::from_fn_with_state(
+            rest_available,
+            compiler_profile_boundary,
+        ))
+}
+
+async fn compiler_profile_boundary(
+    State(rest_available): State<bool>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    // #387: authentication cannot partition the compiler's ownerless storage
+    // and sessions. Deny before any handler or request-body extraction runs.
+    if !rest_available {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "code": "compiler_authoring_profile_restricted",
+                "error": "Compiler REST authoring requires a local single-owner host profile"
+            })),
+        )
+            .into_response();
+    }
+    next.run(request).await
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

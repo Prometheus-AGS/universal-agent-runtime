@@ -1,11 +1,12 @@
 //! AG-UI 1.0 transport over the existing run host and durable approval broker.
 //! Wire-run records correlate protocol segments; they never authorize execution.
-use std::{collections::HashSet, convert::Infallible, sync::Arc, time::Duration};
+use std::{collections::HashSet, convert::Infallible, sync::Arc};
 use axum::{Extension, Json, Router, extract::{Path, State}, http::{HeaderMap, StatusCode}, response::{IntoResponse, Response, Sse, sse::{Event, KeepAlive}}, routing::{get, post}};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use crate::{config::SecurityConfig, uar::{domain::events::NormalizedEvent, persistence::{agui_runs::{AguiRunBinding, AguiTerminal}, approval_decisions::{ApprovalRecordView, ApprovalState}}, security::{authority::authorize_context, claims::{CredentialPrincipal, UserContext}, credential_capture::AuthenticatedCredentialCapture, sidecar_guard::HostAuthenticated}}};
+use anyhow::Context as _;
 use super::routes::{self, RunApiState};
 
 #[derive(Clone)]
@@ -190,14 +191,14 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     if let Err(response) = result {
         // An unknown admission/decision outcome keeps the reservation held.
         // A retry reads this mapping; it never repeats the execution command.
-        observe(Arc::clone(&state),user.clone(),row.clone());
+        observe(Arc::clone(&state),user.clone(),row.clone()).await;
         return response;
     }
     if cold_denied {
         let terminal = AguiTerminal { source_cursor:0,event:json!({"type":"RUN_ERROR","code":"approval_denied","message":"The protected tool continuation was denied"}),interrupt_ids:Vec::new() };
         if seal(&state,&row,terminal).await.is_err() { return unavailable(); }
     }
-    observe(Arc::clone(&state),user.clone(),row.clone());
+    observe(Arc::clone(&state),user.clone(),row.clone()).await;
     stream(state,user,row,&headers).await
 }
 
@@ -261,13 +262,13 @@ async fn seal(state: &RunApiState,row: &AguiRunBinding,terminal: AguiTerminal) -
 }
 async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -> anyhow::Result<AguiRunBinding> {
     if row.terminal.is_some() { return Ok(row); }
-    let db = state.manager.persistence.as_ref().ok_or_else(||anyhow::anyhow!("persistence unavailable"))?;
-    let row = db.load_agui_run(&row.owner,&row.agent_id,&row.thread_id,&row.wire_run_id).await?.ok_or_else(||anyhow::anyhow!("run correlation unavailable"))?;
+    let db = state.manager.persistence.as_ref().ok_or_else(||anyhow::anyhow!("agui reconcile: persistence unavailable"))?;
+    let row = db.load_agui_run(&row.owner,&row.agent_id,&row.thread_id,&row.wire_run_id).await.context("agui reconcile: load_agui_run")?.ok_or_else(||anyhow::anyhow!("run correlation unavailable")).context("agui reconcile: run correlation unavailable")?;
     if row.terminal.is_some() { return Ok(row); }
     let history = state.manager.history_since(&row.native_run_id,Some(row.start_cursor)).await.unwrap_or_default();
     let cursor = history.last().map_or(row.start_cursor,|event|event.id);
-    let views = pending(state,user,&row).await?;
-    let elicitations = pending_elicitations(state,user,&row).await?;
+    let views = pending(state,user,&row).await.context("agui reconcile: pending approvals")?;
+    let elicitations = pending_elicitations(state,user,&row).await.context("agui reconcile: pending elicitations")?;
     if !views.is_empty() || !elicitations.is_empty() {
         let ids = views.iter().map(|view|view.record.challenge_id.clone()).chain(elicitations.iter().map(|view|view.record.id.clone())).collect();
         let mut interrupts: Vec<_> = views.iter().map(|view|json!({"id":view.record.challenge_id,"reason":"tool_approval","message":format!("Approve {}",view.record.tool_name),"toolCallId":view.record.tool_call_id,"expiresAt":view.record.expires_at.to_rfc3339(),"responseSchema":{"type":"object","properties":{"approved":{"type":"boolean"}},"required":["approved"],"additionalProperties":false}})).collect();
@@ -277,7 +278,7 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             if let Some(schema) = request.get("requestedSchema") { properties["content"] = schema.clone(); }
             interrupts.push(json!({"id":view.record.id,"reason":"mcp_elicitation","message":request.get("message").and_then(Value::as_str).unwrap_or("MCP server requires input"),"expiresAt":view.record.expires_at.to_rfc3339(),"responseSchema":{"type":"object","properties":properties,"required":["action"],"additionalProperties":false},"metadata":{"uar":{"serverName":view.record.server_name,"request":request,"resolvable":view.resolvable}}}));
         }
-        return seal(state,&row,AguiTerminal {source_cursor:cursor,event:finished(&row,json!({"type":"interrupt","interrupts":interrupts})),interrupt_ids:ids}).await;
+        return seal(state,&row,AguiTerminal {source_cursor:cursor,event:finished(&row,json!({"type":"interrupt","interrupts":interrupts})),interrupt_ids:ids}).await.context("agui reconcile: seal");
     }
     let Some(status) = state.manager.settled_run_status_for_context(user,&row.native_run_id).await else { return Ok(row); };
     if status == crate::uar::domain::runs::RunStatus::Error {
@@ -285,7 +286,7 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             NormalizedEvent::Error {code,message,..} => Some((event.id,json!({"type":"RUN_ERROR","code":code,"message":message}))),
             _ => None,
         }).unwrap_or_else(||(cursor,json!({"type":"RUN_ERROR","code":"host_cleanup_unconfirmed","message":"The host did not confirm successful cleanup"})));
-        return seal(state,&row,AguiTerminal {source_cursor,event,interrupt_ids:Vec::new()}).await;
+        return seal(state,&row,AguiTerminal {source_cursor,event,interrupt_ids:Vec::new()}).await.context("agui reconcile: seal");
     }
     for event in &history {
         let terminal = match &event.event {
@@ -294,18 +295,52 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             NormalizedEvent::Error {code,message,..} => Some(json!({"type":"RUN_ERROR","code":code,"message":message})),
             _ => None,
         };
-        if let Some(terminal) = terminal { return seal(state,&row,AguiTerminal {source_cursor:event.id,event:terminal,interrupt_ids:Vec::new()}).await; }
+        if let Some(terminal) = terminal { return seal(state,&row,AguiTerminal {source_cursor:event.id,event:terminal,interrupt_ids:Vec::new()}).await.context("agui reconcile: seal"); }
     }
     Ok(row)
 }
-fn observe(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding) {
-    tokio::spawn(async move {
-        let shutdown = state.manager.root_cancellation_token();
+async fn observe(state: Arc<RunApiState>, user: UserContext, row: AguiRunBinding) {
+    // Subscribe before the first reconciliation. A retained broadcast receiver
+    // closes the event/snapshot race without repeatedly rereading persistence.
+    let Some(mut events) = state.manager.subscribe(&row.native_run_id).await else {
+        state.manager.lifecycle_scope().record_unresolved_effect(format!(
+            "agui-terminal-projection:{}", row.native_run_id
+        ));
+        return;
+    };
+    let mut committed_work = state.manager.subscribe_committed_work();
+    let scope = state.manager.lifecycle_scope();
+    let cancellation = scope.cancellation_token();
+    let task_row = row.clone();
+    if scope.spawn("agui-terminal-projection", async move {
         loop {
-            match reconcile(&state,&user,row.clone()).await { Ok(row) if row.terminal.is_some() => return, Err(error) => tracing::warn!(%error,"AG-UI terminal projection remains pending"), _ => {} }
-            tokio::select! { _ = shutdown.cancelled() => return, _ = tokio::time::sleep(Duration::from_millis(100)) => {} }
+            match reconcile(&state, &user, task_row.clone()).await {
+                Ok(updated) if updated.terminal.is_some() => return Ok(()),
+                Ok(_) => {}
+                Err(error) => {
+                    return Err(anyhow::anyhow!(
+                        "AG-UI terminal projection could not reconcile: {error:#}"
+                    ));
+                }
+            }
+            tokio::select! {
+                _ = cancellation.cancelled() => return Ok(()),
+                event = events.recv() => match event {
+                    Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                        return Err(anyhow::anyhow!("AG-UI terminal projection lost its run event source"));
+                    }
+                },
+                changed = committed_work.changed() => {
+                    if changed.is_err() {
+                        return Err(anyhow::anyhow!("AG-UI terminal projection lost its committed-work source"));
+                    }
+                },
+            }
         }
-    });
+    }).is_err() {
+        scope.record_unresolved_effect(format!("agui-terminal-projection:{}", row.native_run_id));
+    }
 }
 
 #[derive(Default)]
@@ -322,6 +357,9 @@ impl Projector {
             NormalizedEvent::ToolStart {tool_call_id,tool,input,..} if !row.resumed_tool_ids.contains(tool_call_id) && self.tools.insert(tool_call_id.clone()) => vec![json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":tool}),json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":input.to_string()}),json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id})],
             NormalizedEvent::ToolCallApprovalRequired {tool_call_id,name,arguments_json,..} if self.tools.insert(tool_call_id.clone()) => vec![json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":name}),json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":arguments_json}),json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id})],
             NormalizedEvent::ToolEnd {tool_call_id,output,..} if self.tools.contains(tool_call_id) || row.resumed_tool_ids.contains(tool_call_id) => vec![json!({"type":"TOOL_CALL_RESULT","messageId":format!("{}:result:{}",row.wire_run_id,tool_call_id),"toolCallId":tool_call_id,"role":"tool","content":output.to_string()})],
+            // Mirrors adapters.rs:134 (`uar.skill.activated`): same CUSTOM `name` and `value` shape. The adapter's closure is not callable
+            // here, and its `runId`/`threadId` carry the native run id, whereas this stream's identity is the wire thread/run (as RUN_STARTED).
+            NormalizedEvent::SkillActivated {skill_id,title,selection_method,..} => vec![json!({"type":"CUSTOM","name":"uar.skill.activated","value":{"skill":{"id":skill_id,"title":title},"selectionMethod":selection_method},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id})],
             _ => Vec::new(),
         }
     }
@@ -344,11 +382,16 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
     };
     let body = async_stream::stream! {
         let mut row = row;
+        // Subscribe before the first durable reconciliation so an event cannot
+        // be lost between snapshot and wait.
+        let mut events = state.manager.subscribe(&row.native_run_id).await;
+        let mut committed_work = state.manager.subscribe_committed_work();
+        let shutdown = state.manager.root_cancellation_token();
         let mut projector = Projector::default();
         let mut cursor = row.start_cursor;
         if after.is_none() { yield Ok::<Event,Infallible>(frame(&row,cursor,0,json!({"type":"RUN_STARTED","threadId":row.thread_id,"runId":row.wire_run_id,"protocolVersion":"1.0"}))); }
         loop {
-            row = match reconcile(&state,&user,row.clone()).await { Ok(row) => row, Err(_) => { yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"Durable stream projection is unavailable"}))); break; } };
+            row = match reconcile(&state,&user,row.clone()).await { Ok(row) => row, Err(error) => { tracing::warn!(error = %format!("{error:#}"), native_run_id = %row.native_run_id, cursor, "AG-UI stream projection read failed"); yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"Durable stream projection is unavailable"}))); break; } };
             let history = state.manager.history_since(&row.native_run_id,Some(cursor)).await;
             if let Some(history) = history {
                 if history.first().is_some_and(|event|event.id > cursor.saturating_add(1)) {
@@ -372,7 +415,26 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
                 if after.is_none_or(|after|(cursor,100)>after) { yield Ok(frame(&row,cursor,100,terminal.event.clone())); }
                 break;
             }
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            let Some(events) = events.as_mut() else {
+                yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution has no live event source"})));
+                break;
+            };
+            tokio::select! {
+                _ = shutdown.cancelled() => break,
+                event = events.recv() => match event {
+                    Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                        yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution event source closed"})));
+                        break;
+                    }
+                },
+                changed = committed_work.changed() => {
+                    if changed.is_err() {
+                        yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"The durable projection event source closed"})));
+                        break;
+                    }
+                },
+            }
         }
     };
     Sse::new(body).keep_alive(KeepAlive::default()).into_response()

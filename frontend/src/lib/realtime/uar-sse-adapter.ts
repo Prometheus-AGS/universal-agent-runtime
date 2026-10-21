@@ -1,17 +1,12 @@
 /**
- * SSE-backed RealtimeAdapter for the UAR live-query bus.
+ * Fetch-stream-backed adapter for the UAR multiplexed live bus.
  *
- * Every topic shares a SINGLE `GET /api/live` EventSource. Browsers cap HTTP/1.1
- * connections at 6 per origin; opening one stream per topic (10 of them)
- * exhausted that budget and starved every other request — including the PGlite
- * WASM the SPA needs to boot — hanging startup. The multiplexed endpoint fans
- * all topics over one connection, tagging each event with its `topic`; this
- * module demultiplexes back to per-topic, per-`entityType` `EntityChange`s.
- *
- * `createUarSseAdapter` still returns one adapter per topic (so the entity graph
- * keeps routing changes by `entityType`), but all adapters reuse the one shared
- * connection underneath.
+ * A reset is an invalidation, never a row update. The adapter keeps the live
+ * connection open before asking the authenticated snapshot endpoint for an
+ * authoritative replacement. Events that overlap the fetch only request a
+ * newer snapshot; their payloads cannot overwrite that snapshot out of order.
  */
+import { useGraphStore } from "@/platform/entities";
 import type {
   AdapterStatus,
   ChangeSet,
@@ -20,170 +15,307 @@ import type {
   SubscriptionConfig,
   UnsubscribeFn,
 } from "@/platform/entities";
+import {
+  installSseRecoveryEvents,
+  openSseStream,
+  type SseFrame,
+  type SseStream,
+} from "./sse-stream";
+
+export interface UarRealtimeReset {
+  version: 1;
+  topic: string;
+  generation?: number;
+  ready?: boolean;
+  reason?: string;
+  requires_snapshot: boolean;
+}
+
+export interface UarTopicSnapshot {
+  version: 1;
+  topic: string;
+  generation?: number;
+  complete: boolean;
+  records: Array<Record<string, unknown>>;
+}
+
+export type UarSnapshotFetcher = (
+  topic: string,
+  signal: AbortSignal,
+) => Promise<UarTopicSnapshot>;
 
 export interface UarSseAdapterOptions {
   /** Topic name from the bus: `knowledge_documents`, `agents`, `providers`, etc. */
   topic: string;
   /** Logical entity type the graph stores rows under (often equal to `topic`). */
   entityType: string;
-  /**
-   * Optional base URL. Defaults to same-origin (`/api/live`) which is what the
-   * dev proxy and the production deploy both serve. Useful for cross-origin
-   * dev rigs.
-   */
+  /** Optional same-origin or cross-origin development base URL. */
   baseUrl?: string;
-  /** Initial reconnect delay in ms. Doubles on each retry, capped at 30 s. */
+  /** Retained only for source compatibility. Reconnect delays are not used. */
   reconnectBaseDelay?: number;
-  /** Max reconnect attempts before giving up. Defaults to Infinity. */
+  /** Retained only for source compatibility. Retry counts are not used. */
   maxReconnectAttempts?: number;
   /** Observe a validated change before it is forwarded to the entity graph. */
   onChange?: (change: EntityChange) => void;
+  /** Observe a lifecycle invalidation before its snapshot is requested. */
+  onReset?: (reset: UarRealtimeReset) => void;
+  /** Injected by tests or a host-specific authenticated snapshot bridge. */
+  fetchSnapshot?: UarSnapshotFetcher;
 }
 
 type LiveOp = "insert" | "update" | "delete";
-type TopicListener = (op: LiveOp, id: string, data: Record<string, unknown>) => void;
-
-// ── Shared multiplexed connection ──────────────────────────────────────────
-// One EventSource to `/api/live` per origin, demultiplexed to per-topic
-// listeners. Created lazily on first subscriber and disconnected when the last
-// listener (across all topics) goes away. The registry object persists so
-// status subscribers and later re-subscribes reuse the same instance.
+type TopicEvent =
+  | { kind: "change"; op: LiveOp; id: string; data: Record<string, unknown> }
+  | { kind: "reset"; reset: UarRealtimeReset };
+type TopicListener = (event: TopicEvent) => void;
 
 interface SharedConnection {
-  addListener(topic: string, fn: TopicListener): void;
-  removeListener(topic: string, fn: TopicListener): void;
-  onStatus(cb: (s: AdapterStatus) => void): () => void;
+  addListener(topic: string, listener: TopicListener): void;
+  removeListener(topic: string, listener: TopicListener): void;
+  onStatus(callback: (status: AdapterStatus) => void): () => void;
+  dispose(): void;
 }
 
 const sharedConnections = new Map<string, SharedConnection>();
 
-/**
- * Test-only: drop all shared connections so each test starts from a clean
- * slate. The shared connection is a module-level singleton (one socket for the
- * whole app); without this, state would leak between test cases. Never called
- * in production.
- *
- * @internal
- */
-export function __resetUarSseConnections(): void {
-  sharedConnections.clear();
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function getSharedConnection(
-  baseUrl: string,
-  reconnectBaseDelay: number,
-  maxReconnectAttempts: number,
-): SharedConnection {
+function asGeneration(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function parseReset(raw: string): UarRealtimeReset | null {
+  let envelope: unknown;
+  try {
+    envelope = JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+  if (!isRecord(envelope)) return null;
+
+  const data = isRecord(envelope.data) ? envelope.data : envelope;
+  const topic =
+    typeof envelope.topic === "string"
+      ? envelope.topic
+      : typeof data.topic === "string"
+        ? data.topic
+        : undefined;
+  if (!topic || data.version !== 1) return null;
+
+  return {
+    version: 1,
+    topic,
+    generation: asGeneration(data.generation),
+    ready: typeof data.ready === "boolean" ? data.ready : undefined,
+    reason: typeof data.reason === "string" ? data.reason : undefined,
+    requires_snapshot: data.requires_snapshot !== false,
+  };
+}
+
+function parseChange(raw: string, op: LiveOp): { event: TopicEvent; topic: string } | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+  if (!isRecord(parsed) || typeof parsed.topic !== "string" || typeof parsed.id !== "string") {
+    return null;
+  }
+  return {
+    topic: parsed.topic,
+    event: {
+      kind: "change",
+      op,
+      id: parsed.id,
+      data: isRecord(parsed.data) ? parsed.data : {},
+    },
+  };
+}
+
+function dispatchFrame(
+  frame: SseFrame,
+  listeners: Map<string, Set<TopicListener>>,
+): void {
+  if (frame.event === "reset") {
+    const reset = parseReset(frame.data);
+    if (!reset) return;
+    for (const listener of listeners.get(reset.topic) ?? []) {
+      listener({ kind: "reset", reset });
+    }
+    return;
+  }
+
+  const op =
+    frame.event === "create"
+      ? "insert"
+      : frame.event === "update"
+        ? "update"
+        : frame.event === "delete"
+          ? "delete"
+          : undefined;
+  if (!op) return;
+  const parsed = parseChange(frame.data, op);
+  if (!parsed) return;
+  for (const listener of listeners.get(parsed.topic) ?? []) listener(parsed.event);
+}
+
+function getSharedConnection(baseUrl: string): SharedConnection {
   const existing = sharedConnections.get(baseUrl);
   if (existing) return existing;
 
   const listeners = new Map<string, Set<TopicListener>>();
-  const statusCbs = new Set<(s: AdapterStatus) => void>();
+  const statusCallbacks = new Set<(status: AdapterStatus) => void>();
+  let stream: SseStream | null = null;
+  let stopped = false;
+  let removeRecoveryListeners = () => {};
 
-  let es: EventSource | null = null;
-  let attempts = 0;
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const emitStatus = (s: AdapterStatus) => {
-    for (const cb of statusCbs) cb(s);
+  const emitStatus = (status: AdapterStatus) => {
+    for (const callback of statusCallbacks) callback(status);
   };
-
-  const totalListeners = (): number => {
-    let n = 0;
-    for (const set of listeners.values()) n += set.size;
-    return n;
+  const hasListeners = () => [...listeners.values()].some((set) => set.size > 0);
+  const stop = () => {
+    stream?.abort();
+    stream = null;
   };
-
-  const dispatch = (raw: string, op: LiveOp) => {
-    let parsed: { topic: string; id: string; data: unknown };
-    try {
-      parsed = JSON.parse(raw) as { topic: string; id: string; data: unknown };
-    } catch {
-      return;
-    }
-    const set = listeners.get(parsed.topic);
-    if (!set || set.size === 0) return;
-    const data = (parsed.data ?? {}) as Record<string, unknown>;
-    for (const fn of set) fn(op, parsed.id, data);
-  };
-
-  function connect() {
-    reconnectTimer = null;
-    const url = `${baseUrl}/api/live`;
+  const connect = () => {
+    if (stopped || stream || !hasListeners()) return;
     emitStatus("connecting");
+    const candidate = openSseStream(`${baseUrl}/api/live`, {
+      onOpen: () => {
+        if (!stopped && stream === candidate) emitStatus("connected");
+      },
+      onFrame: (frame) => dispatchFrame(frame, listeners),
+    });
+    stream = candidate;
+    void candidate.done.then(
+      () => {
+        if (!stopped && stream === candidate) {
+          stream = null;
+          emitStatus("disconnected");
+        }
+      },
+      () => {
+        if (!stopped && stream === candidate) {
+          stream = null;
+          emitStatus("error");
+        }
+      },
+    );
+  };
+  const recover = () => connect();
+  const reinitialize = () => {
+    if (stopped || !hasListeners()) return;
+    stop();
+    connect();
+  };
 
-    try {
-      es = new EventSource(url, { withCredentials: true });
-    } catch {
-      emitStatus("error");
-      scheduleReconnect();
-      return;
-    }
-
-    es.onopen = () => {
-      attempts = 0;
-      emitStatus("connected");
-    };
-
-    es.addEventListener("create", (e) => dispatch((e as MessageEvent).data, "insert"));
-    es.addEventListener("update", (e) => dispatch((e as MessageEvent).data, "update"));
-    es.addEventListener("delete", (e) => dispatch((e as MessageEvent).data, "delete"));
-
-    es.onerror = () => {
-      emitStatus("error");
-      es?.close();
-      es = null;
-      scheduleReconnect();
-    };
-  }
-
-  function scheduleReconnect() {
-    if (totalListeners() === 0) return;
-    if (attempts >= maxReconnectAttempts) return;
-    const delay = Math.min(reconnectBaseDelay * 2 ** Math.min(attempts++, 6), 30_000);
-    reconnectTimer = setTimeout(connect, delay);
-  }
-
-  const conn: SharedConnection = {
-    addListener(topic, fn) {
-      let set = listeners.get(topic);
-      if (!set) {
-        set = new Set();
-        listeners.set(topic, set);
+  const connection: SharedConnection = {
+    addListener(topic, listener) {
+      const wasEmpty = !hasListeners();
+      let topicListeners = listeners.get(topic);
+      if (!topicListeners) {
+        topicListeners = new Set();
+        listeners.set(topic, topicListeners);
       }
-      set.add(fn);
-      // First listener of the whole connection — open the stream.
-      if (!es && reconnectTimer === null) {
-        attempts = 0;
+      topicListeners.add(listener);
+      if (wasEmpty) {
+        removeRecoveryListeners = installSseRecoveryEvents({ recover, reinitialize });
         connect();
       }
     },
-    removeListener(topic, fn) {
-      const set = listeners.get(topic);
-      if (set) {
-        set.delete(fn);
-        if (set.size === 0) listeners.delete(topic);
-      }
-      // Last listener across all topics — tear the stream down.
-      if (totalListeners() === 0) {
-        if (reconnectTimer) {
-          clearTimeout(reconnectTimer);
-          reconnectTimer = null;
-        }
-        es?.close();
-        es = null;
-        attempts = 0;
+    removeListener(topic, listener) {
+      const topicListeners = listeners.get(topic);
+      topicListeners?.delete(listener);
+      if (topicListeners?.size === 0) listeners.delete(topic);
+      if (!hasListeners()) {
+        removeRecoveryListeners();
+        removeRecoveryListeners = () => {};
+        stop();
         emitStatus("disconnected");
       }
     },
-    onStatus(cb) {
-      statusCbs.add(cb);
-      return () => statusCbs.delete(cb);
+    onStatus(callback) {
+      statusCallbacks.add(callback);
+      return () => statusCallbacks.delete(callback);
+    },
+    dispose() {
+      stopped = true;
+      removeRecoveryListeners();
+      removeRecoveryListeners = () => {};
+      stop();
+      listeners.clear();
+      emitStatus("disconnected");
     },
   };
 
-  sharedConnections.set(baseUrl, conn);
-  return conn;
+  sharedConnections.set(baseUrl, connection);
+  return connection;
+}
+
+export function buildAuthoritativeSnapshotChangeSet(
+  entityType: string,
+  records: Array<Record<string, unknown>>,
+  timestamp?: string,
+): ChangeSet | null {
+  const snapshotIds = new Set<string>();
+  const upserts: EntityChange[] = [];
+  for (const record of records) {
+    const id = record.id;
+    if (typeof id !== "string" || id.length === 0 || snapshotIds.has(id)) return null;
+    snapshotIds.add(id);
+    upserts.push({ op: "upsert", type: entityType, id, data: record });
+  }
+
+  const currentIds = Object.keys(useGraphStore.getState().entities[entityType] ?? {});
+  return {
+    changes: [
+      ...upserts,
+      ...currentIds
+        .filter((id) => !snapshotIds.has(id))
+        .map((id) => ({ op: "delete" as const, type: entityType, id })),
+    ],
+    affectedListKeys: [""],
+    timestamp,
+  };
+}
+
+export async function fetchUarTopicSnapshot(
+  baseUrl: string,
+  topic: string,
+  signal: AbortSignal,
+): Promise<UarTopicSnapshot> {
+  const response = await fetch(
+    `${baseUrl}/api/live/${encodeURIComponent(topic)}/snapshot`,
+    { credentials: "include", headers: { Accept: "application/json" }, signal },
+  );
+  if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`);
+  const payload = (await response.json()) as unknown;
+  if (
+    !isRecord(payload) ||
+    payload.version !== 1 ||
+    payload.topic !== topic ||
+    typeof payload.complete !== "boolean" ||
+    !Array.isArray(payload.records) ||
+    !payload.records.every(isRecord)
+  ) {
+    throw new Error("Snapshot response violated the UAR lifecycle contract");
+  }
+  return {
+    version: 1,
+    topic,
+    generation: asGeneration(payload.generation),
+    complete: payload.complete,
+    records: payload.records,
+  };
+}
+
+/** @internal Test reset also closes active streams to prevent leaked readers. */
+export function __resetUarSseConnections(): void {
+  for (const connection of sharedConnections.values()) connection.dispose();
+  sharedConnections.clear();
 }
 
 export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter {
@@ -191,29 +323,100 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
     topic,
     entityType,
     baseUrl = "",
-    reconnectBaseDelay = 1_000,
-    maxReconnectAttempts = Number.POSITIVE_INFINITY,
     onChange,
+    onReset,
+    fetchSnapshot = (snapshotTopic, signal) =>
+      fetchUarTopicSnapshot(baseUrl, snapshotTopic, signal),
   } = opts;
-
-  const conn = getSharedConnection(baseUrl, reconnectBaseDelay, maxReconnectAttempts);
+  const connection = getSharedConnection(baseUrl);
 
   return {
     name: `uar-sse:${topic}`,
     subscribe(_config: SubscriptionConfig, handler): UnsubscribeFn {
-      const listener: TopicListener = (op, id, data) => {
-        const change: EntityChange = { op, type: entityType, id, data };
-        onChange?.(change);
-        const cs: ChangeSet = { changes: [change], timestamp: new Date().toISOString() };
-        handler(cs);
+      let stopped = false;
+      let recoveryVersion = 0;
+      let recovering = false;
+      let invalidatedDuringSnapshot = false;
+      let snapshotController: AbortController | null = null;
+      const markListsStale = () => handler({ changes: [], affectedListKeys: [""] });
+      const recover = (reset: UarRealtimeReset) => {
+        recoveryVersion += 1;
+        const expectedVersion = recoveryVersion;
+        invalidatedDuringSnapshot = false;
+        snapshotController?.abort();
+        snapshotController = new AbortController();
+        recovering = true;
+        onReset?.(reset);
+        markListsStale();
+        if (reset.ready === false || !reset.requires_snapshot) {
+          recovering = false;
+          return;
+        }
+
+        void fetchSnapshot(topic, snapshotController.signal).then(
+          (snapshot) => {
+            if (stopped || expectedVersion !== recoveryVersion) return;
+            if (
+              !snapshot.complete ||
+              snapshot.topic !== topic ||
+              (reset.generation !== undefined && snapshot.generation !== reset.generation)
+            ) {
+              recovering = false;
+              snapshotController = null;
+              markListsStale();
+              return;
+            }
+            if (invalidatedDuringSnapshot) {
+              recover({ ...reset, reason: "change_during_snapshot" });
+              return;
+            }
+            const changeset = buildAuthoritativeSnapshotChangeSet(entityType, snapshot.records);
+            if (!changeset) {
+              recovering = false;
+              snapshotController = null;
+              markListsStale();
+              return;
+            }
+            handler(changeset);
+            recovering = false;
+            snapshotController = null;
+          },
+          () => {
+            if (stopped || expectedVersion !== recoveryVersion) return;
+            recovering = false;
+            snapshotController = null;
+            markListsStale();
+          },
+        );
       };
-      conn.addListener(topic, listener);
+      const listener: TopicListener = (event) => {
+        if (event.kind === "reset") {
+          recover(event.reset);
+          return;
+        }
+        if (recovering) {
+          invalidatedDuringSnapshot = true;
+          return;
+        }
+        const change: EntityChange = {
+          op: event.op,
+          type: entityType,
+          id: event.id,
+          data: event.data,
+        };
+        onChange?.(change);
+        handler({ changes: [change], timestamp: new Date().toISOString() });
+      };
+
+      connection.addListener(topic, listener);
       return () => {
-        conn.removeListener(topic, listener);
+        stopped = true;
+        snapshotController?.abort();
+        connection.removeListener(topic, listener);
       };
     },
-    onStatusChange(cb) {
-      return conn.onStatus(cb);
+    onStatusChange(callback) {
+      return connection.onStatus(callback);
     },
   };
 }

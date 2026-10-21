@@ -9,6 +9,7 @@ use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::uar::runtime::tool_admission::{AdmittedToolInvocation, ToolExecutionKind};
@@ -80,7 +81,17 @@ struct Observation {
 #[derive(Debug, Default)]
 pub(crate) struct NativeAdmissionGateObserver {
     observation: Mutex<Observation>,
-    io_tasks: Mutex<Vec<tokio::task::JoinHandle<()>>>,
+    io_tasks: Mutex<Vec<TrackedIoTask>>,
+    next_io_task: AtomicU64,
+}
+
+/// The control caller may stop waiting at its business deadline, but the
+/// accepted filesystem operation stays owned until its actual join is
+/// acknowledged by that caller or by finalization.
+#[derive(Debug)]
+struct TrackedIoTask {
+    id: u64,
+    handle: tokio::task::JoinHandle<()>,
 }
 
 struct CheckpointDrop<'a>(&'a NativeAdmissionGateObserver);
@@ -227,15 +238,12 @@ impl NativeAdmissionGateObserver {
     pub(crate) async fn finalize(self: &Arc<Self>, cancelled: bool, failed: bool) -> GateResult<()> {
         let bound = self.observation.lock().map_err(|_| "observer_poisoned")?.bound.clone();
         let Some(bound) = bound else { return Ok(()); };
-        // A dropped checkpoint can leave one finite filesystem operation in
-        // flight. Join it before publishing a final count or I/O outcome.
-        let remaining = bound.arm.deadline_unix_ms.saturating_sub(now_ms()?);
-        let deadline = tokio::time::Instant::now() + Duration::from_millis(remaining);
+        // The arm deadline controls checkpoint admission only. A filesystem
+        // operation already admitted before it elapsed remains this observer's
+        // obligation until its join acknowledges completion.
         let tasks = std::mem::take(&mut *self.io_tasks.lock().map_err(|_| "observer_poisoned")?);
         for task in tasks {
-            tokio::time::timeout_at(deadline, task).await
-                .map_err(|_| "control_finalization_timeout")?
-                .map_err(|_| "control_io_panicked")?;
+            task.handle.await.map_err(|_| "control_io_panicked")?;
         }
         let (directory, payload) = {
             let mut state = self.observation.lock().map_err(|_| "observer_poisoned")?;
@@ -253,8 +261,7 @@ impl NativeAdmissionGateObserver {
             }).map_err(|_| "control_encoding_failed")?;
             (bound.directory, payload)
         };
-        tokio::time::timeout_at(deadline, self.control_io(move || publish(&directory, "final.json", &payload)))
-            .await.map_err(|_| "control_finalization_timeout")?
+        self.control_io(move || publish(&directory, "final.json", &payload)).await
     }
 
     async fn control_io<T: Send + 'static>(
@@ -263,7 +270,9 @@ impl NativeAdmissionGateObserver {
     ) -> GateResult<T> {
         let (sender, receiver) = tokio::sync::oneshot::channel();
         let observer = Arc::clone(self);
-        let task = tokio::task::spawn_blocking(move || {
+        let task = crate::uar::runtime::lifecycle::spawn_blocking(
+            "native-admission-gate-control-io",
+            move || {
             let result = operation();
             if let Err(code) = &result {
                 if let Ok(mut state) = observer.observation.lock() {
@@ -273,13 +282,31 @@ impl NativeAdmissionGateObserver {
             // Cancellation can drop the receiver; the manager still joins the
             // operation and inspects the recorded outcome before finalization.
             let _ = sender.send(result);
-        });
+            },
+        )
+        .map_err(|_| "control_io_admission_closed")?;
+        let id = self.next_io_task.fetch_add(1, Ordering::Relaxed);
         {
             let mut tasks = self.io_tasks.lock().map_err(|_| "observer_poisoned")?;
-            tasks.retain(|task| !task.is_finished());
-            tasks.push(task);
+            tasks.push(TrackedIoTask { id, handle: task });
         }
-        receiver.await.map_err(|_| "control_io_interrupted")?
+        let result = receiver.await.map_err(|_| "control_io_interrupted")?;
+        self.join_io_task(id).await?;
+        result
+    }
+
+    async fn join_io_task(&self, id: u64) -> GateResult<()> {
+        let task = {
+            let mut tasks = self.io_tasks.lock().map_err(|_| "observer_poisoned")?;
+            tasks
+                .iter()
+                .position(|task| task.id == id)
+                .map(|index| tasks.swap_remove(index).handle)
+        };
+        if let Some(task) = task {
+            task.await.map_err(|_| "control_io_panicked")?;
+        }
+        Ok(())
     }
 }
 

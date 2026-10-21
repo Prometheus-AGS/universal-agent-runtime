@@ -59,7 +59,8 @@ assert rpc("GetTask", {"id": "missing"})[1]["error"]["code"] == -32001
 assert rpc("SendMessage", {"message": {"messageId": "invalid-role", "role": "user", "parts": [{"text": "hello"}]}})[1]["error"]["code"] == -32602
 assert rpc("SendMessage", {"message": {"messageId": "invalid-oneof", "role": "ROLE_USER", "parts": [{"text": "hello", "data": {}}]}})[1]["error"]["code"] == -32602
 assert rpc("SendMessage", {"message": {"messageId": "unsupported-file", "role": "ROLE_USER", "parts": [{"url": "https://example.invalid/file"}]}})[1]["error"]["code"] == -32005
-assert rpc("SubscribeToTask", {"id": "missing"})[1]["error"]["code"] == -32004
+assert card["capabilities"]["streaming"] is True
+assert rpc("SubscribeToTask", {"id": "missing"})[1]["error"]["code"] == -32001
 
 if mode == "submit":
     message_id = str(uuid.uuid4())

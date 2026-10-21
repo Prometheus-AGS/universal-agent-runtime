@@ -1,0 +1,600 @@
+{
+  "schema_version": 2,
+  "recorded_at": "2026-10-21T09:34:55.681154+00:00",
+  "purpose": "Author saved-source inventory for approved budgeted shutdown; no acceptance checker or verification executed",
+  "phase_id": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
+  "waypoint_revision": 3196,
+  "plan_revision": 86,
+  "canonical_run_counter": {
+    "completed": 138,
+    "total": 153
+  },
+  "approval": "Operator approved budgeted Pending reporting with retained cleanup; no new tests or verification gates",
+  "verification": "CLOSED; earlier embedding pass predates this production edit and is not certification of it",
+  "implementation": {
+    "task": "9.8",
+    "source_complete": true,
+    "writer_handoffs_collected": true,
+    "production_paths": [
+      "src/uar/runtime/lifecycle.rs",
+      "src/embedded.rs"
+    ],
+    "contract": "One retained shutdown owner and stable identity; caller budget limits only observation; Pending preserves resources and dependency order; unknown inventory explicit",
+    "no_new_tests_or_gates": true,
+    "no_dependency_or_wire_changes": true,
+    "whole_phase_accepted": false,
+    "unverified": [
+      "Compilation",
+      "Registry-lock initiation cancellation race",
+      "Budget/completion race",
+      "Repeated caller identity",
+      "Outstanding-resource snapshot",
+      "Embedded wrapper execution"
+    ]
+  },
+  "source": {
+    "root": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+    "base_head": "15f2fa38ca338fa05b344318bb105386cbd9f3b4",
+    "scope": [
+      "src",
+      "Cargo.toml",
+      "Cargo.lock",
+      "build.rs",
+      "Dockerfile",
+      "migrations",
+      "policies",
+      "versions.toml",
+      "proto",
+      "static",
+      "catalog",
+      "package.json",
+      "pnpm-lock.yaml",
+      "vendor",
+      "crates",
+      "frontend",
+      "docs",
+      "scripts",
+      "tests",
+      ".cargo",
+      ".dockerignore",
+      ".gitmodules",
+      "rust-toolchain.toml",
+      "example.config.yaml",
+      "openspec/changes/deterministic-lifecycle-management",
+      "openspec/changes/uar-outstanding-issues-v1-1-1"
+    ],
+    "file_count": 29309,
+    "saved_records_digest": "sha256:251e9c10ee2a67d3f18164aeca6710a3136d46d2516e383da85ebd8a495ed0a6",
+    "base_inventory": "docs/operations/lifecycle-verification-principal-repair-inventory-2026-10-21.json",
+    "base_inventory_file_digest": "sha256:a5b19e24f32ce6adadcb5af735844be87af2304d380ce3da9e7c1d4a7dca14ac",
+    "base_saved_records_digest": "sha256:3902617d5158f3556f5206c69513022fc3783f95c193638764f0fcca951d878a",
+    "representation": "Apply changed records and removals to the base inventory source.files by path; sort by path; compact sorted-key JSON; SHA256. This inventories saved bytes without executing an acceptance/source-identity checker. Excludes this file.",
+    "changed_records": [
+      {
+        "path": "docs/operations/lifecycle-approved-embedding-repair-publication-2026-10-21.md",
+        "kind": "file",
+        "bytes": 3289,
+        "sha256": "sha256:d15d77a641862b2e8acbcb8be2bad3e689ef2bc21539541ce982ef87ecd51578"
+      },
+      {
+        "path": "docs/operations/lifecycle-budget-host-integration-notes.md",
+        "kind": "file",
+        "bytes": 3849,
+        "sha256": "sha256:714a625d9799fb56b7def800b7ee4b1182c80af3799916f3ac472b61cf1e988a"
+      },
+      {
+        "path": "docs/operations/lifecycle-budget-lead-handoff.md",
+        "kind": "file",
+        "bytes": 2361,
+        "sha256": "sha256:61a460e6e17583c025eb24096ee55eba821f8eba55d5177f532277daf746a84d"
+      },
+      {
+        "path": "docs/operations/lifecycle-budget-runtime-handoff.md",
+        "kind": "file",
+        "bytes": 2799,
+        "sha256": "sha256:874e955026cd89a660417f42f625727e3718ed7d2f01831eea478dd10c57b11c"
+      },
+      {
+        "path": "docs/operations/lifecycle-budget-source-inventory-2026-10-21.md",
+        "kind": "file",
+        "bytes": 3347,
+        "sha256": "sha256:371ef43a1f85cbed5c23676cc290cbc9c4f76e62a48ce3da099e37c4d82683c8"
+      },
+      {
+        "path": "docs/operations/lifecycle-budgeted-shutdown.md",
+        "kind": "file",
+        "bytes": 4675,
+        "sha256": "sha256:420014cb628d5ffc4c469b30a158279d7db63a2a04f6ea8d11d7ab57810124f2"
+      },
+      {
+        "path": "docs/operations/lifecycle-plan-implementation-evidence-checklist.md",
+        "kind": "file",
+        "bytes": 18461,
+        "sha256": "sha256:89d73fd3627c1a9505beafda259a9daf1dd7d969c72de6853b559793b501c817"
+      },
+      {
+        "path": "docs/operations/lifecycle-publication-approval.md",
+        "kind": "file",
+        "bytes": 6670,
+        "sha256": "sha256:8c32bd4145fd893efa17be0d252a0bc51b140dad8a77a6d73386a507c1d58574"
+      },
+      {
+        "path": "docs/operations/lifecycle-resource-inventory.md",
+        "kind": "file",
+        "bytes": 16612,
+        "sha256": "sha256:7d3a58815b71ce5a76d3e78a5d08fc2c5a6fa656db966ad533a5e8253cc99b9b"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-command-proposal.md",
+        "kind": "file",
+        "bytes": 8315,
+        "sha256": "sha256:36c9686204225a283e62f6c1ac60f88bb110b7d329e3bebf061fd06dc41273a6"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-output-embedding-2026-10-21-attempt-1.log",
+        "kind": "file",
+        "bytes": 24400,
+        "sha256": "sha256:e0b872b7f4bc7bd8ba60100778eb8dacb9ccb65dc4a497659b83895680ceae43"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-output-embedding-2026-10-21-attempt-2.log",
+        "kind": "file",
+        "bytes": 2213,
+        "sha256": "sha256:63199d988f9e76fb83ab8aabe6b01c6f7347690bcc1e9f3eda6988654d15614d"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-output-embedding-2026-10-21-attempt-3.log",
+        "kind": "file",
+        "bytes": 1026,
+        "sha256": "sha256:225eb10140f1d0d64dbfe5d2f44af0a3a287705e3f1481ae9ff44d1b7c94a9e8"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-principal-repair-inventory-2026-10-21.json",
+        "kind": "file",
+        "bytes": 8140434,
+        "sha256": "sha256:a5b19e24f32ce6adadcb5af735844be87af2304d380ce3da9e7c1d4a7dca14ac"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-result-embedding-2026-10-21-attempt-3.json",
+        "kind": "file",
+        "bytes": 2563,
+        "sha256": "sha256:b4cc790cfa6ce8d160eeb3c2b23999ca9b1a08fce262b15959f85b589ba1c404"
+      },
+      {
+        "path": "docs/operations/lifecycle-verification-results-2026-10-21.md",
+        "kind": "file",
+        "bytes": 12395,
+        "sha256": "sha256:8b81b3f7ebd4f5812a8d4070eaeb35a5389835b57985c97340261253ccdf926b"
+      },
+      {
+        "path": "docs/perfect-lifecycle-management-architecture.md",
+        "kind": "file",
+        "bytes": 59572,
+        "sha256": "sha256:3c51502dfa624ec68754430b61608981603dd869cdcccdd37598e9280138c8f8"
+      },
+      {
+        "path": "openspec/changes/deterministic-lifecycle-management/design.md",
+        "kind": "file",
+        "bytes": 3993,
+        "sha256": "sha256:a4c39045d6c92cebf78af04d7c8e0e9f7961b0ee3f89b2d813b399abd53e5d84"
+      },
+      {
+        "path": "openspec/changes/deterministic-lifecycle-management/specs/runtime-resource-lifecycle/spec.md",
+        "kind": "file",
+        "bytes": 8289,
+        "sha256": "sha256:3c188125caa74a7a737ab448655dfbb699c8fa4fe69421923270fc42af93aa04"
+      },
+      {
+        "path": "openspec/changes/deterministic-lifecycle-management/tasks.md",
+        "kind": "file",
+        "bytes": 2035,
+        "sha256": "sha256:8acb100a639ab0088cb687f5c0a187d4ea3c54fead548e89ca4467384c05e233"
+      },
+      {
+        "path": "src/embedded.rs",
+        "kind": "file",
+        "bytes": 54887,
+        "sha256": "sha256:43e43702e91cf4b22f1957770c9ece110d60541f59086a1effa1ef4bbf1a41d7"
+      },
+      {
+        "path": "src/uar/runtime/lifecycle.rs",
+        "kind": "file",
+        "bytes": 63538,
+        "sha256": "sha256:4b0dbfcd72692a89f73c7b4d74c36aa37b8b8360c6bca3c49115b133977a3523"
+      }
+    ],
+    "removed_paths": [],
+    "gitlinks": [
+      {
+        "path": "crates/prometheus-skill-system",
+        "head": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+        "dirty_status": ""
+      },
+      {
+        "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner",
+        "head": "18d000f3e46952418f682159b227dbf71ce61dcb",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/skills/imported/prometheus-entity-management",
+        "head": "34a211563fe7f06118996a40cc398c4c3af953ef",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/skills/imported/sycophancy-correction",
+        "head": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/tools/cowork-skills",
+        "head": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/tools/disk-space-guardian",
+        "head": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/tools/liter-llm",
+        "head": "a6047386cc9fae4258b4a8577f6a016022095586",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/tools/openai-proxy",
+        "head": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/tools/prometheus-knowledge",
+        "head": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "crates/prometheus-skill-system/tools/surreal-memory-server",
+        "head": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+        "identity_limit": "nested gitlink source not expanded"
+      },
+      {
+        "path": "frontend/packages/prometheus-entity-management",
+        "head": "34a211563fe7f06118996a40cc398c4c3af953ef",
+        "dirty_status": ""
+      },
+      {
+        "path": "vendor/git/liter-llm",
+        "head": "e446f5ef91003bbec5fce6b2f45fb94559dff335",
+        "dirty_status": ""
+      },
+      {
+        "path": "vendor/git/rust-mcp-filesystem",
+        "head": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+        "dirty_status": ""
+      }
+    ]
+  },
+  "boss_source": {
+    "head": "a609869079bf6d51af196944965e6f86ee6c0758",
+    "files": [
+      {
+        "path": "src/main/ai/runtime/uar/UarSidecarService.ts",
+        "kind": "file",
+        "bytes": 50068,
+        "sha256": "sha256:031c3ed77f26f074fe75a0c4749e33d7fdae4c94038d63354d189dc26168160a"
+      },
+      {
+        "path": "package.json",
+        "kind": "file",
+        "bytes": 32115,
+        "sha256": "sha256:930f166ad865f26bbe190f20d39324ff11c92f62fe3f0266af385b23e6ab3234"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "kind": "file",
+        "bytes": 1374089,
+        "sha256": "sha256:58ea21970797b5e0bab9ec3318de461f994e42ed89c590998884b0a6e4b0970f"
+      },
+      {
+        "path": ".agent-team/boss-core/handoffs/2026-10-20-uar-inherited-lifecycle.md",
+        "kind": "file",
+        "bytes": 9228,
+        "sha256": "sha256:1efadb3d4d40ad9c131456fe5b449e8512e35576c60adc7309da2be06fdd2289"
+      },
+      {
+        "path": ".agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-reconnect.md",
+        "kind": "file",
+        "bytes": 5636,
+        "sha256": "sha256:7f32a2fa7e32c5e0038dc6f24b2e06229259cefaba56fb97522cc3d0c4f2fe97"
+      },
+      {
+        "path": ".agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+        "kind": "file",
+        "bytes": 10628,
+        "sha256": "sha256:cd89d07b5844e0cd3cb9479b15f7a1270b5fa591a4b77730964e8c7b0802d880"
+      },
+      {
+        "path": "build/local-uar-source.json",
+        "kind": "file",
+        "bytes": 371,
+        "sha256": "sha256:dabfeaef5735178cc554b547a8e484d4dee70e26e55ca9c996bac126e4e26db1"
+      },
+      {
+        "path": "scripts/uar-candidate-binding.cjs",
+        "kind": "file",
+        "bytes": 2479,
+        "sha256": "sha256:4c676ac723e0bf04036a07adfc9d9edde2ad6ae73ad66c5706cf5279ccd6c975"
+      },
+      {
+        "path": "scripts/local-uar-payload.cjs",
+        "kind": "file",
+        "bytes": 9710,
+        "sha256": "sha256:4fea68abee233031f16d9f93fae8c1775ab8f9af89689b844adcb088ccbe2a46"
+      },
+      {
+        "path": "scripts/prepare-local-uar-payload.cjs",
+        "kind": "file",
+        "bytes": 398,
+        "sha256": "sha256:192e5081b086048cf434765bd93f03ca5484d18d33e281de191000260e9e9a95"
+      },
+      {
+        "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.md",
+        "kind": "file",
+        "bytes": 2754,
+        "sha256": "sha256:91027fa131e971190e13fbf620581c8542d0901fc2587eeb4948ce8ba018000c"
+      },
+      {
+        "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.zh.md",
+        "kind": "file",
+        "bytes": 2623,
+        "sha256": "sha256:fd7e96630d45be2b1eccbf325625f25a2721667014d9329b331842d139e6f231"
+      },
+      {
+        "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.i18n.yaml",
+        "kind": "file",
+        "bytes": 340,
+        "sha256": "sha256:b7ddd082e27a2a86c9b7e9c54c3303332bc6e46f9b4c29e8a382a6d67d8ebcb8"
+      }
+    ]
+  },
+  "handoffs": [
+    {
+      "path": "docs/operations/lifecycle-resource-inventory.md",
+      "sha256": "sha256:7d3a58815b71ce5a76d3e78a5d08fc2c5a6fa656db966ad533a5e8253cc99b9b"
+    },
+    {
+      "path": "docs/operations/lifecycle-runtime-handoff.md",
+      "sha256": "sha256:2879052db63ac8bfe96714cc37cc68648f44ce20324ed3c880c6b77f1ce8a83e"
+    },
+    {
+      "path": "docs/operations/lifecycle-state-handoff.md",
+      "sha256": "sha256:5c630ddfe2381a5f9f565e0ef57389618d87ec81190acbae66f461049cb2754e"
+    },
+    {
+      "path": "docs/operations/lifecycle-trust-handoff.md",
+      "sha256": "sha256:fbd9d3b26b3932a2b312c1be0ad52707595e66528fc1a362bcb6598eaf27fe70"
+    },
+    {
+      "path": "docs/operations/lifecycle-console-handoff.md",
+      "sha256": "sha256:112e3a683886e9af70117a74fd4ed77f0ea38c2c5500d2f25d5840e1432c1d57"
+    },
+    {
+      "path": "docs/operations/lifecycle-a2a-handoff.md",
+      "sha256": "sha256:6db3d15fd88f600efb50321a8843133cd474e9378fd61b2cb0915567a5e63e6a"
+    },
+    {
+      "path": "docs/operations/lifecycle-sandbox-handoff.md",
+      "sha256": "sha256:97d68368c3e645266b1398c5dd417e9dd077eb688403e8d89d8b63f0f881d7a6"
+    },
+    {
+      "path": "docs/operations/lifecycle-startup-handoff.md",
+      "sha256": "sha256:7dd8285ce5254fb9d42084955a484da9954995fd048a96571a3475c97859b80d"
+    },
+    {
+      "path": "docs/operations/lifecycle-entrypoint-handoff.md",
+      "sha256": "sha256:7213b4f59d7a4e5942454deadd9ce413523b1426419cc95dc7f7af59ad3c0576"
+    },
+    {
+      "path": "docs/operations/lifecycle-watcher-order-handoff.md",
+      "sha256": "sha256:e4b80ca28b49df44cf5c8dc80c224de3336ce0e959464db37169309b2f535751"
+    },
+    {
+      "path": "docs/operations/lifecycle-lead-handoff.md",
+      "sha256": "sha256:e3808d0e1eaf5d88dbf28d553b28fd46e9542f53ea77de110e389de9488b11c4"
+    },
+    {
+      "path": "docs/operations/lifecycle-producer-lead-continuation.md",
+      "sha256": "sha256:1d05316340cac41ec4916a6b0a72e0e20fe2281f532212939b750383ba397369"
+    },
+    {
+      "path": "docs/operations/lifecycle-producer-runtime-continuation.md",
+      "sha256": "sha256:5e9818de8ec5806b73235aeb3cb2637df0d2241080ca80aa4c3ecb2d5eded9e8"
+    },
+    {
+      "path": "docs/operations/lifecycle-producer-state-continuation.md",
+      "sha256": "sha256:fc4a4685d8ac08c3e4ae74cddff30c5a43f350bf80a5111ba1ea86b50dc1715f"
+    },
+    {
+      "path": "docs/operations/lifecycle-producer-trust-continuation.md",
+      "sha256": "sha256:c2dd5f58c5544054ad5ae21cac9617444a9343aac14ec0e461345fec2dc942cc"
+    },
+    {
+      "path": "docs/operations/lifecycle-reconnect-continuation.md",
+      "sha256": "sha256:ee3b835aa0218b07bbc73a0b1f88ca7397dc7c681ba54aa941d0d7304403395f"
+    },
+    {
+      "path": "docs/operations/lifecycle-grpc-continuation.md",
+      "sha256": "sha256:c27024726ea80aeabead3e8019f7aac33651dcf0f5c9dc6b47fdc60ff1fed46b"
+    },
+    {
+      "path": "docs/operations/lifecycle-model-stream-continuation.md",
+      "sha256": "sha256:13a466889fc5b6d32309fa68d13d8dd128c5b9be92cac40f2459389755aa0741"
+    },
+    {
+      "path": "docs/operations/lifecycle-embedding-runtime-handoff.md",
+      "sha256": "sha256:c0f5c14b848d3b76295a57aa0ab0533f83d8a70a5aa4b3a77c0a861607ec93bb"
+    },
+    {
+      "path": "docs/operations/lifecycle-embedding-fixture-handoff.md",
+      "sha256": "sha256:75f93ae8cd3304079f661a83be0a7cb4e7277bde2040b86233a3579202888a57"
+    },
+    {
+      "path": "docs/operations/lifecycle-payload-source-handoff.md",
+      "sha256": "sha256:11c9ca53ffb7a4e3bf0329716be27c0927b94a5fb3e3518f6df8fe94581e8d28"
+    },
+    {
+      "path": "docs/operations/lifecycle-candidate-payload.md",
+      "sha256": "sha256:2128dc461031893eb74698f742c7520333af2743321bef19eae4c292917cb4e1"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-runtime-repair.md",
+      "sha256": "sha256:b0d3878fa697f18d28c1a680193b00bf77443571db7d393f99776aa0400b8241"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-state-repair.md",
+      "sha256": "sha256:113ae456ceac376ad9e221c1db043875e3963ebc62327a0cf59206853b981315"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-mcp-repair.md",
+      "sha256": "sha256:a7434293c217934f2e2d3a4b51afb08eee27891d36c3b9a96a0c51c66f580956"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-startup-send-repair.md",
+      "sha256": "sha256:dd3e22e017c1d4aa93f8cdb36ce97cb120f867ffb11f657f307d3d75a5e48c17"
+    },
+    {
+      "path": "docs/operations/lifecycle-image-delivery-39532243053.md",
+      "sha256": "sha256:8f93c246db811ca3d0e406c9d2027c5cc686e80d1cc5aab2af19b9fbe0370430"
+    },
+    {
+      "path": "docs/operations/lifecycle-approved-gate-state-repair-2026-10-21.md",
+      "sha256": "sha256:8ffd3eb96c9974f1fdb4da272b163522fd363edbd4e0f339e3adb0625e89320f"
+    },
+    {
+      "path": "docs/operations/lifecycle-approved-gate-runtime-repair-2026-10-21.md",
+      "sha256": "sha256:849cd129a0d245a73cf429c922d4c34390f66746caac2a14394a9ff1057a00c1"
+    },
+    {
+      "path": "docs/operations/lifecycle-approved-gate-lead-repair-2026-10-21.md",
+      "sha256": "sha256:20b376692b083f1176a6283bf5dbed3d7e9ea9eb1d0e5379b38c6f60ec5a8f79"
+    },
+    {
+      "path": "docs/operations/lifecycle-approved-gate-principal-repair-2026-10-21.md",
+      "sha256": "sha256:33345bcbd96569e7d59b56dec73eafdc9ba8faf14277714c2579bf9a3765c633"
+    },
+    {
+      "path": "docs/operations/lifecycle-budget-runtime-handoff.md",
+      "sha256": "sha256:874e955026cd89a660417f42f625727e3718ed7d2f01831eea478dd10c57b11c"
+    },
+    {
+      "path": "docs/operations/lifecycle-budget-lead-handoff.md",
+      "sha256": "sha256:61a460e6e17583c025eb24096ee55eba821f8eba55d5177f532277daf746a84d"
+    },
+    {
+      "path": "docs/operations/lifecycle-budget-host-integration-notes.md",
+      "sha256": "sha256:714a625d9799fb56b7def800b7ee4b1182c80af3799916f3ac472b61cf1e988a"
+    }
+  ],
+  "canonical_ledgers": [
+    {
+      "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/tasks.md",
+      "sha256": "sha256:cccd1eb7e23b520eb174f1122c9271ec768bd2ee5b7569a415d3f65a7f07ad1e",
+      "recorded_rows": [
+        "- [x] 1.1 \u2014 Record exclusive ownership and complete-phase inventory (COMPLETE)",
+        "- [x] 3.1 \u2014 Capture durable-store eligibility (COMPLETE)",
+        "- [x] 2.1 \u2014 Implement credential tenancy and bound owner (COMPLETE)",
+        "- [x] 4.3 \u2014 Normalize native Anthropic framing (COMPLETE)",
+        "- [x] 2.3 \u2014 Add credential revision schema upgrade (COMPLETE)",
+        "- [x] 3.2 \u2014 Integrate ingestion diagnostics and recovery guidance (COMPLETE)",
+        "- [x] 2.4 \u2014 Implement conditional credential preview and migration (COMPLETE)",
+        "- [x] 2.2 \u2014 Authorize every model credential binding seam (COMPLETE)",
+        "- [x] 4.1 \u2014 Preserve safe typed run-binding diagnostics (COMPLETE)",
+        "- [x] 4.2 \u2014 Require observed ordinary orchestration completion (COMPLETE)",
+        "- [x] 4.4 \u2014 Complete typed MCP outcome scenarios (COMPLETE)",
+        "- [x] 2.5 \u2014 Author credential fixtures and cutover guidance (COMPLETE)",
+        "- [x] 3.3 \u2014 Author durable recovery fixtures (COMPLETE)",
+        "- [x] 5.1 \u2014 Integrate shared roots configuration version and release docs (COMPLETE)",
+        "- [x] 4.5 \u2014 Integrate runtime and combined production fixtures (COMPLETE)",
+        "- [x] 4.6 \u2014 R6: complete confirmed issue385 reservation diagnostics, startup warning, upgrade guidance and real scenarios (COMPLETE)",
+        "- [x] 4.7 \u2014 R7: resolve complete V1 finding cohort in runtime fallback capture, raw-log controls and publication provenance (COMPLETE)",
+        "- [x] 5.2 \u2014 Implement complete source and image acceptance runner (COMPLETE)",
+        "- [x] 5.3 \u2014 Record full-phase implementation-complete inventory (COMPLETE)",
+        "- [x] 5.4 \u2014 L5: record corrected full-phase implementation inventory after V1 finding cohort (COMPLETE)",
+        "- [x] 6.1 \u2014 Obtain isolated artifact review after complete implementation (COMPLETE)",
+        "- [ ] 6.2 \u2014 Run serialized local source and candidate acceptance (IN_PROGRESS)",
+        "- [ ] 7.1 \u2014 Publish immutable v1.1.1 source tag and images (PENDING)",
+        "- [ ] 7.2 \u2014 Run full acceptance on both published architecture images (PENDING)",
+        "- [ ] 7.3 \u2014 Publish release receipts issue dispositions and reflection (PENDING)",
+        "- [x] 4.8 \u2014 R8 repair complete first real acceptance defect cohort (COMPLETE)",
+        "- [x] 5.5 \u2014 L6 record full implementation inventory after real acceptance repairs (COMPLETE)",
+        "- [x] 4.9 \u2014 R9 repair complete second acceptance cohort and isolated supervisor qualification prerequisites (COMPLETE)",
+        "- [x] 5.6 \u2014 L7 record renewed whole-phase inventory after complete R9 repairs and qualification setup (COMPLETE)",
+        "- [x] 4.10 \u2014 R10 repair complete observed native supervisor bootstrap cohort (COMPLETE)",
+        "- [x] 5.7 \u2014 Record renewed whole-phase inventory after native bootstrap repair cohort (COMPLETE)",
+        "- [x] 8.1 \u2014 Reconcile urgent #385 blocker against terminal local04 evidence (COMPLETE)",
+        "- [x] 8.2 \u2014 Reconcile Dot issues, supported profiles, team ownership and cadence (COMPLETE)",
+        "- [x] 8.3 \u2014 Repair complete observed local04 and selected release-blocking cohort (COMPLETE)",
+        "- [x] 8.4 \u2014 Record renewed whole-phase inventory after local04 repair (COMPLETE)",
+        "- [x] 8.5 \u2014 R12 repair complete observed local08 cohort (COMPLETE)",
+        "- [x] 8.6 \u2014 L10 record renewed whole-phase inventory after local08 repair (COMPLETE)",
+        "- [x] 8.7 \u2014 R13 classify local09 pre-build Docker network prerequisite (COMPLETE)",
+        "- [x] 8.8 \u2014 L11 renew whole-phase inventory after R13 code completion (COMPLETE)"
+      ]
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/tasks.md",
+      "sha256": "sha256:05d5886f0e98f3e9ab5d88f08f10bf3166ae0987a05c21e9c6e687d1fd31bd05",
+      "recorded_rows": [
+        "- [x] 1.1 \u2014 Resource inventory and transition diagnostics (COMPLETE)",
+        "- [x] 2.1 \u2014 Supervisor task scopes and history drain (COMPLETE)",
+        "- [x] 3.1 \u2014 Unified endpoints and store ownership (COMPLETE)",
+        "- [x] 4.1 \u2014 Pinned SDK and memory completion contracts (COMPLETE)",
+        "- [x] 5.1 \u2014 Ordered startup and shutdown (COMPLETE)",
+        "- [x] 5.2 \u2014 Close standalone and Windows service entrypoint resources on all outcomes (COMPLETE)",
+        "- [x] 6.1 \u2014 Event-driven realtime work and consumer recovery (COMPLETE)",
+        "- [x] 5.3 \u2014 Stop and join configuration and file watchers before dependent teardown (COMPLETE)",
+        "- [x] 7.1 \u2014 Transactional migration outcomes (COMPLETE)",
+        "- [x] 5.4 \u2014 Retain blocking descendants and remaining background producer finalization (COMPLETE)",
+        "- [x] 8.1 \u2014 Deterministic fixtures and sidecar finalization (COMPLETE)",
+        "- [x] 6.2 \u2014 Local-only compatible embedding live failover and recovery (COMPLETE)",
+        "- [x] 8.2 \u2014 Real local-model failover and incompatible-space fixture source (COMPLETE)",
+        "- [x] 8.3 \u2014 Bind Boss candidate payload to immutable lifecycle source (COMPLETE)",
+        "- [x] 9.3 \u2014 Publish scoped implementation branch and draft PR with deployment image path (COMPLETE)",
+        "- [x] 9.4 \u2014 Repair observed integration compiler failures from authorized Docker delivery (COMPLETE)",
+        "- [x] 8.4 \u2014 Renew immutable Boss source pin after Docker delivery repairs (COMPLETE)",
+        "- [x] 9.5 \u2014 Repair startup tracing awaits exposed by owned server task (COMPLETE)",
+        "- [x] 8.5 \u2014 Renew Boss pin after startup Send source repair (COMPLETE)",
+        "- [x] 9.6 \u2014 Repair approved embedding fixture digest compatibility and emitted compiler warnings (COMPLETE)",
+        "- [x] 9.7 \u2014 Repair approved embedding fixture verified-principal identity (COMPLETE)",
+        "- [x] 9.8 \u2014 Budgeted shutdown observation with retained cleanup ownership (COMPLETE)",
+        "- [x] 1.1 \u2014 Scope and contract amendment (COMPLETE)",
+        "- [x] 2.1 \u2014 Runtime prompt skill and stream observations (COMPLETE)",
+        "- [x] 2.2 \u2014 Trust compiler and recovery observation reduction (COMPLETE)",
+        "- [x] 3.1 \u2014 Runner and documentation integration (COMPLETE)",
+        "- [x] 3.2 \u2014 Whole-phase inventory and operator packet (COMPLETE)",
+        "- [ ] 4.1 \u2014 Authorized same-image supervisor preparation (PENDING)",
+        "- [ ] 4.2 \u2014 Authorized independent completed-artifact review (PENDING)",
+        "- [ ] 4.3 \u2014 Authorized local functional acceptance (PENDING)",
+        "- [ ] 5.1 \u2014 Child reflection and parent handoff (PENDING)"
+      ]
+    }
+  ],
+  "authority_records": [
+    {
+      "path": ".kbd-orchestrator/current-waypoint.json",
+      "sha256": "sha256:818f6453c1955556e1550dd986d04aff7b8f483a62534694b3b2f691c91b4ae3"
+    },
+    {
+      "path": ".agent-team/uar-core/state.json",
+      "sha256": "sha256:bd4f633faa0b5ab44ed4646d201b67df57ea20d94554c78a4fa5d0c85deb25c7"
+    },
+    {
+      "path": ".prometheus/decisions.md",
+      "sha256": "sha256:4b95523d7570b68c5f643cc8d5d3d723d9d3126702e769cd5243184584c5f251"
+    },
+    {
+      "path": ".prometheus/session-log.md",
+      "sha256": "sha256:2d6644527fb582b23f9a60d7ef6ffb2bd50f63f14d243e1ca9aea86753a14a49"
+    }
+  ],
+  "delivery_limit": "Image and Boss pin remain32cb3bcf. Prior source d35234ba repairs published; this budgeted API has no build/test receipt.",
+  "outstanding": "Existing command approvals remain held; full frozen embedding, watcher/producer/engine acceptance, native payload binding and whole-release evidence remain unfinished"
+}

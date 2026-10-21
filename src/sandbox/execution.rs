@@ -583,6 +583,7 @@ fn sandbox_runner_type_label(runner: super::runner::RunnerType) -> &'static str 
 
 fn sandbox_error_type(error: &SandboxError) -> &'static str {
     match error {
+        SandboxError::OutcomeUnknown(_) => "outcome_unknown",
         SandboxError::CreationFailed(_) => "creation_failed",
         SandboxError::ExecutionFailed(_) => "execution_failed",
         SandboxError::FileError(_) => "file_error",

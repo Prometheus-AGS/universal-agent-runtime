@@ -351,6 +351,11 @@ impl SettingsManager {
             .map(|setting| setting.data))
     }
 
+    /// Read a persisted row with its write marker for bootstrap decisions.
+    pub async fn load_optional_persisted_setting(&self, key: &str) -> Result<Option<Settings>> {
+        self.persistence.get_setting(key).await
+    }
+
     /// Apply the seed/normalization write required by a sealed governance plan.
     pub async fn apply_governance_preference_plan(
         &self,
@@ -908,6 +913,7 @@ impl SettingsManager {
     pub async fn seed_providers_from_registry(
         &self,
         registry: &crate::llm::registry::ProviderRegistry,
+        preserve_api_key: bool,
     ) -> Result<usize> {
         // The `provider` settings type is created by initialize(); bail clearly
         // if it isn't present rather than silently writing orphan rows.
@@ -927,7 +933,13 @@ impl SettingsManager {
                 continue;
             }
             let mut persisted = config.clone();
-            persisted.api_key = None;
+            // When the protected credential store is unavailable
+            // (CREDENTIAL_ENCRYPTION_KEY unset), the settings row is the only
+            // durable credential location: stripping the key here would lose
+            // the credential on the very first hydration.
+            if !preserve_api_key {
+                persisted.api_key = None;
+            }
             let data = serde_json::to_value(&persisted).context("serialize ProviderConfig")?;
             let now = Utc::now();
             let setting = Settings {
@@ -981,6 +993,7 @@ impl SettingsManager {
     pub async fn upsert_provider_config(
         &self,
         config: &crate::llm::registry::ProviderConfig,
+        preserve_existing_api_key: bool,
     ) -> Result<()> {
         let st = self
             .persistence
@@ -991,11 +1004,28 @@ impl SettingsManager {
             })?;
 
         let key = format!("provider.{}", config.id);
+        let existing = self.persistence.get_setting(&key).await?;
         let mut persisted = config.clone();
-        persisted.api_key = None;
+        if preserve_existing_api_key {
+            // No protected credential store: the settings row is the only
+            // durable credential location. Keep a key the caller carries
+            // (e.g. the update path's carry-over of the effective
+            // credential), and for a keyless mutation fall back to the key
+            // already stored — stripping either would schedule credential
+            // loss on the next restart.
+            if persisted.api_key.is_none()
+                && let Some(existing) = existing.as_ref()
+                && let Some(existing_key) = existing.data.get("api_key").and_then(|v| v.as_str())
+                && !existing_key.trim().is_empty()
+            {
+                persisted.api_key = Some(existing_key.to_string());
+            }
+        } else {
+            // The protected store owns the credential; rows never hold it.
+            persisted.api_key = None;
+        }
         let data = serde_json::to_value(&persisted).context("serialize ProviderConfig")?;
 
-        let existing = self.persistence.get_setting(&key).await?;
         let now = Utc::now();
         let setting = Settings {
             id: existing.as_ref().map(|e| e.id).unwrap_or_else(Uuid::new_v4),
@@ -1192,6 +1222,7 @@ pub async fn store_system_provider_credential(
     service
         .store()
         .put(CredentialRecord {
+            row_revision: None,
             scope: CredentialScope::System,
             scope_id: "system".to_string(),
             provider_id: provider_id.to_string(),
@@ -1308,7 +1339,8 @@ fn build_core_schema(
                     "x-control": "text", "x-order": 2
                 },
                 "shutdown_timeout_secs": {
-                    "type": "integer", "minimum": 1, "title": "Shutdown Timeout (s)",
+                    "type": "integer", "minimum": 1, "title": "Legacy Shutdown Timeout (unused)",
+                    "description": "Retained for configuration compatibility. Shutdown awaits resource completion; this value does not force exit.",
                     "x-control": "number", "x-order": 3
                 },
                 "log_format": {
@@ -1328,7 +1360,7 @@ fn build_core_schema(
             make_setting(
                 &st,
                 "server.shutdown_timeout_secs",
-                "Shutdown Timeout (s)",
+                "Legacy Shutdown Timeout (unused)",
                 json!(config.server.shutdown_timeout_secs),
             ),
             make_setting(
@@ -2622,6 +2654,7 @@ fn build_core_schema(
                     "type": ["string", "null"],
                     "title": "API Key",
                     "description": "API key for the default provider. Stored encrypted.",
+                    "x-sensitive": true,
                     "x-control": "password"
                 },
                 "base_url": {
@@ -2716,6 +2749,19 @@ fn build_core_schema(
                     "title": "Default LLM Provider ID",
                     "description": "Which registered provider is default (e.g. openai). Persisted with provider settings.",
                     "x-control": "text"
+                },
+                "embedding.backend": {
+                    "type": "string",
+                    "title": "Embedding Backend",
+                    "description": "Operative embedding backend. A validated mutation hot-swaps the shared backend immediately and persists across restarts. Previously indexed knowledge bases keep their recorded space and refuse the new one explicitly.",
+                    "enum": ["fastembed", "candle", "openai", "voyage", "cohere"],
+                    "x-control": "select"
+                },
+                "embedding.model": {
+                    "type": "string",
+                    "title": "Embedding Model",
+                    "description": "Model identifier within the selected embedding backend. Changing the model changes the embedding space.",
+                    "x-control": "text"
                 }
             },
             "required": ["model"]
@@ -2786,6 +2832,23 @@ fn build_core_schema(
                 "llm.default_provider",
                 "Default LLM Provider ID",
                 json!(default_provider_seed),
+            ),
+            // Operative embedding-space selectors. These are the ONLY
+            // REST-mutable embedding keys with a live consumer: a validated
+            // mutation hot-swaps the shared backend (next embed call) and is
+            // applied from the persisted rows at every boot. The rag.*
+            // embedding fields stay descriptive metadata.
+            make_setting(
+                &st,
+                "llm.embedding.backend",
+                "Embedding Backend",
+                json!(config.llm.embedding.backend),
+            ),
+            make_setting(
+                &st,
+                "llm.embedding.model",
+                "Embedding Model",
+                json!(config.llm.embedding.model),
             ),
         ];
         result.push((st, settings));
@@ -3155,6 +3218,33 @@ fn build_core_schema(
     }
 
     // -------------------------------------------------------------------------
+    // tools — standalone tool definitions (R11 CRUD surface, operator ruling
+    // 2026-10-20). One row keyed tool_id -> StoredToolDefinition; owner
+    // governance is enforced in uar::api::tool_definitions, not here.
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "definitions": {
+                    "type": "object",
+                    "title": "Stored tool definitions",
+                    "additionalProperties": { "type": "object" }
+                }
+            }
+        });
+        let st = make_type("Tool Definitions", "tools", schema);
+        let settings = vec![make_setting(
+            &st,
+            "tools.definitions",
+            "Stored Tool Definitions",
+            json!({}),
+        )];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
     // skill_evolution — Hermes learning cycle / auto-skill creation
     // -------------------------------------------------------------------------
     {
@@ -3425,5 +3515,89 @@ fn make_setting(st: &SettingsType, key: &str, name: &str, data: Value) -> Settin
         parent_id: None,
         created_at: Utc::now(),
         updated_at: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_core_schema;
+    use crate::config::AppConfig;
+    use serde_json::json;
+
+    fn minimal_config() -> AppConfig {
+        serde_json::from_value(json!({
+            "server": { "port": 3000, "host": "127.0.0.1" },
+            "security": { "jwt_required": false, "jwt_secret": "test-secret" },
+            "resilience": {
+                "rate_limit_enabled": false,
+                "requests_per_second": 5.0,
+                "burst_size": 10.0
+            },
+            "persistence": {
+                "provider": "surreal",
+                "database_url": "memory://settings-schema-test",
+                "vector_dimension": 384,
+                "external_cache_enabled": false
+            }
+        }))
+        .expect("minimal settings schema test config must deserialize")
+    }
+
+    /// Security repair 2026-10-19: `llm.api_key` must carry `x-sensitive: true`
+    /// so the settings API masks saved/effective values and placeholder
+    /// preservation engages. Regression guard for the plaintext exposure
+    /// (anonymous GET /api/uar/settings returned the default provider key).
+    #[test]
+    fn llm_api_key_schema_is_marked_sensitive() {
+        let config = minimal_config();
+        let types = build_core_schema(&config, false);
+        let (llm_type, _) = types
+            .iter()
+            .find(|(st, _)| st.key == "llm")
+            .expect("core schema must contain the llm type");
+        let api_key = &llm_type.schema["properties"]["api_key"];
+        assert_eq!(
+            api_key.get("x-sensitive").and_then(|v| v.as_bool()),
+            Some(true),
+            "llm.api_key schema must set x-sensitive: true"
+        );
+        assert_eq!(
+            api_key.get("x-control").and_then(|v| v.as_str()),
+            Some("password")
+        );
+    }
+
+    /// Class-level invariant: every `x-control: "password"` property in every
+    /// core schema type must also be `x-sensitive`. This is the exact
+    /// invariant that failed for llm.api_key.
+    #[test]
+    fn every_password_control_property_is_sensitive() {
+        fn collect_violations(prefix: &str, props: &serde_json::Value, out: &mut Vec<String>) {
+            if let Some(map) = props.as_object() {
+                for (name, prop) in map {
+                    let path = format!("{prefix}.{name}");
+                    if prop.get("x-control").and_then(|v| v.as_str()) == Some("password")
+                        && prop.get("x-sensitive").and_then(|v| v.as_bool()) != Some(true)
+                    {
+                        out.push(path.clone());
+                    }
+                    if let Some(nested) = prop.get("properties") {
+                        collect_violations(&path, nested, out);
+                    }
+                }
+            }
+        }
+        let config = minimal_config();
+        let types = build_core_schema(&config, false);
+        let mut violations = Vec::new();
+        for (st, _) in &types {
+            if let Some(props) = st.schema.get("properties") {
+                collect_violations(&st.key, props, &mut violations);
+            }
+        }
+        assert!(
+            violations.is_empty(),
+            "password controls missing x-sensitive: {violations:?}"
+        );
     }
 }

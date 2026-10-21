@@ -12,7 +12,7 @@
 //! - Retains the selected listener through initialization and emits exactly
 //!   one `READY:{port}` line only after the HTTP application is ready to serve.
 //!   The Electron main process reads this line from the child's stdout pipe.
-//! - Spawns a background task that reads stdin; when stdin reaches EOF
+//! - Owns a cancellable, joined control task that reads stdin; when stdin reaches EOF
 //!   (Electron closes the pipe on quit) the process exits cleanly.  This is
 //!   the cross-platform shutdown contract — it works on Windows where SIGTERM
 //!   is unreliable.
@@ -28,49 +28,93 @@
 //! the runtime has spawned its workers — is unsound. `main` is deliberately
 //! synchronous and builds the runtime by hand.
 
-use std::io::{BufRead as _, Read as _, Write as _};
-use std::net::SocketAddr;
-use std::pin::Pin;
+use std::io::Write as _;
+#[path = "uar-sidecar/inherited_input.rs"]
+mod inherited_input;
+#[path = "uar-sidecar/control.rs"]
+mod control;
 
 use clap::Parser as _;
 use dotenvy::dotenv;
 use secrecy::zeroize::Zeroize as _;
-use tokio::io::AsyncReadExt as _;
+use futures::FutureExt as _;
 use universal_agent_runtime::config::{Cli, LogFormat};
 use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 use universal_agent_runtime::uar::security::sidecar_guard::{
-    InvalidLaunchToken, SidecarLaunchToken,
+    InvalidBoundPrincipal, InvalidLaunchToken, SidecarBoundPrincipal, SidecarLaunchToken,
 };
 
 /// Longest accepted token line: 64 hex characters, `\r`, `\n`.
-const MAX_TOKEN_LINE_BYTES: u64 = 66;
+const MAX_TOKEN_LINE_BYTES: usize = 66;
 
 /// Exit status when the launch token is missing or malformed.
-const INVALID_TOKEN_EXIT_STATUS: i32 = 2;
+const INVALID_TOKEN_EXIT_STATUS: u8 = 2;
+
+/// Launch-environment variable naming the one owner of a launch-bound sidecar.
+/// Read only from the process environment set by the launching host.
+const BOUND_PRINCIPAL_ENV: &str = "UAR_SIDECAR_BOUND_PRINCIPAL";
+
+/// Exit status when the bound principal is present but not a valid subject.
+const INVALID_BOUND_PRINCIPAL_EXIT_STATUS: u8 = 3;
+
+#[derive(Debug)]
+struct LaunchRefusal(u8);
+impl std::fmt::Display for LaunchRefusal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("sidecar launch authorization rejected")
+    }
+}
+impl std::error::Error for LaunchRefusal {}
+
+/// Parse the optional launch-bound principal from its raw environment value.
+///
+/// Absent means the shared sidecar. A present value must be UTF-8 and satisfy
+/// the `x-uar-principal` rule; an empty or invalid value fails closed.
+///
+/// # Errors
+///
+/// Returns [`InvalidBoundPrincipal`] for a non-UTF-8 or invalid value.
+fn bound_principal_from_env(
+    raw: Option<&std::ffi::OsStr>,
+) -> Result<Option<SidecarBoundPrincipal>, InvalidBoundPrincipal> {
+    raw.map(|value| {
+        value
+            .to_str()
+            .ok_or(InvalidBoundPrincipal)
+            .and_then(SidecarBoundPrincipal::parse)
+    })
+    .transpose()
+}
+
+/// Settings forced off because they can mix content across host sessions.
+///
+/// Skill evolution is always off. Memory is forced off only for the shared
+/// sidecar, where one process serves many host sessions and owners. A
+/// launch-bound sidecar has exactly one owner, so memory follows configuration.
+fn forced_session_mixing_env(launch_bound: bool) -> &'static [(&'static str, &'static str)] {
+    if launch_bound {
+        &[("UAR_SKILL_EVOLUTION__ENABLED", "false")]
+    } else {
+        &[("UAR_SKILL_EVOLUTION__ENABLED", "false"), ("UAR_MEMORY__ENABLED", "false")]
+    }
+}
 
 /// Read the launch token from the first stdin line.
 ///
 /// The read is bounded, so a host that never sends a newline cannot make the
 /// sidecar buffer without limit. The raw bytes are zeroized after parsing.
-/// Bytes after the first line stay in the standard-library stdin buffer, which
-/// the EOF watcher in [`run_sidecar`] reads through the same handle.
+/// Bootstrap reads exactly one byte at a time; later control bytes remain in
+/// the owned inherited pipe for the cancellable runtime reader.
 ///
 /// # Errors
 ///
 /// Returns [`InvalidLaunchToken`] on end-of-file, a read error, or a line that
 /// is not exactly a launch token.
-fn read_launch_token() -> Result<SidecarLaunchToken, InvalidLaunchToken> {
-    let mut line = Vec::new();
-    let read = std::io::stdin()
-        .lock()
-        .take(MAX_TOKEN_LINE_BYTES)
-        .read_until(b'\n', &mut line);
-    let token = match read {
-        Ok(_) => SidecarLaunchToken::from_line(&line),
-        Err(_) => Err(InvalidLaunchToken),
-    };
+fn read_launch_token(input: &mut inherited_input::Input) -> Result<SidecarLaunchToken, InvalidLaunchToken> {
+    let mut line = input.read_token_line(MAX_TOKEN_LINE_BYTES).map_err(|_| InvalidLaunchToken)?;
+    let token = SidecarLaunchToken::from_line(&line);
     line.zeroize();
     token
 }
@@ -109,7 +153,9 @@ fn should_disable_sidecar_jwt(
 struct SidecarBootstrap {
     cli: Cli,
     token: SidecarLaunchToken,
+    bound_principal: Option<SidecarBoundPrincipal>,
     listener: std::net::TcpListener,
+    input: inherited_input::Input,
 }
 
 const DEFAULT_SIDECAR_PORT: u16 = 1906;
@@ -135,6 +181,9 @@ fn bind_sidecar_listener(preferred_port: u16) -> std::io::Result<std::net::TcpLi
 
 /// Synchronous pre-runtime bootstrap: every environment write lives here.
 ///
+/// Windows launchers must provide inherited named-pipe stdin opened with
+/// FILE_FLAG_OVERLAPPED and declare UAR_SIDECAR_STDIN_OVERLAPPED=1. The legacy
+/// blocking-stdin channel is rejected before resource acquisition.
 /// The launch token is read after the environment writes and before any socket
 /// is bound. A missing or malformed token ends the process with status 2 and a
 /// fixed message that never echoes the received bytes.
@@ -157,6 +206,17 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
     let session_retention_unconfigured = std::env::var_os("UAR_SESSIONS__IDLE_TIMEOUT_SECS")
         .is_none()
         && std::env::var_os("UAR_SESSIONS__MAX_RETAINED").is_none();
+    // Fail closed before any socket is bound; never echo the rejected value.
+    let bound_principal =
+        match bound_principal_from_env(std::env::var_os(BOUND_PRINCIPAL_ENV).as_deref()) {
+            Ok(principal) => principal,
+            Err(_) => {
+                eprintln!(
+                    "UAR sidecar refused to start: {BOUND_PRINCIPAL_ENV} is not a valid host principal"
+                );
+                return Err(LaunchRefusal(INVALID_BOUND_PRINCIPAL_EXIT_STATUS).into());
+            }
+        };
 
     // Force loopback-only binding and JSON logs before config is loaded so the
     // config layer picks them up via env-var overrides.
@@ -188,17 +248,22 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
             std::env::set_var("UAR_SESSIONS__IDLE_TIMEOUT_SECS", "1800");
             std::env::set_var("UAR_SESSIONS__MAX_RETAINED", "1000");
         }
-        // One sidecar serves every host session. Features that mix content
-        // across sessions stay off regardless of configuration files.
-        std::env::set_var("UAR_SKILL_EVOLUTION__ENABLED", "false");
-        std::env::set_var("UAR_MEMORY__ENABLED", "false");
+        // A shared sidecar serves every host session, so features that mix
+        // content across sessions stay off regardless of configuration files.
+        // Skill evolution is off in every mode. Memory is forced off only when
+        // no principal is bound; a launch-bound sidecar serves exactly one
+        // owner, so its memory follows configuration.
+        for (key, value) in forced_session_mixing_env(bound_principal.is_some()) {
+            std::env::set_var(key, value);
+        }
     }
 
-    let token = match read_launch_token() {
+    let mut input = inherited_input::Input::open()?;
+    let token = match read_launch_token(&mut input) {
         Ok(token) => token,
         Err(error) => {
             eprintln!("UAR sidecar refused to start: {error}");
-            std::process::exit(INVALID_TOKEN_EXIT_STATUS);
+            return Err(LaunchRefusal(INVALID_TOKEN_EXIT_STATUS).into());
         }
     };
 
@@ -223,36 +288,13 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
     Ok(SidecarBootstrap {
         cli,
         token,
+        bound_principal,
         listener,
+        input,
     })
 }
 
-/// Await readiness, failing fast if the server stops first.
-///
-/// # Errors
-///
-/// Returns an error if the server exits — successfully or not — before it
-/// signals readiness.
-async fn await_server_readiness<F>(
-    mut ready: tokio::sync::oneshot::Receiver<SocketAddr>,
-    server: Pin<&mut F>,
-) -> anyhow::Result<SocketAddr>
-where
-    F: std::future::Future<Output = anyhow::Result<()>>,
-{
-    tokio::select! {
-        ready = &mut ready => ready
-            .map_err(|_| anyhow::anyhow!("UAR sidecar stopped before reporting readiness")),
-        result = server => match result {
-            Ok(()) => Err(anyhow::anyhow!("sidecar stopped before reporting readiness")),
-            Err(error) => Err(anyhow::anyhow!(
-                "UAR sidecar failed during startup: {error:#}"
-            )),
-        },
-    }
-}
-
-fn main() {
+fn main() -> std::process::ExitCode {
     #[cfg(feature = "tract-embeddings")]
     ort::set_api(ort_tract::api());
 
@@ -260,94 +302,179 @@ fn main() {
         Ok(bootstrap) => bootstrap,
         Err(error) => {
             eprintln!("Failed to prepare UAR sidecar: {error:#}");
-            std::process::exit(1);
+            return std::process::ExitCode::from(error.downcast_ref::<LaunchRefusal>().map_or(1, |error| error.0));
         }
     };
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .thread_stack_size(8 * 1024 * 1024)
-        .enable_all()
-        .build()
-        .expect("Failed to create UAR sidecar async runtime");
-    runtime.block_on(run_sidecar(bootstrap));
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .thread_stack_size(8 * 1024 * 1024).enable_all().build() {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("Failed to create UAR sidecar async runtime: {error}");
+            return std::process::ExitCode::FAILURE;
+        }
+    };
+    match runtime.block_on(run_sidecar(bootstrap)) {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("UAR sidecar failed after cleanup: {error:#}");
+            std::process::ExitCode::FAILURE
+        }
+    }
 }
 
-async fn run_sidecar(bootstrap: SidecarBootstrap) {
-    let log_format = LogFormat::Json;
-    // Plain `info` by default: debug lines carry prompts and tool arguments,
-    // and one sidecar log stream serves every host session. An explicit
-    // `RUST_LOG` stays authoritative.
-    let otel_provider = match uar::telemetry::init(&log_format, "info") {
-        Ok(provider) => provider,
-        Err(error) => {
-            eprintln!("Failed to initialize UAR sidecar telemetry: {error:#}");
-            std::process::exit(1);
+async fn run_sidecar(bootstrap: SidecarBootstrap) -> anyhow::Result<()> {
+    let SidecarBootstrap { cli, token, bound_principal, listener, input } = bootstrap;
+    let input = input.into_async()?;
+    let otel_provider = match std::panic::catch_unwind(|| uar::telemetry::init(&LogFormat::Json, "info")) {
+        Ok(Ok(provider)) => provider,
+        outcome => {
+            // The OS input worker is already acquired. Even telemetry startup
+            // failure must acknowledge its cancellation before returning.
+            let close = input.close().await;
+            let initial = match outcome {
+                Ok(Err(error)) => error.to_string(),
+                Err(_) => "sidecar telemetry initialization panicked".to_owned(),
+                Ok(Ok(_)) => unreachable!(),
+            };
+            return Err(match close {
+                Ok(()) => anyhow::anyhow!(initial),
+                Err(error) => anyhow::anyhow!("{initial}; input cleanup failed: {error}"),
+            });
         }
     };
-    uar::telemetry::metrics::init();
-
-    let listener = tokio::net::TcpListener::from_std(bootstrap.listener)
-        .expect("Failed to register UAR sidecar listener with async runtime");
-
-    let config_manager = match ConfigManager::load(bootstrap.cli).await {
-        Ok(m) => m,
-        Err(e) => {
-            tracing::error!("Failed to load configuration: {:?}", e);
-            std::process::exit(1);
-        }
-    };
-
-    let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let process_shutdown = tokio_util::sync::CancellationToken::new();
-    let server = server::start_server_sidecar(
-        config_manager, listener, bootstrap.token, ready_tx, Some(process_shutdown.clone()),
-    );
-    tokio::pin!(server);
-    let ready_addr = match await_server_readiness(ready_rx, server.as_mut()).await {
-        Ok(addr) => addr,
-        Err(error) => {
-            tracing::error!(error = %error, "UAR sidecar failed during startup");
-            std::process::exit(1);
-        }
-    };
+    let reader_stop = tokio_util::sync::CancellationToken::new();
+    let host_control = server::ServerLifecycleControl::default();
+    // Register the sole input owner before config/server initialization can await.
+    // Parent EOF therefore requests cancellation during startup as well as serving.
+    let reader = tokio::spawn(control::serve(input, host_control.clone(),
+        process_shutdown.clone(), reader_stop.clone()));
 
-    // Emit readiness only after the runtime and HTTP application initialize.
-    // UarSidecarService's readline handler watches for this exact format.
-    let ready_line = format!("READY:{}\n", ready_addr.port());
-    std::io::stdout()
-        .write_all(ready_line.as_bytes())
-        .expect("Failed to write READY signal to stdout");
-    std::io::stdout().flush().expect("Failed to flush stdout");
-
-    // EOF requests the same bounded graceful cleanup used by server shutdown.
-    // Electron closes the child's stdin pipe on app quit, triggering this path.
-    tokio::spawn(async move {
-        let mut stdin = tokio::io::stdin();
-        let mut buf = [0u8; 1];
-        // Block until stdin is closed (EOF) or errors out.
-        loop {
-            match stdin.read(&mut buf).await {
-                Ok(0) | Err(_) => break,
-                Ok(_) => {} // ignore any bytes written to stdin
+    let result = std::panic::AssertUnwindSafe(async {
+        uar::telemetry::metrics::init();
+        let listener = tokio::net::TcpListener::from_std(listener)?;
+        let config_manager = tokio::select! {
+            biased;
+            _ = process_shutdown.cancelled() => return Ok(()),
+            result = ConfigManager::load(cli) => result?,
+        };
+        let (ready_tx, mut ready_rx) = tokio::sync::oneshot::channel();
+        let server = server::start_server_sidecar_with_control(config_manager, listener,
+            token, bound_principal, ready_tx, Some(process_shutdown.clone()), host_control);
+        tokio::pin!(server);
+        let ready = tokio::select! {
+            result = server.as_mut() => {
+                result?;
+                if process_shutdown.is_cancelled() { return Ok(()); }
+                return Err(anyhow::anyhow!("sidecar exited before readiness"));
+            },
+            result = &mut ready_rx => result,
+        };
+        let ready_addr = match ready {
+            Ok(address) => address,
+            Err(error) => {
+                process_shutdown.cancel();
+                let cleanup = server.await;
+                cleanup?;
+                return Err(anyhow::anyhow!("sidecar readiness channel closed: {error}"));
             }
+        };
+        // Keep the exact parent-compatible line. A write failure requests cleanup;
+        // it never bypasses the supervisor by exiting the process.
+        let announce = (|| -> std::io::Result<()> {
+            let mut stdout = std::io::stdout().lock();
+            writeln!(stdout, "READY:{}", ready_addr.port())?;
+            stdout.flush()
+        })();
+        if let Err(error) = announce {
+            process_shutdown.cancel();
+            let cleanup = server.await;
+            if let Err(cleanup) = cleanup { tracing::error!(error = %cleanup, "sidecar cleanup failed after output error"); }
+            return Err(error.into());
         }
-        tracing::info!(name = "sidecar.stdin_eof", "stdin closed — requesting graceful shutdown");
-        process_shutdown.cancel();
-    });
+        server.await
+    }).catch_unwind().await;
 
-    if let Err(error) = server.await {
-        tracing::error!(error = %error, "UAR sidecar error");
-        std::process::exit(1);
-    }
-
-    if let Some(provider) = &otel_provider {
-        let _ = provider.shutdown();
-    }
+    reader_stop.cancel();
+    let reader_result = reader.await;
+    let telemetry_result = otel_provider.as_ref().map(|provider| provider.shutdown()).transpose();
+    // Cleanup obligations settle before propagating the original failure/panic.
+    if let Err(error) = &reader_result { tracing::error!(error = %error, "sidecar control task failed"); }
+    if let Ok(Err(error)) = &reader_result { tracing::error!(error = %error, "sidecar control cleanup failed"); }
+    if let Err(error) = &telemetry_result { tracing::error!(error = %error, "sidecar telemetry shutdown failed"); }
+    result.map_err(|_| anyhow::anyhow!("sidecar startup or runtime panicked"))??;
+    reader_result??;
+    telemetry_result?;
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::should_disable_sidecar_jwt;
+    use super::{
+        InvalidBoundPrincipal, bound_principal_from_env, forced_session_mixing_env,
+        should_disable_sidecar_jwt,
+    };
     use std::ffi::OsStr;
+
+    #[test]
+    fn bound_principal_absent_keeps_shared_mode() {
+        assert_eq!(bound_principal_from_env(None), Ok(None));
+    }
+
+    #[test]
+    fn bound_principal_accepts_a_valid_subject() {
+        let bound = bound_principal_from_env(Some(OsStr::new("alice")))
+            .expect("valid subject must parse")
+            .expect("present subject must bind");
+        assert_eq!(bound.as_str(), "alice");
+        let longest = "a".repeat(128);
+        assert!(bound_principal_from_env(Some(OsStr::new(&longest))).is_ok());
+    }
+
+    #[test]
+    fn bound_principal_rejects_anonymous_empty_overlong_and_bad_charset() {
+        let overlong = "a".repeat(129);
+        for rejected in [
+            "anonymous",
+            "ANONYMOUS",
+            "",
+            overlong.as_str(),
+            "-alice",
+            "alice bob",
+            "alice/bob",
+            "alice\n",
+        ] {
+            assert_eq!(
+                bound_principal_from_env(Some(OsStr::new(rejected))),
+                Err(InvalidBoundPrincipal),
+                "a malformed bound principal must fail closed"
+            );
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn bound_principal_rejects_non_utf8() {
+        use std::os::unix::ffi::OsStrExt as _;
+        assert_eq!(
+            bound_principal_from_env(Some(OsStr::from_bytes(&[0x61, 0xff]))),
+            Err(InvalidBoundPrincipal)
+        );
+    }
+
+    #[test]
+    fn bound_principal_mode_lets_memory_follow_configuration() {
+        let forced = forced_session_mixing_env(true);
+        assert!(!forced.iter().any(|(key, _)| *key == "UAR_MEMORY__ENABLED"));
+        assert!(forced.contains(&("UAR_SKILL_EVOLUTION__ENABLED", "false")));
+    }
+
+    #[test]
+    fn bound_principal_shared_mode_still_forces_memory_off() {
+        let forced = forced_session_mixing_env(false);
+        assert!(forced.contains(&("UAR_MEMORY__ENABLED", "false")));
+        assert!(forced.contains(&("UAR_SKILL_EVOLUTION__ENABLED", "false")));
+    }
 
     #[test]
     fn disables_jwt_when_operator_expressed_no_opinion() {

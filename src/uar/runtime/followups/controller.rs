@@ -31,6 +31,19 @@ impl FollowupController {
         Ok(())
     }
     pub fn supported(&self) -> bool { self.require_store().is_ok() }
+    /// The next deferred follow-up availability boundary. The durable catalog
+    /// is still reloaded and arbitrated when this one-shot wakeup fires.
+    pub async fn next_due_at(&self) -> Result<Option<chrono::DateTime<Utc>>, FollowupError> {
+        self.require_store()?;
+        let now = Utc::now();
+        Ok(self.catalog.followup_rules().await?.iter()
+            .filter(|rule| rule.enabled && !rule.revoked)
+            .flat_map(|rule| rule.decisions.iter())
+            .filter(|decision| decision.disposition == FollowupDisposition::Deferred)
+            .filter_map(|decision| decision.available_at)
+            .filter(|available_at| *available_at > now)
+            .min())
+    }
     async fn instance(&self, owner: &ActorOwner, workspace: &str, id: &str) -> Result<AgentInstanceRecord, FollowupError> {
         let record = self.instances.store.load_agent_instance(&owner.presentation_owner_key(), workspace, id)
             .await.map_err(|_| FollowupError::Storage)?.ok_or(FollowupError::Denied)?;

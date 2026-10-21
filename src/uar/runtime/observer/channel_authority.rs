@@ -1,8 +1,6 @@
 //! UAR obtains current Gate authority as the authenticated execution owner.
 //! Incoming route claims and earlier receipts are never an execution permit.
 
-use std::time::Duration;
-
 use reqwest::Url;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
@@ -63,7 +61,6 @@ impl ChannelGateClient {
             base.set_path(&path);
         }
         let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
             .redirect(reqwest::redirect::Policy::none())
             .build().ok()?;
         Some(Self {

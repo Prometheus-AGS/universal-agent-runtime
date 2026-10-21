@@ -5,7 +5,7 @@
 use std::net::TcpListener;
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, routing::post};
+use axum::{Json, Router, extract::State, routing::{get, post}};
 use serde_json::json;
 use tokio::net::TcpListener as TokioListener;
 use universal_agent_runtime::uar::api::a2a::{A2AClient, types::TaskState};
@@ -26,8 +26,13 @@ async fn start_mock_server(result: serde_json::Value) -> String {
     let port = find_free_port();
     let result = Arc::new(result);
 
+    let endpoint = format!("http://127.0.0.1:{port}/");
+    let card = json!({"capabilities": {"streaming": true}, "supportedInterfaces": [{
+        "url": endpoint, "protocolBinding": "JSONRPC", "protocolVersion": "1.0",
+    }]});
     let app = Router::new()
         .route("/", post(mock_rpc_handler))
+        .route("/.well-known/agent-card.json", get(move || { let card = card.clone(); async move { Json(card) } }))
         .with_state(result);
 
     let listener = TokioListener::bind(format!("127.0.0.1:{port}"))
@@ -49,16 +54,16 @@ async fn mock_rpc_handler(
     Json(json!({
         "jsonrpc": "2.0",
         "id": id,
-        "result": *result,
+        "result": if req["method"] == "SendMessage" { json!({"task": *result}) } else { (*result).clone() },
     }))
 }
 
 fn sample_task() -> serde_json::Value {
     json!({
         "id": "task-abc",
-        "context_id": "ctx-1",
+        "contextId": "ctx-1",
         "status": {
-            "state": "completed",
+            "state": "TASK_STATE_COMPLETED",
             "timestamp": "2026-04-12T08:00:00Z"
         },
         "artifacts": [],
@@ -102,6 +107,9 @@ async fn test_get_task_returns_task() {
 async fn test_rpc_error_propagated() {
     let port = find_free_port();
 
+    let card = json!({"capabilities": {"streaming": true}, "supportedInterfaces": [{
+        "url": format!("http://127.0.0.1:{port}/"), "protocolBinding": "JSONRPC", "protocolVersion": "1.0",
+    }]});
     let app = Router::new().route(
         "/",
         post(|Json(req): Json<serde_json::Value>| async move {
@@ -115,7 +123,7 @@ async fn test_rpc_error_propagated() {
                 }
             }))
         }),
-    );
+    ).route("/.well-known/agent-card.json", get(move || { let card = card.clone(); async move { Json(card) } }));
 
     let listener = TokioListener::bind(format!("127.0.0.1:{port}"))
         .await

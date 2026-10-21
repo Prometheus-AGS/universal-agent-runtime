@@ -1,0 +1,15 @@
+{
+  "command": "UAR_EMBEDDING_LIFECYCLE_PRIMARY_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models UAR_EMBEDDING_LIFECYCLE_BACKUP_DIR=/Volumes/T7/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIR=/Volumes/T7/uar-local-embedding-minilm-1110a243fdf4 UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_MODEL=sentence-transformers/all-MiniLM-L6-v2 UAR_EMBEDDING_LIFECYCLE_INCOMPATIBLE_DIMENSION=384 cargo test --locked --no-default-features --features server-full --test embedding_lifecycle_failover -- --test-threads=1",
+  "cwd": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+  "started_at": "2026-10-21T10:06:19.305355+00:00",
+  "status": "canceled_by_operator",
+  "operator_authorization": "Three existing UAR commands, serially; fix failures; no other checks; full release runner CLOSED",
+  "source_inventory": "docs/operations/lifecycle-uar-approval-inventory-2026-10-21.json",
+  "source_commit_before_repairs": "0f926ed6deee26c353278640e3d7c1f19982bc55",
+  "output": "docs/operations/lifecycle-approved-uar-2026-10-21-embedding-attempt-1.log",
+  "finished_at": "2026-10-21T10:09:05.472479+00:00",
+  "exit_code": -15,
+  "operator_stop": "Testing explicitly revoked; SIGTERM requested for owned Cargo and compiler descendants. Cargo exit -15, wrapper exit143. No test/compilation success claimed.",
+  "remaining_commands": "Owned-resource and sidecar commands not started; all further verification CLOSED.",
+  "follow_up": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/421"
+}

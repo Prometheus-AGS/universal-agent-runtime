@@ -75,6 +75,22 @@ pub(super) async fn discover(store: &SurrealDbProvider, limit: usize) -> Result<
     Ok(jobs)
 }
 
+pub(super) async fn next_due_at(store: &SurrealDbProvider) -> Result<Option<i64>> {
+    require_durable(store)?;
+    let mut due_at = None;
+    for namespace in [KnowledgeNamespace::Legacy, KnowledgeNamespace::PrincipalV1] {
+        let mut response = store.db.query(namespace.query("SELECT VALUE next_attempt_at FROM knowledge_ingestion WHERE ($principal OR owner_id='anonymous') AND state IN ['pending','processing','retryable'] AND next_attempt_at > time::unix() ORDER BY next_attempt_at,owner_id,document_id LIMIT 1"))
+            .bind(("principal", namespace == KnowledgeNamespace::PrincipalV1))
+            .await?
+            .check()?;
+        let rows: Vec<i64> = response.take(0)?;
+        if let Some(next) = rows.into_iter().next() {
+            due_at = Some(due_at.map_or(next, |current: i64| current.min(next)));
+        }
+    }
+    Ok(due_at)
+}
+
 pub(super) async fn get(store: &SurrealDbProvider, owner: &str, document: &str) -> Result<Option<IngestionJob>> {
     let namespace = KnowledgeNamespace::for_owner(owner)?;
     require_durable(store)?;

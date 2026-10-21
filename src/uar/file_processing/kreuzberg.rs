@@ -12,6 +12,49 @@ use crate::config::KreuzbergConfig;
 
 use super::provider::{ExtractedImage, FileProcessor, ProcessingError, ProcessingResult};
 
+/// An extraction budget requests cancellation; it cannot stop an already
+/// running blocking extractor. Retain both its host lease and its join until
+/// the actual worker finishes before returning the budget outcome.
+async fn extract_owned<F, T>(
+    name: &str,
+    budget_secs: u64,
+    work: F,
+) -> Result<T, ProcessingError>
+where
+    F: FnOnce() -> Result<T, ProcessingError> + Send + 'static,
+    T: Send + 'static,
+{
+    let mut worker = crate::uar::runtime::lifecycle::spawn_blocking(name, work)
+        .map_err(|error| ProcessingError::ProviderError(error.to_string()))?;
+    match tokio::time::timeout(Duration::from_secs(budget_secs), &mut worker).await {
+        Ok(result) => result.map_err(|error| {
+            ProcessingError::ProviderError(format!("Extraction worker join failed: {error}"))
+        })?,
+        Err(_) => {
+            // Abort can cancel dispatch that has not begun. A running blocking
+            // closure remains admitted until this join actually acknowledges it.
+            worker.abort();
+            match worker.await {
+                Ok(Ok(_)) => {}
+                Ok(Err(error)) => {
+                    return Err(ProcessingError::ProviderError(format!(
+                        "extraction budget expired; joined worker failed: {error}"
+                    )));
+                }
+                Err(error) if error.is_cancelled() => {}
+                Err(error) => {
+                    return Err(ProcessingError::ProviderError(format!(
+                        "extraction budget expired; worker join failed: {error}"
+                    )));
+                }
+            }
+            Err(ProcessingError::ResourceLimitExceeded(format!(
+                "extraction exceeded its {budget_secs}s execution budget; worker joined"
+            )))
+        }
+    }
+}
+
 /// Kreuzberg-based file processor using the native Rust core.
 ///
 /// Provides high-performance document extraction with OCR support.
@@ -83,9 +126,10 @@ impl FileProcessor for KreuzbergProvider {
 
         if mime_guess::from_path(path).first_raw() == Some("application/pdf") {
             let path_buf = path.to_path_buf();
-            let result = tokio::time::timeout(
-                Duration::from_secs(self.config.extraction_timeout_secs),
-                tokio::task::spawn_blocking(move || {
+            let result = extract_owned(
+                "pdf-extraction",
+                self.config.extraction_timeout_secs,
+                move || {
                     let document = lopdf::Document::load(&path_buf).map_err(|error| {
                         ProcessingError::ProviderError(format!("PDF load error: {error}"))
                     })?;
@@ -94,18 +138,9 @@ impl FileProcessor for KreuzbergProvider {
                         ProcessingError::ProviderError(format!("PDF extraction error: {error}"))
                     })?;
                     Ok::<_, ProcessingError>((content, pages.len()))
-                }),
+                },
             )
-            .await
-            .map_err(|_| {
-                ProcessingError::ResourceLimitExceeded(format!(
-                    "PDF extraction exceeded {}s timeout",
-                    self.config.extraction_timeout_secs
-                ))
-            })?
-            .map_err(|error| {
-                ProcessingError::ProviderError(format!("Task join error: {error}"))
-            })??;
+            .await?;
 
             return Ok(ProcessingResult {
                 content: result.0,
@@ -123,21 +158,15 @@ impl FileProcessor for KreuzbergProvider {
         // Use kreuzberg's synchronous API wrapped in spawn_blocking
         // for async compatibility
         let path_buf = path.to_path_buf();
-        let result = tokio::time::timeout(
-            Duration::from_secs(self.config.extraction_timeout_secs),
-            tokio::task::spawn_blocking(move || {
+        let result = extract_owned(
+            "document-file-extraction",
+            self.config.extraction_timeout_secs,
+            move || {
                 kreuzberg::extract_file_sync(path_buf, None, &extraction_config)
-            }),
+                    .map_err(|error| ProcessingError::ProviderError(format!("Kreuzberg error: {error}")))
+            },
         )
-        .await
-        .map_err(|_elapsed| {
-            ProcessingError::ResourceLimitExceeded(format!(
-                "extraction exceeded {}s timeout",
-                self.config.extraction_timeout_secs
-            ))
-        })?
-        .map_err(|e| ProcessingError::ProviderError(format!("Task join error: {e}")))?
-        .map_err(|e| ProcessingError::ProviderError(format!("Kreuzberg error: {e}")))?;
+        .await?;
 
         // Extract MIME type from the file
         let mime_type = mime_guess::from_path(path)
@@ -298,21 +327,15 @@ pub async fn process_bytes(
     let mime_for_extraction = mime_type.to_string();
     let mime_for_result = mime_type.to_string();
 
-    let result = tokio::time::timeout(
-        Duration::from_secs(config.extraction_timeout_secs),
-        tokio::task::spawn_blocking(move || {
+    let result = extract_owned(
+        "document-bytes-extraction",
+        config.extraction_timeout_secs,
+        move || {
             kreuzberg::extract_bytes_sync(&data_owned, &mime_for_extraction, &extraction_config)
-        }),
+                .map_err(|error| ProcessingError::ProviderError(format!("Kreuzberg error: {error}")))
+        },
     )
-    .await
-    .map_err(|_elapsed| {
-        ProcessingError::ResourceLimitExceeded(format!(
-            "extraction exceeded {}s timeout",
-            config.extraction_timeout_secs
-        ))
-    })?
-    .map_err(|e| ProcessingError::ProviderError(format!("Task join error: {e}")))?
-    .map_err(|e| ProcessingError::ProviderError(format!("Kreuzberg error: {e}")))?;
+    .await?;
 
     let mut content = result.content;
 

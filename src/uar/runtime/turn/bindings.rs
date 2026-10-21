@@ -15,6 +15,37 @@ use crate::uar::runtime::skills::{
 use crate::uar::runtime::thread::policy_intersection::{
     CredentialGrant, CredentialTarget, ThreadPolicy,
 };
+use crate::uar::security::credentials::CredentialSourceDecision;
+
+/// Apply the one host-issued decision before any provider constructor can read
+/// configuration or ambient credential state. A credential-free decision uses
+/// an explicit empty key so the existing client builders cannot fall back to an
+/// environment variable or provider shortcut.
+pub(crate) fn apply_credential_decision(
+    mut config: LlmConfig,
+    decision: &CredentialSourceDecision,
+) -> anyhow::Result<LlmConfig> {
+    use secrecy::ExposeSecret;
+
+    let provider = config
+        .resolved_provider_id
+        .clone()
+        .unwrap_or_else(|| crate::llm::registry::split_model_string_pub(&config.model).0);
+    anyhow::ensure!(
+        decision.provider_id() == provider,
+        "credential decision does not match the selected provider"
+    );
+    config.api_key = Some(
+        decision
+            .api_key()
+            .map(|key| key.expose_secret().to_owned())
+            .unwrap_or_default(),
+    );
+    config.api_key_env = None;
+    config.provider_keys.clear();
+    config.host_supplied_connection = true;
+    Ok(config)
+}
 
 pub(crate) fn validate_effective_binding_artifact(
     receipt: &crate::uar::domain::collaboration::EffectiveBindingReceipt,
@@ -109,19 +140,29 @@ impl std::fmt::Debug for RunDelegationBindings {
 /// cannot keep the delegation lifetime open after root completion or unwind.
 pub(crate) struct RunDelegationLifetime(pub(crate) Option<Arc<RunDelegationBindings>>);
 
+impl RunDelegationLifetime {
+    /// Cancel borrowers and await the run-scoped MCP owner's acknowledged
+    /// close. The retained producer calls this after its kernel future settles;
+    /// a dropped reply can therefore never turn cleanup into a detached task.
+    pub(crate) async fn release(mut self) -> anyhow::Result<()> {
+        let Some(bindings) = self.0.take() else {
+            return Ok(());
+        };
+        bindings.cancellation.cancel();
+        if let Some(runtime) = bindings.run_scoped_mcp.clone() {
+            runtime.shutdown().await?;
+        }
+        Ok(())
+    }
+}
+
 impl Drop for RunDelegationLifetime {
     fn drop(&mut self) {
+        // This is only the synchronous cancellation request for an unwind path.
+        // The owned producer performs the awaited release above and records any
+        // incomplete MCP closure in its terminal cleanup result.
         if let Some(bindings) = &self.0 {
             bindings.cancellation.cancel();
-            if let Some(runtime) = bindings.run_scoped_mcp.clone()
-                && let Ok(handle) = tokio::runtime::Handle::try_current()
-            {
-                handle.spawn(async move {
-                    if let Err(error) = runtime.shutdown().await {
-                        tracing::warn!(%error, "Run-scoped MCP cleanup failed");
-                    }
-                });
-            }
         }
     }
 }
@@ -160,10 +201,17 @@ struct BoundModel {
     grant: CredentialGrant,
     driver: Arc<dyn LlmDriver>,
     endpoint_profile: Option<crate::llm::EndpointRequestProfile>,
+    /// Nonserializable host decision proving this client was admitted before
+    /// construction. Descendants select this binding but never resolve again.
+    credential: CredentialSourceDecision,
 }
 
 impl BoundModel {
-    fn capture(model: String, driver: Arc<dyn LlmDriver>) -> Self {
+    fn capture(
+        model: String,
+        driver: Arc<dyn LlmDriver>,
+        credential: CredentialSourceDecision,
+    ) -> Self {
         let (provider, _) = crate::llm::registry::split_model_string_pub(&model);
         Self {
             pricing_model: model.clone(),
@@ -174,6 +222,7 @@ impl BoundModel {
                 target: CredentialTarget::Provider(provider),
                 binding_id: uuid::Uuid::new_v4().to_string(),
             },
+            credential,
         }
     }
 }
@@ -199,8 +248,10 @@ impl RunModelBindings {
     /// Returns the primary client's construction failure. Unavailable fallback
     /// clients retain the existing skip-and-report behavior.
     pub(crate) async fn capture(
-        mut config: LlmConfig,
+        config: LlmConfig,
         supplied_primary: Option<Arc<dyn LlmDriver>>,
+        primary_decision: CredentialSourceDecision,
+        fallback_decisions: std::collections::BTreeMap<String, CredentialSourceDecision>,
         failover: FailoverConfig,
         health: Option<Arc<ProviderHealthMonitor>>,
         budget: crate::uar::runtime::cost_budget::ModelCallBudget,
@@ -210,6 +261,7 @@ impl RunModelBindings {
         secret_scrubber: &mut super::host::RunSecretScrubber,
     ) -> anyhow::Result<Self> {
         budget.admit()?;
+        let mut config = apply_credential_decision(config, &primary_decision)?;
         let settings_only = !endpoint_profiles.is_empty();
         let selected_profile = if settings_only {
             let selected = endpoint_profiles.values().find(|profile| {
@@ -241,7 +293,7 @@ impl RunModelBindings {
             .as_deref()
             .unwrap_or(&model_provider);
         let primary_model = format!("{provider}/{model}");
-        let mut primary = BoundModel::capture(primary_model.clone(), primary);
+        let mut primary = BoundModel::capture(primary_model.clone(), primary, primary_decision);
         primary.endpoint_profile = selected_profile;
         if let Some(pricing_model) = &config.catalog_pricing_model {
             primary.pricing_model.clone_from(pricing_model);
@@ -265,12 +317,16 @@ impl RunModelBindings {
                     Some(endpoint_profiles.get(&fallback.model).cloned()
                         .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?)
                 } else { None };
+                let fallback_decision = fallback_decisions
+                    .get(&fallback.model)
+                    .ok_or_else(|| anyhow::anyhow!("Fallback model lacks credential decision"))?
+                    .clone();
                 let driver = match (&fallback_profile, run_credentials) {
                     (Some(profile), _) => {
-                        let mut fallback_config = config.clone();
-                        fallback_config.model.clone_from(&fallback.model);
-                        fallback_config.api_key.clone_from(&fallback.api_key);
-                        fallback_config.base_url.clone_from(&fallback.base_url);
+                        let mut fallback_config = Orchestrator::fallback_llm_config(&config, fallback);
+                        fallback_config.resolved_provider_id = Some(profile.provider_id.clone());
+                        let fallback_config =
+                            apply_credential_decision(fallback_config, &fallback_decision)?;
                         let mut client_config = crate::config::build_client_config(&fallback_config);
                         crate::llm::orchestrator::capture_client_config(&mut client_config, secret_scrubber);
                         crate::llm::LiterLlmDriver::from_endpoint_profile(
@@ -282,16 +338,24 @@ impl RunModelBindings {
                         .config_for(&provider, Some(&fallback.model), config.clone())
                         .map_err(anyhow::Error::from)
                         .and_then(|fallback_config| {
+                            let fallback_config =
+                                apply_credential_decision(fallback_config, &fallback_decision)?;
                             crate::llm::orchestrator::build_driver_captured(&fallback_config, secret_scrubber)
                         }),
                     (None, None) => {
                         let fallback_config = Orchestrator::fallback_llm_config(&config, fallback);
+                        let fallback_config =
+                            apply_credential_decision(fallback_config, &fallback_decision)?;
                         crate::llm::orchestrator::build_driver_captured(&fallback_config, secret_scrubber)
                     },
                 };
                 match driver {
                     Ok(driver) => {
-                        let mut bound = BoundModel::capture(fallback.model.clone(), driver);
+                        let mut bound = BoundModel::capture(
+                            fallback.model.clone(),
+                            driver,
+                            fallback_decision,
+                        );
                         bound.endpoint_profile = fallback_profile;
                         if let Some(pricing_model) = pricing_models.get(&fallback.model) {
                             bound.pricing_model.clone_from(pricing_model);
@@ -387,6 +451,7 @@ impl RunModelBindings {
                 model: qualified,
                 grant: binding.grant.clone(),
                 endpoint_profile: binding.endpoint_profile.clone(),
+                credential: binding.credential.clone(),
             })
         };
         let primary = bind(&route.provider_id, &route.model_id)?;

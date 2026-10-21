@@ -38,7 +38,7 @@ fn scoped_service<'a>(
     let principal = context.verified_owner.as_ref()
         .and_then(crate::uar::runtime::actor::messages::ActorOwner::credential_principal)
         .ok_or_else(|| anyhow::anyhow!("memory_requires_verified_owner"))?;
-    let owned = service.for_owner(principal);
+    let owned = service.for_owner(principal)?;
     owned.check_filter(args.get("user_id").and_then(serde_json::Value::as_str))?;
     if let Some(requested) = args.get("session_id").and_then(serde_json::Value::as_str) {
         anyhow::ensure!(context.session_id.as_deref() == Some(requested), "Memory session cannot be replaced by tool arguments");

@@ -28,6 +28,9 @@ pub async fn live_stream(
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, (StatusCode, String)> {
     let topic = EntityTopic::from_str(&topic)
         .map_err(|_| (StatusCode::NOT_FOUND, format!("unknown topic '{topic}'")))?;
+    if !topic.is_public() {
+        return Err((StatusCode::NOT_FOUND, "unknown public topic".to_owned()));
+    }
 
     let bus = state.live_bus.as_ref().ok_or((
         StatusCode::SERVICE_UNAVAILABLE,
@@ -39,10 +42,15 @@ pub async fn live_stream(
         format!("topic '{topic}' has no broadcaster"),
     ))?;
 
-    let stream = BroadcastStream::new(rx).filter_map(|msg| match msg {
-        Ok(event) => Some(Ok(sse_event(&event))),
-        Err(_) => None, // skip lagged messages
+    let initial = gap_event(topic, "subscription_established", bus.topic_state(topic));
+    let subscription_bus = std::sync::Arc::clone(bus);
+    let stream = BroadcastStream::new(rx).map(move |msg| match msg {
+        Ok(event) => Ok(sse_event(&event, subscription_bus.topic_state(topic))),
+        Err(_) => Ok(gap_event(topic, "consumer_lagged", subscription_bus.topic_state(topic))),
     });
+    // Subscribe before requesting the consumer's initial snapshot. Events
+    // arriving during that snapshot remain buffered on this receiver.
+    let stream = tokio_stream::once(Ok(initial)).chain(stream);
 
     Ok(Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15))))
 }
@@ -68,11 +76,15 @@ pub async fn live_stream_all(
     let mut streams: Vec<Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>> =
         Vec::with_capacity(EntityTopic::ALL.len());
     for &topic in EntityTopic::ALL {
+        if !topic.is_public() { continue; }
         if let Some(rx) = bus.subscribe(topic) {
-            let stream = BroadcastStream::new(rx).filter_map(|msg| match msg {
-                Ok(event) => Some(Ok(sse_event(&event))),
-                Err(_) => None, // skip lagged messages
+            let initial = gap_event(topic, "subscription_established", bus.topic_state(topic));
+            let subscription_bus = std::sync::Arc::clone(bus);
+            let stream = BroadcastStream::new(rx).map(move |msg| match msg {
+                Ok(event) => Ok(sse_event(&event, subscription_bus.topic_state(topic))),
+                Err(_) => Ok(gap_event(topic, "consumer_lagged", subscription_bus.topic_state(topic))),
             });
+            let stream = tokio_stream::once(Ok(initial)).chain(stream);
             streams.push(Box::pin(stream));
         }
     }
@@ -83,16 +95,25 @@ pub async fn live_stream_all(
     )
 }
 
-fn sse_event(event: &LiveEvent) -> Event {
-    let name = match event.action {
-        LiveAction::Create => "create",
-        LiveAction::Update => "update",
-        LiveAction::Delete => "delete",
-    };
+fn sse_event(event: &LiveEvent, state: Option<crate::uar::realtime::lifecycle::TopicState>) -> Event {
+    // Shared database notifications are invalidations, not authorization to
+    // disclose a row. The snapshot route reapplies each domain's read policy.
     let payload = serde_json::json!({
+        "version": 1,
         "topic": event.topic.as_str(),
-        "id": event.id,
-        "data": event.data,
+        "requires_snapshot": true,
+        "reason": if matches!(event.action, LiveAction::Reset) { "lifecycle_transition" } else { "committed_change" },
+        "generation": state.as_ref().map(|state| state.generation),
+        "ready": state.as_ref().is_some_and(|state| state.ready),
     });
-    Event::default().event(name).data(payload.to_string())
+    Event::default().event("reset").data(payload.to_string())
+}
+
+fn gap_event(topic: EntityTopic, reason: &str, state: Option<crate::uar::realtime::lifecycle::TopicState>) -> Event {
+    Event::default().event("reset").data(serde_json::json!({
+        "version": 1, "topic": topic.as_str(), "reason": reason,
+        "requires_snapshot": true,
+        "generation": state.as_ref().map(|state| state.generation),
+        "ready": state.as_ref().is_some_and(|state| state.ready),
+    }).to_string())
 }

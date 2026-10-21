@@ -27,6 +27,8 @@ const MODEL: &str = "gpt-5.4-mini";
 async fn metrics_endpoint_serves_without_explicit_init() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let resp = reqwest::Client::new()
         .get(format!("{}/metrics", server.base_url))
@@ -55,6 +57,9 @@ async fn metrics_endpoint_serves_without_explicit_init() {
     // booted server may not have recorded any series yet, so assert on the
     // response being intact rather than on specific metric names.
     resp.text().await.expect("failed to read /metrics body");
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }
 
 /// The recorder backing `/metrics` must be the *global* one the `counter!` /
@@ -67,6 +72,8 @@ async fn metrics_endpoint_serves_without_explicit_init() {
 async fn metrics_endpoint_reflects_recorded_series() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let fixture_outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(async {
+
 
     let client = reqwest::Client::new();
 
@@ -91,4 +98,7 @@ async fn metrics_endpoint_reflects_recorded_series() {
         "expected the global recorder's series in /metrics output; a detached \
          recorder would render an empty page. Body was:\n{body}"
     );
+    })).await;
+    server.finish_case(fixture_outcome).await
+
 }

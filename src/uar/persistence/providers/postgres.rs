@@ -3,6 +3,8 @@ use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
 mod a2a_bindings;
 #[path = "agui_runs/postgres.rs"]
 mod agui_runs;
+#[path = "run_history/postgres.rs"]
+mod run_history;
 #[path = "mcp_elicitations/postgres.rs"]
 mod mcp_elicitations;
 #[path = "accounting/postgres.rs"]
@@ -24,7 +26,7 @@ use crate::uar::domain::knowledge::{
 use crate::uar::domain::policy::ConversationPolicyRecord;
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
-use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::{DurableStoreEligibility, PersistenceLayer};
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
     PersistedAgentThread,
@@ -34,13 +36,16 @@ use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::Result;
 use async_trait::async_trait;
+use futures::FutureExt;
 use pgvector::Vector;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
+use std::panic::AssertUnwindSafe;
 
 #[derive(Debug)]
 pub struct PostgresProvider {
     pool: PgPool,
+    session_changes: tokio::sync::watch::Sender<u64>,
 }
 
 impl PostgresProvider {
@@ -50,10 +55,55 @@ impl PostgresProvider {
             .connect(connection_string)
             .await?;
 
-        // Run Migrations
-        sqlx::migrate!("./migrations").run(&pool).await?;
+        Self::initialize_retained(pool).await
+    }
 
-        Ok(Self { pool })
+    /// Keep the acquired pool under a detached initializer until it is either
+    /// returned to startup or explicitly closed. Dropping the caller's wait
+    /// must not turn a migration in flight into an unowned pool.
+    async fn initialize_retained(pool: PgPool) -> Result<Self> {
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        tokio::spawn(async move {
+            let initialized = AssertUnwindSafe(async {
+                sqlx::migrate!("./migrations").run(&pool).await?;
+                let (session_changes, _) = tokio::sync::watch::channel(0_u64);
+                Ok::<_, anyhow::Error>(session_changes)
+            })
+            .catch_unwind()
+            .await;
+
+            let result = match initialized {
+                Ok(Ok(session_changes)) => Ok(Self {
+                    pool,
+                    session_changes,
+                }),
+                Ok(Err(error)) => {
+                    pool.close().await;
+                    Err(error)
+                }
+                Err(_) => {
+                    pool.close().await;
+                    Err(anyhow::anyhow!(
+                        "PostgreSQL provider initialization panicked after acquiring its pool"
+                    ))
+                }
+            };
+
+            // A canceled constructor waiter returns the undelivered provider
+            // here. Closing it is an acknowledgement that the pool was never
+            // transferred to the startup supervisor.
+            if let Err(result) = sender.send(result) {
+                if let Ok(provider) = result {
+                    provider.pool.close().await;
+                }
+            }
+        });
+
+        receiver.await.map_err(|_| {
+            anyhow::anyhow!(
+                "PostgreSQL provider initializer ended before reporting whether its pool was released"
+            )
+        })?
     }
 
     pub fn get_pool(&self) -> &PgPool {
@@ -92,6 +142,11 @@ impl PersistenceLayer for PostgresProvider {
     async fn load_agui_run(&self, owner: &str, agent: &str, thread: &str, run: &str) -> Result<Option<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::load(self,owner,agent,thread,run).await }
     async fn list_agui_runs(&self, owner: &str, agent: &str, thread: &str) -> Result<Vec<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::list(self,owner,agent,thread).await }
     async fn compare_and_swap_agui_run(&self, before: &crate::uar::persistence::agui_runs::AguiRunBinding, after: &crate::uar::persistence::agui_runs::AguiRunBinding) -> Result<bool> { agui_runs::transition(self,before,after).await }
+    fn supports_durable_run_history(&self) -> bool { true }
+    async fn upsert_run_history_record(&self, record: &crate::uar::persistence::run_history::RunHistoryRecord) -> Result<()> { run_history::upsert_record(self,record).await }
+    async fn load_run_history_record(&self, run_id: &str) -> Result<Option<crate::uar::persistence::run_history::RunHistoryRecord>> { run_history::load_record(self,run_id).await }
+    async fn append_run_history_event(&self, event: &crate::uar::persistence::run_history::RunHistoryEvent) -> Result<()> { run_history::append_event(self,event).await }
+    async fn load_run_history_events(&self, run_id: &str) -> Result<Vec<crate::uar::persistence::run_history::RunHistoryEvent>> { run_history::load_events(self,run_id).await }
     async fn bind_accounting_delegation(&self, link: &accounting::AccountingDelegation) -> Result<()> { accounting_records::bind_delegation(self,link).await }
     async fn get_accounting_delegation(&self, digest: &str) -> Result<Option<accounting::AccountingCall>> { accounting_records::delegation(self,digest).await }
 
@@ -102,6 +157,9 @@ impl PersistenceLayer for PostgresProvider {
     async fn list_a2a_bindings(&self, owner: &str, agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::list(self, owner, agent).await }
 
     fn supports_durable_accounting(&self) -> bool { true }
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        DurableStoreEligibility::LocalDurable
+    }
     async fn admit_remote_grant(&self, owner: &str, accounting_id: &str,
         grant: &crate::uar::api::a2a::contract::UarUsageGrant,
         activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {
@@ -117,6 +175,7 @@ impl PersistenceLayer for PostgresProvider {
     fn supports_durable_ingestion(&self) -> bool { true }
     async fn accept_ingestion(&self, document: &KnowledgeDocument, source: &[u8]) -> Result<IngestionJob> { ingestion_records::accept(self, document, source).await }
     async fn discover_ingestion(&self, limit: usize) -> Result<Vec<IngestionJob>> { ingestion_records::discover(self, limit).await }
+    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> { ingestion_records::next_due_at(self).await }
     async fn get_ingestion_job(&self, owner: &str, document: &str) -> Result<Option<IngestionJob>> { ingestion_records::get(self, owner, document).await }
     async fn get_ingestion_source(&self, job: &IngestionJob) -> Result<Option<Vec<u8>>> { ingestion_records::source(self, job).await }
     async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
@@ -505,6 +564,25 @@ impl PersistenceLayer for PostgresProvider {
             .collect()
     }
 
+    fn subscribe_persisted_session_changes(&self) -> Option<tokio::sync::watch::Receiver<u64>> {
+        Some(self.session_changes.subscribe())
+    }
+
+    async fn next_persisted_session_expiry(
+        &self,
+        idle_timeout: chrono::Duration,
+    ) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+        let seconds = idle_timeout.num_seconds();
+        if seconds < 0 { return Ok(None); }
+        let row = sqlx::query(
+            "SELECT MIN((data->>'last_activity')::timestamptz + ($1 * INTERVAL '1 second')) AS deadline              FROM sessions              WHERE (data->>'last_activity')::timestamptz + ($1 * INTERVAL '1 second') > NOW()",
+        )
+        .bind(seconds)
+        .fetch_one(&self.pool)
+        .await?;
+        row.try_get("deadline").map_err(anyhow::Error::from)
+    }
+
     async fn save_session(&self, session: &Session) -> Result<()> {
         let id = crate::uar::persistence::session_storage_key(session.owner_id(), session.id());
         // Serialize session to JSON
@@ -524,6 +602,9 @@ impl PersistenceLayer for PostgresProvider {
         .execute(&self.pool)
         .await?;
 
+        self.session_changes.send_modify(|generation| {
+            *generation = generation.saturating_add(1);
+        });
         Ok(())
     }
 
@@ -561,6 +642,24 @@ impl PersistenceLayer for PostgresProvider {
         }
     }
 
+    async fn list_sessions(&self, owner_id: &str) -> Result<Vec<Session>> {
+        let rows = sqlx::query(
+            "SELECT data FROM sessions WHERE data->>'owner_id' = $1 ORDER BY data->>'id', id",
+        )
+        .bind(owner_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut sessions = Vec::with_capacity(rows.len());
+        for row in rows {
+            let value: serde_json::Value = row.try_get("data")?;
+            let session: Session = serde_json::from_value(value)?;
+            anyhow::ensure!(session.owner_id() == owner_id, "Session partition mismatch");
+            sessions.push(session);
+        }
+        Ok(sessions)
+    }
+
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
         if self.load_session(owner_id, id).await?.is_none() { return Ok(false); }
         let storage_id = crate::uar::persistence::session_storage_key(owner_id, id);
@@ -588,6 +687,11 @@ impl PersistenceLayer for PostgresProvider {
         // Cost/accounting and admission evidence remain host lifecycle-owned;
         // a session ID does not carry authority over those independent records.
         tx.commit().await?;
+        if existed {
+            self.session_changes.send_modify(|generation| {
+                *generation = generation.saturating_add(1);
+            });
+        }
         Ok(existed)
     }
 

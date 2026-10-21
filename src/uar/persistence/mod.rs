@@ -1,3 +1,4 @@
+pub mod scoped;
 pub mod knowledge_namespace;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
@@ -25,6 +26,7 @@ pub mod checkpoint_resume;
 pub mod observers;
 pub mod presentations;
 pub mod providers;
+pub mod run_history;
 pub mod tool_admission;
 
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
@@ -67,6 +69,33 @@ pub struct AttachmentMeta {
 #[derive(Debug)]
 pub struct PostgresProvider;
 
+/// Store eligibility captured by the trusted host when it constructs a provider.
+///
+/// This intentionally contains no endpoint, namespace, credential, or mutable
+/// configuration. Callers project it onto their own admission diagnostics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DurableStoreEligibility {
+    LocalDurable,
+    RemoteAttested,
+    RemoteNotAttested,
+    UnsupportedBackend,
+}
+
+impl DurableStoreEligibility {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::LocalDurable => "local_durable",
+            Self::RemoteAttested => "remote_attested",
+            Self::RemoteNotAttested => "remote_not_attested",
+            Self::UnsupportedBackend => "unsupported_backend",
+        }
+    }
+
+    pub(crate) const fn permits_durable_work(self) -> bool {
+        matches!(self, Self::LocalDurable | Self::RemoteAttested)
+    }
+}
+
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     fn supports_durable_mcp_elicitations(&self) -> bool { false }
@@ -88,10 +117,22 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn compare_and_swap_a2a_binding(&self, _before: &crate::uar::api::a2a::durable::A2aBinding, _after: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { anyhow::bail!("durable_a2a_bindings_unsupported") }
     async fn list_a2a_bindings(&self, _owner: &str, _agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { anyhow::bail!("durable_a2a_bindings_unsupported") }
 
+    /// Restart-durable public run history. Every published event is written
+    /// through; a terminal-only snapshot does not satisfy the contract.
+    fn supports_durable_run_history(&self) -> bool { false }
+    async fn upsert_run_history_record(&self, _record: &run_history::RunHistoryRecord) -> Result<()> { anyhow::bail!("durable_run_history_unsupported") }
+    async fn load_run_history_record(&self, _run_id: &str) -> Result<Option<run_history::RunHistoryRecord>> { anyhow::bail!("durable_run_history_unsupported") }
+    async fn append_run_history_event(&self, _event: &run_history::RunHistoryEvent) -> Result<()> { anyhow::bail!("durable_run_history_unsupported") }
+    async fn load_run_history_events(&self, _run_id: &str) -> Result<Vec<run_history::RunHistoryEvent>> { anyhow::bail!("durable_run_history_unsupported") }
+
     async fn bind_accounting_delegation(&self, _link: &accounting::AccountingDelegation) -> Result<()> { Err(accounting::AccountingError::Unsupported.into()) }
     async fn get_accounting_delegation(&self, _digest: &str) -> Result<Option<accounting::AccountingCall>> { Err(accounting::AccountingError::Unsupported.into()) }
     /// Durable accounting is a host capability, not an in-memory fallback.
     fn supports_durable_accounting(&self) -> bool { false }
+    /// Captured backing-store eligibility for admission and durable-work gates.
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        DurableStoreEligibility::UnsupportedBackend
+    }
     async fn admit_remote_grant(&self, _owner: &str, _accounting_id: &str,
         _grant: &crate::uar::api::a2a::contract::UarUsageGrant,
         _activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {
@@ -112,6 +153,15 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     }
 
     async fn discover_ingestion(&self, _limit: usize) -> Result<Vec<ingestion_records::IngestionJob>> {
+        Err(ingestion_records::IngestionStoreError::Unsupported.into())
+    }
+
+    /// The next durable ingestion deadline, if accepted work remains.
+    ///
+    /// This is an authoritative schedule read for a one-shot wakeup after a
+    /// durable state change. It is not a polling signal and does not certify
+    /// that a processing job completed.
+    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
@@ -318,6 +368,14 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn save_session(&self, session: &Session) -> Result<()>;
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>>;
 
+    /// List every session whose serialized owner matches `owner_id`.
+    ///
+    /// This is an authenticated owner snapshot. Implementations must not
+    /// broaden it with a legacy or all-tenant fallback.
+    async fn list_sessions(&self, _owner_id: &str) -> Result<Vec<Session>> {
+        anyhow::bail!("owner_scoped_session_listing_unsupported")
+    }
+
     /// Delete a session and all owned downstream data (conversation policy,
     /// checkpoints, cost ledger entries, tool admission evidence) for the
     /// verified owner. Returns true when a session row existed.
@@ -331,6 +389,23 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         _cutoff: chrono::DateTime<chrono::Utc>,
     ) -> Result<Vec<(String, String)>> {
         Ok(Vec::new())
+    }
+
+    /// Subscribe to successful local durable session commits. This is a wakeup,
+    /// not a state transfer: receivers reread the authoritative expiry after a
+    /// generation change. `None` means this provider has no durable signal.
+    fn subscribe_persisted_session_changes(&self) -> Option<tokio::sync::watch::Receiver<u64>> {
+        None
+    }
+
+    /// Return the earliest future persisted idle deadline under the supplied
+    /// policy. The deadline schedules a one-shot wakeup; it does not prove a
+    /// session is removable until the deletion transaction rechecks it.
+    async fn next_persisted_session_expiry(
+        &self,
+        _idle_timeout: chrono::Duration,
+    ) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+        Ok(None)
     }
 
     /// Save or replace a conversation-scoped chat policy.

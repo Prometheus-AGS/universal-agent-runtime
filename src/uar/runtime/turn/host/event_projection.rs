@@ -11,6 +11,7 @@ pub struct AdmissionProjection {
     pending: Vec<NormalizedEvent>,
     bytes: usize,
     refused: Option<&'static str>,
+    reduced_failure_only: bool,
 }
 
 impl std::fmt::Debug for AdmissionProjection {
@@ -20,13 +21,42 @@ impl std::fmt::Debug for AdmissionProjection {
             .field("bytes", &self.bytes)
             .field("ready", &self.capture.is_some())
             .field("refused", &self.refused)
+            .field("reduced_failure_only", &self.reduced_failure_only)
             .finish()
     }
 }
 
 impl AdmissionProjection {
+    /// Discard unpublishable pre-admission content before already-reduced host
+    /// failure frames are emitted. The resulting projection admits only
+    /// terminal lifecycle and error frames, so a caller cannot use this seam
+    /// to publish ordinary content before full admission completes.
+    pub(crate) fn begin_reduced_failure(&mut self, capture: RunSecretScrubber) {
+        self.pending.clear();
+        self.bytes = 0;
+        self.refused = None;
+        self.capture = Some(capture);
+        self.reduced_failure_only = true;
+    }
+
+    /// A reduced binding failure has no admitted presentation to observe.
+    pub(crate) fn suppresses_presentation(&self) -> bool {
+        self.reduced_failure_only
+    }
+
     pub fn project_or_stage(&mut self, mut event: NormalizedEvent) -> Option<NormalizedEvent> {
         if let Some(capture) = &self.capture {
+            if self.reduced_failure_only
+                && !matches!(
+                    &event,
+                    NormalizedEvent::Error { .. }
+                        | NormalizedEvent::RunDone { .. }
+                        | NormalizedEvent::RunDoneWithUsage { .. }
+                        | NormalizedEvent::Cancelled { .. }
+                )
+            {
+                return None;
+            }
             capture.project_event(&mut event);
             return Some(event);
         }

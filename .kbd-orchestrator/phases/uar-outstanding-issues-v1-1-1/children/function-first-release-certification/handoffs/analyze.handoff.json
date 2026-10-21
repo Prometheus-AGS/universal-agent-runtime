@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-10-17T21:10:07Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Existing runner reused. Reduce 80 labels to 65 by folding 16 and adding one prompt-skill journey; cut expanded stream partitions and repeated restarts, and use local six-group plus published streams/recovery. The published cut loses child-specific credential/compiler/budget/tool-failure assurance; timing remains diagnostic. The disabled-skill oracle was corrected in adversarial re-vet.",
+  "skipped": false,
+  "skipReason": null
+}

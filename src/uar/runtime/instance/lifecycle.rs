@@ -333,38 +333,19 @@ impl AgentInstanceController {
                 .cancel_run_for_user(owner.user_id(), &active.root_run_id)
                 .await
             {
-                // The attempt can be durably claimed before RunManager registers
-                // its cancellation token. Keep the same cancellation intent and
-                // retry until that exact attempt is running or has settled.
+                // The attempt can be durably claimed before RunManager installs
+                // its cancellation capability. Wait for the retained admission
+                // generation instead of probing with timed retries.
                 let controller = Arc::clone(self);
                 let owner = owner.clone();
-                let workspace = workspace.to_owned();
-                let id = id.to_owned();
                 let run_id = active.root_run_id.clone();
-                tokio::spawn(async move {
-                    let mut delay = 10_u64;
-                    loop {
-                        let Ok(current) = controller.load(&owner, &workspace, &id).await else {
-                            return;
-                        };
-                        if current
-                            .active_attempt
-                            .as_ref()
-                            .is_none_or(|attempt| attempt.root_run_id != run_id)
-                        {
-                            return;
-                        }
-                        if controller
-                            .manager
-                            .cancel_run_for_user(owner.user_id(), &run_id)
-                            .await
-                        {
-                            return;
-                        }
-                        tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
-                        delay = (delay * 2).min(500);
-                    }
-                });
+                let cancellation = self.lifecycle_scope.cancellation_token();
+                self.spawn_owned_task("instance-cancel-after-admission", Box::pin(async move {
+                    let _ = controller
+                        .manager
+                        .cancel_run_when_registered(owner.user_id(), &run_id, cancellation)
+                        .await;
+                }));
             }
         }
         self.kick(owner.clone(), workspace, id);
