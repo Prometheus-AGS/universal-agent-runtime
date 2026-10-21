@@ -6265,3 +6265,16 @@ Operator excluded the Boss repository from the current scope. Its pin and packag
 ## 2026-10-21 — Operator stops testing and requests publication
 
 Operator revoked further verification, requested commit/push and PR418 ready for merge. Stopped owned Cargo/compiler work with SIGTERM: Cargo-15/wrapper143, no new test result. Other two targets not started. Follow-up issue421 captures all remaining gaps. KBD3200/plan90 preserves pending acceptance; verification CLOSED. Source unchanged; scoped documentation publication uses earlier authorized hook exception, no hook checks run.
+
+## 2026-10-21 — v1.2.0 image build repair
+
+Operator requested latest main via git pull, lock repair, check-in and successful
+CI/CD image delivery. Pulled abce1905, aligned committed submodules, preserved
+blocking untracked Liter history under /tmp/uar-120-liter-private-state, and
+committed/pushed lock repair ce241cf5. Locked offline metadata, spec and
+GitHub Actions policy validation passed. Independent lock review had no findings.
+Deployment run 39685313234 passed resolution on both architectures, then failed
+E0164 at provider_error.rs:135. One-line Network struct-pattern repair is complete;
+next: independent source review, commit/push, repeat deployment build. Broader
+lifecycle acceptance stays closed. Detailed receipt is in the phase child
+v1.2.0-lock-repair.md; no successful image delivery is claimed yet.

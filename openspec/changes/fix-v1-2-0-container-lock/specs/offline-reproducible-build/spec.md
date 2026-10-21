@@ -17,3 +17,9 @@ Rust resolution on linux/amd64 and linux/arm64.
 - **WHEN** the lock repair is delivered through the deployment workflow
 - **THEN** both native architecture builds succeed and their digests are assembled
   into the published multi-platform manifest
+
+#### Scenario: Pinned provider error representation
+
+- **WHEN** the pinned provider library represents Network as a struct variant
+- **THEN** UAR matches that representation and preserves transport-error
+  classification in the production image build

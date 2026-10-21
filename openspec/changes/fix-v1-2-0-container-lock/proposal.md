@@ -11,6 +11,8 @@ etcd-client 0.21, jsonschema 0.58 and OpenDAL >=0.59.4; the lock contains
 
 Reconcile only the incompatible locked dependency families and their transitive
 edges. Preserve the pinned submodules, manifests and Dockerfile's --locked build.
+Adapt the provider error match to pinned Liter's Network struct variant after
+the deployment compiler exposed E0164 in both native builds.
 
 ## Capabilities
 

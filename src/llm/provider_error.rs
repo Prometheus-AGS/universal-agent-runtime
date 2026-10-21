@@ -132,7 +132,7 @@ impl ProviderError {
             | LiterLlmError::ServiceUnavailable { .. }
             | LiterLlmError::IdempotencyInFlight { .. } => ProviderErrorKind::Overloaded,
             LiterLlmError::Timeout => ProviderErrorKind::Timeout,
-            LiterLlmError::Network(_) => ProviderErrorKind::Transport,
+            LiterLlmError::Network { .. } => ProviderErrorKind::Transport,
             LiterLlmError::Streaming { .. } => ProviderErrorKind::Stream,
             LiterLlmError::BudgetExceeded { .. } => ProviderErrorKind::BudgetExceeded,
             LiterLlmError::Serialization(_)

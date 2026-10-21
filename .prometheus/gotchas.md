@@ -2035,3 +2035,14 @@ are source-only; neither compilation success nor runtime correctness is claimed.
 ## Startup Send boundary repair — 2026-10-21
 
 Authorized Docker run39528865081 at6d50cb8a failed ARM64 with2 diagnostics from1 inline governance log await. Tracing temporaries cannot cross startup awaits inside the retained Send owner. Runtime writer moved both native-skill and policy count awaits before their log macros. Source `32cb3bcfc9691212ec0b0359ce22474968bc6850` and matching signed Boss pin `a609869079bf6d51af196944965e6f86ee6c0758` are pushed with handoffs; next delivery pending renewed inventory. AMD64 remains active at this boundary. No standalone compiler, test or other routine verification ran. CLOSED.
+
+## 2026-10-21 — Pinned Liter adoption needs lock and source reconciliation
+
+The v1.2.0 deployment run 39683357804 rejected Cargo.lock on both native Linux
+architectures. The gitlink pinned Liter 2.3.0 while the lock still described
+2.1.1 and older etcd-client, jsonschema and OpenDAL requirements. Reconcile the
+lock against committed submodules; retain --locked and discard unrelated
+cache-driven offline resolution changes. After repair ce241cf5, run 39685313234
+passed resolution but exposed E0164: Network is now a struct variant. Match
+Network { .. } while retaining Transport classification. Lock metadata success
+does not prove compilation; require both native image builds and manifest merge.
