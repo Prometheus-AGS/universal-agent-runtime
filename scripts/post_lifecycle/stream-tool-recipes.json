@@ -1,0 +1,611 @@
+{
+  "kind": "uar.controlled-peer-recipes-fragment/v1",
+  "status": "AUTHORED_NOT_EXECUTED",
+  "scope": "Merge only the required pieces into the existing ten-scenario packet; no new acceptance gate.",
+  "sourceReferences": [
+    "src/uar/api/routes.rs:CreateRunRequest",
+    "src/uar/api/openai/types.rs:ChatCompletionRequest",
+    "src/uar/api/openai/routes.rs:chat_completions registered agent lookup",
+    "src/server.rs:/api/agents and /api/uar/providers routes",
+    "src/uar/api/discovery.rs:create_agent",
+    "src/llm/registry.rs:ProviderConfig/ModelConfig",
+    "src/uar/defaults.rs:default_agent",
+    "src/uar/runtime/native_skills/echo.rs:EchoSkill",
+    "src/uar/runtime/native_skills/agents/mod.rs:Operation schema",
+    "src/uar/runtime/thread/spawn.rs:AgentSpawnRequest",
+    "src/uar/runtime/thread/policy_intersection.rs:ThreadBudgets",
+    "src/uar/rag/embeddings/openai.rs:embed_chunk",
+    "tests/support/credential_process.rs:completion"
+  ],
+  "peer": {
+    "argv": [
+      "python3",
+      "scripts/post_lifecycle/controlled_peer.py",
+      "--port",
+      "{approvedPeerPort}",
+      "--port-file",
+      "{ownedPeerPortFile}",
+      "--receipt-file",
+      "{ownedPeerReceiptFile}",
+      "--dimensions",
+      "{existingEmbeddingDimension}",
+      "--hold-seconds",
+      "20"
+    ],
+    "bind": "127.0.0.1 only",
+    "baseUrl": "http://127.0.0.1:{approvedPeerPort}",
+    "embeddingBaseUrl": "http://127.0.0.1:{approvedPeerPort}/v1",
+    "headers": "No auth is required by peer; never transmit a live provider key to it. Existing main auth refs apply only to main calls.",
+    "readyFile": "Atomic ASCII port plus newline; if port0 is selected, the runner must explicitly support observed port binding rather than guessing a URL.",
+    "receipt": "Exclusive new append-only JSONL; no headers, credentials, prompts or arbitrary bodies logged.",
+    "shutdown": "Only owned PID SIGTERM, observe awaited exit; handler idle read timeout5s and hold expiry<=20s; never claim cancellation implies exit."
+  },
+  "configureChat": [
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "success",
+        "mode": "success"
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "provider-failure",
+        "mode": "provider_failure"
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "disconnect",
+        "mode": "disconnect"
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "echo-positive",
+        "mode": "tool",
+        "tool": "native_echo",
+        "arguments": {
+          "message": "owned-fixture-echo-positive"
+        }
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "echo-denied",
+        "mode": "tool",
+        "tool": "native_echo",
+        "arguments": {
+          "message": "owned-fixture-echo-denied"
+        }
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "root-negative",
+        "mode": "success"
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "json": {
+        "action": "configure_chat",
+        "case": "child-negative",
+        "mode": "success"
+      },
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "target": "peer",
+      "status": 200,
+      "json": {
+        "action": "configure_chat",
+        "case": "parent-child",
+        "mode": "child",
+        "tool": "spawn_agent",
+        "wait_tool": "wait_agents",
+        "arguments": {
+          "artifact_id": "{fixtureId}-child-denied",
+          "delegated_prompt": "UAR_CASE:child-negative",
+          "task_name": "fixture-child",
+          "history_fork": {
+            "mode": "none"
+          }
+        }
+      }
+    }
+  ],
+  "mainAgentSetup": {
+    "permission": "Future writes only in explicitly approved isolated store. Do not register providers/agents in live/shared configuration. Existing identifiers from reviewed manifest must resolve before scenario assertions. This fragment does not supply credentials.",
+    "providerRequestSchemaExample": {
+      "method": "POST",
+      "path": "/api/uar/providers",
+      "status": 201,
+      "json": {
+        "id": "{approvedProviderId}",
+        "display_name": "Owned controlled peer",
+        "base_url": "http://127.0.0.1:{approvedPeerPort}/v1",
+        "protocol": "chat",
+        "default_model": "{approvedModelId}",
+        "models": [
+          {
+            "id": "{approvedModelId}",
+            "supports_tools": true,
+            "supports_streaming": true,
+            "enabled": true
+          }
+        ],
+        "enabled": true
+      }
+    },
+    "providerConstraints": "No api_key field is supplied. Registration may require an existing permitted credential route and an accepted provider/model identity. Do not invent a key, choose a paid model, overwrite defaults or claim successful registration before observing it. Catalog context_window is deliberately absent and cannot establish COUNT-01 trust.",
+    "agentCreate": {
+      "method": "POST",
+      "path": "/api/agents",
+      "status": 201,
+      "json": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "{fixtureId}-echo-positive",
+        "metadata": {
+          "title": "Owned post-lifecycle fixture",
+          "description": "Controlled local-peer fixture only",
+          "tags": [
+            "post-lifecycle-fixture"
+          ]
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "{approvedProviderId}",
+              "model": "{approvedModelId}"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "native_echo"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 1
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Owned controlled-peer fixture. Use only explicitly advertised permitted tools.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "budgets": {
+            "max_tool_calls_per_turn": 1
+          }
+        }
+      }
+    },
+    "agentVariants": {
+      "echoDenied": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "{fixtureId}-echo-denied",
+        "metadata": {
+          "title": "Owned post-lifecycle fixture",
+          "description": "Controlled local-peer fixture only",
+          "tags": [
+            "post-lifecycle-fixture"
+          ]
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "{approvedProviderId}",
+              "model": "{approvedModelId}"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "native_echo"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 1
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Owned controlled-peer fixture. Use only explicitly advertised permitted tools.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "budgets": {
+            "max_tool_calls_per_turn": 0
+          }
+        }
+      },
+      "childDenied": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "{fixtureId}-child-denied",
+        "metadata": {
+          "title": "Owned post-lifecycle fixture",
+          "description": "Controlled local-peer fixture only",
+          "tags": [
+            "post-lifecycle-fixture"
+          ]
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "{approvedProviderId}",
+              "model": "{approvedModelId}"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "native_echo"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 1
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Owned controlled-peer fixture. Use only explicitly advertised permitted tools.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "budgets": {
+            "max_tool_calls_per_turn": 1,
+            "max_tokens_per_turn": 0
+          }
+        }
+      },
+      "parent": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "{fixtureId}-parent",
+        "metadata": {
+          "title": "Owned post-lifecycle fixture",
+          "description": "Controlled local-peer fixture only",
+          "tags": [
+            "post-lifecycle-fixture"
+          ]
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "{approvedProviderId}",
+              "model": "{approvedModelId}"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "spawn_agent",
+              "wait_agents"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 1
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Owned controlled-peer fixture. Use only explicitly advertised permitted tools.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "budgets": {
+            "max_tool_calls_per_turn": 3
+          }
+        }
+      }
+    },
+    "headers": {
+      "Authorization": "UAR_BOUNDARY_OWNER_AUTHORIZATION"
+    },
+    "cleanup": "Track exact newly owned provider/agent IDs and current source-backed deletion semantics under store permission; no blanket cleanup. Unfinished cleanup means BLOCKED."
+  },
+  "mainRequests": {
+    "runEchoPositive": {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "json": {
+        "agent_id": "{fixtureId}-echo-positive",
+        "input": "UAR_CASE:echo-positive",
+        "session_id": "{fixtureId}-echo-positive"
+      }
+    },
+    "runEchoDenied": {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "json": {
+        "agent_id": "{fixtureId}-echo-denied",
+        "input": "UAR_CASE:echo-denied",
+        "session_id": "{fixtureId}-echo-denied"
+      }
+    },
+    "runChildDenied": {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "json": {
+        "agent_id": "{fixtureId}-parent",
+        "input": "UAR_CASE:parent-child",
+        "session_id": "{fixtureId}-parent-child"
+      }
+    },
+    "openAiSuccess": {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "json": {
+        "model": "{fixtureId}-echo-positive",
+        "messages": [
+          {
+            "role": "user",
+            "content": "UAR_CASE:success"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "openAiProviderFailure": {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "json": {
+        "model": "{fixtureId}-echo-positive",
+        "messages": [
+          {
+            "role": "user",
+            "content": "UAR_CASE:provider-failure"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "openAiDisconnect": {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "json": {
+        "model": "{fixtureId}-echo-positive",
+        "messages": [
+          {
+            "role": "user",
+            "content": "UAR_CASE:disconnect"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "openAiBudgetError": {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "json": {
+        "model": "{fixtureId}-echo-denied",
+        "messages": [
+          {
+            "role": "user",
+            "content": "UAR_CASE:echo-denied"
+          }
+        ],
+        "stream": true
+      }
+    }
+  },
+  "oracles": {
+    "nativeEcho": "Measured native effect is successful canonical main tool outcome with name native_echo and output echoed.message matching the fixture marker. Peer tool_intents is an attempt, not an effect; no peer endpoint measures native execution.",
+    "budgetError": "Exactly one budget_admission_failed error envelope followed by one [DONE], no success/finish_reason stop frame; exact category remains frozen even if current implementation emits a generic code (that is FAIL, not relaxed oracle).",
+    "providerFailure": "Peer returns503 fixture_provider_failure. It must not be relabeled budget_admission_failed; retain truthful terminal behavior instead of treating any error as budget proof.",
+    "disconnect": "Peer emits one content frame then closes a deliberately short Content-Length body with no terminal/[DONE]; main must preserve incomplete/provider/disconnect distinction, no fabricated success.",
+    "child": "spawn_agent arguments are source-backed. Optional wait_tool waits at most1000ms exactly once after parsing actual child thread_id. Spawn ack/parent DONE is not child completion. Require actual wait result/run terminal outcome and /cases/child-negative/model_requests==0 for child token0 refusal; a wait timeout is BLOCKED, never success. Do not retry into additional loops.",
+    "counters": "GET /__uar_fixture/status: counts/model_requests and embedding request/input/response counts; cases/<configured-case>/model_requests and tool_intents always present including0. Actual native tool/child effects require main canonical receipts; no MCP fixture is introduced.",
+    "count": "Standalone main COUNT-01 remains BLOCKED/unsupported without an existing trusted host preparation. No seam added by this fixture."
+  },
+  "heldEmbeddings": {
+    "arm": {
+      "target": "peer",
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "json": {
+        "action": "arm_embeddings",
+        "group": "{uniqueHoldGroup}",
+        "expected": 2
+      }
+    },
+    "inputMarker": "UAR_HOLD:{uniqueHoldGroup}: plus unique document/query identity terms",
+    "status": {
+      "target": "peer",
+      "method": "GET",
+      "path": "/__uar_fixture/status",
+      "assertPointers": {
+        "/held/{uniqueHoldGroup}/arrived": 2,
+        "/held/{uniqueHoldGroup}/released": false,
+        "/held/{uniqueHoldGroup}/expired": 0
+      }
+    },
+    "release": {
+      "target": "peer",
+      "method": "POST",
+      "path": "/__uar_fixture/control",
+      "json": {
+        "action": "release_embeddings",
+        "group": "{uniqueHoldGroup}"
+      },
+      "assertPointer": "/released",
+      "equals": "{uniqueHoldGroup}"
+    },
+    "assertionLimit": "This proves overlapping held embedding request windows, not a forced SurrealDB transaction race. Both uploads must have positive retrieval sentinels; retain typed failures. Arm must precede uploads, release before20seconds; expiry returns504 and never counts as successful ingestion. Multiple chunk batches may make arrived>2; choose owned single-chunk inputs under existing chunk config and inspect actual count, never relabel surplus arrivals.",
+    "embedding": "Deterministic normalized hashed-word vectors of the explicitly supplied existing dimension; not a semantic quality benchmark or compatible replacement for any persisted embedding fingerprint."
+  }
+}

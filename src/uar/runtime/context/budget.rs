@@ -157,11 +157,9 @@ fn require_bounded(subject: impl Into<String>, count: &CountedTokens) -> Option<
     })
 }
 
-/// Compute `I = min(L, H, C - O - R - M)` and `B = I - F` without I/O or
-/// request mutation.
-#[must_use]
-pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
-    let limits = &input.limits;
+/// Validate destination limits and derive the complete input allowance.
+/// This is capacity arithmetic only; it does not certify any request count.
+pub fn input_allowance_for_limits(limits: &DestinationLimits) -> Result<u64, BudgetOutcome> {
     for (field, value) in [
         ("context_tokens", limits.context_tokens),
         ("output_tokens", limits.output_tokens),
@@ -172,7 +170,7 @@ pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
         ("count_uncertainty_tokens", limits.count_uncertainty_tokens),
     ] {
         if let Some(outcome) = reject_negative(field, value) {
-            return outcome;
+            return Err(outcome);
         }
     }
     for (field, value) in [
@@ -182,7 +180,7 @@ pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
         if let Some(value) = value
             && let Some(outcome) = reject_negative(field, value)
         {
-            return outcome;
+            return Err(outcome);
         }
     }
 
@@ -191,25 +189,16 @@ pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
         .checked_add(limits.additional_reasoning_tokens)
         .and_then(|value| value.checked_add(limits.count_uncertainty_tokens))
     else {
-        return BudgetOutcome::InvalidLimits {
+        return Err(BudgetOutcome::InvalidLimits {
             field: "reserve_sum",
             value: i64::MAX,
-        };
+        });
     };
     if reserves > limits.context_tokens {
-        return BudgetOutcome::InvalidLimits {
+        return Err(BudgetOutcome::InvalidLimits {
             field: "reserve_sum",
             value: reserves,
-        };
-    }
-
-    if let Some(outcome) = require_bounded("protected_request", &input.protected_request) {
-        return outcome;
-    }
-    for span in &input.eligible_prose {
-        if let Some(outcome) = require_bounded(format!("eligible_prose:{}", span.id), &span.count) {
-            return outcome;
-        }
+        });
     }
 
     let mut input_allowance = limits.context_tokens - reserves;
@@ -220,6 +209,27 @@ pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
         input_allowance = input_allowance.min(limit);
     }
     let input_allowance = u64::try_from(input_allowance).expect("non-negative limits validated");
+
+    Ok(input_allowance)
+}
+
+/// Compute `I = min(L, H, C - O - R - M)` and `B = I - F` without I/O or
+/// request mutation.
+#[must_use]
+pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
+    let limits = &input.limits;
+    let input_allowance = match input_allowance_for_limits(limits) {
+        Ok(allowance) => allowance,
+        Err(outcome) => return outcome,
+    };
+    if let Some(outcome) = require_bounded("protected_request", &input.protected_request) {
+        return outcome;
+    }
+    for span in &input.eligible_prose {
+        if let Some(outcome) = require_bounded(format!("eligible_prose:{}", span.id), &span.count) {
+            return outcome;
+        }
+    }
 
     if input.protected_request.tokens > input_allowance {
         return BudgetOutcome::ProtectedOverflow {
@@ -266,6 +276,13 @@ pub fn plan_budget(input: &BudgetInput) -> BudgetOutcome {
 pub fn validate_final_count(plan: &BudgetPlan, final_request: &CountedTokens) -> BudgetOutcome {
     if let Some(outcome) = require_bounded("final_serialized_request", final_request) {
         return outcome;
+    }
+    if final_request.revision != plan.counting_revision {
+        return BudgetOutcome::UnsupportedCount {
+            subject: "final_serialized_request_revision".to_string(),
+            quality: final_request.quality,
+            revision: final_request.revision.clone(),
+        };
     }
     if final_request.tokens > plan.input_allowance {
         return BudgetOutcome::ProtectedOverflow {

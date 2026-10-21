@@ -962,7 +962,7 @@ impl ModelCallBudget {
             &self.usage_id,
             &self.limits,
             self.remote.as_ref(),
-        )
+        ).map_err(|error| error.context(BudgetFailureOrigin::Admission))
     }
 
     /// Called only by the trusted host before an authorized tool attempt.
@@ -1291,14 +1291,23 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                 // A partial cumulative report followed by cancellation is not
                 // a terminal provider counter and cannot release a reservation.
                 if matches!(&event, Ok(crate::normalized::NormalizedEvent::Done)) && reported_usage && !confirmed_usage && !stream_failed {
-                    if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error.context(BudgetFailureOrigin::UsageAccounting)); break; }
+                    let mut settled = last_price.is_some();
                     if let Some(call) = &durable_call {
-                        let price = last_price;
-                        if let Err(error) = call.usage(price, charged_tokens, true).await {
+                        if let Err(error) = call.usage(last_price, charged_tokens, true).await {
+                            settled = false;
                             tracing::warn!(%error, call_id = %call.identity.call_id, "Execution completed with unresolved durable accounting");
+                            // Retain a replayable host-observed receipt rather than
+                            // treating failed persistence as a refund. The existing
+                            // trusted-host reconciliation route owns later replay.
                             yield Ok(crate::normalized::NormalizedEvent::Custom { source: "uar.accounting".into(), event_name: "unresolved".into(),
-                                payload: serde_json::json!({"callId": call.identity.call_id, "state": "pending"}) });
+                                payload: serde_json::json!({"callId": call.identity.call_id, "state": "pending",
+                                    "runId": call.identity.run_id, "attempt": call.identity.attempt,
+                                    "terminalUsage": {"costUsd": last_price, "tokens": charged_tokens,
+                                        "evidence": call.terminal_evidence()}}) });
                         }
+                    }
+                    if settled {
+                        if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error.context(BudgetFailureOrigin::UsageAccounting)); break; }
                     }
                     confirmed_usage = true;
                 }
@@ -1444,9 +1453,17 @@ struct DurableBudget {
 #[derive(Debug, Clone)]
 struct DurableCall { store: Arc<dyn PersistenceLayer>, identity: CallIdentity }
 impl DurableCall {
+    fn terminal_evidence(&self) -> String {
+        format!("host-confirmed-terminal:{}", self.identity.key())
+    }
+
     async fn usage(&self, cost: Option<f64>, tokens: u64, terminal: bool) -> anyhow::Result<()> {
-        self.store.record_accounting_usage(&CallUsage { identity: self.identity.clone(),
-            cost_usd: cost, tokens, terminal, evidence: None }).await?;
+        let recorded = self.store.record_accounting_usage(&CallUsage { identity: self.identity.clone(),
+            cost_usd: cost, tokens, terminal,
+            evidence: terminal.then(|| self.terminal_evidence()) }).await?;
+        if terminal && recorded.state != crate::uar::persistence::accounting::AccountingState::Settled {
+            return Err(AccountingError::Unresolved.into());
+        }
         Ok(())
     }
 }

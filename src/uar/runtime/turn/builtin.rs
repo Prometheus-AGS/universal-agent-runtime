@@ -196,6 +196,9 @@ impl McpToolsContributor for ToolsStage {
 pub struct ContextStage {
     pub model: String,
     pub context_limit: usize,
+    /// Input allowance after the host-reviewed output/reasoning reserves and
+    /// independent input caps, or the explicitly approximate legacy allowance.
+    pub input_allowance: usize,
     /// Host context reinserted after reduction, including a possible full world state.
     pub reserved_tokens: usize,
     pub strategy: crate::uar::context::ContextStrategy,
@@ -251,11 +254,11 @@ impl ContextContributor for ContextStage {
             let mut history = vec![system];
             history.extend(inputs.history.clone());
             let (history, report) =
-                crate::uar::runtime::context::reduce::reduce_history_with_marked_prose(
+                crate::uar::runtime::context::reduce::reduce_history_with_input_allowance(
                     history,
                     &self.strategy,
                     &self.model,
-                    self.context_limit.saturating_sub(self.reserved_tokens),
+                    self.input_allowance.saturating_sub(self.reserved_tokens),
                     self.driver.as_deref(),
                     self.summary_budget_contract.as_ref(),
                     &self.eligible_prose,

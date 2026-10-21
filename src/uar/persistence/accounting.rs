@@ -173,7 +173,11 @@ impl AccountingCall {
     pub fn unknown(&self) -> bool { self.admission.reserved_cost_usd.is_none() || self.admission.reserved_tokens.is_none() }
 }
 
-/// Cumulative provider counter. Only a trustworthy terminal counter releases a reservation.
+/// Cumulative provider counter. Only a priced terminal counter with nonempty
+/// host/provider evidence releases a reservation. The trusted host binds that
+/// evidence to `identity`; cancellation, elapsed time and stream errors are not
+/// terminal usage evidence. The same terminal payload may be replayed after a
+/// lost settlement response, while a conflicting payload is rejected.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallUsage { pub identity: CallIdentity, pub cost_usd: Option<f64>, pub tokens: u64, pub terminal: bool, pub evidence: Option<String> }
 
@@ -215,8 +219,16 @@ pub(crate) fn reserve(scope: &mut AccountingScope, admission: &CallAdmission) ->
 pub(crate) fn observe(call: &AccountingCall, usage: &CallUsage) -> anyhow::Result<AccountingCall> {
     if usage.identity != call.admission.identity { return Err(AccountingError::IdentityConflict.into()); }
     anyhow::ensure!(usage.cost_usd.is_none_or(|v| v.is_finite() && v >= 0.0), "invalid accounting usage");
+    if usage.terminal && usage.cost_usd.is_some()
+        && usage.evidence.as_deref().is_none_or(|evidence| evidence.trim().is_empty()) {
+        return Err(AccountingError::ReconciliationRequired.into());
+    }
     if call.state == AccountingState::Settled {
-        if usage.terminal && usage.cost_usd == call.observed_cost_usd && usage.tokens == call.observed_tokens { return Ok(call.clone()); }
+        if usage.terminal && usage.cost_usd == call.observed_cost_usd
+            && usage.tokens == call.observed_tokens
+            && call.reconciliation_evidence.as_ref().is_none_or(|evidence| usage.evidence.as_ref() == Some(evidence)) {
+            return Ok(call.clone());
+        }
         return Err(AccountingError::IdentityConflict.into());
     }
     anyhow::ensure!(usage.tokens >= call.observed_tokens, "accounting token counter decreased");
@@ -227,7 +239,9 @@ pub(crate) fn observe(call: &AccountingCall, usage: &CallUsage) -> anyhow::Resul
     after.observed_tokens = usage.tokens;
     // Unpriced work is never represented as free settled usage.
     if usage.terminal && usage.cost_usd.is_some() { after.state = AccountingState::Settled; }
-    after.reconciliation_evidence = usage.evidence.clone();
+    // Partial counters must not erase the last retained evidence. A terminal
+    // settlement records exactly the evidence used to release this call.
+    after.reconciliation_evidence = usage.evidence.clone().or_else(|| call.reconciliation_evidence.clone());
     after.revision += 1;
     Ok(after)
 }

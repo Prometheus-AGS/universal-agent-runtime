@@ -1,0 +1,80 @@
+{
+  "kind": "uar.boundary-packet-proposal/v1",
+  "readyToRun": false,
+  "recordedAt": "2026-10-21T20:38:18.511325+00:00",
+  "projectRoot": "/Users/gqadonis/.claude/worktrees/uar-post-lifecycle-verification",
+  "head": "eddd5508c902f892b20042ec545900cac16747c6",
+  "contractIdentity": {
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "phaseId": "uar-post-lifecycle-verification-readiness",
+    "planRevision": 90,
+    "contractDigest": "dab4675cd1d2889fbe627cf130ff2875ac2b2ab8c0dde1dddafb9042a648d0cb"
+  },
+  "entryCommand": "python3 scripts/post_lifecycle/main_boundary.py --manifest .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/boundary-manifest.json --evidence-root .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-001",
+  "serialChildCommands": [
+    "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full --bin universal-agent-runtime",
+    "CARGO_TARGET_DIR=target/uar-post-lifecycle-main UAR_MAIN_CANDIDATE=\"$PWD/target/uar-post-lifecycle-main/debug/universal-agent-runtime\" UAR_BOUNDARY_MANIFEST=\"$PWD/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/boundary-manifest.json\" cargo test --locked --no-default-features --features server-full --test post_lifecycle_main -- --test-threads=1"
+  ],
+  "inventory": "implementation-inventory.final.json",
+  "inventorySha256": "32e5b52b368d7b036aea5dc1f88fccdf43fb92fd0d523a5fc59110523150f1f3",
+  "fixtureSpecification": "scripts/post_lifecycle/manifest-requirements.md",
+  "scenarioIds": [
+    "LIAB-01",
+    "LIAB-02",
+    "ERROR-01",
+    "ERROR-02",
+    "COUNT-01",
+    "HISTORY-01",
+    "KB-01",
+    "CAS-01",
+    "BTHREE-01",
+    "IDENTITY-01"
+  ],
+  "declaredFutureEffects": [
+    "Owned main/peer argv and bounded starts/stops",
+    "Unique isolated namespace/database on unchanged existing endpoint with actual durability evidence",
+    "Existing-identity fixture agent create/delete and native_echo/spawn_agent/wait_agents decisions",
+    "Owned KB upload/search/delete and local controlled peer traffic, no real-provider secrets or spend",
+    "Exact-target synchronous schema event, SLEEP100ms, max12 distinct-row contention writes, exact event removal",
+    "Explicit owner/snapshot-checked row deletion and absence readback; no namespace/table/database deletion"
+  ],
+  "unresolved": [
+    "Root Cargo.lock requires liter-llm2.3.0-compatible dependency resolution; no unrelated upgrades authorized",
+    "Failed approved build awaits explicit rerun instruction after pinned local dependency restoration",
+    "Runtime fixture identity/config bindings unavailable; retained BLOCKED setup, not auth/JWT provisioning requirement or release gate",
+    "No runnable boundary-manifest.json fabricated; no runtime acceptance claimed"
+  ],
+  "verification": "BUILD_FAILED_RUNTIME_NOT_RUN",
+  "externalSpendAllowed": false,
+  "sourceAuthoringComplete": true,
+  "countOwnerApproval": "Sentinel_8d3118c046848191a1e2323b355da735 2026-10-21T19:16:56Z",
+  "countEvidence": {
+    "builder": "Existing trusted Rust builder + production final-wire driver with one owned in-process Axum loopback HTTP peer; actual captured body/count/no-effect and awaited shutdown",
+    "standaloneMainExactFit": "UNSUPPORTED",
+    "newRuntimeConfigurationFeature": false
+  },
+  "finiteStop": "Run only the sole proposed entry once after exact approval; build failure prevents tests; no hidden commands or scope expansion. Preserve any FAIL/BLOCKED/timeout, identity drift or cleanup uncertainty; no automatic rerun/extension. Any repair closes gate and needs renewed inventory and exact failed-command approval; original maximum2 repair attempts/240 minutes/240 calls/3 no-progress preserved.",
+  "verificationApprovalRef": "Sentinel_e3aeead4c9988191b9815c798b3e2306 2026-10-21T20:03:14Z",
+  "storeFixtureApprovalRef": "Sentinel_e3aeead4c9988191b9815c798b3e2306",
+  "implementationComplete": true,
+  "buildReceipt": "evidence/main-build-001/build.json",
+  "checkoutCompletenessReceipt": "checkout-completeness-receipt.json",
+  "scopeDisposition": {
+    "authJwtWork": "EXCLUDED",
+    "releaseDependency": false,
+    "existingEnforcement": "UNCHANGED",
+    "assertions": "UNCHANGED"
+  },
+  "finiteDisposition": "Original task1.3 completes by delivery of this exact non-runnable packet and reconciled inventory. Execution/build/test/acceptance are independent outcomes, no extra implementation tasks.",
+  "dependencyCandidate": {
+    "literLlm": "31c7e63236aa96914fccae2a5c25c4cda9ffa430",
+    "oldLiterLlm": "e446f5ef91003bbec5fce6b2f45fb94559dff335",
+    "rustMcpFilesystem": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+    "rootLockSha256": "888d0efad962353112e0dcfede372293a9c001c0c59cb35450977f758140b642",
+    "lockResolution": "PENDING: root liter-llm2.1.1 differs from pinned source2.3.0; no resolver run or fabricated lock edit",
+    "validation": "NONE for updated dependency candidate",
+    "gitlink": "staged exact commit, not committed/pushed"
+  },
+  "priorBuildCandidate": "Old gitlink e446f5ef91003bbec5fce6b2f45fb94559dff335; exit101 before compile, not evidence for31c7e632"
+}

@@ -192,8 +192,27 @@ pub async fn chat_completions(
                     yield Ok(Event::default().data("[DONE]"));
                     break;
                 }
-                NormalizedEvent::Error { message, .. } => {
+                NormalizedEvent::Error { code, message, .. } => {
                     tracing::error!("Error in chat completion: {}", message);
+                    // Only the closed host budget categories use this terminal
+                    // contract. Provider failures and disconnects keep their own
+                    // behavior; an error must never emit a successful stop chunk.
+                    if matches!(code.as_str(),
+                        "budget_admission_failed"
+                        | "budget_root_cancelled"
+                        | "budget_root_deadline_exceeded"
+                        | "budget_usage_accounting_failed")
+                    {
+                        yield Ok(json_event(serde_json::json!({
+                            "error": {
+                                "message": message,
+                                "type": "budget_error",
+                                "param": null,
+                                "code": code
+                            }
+                        })));
+                        yield Ok(Event::default().data("[DONE]"));
+                    }
                     break;
                 }
                 _ => {}

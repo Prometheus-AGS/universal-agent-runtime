@@ -113,8 +113,20 @@ async fn accounting_process() {
             let blocked = admission(store.as_ref(),&namespace,"blocked",1.0).await;
             assert!(store.admit_accounting_call(&blocked).await.is_err());
             let usage = CallUsage { identity:request.identity.clone(),cost_usd:Some(0.5),tokens:5,terminal:true,evidence:Some("confirmed provider final receipt".into()) };
-            store.record_accounting_usage(&usage).await.unwrap();
-            store.record_accounting_usage(&usage).await.unwrap();
+            let mut unsupported_terminal = usage.clone();
+            unsupported_terminal.evidence = None;
+            assert!(store.record_accounting_usage(&unsupported_terminal).await.is_err(),
+                "a priced terminal counter without evidence must not release the reservation");
+            let pending = store.list_accounting_calls(&request.identity.owner,&namespace).await.unwrap();
+            assert_eq!(pending[0].state,AccountingState::Pending);
+            let settled = store.record_accounting_usage(&usage).await.unwrap();
+            let replayed = store.record_accounting_usage(&usage).await.unwrap();
+            assert_eq!(replayed,settled,"identical terminal receipt replay must not rewrite the call");
+            assert_eq!(settled.reconciliation_evidence,usage.evidence);
+            let mut conflicting_terminal = usage.clone();
+            conflicting_terminal.evidence = Some("different provider final receipt".into());
+            assert!(store.record_accounting_usage(&conflicting_terminal).await.is_err(),
+                "a settled call must not be relabeled by conflicting terminal evidence");
             for binding in &request.scopes {
                 let row = store.get_accounting_scope(&binding.identity).await.unwrap().unwrap();
                 assert_eq!(row.settled_cost_usd,0.5); assert_eq!(row.settled_tokens,5);

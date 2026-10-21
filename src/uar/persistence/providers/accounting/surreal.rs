@@ -99,7 +99,7 @@ pub(super) async fn usage(store: &SurrealDbProvider, usage: &CallUsage) -> Resul
     let before = changes(store,&before_call.admission).await?;
     let mut after = before.clone();
     for scope in &mut after { accounting::settle(scope,&before_call,&after_call)?; }
-    checked(store.db.query("BEGIN TRANSACTION;
+    let result = checked(store.db.query("BEGIN TRANSACTION;
         FOR $change IN $changes {
             LET $updated = (UPDATE type::record('accounting_scopes',$change.key) SET data=$change.after WHERE data=$change.before RETURN AFTER);
             IF array::len($updated) != 1 { THROW 'accounting_revision_conflict'; };
@@ -108,7 +108,19 @@ pub(super) async fn usage(store: &SurrealDbProvider, usage: &CallUsage) -> Resul
         IF array::len($updated) != 1 { THROW 'accounting_revision_conflict'; };
         COMMIT TRANSACTION;")
         .bind(("changes",serde_json::to_value(scope_changes(&before,&after)?)?)).bind(("key",usage.identity.key()))
-        .bind(("before",serde_json::to_string(&before_call)?)).bind(("after",serde_json::to_string(&after_call)?)).await?)?;
+        .bind(("before",serde_json::to_string(&before_call)?)).bind(("after",serde_json::to_string(&after_call)?)).await?);
+    if let Err(error) = result {
+        // A concurrent identical terminal replay may have committed this exact
+        // call and all its scope changes atomically. Read only that original
+        // row once; never treat a generic transaction conflict as success and
+        // never retry an unknown call or release its reservation by age.
+        if after_call.state == accounting::AccountingState::Settled {
+            if let Ok(Some(recorded)) = read::<AccountingCall>(store,"accounting_calls",usage.identity.key()).await {
+                if recorded == after_call { return Ok(recorded); }
+            }
+        }
+        return Err(error);
+    }
     Ok(after_call)
 }
 pub(super) async fn list(store: &SurrealDbProvider, owner: &str, run: &str) -> Result<Vec<AccountingCall>> {

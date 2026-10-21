@@ -400,6 +400,15 @@ impl DestinationRequestPreparation {
             self.request_profile.output_ceiling == Some(self.budget_contract.output_ceiling),
             "Destination preparation output ceiling does not match its budget"
         );
+        anyhow::ensure!(
+            self.budget_contract.counting
+                == crate::uar::runtime::context::token_service::SerializedCountingContract::ExactCl100kJsonV1,
+            "Destination preparation has no validated counting contract"
+        );
+        crate::uar::runtime::context::budget::input_allowance_for_limits(&self.budget_contract.limits)
+            .map_err(|outcome| anyhow::anyhow!("Invalid destination capacity contract: {outcome:?}"))?;
+        anyhow::ensure!(self.budget_contract.limits.context_tokens > 0,
+            "Destination preparation requires a known positive capacity");
         super::prompt_dialect::PromptTemplateResolver::new(vec![self.template.clone()]).resolve(
             &self.destination,
             None,
@@ -433,6 +442,16 @@ impl DestinationRequestPreparations {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.profiles.is_empty()
+    }
+
+    /// Return only a host-installed, validated destination contract. Catalog
+    /// metadata and tokenizer lookup never manufacture one.
+    #[must_use]
+    pub fn budget_contract(
+        &self,
+        model: &str,
+    ) -> Option<&crate::uar::runtime::context::budget::RequestBudgetContract> {
+        self.profiles.get(model).map(|profile| &profile.budget_contract)
     }
 
     fn prepare(
@@ -993,6 +1012,8 @@ impl Orchestrator {
                     "budgeting": {
                         "label": "budgeted",
                         "contract_present": request.budget_contract.is_some(),
+                        "fit_guarantee": false,
+                        "counting_scope": "host-reviewed final-wire contract; fit is checked by the destination driver",
                     },
                     "template": preparation.map(|profile| serde_json::json!({
                         "id": profile.template.id,
@@ -1940,6 +1961,15 @@ impl Orchestrator {
                 let tools = descriptors.values().map(|tool| tool.openai_tool_json()).collect::<Vec<_>>();
 
                 if let Some(activation) = &orchestrator.skill_activation {
+                    let destination_contract = orchestrator.destination_preparations.as_ref()
+                        .and_then(|preparations| preparations.budget_contract(&orchestrator.llm_config.model))
+                        .or(orchestrator.request_budget_contract.as_ref());
+                    let input_allowance = match destination_contract {
+                        Some(contract) => crate::uar::runtime::context::budget::input_allowance_for_limits(&contract.limits)
+                            .ok().and_then(|allowance| usize::try_from(allowance).ok()).unwrap_or(0),
+                        None => activation.context_limit.saturating_sub(
+                            crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS),
+                    };
                     let active = active_skills;
                     // The window carries no tool cost; this step's actual tool
                     // definitions are withheld here, on every iteration.
@@ -1964,7 +1994,7 @@ impl Orchestrator {
                     } else { None };
                     let world_reserved_tokens = if let Some(contributor) = &world_contributor {
                         match contributor.reserved_tokens(&history, &activation.model) {
-                            Ok(tokens) if tokens.saturating_add(1_000) < activation.context_limit => tokens,
+                            Ok(tokens) if tokens < input_allowance => tokens,
                             result => {
                                 let message = match result {
                                     Ok(tokens) => format!("World state requires {tokens} tokens and does not fit the model context budget"),
@@ -1977,8 +2007,8 @@ impl Orchestrator {
                     } else { 0 };
                     // Refuse before any provider call when this step's tools, world
                     // state and the response reserve already fill the window.
-                    let history_limit = match crate::uar::runtime::context::reduce::reserve_fixed_request_tokens(
-                        activation.context_limit, world_reserved_tokens, tool_tokens,
+                    let history_limit = match crate::uar::runtime::context::reduce::reserve_fixed_input_tokens(
+                        input_allowance, world_reserved_tokens, tool_tokens,
                     ) {
                         Ok(limit) => limit,
                         Err(error) => {
@@ -1993,9 +2023,9 @@ impl Orchestrator {
                         }
                     };
                     let (mut history, rewritten) = if iteration > 1 {
-                        match crate::uar::runtime::context::reduce::reduce_history(
+                        match crate::uar::runtime::context::reduce::reduce_history_with_input_allowance(
                             history, &activation.strategy, &activation.model,
-                            history_limit, Some(orchestrator.driver.as_ref()),
+                            history_limit, Some(orchestrator.driver.as_ref()), destination_contract, &[],
                         ).await {
                             Ok((history, report)) => (history, report.history_rewritten),
                             Err(error) => {
@@ -2036,24 +2066,20 @@ impl Orchestrator {
                         },
                     );
                     step_fragments.extend(skill_fragments);
-                    if iteration == 1 {
-                        // The first step is not reduced here, so measure the request
-                        // actually about to be sent instead of trusting admission.
+                    {
+                        // Recount every prepared step, including actual tool definitions
+                        // and reattached skills; trimming estimates are not fit proof.
                         let measured = crate::uar::runtime::context::token_service::TokenService::count_messages(
                             &activation.model, &attached,
                         );
                         let required_tokens = measured.saturating_add(tool_tokens);
-                        let input_allowance = activation.context_limit
-                            .saturating_sub(crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS);
                         if required_tokens > input_allowance {
                             let error = crate::uar::runtime::context::reduce::ReduceHistoryError::ContextOverflow {
                                 required_tokens, input_allowance,
                             };
                             yield NormalizedEvent::Error {
                                 message: format!(
-                                    "{error}; the request holds {measured} message tokens and {tool_tokens} tool-definition tokens against a {}-token context with a {}-token response reserve",
-                                    activation.context_limit,
-                                    crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS,
+                                    "{error}; the request holds {measured} estimated message tokens and {tool_tokens} estimated tool-definition tokens against the applicable input allowance {input_allowance}",
                                 ),
                                 code: Some(error.code().to_string()),
                             };
@@ -3224,6 +3250,10 @@ impl Orchestrator {
             extra_params: None,
             budget_contract: self.request_budget_contract.clone(),
         };
+
+        let canonical = req.messages.clone();
+        let fragments = self.canonical_fragments.as_deref().unwrap_or(&[]);
+        let req = self.prepare_attempt(&self.llm_config.model, req, &canonical, fragments)?;
 
         // Stream from the driver and collect message deltas
         let mut stream = self.driver.stream(req).await?;
