@@ -4,6 +4,17 @@ Source: `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`. ARM64 job118973677204 failed
 
 Run: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909/job/118973677204
 
+## Final run disposition
+
+The run later completed with failure. AMD64 job118973677492 also reported the
+same19 diagnostic categories and Cargo exit101. Manifest publication was
+skipped, and no image digest was published. A cancellation request reached an
+already completed run and made no state change. Source repairs are committed
+as `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; this failed source is not relabeled
+as successful. Boss's renewed pin is in signed/Verified follow-up
+`2888c6ff368fbc52ec51c7ff4a59c493c4487d84`. Rebuild and runtime acceptance are
+separate unfinished obligations.
+
 Repair source only, preserving lifecycle/admission/actual-join contracts. Do not erase or weaken proof capabilities to satisfy a type error. All repaired source, Boss pin and inventory must be renewed before repeating the same approved delivery command. No image was published by this failed job.
 
 ```text

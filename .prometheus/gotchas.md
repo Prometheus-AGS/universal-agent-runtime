@@ -2015,3 +2015,18 @@ The correction is recorded as lifecycle task5.3; task5.1 cannot be reopened by
 the canonical runtime, so its earlier completion is preserved as history and a
 follow-up is registered instead. This is a source defect, not proof that a
 specific watcher caused the historical c9 lock failure.
+
+
+## Retained source boundaries require actual owned types — 2026-10-21T01:39:47.140717+00:00
+
+The first authorized Docker build found19 integration compiler errors after
+lifecycle source authoring. Two retained dispatch inputs called clone on types
+without Clone, copying only a borrowed reference and escaping the caller's
+lifetime. Prepared payload and sealed immutable proof ownership now preserve
+private validation and atomic durable challenge consumption. The original proof
+API already borrowed the proof; immutable copying does not create fresh authority.
+Other observed errors include stale tuple/Result assumptions, moved diagnostic
+IDs and SDK live-stream wrapper mismatch. Ending a mutex guard before await
+must retain atomic generation validation/publication under one lexical lock;
+a split no-await check and later relock is still a threaded race. These repairs
+are source-only; neither compilation success nor runtime correctness is claimed.

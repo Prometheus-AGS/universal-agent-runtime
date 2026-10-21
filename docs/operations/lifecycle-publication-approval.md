@@ -6,22 +6,19 @@ scoped implementation commit and necessary documentation follow-ups, overriding
 the repository policy-validator prohibition only for those commits. Stored
 hook/validator configuration is unchanged. No policy compliance result is claimed.
 
-## Actual delivery
+## Actual source publication and delivery history
 
-- UAR implementation source commit: `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`, pushed to
-  `codex/uar-1-1-1-implementation`.
-- UAR draft PR: https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418.
-- Boss draft PR: https://github.com/Prometheus-AGS/the-boss/pull/74 on
-  `codex/uar-lifecycle-payload`. Its schema2 local candidate pin names the exact
-  UAR source commit above. Published Boss commit
-  `7e7ff9f696e7f32f69c223a9aaa49b815134a23b` is signed and DCO-signed off;
-  GitHub reports its signature verified with reason `valid`. The final commit
-  uses the already registered Boss release key and account noreply identity
-  through per-command options. No account key or stored identity setting changed.
-  Signature status is recorded separately from product acceptance.
-- Requested deployment-image workflow: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909, confirmed running at source
-  `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`. Both native architecture jobs are active. **No image digest or
-  available image is claimed until publication completes.**
+- Initial UAR implementation: `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`; published on the existing topic
+  branch and draft PR418.
+- First Docker delivery: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909. Both native architecture jobs failed19
+  compiler diagnostics. Manifest merge was skipped; no image was published.
+- Repaired immutable UAR source: `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`, committed and pushed after all
+  runtime/state/MCP repair handoffs. No standalone compiler or test ran.
+- Boss renewed pin and proposed notes: `2888c6ff368fbc52ec51c7ff4a59c493c4487d84`, published in draft
+  PR74. GitHub reports its signature valid/Verified; DCO signoff is retained.
+- Both drafts remain open: https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418
+  and https://github.com/Prometheus-AGS/the-boss/pull/74.
+- Replacement Docker delivery: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081, confirmed at repaired source `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`. Both architecture jobs are active. Only the same explicitly approved workflow command ran. No image or digest is claimed yet.
 
 The UAR source commit used exactly:
 
@@ -38,7 +35,7 @@ personal credentials, runtime settings or unrelated skills gitlink was changed.
 
 The operator requested Docker image delivery and then explicitly approved the
 source-only publication path and requested Docker deployment build. The existing
-unchanged deployment workflow was dispatched with:
+unchanged deployment workflow was initially dispatched with:
 
 ```sh
 /opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation

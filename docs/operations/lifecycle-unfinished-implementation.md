@@ -1,7 +1,7 @@
 # Lifecycle work still outstanding
 
 Execute: `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
-Waypoint3158, plan70. Verification **CLOSED**.
+Waypoint3167, plan73. Verification **CLOSED**.
 
 The unified lifecycle source tasks1.1–8.1 and follow-ups5.2/5.3/5.4 remain
 source-complete. Runtime6.2 and real-model fixture8.2 now have collected source
@@ -11,16 +11,20 @@ remaining implementation and evidence.
 
 ## Source completion and remaining delivery
 
-Lifecycle8.3 now records source completion: Boss pins UAR `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`, both
-repositories are pushed, and draft PR418 (UAR) and PR74 (Boss) are published.
-All planned production/fixture source and required handoffs are authored.
-This is a source-only statement, not compiled or accepted behavior.
+The first authorized image build exposed19 compiler integration errors on both
+architectures. Follow-up9.4 now records the bounded source repairs with all
+writer handoffs. Follow-up8.4 renews the actual Boss pin to repaired UAR source
+`6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; signed Boss source `2888c6ff368fbc52ec51c7ff4a59c493c4487d84` is pushed. Draft PR418 (UAR)
+and PR74 (Boss) remain published. No additional production source work is
+identified in these collected handoffs, but the repaired bytes are uncompiled
+and unaccepted. This is source authoring completion, not behavior proof.
 
-Lifecycle9.3 remains in progress until the requested Docker deployment build
-publishes its actual digest. The live run is https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909. Both architecture jobs
-are active; no available image is claimed. The operator explicitly approved
-source-only hook exceptions, preserving the closed routine-verification gate.
-No stored hook configuration changed and no normal validator/check was run.
+Lifecycle9.3 is unfinished. The initial run https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909 failed on both native
+architectures, with manifest merge skipped and no image published. The same
+approved Docker delivery workflow was repeated after inventory renewal: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081. The run is active at repaired source `6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46`; its publication outcome remains pending.
+No local/native build, test, lint, formatter, typecheck, policy validator,
+independent review or acceptance is authorized. The source-only hook exception
+remains limited to scoped commits and required documentation follow-ups.
 
 ## Remaining canonical evidence and handoff
 

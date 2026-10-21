@@ -15,6 +15,8 @@
 - [x] 8.2 Real local-model failover and incompatible-space fixture source
 - [x] 8.3 Bind Boss candidate payload to immutable lifecycle source
 - [ ] 9.3 Publish scoped implementation branch and draft PR with deployment image path
+- [x] 9.4 Repair observed integration compiler failures from authorized Docker delivery
+- [x] 8.4 Renew immutable Boss source pin after Docker delivery repairs
 
 Implementation checkboxes record authored production/fixture/documentation
 source and collected writer handoffs. They do not certify compilation, execution,

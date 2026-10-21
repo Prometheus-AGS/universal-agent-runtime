@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 103,
+  "revision": 112,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -886,6 +886,49 @@
       "evidence": [
         "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
         "UAR actual committed pin ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; source only; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-runtime-repair",
+      "title": "Repair observed runtime Docker compiler integration errors",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-runtime-repair.md",
+        "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-state-repair",
+      "title": "Repair observed state/stream/owned input Docker compiler errors",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-state-repair.md",
+        "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "lifecycle-delivery-lead-repair",
+      "title": "Repair MCP borrower cloning and renew source publication bindings",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "docs/operations/lifecycle-delivery-mcp-repair.md",
+        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+        "Actual repaired UAR/Boss commits published; no runtime acceptance; CLOSED"
       ],
       "remaining": []
     }
@@ -2925,6 +2968,169 @@
         "evidence": [
           "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
           "UAR actual committed pin ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; source only; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "f1d33259-6350-45c7-b4d3-525fe529f9fe",
+      "at": "2026-10-21T01:30:37.726Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-runtime-repair",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "115bf9b3-66d7-4354-b5ca-f7b4f7fffd8a",
+      "at": "2026-10-21T01:30:37.854Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-runtime-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-runtime-repair.md"
+        ],
+        "remaining": [
+          "Source integration repair; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "55793954-b1f0-4f48-9995-973e5855857a",
+      "at": "2026-10-21T01:30:37.980Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-state-repair",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "aa740067-28eb-44d6-b3ed-becacf454d06",
+      "at": "2026-10-21T01:30:38.110Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-state-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-state-repair.md"
+        ],
+        "remaining": [
+          "Source integration repair; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "9e09a1ec-173d-4455-832a-64ddcd87c659",
+      "at": "2026-10-21T01:30:38.229Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "lifecycle-delivery-lead-repair",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "7e0e8e15-8b99-4e53-a7a4-b24dc049ad5e",
+      "at": "2026-10-21T01:30:38.377Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "lifecycle-delivery-lead-repair",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-mcp-repair.md"
+        ],
+        "remaining": [
+          "Source integration repair; verification CLOSED"
+        ]
+      }
+    },
+    {
+      "id": "763b954d-f82f-4940-9fd6-9ab0fe28e70d",
+      "at": "2026-10-21T01:34:37.855Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-runtime-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-runtime-repair.md",
+          "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "c3b83c01-2f31-4fc5-90ba-3835659aeecb",
+      "at": "2026-10-21T01:34:37.960Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-state-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-state-repair.md",
+          "Observed build diagnostic source repairs; runtime behavior unverified; CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "e395113f-abe0-402a-b5a1-591ef3d3720e",
+      "at": "2026-10-21T01:38:21.304Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-delivery-lead-repair",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "docs/operations/lifecycle-delivery-mcp-repair.md",
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+          "Actual repaired UAR/Boss commits published; no runtime acceptance; CLOSED"
         ],
         "remaining": []
       }

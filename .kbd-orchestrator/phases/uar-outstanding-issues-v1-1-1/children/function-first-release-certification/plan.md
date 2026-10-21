@@ -689,3 +689,22 @@ jobs active. Dispatch is not image availability or acceptance. No routine
 tests/checks/lint/typecheck/format/build/package/review/validator ran. The Docker
 delivery build is the explicit narrow exception, not a gate opening. Unrelated
 dirty source, personal configuration and Boss skills gitlink remain untouched.
+
+
+## Delivery integration source repairs — 2026-10-21T01:39:47.140717+00:00
+
+The explicitly authorized Docker deployment run39523808909 failed19 compiler
+diagnostics on both native architectures. No image was published. Follow-up9.4
+records source repairs;8.4 records renewed immutable Boss pin. UAR source
+6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46 and signed/Verified Boss source2888c6ff368fbc52ec51c7ff4a59c493c4487d84 are committed/pushed.
+Runtime/state/MCP handoffs are collected. Tuple contracts, moved diagnostic
+captures, scoped visibility/due-date type, selected-query stream ownership and
+closure variants, sealed owned proof input and recovery atomic CAS are repaired
+in source. No public proof constructor/field or durable arbitration was relaxed.
+
+Source-only hook exception remains explicitly authorized. Routine verification
+is CLOSED; no local Cargo/compiler/tests/lint/format/typecheck/validator/review
+or native/customer package ran. The failed Docker attempt is delivery evidence
+of failure, not phase acceptance. A replacement is not yet dispatched at this
+source-inventory boundary. Renew inventory before repeating only the same
+approved deployment command. No old failure is relabeled as success.

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-21T01:00:15.786074+00:00",
+  "recorded_at": "2026-10-21T01:44:05.291699+00:00",
   "purpose": "Saved source inventory authoring; no acceptance/identity gate imported or executed",
   "phase_id": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
   "change": "deterministic-lifecycle-management",
-  "waypoint_revision": 3158,
-  "plan_revision": 70,
+  "waypoint_revision": 3167,
+  "plan_revision": 73,
   "canonical_run_counter": {
     "completed": 137,
     "total": 153,
@@ -15,11 +15,21 @@
   "verification_commands_executed": [],
   "source_publication": {
     "operator_hook_exception": "Explicit source-only LEFTHOOK=0 commits and required documentation follow-ups; routine verification CLOSED",
-    "uar_implementation_commit": "ad557b0d00134c003bf0e87d248d1aef2e9ce4e5",
+    "uar_implementation_commit": "6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46",
     "uar_draft_pr": "https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418",
     "boss_draft_pr": "https://github.com/Prometheus-AGS/the-boss/pull/74",
-    "deployment_run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909",
-    "deployment_status": "in_progress at implementation commit; no available image or digest claimed",
+    "prior_failed_delivery": {
+      "run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909",
+      "source": "ad557b0d00134c003bf0e87d248d1aef2e9ce4e5",
+      "result": "Both native architecture jobs failed19 compiler diagnostics; manifest skipped; no image"
+    },
+    "deployment_run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39528865081",
+    "deployment_status": "Repaired source and Boss pin published; replacement active at6d50cb8a; no image digest published yet",
+    "boss_published_commit": "2888c6ff368fbc52ec51c7ff4a59c493c4487d84",
+    "boss_signature_metadata": {
+      "verified": true,
+      "reason": "valid"
+    },
     "delivery_commands_executed": [
       "git commit/push (scoped source only)",
       "gh draft PR creation/update",
@@ -45,7 +55,9 @@
       "5.4",
       "6.2",
       "8.2",
-      "8.3"
+      "8.3",
+      "9.4",
+      "8.4"
     ],
     "all_planned_production_fixture_source_authored": true,
     "unfinished_source_implementation_task_ids": [],
@@ -62,7 +74,7 @@
   },
   "uar_source": {
     "root": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
-    "head": "ad557b0d00134c003bf0e87d248d1aef2e9ce4e5",
+    "head": "6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46",
     "scope": [
       "src",
       "Cargo.toml",
@@ -92,8 +104,8 @@
       "openspec/changes/uar-outstanding-issues-v1-1-1"
     ],
     "method": "SHA-256 of saved per-file bytes; aggregate of sorted compact JSON records; excludes this inventory itself",
-    "file_count": 29281,
-    "saved_records_digest": "sha256:00aa90742e2d7c2c46459b7ca6d7e7dd0913fa87119f52cc45af81043939a7af",
+    "file_count": 29285,
+    "saved_records_digest": "sha256:263ad0b813e52e8ac6aa12b3e0895682a5ac7920e3b9d4d05b6b88a1efbc383d",
     "acceptance_runner_source_tree": null,
     "acceptance_runner_identity_limit": "No existing source_identity() or freeze/check helper invoked; fresh prepared manifest binding pending",
     "gitlinks": [
@@ -74985,6 +74997,30 @@
         "sha256": "sha256:112e3a683886e9af70117a74fd4ed77f0ea38c2c5500d2f25d5840e1432c1d57"
       },
       {
+        "path": "docs/operations/lifecycle-delivery-build-failure-39523808909.md",
+        "kind": "file",
+        "bytes": 22372,
+        "sha256": "sha256:c9a9cc92d4985d3addf98cc8a66e2cb35833823cf7e10dee336d9083a1ab4d9e"
+      },
+      {
+        "path": "docs/operations/lifecycle-delivery-mcp-repair.md",
+        "kind": "file",
+        "bytes": 1070,
+        "sha256": "sha256:a7434293c217934f2e2d3a4b51afb08eee27891d36c3b9a96a0c51c66f580956"
+      },
+      {
+        "path": "docs/operations/lifecycle-delivery-runtime-repair.md",
+        "kind": "file",
+        "bytes": 1973,
+        "sha256": "sha256:b0d3878fa697f18d28c1a680193b00bf77443571db7d393f99776aa0400b8241"
+      },
+      {
+        "path": "docs/operations/lifecycle-delivery-state-repair.md",
+        "kind": "file",
+        "bytes": 2814,
+        "sha256": "sha256:113ae456ceac376ad9e221c1db043875e3963ebc62327a0cf59206853b981315"
+      },
+      {
         "path": "docs/operations/lifecycle-embedding-fixture-handoff.md",
         "kind": "file",
         "bytes": 4903,
@@ -75023,8 +75059,8 @@
       {
         "path": "docs/operations/lifecycle-implementation-inventory-2026-10-20.md",
         "kind": "file",
-        "bytes": 10424,
-        "sha256": "sha256:ee9ea4c0238980de086bde025052a5552d0c254a9358207d7f2a256cb979bf8d"
+        "bytes": 11208,
+        "sha256": "sha256:a75c36b7a5783b2b914ffeb6fb64195622cfb432d4bd971d171fe945bcc453ee"
       },
       {
         "path": "docs/operations/lifecycle-lead-handoff.md",
@@ -75071,8 +75107,8 @@
       {
         "path": "docs/operations/lifecycle-publication-approval.md",
         "kind": "file",
-        "bytes": 3658,
-        "sha256": "sha256:3e50ae734c97c4ac1e5076eea481cb25b5713f4017213182f4725e05d2c7bea9"
+        "bytes": 3773,
+        "sha256": "sha256:a5b223ecabce0c3e9c2dcc5c44498ff6569110de97ff362e422fec07fdcc7a4b"
       },
       {
         "path": "docs/operations/lifecycle-publication-scope-2026-10-20.txt",
@@ -75125,14 +75161,14 @@
       {
         "path": "docs/operations/lifecycle-unfinished-implementation.md",
         "kind": "file",
-        "bytes": 3345,
-        "sha256": "sha256:319d4c88c87a3dcd8e047ffa1c972c795f738df856c9e80b8ac27ae62dec8c59"
+        "bytes": 3884,
+        "sha256": "sha256:374b1cd223d0e602eb8333ea3d296b6e57c1d7be02ed8ad519cfd5bfb9b9d389"
       },
       {
         "path": "docs/operations/lifecycle-verification-command-proposal.md",
         "kind": "file",
-        "bytes": 6812,
-        "sha256": "sha256:fc22f308f29365a9d6027ce174703fbcdd0c06f0d29ac00267dd72d8c7c451b2"
+        "bytes": 7148,
+        "sha256": "sha256:cd8bbaa76e19d929e0154ed70b4397c9727b48c0cc18389dcb048db1e48877c5"
       },
       {
         "path": "docs/operations/lifecycle-watcher-order-handoff.md",
@@ -130865,8 +130901,8 @@
       {
         "path": "openspec/changes/deterministic-lifecycle-management/tasks.md",
         "kind": "file",
-        "bytes": 1516,
-        "sha256": "sha256:20d0c11860ed96558a0a692b18e63d0fc7bfc2b425be45f736a3352d329c7da9"
+        "bytes": 1676,
+        "sha256": "sha256:347b5cd60cb00f03c570f4e44617381a16e6ca7d398b45c825e9b0cde49df595"
       },
       {
         "path": "openspec/changes/uar-outstanding-issues-v1-1-1/.openspec.yaml",
@@ -132395,8 +132431,8 @@
       {
         "path": "src/llm/orchestrator.rs",
         "kind": "file",
-        "bytes": 168605,
-        "sha256": "sha256:e9bdc376249833e231c1df2dec465c773be0d47e3ade541c233637ac39b73529"
+        "bytes": 168618,
+        "sha256": "sha256:2fbe3e018706a5a61493e8a027fb2c4d9341f8c9cdddc4c7890ccec390d0f0ed"
       },
       {
         "path": "src/llm/prompt_dialect.rs",
@@ -132521,8 +132557,8 @@
       {
         "path": "src/mcp/registry.rs",
         "kind": "file",
-        "bytes": 132282,
-        "sha256": "sha256:5db28cf8e2b1d1eb7d98710faede69edc9b841a3ff052747cbc6ab025cb6646a"
+        "bytes": 132278,
+        "sha256": "sha256:9ab6433263f945d7950ac3981989df7a3534145148244fa20be50b1b03dbe6d3"
       },
       {
         "path": "src/mcp/run_events.rs",
@@ -132971,8 +133007,8 @@
       {
         "path": "src/uar/api/a2a/thread_service.rs",
         "kind": "file",
-        "bytes": 65364,
-        "sha256": "sha256:6762152ed1e083b421582504f553fe79f1fc0541eabd0979170084d24bbf8ee8"
+        "bytes": 65415,
+        "sha256": "sha256:31a855082e14f89f585f6fa94f7a677bbdffbb66dfa61f70476d7d3ea0037009"
       },
       {
         "path": "src/uar/api/a2a/types.rs",
@@ -133163,8 +133199,8 @@
       {
         "path": "src/uar/api/full_harness.rs",
         "kind": "file",
-        "bytes": 18332,
-        "sha256": "sha256:5dce42406339a7b200cab5e62380ddb0d43764fd82aa1bf0601dd00ad28da6f4"
+        "bytes": 18393,
+        "sha256": "sha256:7a634d5711a481b0fba96422fdbbf088fbd7c42320e26332062aae9833a0ca27"
       },
       {
         "path": "src/uar/api/full_harness/a2a_projection.rs",
@@ -134267,8 +134303,8 @@
       {
         "path": "src/uar/memory/controls.rs",
         "kind": "file",
-        "bytes": 6833,
-        "sha256": "sha256:1a9b316d64578c5349e9837f900b3f4a66e14ca7c2b12f1b145cc9ed7d4a499a"
+        "bytes": 7099,
+        "sha256": "sha256:e04ad3e53287359bfaa7eeb3c2d7d2ca9dc604867187db6700026d38f83701b3"
       },
       {
         "path": "src/uar/memory/controls_store.rs",
@@ -134315,8 +134351,8 @@
       {
         "path": "src/uar/memory/service.rs",
         "kind": "file",
-        "bytes": 56362,
-        "sha256": "sha256:79d91e53b84e01d1d38fe55f8be03c5b70ae52a718de96f3775612e753d3804c"
+        "bytes": 56388,
+        "sha256": "sha256:c1a116d57165a2d064c3713e54c49c30c8b913121910c35c2d3d06d9d57ec973"
       },
       {
         "path": "src/uar/memory/workflow_mirror.rs",
@@ -134393,8 +134429,8 @@
       {
         "path": "src/uar/persistence/ingestion_records/mod.rs",
         "kind": "file",
-        "bytes": 4979,
-        "sha256": "sha256:af3b500dcf7f5d0368a287a613a41e835957f397764c99085f63d02a0607197b"
+        "bytes": 4986,
+        "sha256": "sha256:67dd5a675152175a34c84f066b8df14a84b059ac5b8cce8038e66a1d435bceaf"
       },
       {
         "path": "src/uar/persistence/knowledge_namespace.rs",
@@ -134627,8 +134663,8 @@
       {
         "path": "src/uar/rag/embeddings/failover.rs",
         "kind": "file",
-        "bytes": 26247,
-        "sha256": "sha256:176e7ac4892f7ec422c43dd4dc189e58d89ce499232c17676f87423dc183e7b5"
+        "bytes": 25627,
+        "sha256": "sha256:ebe79b5fed7548f13b3a6d44bcc3b5e49480e4373150f152178f8c40ec1ad983"
       },
       {
         "path": "src/uar/rag/embeddings/fastembed.rs",
@@ -134729,14 +134765,14 @@
       {
         "path": "src/uar/realtime/postgres_bus.rs",
         "kind": "file",
-        "bytes": 6421,
-        "sha256": "sha256:6c57f026f903e8533be3716c47a6090d53be90b621fa0591f16140458e2e8346"
+        "bytes": 6432,
+        "sha256": "sha256:049dbbaa9b04584e4ba26a285f3dc3a6a1fe616b87b1f87385407156bb3a1e7e"
       },
       {
         "path": "src/uar/realtime/surreal_bus.rs",
         "kind": "file",
-        "bytes": 10077,
-        "sha256": "sha256:e1b430680e3cde2a293598cc791a098395a2095482b57aecc02b0ef4410f3f82"
+        "bytes": 11436,
+        "sha256": "sha256:d228c58f55fd384e2ff03176eca0bd51424bde99960941e5433623309ace81af"
       },
       {
         "path": "src/uar/runtime/a2ui_output.rs",
@@ -134957,8 +134993,8 @@
       {
         "path": "src/uar/runtime/instance/pump.rs",
         "kind": "file",
-        "bytes": 21995,
-        "sha256": "sha256:ecae09b9753f9d55e2d8d13a1c2c179fc8a53c824a9ec720f2bc9fb231f33855"
+        "bytes": 22006,
+        "sha256": "sha256:f77e89ca28ac45ca5beffecdc36090aadbaeed8a63fedb1ac9398a344382b5aa"
       },
       {
         "path": "src/uar/runtime/instance/reconcile.rs",
@@ -134993,8 +135029,8 @@
       {
         "path": "src/uar/runtime/manager.rs",
         "kind": "file",
-        "bytes": 423200,
-        "sha256": "sha256:8ece0e319efbf33cdfb4dddd18f1e2167234464572ca43112701909182b4a6b8"
+        "bytes": 421743,
+        "sha256": "sha256:8152dd78c765eb4859bf43d391335d119cf7d27b65f3d5afff4aa022e5d0ad09"
       },
       {
         "path": "src/uar/runtime/matching/burn_model.rs",
@@ -135305,8 +135341,8 @@
       {
         "path": "src/uar/runtime/schedules/controller.rs",
         "kind": "file",
-        "bytes": 19505,
-        "sha256": "sha256:26234860dbf29128fa5c09e5c6e3334558b09336c839d5a4967f25ca2a4bcf81"
+        "bytes": 19530,
+        "sha256": "sha256:1c795c4595fadf2297a5b2dfccaf632038ef76f81ecff3c0327fa3bb837aca9d"
       },
       {
         "path": "src/uar/runtime/schedules/mod.rs",
@@ -135443,8 +135479,8 @@
       {
         "path": "src/uar/runtime/supervisor.rs",
         "kind": "file",
-        "bytes": 17440,
-        "sha256": "sha256:7566639bdd0ca91d80b7f1d4109d8e678af13cd101876d33922c805f876cdc43"
+        "bytes": 17601,
+        "sha256": "sha256:7dba541816b6351487457cc0d98a7dda81c37ab85babf86e6a378b50df6a4e66"
       },
       {
         "path": "src/uar/runtime/team_execution/controller.rs",
@@ -175854,9 +175890,9 @@
   },
   "boss_source": {
     "root": "/Volumes/T7/Projects/prometheus/the-boss",
-    "head": "7e7ff9f696e7f32f69c223a9aaa49b815134a23b",
+    "head": "2888c6ff368fbc52ec51c7ff4a59c493c4487d84",
     "scope": "Assigned launcher, candidate binding/pin/preparer, dependency manifests and three lifecycle handoffs only",
-    "candidate_source_pin_status": "Actual UAR implementation commit ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; no candidate/native package executed",
+    "candidate_source_pin_status": "Actual repaired UAR implementation commit6d50cb8a05fb2af33e0928dc8d7ac3ff0c5f3e46; no candidate/native package executed",
     "full_customer_build_identity": "Pending actual authorized preparation; do not infer from this subset",
     "files": [
       {
@@ -175892,14 +175928,14 @@
       {
         "path": ".agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
         "kind": "file",
-        "bytes": 7446,
-        "sha256": "sha256:8f867254ff10bce1f78bb41f0501349dba844be6a7d0f5a04c929bad0b17b5e3"
+        "bytes": 9155,
+        "sha256": "sha256:d79ab2a65128117dca289d47a8357b709f8643f8e4c0df06a6eb434bd02235b1"
       },
       {
         "path": "build/local-uar-source.json",
         "kind": "file",
         "bytes": 371,
-        "sha256": "sha256:f16e0a773bfb8e1e65f3eb73bbe1060fb6865a57742af558344b5b72930dec1a"
+        "sha256": "sha256:eb193da1382c0db9f89852b1a72ad97d2a1258946ebb1ce4409e0abe5a9d935a"
       },
       {
         "path": "scripts/uar-candidate-binding.cjs",
@@ -175923,19 +175959,19 @@
         "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.md",
         "kind": "file",
         "bytes": 2754,
-        "sha256": "sha256:9c28ac31cc49924b315b8983c28bb9bb05ea5419e0c90595410b8bb907d8153b"
+        "sha256": "sha256:9bdb0716b5cfab9ebd1c51e4d5ec714634e6204ea58cc942459b109aacb33536"
       },
       {
         "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.zh.md",
         "kind": "file",
         "bytes": 2623,
-        "sha256": "sha256:516bdb84976487f3a127240c7797520e20620707af8ace45b1b3860807db3b37"
+        "sha256": "sha256:fa88a9e571fc244fe18aac7d261e99e88e30193c0a981da0733849238d6a1403"
       },
       {
         "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.i18n.yaml",
         "kind": "file",
         "bytes": 340,
-        "sha256": "sha256:ac94b951ef2f391fe21ffe1db8ee12982d653cefc107a36127bbd6ab51816d68"
+        "sha256": "sha256:8d457cffa9c0465d0fef3d4045dc710f03eb8d0b7ad8d03bf0cbb6a9b6430fbf"
       }
     ]
   },
@@ -176027,12 +176063,24 @@
     {
       "path": "docs/operations/lifecycle-candidate-payload.md",
       "sha256": "sha256:2128dc461031893eb74698f742c7520333af2743321bef19eae4c292917cb4e1"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-runtime-repair.md",
+      "sha256": "sha256:b0d3878fa697f18d28c1a680193b00bf77443571db7d393f99776aa0400b8241"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-state-repair.md",
+      "sha256": "sha256:113ae456ceac376ad9e221c1db043875e3963ebc62327a0cf59206853b981315"
+    },
+    {
+      "path": "docs/operations/lifecycle-delivery-mcp-repair.md",
+      "sha256": "sha256:a7434293c217934f2e2d3a4b51afb08eee27891d36c3b9a96a0c51c66f580956"
     }
   ],
   "canonical_ledgers": [
     {
       "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/tasks.md",
-      "sha256": "sha256:f88ed8f88b462c72032f842f41ce92a418f32a49482539fc5a943b92c46540a6",
+      "sha256": "sha256:4d5f4d19e2b251a56d5bbb27c8fe0dec22c9d097cc083fc97282fb2f29011ba1",
       "recorded_rows": [
         "- [x] 1.1 \u2014 Record exclusive ownership and complete-phase inventory (COMPLETE)",
         "- [x] 3.1 \u2014 Capture durable-store eligibility (COMPLETE)",
@@ -176077,7 +176125,7 @@
     },
     {
       "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/tasks.md",
-      "sha256": "sha256:18f39de8118465d3f5f8e4abb2d332b21bf1a5f8ca222b5f4d5e38232df732ba",
+      "sha256": "sha256:2a71ce5a1a4eb57edca28024065a58308e45cca5ed90c83a453e41584779a814",
       "recorded_rows": [
         "- [x] 1.1 \u2014 Resource inventory and transition diagnostics (COMPLETE)",
         "- [x] 2.1 \u2014 Supervisor task scopes and history drain (COMPLETE)",
@@ -176094,6 +176142,8 @@
         "- [x] 8.2 \u2014 Real local-model failover and incompatible-space fixture source (COMPLETE)",
         "- [x] 8.3 \u2014 Bind Boss candidate payload to immutable lifecycle source (COMPLETE)",
         "- [ ] 9.3 \u2014 Publish scoped implementation branch and draft PR with deployment image path (IN_PROGRESS)",
+        "- [x] 9.4 \u2014 Repair observed integration compiler failures from authorized Docker delivery (COMPLETE)",
+        "- [x] 8.4 \u2014 Renew immutable Boss source pin after Docker delivery repairs (COMPLETE)",
         "- [x] 1.1 \u2014 Scope and contract amendment (COMPLETE)",
         "- [x] 2.1 \u2014 Runtime prompt skill and stream observations (COMPLETE)",
         "- [x] 2.2 \u2014 Trust compiler and recovery observation reduction (COMPLETE)",
