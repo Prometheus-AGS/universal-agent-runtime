@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+  "image": "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:048d9c8ef71002514b5419fa6f56b351bf874027e6a37cc28c0361a1a76ba2e1",
+  "platform": "linux/amd64",
+  "exitCode": 1,
+  "status": "failed",
+  "corePassed": 94,
+  "coreTotal": 95,
+  "failedScenario": "agui:reject:partial",
+  "failure": "Setup returned RUN_ERROR host_cleanup_unconfirmed before partial-results rejection was exercised",
+  "nativeRunId": "f936321b-4e89-4b15-aafc-3b035e6c1830",
+  "wireRunId": "9aa09a19-193b-44f5-adbf-737c84c2538f",
+  "batchId": "594edbdd-94dd-44ec-b789-f9dbbc15f630",
+  "extendedStages": "not run after core failure",
+  "evidenceRoot": "target/client-tools-image-bundle-v1.2.2/target/client-tools-published-image-001",
+  "commandRecord": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-001-command.json",
+  "acceptance": "Not accepted; native gate017 success does not override delivered-image failure",
+  "repairPolicy": "Preserve published1.2.2. Production repair requires immutable1.2.3.",
+  "ownedShutdownClean": true,
+  "ownedExitStatusesExpected": false,
+  "cleanupStatus": "confirmed"
+}

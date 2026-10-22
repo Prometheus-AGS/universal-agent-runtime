@@ -1,0 +1,47 @@
+{
+  "kind": "Authorized finiteCT7 exactpublishedimage local gate",
+  "sourceCommit": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+  "indexDigest": "sha256:048d9c8ef71002514b5419fa6f56b351bf874027e6a37cc28c0361a1a76ba2e1",
+  "platformManifest": "sha256:c91a01de7c673cb9dcefd74eb35cea4b8f6ce7b4c56c9c3c45c8734dd5c000e7",
+  "platform": "linux/amd64",
+  "argv": [
+    "docker",
+    "run",
+    "--rm",
+    "--name",
+    "uar-client-tools-v122-39863098430",
+    "--network",
+    "none",
+    "--no-healthcheck",
+    "--platform",
+    "linux/amd64",
+    "--user",
+    "501:20",
+    "--mount",
+    "type=bind,source=/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-image-bundle-v1.2.2,target=/workspace",
+    "--workdir",
+    "/workspace",
+    "--entrypoint",
+    "python3",
+    "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:048d9c8ef71002514b5419fa6f56b351bf874027e6a37cc28c0361a1a76ba2e1",
+    "scripts/release/client_tools_local_gate.py",
+    "--binary",
+    "/usr/local/bin/universal-agent-runtime",
+    "--evidence",
+    "target/client-tools-published-image-001",
+    "--extended"
+  ],
+  "command": "docker run --rm --name uar-client-tools-v122-39863098430 --network none --no-healthcheck --platform linux/amd64 --user 501:20 --mount type=bind,source=/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-image-bundle-v1.2.2,target=/workspace --workdir /workspace --entrypoint python3 ghcr.io/prometheus-ags/universal-agent-runtime@sha256:048d9c8ef71002514b5419fa6f56b351bf874027e6a37cc28c0361a1a76ba2e1 scripts/release/client_tools_local_gate.py --binary /usr/local/bin/universal-agent-runtime --evidence target/client-tools-published-image-001 --extended",
+  "authority": "Operator explicit allfive localfunctionaltest/fix/retest/publication execution contract",
+  "isolation": "Minimalfixturebundle only; no repo config/privateHOME/credentials mounted; container networknone, controlledpeer loopback",
+  "sourceImplementationComplete": {
+    "items": 59,
+    "changes": 6
+  },
+  "proofLimits": [
+    "SurrealKV selectedbackend",
+    "controlledLLM/MCPHTTPpeer",
+    "arm64buildonly",
+    "broadercertificationexcluded"
+  ]
+}

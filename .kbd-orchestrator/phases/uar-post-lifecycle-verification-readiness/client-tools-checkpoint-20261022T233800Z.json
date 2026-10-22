@@ -1,0 +1,32 @@
+{
+  "timeUTC": "2026-10-22T23:38:00Z",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "stage": "Execute",
+  "waypointRevision": 264,
+  "planRevision": 96,
+  "sourceBoundary": {
+    "complete": 60,
+    "total": 61,
+    "pending": "13.30 single-writer acknowledgment +1.2.3 version/contracts source authoring/review"
+  },
+  "team": {
+    "lead": "KBD/integration/version/docs/publishing",
+    "budget_storage_repair": "manager.rs/client_tools.rs single-writer correction; source-only active",
+    "otherWriters": "completed; no checks delegated"
+  },
+  "activeCommands": [],
+  "commandsSincePriorCheckpoint": [
+    "Enabled policy/commitlint hooks PASS andc065 source push/v1.2.2",
+    "Deploy39863098430 test-disabled image build/publication SUCCESS;55minute external wait",
+    "Authorized registry/tag/source attestation checks PASS; oldversionsunchanged",
+    "ExactpublishedLinuxamd64 image001 gate EXIT1:94/95 core, ownedcleanupconfirmed",
+    "Source-only exactcall-ID correlation/isolatedreviews",
+    "Build016 PASS4m47 existingwarningonly",
+    "Nativegate018 EXIT2:all9scopedgroupspass andcleanupconfirmed; no diagnosticwarning",
+    "KBDtask13.29complete/new13.30inprogress; version1.2.3+contract/spec authoring",
+    "Required upstreamFirecrawldeveloperlookup attempted, installedCLIunknownsubcommand; pinnedprimarysource readinstead"
+  ],
+  "verificationAuthority": "Latest explicit operator continue scoped finite localfunctionaltest/fix/publishcontract. Unrelated verification CLOSED; no new broader gate. Newinventory required before necessarybuild017/nativegate019.",
+  "violationsObserved": [],
+  "sourceTruth": "Published1.2.2 notaccepted; originalinnererrorunproven. Nativepass doesnotcertifyLinuximage. Newpatchimmutable; noKuboedits/nohistoricaltagmutation/noextragraphscope."
+}

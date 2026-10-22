@@ -1,0 +1,11 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "session": 75769,
+  "status": "passed",
+  "scope": "Diagnostic-only fixed-stage logging; original image failure unresolved",
+  "authority": "Latest explicit operator continue finite local functional repair/publish contract; inventory60/60 source authored, isolated corrective review ready",
+  "source": "c065 plus diagnosticSource SHA in current inventory",
+  "exitCode": 0,
+  "observedOutput": "Finished dev profile [unoptimized + debuginfo] target(s) in4m47s",
+  "warning": "Existing vendored OnceLockExt unused import only"
+}

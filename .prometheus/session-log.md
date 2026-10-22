@@ -6301,3 +6301,8 @@ Operator approved OpenAI plan and expanded AG-UI, Anthropic, A2A and ACP. Six bo
 2026-10-22 authorized caller-tools build once exited101 with two compile errors (graph state capture, shared SSE event exhaustiveness). Both repaired in source; no rerun.100-file source inventory refreshed. Unchanged vendored SurrealDB unused-import warning retained. Verification CLOSED pending renewed exact-command approval; no tests/publication.
 
 2026-10-22 caller-tools build003 PASS: exact approved server-full,postgres-backend production binary build exited0 in1m15s. No UAR warnings; existing vendored SurrealDB unused import retained. No product tests/startup/restart/publication. Functional acceptance pending.
+
+
+2026-10-22T23:36Z — Execute uar-post-lifecycle-verification-readiness: immutable1.2.2 source c065 and paired048d9c8e image published/attested, exactLinuxamd64 image001 failed94/95 core onAGUI acknowledgment. No acceptance claim. Native diagnostic build016/gate018 passed95core60safety5cancel+all9groups withownedcleanup, nofailurestage. Exactcall-IDcorrelation shows competingAGUIconfirmers can disagree within a passedmixedcase aswell. Proceed boundedsource-run acknowledgmentserialization1.2.3; originalinnercauseunproven, frozenversionsnotmoved. Operatorexplicitfinite localtest/fix/publishloop retained; unrelatedverificationCLOSED. NoKuboedit orduplicate425comment.
+
+2026-10-22T23:55Z — Reviewed1.2.3 source compiledbuild0179m09; nativegate019 all9scopedgroupspassed withownedcleanup. Proceedimmutablepublication andexactimageproof; no newproductionedits, no broadercertification.

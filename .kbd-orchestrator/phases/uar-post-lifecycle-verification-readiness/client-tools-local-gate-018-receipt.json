@@ -1,0 +1,50 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-018 --extended",
+  "exitCode": 2,
+  "status": "extended_passed_remaining_release_gates",
+  "exitMeaning": "All scoped local scenarios passed;2 retains broader release/backend certification outside finite CT contract",
+  "source": "c065 plus reviewed diagnostic-only client_tools.rs, build016",
+  "binarySha256": null,
+  "platform": "Intel macOS x86_64",
+  "backend": "SurrealKV",
+  "provider": "Isolated controlled LLM/MCP HTTP peer through production runtime and drivers",
+  "corePassed": 95,
+  "safetyPassed": 60,
+  "cancellationPassed": 5,
+  "ordinaryColdPassed": 5,
+  "graphWarmColdPassed": 5,
+  "budgetWarmColdPassed": 5,
+  "mixedCrashRecoveredProtocols": [
+    "openai",
+    "anthropic",
+    "agui",
+    "a2a",
+    "acp"
+  ],
+  "repeatedHostEffects": 0,
+  "ownedShutdownClean": true,
+  "ownedExitStatusesExpected": true,
+  "cleanupStatus": "confirmed",
+  "completedLocalGates": [
+    "matrix",
+    "safety",
+    "cancellation",
+    "ordinary-cold",
+    "graph-warm",
+    "graph-cold",
+    "budget-warm",
+    "budget-cold",
+    "mixed-crash-recovery"
+  ],
+  "remaining": [
+    "Observed image001failure: source acknowledgment serialization correction and new native/image proof"
+  ],
+  "excluded": [
+    "PostgreSQL functional matrix",
+    "arm64 functional acceptance",
+    "paidprovider certification",
+    "arbitrary remotegraphs",
+    "broader estate certification"
+  ],
+  "diagnosis": "No confirmation-stage warning in native run; exact Linuximage failure not reproduced. Does not certify later repair."
+}

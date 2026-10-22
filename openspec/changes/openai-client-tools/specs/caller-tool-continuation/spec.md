@@ -42,3 +42,11 @@ The host SHALL use an operator-configurable ingestion directory while retaining 
 - **WHEN** a native runtime is configured with a writable isolated ingestion directory
 - **THEN** its native watcher registers that directory before readiness
 - **AND** it does not attempt to create the container default outside the configured directory.
+
+### Requirement: Single-writer live source acknowledgment
+The host SHALL serialize handoff confirmation for observers of the same live source run while preserving authenticated durable batch lookup, actual producer joins, settlement CAS and fail-closed errors. A cold process SHALL accept only already committed source-settled evidence.
+
+#### Scenario: Concurrent AG-UI observers
+- **WHEN** the retained observer and HTTP stream confirm the same source handoff
+- **THEN** one live source acknowledgment writer runs at a time and later observers reuse the durable settled evidence
+- **AND** neither observer substitutes an emitted terminal for actual cleanup or bypasses a storage failure.

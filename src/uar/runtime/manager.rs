@@ -450,6 +450,7 @@ impl std::fmt::Debug for ActorToolApprovalGate {
 #[derive(Debug)]
 struct RunStreamState {
     run: Run,
+    caller_handoff_confirmation: Arc<Mutex<()>>,
     approval_root_run_id: Option<String>,
     /// Full middleware-verified identity retained only by the host. The public
     /// Run record keeps its stable subject-only wire schema.
@@ -3515,6 +3516,7 @@ impl RunManager {
                     ),
                     sender,
                     history,
+                    caller_handoff_confirmation: Arc::new(Mutex::new(())),
                     completion: None,
                     delegation: None,
                     tool_admission: None,
@@ -4540,6 +4542,7 @@ impl RunManager {
                         dialogue,
                         sender: tx.clone(),
                         history: Arc::clone(&history),
+                        caller_handoff_confirmation: Arc::new(Mutex::new(())),
                         completion: emitter.completion.as_ref().map(Arc::downgrade),
                         delegation: None,
                         tool_admission: None,
@@ -4654,6 +4657,7 @@ impl RunManager {
                     dialogue: dialogue.clone(),
                     sender: tx.clone(),
                     history: Arc::clone(&history),
+                    caller_handoff_confirmation: Arc::new(Mutex::new(())),
                     completion: emitter.completion.as_ref().map(Arc::downgrade),
                     delegation: None,
                     tool_admission: None,
@@ -8929,6 +8933,15 @@ impl RunManager {
             if !finished { return None; }
         }
         Some(run.status)
+    }
+
+    /// Serialize local handoff acknowledgments for one retained source run.
+    pub(crate) async fn caller_handoff_confirmation_lock(
+        &self,
+        run_id: &str,
+    ) -> Option<Arc<Mutex<()>>> {
+        self.active_runs.read().await.get(run_id)
+            .map(|state| Arc::clone(&state.caller_handoff_confirmation))
     }
 
     /// Join the exact admitted producer and graph root, including outer cleanup.

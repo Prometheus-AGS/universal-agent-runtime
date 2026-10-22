@@ -4,7 +4,21 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
-## 1.2.2 — 2026-10-22 (native contract passed; image proof pending)
+## 1.2.3 — 2026-10-22 (native contract passed; image proof pending)
+
+- Serialize caller-tool source acknowledgment across observers of the same live
+  run while retaining actual producer joins, durable settlement CAS and exact
+  authenticated continuation. Add fixed-stage diagnostics without logging tool
+  payloads, credentials or arbitrary backend messages.
+- Addresses the competing AG-UI confirmation paths observed during exact-image
+  testing of1.2.2. The original inner error was discarded, so the precise failing
+  operation is not claimed proven. Nativegate019 passed the complete finite
+  CT1–CT6 contract; exact published-image acceptance remains pending.
+- Preserves the five-interface caller/host ownership and continuation contract.
+  Published1.2.0,1.2.1 and1.2.2 tags remain immutable. See
+  [the1.2.3 integration contract](docs/releases/v1.2.3-kubo.md).
+
+## 1.2.2 — 2026-10-22 (published; exact-image acceptance failed)
 
 - Wired the actual mounted OpenAI endpoint to the durable caller-tool loop with
   complete history, controls, output caps and existing protected admission.
@@ -20,7 +34,9 @@ contracts identified in the product support matrix.
   root/child producer correlation. Preserve Anthropic/ACP budget-error reasons and
   keep local budget refusals out of provider outage cooldown. Functional acceptance
   passed locally across all five interfaces, including warm/cold graph, budgets and
-  settled mixed-host-effect crash recovery. Exact published-image proof is pending.
+  settled mixed-host-effect crash recovery. The published Linuxamd64 image then
+  failed1/95 core cases: AG-UI partial-result rejection setup returned
+  `host_cleanup_unconfirmed`. Extended image acceptance did not run.
 
 ## 1.2.1 — 2026-10-22 (functional acceptance pending)
 

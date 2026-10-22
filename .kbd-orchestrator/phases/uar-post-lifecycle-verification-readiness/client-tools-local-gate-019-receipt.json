@@ -1,0 +1,66 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-019 --extended",
+  "exitCode": 2,
+  "exitMeaning": "Every scoped CT1\u2013CT6 group passed;2 retains broader certification excluded by the finite contract",
+  "status": "extended_passed_remaining_release_gates",
+  "version": "1.2.3",
+  "source": "Reviewed13.29/13.30 source, build017, exact files in inventory",
+  "platform": "Intel macOS x86_64",
+  "backend": "SurrealKV",
+  "provider": "Controlled isolated LLM/MCP HTTP peer through actual production paths",
+  "counts": {
+    "matrix": {
+      "passed": 95,
+      "failed": 0
+    },
+    "safety": {
+      "passed": 60,
+      "failed": 0
+    },
+    "cancellation": {
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "completedLocalGates": [
+    "matrix",
+    "safety",
+    "cancellation",
+    "ordinary-cold",
+    "graph-warm",
+    "graph-cold",
+    "budget-warm",
+    "budget-cold",
+    "mixed-crash-recovery"
+  ],
+  "ownedShutdownClean": true,
+  "ownedExitStatusesExpected": true,
+  "cleanupStatus": "confirmed",
+  "expectedCrash": {
+    "action": "expected_crash_for_recovery",
+    "process": "candidate-4",
+    "pid": 4381,
+    "generation": 4,
+    "signal": 9,
+    "started_at_unix": 1792713270.275419,
+    "joined_at_unix": 1792713270.290878,
+    "joined": true,
+    "exit_code": -9,
+    "signal_delivered": true,
+    "expected_crash_confirmed": true,
+    "exit_status_expected": true,
+    "clean_shutdown": false,
+    "cleanup_confirmed": false,
+    "cleanup_errors": []
+  },
+  "remaining": [
+    "Immutable1.2.3 publication and exact image CT7 acceptance"
+  ],
+  "excluded": [
+    "PostgreSQL functional matrix",
+    "arm64 runtime acceptance",
+    "paidprovider certification",
+    "arbitrary remotegraphs",
+    "broader estate certification"
+  ]
+}

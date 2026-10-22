@@ -30,9 +30,9 @@
 
 ## Verification and release (scoped operator local test/fix/retest loop; unrelated gates CLOSED)
 - [x] 15. Record explicit operator authorization for the local functional test/fix/retest loop and necessary scoped source reviews/builds.
-- [ ] 16. Run authorized serialized production gates and retain actual results.
+- [x] 16. Run authorized serialized native production gates and retain actual results (current1.2.3 finite CT1–CT6 passed gate019; exact-image proof remains17.1).
 - [x] 17. Publish separately authorized1.2.1 immutable digest a012df13… before acceptance per operator reprioritization; never move1.2.0.
-- [ ] 17.1. Publish corrected1.2.2 after actual local functional acceptance, then verify the published artifact locally.
+- [ ] 17.1. Publish corrected1.2.3 after nativegate019, preserving failed immutable1.2.2, then verify the exact published artifact locally.
 
 - [x] 13.7. Correct provider adapter capability binding and OpenAI acceptance model selector.
 - [x] 13.8. Bind remaining cold restart, graph and cumulative-budget acceptance to real supported paths.
@@ -70,3 +70,7 @@
 - [x] 13.27 Bind mixed-crash seed to actual emitted host call and settled MCP result, then verify ordered cold provider history without requiring forbidden pre-handoff provider request.
 
 - [x] 13.28 Compare retained host arguments by JSON value while preserving exact call identity, result, order and zero repeated effects.
+
+- [x] 13.29 Retain safe exact confirmation-stage diagnostics for observed published-image AG-UI handoff failure; preserve actual joins, durable acknowledgment and fail-closed behavior.
+
+- [x] 13.30 Serialize live source-run acknowledgment across competing observers, preserve durable fail-closed semantics, and author immutable1.2.3 version/contracts.

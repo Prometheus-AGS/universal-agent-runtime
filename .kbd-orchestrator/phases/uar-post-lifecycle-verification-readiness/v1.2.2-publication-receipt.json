@@ -1,0 +1,63 @@
+{
+  "sourceCommit": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+  "gitTag": "v1.2.2",
+  "dockerTags": [
+    "1.2.2",
+    "v1.2.2"
+  ],
+  "normalHooks": {
+    "githubActionsPolicy": "passed",
+    "commitlint": "passed",
+    "automaticDependencyInstall": false
+  },
+  "push": "main andannotatedv1.2.2 succeeded",
+  "dispatchCommand": "gh workflow run deploy.yml --ref v1.2.2",
+  "runId": 39863098430,
+  "runUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39863098430",
+  "state": "Docker publication SUCCESS; exact image acceptance FAILED",
+  "preserved": "Frozen1.2.0 andpublished1.2.1 versions notmoved",
+  "nativeAcceptance": "CT1\u2013CT6 passed gate017; exit2 preserves broader excluded certification",
+  "buildWaitStartedUTC": "2026-10-22T22:11:33Z",
+  "buildWaitPolicy": "External deployment build wait is excluded from active no-progress repair budget",
+  "currentJobs": "All deployment jobs completed successfully",
+  "postPublicationAcceptance": {
+    "sourceCommit": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+    "image": "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:048d9c8ef71002514b5419fa6f56b351bf874027e6a37cc28c0361a1a76ba2e1",
+    "platform": "linux/amd64",
+    "exitCode": 1,
+    "status": "failed",
+    "corePassed": 94,
+    "coreTotal": 95,
+    "failedScenario": "agui:reject:partial",
+    "failure": "Setup returned RUN_ERROR host_cleanup_unconfirmed before partial-results rejection was exercised",
+    "nativeRunId": "f936321b-4e89-4b15-aafc-3b035e6c1830",
+    "wireRunId": "9aa09a19-193b-44f5-adbf-737c84c2538f",
+    "batchId": "594edbdd-94dd-44ec-b789-f9dbbc15f630",
+    "extendedStages": "not run after core failure",
+    "evidenceRoot": "target/client-tools-image-bundle-v1.2.2/target/client-tools-published-image-001",
+    "commandRecord": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-001-command.json",
+    "acceptance": "Not accepted; native gate017 success does not override delivered-image failure",
+    "repairPolicy": "Preserve published1.2.2. Production repair requires immutable1.2.3."
+  },
+  "remoteGitTags": {
+    "refs/tags/v1.2.0": "aac0e6079d912aaea64ebec5df56af058dba85ac",
+    "refs/tags/v1.2.0^{}": "035bbdc702ba20daaa1add7294b35f5783ed6e0e",
+    "refs/tags/v1.2.1": "a07cbb747c5aebd1ab4325071022a13f2e01be71",
+    "refs/tags/v1.2.1^{}": "dd896d5a66eda825f0076c1f35ba05f2dea6324c",
+    "refs/tags/v1.2.2": "6f2801eb49298d6c5d5cfb07faa8ff8f8d6ce111",
+    "refs/tags/v1.2.2^{}": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6"
+  },
+  "gitTagSourceVerified": true,
+  "runConclusion": "success",
+  "canonicalIndex": "sha256:048d9c8ef71002514b5419fa6f56b351bf874027e6a37cc28c0361a1a76ba2e1",
+  "platforms": {
+    "linux/amd64": "sha256:c91a01de7c673cb9dcefd74eb35cea4b8f6ce7b4c56c9c3c45c8734dd5c000e7",
+    "linux/arm64": "sha256:7947da419cbeb28b83b93ddeb2bb0c52a8622af4acc26253dba10e7dd4ce2c92"
+  },
+  "oldDockerTagsUnchanged": true,
+  "sourceAttestationRevisions": [
+    "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+    "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6"
+  ],
+  "postPublicationCommandRecord": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-001-command.json"
+}

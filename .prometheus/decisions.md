@@ -2331,3 +2331,6 @@ Gate010 demonstrated that the actual built-in RouterNode delegates through Agent
 
 ## 2026-10-22 — Finite caller-tool delivery exit
 Operator requested kbd-plan to bound completion. CT-1–CT-7 in the active phase client-tools-exit-contract.md cover five APIs, local AgentNode team delegation, existing safety/durable/budget/crash promises and immutable image proof. No remote federation, generic graph certification or additional test cross-products. Preserve passing candidate-bound evidence; stop/report after two same-scenario failures without a causal discriminator or60 active minutes without material progress. This does not waive failures, open unrelated gates or claim current acceptance.
+
+
+2026-10-22 — Preserve published1.2.2 after failedexactimageacceptance. Deliver necessary production correction onlyunder1.2.3; retainactual joins/durableCAS/authentication andfailclosedbehavior. Addressobserveddisagreeingconcurrenthandoffconfirmers withone source-runwriter; donotclaimunderlyingdiscardedstorageerrorproven. Exactnewimageacceptance remainsrequired.

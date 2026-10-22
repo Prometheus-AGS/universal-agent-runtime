@@ -11,6 +11,22 @@ pub enum ClientToolPreparation {
     Replay { response: Value, events: Vec<Value> },
 }
 
+/// Field-free provenance for internal settlement diagnostics.
+#[derive(Debug)]
+enum HandoffConfirmationStage {
+    LoadBatch,
+    ValidateBatch,
+    PendingState,
+    JoinRoot,
+    RootStatus,
+    JoinChild,
+    ChildStatus,
+    SettlementCas,
+    ReloadBatch,
+    ValidateReloadedBatch,
+    SettlementWinner,
+}
+
 /// Decode the host-issued locator; caller-selected ordinary tool IDs are never resume grants.
 pub fn batch_id_from_call_id(call_id: &str) -> anyhow::Result<String> {
     let locator = call_id.strip_prefix("uar_client_")
@@ -42,24 +58,43 @@ pub async fn confirm_handoff_for_run(
     manager: &crate::uar::runtime::manager::RunManager,
     store: &dyn PersistenceLayer, owner: &str, tenant: Option<&str>, agent: &str, run_id: &str,
 ) -> anyhow::Result<()> {
-    let row = store.load_client_tool_continuation_for_run(owner, tenant, agent, run_id).await?
-        .ok_or_else(|| anyhow::anyhow!("client_tool_continuation_not_found"))?;
-    row.validate()?;
+    use HandoffConfirmationStage as Stage;
+    let report = |stage: Stage| move |error: anyhow::Error| {
+        tracing::warn!(run_id, confirmation_stage = ?stage, "Caller-tool handoff confirmation failed");
+        error
+    };
+    // A second local observer must load only after the first acknowledgment
+    // finishes. An absent live run still needs an already-settled durable row.
+    let _confirmation = match manager.caller_handoff_confirmation_lock(run_id).await {
+        Some(lock) => Some(lock.lock_owned().await),
+        None => None,
+    };
+    let row = store.load_client_tool_continuation_for_run(owner, tenant, agent, run_id).await.map_err(report(Stage::LoadBatch))?
+        .ok_or_else(|| anyhow::anyhow!("client_tool_continuation_not_found")).map_err(report(Stage::LoadBatch))?;
+    row.validate().map_err(report(Stage::ValidateBatch))?;
     if row.source_settled { return Ok(()); }
-    anyhow::ensure!(row.state == ClientToolContinuationState::Pending, "client_tool_continuation_state_conflict");
-    anyhow::ensure!(manager.await_settled_run_status(run_id).await?
-        == crate::uar::domain::runs::RunStatus::Done, "client_tool_source_not_settled");
+    if row.state != ClientToolContinuationState::Pending {
+        return Err(anyhow::anyhow!("client_tool_continuation_state_conflict")).map_err(report(Stage::PendingState));
+    }
+    if manager.await_settled_run_status(run_id).await.map_err(report(Stage::JoinRoot))?
+        != crate::uar::domain::runs::RunStatus::Done {
+        return Err(anyhow::anyhow!("client_tool_source_not_settled")).map_err(report(Stage::RootStatus));
+    }
     if let Some(source) = &row.execution_source {
-        anyhow::ensure!(manager.await_settled_run_status(&source.run_id).await?
-            == crate::uar::domain::runs::RunStatus::Done, "client_tool_child_source_not_settled");
+        if manager.await_settled_run_status(&source.run_id).await.map_err(report(Stage::JoinChild))?
+            != crate::uar::domain::runs::RunStatus::Done {
+            return Err(anyhow::anyhow!("client_tool_child_source_not_settled")).map_err(report(Stage::ChildStatus));
+        }
     }
     let mut settled = row.clone();
     settled.source_settled = true;
-    if store.compare_and_swap_client_tool_continuation(&row, &settled).await? { return Ok(()); }
-    let saved = store.load_client_tool_continuation_for_run(owner, tenant, agent, run_id).await?
-        .ok_or_else(|| anyhow::anyhow!("client_tool_continuation_not_found"))?;
-    saved.validate()?;
-    anyhow::ensure!(saved.source_settled, "client_tool_source_settlement_conflict");
+    if store.compare_and_swap_client_tool_continuation(&row, &settled).await.map_err(report(Stage::SettlementCas))? { return Ok(()); }
+    let saved = store.load_client_tool_continuation_for_run(owner, tenant, agent, run_id).await.map_err(report(Stage::ReloadBatch))?
+        .ok_or_else(|| anyhow::anyhow!("client_tool_continuation_not_found")).map_err(report(Stage::ReloadBatch))?;
+    saved.validate().map_err(report(Stage::ValidateReloadedBatch))?;
+    if !saved.source_settled {
+        return Err(anyhow::anyhow!("client_tool_source_settlement_conflict")).map_err(report(Stage::SettlementWinner));
+    }
     Ok(())
 }
 

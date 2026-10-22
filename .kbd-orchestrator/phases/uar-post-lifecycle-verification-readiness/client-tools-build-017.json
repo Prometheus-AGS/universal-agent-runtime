@@ -1,0 +1,12 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "session": 69780,
+  "status": "passed",
+  "version": "1.2.3",
+  "source": "Reviewed task13.30;61/61 source inventory",
+  "scope": "Necessary candidate compilation before existing local functional gate019",
+  "authority": "Explicit operator finite local functional repair/publish loop",
+  "exitCode": 0,
+  "observedOutput": "Finished dev profile [unoptimized + debuginfo] target(s) in9m09s",
+  "warning": "Existing vendored OnceLockExt unused import only"
+}

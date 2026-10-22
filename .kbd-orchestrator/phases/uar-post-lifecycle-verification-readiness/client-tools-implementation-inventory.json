@@ -1,16 +1,16 @@
 {
   "kind": "uar.whole-phase-source-authoring-inventory/v1",
   "phase": "uar-post-lifecycle-verification-readiness",
-  "planRevision": 94,
-  "head": "dd896d5a66eda825f0076c1f35ba05f2dea6324c",
-  "sourceIdentity": "HEAD dd896d5 plus listed reviewed1.2.2 bytes; build015/gate017 nativeaccepted",
-  "verification": "Native finite CT1\u2013CT6 PASS gate017 exit2 preserves outofscopecertification; CT7 publication/imagepending",
+  "planRevision": 97,
+  "head": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+  "sourceIdentity": "HEADc065 plus reviewed frozen1.2.3 two-Rust-file correction, root version/lock and docs; production bytes accepted by nativegate019. Commit identity follows enabled hooks.",
+  "verification": "Native1.2.3 build017/gate019 PASS finite CT1\u2013CT6; exact published-image CT7 remains pending",
   "sourceAuthoringComplete": true,
   "phaseSourceTasks": {
     "baseline": 13,
-    "callerTools": 46,
-    "total": 59,
-    "complete": 59,
+    "callerTools": 48,
+    "total": 61,
+    "complete": 61,
     "inProgress": 0
   },
   "coverage": [
@@ -28,7 +28,9 @@
     "contracts/specs/changelog"
   ],
   "remaining": [
-    "CT7 immutablepublication+exactimage"
+    "Immutable1.2.3 source/tag/image publication",
+    "Exactimagegate002 CT7",
+    "Finalrelease/receipts"
   ],
   "preservedOutsideScope": [
     ".codex/config.toml",
@@ -70,12 +72,36 @@
       "sha256": "9b3d11048a2cd6e6b28c3faf8ee732c85506374a659f1a00e992d8965895f5c6"
     },
     {
+      "path": ".agent-team/uar-core/reviews/client-tools/a2a-mailbox-review.md",
+      "sha256": "37df9712ab442cd8fc99a4a2bfec64f44e3d3a8534a58673e9f4b87cec4709e3"
+    },
+    {
       "path": ".agent-team/uar-core/reviews/client-tools/a2a-mixed-projection-review.md",
       "sha256": "9240c2cf5d28562c9e4994162075b5ee1327964d917c71f1aabb5815d22654f5"
     },
     {
+      "path": ".agent-team/uar-core/reviews/client-tools/acp-selected-agent-review.md",
+      "sha256": "818bf8a2cb5fa732332133307667e0553f4f78bb215e89c30445a4f38608bff7"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/actor-current-policy-review.md",
+      "sha256": "ac34ce5b2f1f2de524a51cfd2a73adc9ad1dfcf9ed474caf85133be54958109d"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/agui-concurrent-replay-review.md",
+      "sha256": "9ae02884abc05821a90af88a67cee153f3dc30e668ac046e3c8cd6d6de19b715"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/agui-settlement-review.md",
+      "sha256": "2b81b3e53bc6de0612542c364adf98b61960ca8f51bc79789977ff5421488255"
+    },
+    {
       "path": ".agent-team/uar-core/reviews/client-tools/budget-error-projection-review.md",
       "sha256": "202f91232be457fe9168a01c415d1d0d2fe9784f5783bc972b4f4df8c1e1d80d"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/budget-proof-plan.md",
+      "sha256": "3b1e3bb3cba5431304483d7fd4eb660944d501082d4dc665696a921a1a836a3c"
     },
     {
       "path": ".agent-team/uar-core/reviews/client-tools/cancellation-crash-review.md",
@@ -84,6 +110,22 @@
     {
       "path": ".agent-team/uar-core/reviews/client-tools/cold-budget-health-review.md",
       "sha256": "74bd8e60a07d0651244a6847286d9e7c4800e85c4443a7ac0d8e4e5f650548c4"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/extended-supervisor-review.md",
+      "sha256": "e676fe248f9922c22c1d50f97ad917fa6303039d397ce7a1d4ae597ddae27f12"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/gate-ingest-repair-review.md",
+      "sha256": "465f8b391f286660a937fceba630fefebbc22d73b5cca5fad55d55dd210a4b86"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/gate-model-verification-review.md",
+      "sha256": "c9501dc6c5b56fcaf22ecca8eb777a9a258e8d15ae8b476356088c8319ef11c1"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/gate-policy-fixture-review.md",
+      "sha256": "18ceec791911977652eb334d7a9ff1a6e900cddb45cdbee265e8b5a255f61e72"
     },
     {
       "path": ".agent-team/uar-core/reviews/client-tools/graph-approval-driver-review.md",
@@ -106,8 +148,56 @@
       "sha256": "3436ce1d1233c298e68b458572ad0019030fbcaf9498e71aec7ca542a6e48ec0"
     },
     {
+      "path": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
+      "sha256": "90478dc39b2f6b2739ee756a64673c7aedc82abbab5a9a132a83a0a8e8058e56"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/local-gate-corrective-review.md",
+      "sha256": "70da7e7854449db7062d3fab4d7554e1273e842f204d0339eaa6de695889a896"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/local-gate-source-review.md",
+      "sha256": "21b36620825ee09cc8381de7f5d718ab2ab98fc1c26ee4c5c1ca5d0eadc34d7e"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/matrix-batch-rust-review.md",
+      "sha256": "3400b42344028e237c515c4dfc815f7d68beb166e7e40c38b411fe6fd228c65c"
+    },
+    {
       "path": ".agent-team/uar-core/reviews/client-tools/mixed-crash-seed-proof-review.md",
       "sha256": "2d215f9bc477a34d45ce82628e7938d8ef3e6c9343fd2bfb4994f3c48680287c"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/mounted-openai-review.md",
+      "sha256": "7d0af07081444cd2da10daaa6aa65489a36c172dde2e5f5e583e6112537ddd13"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/remaining-driver-review.md",
+      "sha256": "91294eb16a7d370637067ddbabd3f0a9f6bf96f61f5f032b2cc053cdeb6a7fc8"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/safety-gate-review.md",
+      "sha256": "7dd3bd6534e7e3b62cc01b46219d989a0ded9e30daabc54fda21feb4e32d5121"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/source-review.md",
+      "sha256": "ceb11d4ff6332051a3edddcc19789701d5ba271f9bba71fa1fae63dc9546c4d7"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/startup-repair-review.md",
+      "sha256": "5b70c91412e668b4bd968cd18822ba707e77630eb37e787aeaa95730600a7a30"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-build-016.json",
+      "sha256": "0afd70570cd9eb71125a8519170e127f3e4c8524978fa3c0f44a2fd5226bccde"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-build-017.json",
+      "sha256": "971cbe4fc24233e001c6c72a1486704f94b0129802e4dbd6d0f26dbc9ba6645d"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-checkpoint-20261022T233800Z.json",
+      "sha256": "ec70533c6a7ccb32016d43762d294382c48b87f00187f3a526dfb84f223d3a92"
     },
     {
       "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract-recommendation.md",
@@ -115,27 +205,51 @@
     },
     {
       "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md",
-      "sha256": "6189d5c82e837a4c91af01e2e1bd7ed9f1e8f6ff8bf7d766900a27743cf9f1db"
+      "sha256": "0007961e54aa1b05213df70b1b986b8eeb54d8e4daf7ec464906fff7678c51cc"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-local-gate-018-receipt.json",
+      "sha256": "baba689284467c7e34acc3a56892f756c624f7e44c6d360a179e85d592029764"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-local-gate-019-receipt.json",
+      "sha256": "f71d1781382b4995984632a7d05775366afac134e2eb32b517c3d1a87e9d5fe4"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-001-command.json",
+      "sha256": "4f0a20859cd83a1bec2710839bd2f964508364cb9f7a20f4ac25ddb41b3a5e99"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-001-receipt.json",
+      "sha256": "779fa6eb8aa09e638ad69fc47ed1587917dfd92b6af82d2bc12ffcf01b46a8b0"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.2.2-publication-receipt.json",
+      "sha256": "17807f367cca8e3905237ae6a1e5060a54db9395f135f7b2dbc7d2a8b248e3c0"
     },
     {
       "path": ".prometheus/decisions.md",
-      "sha256": "78e6d5c0224d6a247586e09a693a82a8cc17655f476f2e95302d70b71dc28893"
+      "sha256": "3214383cf50f51bb37cd69eabd70298a3a1b0d23f398a9d1d09c781b839c0222"
     },
     {
       "path": ".prometheus/gotchas.md",
       "sha256": "9fdcebb07fb607998a0308e71a5f95cad481376c59feb0966d40b1e95eee722e"
     },
     {
+      "path": ".prometheus/session-log.md",
+      "sha256": "2ea6d96849d36305775ba8c5cd0500a06823cc4916da259cf76aeb320b3f8cf3"
+    },
+    {
       "path": "CHANGELOG.md",
-      "sha256": "c027ee2277da51e5d3e161c583876b388d51c94242b8e99b03c528e6b55f8693"
+      "sha256": "8ead4771f0e18c74aafbd919d1c017984dc31542cd3934a01017b8d4d4e28a52"
     },
     {
       "path": "Cargo.lock",
-      "sha256": "a3b99e4c6aa17a93c27adf222d7059d0262459c88a218671aff7ace06b95efea"
+      "sha256": "c9e79a339f61da7d28f95994bebc4b169ef5d6751c614215b43358c8e7d06bbb"
     },
     {
       "path": "Cargo.toml",
-      "sha256": "b1d320abea0401df14aff9707a433b0a915620d868a6f2adbc7bbe74148d707b"
+      "sha256": "2fbda42e8f3a46d49631ae49c86044dbfd625a7b75e46b9d3a31351e0e5d85b4"
     },
     {
       "path": "build.rs",
@@ -155,7 +269,19 @@
     },
     {
       "path": "docs/releases/v1.2.2-kubo.md",
-      "sha256": "bdd2e7499b19d4dbce4d890f86a0ca04d0a20d47ee55a53c74e138b0765d43ab"
+      "sha256": "1508ea59ff60044784512af6cdbcfea8f9d1051cde9d15397e6828cb98a90eee"
+    },
+    {
+      "path": "docs/releases/v1.2.2-publication.md",
+      "sha256": "4e8bfead79f850c877b8c553f4110c847189d452eed8edcd69e11a1c49fdf86f"
+    },
+    {
+      "path": "docs/releases/v1.2.2-registry-provenance.json",
+      "sha256": "19d9d80da07d3e6048024c47bdd4d7f73477057c65c98320622582cb11f2eb5f"
+    },
+    {
+      "path": "docs/releases/v1.2.3-kubo.md",
+      "sha256": "cd6fb5223442d1597ff72d91f14b79faa0e12d076c93e40785c08e7b03cdfa85"
     },
     {
       "path": "example.config.yaml",
@@ -238,6 +364,26 @@
       "sha256": "8789568308371833e4497df5a3122dba9d125a28181ecd677c3bb894f3898da7"
     },
     {
+      "path": "openspec/changes/openai-client-tools/handoffs/image-agui-cas-review.md",
+      "sha256": "9b7dc9b3536df94a95579c15fc827bf86e5b452679a6deaef9b0a36d31d8e9e7"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/image-agui-cleanup-diagnosis.md",
+      "sha256": "31025f64d255f264adf2749083ef951465961afdd1c39cd78d54ad3b79da7366"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/image-agui-diagnostic-review.md",
+      "sha256": "d768e05808b0e06211907defe1e7c4c1db7868c0c920ea913922e4b35714b9ff"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/image-agui-producer-review.md",
+      "sha256": "f4e7da2f17d3fb2ba9f28adc9dce9b937db25f156353934a172c075fa2e58d9c"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/image-agui-singlewriter.md",
+      "sha256": "23b81c8b85b83dc761e653086041604ef74d1128c99d4e662f51fe5d39259ebf"
+    },
+    {
       "path": "openspec/changes/openai-client-tools/handoffs/local-gate-remaining-plan.md",
       "sha256": "480e609f4da30ed5c0756d75e04d869bbb3b23978348e29b078a03d97a4d25cd"
     },
@@ -287,7 +433,7 @@
     },
     {
       "path": "openspec/changes/openai-client-tools/specs/caller-tool-continuation/spec.md",
-      "sha256": "f523c39b4cbde6d8a3bc2540e1b865b2bb6b9f1bfbb5b6f78229a6330175547f"
+      "sha256": "1719e18987f067c385ed46eff92a06e62db4665b6406e4fb83effc6884810ae8"
     },
     {
       "path": "openspec/changes/openai-client-tools/specs/openai-compatible-client-tools/spec.md",
@@ -295,7 +441,7 @@
     },
     {
       "path": "openspec/changes/openai-client-tools/tasks.md",
-      "sha256": "0c53c5641d1e148a501d53dd29ce6683c60031dda7b92fbff8d043d5c05722cc"
+      "sha256": "4a747443e66ce92b8b47c4308c6e5d9e46a013133ebcbb7d6ed17085575b909a"
     },
     {
       "path": "scripts/post_lifecycle/controlled_peer.py",
@@ -411,7 +557,7 @@
     },
     {
       "path": "src/uar/api/client_tools.rs",
-      "sha256": "3b3534ff53485b8228702e6d4d5a20425c5689a0591485a26f19a7905ebd8e55"
+      "sha256": "60607261fa271e3ff027127b357a0d88301bf9699118f36da2b8ff4a78d4b76d"
     },
     {
       "path": "src/uar/api/mod.rs",
@@ -543,7 +689,7 @@
     },
     {
       "path": "src/uar/runtime/manager.rs",
-      "sha256": "f738b05f5fe08d8e943ef7a74190179c9ee73fb099d10280e11b364d37576b7b"
+      "sha256": "241d0b86557a9a9fb1cda1eb334477123790b368f09370028bed22f04a77a1cb"
     },
     {
       "path": "src/uar/runtime/presentation_history_tests.rs",
@@ -630,8 +776,8 @@
       "sha256": "529536a6a1be006f5cd728891178618d717cdf9d73eb07e68d51ececb1eafbb3"
     }
   ],
-  "review": "Prior isolated source review completed; build-driven graph/SSE repairs have no corrective-review or compiler receipt.",
-  "canonicalRevision": 257,
+  "review": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
+  "canonicalRevision": 266,
   "aggregateReconciliation": {
     "rootCompletion": {
       "completed": 144,
@@ -781,18 +927,18 @@
       },
       "openai-client-tools": {
         "status": "complete",
-        "tasksComplete": 41,
-        "tasksTotal": 41
+        "tasksComplete": 48,
+        "tasksTotal": 48
       }
     }
   },
-  "reviewArtifact": ".agent-team/uar-core/reviews/client-tools/source-review.md",
-  "lastBuildReceipt": "client-tools-build-015.json",
+  "reviewArtifact": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
+  "lastBuildReceipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-build-017.json",
   "postBuildDocumentation": "Sourcechangedafterbuild011: realAgentNode graphchildcaller capture/rootbinding+joins andnativeapprovaldriver. BothreviewsCLEAR; budgetcatalogueproof sourceaudit unchanged.",
-  "proposedUnexecutedRuntimeGate": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-017 --extended",
+  "proposedUnexecutedRuntimeGate": "Exact published Linuxamd64 imagegate002, index-bound command recorded after registry publication",
   "localGateReview": "All current bounded source reviews have no blocking findings; compilation and functional acceptance pending.",
-  "releaseDirection": "1.2.1 published beforeacceptance per operator. Repairs are1.2.2candidate; publish newimmutablepatch afterpassing localacceptance, preserve1.2.0/v1.2.1tags.",
-  "canonicalSourceRevision": 257,
+  "releaseDirection": "Immutable1.2.3 source/tag/pairedimage after nativegate019, exactimagegate002 required; never move earlier versions",
+  "canonicalSourceRevision": 266,
   "reviewArtifacts": [
     ".agent-team/uar-core/reviews/client-tools/a2a-mailbox-review.md",
     ".agent-team/uar-core/reviews/client-tools/a2a-mixed-projection-review.md",
@@ -817,8 +963,26 @@
     ".agent-team/uar-core/reviews/client-tools/remaining-driver-review.md",
     ".agent-team/uar-core/reviews/client-tools/safety-gate-review.md",
     ".agent-team/uar-core/reviews/client-tools/source-review.md",
-    ".agent-team/uar-core/reviews/client-tools/startup-repair-review.md"
+    ".agent-team/uar-core/reviews/client-tools/startup-repair-review.md",
+    ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md"
   ],
-  "postPublicationGatePlan": "Run same extended supervisor inside canonical published1.2.2 image digest with minimal source-only bundle, isolated writable evidence and --network none. Tests local; bundledUI/skilltoolchains not certified.",
-  "exitContract": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md"
+  "postPublicationGatePlan": "Exactindex Linuxamd64 isolated container, minimalownedfixturebundle andexisting allfiveextendedsupervisor; no extraprobes",
+  "exitContract": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md",
+  "diagnosticSource": {
+    "path": "src/uar/api/client_tools.rs",
+    "sha256": "d66611f2efc2888bdb3f450b5f4ed8d2ed15e926065ba5207d30e5f36dbd6b0e"
+  },
+  "nextCommands": [
+    "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+    "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-019 --extended"
+  ],
+  "generatedAtUTC": "2026-10-22T23:55:35.258742+00:00",
+  "sourceAuthoringFileCount": 184,
+  "writerHandoffs": {
+    "acknowledgment": "openspec/changes/openai-client-tools/handoffs/image-agui-singlewriter.md",
+    "diagnostics": "openspec/changes/openai-client-tools/handoffs/image-agui-cleanup-diagnosis.md",
+    "review": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
+    "otherSource": "Prior61-item inventory/sourcehandsoffs retained in files"
+  },
+  "nativeAcceptanceReceipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-local-gate-019-receipt.json"
 }
