@@ -182,6 +182,7 @@ mod tests {
                 },
             ],
             tools: Some(vec![crate::llm::anthropic_types::ToolDef {
+                strict: None,
                 name: "get_weather".to_string(),
                 description: "Get the weather".to_string(),
                 input_schema: serde_json::json!({"type": "object"}),

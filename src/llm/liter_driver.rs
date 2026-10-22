@@ -390,7 +390,7 @@ fn enforce_request_budget(
     source: &LlmRequest,
     request: &mut ChatCompletionRequest,
 ) -> anyhow::Result<Option<Vec<u8>>> {
-    let Some(contract) = source.budget_contract.clone() else {
+    let Some(mut contract) = source.budget_contract.clone() else {
         return Ok(None);
     };
     if contract.destination_model != model {
@@ -407,6 +407,9 @@ fn enforce_request_budget(
     }
     if contract.wire != WireContract::SyntheticOpenAiCompatibleChatV1 {
         anyhow::bail!("unsupported final request wire contract");
+    }
+    if let Some(cap) = source.output_token_cap {
+        contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(cap));
     }
     let output_tokens = u64::try_from(contract.limits.output_tokens)
         .map_err(|_| anyhow::anyhow!("invalid negative output reservation"))?;
@@ -469,6 +472,8 @@ fn build_chat_request(
     endpoint_profile: Option<&EndpointRequestProfile>,
     req: &LlmRequest,
 ) -> anyhow::Result<PreparedChatRequest> {
+    anyhow::ensure!(req.output_token_cap != Some(0), "Output token cap must be positive");
+    req.validate_tool_controls()?;
     let messages = convert_messages(&req.messages, req.budget_contract.is_some())?;
     let tools = convert_tools(&req.tools)?;
 
@@ -476,14 +481,66 @@ fn build_chat_request(
     chat_req.model = endpoint_profile.map_or_else(|| model.to_owned(), |profile| profile.wire_model.clone());
     chat_req.messages = messages;
     chat_req.tools = if tools.is_empty() { None } else { Some(tools) };
-    chat_req.parallel_tool_calls = parallel_tool_calls;
+    chat_req.parallel_tool_calls = req.parallel_tool_calls.or(parallel_tool_calls);
+    // Liter provider adapters may strip unsupported fields. Refuse explicit
+    // caller settings unless this path preserves their exact semantics.
+    let provider = super::detect_provider(model);
+    if req.parallel_tool_calls.is_some()
+        && !matches!(provider, "openai" | "azure" | "azure_openai")
+        && endpoint_profile.is_none()
+    {
+        anyhow::bail!("provider capability error: explicit parallel_tool_calls is unsupported by the {provider} Liter adapter");
+    }
+    if req.tool_choice.is_some()
+        && !matches!(provider, "openai" | "azure" | "azure_openai" | "anthropic")
+        && endpoint_profile.is_none()
+    {
+        anyhow::bail!("provider capability error: explicit tool_choice is unsupported by the {provider} Liter adapter");
+    }
+    if !matches!(provider, "openai" | "azure" | "azure_openai")
+        && endpoint_profile.is_none()
+        && req.tools.iter().any(|tool| tool.pointer("/function/strict").is_some())
+    {
+        anyhow::bail!("provider capability error: strict tool semantics are unsupported by the {provider} Liter adapter; Anthropic callers can select the native driver");
+    }
+    if provider == "anthropic" && req.tools.iter().any(|tool| {
+        tool.pointer("/function/parameters/type").and_then(serde_json::Value::as_str) != Some("object")
+    }) {
+        anyhow::bail!("provider capability error: the Anthropic Liter adapter would rewrite the tool input schema; select the native driver");
+    }
+    if let Some(extra) = req.extra_params.as_ref().and_then(serde_json::Value::as_object) {
+        if extra.contains_key("tool_choice") || extra.contains_key("parallel_tool_calls") || extra.contains_key("tools") {
+            anyhow::bail!("tool controls must use typed request fields, not extra_params");
+        }
+    }
+    if let Some(cap) = req.output_token_cap {
+        if provider == "anthropic" && anthropic_reasoning_minimum(req.extra_params.as_ref())?
+            .is_some_and(|required| required > u64::from(cap))
+        {
+            anyhow::bail!("Anthropic thinking configuration would exceed the caller output token cap");
+        }
+        let output_field = endpoint_profile.and_then(|profile| profile.output_ceiling)
+            .unwrap_or(if provider == "anthropic" { OutputCeilingField::MaxTokens } else { OutputCeilingField::MaxCompletionTokens });
+        match output_field {
+            OutputCeilingField::MaxTokens => chat_req.max_tokens = Some(u64::from(cap)),
+            OutputCeilingField::MaxCompletionTokens => chat_req.max_completion_tokens = Some(u64::from(cap)),
+        }
+    }
     chat_req.stream_options = Some(StreamOptions {
         include_usage: Some(true),
     });
 
-    if chat_req.tools.is_some() {
-        chat_req.tool_choice = Some(ToolChoice::Mode(ToolChoiceMode::Auto));
-    }
+    chat_req.tool_choice = match req.tool_choice.as_ref() {
+        Some(super::ToolChoice::Auto) => Some(ToolChoice::Mode(ToolChoiceMode::Auto)),
+        Some(super::ToolChoice::None) => Some(ToolChoice::Mode(ToolChoiceMode::None)),
+        Some(super::ToolChoice::Required) => Some(ToolChoice::Mode(ToolChoiceMode::Required)),
+        Some(super::ToolChoice::Named(name)) => Some(ToolChoice::Specific(liter_llm::SpecificToolChoice {
+            choice_type: liter_llm::ToolType::Function,
+            function: liter_llm::SpecificFunction { name: name.clone() },
+        })),
+        None if chat_req.tools.is_some() => Some(ToolChoice::Mode(ToolChoiceMode::Auto)),
+        None => None,
+    };
 
     // CH-04: per-model dialect params (extended-thinking budgets, reasoning
     // persistence toggles) computed by `PromptDialectEngine`, merged
@@ -793,6 +850,9 @@ mod prompt_caching_tests {
         LlmRequest {
             messages: vec![serde_json::json!({"role": "user", "content": "hello"})],
             tools: Vec::new(),
+            tool_choice: None,
+            parallel_tool_calls: None,
+            output_token_cap: None,
             cache_strategy,
             thinking_config: None,
             anthropic_system: None,

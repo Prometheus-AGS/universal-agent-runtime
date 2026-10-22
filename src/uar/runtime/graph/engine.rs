@@ -74,7 +74,8 @@ impl AgentGraph {
         checkpoints: Option<&crate::uar::runtime::checkpoint_host::CheckpointHost>,
     ) -> GraphState {
         let mut state = initial_state;
-        let mut current_id = self.entry_node.clone();
+        let mut current_id = state.get::<String>("_client_tool_resume_node").unwrap_or_else(|| self.entry_node.clone());
+        state.data.remove("_client_tool_resume_node");
         // The engine owns step numbering, including after checkpoint resume;
         // a node's returned state must not reset or duplicate event identities.
         let mut step = state.iteration;

@@ -27,6 +27,8 @@ pub struct ResolvedTurn {
     credentials: LlmConfig,
     fragments: Vec<PromptFragment>,
     shadow: Option<super::shadow::ShadowReport>,
+    client_tools: Option<super::client_tools::ClientToolInput>,
+    output_token_cap: Option<u32>,
 }
 
 impl ResolvedTurn {
@@ -46,7 +48,25 @@ impl ResolvedTurn {
             credentials,
             fragments,
             shadow: None,
+            client_tools: None,
+            output_token_cap: None,
         }
+    }
+
+    pub(crate) fn with_output_token_cap(mut self, cap: Option<u32>) -> Self {
+        self.output_token_cap = cap;
+        self
+    }
+
+    pub(crate) fn output_token_cap(&self) -> Option<u32> { self.output_token_cap }
+
+    pub(crate) fn with_client_tools(mut self, input: Option<super::client_tools::ClientToolInput>) -> Self {
+        self.client_tools = input;
+        self
+    }
+
+    pub fn client_tools(&self) -> Option<&super::client_tools::ClientToolInput> {
+        self.client_tools.as_ref()
     }
 
     /// Preserve the ingress identity after the manager's admission check.
@@ -152,10 +172,38 @@ impl ResolvedStep {
             .filter(|(_, descriptor)| descriptor.exposure != Exposure::Hidden)
             .collect::<BTreeMap<_, _>>();
         let mut request = request;
+        request.output_token_cap = match (request.output_token_cap, turn.output_token_cap()) {
+            (Some(left), Some(right)) => Some(left.min(right)),
+            (left, right) => left.or(right),
+        };
+        if let (Some(cap), Some(contract)) = (request.output_token_cap, &mut request.budget_contract) {
+            contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(cap));
+        }
+
         request.tools = tools
             .values()
             .map(|descriptor| descriptor.openai_tool_json())
             .collect();
+        if let Some(client) = turn.client_tools() {
+            client.validate().map_err(|error| super::contributors::AssemblyError::ContributorFailed {
+                name: "client_tools".into(), message: error.to_string(),
+            })?;
+            for schema in &client.tools {
+                let name = schema["function"]["name"].as_str().unwrap_or_default();
+                if tools.contains_key(name) {
+                    return Err(super::contributors::AssemblyError::ToolChanged { name: name.into() });
+                }
+            }
+            if matches!(client.tool_choice, Some(crate::llm::ToolChoice::Required | crate::llm::ToolChoice::Named(_))) {
+                request.tools.clear();
+            }
+            request.tools.extend(client.tools.clone());
+            request.tool_choice = client.tool_choice.clone();
+            request.parallel_tool_calls = client.parallel_tool_calls;
+            if matches!(client.tool_choice, Some(crate::llm::ToolChoice::None)) {
+                request.tools.clear();
+            }
+        }
         let mut mcp_catalog = mcp.server_names();
         mcp_catalog.sort();
         Ok(Self {

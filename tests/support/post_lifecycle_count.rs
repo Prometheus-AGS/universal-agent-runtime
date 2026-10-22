@@ -107,7 +107,7 @@ fn preparation(base: &str, budget: RequestBudgetContract) -> DestinationRequestP
 }
 
 fn request(messages: Vec<Value>, tools: Vec<Value>, budget: RequestBudgetContract) -> LlmRequest {
-    LlmRequest {messages, tools, cache_strategy:None, thinking_config:None,
+    LlmRequest {messages, tools, output_token_cap:None, tool_choice:None, parallel_tool_calls:None, cache_strategy:None, thinking_config:None,
         anthropic_system:None, extra_params:None, budget_contract:Some(budget)}
 }
 

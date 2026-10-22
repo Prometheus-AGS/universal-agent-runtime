@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 166,
+  "derivedRevision": 166,
+  "frontier": {
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 54,
+    "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+  },
+  "conflictCount": 0,
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "phaseId": "uar-post-lifecycle-verification-readiness",
+  "parentPhase": null,
+  "last_updated": "2026-10-22T16:41:35.571503Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 6,
+  "changes_completed": 6,
+  "implementation_total": 6,
+  "implementation_completed": 6,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 6,
+      "total": 6,
+      "status": "COMPLETE"
+    },
+    "evidence": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "completionScopes": {
+    "completion": "phase",
+    "runCompletion": "run"
+  },
+  "runCompletion": {
+    "scope": "run",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 144,
+      "total": 166,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "pl-main-budget-reconciliation",
+      "title": "Terminal liability reconciliation",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 3,
+      "tasks_done": 3,
+      "last_task_completed": "Document failure and restart outcomes with scenario bindings",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-compatible-budget-errors",
+      "title": "Compatible refusal classification and delivery",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 2,
+      "tasks_done": 2,
+      "last_task_completed": "Implement the reviewed compatible OpenAI terminal budget-error contract",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-destination-budget-contract",
+      "title": "Destination trust decision and contract wiring",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 2,
+      "tasks_done": 2,
+      "last_task_completed": "Wire reviewed preparations reserve and tool-inclusive trim accounting",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-persistence-discriminators",
+      "title": "Main persistence CAS and historical evidence discriminators",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 3,
+      "tasks_done": 3,
+      "last_task_completed": "Record finite B3 archive search and conditional-repair dispositions",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-boundary-evidence",
+      "title": "Candidate-bound production integration and receipt packet",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 3,
+      "tasks_done": 3,
+      "last_task_completed": "Prepare complete implementation inventory and exact approval packet without running it",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "openai-client-tools",
+      "title": "Caller-executed tools across OpenAI AG-UI Anthropic A2A ACP",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 17,
+      "tasks_done": 17,
+      "last_task_completed": "Repair observed supervisor cleanup interruption and per-child failure handling",
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

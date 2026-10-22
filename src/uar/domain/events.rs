@@ -60,6 +60,12 @@ pub enum NormalizedEvent {
         lifecycle: McpServerLifecycle,
     },
 
+    /// Caller-owned calls persisted before transport handoff.
+    ClientToolsRequested {
+        run_id: String,
+        batch_id: String,
+        calls: Vec<crate::llm::ToolCall>,
+    },
     ToolStart {
         run_id: String,
         call_index: usize,

@@ -234,6 +234,15 @@ impl ActorThreadSession {
         artifacts: Option<super::artifacts::RunArtifactCollector>,
         credential_capture: AuthenticatedCredentialCapture,
     ) -> anyhow::Result<PersistedAgentThread> {
+        self.execute_named_with_client_tools(content, run_id, artifacts, credential_capture, None).await
+    }
+
+    pub(crate) async fn execute_named_with_client_tools(
+        &mut self, content: String, run_id: String,
+        artifacts: Option<super::artifacts::RunArtifactCollector>,
+        credential_capture: AuthenticatedCredentialCapture,
+        client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
+    ) -> anyhow::Result<PersistedAgentThread> {
         let mut request = match &self.instance {
             Some(instance) => {
                 let mut request = RunExecutionRequest::from_bound_agent(
@@ -264,6 +273,7 @@ impl ActorThreadSession {
         };
         if let Some(history) = self.a2a_context.take() { request.host_history = Some(history); }
         request = request.with_credential_capture(Some(credential_capture));
+        request.client_tools = client_tools;
         if let Some(constraints) = &self.remote_constraints {
             request.a2a_delegation = constraints.a2a_delegation.clone();
             request.presentation_negotiation = constraints

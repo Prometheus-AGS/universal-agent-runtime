@@ -185,6 +185,11 @@ impl RunSecretScrubber {
             Error { message, .. }
             | RagDiagnostic { message, .. }
             | PresentationDiagnostic { message, .. } => *message = self.scrub(message),
+            ClientToolsRequested { calls, .. } => {
+                for call in calls {
+                    call.function.arguments = self.project_json_text(&call.function.arguments);
+                }
+            }
             ToolStart { input, .. } => *input = self.project_value(std::mem::take(input)),
             ToolDelta { delta, .. } => *delta = self.project_value(std::mem::take(delta)),
             ToolEnd { output, .. } => *output = self.project_value(std::mem::take(output)),

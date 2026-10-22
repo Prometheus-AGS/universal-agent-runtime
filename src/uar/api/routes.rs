@@ -71,6 +71,9 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct CreateRunRequest {
+    /// Constructed by authenticated protocol adapters, never from raw JSON.
+    #[serde(skip)]
+    pub(crate) client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
     #[serde(default)]
     pub(crate) artifact: Option<AgentArtifact>,
     #[serde(default)]
@@ -490,6 +493,7 @@ pub(crate) async fn admit_run(
     credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
+        client_tools,
         artifact,
         agent_id,
         deployment_binding_id,
@@ -614,6 +618,28 @@ pub(crate) async fn admit_run(
         }
     }
     request.session_id = session_id;
+    request.client_tools = client_tools;
+    if let Some(client) = &request.client_tools {
+        client.validate().map_err(|error| RunApiError {
+            status: StatusCode::BAD_REQUEST,
+            code: "invalid_client_tools",
+            message: error.to_string(),
+        })?;
+        let store = state.manager.persistence.as_deref().ok_or_else(|| RunApiError {
+            status: StatusCode::SERVICE_UNAVAILABLE,
+            code: "durable_client_tools_unsupported",
+            message: "caller tools require durable continuation storage".into(),
+        })?;
+        let owner = user.session_owner_key().map_err(|_| principal_invalid())?;
+        super::client_tools::validate_visible_history(
+            store, &owner, user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+            &request.artifact.id, client,
+        ).await.map_err(|error| RunApiError {
+            status: StatusCode::BAD_REQUEST,
+            code: "invalid_client_tool_history",
+            message: error.to_string(),
+        })?;
+    }
     request.skill_attachments = skill_attachments;
     request.presentation_negotiation = presentation_negotiation;
     if let Some(context) = delegated_host_context {
@@ -1272,6 +1298,8 @@ async fn list_checkpoints(
 
 #[derive(Clone, Deserialize)]
 pub(crate) struct ResumeRequest {
+    #[serde(skip)]
+    pub(crate) client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
     #[serde(default)]
     artifact: Option<AgentArtifact>,
     /// Optional new input message; defaults to restoring the last checkpoint state.
@@ -1587,7 +1615,7 @@ impl ResumeRequest {
         request
     }
     pub(crate) fn for_input(input: String) -> Self {
-        Self { artifact: None, input: Some(input), session_id: None, run_credentials: None,
+        Self { client_tools: None, artifact: None, input: Some(input), session_id: None, run_credentials: None,
             mcp_servers: None, working_directory: None, reasoning_effort: None, history: None,
             service_placement: None, presentation_negotiation: Default::default() }
     }
@@ -1782,6 +1810,7 @@ pub(crate) async fn resume_checkpoint_admitted(
     };
     request = request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
     request.input = req.input;
+    request.client_tools = req.client_tools;
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());

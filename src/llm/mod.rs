@@ -250,7 +250,7 @@ pub enum MessageRole {
 }
 
 /// A tool call made by the assistant.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ToolCall {
     /// Unique identifier for this tool call.
     pub id: String,
@@ -262,7 +262,7 @@ pub struct ToolCall {
 }
 
 /// Function details in a tool call.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ToolCallFunction {
     /// Function name.
     pub name: String,
@@ -316,6 +316,20 @@ pub struct ProfiledWireReceipt {
     pub counted_tokens: Option<u64>,
 }
 
+/// Provider-independent tool selection requested by a caller.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type", content = "name", rename_all = "snake_case")]
+pub enum ToolChoice {
+    /// The model decides whether to call a tool.
+    Auto,
+    /// The model must not call a tool.
+    None,
+    /// The model must call at least one tool.
+    Required,
+    /// The model must call this declared tool.
+    Named(String),
+}
+
 /// Request to an LLM driver.
 #[derive(Debug, Clone)]
 pub struct LlmRequest {
@@ -323,6 +337,12 @@ pub struct LlmRequest {
     pub messages: Vec<serde_json::Value>,
     /// Available tools in `OpenAI` function schema format.
     pub tools: Vec<serde_json::Value>,
+    /// Explicit caller selection; absent preserves the driver default.
+    pub tool_choice: Option<ToolChoice>,
+    /// Explicit caller parallelism preference, overriding configured defaults.
+    pub parallel_tool_calls: Option<bool>,
+    /// Restriction-only output ceiling requested by the HTTP caller.
+    pub output_token_cap: Option<u32>,
     /// Anthropic-specific: cache strategy to apply before sending.
     /// Ignored by non-Anthropic drivers.
     pub cache_strategy: Option<anthropic_cache::CacheStrategy>,
@@ -341,6 +361,21 @@ pub struct LlmRequest {
     /// Optional proven destination budget contract. Leaf drivers enforce this
     /// against their final wire representation immediately before dispatch.
     pub budget_contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
+}
+
+impl LlmRequest {
+    /// Validate explicit tool selection against the declared tool set.
+    pub fn validate_tool_controls(&self) -> anyhow::Result<()> {
+        match self.tool_choice.as_ref() {
+            Some(ToolChoice::Required) if self.tools.is_empty() => {
+                anyhow::bail!("tool_choice required needs at least one declared tool");
+            }
+            Some(ToolChoice::Named(name)) if !self.tools.iter().any(|tool| {
+                tool.pointer("/function/name").and_then(serde_json::Value::as_str) == Some(name.as_str())
+            }) => anyhow::bail!("tool_choice names an undeclared tool: {name}"),
+            _ => Ok(()),
+        }
+    }
 }
 
 /// Trait for LLM streaming drivers.

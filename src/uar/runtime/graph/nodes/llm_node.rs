@@ -67,17 +67,21 @@ impl GraphNode for LlmNode {
             return NodeResult::Error(state, "LlmNode: no messages to send".to_string());
         }
 
+        let mut resume_state = state.clone();
+        resume_state.set("_client_tool_resume_node", &self.id);
         let turn = match host
             .model_turn(
                 &ctx.run_id,
                 state.messages.clone(),
                 self.system_prompt.clone(),
+                serde_json::json!(resume_state),
             )
             .await
         {
             Ok(turn) => turn,
             Err(error) => return NodeResult::Error(state, format!("LlmNode host error: {error}")),
         };
+        let caller_handoff = turn.caller_handoff;
         state.messages = turn
             .messages
             .into_iter()
@@ -91,6 +95,11 @@ impl GraphNode for LlmNode {
         }
         state.set(&self.output_key, &turn.text);
 
-        NodeResult::Continue(state)
+        if caller_handoff {
+            state.set("_client_tool_handoff", &true);
+            NodeResult::Finished(state)
+        } else {
+            NodeResult::Continue(state)
+        }
     }
 }

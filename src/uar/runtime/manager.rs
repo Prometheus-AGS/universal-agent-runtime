@@ -93,6 +93,8 @@ struct EventHistory {
     buffer: VecDeque<StreamEvent>,
     presentation: Option<super::presentations::PresentationObservation>,
     latest_presentation: Option<StreamEvent>,
+    pending_client_handoff: Option<NormalizedEvent>,
+    client_handoff_failed: bool,
 }
 
 impl EventHistory {
@@ -132,6 +134,18 @@ impl EventHistory {
             &std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>,
         >,
     ) -> Vec<StreamEvent> {
+        // A durable pending row is not proof that producer cleanup succeeded.
+        // Keep caller handoff private until the host publishes its settled terminal.
+        if matches!(&event, NormalizedEvent::ClientToolsRequested { .. }) {
+            if !self.client_handoff_failed {
+                self.pending_client_handoff = Some(event);
+            }
+            return Vec::new();
+        }
+        if matches!(&event, NormalizedEvent::Error { .. } | NormalizedEvent::Cancelled { .. }) {
+            self.client_handoff_failed = true;
+            self.pending_client_handoff = None;
+        }
         let terminal = matches!(
             &event,
             NormalizedEvent::RunDone { .. }
@@ -142,6 +156,13 @@ impl EventHistory {
         // Publication observations follow their actual event. Terminal state
         // precedes the terminal frame, which closes transport subscribers.
         let mut published = Vec::new();
+        if matches!(&event, NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. })
+            && !self.client_handoff_failed
+            && let Some(handoff) = self.pending_client_handoff.take()
+        {
+            published.push(self.publish(handoff, sender, completion));
+        }
+
         if !terminal {
             published.push(self.publish(event.clone(), sender, completion));
         }
@@ -3206,6 +3227,8 @@ impl RunManager {
             a2a_delegation: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
+            client_tools: None,
+            output_token_cap: None,
             host_history: None,
             reasoning_effort: None,
             checkpoint_resume: Some(crate::uar::runtime::turn::CheckpointResume {
@@ -3466,6 +3489,8 @@ impl RunManager {
                     buffer: VecDeque::with_capacity(EVENT_HISTORY_LIMIT),
                     presentation: None,
                     latest_presentation: None,
+                    pending_client_handoff: None,
+                    client_handoff_failed: false,
                 }));
                 RunStreamState {
                     run: Run {
@@ -3808,7 +3833,9 @@ impl RunManager {
             target_selection,
             presentation_negotiation,
             seed_history,
-            host_history,
+            client_tools,
+            output_token_cap,
+            mut host_history,
             reasoning_effort,
             checkpoint_resume,
             inherited_history,
@@ -3829,6 +3856,17 @@ impl RunManager {
             a2a_delegation,
             host_sandbox_constraint,
         } = request;
+        let output_token_cap = match (output_token_cap, client_tools.as_ref().and_then(|input| input.output_token_cap)) {
+            (Some(left), Some(right)) => Some(left.min(right)),
+            (left, right) => left.or(right),
+        };
+        if let Some(client) = &client_tools {
+            if client.validate().is_err() { return run_id; }
+            match serde_json::from_value::<Vec<Message>>(serde_json::Value::Array(client.history.clone())) {
+                Ok(history) => host_history = Some(history),
+                Err(_) => return run_id,
+            }
+        }
         let collaboration_binding = collaboration_binding.or_else(|| {
             inherited
                 .as_ref()
@@ -3856,8 +3894,9 @@ impl RunManager {
                 .any(|call| call.id == record.tool_call_id));
             match index { Some(index) => history.split_off(index), None => return run_id }
         } else { Vec::new() };
-        let supplied_history = checkpoint_history.as_ref().or(inherited_history.as_ref());
-        let append_input = plan.append_input;
+        let client_history = client_tools.as_ref().and_then(|_| host_history.clone());
+        let supplied_history = checkpoint_history.as_ref().or(inherited_history.as_ref()).or(client_history.as_ref());
+        let append_input = plan.append_input && client_tools.is_none();
         let skill_attachments = plan.requested_skill_ids;
         let input = input.unwrap_or_default();
         tracing::Span::current().record("run_id", &run_id);
@@ -3868,6 +3907,8 @@ impl RunManager {
             buffer: VecDeque::with_capacity(EVENT_HISTORY_LIMIT),
             presentation: None,
             latest_presentation: None,
+            pending_client_handoff: None,
+            client_handoff_failed: false,
         }));
         let mut emitter = RunEventEmitter {
             run_id: run_id.clone(),
@@ -3884,6 +3925,15 @@ impl RunManager {
         let completion_guard = crate::uar::runtime::thread::execution::RunCompletionGuard::new(
             emitter.completion.clone(),
         );
+
+        if client_tools.as_ref().is_some_and(|input| !input.tools.is_empty() || input.budget_snapshot.is_some())
+            && (verified_owner.as_ref().and_then(|owner| owner.credential_principal()).is_none()
+            || !self.persistence.as_ref().is_some_and(|store| store.supports_durable_client_tools())) {
+            emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(), code: "durable_client_tools_unavailable".into(),
+                message: "Caller tools require authenticated durable continuation storage".into() }).await;
+            emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+            return run_id;
+        }
 
         if let Some(remote) = host_budget_constraint {
             let narrowed = crate::uar::runtime::thread::policy_intersection::ThreadBudgets::from_artifact(&artifact)
@@ -4527,6 +4577,12 @@ impl RunManager {
             for message in history {
                 if message.role != MessageRole::System {
                     session.add_message(message.clone());
+                } else if client_tools.is_some() {
+                    // Caller instructions remain ordered caller content; they cannot
+                    // replace authoritative agent/system policy.
+                    let mut caller = message.clone();
+                    caller.role = MessageRole::User;
+                    session.add_message(caller);
                 }
             }
         }
@@ -5820,6 +5876,15 @@ impl RunManager {
                 Err(error) => Err(error),
             };
 
+            let model_budget = match (model_budget, client_tools.as_ref().and_then(|input| input.budget_snapshot.as_ref())) {
+                (Ok(budget), Some(snapshot)) => match verified_owner.as_ref() {
+                    Some(owner) => budget.restore_client_handoff(snapshot, owner).await,
+                    None => Err(anyhow::anyhow!("client_tools_require_authenticated_owner")),
+                },
+                (budget, None) => budget,
+                (Err(error), Some(_)) => Err(error),
+            };
+
             let fallback_credential_decisions = async {
                 let mut decisions = std::collections::BTreeMap::new();
                 if !run_failover_config.enabled {
@@ -6734,7 +6799,9 @@ impl RunManager {
                 prompt_fragments.clone(),
             )
             .with_verified_owner(verified_owner.clone())
-            .with_presentations(Arc::clone(&presentation_snapshot)),
+            .with_presentations(Arc::clone(&presentation_snapshot))
+            .with_client_tools(client_tools.clone())
+            .with_output_token_cap(output_token_cap),
         );
         let shadow_turn = if harness_config.mode == crate::config::HarnessMode::Shadow {
             typed_assembly.as_ref().map(|assembled| {
@@ -6748,7 +6815,9 @@ impl RunManager {
                             assembled.fragments.clone(),
                         )
                         .with_verified_owner(verified_owner.clone())
-                        .with_presentations(Arc::clone(&presentation_snapshot)),
+                        .with_presentations(Arc::clone(&presentation_snapshot))
+                        .with_client_tools(client_tools.clone())
+                        .with_output_token_cap(output_token_cap),
                     ),
                     assembled.history.clone(),
                 )
@@ -6909,6 +6978,7 @@ impl RunManager {
                 .with_resilience_policy(turn_resilience_policy)
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
+                .with_client_tool_budget(Arc::new(model_bindings.budget().clone()))
                 .with_canonical_receipt_store(self.persistence.clone())
                 .with_secret_scrubber(emitter.secret_scrubber.clone())
                 .with_team_model_handoff(collaboration_binding.clone().filter(|b|b.team_attempt.is_some()))
@@ -7428,7 +7498,9 @@ impl RunManager {
                     tool_host: graph_tool_host.clone(),
                 };
 
-                let mut initial_state = restored_state.unwrap_or_default();
+                let mut initial_state = client_tools.as_ref().and_then(|input| input.graph_state.clone())
+                    .and_then(|value| serde_json::from_value(value).ok())
+                    .or(restored_state).unwrap_or_default();
                 initial_state.set(
                     crate::uar::runtime::checkpoint::CHECKPOINT_AUTHORIZATION_DIGEST_KEY,
                     checkpoint_authorization_digest,
@@ -7978,6 +8050,13 @@ impl RunManager {
                                     code: code.unwrap_or_default(),
                                 })
                             }
+                            crate::normalized::NormalizedEvent::ClientToolsRequested { batch_id, calls } => {
+                                if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
+                                    state.run.context["pending_client_tool_batch_id"] = batch_id.clone().into();
+                                    state.run.context["pending_client_tool_call_ids"] = serde_json::json!(calls.iter().map(|call| &call.id).collect::<Vec<_>>());
+                                }
+                                Some(NormalizedEvent::ClientToolsRequested { run_id: execute_run_id.clone(), batch_id, calls })
+                            }
                             crate::normalized::NormalizedEvent::Done => {
                                 orchestrator_completed = true;
                                 None
@@ -8503,6 +8582,37 @@ impl RunManager {
         run_id
     }
 
+    /// Capture startup replay and the live receiver under the publication lock.
+    /// A truncated startup is an explicit failed observation, never a success.
+    pub async fn execute_request_observed(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+    ) -> anyhow::Result<(String, Vec<StreamEvent>, broadcast::Receiver<StreamEvent>)> {
+        let run_id = self.execute_request(request).await;
+        let snapshot = {
+            let runs = self.active_runs.read().await;
+            match runs.get(&run_id) {
+                Some(state) => {
+                    let history = state.history.lock().await;
+                    if history.buffer.front().is_some_and(|event| event.id != 1) {
+                        None
+                    } else {
+                        let receiver = state.sender.subscribe();
+                        Some((history.buffer.iter().cloned().collect(), receiver))
+                    }
+                }
+                None => None,
+            }
+        };
+        match snapshot {
+            Some((events, receiver)) => Ok((run_id, events, receiver)),
+            None => {
+                self.cancel_run(&run_id).await;
+                anyhow::bail!("run_startup_observation_lost")
+            }
+        }
+    }
+
     pub async fn subscribe(&self, run_id: &str) -> Option<broadcast::Receiver<StreamEvent>> {
         let runs = self.active_runs.read().await;
         let receiver = runs.get(run_id).map(|state| state.sender.subscribe());
@@ -8791,7 +8901,13 @@ impl RunManager {
     pub(crate) async fn settled_run_status_for_context(
         &self, user: &crate::uar::security::claims::UserContext, run_id: &str,
     ) -> Option<RunStatus> {
-        let run = self.get_run_for_context(user,run_id).await?;
+        self.get_run_for_context(user,run_id).await?;
+        self.settled_run_status(run_id).await
+    }
+
+    /// Host-only status query; ingress must establish ownership separately.
+    pub(crate) async fn settled_run_status(&self, run_id: &str) -> Option<RunStatus> {
+        let run = self.get_run(run_id).await?;
         if !matches!(run.status,RunStatus::Done|RunStatus::Error|RunStatus::Cancelled)
             || !self.graph_roots.is_settled(run_id) { return None; }
         let producer = self.checkpoint_producers.lock().await.get(run_id).cloned();
@@ -8805,6 +8921,39 @@ impl RunManager {
             if !finished { return None; }
         }
         Some(run.status)
+    }
+
+    /// Join the exact admitted producer and graph root, including outer cleanup.
+    /// Called only after an adapter has authenticated the run or durable row.
+    /// Handles stay in their slots across await so cancellation cannot detach work.
+    pub(crate) async fn await_settled_run_status(&self, run_id: &str) -> anyhow::Result<RunStatus> {
+        anyhow::ensure!(self.get_run(run_id).await.is_some(), "source_run_not_found");
+        let producer = self.checkpoint_producers.lock().await.get(run_id).cloned();
+        let joined = async {
+            if let Some(producer) = producer {
+                let mut producer = producer.lock().await;
+                match &mut *producer {
+                    CheckpointProducer::Ordinary(handle) => {
+                        if let Some(join) = handle.as_mut() {
+                            let outcome = join.await;
+                            *handle = None;
+                            outcome.map_err(|_| anyhow::anyhow!("run_producer_join_failed"))?;
+                        }
+                    }
+                    CheckpointProducer::Actor(root) => root.finish().await?,
+                }
+            }
+            self.graph_roots.join_run(run_id).await?;
+            Ok::<(), anyhow::Error>(())
+        }.await;
+        if let Err(error) = joined {
+            if let Some(state) = self.active_runs.write().await.get_mut(run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            return Err(error);
+        }
+        self.settled_run_status(run_id).await
+            .ok_or_else(|| anyhow::anyhow!("run_settlement_unconfirmed"))
     }
 
     pub async fn get_run_for_owner(

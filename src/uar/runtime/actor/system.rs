@@ -155,6 +155,14 @@ impl ActorSession {
         content: String,
         credential_capture: AuthenticatedCredentialCapture,
     ) -> anyhow::Result<ActorTurn> {
+        self.submit_authorized_prompt_with_client_tools(owner, run_id, content, credential_capture, None)
+    }
+
+    pub(crate) fn submit_authorized_prompt_with_client_tools(
+        &self, owner: &ActorOwner, run_id: String, content: String,
+        credential_capture: AuthenticatedCredentialCapture,
+        client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
+    ) -> anyhow::Result<ActorTurn> {
         anyhow::ensure!(owner == &self.key.0, "Actor authority belongs to another owner");
         let handle = &self.handle;
         anyhow::ensure!(
@@ -173,6 +181,7 @@ impl ActorSession {
                 run_id: run_id.clone(),
                 content,
                 credential_capture,
+                client_tools,
                 artifacts: artifacts.clone(),
                 reply,
             })

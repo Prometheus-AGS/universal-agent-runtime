@@ -4,6 +4,25 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.2.1 — 2026-10-22 (functional acceptance pending)
+
+- Authored caller-owned function declarations, selection/parallel controls,
+  durable handoffs, exact result-batch continuation, and replay projections
+  across OpenAI Chat Completions, Anthropic Messages, AG-UI, A2A 1.0, and ACP.
+  Host tools retain their existing trusted execution and governance paths.
+- Added the [candidate integration contract](docs/releases/v1.2.1-kubo.md),
+  including native wire examples, provider control restrictions, and authored
+  acceptance entry points. Bound Anthropic execution uses the shared runtime;
+  unbound direct forwarding does not acquire durable host continuation guarantees.
+- The Intel macOS development binary compiled and linked with
+  `server-full,postgres-backend`; functional acceptance remains unexecuted. The
+  active `uar-post-lifecycle-verification-readiness` phase is authoring isolated
+  acceptance lifecycle bindings before renewed inventory and execution approval.
+  The operator requested immediate version-tag and Docker publication before
+  acceptance. Publication receipts establish the resulting image digest; runtime
+  acceptance remains pending.
+  Frozen v1.2.0 artifacts and historical release documents are unchanged.
+
 ## 1.2.0 — 2026-10-22
 
 - Recorded the existing multi-platform image from source

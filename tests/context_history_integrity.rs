@@ -1376,6 +1376,9 @@ async fn exact_budget_contract_dispatches_intact_protected_wire_body() {
                 "parameters":{"type":"object","properties":{}}
             }
         })],
+        output_token_cap: None,
+        tool_choice: None,
+        parallel_tool_calls: None,
         cache_strategy: None,
         thinking_config: None,
         anthropic_system: None,
@@ -1517,6 +1520,9 @@ async fn protected_overflow_and_approximate_count_block_before_dispatch() {
                     "content":protected
                 })],
                 tools: Vec::new(),
+                output_token_cap: None,
+                tool_choice: None,
+                parallel_tool_calls: None,
                 cache_strategy: None,
                 thinking_config: None,
                 anthropic_system: None,
@@ -1570,6 +1576,9 @@ async fn budget_contracts_fail_closed_on_endpoint_schema_and_unsupported_driver_
         LlmRequest {
             messages: vec![serde_json::json!({"role":"user","content":"protected"})],
             tools: Vec::new(),
+            output_token_cap: None,
+            tool_choice: None,
+            parallel_tool_calls: None,
             cache_strategy: None,
             thinking_config: None,
             anthropic_system: None,

@@ -41,6 +41,7 @@ struct Bindings {
 }
 
 struct Entry {
+    tenant_id: Option<String>,
     actor: ActorSession,
     durable: Option<super::durable::A2aBinding>,
     task: Task,
@@ -257,6 +258,11 @@ impl A2AThreadService {
         }
     }
 
+    pub(crate) fn supports_client_tools(&self) -> bool {
+        self.run_api.is_some() && self.actors.persistence().is_ok_and(|store|
+            store.supports_durable_a2a_bindings() && store.supports_durable_client_tools())
+    }
+
     pub fn new(actors: Arc<ActorCollaboration>) -> Self {
         Self {
             actors,
@@ -322,7 +328,7 @@ impl A2AThreadService {
         params: MessageSendParams,
         credential_capture: AuthenticatedCredentialCapture,
     ) -> Result<Task, TaskError> {
-        self.send_internal(owner, authenticated_instance_id, agent_id, params, credential_capture, None).await
+        self.send_internal(owner, authenticated_instance_id, agent_id, params, credential_capture, None, None).await
     }
 
     async fn send_internal(
@@ -333,7 +339,18 @@ impl A2AThreadService {
         params: MessageSendParams,
         credential_capture: AuthenticatedCredentialCapture,
         reservation: Option<(String, String)>,
+        prepared_client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
     ) -> Result<Task, TaskError> {
+        let mut client_tools = prepared_client_tools.or(
+            super::client_tools::ClientToolsExtension::parse(&params.metadata)
+                .map_err(TaskError::Invalid)?.map(|extension| extension.into_input())
+        );
+        if let Some(input) = &client_tools {
+            input.validate().map_err(|_| TaskError::Invalid("Caller-tools declaration is invalid"))?;
+        }
+        if client_tools.is_some() && reservation.is_none() {
+            return Err(TaskError::Invalid("Caller tools require the durable A2A 1.0 interface"));
+        }
         if params.message.role != Role::User
             || params.message.parts.is_empty()
             || params
@@ -358,6 +375,11 @@ impl A2AThreadService {
             .join("\n");
         if content.trim().is_empty() {
             return Err(TaskError::Invalid("agent input must not be empty"));
+        }
+
+        if let Some(input) = &mut client_tools
+            && input.history.is_empty() {
+            input.history.push(serde_json::json!({"role": "user", "content": content}));
         }
 
         // Input guardrails: screen A2A input for injection/PII (#328).
@@ -470,6 +492,7 @@ impl A2AThreadService {
                     .map_err(TaskError::Host)?;
                     let context_id = params.context_id.clone().unwrap_or_else(|| id.clone());
                     let entry = Arc::new(Mutex::new(Entry {
+                        tenant_id: owner.tenant_id().map(str::to_owned),
                         actor,
                         durable,
                         turn: None,
@@ -542,13 +565,14 @@ impl A2AThreadService {
                 }
                 entry.durable = Some(record.clone());
             }
-            entry.actor.submit_authorized_prompt(owner, record.run_id, content, credential_capture)
+            entry.actor.submit_authorized_prompt_with_client_tools(owner, record.run_id, content, credential_capture, client_tools)
         } else {
-            entry.actor.submit_authorized_prompt(
+            entry.actor.submit_authorized_prompt_with_client_tools(
                 owner,
                 uuid::Uuid::new_v4().to_string(),
                 content,
                 credential_capture,
+                client_tools,
             )
         }.map_err(TaskError::Host)?;
         // Publication is synchronous after enqueue: request cancellation cannot
@@ -570,7 +594,6 @@ impl A2AThreadService {
         entry.turn = Some(turn);
         entry.refresh();
         self.refresh_governed_metadata(&mut entry);
-        let task = entry.task.clone();
         if entry.durable.is_some() {
             let persistence = self.actors.persistence().map_err(TaskError::Host)?;
             // This observer retains completion correlation after an HTTP caller
@@ -581,7 +604,7 @@ impl A2AThreadService {
             let Some(mut events) = manager.subscribe(observed_run.as_deref().unwrap_or_default()).await else {
                 scope.record_unresolved_effect("a2a-durable-projection:run-event-source-unavailable");
                 self.persist_projection(&mut entry).await?;
-                return Ok(task);
+                return Ok(entry.task.clone());
             };
             let mut committed_work = manager.subscribe_committed_work();
             let cancellation = scope.cancellation_token();
@@ -632,7 +655,7 @@ impl A2AThreadService {
                     }
                     entry.refresh();
                     let settled = entry.turn.is_none();
-                    if let Err(error) = persist_entry_projection(persistence.as_ref(), &mut entry).await {
+                    if let Err(error) = persist_entry_projection(persistence.as_ref(), manager.as_ref(), &mut entry).await {
                         if matches!(error, TaskError::Conflict) { continue; }
                         return Err(anyhow::anyhow!("A2A durable completion projection failed: {error}"));
                     }
@@ -643,7 +666,7 @@ impl A2AThreadService {
             }
         }
         self.persist_projection(&mut entry).await?;
-        Ok(task)
+        Ok(entry.task.clone())
     }
 
     async fn entry(
@@ -728,7 +751,7 @@ fn durable_owner(owner: &ActorOwner) -> Result<String, TaskError> {
 
 impl A2AThreadService {
     async fn persist_projection(&self, entry: &mut Entry) -> Result<(), TaskError> {
-        persist_entry_projection(self.actors.persistence().map_err(TaskError::Host)?.as_ref(), entry).await
+        persist_entry_projection(self.actors.persistence().map_err(TaskError::Host)?.as_ref(), self.actors.run_manager().as_ref(), entry).await
     }
 
     /// A v1 request reserves durable correlation before the existing actor owns
@@ -739,6 +762,15 @@ impl A2AThreadService {
         params: MessageSendParams, message_id: &str, capture: AuthenticatedCredentialCapture,
     ) -> Result<Task, TaskError> {
         use sha2::{Digest, Sha256};
+        let caller_tools = super::client_tools::ClientToolsExtension::parse(&params.metadata)
+            .map_err(TaskError::Invalid)?;
+        if caller_tools.as_ref().is_some_and(|extension| extension.history.iter().any(|message| message["role"] == "tool"))
+            && (params.task_id.is_none() || params.context_id.is_none()) {
+            return Err(TaskError::Invalid("Caller-tool results require the exact taskId and contextId"));
+        }
+        if caller_tools.is_some() && params.metadata.contains_key("uar.approval") {
+            return Err(TaskError::Invalid("Caller-tool results and approval decisions require separate messages"));
+        }
         if params.metadata.contains_key("uar.approval") && params.task_id.is_none() {
             return Err(TaskError::Invalid("Approval requires its existing taskId"));
         }
@@ -768,6 +800,11 @@ impl A2AThreadService {
             if task.status.state != TaskState::InputRequired {
                 return Err(TaskError::Conflict);
             }
+            if caller_tools.is_some() {
+                let current = persistence.load_a2a_binding(&owner_key, agent, &id).await
+                    .map_err(TaskError::Host)?.ok_or(TaskError::NotFound)?;
+                return self.resume_client_tools(owner, instance, agent, current, params, digest, capture).await;
+            }
             if self.entry(owner, agent, &id).await.is_err() {
                 return self.resume_durable(owner, user, agent, record, params, digest, capture, None).await;
             }
@@ -784,7 +821,81 @@ impl A2AThreadService {
                 }
             }
         }
-        self.send_internal(owner, instance, agent, params, capture, Some((id, digest))).await
+        let prepared = if let Some(extension) = caller_tools {
+            let input = extension.into_input();
+            match crate::uar::api::client_tools::prepare(self.actors.run_manager().as_ref(), persistence.as_ref(), &owner_key, owner.tenant_id(), agent, &input)
+                .await.map_err(|_| TaskError::Invalid("Caller-tool history conflicts with durable evidence"))? {
+                crate::uar::api::client_tools::ClientToolPreparation::Fresh(input) => Some(input),
+                _ => return Err(TaskError::Invalid("Caller-tool results require their existing task")),
+            }
+        } else { None };
+        self.send_internal(owner, instance, agent, params, capture, Some((id, digest)), prepared).await
+    }
+
+    async fn resume_client_tools(
+        &self, owner: &ActorOwner, instance: Option<&str>, agent: &str,
+        record: super::durable::A2aBinding, mut params: MessageSendParams, digest: String,
+        capture: AuthenticatedCredentialCapture,
+    ) -> Result<Task, TaskError> {
+        use crate::uar::api::client_tools::{self, ClientToolPreparation};
+        if record.cancellation_requested || params.context_id.as_deref() != Some(record.context_id.as_str()) {
+            return Err(TaskError::Invalid("Caller-tool continuation requires its exact task and context"));
+        }
+        if params.message.role != Role::User { return Err(TaskError::Invalid("Caller-tool results require a user message")); }
+        let contract = params.metadata.get(UAR_DELEGATION_CONTRACT_METADATA)
+            .map(|value| serde_json::from_value::<UarDelegationContract>(value.clone()))
+            .transpose().map_err(|_| TaskError::Invalid("UAR delegation contract is malformed"))?;
+        if contract != record.contract { return Err(TaskError::Invalid("Continuation requires its current peer delegation contract")); }
+        if let Some(contract) = &contract {
+            contract.validate().map_err(|_| TaskError::Invalid("UAR delegation contract is invalid"))?;
+            if contract.owner_id != owner.user_id() || instance != Some(contract.source_instance_id.as_str())
+                || self.instance_id.as_deref() != Some(contract.target_instance_id.as_str())
+                || contract.target_agent_id != agent {
+                return Err(TaskError::Invalid("Continuation delegation does not match the authenticated peer"));
+            }
+        }
+        if let Ok(entry) = self.entry(owner, agent, &record.task_id).await {
+            let mut entry = entry.lock().await;
+            entry.refresh();
+            if entry.closed || entry.turn.is_some() { return Err(TaskError::Conflict); }
+        }
+        let input = super::client_tools::ClientToolsExtension::parse(&params.metadata)
+            .map_err(TaskError::Invalid)?.ok_or(TaskError::Invalid("Caller-tools extension required"))?.into_input();
+        let call_id = input.history.last().and_then(|message| message.get("tool_call_id"))
+            .and_then(serde_json::Value::as_str).ok_or(TaskError::Invalid("Caller-tool results required"))?;
+        let batch_id = client_tools::batch_id_from_call_id(call_id)
+            .map_err(|_| TaskError::Invalid("Invalid caller-tool call identity"))?;
+        let persistence = self.actors.persistence().map_err(TaskError::Host)?;
+        let tenant = owner.tenant_id();
+        let batch = persistence.load_client_tool_continuation_for_run(&record.owner_key, tenant, agent, &record.run_id)
+            .await.map_err(TaskError::Host)?.ok_or(TaskError::Conflict)?;
+        if batch.batch_id != batch_id { return Err(TaskError::Invalid("Caller-tool batch does not belong to this task turn")); }
+        let preparation = client_tools::prepare(self.actors.run_manager().as_ref(), persistence.as_ref(), &record.owner_key, tenant, agent, &input)
+            .await.map_err(|_| TaskError::Invalid("Caller-tool continuation conflicts with its durable batch"))?;
+        let (input, claim) = match preparation {
+            ClientToolPreparation::Continue { input, claim } => (input, claim),
+            ClientToolPreparation::Replay { response, .. } => return serde_json::from_value(response)
+                .map_err(|error| TaskError::Host(error.into())),
+            ClientToolPreparation::Fresh(_) => return Err(TaskError::Invalid("Caller-tool results required")),
+        };
+        if self.entry(owner, agent, &record.task_id).await.is_err() {
+            let actor = self.actors.spawn_a2a_session(owner, &record.task_id, agent, &record.context_id, record.contract.as_ref())
+                .await.map_err(TaskError::Host)?;
+            let entry = Arc::new(Mutex::new(Entry { tenant_id: owner.tenant_id().map(str::to_owned), actor, durable: Some(record.clone()),
+                task: record.task.clone(), turn: None, closed: false, cleanup_pending: false,
+                contract: record.contract.clone(), run_id: Some(record.run_id.clone()),
+                accounted_run_id: None, usage: UarUsageReceipt::default() }));
+            self.bindings.lock().await.tasks.insert((owner.clone(), agent.into(), record.task_id.clone()), entry);
+        }
+        // The common service has already restored the host transcript and claimed
+        // the exact complete batch. This is a fresh root in the same A2A context.
+        if !params.message.parts.iter().any(|part| matches!(part, Part::Text { text } if !text.trim().is_empty())) {
+            params.message.parts = vec![Part::text("Continue with caller-tool results")];
+        }
+        let task = self.send_internal(owner, instance, agent, params, capture, Some((record.task_id, digest)), Some(input)).await?;
+        client_tools::complete(persistence.as_ref(), &claim, serde_json::to_value(&task)
+            .map_err(|error| TaskError::Host(error.into()))?, Vec::new()).await.map_err(TaskError::Host)?;
+        Ok(task)
     }
 
     /// Recover task identity through an exact full-principal binding, then read
@@ -814,6 +925,13 @@ impl A2AThreadService {
                 task.status.state = TaskState::InputRequired;
             }
             task.metadata.insert("uar.approvals".into(), serde_json::to_value(views).map_err(|error| TaskError::Host(error.into()))?);
+        }
+        if !record.cancellation_requested && persistence.supports_durable_client_tools()
+            && let Some(batch) = persistence.load_client_tool_continuation_for_run(
+                &record.owner_key, owner.tenant_id(), agent, &record.run_id,
+            ).await.map_err(TaskError::Host)?
+            && batch.state == crate::uar::persistence::client_tools::ClientToolContinuationState::Pending {
+            project_settled_client_tools(&mut task, self.actors.run_manager().as_ref(), persistence.as_ref(), &record.run_id, &batch).await?;
         }
         let current = persistence.load_a2a_binding(&record.owner_key, agent, id).await.map_err(TaskError::Host)?.ok_or(TaskError::NotFound)?;
         if current.run_id != record.run_id { return Err(TaskError::Conflict); }
@@ -1016,8 +1134,49 @@ impl A2AThreadService {
     }
 }
 
+/// A durable pending row precedes producer cleanup; it is not yet a handoff.
+async fn project_settled_client_tools(
+    task: &mut Task, manager: &crate::uar::runtime::manager::RunManager,
+    persistence: &dyn crate::uar::persistence::PersistenceLayer, run_id: &str,
+    batch: &crate::uar::persistence::client_tools::ClientToolContinuation,
+) -> Result<(), TaskError> {
+    use crate::uar::domain::runs::RunStatus;
+    let status = if manager.get_run(run_id).await.is_some() {
+        manager.await_settled_run_status(run_id).await.map_err(TaskError::Host)?
+    } else {
+        // A cold process has no producer to join. Only the persisted settlement
+        // acknowledgment below can establish that a predecessor already joined.
+        RunStatus::Done
+    };
+    match status {
+        RunStatus::Done => {
+            crate::uar::api::client_tools::confirm_handoff_for_run(manager, persistence,
+                &batch.owner_key, batch.tenant_id.as_deref(), &batch.agent_id, run_id)
+                .await.map_err(TaskError::Host)?;
+            let calls = batch.canonical_transcript.as_array().and_then(|history| history.last())
+                .and_then(|message| message.get("tool_calls")).cloned().ok_or(TaskError::Conflict)?;
+            task.status.state = TaskState::InputRequired;
+            task.metadata.insert(super::client_tools::CLIENT_TOOLS_EXTENSION.into(), serde_json::json!({
+                "batch_id": batch.batch_id, "pending_calls": calls,
+                "history": batch.visible_transcript, "declarations": batch.client_schemas,
+            }));
+        }
+        RunStatus::Error => {
+            task.status.state = TaskState::Failed;
+            task.metadata.remove(super::client_tools::CLIENT_TOOLS_EXTENSION);
+        }
+        RunStatus::Cancelled => {
+            task.status.state = TaskState::Canceled;
+            task.metadata.remove(super::client_tools::CLIENT_TOOLS_EXTENSION);
+        }
+        _ => return Err(TaskError::Conflict),
+    }
+    Ok(())
+}
+
 async fn persist_entry_projection(
-    persistence: &dyn crate::uar::persistence::PersistenceLayer, entry: &mut Entry,
+    persistence: &dyn crate::uar::persistence::PersistenceLayer,
+    manager: &crate::uar::runtime::manager::RunManager, entry: &mut Entry,
 ) -> Result<(), TaskError> {
     let Some(before) = entry.durable.clone() else { return Ok(()); };
     let current = persistence.load_a2a_binding(&before.owner_key, &before.agent_id, &before.task_id)
@@ -1029,6 +1188,13 @@ async fn persist_entry_projection(
         }
     }
     entry.durable = Some(current.clone());
+    if !current.cancellation_requested && persistence.supports_durable_client_tools()
+        && let Some(batch) = persistence.load_client_tool_continuation_for_run(
+            &current.owner_key, entry.tenant_id.as_deref(), &current.agent_id, &current.run_id,
+        ).await.map_err(TaskError::Host)?
+        && batch.state == crate::uar::persistence::client_tools::ClientToolContinuationState::Pending {
+        project_settled_client_tools(&mut entry.task, manager, persistence, &current.run_id, &batch).await?;
+    }
     let before = &current;
     if serde_json::to_value(&before.task).map_err(|error| TaskError::Host(error.into()))?
         == serde_json::to_value(&entry.task).map_err(|error| TaskError::Host(error.into()))? {

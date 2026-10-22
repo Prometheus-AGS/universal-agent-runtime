@@ -90,6 +90,11 @@ impl ProjectedEventStream {
                     .or_insert_with(|| self.scrubber.stream())
                     .push(data);
             }
+            ClientToolsRequested { calls, .. } => {
+                for call in calls {
+                    call.function.arguments = self.scrubber.project_json_text(&call.function.arguments);
+                }
+            }
             ToolResult { content, .. } => *content = self.scrubber.project_json_text(content),
             Error { message, .. } => {
                 *message = self.scrubber.scrub(message);

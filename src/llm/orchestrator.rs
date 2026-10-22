@@ -328,6 +328,8 @@ pub struct Orchestrator {
     canonical_receipt_store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
     secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
     team_model_handoff: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
+    client_graph_state: Option<serde_json::Value>,
+    client_tool_budget: Option<Arc<crate::uar::runtime::cost_budget::ModelCallBudget>>,
 }
 
 #[derive(Clone)]
@@ -492,6 +494,10 @@ impl DestinationRequestPreparations {
         request.messages = messages;
         request.extra_params.clone_from(&profile.exact_settings);
         request.budget_contract = Some(profile.budget_contract.clone());
+        if let (Some(cap), Some(contract)) = (request.output_token_cap, &mut request.budget_contract) {
+            contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(cap));
+        }
+
         Ok(request)
     }
 }
@@ -887,6 +893,8 @@ impl Orchestrator {
             canonical_receipt_store: None,
             secret_scrubber: Default::default(),
             team_model_handoff: None,
+            client_graph_state: None,
+            client_tool_budget: None,
         }
     }
 
@@ -1076,6 +1084,16 @@ impl Orchestrator {
         turn: Arc<crate::uar::runtime::turn::ResolvedTurn>,
     ) -> Self {
         self.resolved_turn = Some(turn);
+        self
+    }
+
+    pub(crate) fn with_client_tool_budget(mut self, budget: Arc<crate::uar::runtime::cost_budget::ModelCallBudget>) -> Self {
+        self.client_tool_budget = Some(budget);
+        self
+    }
+
+    pub(crate) fn with_client_graph_state(mut self, state: serde_json::Value) -> Self {
+        self.client_graph_state = Some(state);
         self
     }
 
@@ -1865,6 +1883,7 @@ impl Orchestrator {
             } else {
                 orchestrator.canonical_history.as_ref().unwrap_or(&messages)
             };
+            let mut caller_visible_assistant_text = String::new();
             let mut canonical_message_json: Vec<serde_json::Value> = canonical_messages
                 .iter()
                 .map(|message| serde_json::to_value(message).unwrap_or_default())
@@ -2147,6 +2166,9 @@ impl Orchestrator {
                 let base_req = LlmRequest {
                     messages: request_messages,
                     tools: tools.clone(),
+                    output_token_cap: orchestrator.resolved_turn.as_ref().and_then(|turn| turn.output_token_cap()),
+                    tool_choice: orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).and_then(|input| input.tool_choice.clone()),
+                    parallel_tool_calls: orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).and_then(|input| input.parallel_tool_calls),
                     cache_strategy: orchestrator.cache_strategy.clone(),
                     thinking_config: None,
                     anthropic_system: None,
@@ -2560,6 +2582,7 @@ impl Orchestrator {
                             match &event {
                                 NormalizedEvent::MessageDelta { text } => {
                                     assistant_text.push_str(text);
+                                    caller_visible_assistant_text.push_str(text);
                                 }
                                 NormalizedEvent::ToolCallDelta {
                                     call_index,
@@ -2579,7 +2602,9 @@ impl Orchestrator {
                                         acc.arguments.push_str(delta);
                                     }
                                 }
-                                NormalizedEvent::ToolCallComplete { .. } => {
+                                NormalizedEvent::ToolCallComplete { call_index, id, name, arguments_json } => {
+                                    let acc = tool_accumulators.entry(*call_index).or_default();
+                                    acc.id = Some(id.clone()); acc.name = Some(name.clone()); acc.arguments = arguments_json.clone();
                                     has_tool_calls = true;
                                     finish_reason = Some("tool_calls".to_string());
                                 }
@@ -2587,6 +2612,10 @@ impl Orchestrator {
                                     saw_terminal = true;
                                     // Don't yield Done yet if we have tool calls to process
                                     if !has_tool_calls {
+                                        if orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_some_and(|input| matches!(input.tool_choice, Some(super::ToolChoice::Required | super::ToolChoice::Named(_)))) {
+                                            yield NormalizedEvent::Error { message: "Provider completed without required caller tool call".into(), code: Some("client_tool_choice_not_honored".into()) };
+                                            return;
+                                        }
                                         yield event;
                                         return;
                                     }
@@ -2599,7 +2628,12 @@ impl Orchestrator {
                                 }
                                 _ => {}
                             }
-                            yield event;
+                            // Caller-facing tool metadata is published only after durable handoff.
+                            // Raw provider IDs remain private so no unresumable call escapes.
+                            if !(orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_some()
+                                && matches!(event, NormalizedEvent::ToolCallDelta { .. } | NormalizedEvent::ToolCallComplete { .. })) {
+                                yield event;
+                            }
                         }
                         Err(e) => {
                             tracing::warn!(
@@ -2642,7 +2676,7 @@ impl Orchestrator {
                 );
 
                 // Build tool calls from accumulators
-                let tool_calls: Vec<ToolCall> = tool_accumulators
+                let mut tool_calls: Vec<ToolCall> = tool_accumulators
                     .values()
                     .filter_map(|acc| {
                         let id = acc.id.clone()?;
@@ -2658,6 +2692,40 @@ impl Orchestrator {
                     })
                     .collect();
 
+                let client_input = orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools());
+                let batch_id = Uuid::new_v4().to_string();
+                for call in &mut tool_calls {
+                    if client_input.is_some_and(|input| input.owns(&call.function.name)) {
+                        call.id = format!("uar_client_{}_{}", batch_id, Uuid::new_v4());
+                        // Persist exactly the host-redacted public argument bytes.
+                        // Schema validation below runs after projection as well.
+                        call.function.arguments = orchestrator.secret_scrubber.project_json_text(&call.function.arguments);
+                    }
+                }
+                assistant_text = orchestrator.secret_scrubber.scrub(&assistant_text);
+                let caller_calls = tool_calls.iter().filter(|call| client_input.is_some_and(|input| input.owns(&call.function.name))).cloned().collect::<Vec<_>>();
+                if let Some(input) = client_input {
+                    let choice_honored = match &input.tool_choice {
+                        Some(super::ToolChoice::None) => tool_calls.is_empty(),
+                        Some(super::ToolChoice::Required) => !caller_calls.is_empty(),
+                        Some(super::ToolChoice::Named(name)) => !caller_calls.is_empty() && caller_calls.iter().all(|call| &call.function.name == name),
+                        _ => true,
+                    };
+                    if tool_calls.is_empty() || !choice_honored {
+                        yield NormalizedEvent::Error { message: "Provider returned incomplete tool calls or did not honor tool choice".into(), code: Some("client_tool_choice_not_honored".into()) }; return;
+                    }
+                    if input.parallel_tool_calls == Some(false) && tool_calls.len() > 1 {
+                        yield NormalizedEvent::Error { message: "Provider returned parallel caller calls when disabled".into(), code: Some("client_tool_choice_not_honored".into()) }; return;
+                    }
+                    for call in &caller_calls {
+                        let valid = input.tools.iter().find(|schema| schema["function"]["name"].as_str() == Some(call.function.name.as_str()))
+                            .and_then(|schema| crate::uar::tools::validate::compile(&schema["function"]["parameters"]).ok())
+                            .is_some_and(|validator| crate::uar::tools::validate::validate(&validator, &call.function.arguments).is_ok());
+                        if !valid {
+                            yield NormalizedEvent::Error { message: "Provider returned invalid caller tool arguments".into(), code: Some("invalid_client_tool_arguments".into()) }; return;
+                        }
+                    }
+                }
                 if tool_calls.is_empty() {
                     tracing::warn!(
                         request_id = %request_id,
@@ -2698,6 +2766,13 @@ impl Orchestrator {
                     );
                 }
 
+                if client_input.is_some() {
+                    for (call_index, call) in tool_calls.iter().enumerate() {
+                        if !client_input.is_some_and(|input| input.owns(&call.function.name)) {
+                            yield NormalizedEvent::ToolCallComplete { call_index, id: call.id.clone(), name: call.function.name.clone(), arguments_json: call.function.arguments.clone() };
+                        }
+                    }
+                }
                 // Add assistant message with tool calls to history
                 message_json.push(serde_json::json!({
                     "role": "assistant",
@@ -2925,6 +3000,7 @@ impl Orchestrator {
                 // Execute mutating, approval-gated, sandboxed, or unknown calls
                 // sequentially to preserve policy and side-effect ordering.
                 for (idx, tool_call) in tool_calls.iter().enumerate() {
+                    if client_input.is_some_and(|input| input.owns(&tool_call.function.name)) { continue; }
                     let tool_name = &tool_call.function.name;
                     let sequence = (u64::from(step) << 32) | idx as u64;
                     let Some(descriptor) = descriptors.get(tool_name) else {
@@ -3192,6 +3268,42 @@ impl Orchestrator {
                     );
                 }
 
+                if !caller_calls.is_empty() {
+                    let saved = async {
+                        let input = client_input.ok_or_else(|| anyhow::anyhow!("client_tools_missing"))?;
+                        let turn = orchestrator.resolved_turn.as_ref().ok_or_else(|| anyhow::anyhow!("client_tool_turn_missing"))?;
+                        let owner = turn.verified_owner().ok_or_else(|| anyhow::anyhow!("client_tools_require_authenticated_owner"))?;
+                        let store = orchestrator.canonical_receipt_store.as_ref().ok_or_else(|| anyhow::anyhow!("durable_client_tools_unsupported"))?;
+                        anyhow::ensure!(store.supports_durable_client_tools(), "durable_client_tools_unsupported");
+                        let mut visible = input.visible_history.as_ref().unwrap_or(&input.history).clone();
+                        visible.push(serde_json::json!({"role":"assistant", "content":orchestrator.secret_scrubber.scrub(&caller_visible_assistant_text), "tool_calls":caller_calls}));
+                        let pending = crate::uar::persistence::client_tools::ClientToolContinuation {
+                            owner_key: owner.session_owner_key()?, tenant_id: owner.tenant_id().map(str::to_owned),
+                            agent_id: turn.artifact().id.clone(), batch_id: batch_id.clone(), protocol: input.protocol.clone(),
+                            source_run_id: turn.environment().run_id.clone(), source_settled: false,
+                            session_id: Some(turn.environment().session_id.clone()),
+                            graph_state: orchestrator.client_graph_state.clone(),
+                            output_token_cap: turn.output_token_cap(),
+                            budget_snapshot: Some(orchestrator.client_tool_budget.as_ref()
+                                .ok_or_else(|| anyhow::anyhow!("client_tool_budget_missing"))?.snapshot_client_handoff()?),
+                            canonical_transcript: serde_json::Value::Array(canonical_message_json.clone()),
+                            visible_transcript: serde_json::Value::Array(visible),
+                            client_schemas: serde_json::json!({"tools":input.tools,"tool_choice":input.tool_choice,"parallel_tool_calls":input.parallel_tool_calls}),
+                            pending_call_ids: caller_calls.iter().map(|call| call.id.clone()).collect(),
+                            state: crate::uar::persistence::client_tools::ClientToolContinuationState::Pending,
+                            result_batch: None, completed_response: None, completed_events: Vec::new(),
+                        };
+                        anyhow::ensure!(store.create_client_tool_continuation(&pending).await?, "client_tool_batch_conflict");
+                        Ok::<(), anyhow::Error>(())
+                    }.await;
+                    if let Err(error) = saved {
+                        yield NormalizedEvent::Error { message: error.to_string(), code: Some("client_tool_handoff_persistence_failed".into()) };
+                        return;
+                    }
+                    yield NormalizedEvent::ClientToolsRequested { batch_id, calls: caller_calls };
+                    yield NormalizedEvent::Done;
+                    return;
+                }
                 tracing::info!(
                     request_id = %request_id,
                     iteration = iteration,
@@ -3244,6 +3356,9 @@ impl Orchestrator {
         let req = LlmRequest {
             messages: message_json,
             tools,
+            output_token_cap: None,
+            tool_choice: None,
+            parallel_tool_calls: None,
             cache_strategy: None,
             thinking_config: None,
             anthropic_system: None,

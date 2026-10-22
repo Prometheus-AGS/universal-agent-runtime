@@ -388,6 +388,15 @@ where
 
 pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
     match event {
+        NormalizedEvent::ClientToolsRequested { run_id, batch_id, calls } => Some((
+            "agui.client_tools.requested",
+            serde_json::json!({
+                "kind": "client_tools",
+                "request_id": run_id,
+                "batch_id": batch_id,
+                "calls": calls
+            }),
+        )),
         NormalizedEvent::RunStart { run_id, agent_id } => Some((
             "agui.stream.start",
             serde_json::json!({

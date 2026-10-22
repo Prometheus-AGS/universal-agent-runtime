@@ -121,11 +121,24 @@ impl AnthropicDriver {
 
         MessagesRequest {
             model: self.model.clone(),
-            max_tokens: self.max_tokens,
+            max_tokens: req.output_token_cap.map_or(self.max_tokens, |cap| self.max_tokens.min(cap)),
             system,
             messages,
             tools,
-            tool_choice: None,
+            tool_choice: match req.tool_choice.as_ref() {
+                Some(super::ToolChoice::None) => Some(ToolChoice::None),
+                Some(super::ToolChoice::Required) => Some(ToolChoice::Any {
+                    disable_parallel_tool_use: req.parallel_tool_calls.map(|parallel| !parallel),
+                }),
+                Some(super::ToolChoice::Named(name)) => Some(ToolChoice::Tool {
+                    name: name.clone(),
+                    disable_parallel_tool_use: req.parallel_tool_calls.map(|parallel| !parallel),
+                }),
+                Some(super::ToolChoice::Auto) | None if !req.tools.is_empty() => Some(ToolChoice::Auto {
+                    disable_parallel_tool_use: req.parallel_tool_calls.map(|parallel| !parallel),
+                }),
+                _ => None,
+            },
             stream: true,
             thinking,
         }
@@ -269,6 +282,7 @@ impl AnthropicDriver {
                         .get("parameters")
                         .cloned()
                         .unwrap_or(serde_json::json!({"type": "object", "properties": {}})),
+                    strict: func.get("strict").and_then(serde_json::Value::as_bool),
                     cache_control: None,
                 })
             })
@@ -315,11 +329,36 @@ impl LlmDriver for AnthropicDriver {
         &self,
         req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
+        if req.output_token_cap == Some(0) {
+            return Err(ProviderError::invalid_request("Output token cap must be positive").into());
+        }
+        req.validate_tool_controls()
+            .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
+        // Reject malformed declarations before the converter can omit a tool.
+        for tool in &req.tools {
+            serde_json::from_value::<liter_llm::ChatCompletionTool>(tool.clone())
+                .map_err(|error| ProviderError::invalid_request(format!("invalid tool declaration: {error}")))?;
+        }
+        if matches!(req.tool_choice.as_ref(), Some(super::ToolChoice::None))
+            && req.parallel_tool_calls.is_some()
+        {
+            return Err(ProviderError::invalid_request(
+                "provider capability error: parallel_tool_calls cannot accompany Anthropic tool_choice none",
+            ).into());
+        }
         if req.budget_contract.is_some() {
             return Err(ProviderError::invalid_request(
                 "Anthropic driver has no supported final-wire budget contract",
             )
             .into());
+        }
+        if matches!(req.tool_choice.as_ref(), Some(super::ToolChoice::Required | super::ToolChoice::Named(_)))
+            && req.thinking_config.as_ref().or(self.default_thinking_config.as_ref())
+                .is_some_and(|thinking| thinking.thinking_type == "enabled")
+        {
+            return Err(ProviderError::invalid_request(
+                "provider capability error: Anthropic extended thinking cannot force tool use",
+            ).into());
         }
         let api_request = self.build_request_with_strategy(&req);
 
@@ -500,6 +539,9 @@ mod tests {
                 }),
             ],
             tools: Vec::new(),
+            tool_choice: None,
+            parallel_tool_calls: None,
+            output_token_cap: None,
             cache_strategy,
             thinking_config: None,
             anthropic_system: None,

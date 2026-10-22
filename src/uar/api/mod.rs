@@ -59,6 +59,8 @@ pub mod memory_admin;
 #[cfg(feature = "server")]
 pub mod openai;
 #[cfg(feature = "server")]
+pub mod client_tools;
+#[cfg(feature = "server")]
 pub mod openapi;
 #[cfg(feature = "server")]
 pub mod presentations;

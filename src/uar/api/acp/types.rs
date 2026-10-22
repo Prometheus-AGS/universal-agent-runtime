@@ -93,6 +93,37 @@ pub struct AcpCapabilities {
     pub multi_turn: bool,
 }
 
+/// Caller-owned function declarations and canonical continuation messages.
+/// Tool selection uses the shared tagged `type`/`name` representation.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AcpClientTools {
+    #[serde(default)]
+    pub tools: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<crate::llm::ToolChoice>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parallel_tool_calls: Option<bool>,
+    /// Exact visible predecessor transcript plus a complete tool-result batch.
+    #[serde(default)]
+    pub history: Vec<Value>,
+}
+
+impl AcpClientTools {
+    pub fn into_input(self) -> crate::uar::runtime::turn::client_tools::ClientToolInput {
+        crate::uar::runtime::turn::client_tools::ClientToolInput {
+            tools: self.tools,
+            tool_choice: self.tool_choice,
+            parallel_tool_calls: self.parallel_tool_calls,
+            history: self.history,
+            visible_history: None,
+            graph_state: None,
+            budget_snapshot: None, output_token_cap: None,
+            protocol: "acp".to_owned(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AcpSession {
     pub session_id: String,
@@ -101,6 +132,8 @@ pub struct AcpSession {
     pub last_active: chrono::DateTime<chrono::Utc>,
     #[serde(default)]
     pub metadata: Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_tools: Option<AcpClientTools>,
 }
 
 impl AcpSession {
@@ -112,6 +145,7 @@ impl AcpSession {
             created_at: now,
             last_active: now,
             metadata: Value::Object(Default::default()),
+            client_tools: None,
         }
     }
 }
@@ -119,7 +153,10 @@ impl AcpSession {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AcpRunRequest {
     pub session_id: String,
+    #[serde(default)]
     pub input: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_tools: Option<AcpClientTools>,
     #[serde(default)]
     pub stream: bool,
     #[serde(default)]
@@ -148,6 +185,12 @@ pub enum AcpRunEvent {
         tool: String,
         output: Value,
         ok: bool,
+    },
+    /// The caller must execute these calls and submit their complete results.
+    ClientToolsRequested {
+        run_id: String,
+        batch_id: String,
+        calls: Vec<crate::llm::ToolCall>,
     },
     RunDone {
         run_id: String,

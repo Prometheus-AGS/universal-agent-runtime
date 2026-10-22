@@ -1,0 +1,19 @@
+# ACP caller tools handoff
+
+Execute phase. VERIFICATION CLOSED. All commands were source inspection or implementation/documentation writes. No tests, checks, compiler, formatter, builds, review gates, commit or push ran.
+
+Owned files changed:
+- src/uar/api/acp/types.rs: AcpClientTools wire declaration (tools, tagged tool_choice, parallel_tool_calls, history), optional session/run declaration, caller-tools event type.
+- src/uar/api/acp/handler.rs: owner-scoped session declarations; run override/inheritance; shared prepare/claim/replay and completion; native runs/submit_tool_results operation; complete canonical result-batch validation through the shared service; tenant/agent/session binding; durable batch lookup in runs/get. Caller-tool execution collects terminal RunManager events and commits a continuation response before returning it. Subscribing before reading history avoids losing fast completion. Broadcast lag recovers retained history; failed recovery errors rather than dropping calls. Exact matching completed results replay without new execution. A durable authenticated batch can restore its session after process restart.
+- src/uar/api/acp/routes.rs: runs/submit_tool_results streaming support; caller-tool events replay only after response persistence and end with acp_result containing continuation history. Other runs keep their existing live streaming behavior.
+- src/uar/api/acp/mod.rs: native JSON-RPC extension contract and buffered streaming limitation documented.
+
+Wire: sessions/create and runs/create accept client_tools:{tools:[OpenAI function schema],tool_choice:{type:auto|none|required|named,name?:string},parallel_tool_calls?:bool,history:canonicalMessages[]}. Session declarations cannot carry history. runs/create response for caller tools returns run_id/status/output/events and, when required, batch_id/client_tools with exact visible predecessor history. Append complete contiguous role=tool results (tool_call_id/content) and submit runs/submit_tool_results with session_id and client_tools; input is optional for this continuation. Results-only without predecessor history are rejected by shared preparation. runs/get includes pending_client_tools and client_tool_continuation with durable state and visible history.
+
+Integration: common ClientToolInput lives runtime/turn/client_tools.rs. Persistence service prepare/complete/load_by_call_id and immutable row session_id/source_run_id were coordinated directly with persistence/runtime writers. Runtime guarantees ClientToolsRequested is persisted then followed by terminal RunDone/RunDoneWithUsage. Parent owns exports and any external documentation/spec deltas.
+
+Uncomfortable limitations: caller-tool SSE is buffered until manager termination, which can increase time to first event. Fresh request disconnect does not undo an already claimed continuation; interruption preserves claimed state and requires operator recovery, matching shared fail-closed semantics. ACP sessions remain process-local outside durable caller-tool batches. Deleting the process-local session does not cancel an already durable pending batch; authenticated result submission can restore its exact session. No executable evidence establishes compilation, provider behavior, restart, retry or protocol acceptance.
+
+Cohort 11.1: after collecting caller-tool run events, ACP now awaits manager.await_settled_run_status and accepts only Done before completion/public response. Error, Cancelled or join failure becomes JSON-RPC error. No verification ran.
+
+Cohort 11.1 durable cleanup acknowledgment: ACP calls confirm_handoff_for_run for each nonempty pending batch before public pending state/events/response. Same owner/tenant/agent/run scope; only actual settled Done yields the durable source_settled acknowledgment consumed by cold continuation admission. No verification ran.

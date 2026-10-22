@@ -100,6 +100,9 @@ impl GraphNode for RouterNode {
         let mut req = LlmRequest {
             messages,
             tools: Vec::new(),
+            output_token_cap: None,
+            tool_choice: None,
+            parallel_tool_calls: None,
             cache_strategy: ctx.cache_strategy.clone(),
             thinking_config: None,
             anthropic_system: None,

@@ -24,6 +24,7 @@ pub mod durable;
 #[cfg(feature = "server")]
 pub mod v1;
 pub mod client;
+pub mod client_tools;
 pub mod contract;
 #[cfg(feature = "server")]
 pub mod discovery;

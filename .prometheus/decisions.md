@@ -2320,3 +2320,8 @@ Operator excluded the Boss repository from the current scope. Its pin and packag
 ## 2026-10-21 — Operator stops testing and requests publication
 
 Operator revoked further verification, requested commit/push and PR418 ready for merge. Stopped owned Cargo/compiler work with SIGTERM: Cargo-15/wrapper143, no new test result. Other two targets not started. Follow-up issue421 captures all remaining gaps. KBD3200/plan90 preserves pending acceptance; verification CLOSED. Source unchanged; scoped documentation publication uses earlier authorized hook exception, no hook checks run.
+
+## 2026-10-22 — Caller tools across five interfaces
+Operator selected caller execution alongside internal host tools, with durable continuation retaining hidden transcript, graph cursor and cumulative accounting. Function declarations never bind executables. Native wire contracts share one lifecycle; ACP means the existing Agent Communication Protocol endpoint. Frozen1.2.0 remains unchanged; newreleasecandidate1.2.1 only after separate gates/publication authorization. Verification CLOSED.
+
+2026-10-22: Operator explicitly requested immediate1.2.1 source/Docker tag publication before remaining acceptance. Preserve1.2.0 exact index/tags. Publish with acceptancepending disclosure; publication is not certification. Resume separately authorized acceptance after publication.

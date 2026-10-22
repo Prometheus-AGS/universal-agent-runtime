@@ -4252,6 +4252,13 @@ struct AnthropicMessagesRequest {
     system: Option<AnthropicSystemInput>,
     #[serde(default)]
     tools: Vec<AnthropicToolInput>,
+    /// SDK-required generation ceiling; intersects authorized host limits.
+    #[serde(default)]
+    max_tokens: Option<u32>,
+    #[serde(default)]
+    tool_choice: Option<AnthropicToolChoiceInput>,
+    #[serde(default)]
+    parallel_tool_calls: Option<bool>,
     #[serde(default)]
     stream: bool,
     /// Optional UAR conversation whose persisted policy should apply.
@@ -4276,6 +4283,26 @@ struct AnthropicMessagesRequest {
     prompt_caching_enabled: Option<bool>,
     #[serde(flatten)]
     _extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum AnthropicToolChoiceInput {
+    Auto { #[serde(default)] disable_parallel_tool_use: Option<bool> },
+    None,
+    Any { #[serde(default)] disable_parallel_tool_use: Option<bool> },
+    Tool { name: String, #[serde(default)] disable_parallel_tool_use: Option<bool> },
+}
+
+impl AnthropicToolChoiceInput {
+    fn normalize(&self) -> (crate::llm::ToolChoice, Option<bool>) {
+        match self {
+            Self::Auto { disable_parallel_tool_use } => (crate::llm::ToolChoice::Auto, disable_parallel_tool_use.map(|disabled| !disabled)),
+            Self::None => (crate::llm::ToolChoice::None, None),
+            Self::Any { disable_parallel_tool_use } => (crate::llm::ToolChoice::Required, disable_parallel_tool_use.map(|disabled| !disabled)),
+            Self::Tool { name, disable_parallel_tool_use } => (crate::llm::ToolChoice::Named(name.clone()), disable_parallel_tool_use.map(|disabled| !disabled)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -4329,6 +4356,8 @@ enum AnthropicSystemInput {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 struct AnthropicToolInput {
+    #[serde(default)]
+    strict: Option<bool>,
     #[serde(default)]
     name: String,
     #[serde(default)]
@@ -4525,7 +4554,7 @@ fn ensure_toolu_id(id: &str) -> String {
     if trimmed.is_empty() {
         return format!("toolu_{}", Uuid::new_v4().simple());
     }
-    if trimmed.starts_with("toolu_") {
+    if trimmed.starts_with("toolu_") || trimmed.starts_with("uar_client_") {
         trimmed.to_string()
     } else {
         format!("toolu_{trimmed}")
@@ -4782,20 +4811,15 @@ fn convert_anthropic_messages_to_openai(req: &AnthropicMessagesRequest) -> Vec<V
 }
 
 fn convert_anthropic_tools_to_openai(tools: &[AnthropicToolInput]) -> Vec<Value> {
-    tools
-        .iter()
-        .filter(|tool| !tool.name.trim().is_empty())
-        .map(|tool| {
-            json!({
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description.clone().unwrap_or_default(),
-                    "parameters": tool.input_schema.clone().unwrap_or_else(|| json!({ "type": "object", "properties": {} }))
-                }
-            })
-        })
-        .collect()
+    tools.iter().map(|tool| {
+        let mut function = json!({
+            "name": tool.name,
+            "parameters": tool.input_schema.clone().unwrap_or_else(|| json!({"type":"object","properties":{}})),
+        });
+        if let Some(description) = &tool.description { function["description"] = json!(description); }
+        if let Some(strict) = tool.strict { function["strict"] = json!(strict); }
+        json!({"type":"function","function":function})
+    }).collect()
 }
 
 async fn resolve_anthropic_model(
@@ -4875,12 +4899,246 @@ async fn authorized_http_model(
         .map_err(|_| (StatusCode::FORBIDDEN, "credential_source_denied"))
 }
 
+enum BoundAnthropicProjection {
+    Wire(&'static str, Value),
+    Complete(Value),
+}
+
+async fn api_bound_anthropic_messages(
+    state: AppState,
+    user: Option<UserContext>,
+    req: AnthropicMessagesRequest,
+    artifact: crate::uar::domain::artifact::AgentArtifact,
+    model: ResolvedModel,
+    history: Vec<Value>,
+    tool_choice: Option<crate::llm::ToolChoice>,
+    parallel_tool_calls: Option<bool>,
+    caching_enabled: bool,
+) -> Response {
+    let Some(user) = user else {
+        return anthropic_error_response(StatusCode::UNAUTHORIZED, "Authenticated owner required for bound-agent Messages");
+    };
+    let owner = match user.session_owner_key() {
+        Ok(owner) => owner,
+        Err(_) => return anthropic_error_response(StatusCode::FORBIDDEN, "Invalid Messages principal"),
+    };
+    let Some(store) = state.persistence.as_ref().cloned().filter(|store| store.supports_durable_client_tools()) else {
+        return anthropic_error_response(StatusCode::SERVICE_UNAVAILABLE, "Durable caller-tool persistence is unavailable");
+    };
+    let input = crate::uar::runtime::turn::client_tools::ClientToolInput {
+        tools: convert_anthropic_tools_to_openai(&req.tools), tool_choice, parallel_tool_calls,
+        history, visible_history: None, graph_state: None, output_token_cap: req.max_tokens,
+        budget_snapshot: None, protocol: "anthropic".to_owned(),
+    };
+    if let Err(error) = input.validate() {
+        return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
+    }
+    if let Some(call_id) = input.history.last()
+        .filter(|message| message.get("role").and_then(Value::as_str) == Some("tool"))
+        .and_then(|message| message.get("tool_call_id")).and_then(Value::as_str)
+    {
+        match crate::uar::api::client_tools::load_by_call_id(store.as_ref(), &owner,
+            user.tenant_id.as_ref().map(|tenant| tenant.as_str()), &artifact.id, call_id).await {
+            Ok(Some(row)) if row.protocol == "anthropic"
+                && req.session_id.as_ref().is_none_or(|session| row.session_id.as_ref() == Some(session)) => {}
+            Ok(_) => return anthropic_error_response(StatusCode::CONFLICT, "Caller-tool session binding mismatch"),
+            Err(error) => return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string()),
+        }
+    }
+    let (input, claim) = match crate::uar::api::client_tools::prepare(state.run_manager.as_ref(), store.as_ref(), &owner,
+        user.tenant_id.as_ref().map(|tenant| tenant.as_str()), &artifact.id, &input).await {
+        Ok(crate::uar::api::client_tools::ClientToolPreparation::Fresh(input)) => (input, None),
+        Ok(crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim }) => (input, Some(claim)),
+        Ok(crate::uar::api::client_tools::ClientToolPreparation::Replay { response, events }) => {
+            if !req.stream { return Json(response).into_response(); }
+            let replay = futures::stream::iter(events.into_iter().map(|event| {
+                let name = event.get("event").and_then(Value::as_str).unwrap_or("error").to_owned();
+                let payload = event.get("data").cloned().unwrap_or(Value::Null);
+                Ok::<Event, std::convert::Infallible>(anthropic_sse_event(&name, payload))
+            }));
+            return Sse::new(replay).into_response();
+        }
+        Err(error) => return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string()),
+    };
+    let caller_agent_id = artifact.id.clone();
+    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, String::new()).with_user_context(&user) {
+        Ok(request) => request,
+        Err(error) => return anthropic_error_response(StatusCode::FORBIDDEN, &error.to_string()),
+    };
+    request.session_id = claim.as_ref().map_or(req.session_id, |claim| claim.session_id.clone());
+    request.client_tools = Some(input);
+    request.output_token_cap = req.max_tokens;
+    request.host_policy_constraint = Some(crate::uar::domain::policy::RunPolicy {
+        model: Some(crate::uar::domain::policy::ModelRoute {
+            provider_id: model.provider_id.clone(), model_id: model.model_id.clone(),
+        }),
+        prompt_caching_enabled: Some(caching_enabled),
+        ..Default::default()
+    });
+    let (run_id, startup, mut receiver) = match state.run_manager.execute_request_observed(request).await {
+        Ok(observed) => observed,
+        Err(error) => return anthropic_error_response(StatusCode::BAD_GATEWAY, &error.to_string()),
+    };
+    let response_model = if req.model.is_empty() { model.model_id } else { req.model };
+    let projection = async_stream::stream! {
+        use crate::uar::domain::events::NormalizedEvent as RunEvent;
+        let message_id = format!("msg_{}", Uuid::new_v4().simple());
+        let mut recorded = Vec::<Value>::new();
+        let start = json!({"type":"message_start","message":{
+            "id":message_id,"type":"message","role":"assistant","model":response_model,
+            "content":[],"stop_reason":null,"stop_sequence":null,"usage":AnthropicUsage::default()
+        }});
+        recorded.push(json!({"event":"message_start","data":start}));
+        yield Ok::<_, anyhow::Error>(BoundAnthropicProjection::Wire("message_start", start));
+        let mut startup = std::collections::VecDeque::from(startup);
+        let mut text = String::new();
+        let mut text_open = false;
+        let mut next_index = 0usize;
+        let mut tool_blocks = Vec::<Value>::new();
+        let mut staged_tool_wire = Vec::<(&'static str, Value)>::new();
+        let mut usage = AnthropicUsage::default();
+        let mut failed = None;
+        loop {
+            let event = if let Some(event) = startup.pop_front() { event } else {
+                match receiver.recv().await {
+                    Ok(event) => event,
+                    Err(error) => { yield Err(anyhow::anyhow!("Messages run observation failed: {error}")); break; }
+                }
+            };
+            let mut wire = Vec::<(&'static str, Value)>::new();
+            let mut terminal = false;
+            match event.event {
+                RunEvent::ChatDelta { text_delta, .. } => {
+                    if !text_open {
+                        text_open = true;
+                        wire.push(("content_block_start", json!({"type":"content_block_start","index":next_index,"content_block":{"type":"text","text":""}})));
+                    }
+                    text.push_str(&text_delta);
+                    wire.push(("content_block_delta", json!({"type":"content_block_delta","index":next_index,"delta":{"type":"text_delta","text":text_delta}})));
+                }
+                RunEvent::ClientToolsRequested { calls, .. } => {
+                    if text_open {
+                        staged_tool_wire.push(("content_block_stop", json!({"type":"content_block_stop","index":next_index})));
+                        text_open = false;
+                        next_index += 1;
+                    }
+                    for call in calls {
+                        let input: Value = match serde_json::from_str(&call.function.arguments) {
+                            Ok(input) => input,
+                            Err(error) => { failed = Some(format!("Invalid caller-tool arguments: {error}")); break; }
+                        };
+                        let block = json!({"type":"tool_use","id":call.id,"name":call.function.name,"input":input});
+                        staged_tool_wire.push(("content_block_start", json!({"type":"content_block_start","index":next_index,"content_block":{"type":"tool_use","id":call.id,"name":call.function.name,"input":{}}})));
+                        staged_tool_wire.push(("content_block_delta", json!({"type":"content_block_delta","index":next_index,"delta":{"type":"input_json_delta","partial_json":input.to_string()}})));
+                        staged_tool_wire.push(("content_block_stop", json!({"type":"content_block_stop","index":next_index})));
+                        tool_blocks.push(block);
+                        next_index += 1;
+                    }
+                }
+                RunEvent::Error { message, .. } => failed = Some(message),
+                RunEvent::Cancelled { .. } => { failed = Some("Run cancelled".to_owned()); terminal = true; }
+                RunEvent::RunDoneWithUsage { input_tokens, output_tokens, .. } => {
+                    usage.input_tokens = input_tokens.unwrap_or(0);
+                    usage.output_tokens = output_tokens.unwrap_or(0);
+                    terminal = true;
+                }
+                RunEvent::RunDone { .. } => terminal = true,
+                _ => {}
+            }
+            for (name, payload) in wire {
+                recorded.push(json!({"event":name,"data":payload}));
+                yield Ok(BoundAnthropicProjection::Wire(name, payload));
+            }
+            if !terminal { continue; }
+            match state.run_manager.await_settled_run_status(&run_id).await {
+                Ok(crate::uar::domain::runs::RunStatus::Done) => {}
+                Ok(status) => {
+                    yield Err(anyhow::anyhow!("Messages run did not settle successfully: {status:?}"));
+                    break;
+                }
+                Err(error) => { yield Err(error); break; }
+            }
+            if let Some(message) = failed {
+                yield Err(anyhow::anyhow!(message));
+                break;
+            }
+            if !tool_blocks.is_empty() {
+                if let Err(error) = crate::uar::api::client_tools::confirm_handoff_for_run(
+                    state.run_manager.as_ref(), store.as_ref(), &owner,
+                    user.tenant_id.as_ref().map(|tenant| tenant.as_str()), &caller_agent_id, &run_id,
+                ).await {
+                    yield Err(error);
+                    break;
+                }
+            }
+            for (name, payload) in staged_tool_wire {
+                recorded.push(json!({"event":name,"data":payload}));
+                yield Ok(BoundAnthropicProjection::Wire(name, payload));
+            }
+            if text_open {
+                let payload = json!({"type":"content_block_stop","index":next_index});
+                recorded.push(json!({"event":"content_block_stop","data":payload}));
+                yield Ok(BoundAnthropicProjection::Wire("content_block_stop", payload));
+            }
+            let stop = if tool_blocks.is_empty() { "end_turn" } else { "tool_use" };
+            let mut content = Vec::<Value>::new();
+            if !text.is_empty() { content.push(json!({"type":"text","text":text})); }
+            content.extend(tool_blocks);
+            let response = json!({"id":message_id,"type":"message","role":"assistant","model":response_model,
+                "content":content,"stop_reason":stop,"stop_sequence":null,"usage":usage});
+            let delta = json!({"type":"message_delta","delta":{"stop_reason":stop,"stop_sequence":null},"usage":usage});
+            let end = json!({"type":"message_stop"});
+            recorded.push(json!({"event":"message_delta","data":delta}));
+            recorded.push(json!({"event":"message_stop","data":end}));
+            if let Some(claim) = &claim {
+                if let Err(error) = crate::uar::api::client_tools::complete(store.as_ref(), claim, response.clone(), recorded).await {
+                    yield Err(error);
+                    break;
+                }
+            }
+            yield Ok(BoundAnthropicProjection::Wire("message_delta", delta));
+            yield Ok(BoundAnthropicProjection::Wire("message_stop", end));
+            yield Ok(BoundAnthropicProjection::Complete(response));
+            break;
+        }
+    };
+    if req.stream {
+        let stream = async_stream::stream! {
+            futures::pin_mut!(projection);
+            while let Some(item) = projection.next().await {
+                match item {
+                    Ok(BoundAnthropicProjection::Wire(name, payload)) => yield Ok::<Event, std::convert::Infallible>(anthropic_sse_event(name, payload)),
+                    Ok(BoundAnthropicProjection::Complete(_)) => {}
+                    Err(error) => {
+                        yield Ok(anthropic_sse_event("error", json!({"type":"error","error":{"type":"api_error","message":error.to_string()}})));
+                        break;
+                    }
+                }
+            }
+        };
+        Sse::new(stream).into_response()
+    } else {
+        futures::pin_mut!(projection);
+        while let Some(item) = projection.next().await {
+            match item {
+                Ok(BoundAnthropicProjection::Complete(response)) => return Json(response).into_response(),
+                Ok(_) => {}
+                Err(error) => return anthropic_error_response(StatusCode::BAD_GATEWAY, &error.to_string()),
+            }
+        }
+        anthropic_error_response(StatusCode::BAD_GATEWAY, "Messages run ended without a response")
+    }
+}
+
 async fn api_messages(
     State(state): State<AppState>,
     headers: HeaderMap,
     user_ctx: Option<axum::Extension<UserContext>>,
     Json(req): Json<AnthropicMessagesRequest>,
 ) -> Response {
+    if req.max_tokens == Some(0) {
+        return anthropic_error_response(StatusCode::BAD_REQUEST, "max_tokens must be positive");
+    }
     if req.messages.is_empty() {
         return anthropic_error_response(
             StatusCode::BAD_REQUEST,
@@ -5020,34 +5278,30 @@ async fn api_messages(
         None => None,
     };
 
-    let mut openai_messages = convert_anthropic_messages_to_openai(&req);
-    if let Some(agent) = &bound_agent {
-        // Mirror the run pipeline's agent-identity fragments
-        // (uar/runtime/turn/builtin.rs artifact_fragments): the agent system
-        // prompt first, then its host instructions. Client-supplied system
-        // text is kept after the agent prompt, matching chat completions.
-        let mut agent_system = Vec::new();
-        if !agent.prompt.system.trim().is_empty() {
-            agent_system.push(json!({
-                "role": "system",
-                "content": agent.prompt.system
-            }));
-        }
-        for instruction in &agent.prompt.instructions {
-            if !instruction.trim().is_empty() {
-                agent_system.push(json!({
-                    "role": "system",
-                    "content": instruction
-                }));
-            }
-        }
-        agent_system.append(&mut openai_messages);
-        openai_messages = agent_system;
+    let controls = req.tool_choice.as_ref().map(AnthropicToolChoiceInput::normalize);
+    let parallel = controls.as_ref().and_then(|(_, parallel)| *parallel);
+    if parallel.is_some() && req.parallel_tool_calls.is_some() && parallel != req.parallel_tool_calls {
+        return anthropic_error_response(StatusCode::BAD_REQUEST, "Conflicting parallel tool controls");
     }
-
+    if req.tools.iter().any(|tool| !tool._extra.is_empty()) {
+        return anthropic_error_response(StatusCode::BAD_REQUEST, "Unsupported Anthropic tool definition fields");
+    }
+    let tool_choice = controls.map(|(choice, _)| choice);
+    let parallel_tool_calls = parallel.or(req.parallel_tool_calls);
+    let openai_messages = convert_anthropic_messages_to_openai(&req);
+    if let Some(agent) = bound_agent.clone() {
+        if !req._extra.is_empty() {
+            return anthropic_error_response(StatusCode::BAD_REQUEST, "Unsupported request fields for bound-agent Messages execution");
+        }
+        return api_bound_anthropic_messages(state, user_ctx.map(|user| user.0), req, agent,
+            resolved_model, openai_messages, tool_choice, parallel_tool_calls, effective_caching.enabled).await;
+    }
     let mut llm_request = crate::llm::LlmRequest {
         messages: openai_messages,
         tools: convert_anthropic_tools_to_openai(&req.tools),
+        tool_choice,
+        parallel_tool_calls,
+        output_token_cap: req.max_tokens,
         cache_strategy: effective_caching
             .enabled
             .then(crate::llm::anthropic_cache::CacheStrategy::default),
@@ -5076,9 +5330,17 @@ async fn api_messages(
             );
         }
     };
+    if let Err(error) = llm_request.validate_tool_controls() {
+        return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
+    }
     let driver_stream = match driver.stream(llm_request).await {
         Ok(stream) => stream,
-        Err(_) => {
+        Err(error) => {
+            if error.downcast_ref::<crate::llm::ProviderError>()
+                .is_some_and(|error| error.kind == crate::llm::ProviderErrorKind::InvalidRequest)
+            {
+                return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
+            }
             tracing::error!("Anthropic adapter failed to start authorized stream");
             return anthropic_error_response(
                 StatusCode::BAD_GATEWAY,

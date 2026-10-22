@@ -1,0 +1,15 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "authorization": "Operator: Authorize this build once after linker repair,2026-10-22",
+  "session": 48168,
+  "exitCode": 0,
+  "observedOutput": "Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 15s",
+  "artifact": "target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+  "artifactHash": "NOT CHECKED; no standalone identity command authorized",
+  "warning": "Existing vendored SurrealDB OnceLockExt unused import, vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs:12",
+  "scope": "Compilation and linking of production binary with server-full,postgres-backend only. No runtime/tool/restart acceptance.",
+  "tests": "NOT RUN",
+  "serviceStartup": "NOT RUN",
+  "publication": "NONE",
+  "gate": "CLOSED; once-only approval consumed"
+}

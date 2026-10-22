@@ -74,6 +74,8 @@ async fn manager_with_run(captured: bool) -> RunManager {
                 buffer: VecDeque::new(),
                 presentation: None,
                 latest_presentation: None,
+                pending_client_handoff: None,
+                client_handoff_failed: false,
             })),
             completion: None,
             delegation: None,

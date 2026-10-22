@@ -128,6 +128,9 @@ pub struct RunExecutionRequest {
     pub(crate) host_sandbox_constraint:
         Option<crate::uar::runtime::thread::policy_intersection::SandboxPermissions>,
     pub seed_history: Vec<SeedMessage>,
+    pub client_tools: Option<super::client_tools::ClientToolInput>,
+    /// Restriction-only per-response output ceiling admitted by protocol ingress.
+    pub(crate) output_token_cap: Option<u32>,
     /// Validated host history for a cold sidecar session.
     pub(crate) host_history: Option<Vec<Message>>,
     /// Host-selected reasoning override for this run and local children.
@@ -184,6 +187,8 @@ impl RunExecutionRequest {
             a2a_delegation: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
+            client_tools: None,
+            output_token_cap: None,
             host_history: None,
             reasoning_effort: None,
             checkpoint_resume: None,

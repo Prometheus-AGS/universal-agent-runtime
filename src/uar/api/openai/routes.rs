@@ -1,6 +1,5 @@
 use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use super::types::{
-    ChatCompletionChunk, ChatCompletionChunkChoice, ChatCompletionChunkDelta,
     ChatCompletionRequest, ModelCard, ModelList,
 };
 use crate::AppState;
@@ -91,12 +90,9 @@ pub async fn chat_completions(
     let conversation_id = Uuid::new_v4().to_string();
     let created = unix_now_secs();
 
-    // Extract last user message
-    let last_message = req
-        .messages
-        .last()
-        .map(|m| m.content.clone())
-        .unwrap_or_default();
+    if req.messages.is_empty() {
+        return openai_error(StatusCode::BAD_REQUEST, "invalid_request_error", "invalid_messages", "messages must not be empty");
+    }
 
     let agent_id = match req.model.as_str() {
         "default" => "default-agent",
@@ -108,119 +104,272 @@ pub async fn chat_completions(
         Err(error) => return agent_resolution_response(error),
     };
 
-    // Start Run
-    // Note: We are creating a NEW session for each request for simplicity in this adapter
-    // because OpenAI API is stateless (except for message history passed in request).
-    // Ideally we would map thread_id if UAR supported it in context, but UAR sessions are ID-based.
-    // We'll create an ephemeral session ID here.
-    let mut run_request =
-        match crate::uar::runtime::turn::RunExecutionRequest::new(agent, last_message.clone())
-            .with_user_context(&user_context)
-        {
-            Ok(request) => request,
-            Err(_) => {
-                return (StatusCode::UNAUTHORIZED, "Invalid run principal").into_response();
-            }
-        };
-    run_request = run_request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
-    run_request.session_id = Some(conversation_id.clone());
-    run_request.presentation_negotiation = req.presentation_negotiation.clone();
-    let run_id = run_manager.execute_request(run_request).await;
-
-    // Subscribe to events
-    let Some(mut rx) = run_manager.subscribe(&run_id).await else {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to subscribe to run",
-        )
-            .into_response();
+    let input = match req.client_tool_input() {
+        Ok(input) => input,
+        Err(error) => return openai_error(StatusCode::BAD_REQUEST, "invalid_request_error", "invalid_client_tools", error),
     };
-
-    // Convert to SSE stream
-    let stream = async_stream::stream! {
-        let id = Uuid::new_v4().to_string();
-
-        // Yield initial role chunk
-         let initial_chunk = ChatCompletionChunk {
-            id: id.clone(),
-            object: "chat.completion.chunk".to_string(),
-            created,
-            model: req.model.clone(),
-            choices: vec![ChatCompletionChunkChoice {
-                index: 0,
-                delta: ChatCompletionChunkDelta {
-                    role: Some("assistant".to_string()),
-                    content: Some(String::new()),
-                },
-                finish_reason: None,
-            }],
-        };
-        yield Ok::<_, std::convert::Infallible>(json_event(initial_chunk));
-
-        while let Ok(event) = rx.recv().await {
-            match event.event {
-                NormalizedEvent::ChatDelta { text_delta, .. } => {
-                    let chunk = ChatCompletionChunk {
-                        id: id.clone(),
-                        object: "chat.completion.chunk".to_string(),
-                        created,
-                        model: req.model.clone(),
-                        choices: vec![ChatCompletionChunkChoice {
-                            index: 0,
-                            delta: ChatCompletionChunkDelta {
-                                role: None,
-                                content: Some(text_delta),
-                            },
-                            finish_reason: None,
-                        }],
-                    };
-                    yield Ok(json_event(chunk));
-                }
-                NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. } => {
-                     let chunk = ChatCompletionChunk {
-                        id: id.clone(),
-                        object: "chat.completion.chunk".to_string(),
-                        created,
-                        model: req.model.clone(),
-                        choices: vec![ChatCompletionChunkChoice {
-                            index: 0,
-                            delta: ChatCompletionChunkDelta::default(),
-                            finish_reason: Some("stop".to_string()),
-                        }],
-                    };
-                    yield Ok(json_event(chunk));
-                    yield Ok(Event::default().data("[DONE]"));
-                    break;
-                }
-                NormalizedEvent::Error { code, message, .. } => {
-                    tracing::error!("Error in chat completion: {}", message);
-                    // Only the closed host budget categories use this terminal
-                    // contract. Provider failures and disconnects keep their own
-                    // behavior; an error must never emit a successful stop chunk.
-                    if matches!(code.as_str(),
-                        "budget_admission_failed"
-                        | "budget_root_cancelled"
-                        | "budget_root_deadline_exceeded"
-                        | "budget_usage_accounting_failed")
-                    {
-                        yield Ok(json_event(serde_json::json!({
-                            "error": {
-                                "message": message,
-                                "type": "budget_error",
-                                "param": null,
-                                "code": code
-                            }
-                        })));
-                        yield Ok(Event::default().data("[DONE]"));
-                    }
-                    break;
-                }
-                _ => {}
+    let mut run_request = match crate::uar::runtime::turn::RunExecutionRequest::new(agent, String::new())
+        .with_user_context(&user_context)
+    {
+        Ok(request) => request,
+        Err(_) => return openai_error(StatusCode::UNAUTHORIZED, "invalid_request_error", "invalid_principal", "Invalid run principal"),
+    };
+    let owner_key = match user_context.session_owner_key() {
+        Ok(owner) => owner,
+        Err(error) => return openai_error(StatusCode::UNAUTHORIZED, "invalid_request_error", "invalid_principal", error.to_string()),
+    };
+    let needs_persistence = !input.tools.is_empty() || input.history.iter().any(|message| {
+        message.get("tool_calls").is_some() || message.get("role").and_then(serde_json::Value::as_str) == Some("tool")
+    });
+    let store = state.persistence.clone();
+    let (input, claim) = match store.as_deref() {
+        Some(store) => {
+            if needs_persistence && !store.supports_durable_client_tools() {
+                return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "durable_client_tools_unsupported", "Durable client tool continuations are unavailable");
+            }
+            match crate::uar::api::client_tools::prepare(run_manager.as_ref(), store, &owner_key, user_context.tenant_id.as_ref().map(|tenant| tenant.as_str()), agent_id, &input).await {
+                Ok(crate::uar::api::client_tools::ClientToolPreparation::Fresh(input)) => (input, None),
+                Ok(crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim }) => (input, Some(claim)),
+                Ok(crate::uar::api::client_tools::ClientToolPreparation::Replay { response, events }) => return completion_response(req.stream, response, events),
+                Err(error) => return openai_error(StatusCode::CONFLICT, "invalid_request_error", "client_tool_continuation_rejected", error.to_string()),
             }
         }
+        None if needs_persistence => return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "durable_client_tools_unsupported", "Durable client tool continuations are unavailable"),
+        None => (input, None),
     };
+    run_request = run_request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
+    run_request.input = None;
+    run_request.client_tools = Some(input);
+    run_request.session_id = match &claim { Some(claim) => claim.session_id.clone(), None => Some(conversation_id) };
+    run_request.presentation_negotiation = req.presentation_negotiation.clone();
+    let (run_id, observed, mut rx) = match run_manager.execute_request_observed(run_request).await {
+        Ok(observed) => observed,
+        Err(error) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_observation_lost", error.to_string()),
+    };
+    let runtime_agent_id = agent_id.to_owned();
+    let handoff_tenant = user_context.tenant_id.as_ref().map(|tenant| tenant.as_str().to_owned());
+    let mut replay = observed.into_iter();
+    let id = format!("chatcmpl-{run_id}");
+    if req.stream {
+        let settled_manager = std::sync::Arc::clone(run_manager);
+        let stream = async_stream::stream! {
+            let mut content = String::new();
+            let mut pending_calls = Vec::new();
+            let initial = chunk(&id, created, &req.model, serde_json::json!({"role":"assistant","content":""}), None);
+            let mut events = vec![initial.clone()];
+            yield Ok::<_, std::convert::Infallible>(json_event(initial));
+            loop {
+                let received = match replay.next() {
+                    Some(event) => Ok(event),
+                    None => rx.recv().await,
+                };
+                let event = match received {
+                    Ok(event) => event.event,
+                    Err(error) => {
+                        yield Ok(json_event(error_value("server_error", "run_observation_lost", format!("Run observation lost: {error}"))));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    }
+                };
+                let (calls, finish_reason, usage) = match event {
+                    NormalizedEvent::ChatDelta { text_delta, .. } => {
+                        content.push_str(&text_delta);
+                        let delta = chunk(&id, created, &req.model, serde_json::json!({"content":text_delta}), None);
+                        events.push(delta.clone());
+                        yield Ok(json_event(delta));
+                        continue;
+                    }
+                    NormalizedEvent::ClientToolsRequested { calls, .. } => {
+                        pending_calls = calls;
+                        continue;
+                    }
+                    terminal @ (NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. }) => {
+                        match settled_manager.await_settled_run_status(&run_id).await {
+                            Ok(crate::uar::domain::runs::RunStatus::Done) => {}
+                            Ok(status) => {
+                                yield Ok(json_event(error_value("server_error", "run_settlement_failed", format!("Run settled without success: {status:?}"))));
+                                yield Ok(Event::default().data("[DONE]"));
+                                break;
+                            }
+                            Err(error) => {
+                                yield Ok(json_event(error_value("server_error", "run_settlement_failed", error.to_string())));
+                                yield Ok(Event::default().data("[DONE]"));
+                                break;
+                            }
+                        }
+                        let calls = std::mem::take(&mut pending_calls);
+                        let finish_reason = if calls.is_empty() { "stop" } else { "tool_calls" };
+                        (calls, finish_reason, super::usage::from_run_done(&terminal))
+                    }
+                    NormalizedEvent::Error { code, message, .. } => {
+                        let kind = if code.starts_with("budget_") { "budget_error" } else { "server_error" };
+                        yield Ok(json_event(error_value(kind, &code, message)));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    }
+                    NormalizedEvent::Cancelled { .. } => {
+                        yield Ok(json_event(error_value("server_error", "run_cancelled", "Run cancelled".to_owned())));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    }
+                    _ => continue,
+                };
+                if !calls.is_empty() {
+                    let Some(store) = store.as_deref() else {
+                        yield Ok(json_event(error_value("server_error", "client_tool_handoff_unconfirmed", "Continuation storage unavailable".to_owned())));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    };
+                    if let Err(error) = crate::uar::api::client_tools::confirm_handoff_for_run(
+                        settled_manager.as_ref(), store, &owner_key, handoff_tenant.as_deref(), &runtime_agent_id, &run_id,
+                    ).await {
+                        yield Ok(json_event(error_value("server_error", "client_tool_handoff_unconfirmed", error.to_string())));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    }
+                }
+                let response = completion(&id, created, &req.model, &content, &calls, finish_reason, usage);
+                let mut final_events = Vec::new();
+                for (index, call) in calls.iter().enumerate() {
+                    final_events.push(chunk(&id, created, &req.model, serde_json::json!({"tool_calls":[{
+                        "index":index,"id":call.id,"type":"function",
+                        "function":{"name":call.function.name,"arguments":call.function.arguments}
+                    }]}), None));
+                }
+                final_events.push(chunk(&id, created, &req.model, serde_json::json!({}), Some(finish_reason)));
+                events.extend(final_events.iter().cloned());
+                if let Some(claim) = &claim {
+                    let Some(store) = store.as_deref() else {
+                        yield Ok(json_event(error_value("server_error", "client_tool_completion_failed", "Continuation storage unavailable".to_owned())));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    };
+                    if let Err(error) = crate::uar::api::client_tools::complete(store, claim, response, events).await {
+                        yield Ok(json_event(error_value("server_error", "client_tool_completion_failed", error.to_string())));
+                        yield Ok(Event::default().data("[DONE]"));
+                        break;
+                    }
+                }
+                for event in final_events { yield Ok(json_event(event)); }
+                yield Ok(Event::default().data("[DONE]"));
+                break;
+            }
+        };
+        return Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default()).into_response();
+    }
+    let mut content = String::new();
+    let mut pending_calls = Vec::new();
+    let mut events = vec![chunk(&id, created, &req.model, serde_json::json!({"role":"assistant","content":""}), None)];
+    let (calls, finish_reason, usage) = loop {
+        let received = match replay.next() {
+            Some(event) => Ok(event),
+            None => rx.recv().await,
+        };
+        let event = match received {
+            Ok(event) => event.event,
+            Err(error) => return completion_failure(req.stream, events, "server_error", "run_observation_lost", format!("Run observation lost: {error}")),
+        };
+        match event {
+            NormalizedEvent::ChatDelta { text_delta, .. } => {
+                content.push_str(&text_delta);
+                events.push(chunk(&id, created, &req.model, serde_json::json!({"content":text_delta}), None));
+            }
+            NormalizedEvent::ClientToolsRequested { calls, .. } => {
+                pending_calls = calls;
+            }
+            terminal @ (NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. }) => {
+                match run_manager.await_settled_run_status(&run_id).await {
+                    Ok(crate::uar::domain::runs::RunStatus::Done) => {}
+                    Ok(status) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_settlement_failed", format!("Run settled without success: {status:?}")),
+                    Err(error) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_settlement_failed", error.to_string()),
+                }
+                let calls = std::mem::take(&mut pending_calls);
+                let finish_reason = if calls.is_empty() { "stop" } else { "tool_calls" };
+                break (calls, finish_reason, super::usage::from_run_done(&terminal));
+            }
+            NormalizedEvent::Error { code, message, .. } => {
+                let kind = if code.starts_with("budget_") { "budget_error" } else { "server_error" };
+                return completion_failure(req.stream, events, kind, &code, message);
+            }
+            NormalizedEvent::Cancelled { .. } => return completion_failure(req.stream, events, "server_error", "run_cancelled", "Run cancelled".to_owned()),
+            _ => {}
+        }
+    };
+    if !calls.is_empty() {
+        let Some(store) = store.as_deref() else {
+            return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "client_tool_handoff_unconfirmed", "Continuation storage unavailable");
+        };
+        if let Err(error) = crate::uar::api::client_tools::confirm_handoff_for_run(
+            run_manager.as_ref(), store, &owner_key, handoff_tenant.as_deref(), &runtime_agent_id, &run_id,
+        ).await {
+            return openai_error(StatusCode::BAD_GATEWAY, "server_error", "client_tool_handoff_unconfirmed", error.to_string());
+        }
+    }
+    let response = completion(&id, created, &req.model, &content, &calls, finish_reason, usage);
+    for (index, call) in calls.iter().enumerate() {
+        events.push(chunk(&id, created, &req.model, serde_json::json!({"tool_calls":[{
+            "index":index,"id":call.id,"type":"function",
+            "function":{"name":call.function.name,"arguments":call.function.arguments}
+        }]}), None));
+    }
+    events.push(chunk(&id, created, &req.model, serde_json::json!({}), Some(finish_reason)));
+    if let Some(claim) = &claim {
+        let Some(store) = store.as_deref() else {
+            return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "client_tool_completion_failed", "Continuation storage unavailable");
+        };
+        if let Err(error) = crate::uar::api::client_tools::complete(store, claim, response.clone(), events.clone()).await {
+            return openai_error(StatusCode::BAD_GATEWAY, "server_error", "client_tool_completion_failed", error.to_string());
+        }
+    }
+    completion_response(req.stream, response, events)
+}
 
-    Sse::new(stream)
-        .keep_alive(axum::response::sse::KeepAlive::default())
-        .into_response()
+fn openai_error(status: StatusCode, kind: &str, code: &str, message: impl Into<String>) -> axum::response::Response {
+    (status, Json(serde_json::json!({"error":{"message":message.into(),"type":kind,"param":null,"code":code}}))).into_response()
+}
+
+fn chunk(id: &str, created: u64, model: &str, delta: serde_json::Value, finish_reason: Option<&str>) -> serde_json::Value {
+    serde_json::json!({
+        "id":id,"object":"chat.completion.chunk","created":created,"model":model,
+        "choices":[{"index":0,"delta":delta,"finish_reason":finish_reason}]
+    })
+}
+
+fn completion_response(stream: bool, response: serde_json::Value, events: Vec<serde_json::Value>) -> axum::response::Response {
+    if !stream { return Json(response).into_response(); }
+    sse_response(events)
+}
+
+fn sse_response(events: Vec<serde_json::Value>) -> axum::response::Response {
+    let stream = async_stream::stream! {
+        for event in events {
+            yield Ok::<_, std::convert::Infallible>(json_event(event));
+        }
+        yield Ok(Event::default().data("[DONE]"));
+    };
+    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default()).into_response()
+}
+
+fn completion_failure(stream: bool, mut events: Vec<serde_json::Value>, kind: &str, code: &str, message: String) -> axum::response::Response {
+    if !stream { return openai_error(StatusCode::BAD_GATEWAY, kind, code, message); }
+    events.push(serde_json::json!({"error":{"message":message,"type":kind,"param":null,"code":code}}));
+    sse_response(events)
+}
+
+fn error_value(kind: &str, code: &str, message: String) -> serde_json::Value {
+    serde_json::json!({"error":{"message":message,"type":kind,"param":null,"code":code}})
+}
+
+fn completion(id: &str, created: u64, model: &str, content: &str, calls: &[crate::llm::ToolCall], finish_reason: &str, usage: Option<serde_json::Value>) -> serde_json::Value {
+    let mut message = serde_json::json!({"role":"assistant","content":content});
+    if !calls.is_empty() {
+        if content.is_empty() { message["content"] = serde_json::Value::Null; }
+        message["tool_calls"] = serde_json::json!(calls);
+    }
+    let mut response = serde_json::json!({
+        "id":id,"object":"chat.completion","created":created,"model":model,
+        "choices":[{"index":0,"message":message,"finish_reason":finish_reason}]
+    });
+    if let Some(usage) = usage { response["usage"] = usage; }
+    response
 }

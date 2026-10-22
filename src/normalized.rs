@@ -158,6 +158,15 @@ pub enum NormalizedEvent {
         arguments_json: String,
     },
 
+    /// A durable caller-owned batch, ready for the transport to hand back.
+    #[serde(rename = "client_tools.requested")]
+    ClientToolsRequested {
+        /// Owner-scoped durable continuation locator.
+        batch_id: String,
+        /// Caller-owned calls; these have no host executable binding.
+        calls: Vec<crate::llm::ToolCall>,
+    },
+
     /// Result from executing a tool.
     #[serde(rename = "tool_result")]
     ToolResult {
@@ -287,6 +296,7 @@ pub fn event_name(evt: &NormalizedEvent) -> &'static str {
         NormalizedEvent::Custom { .. } => "custom",
         NormalizedEvent::ToolCallDelta { .. } => "tool_call.delta",
         NormalizedEvent::ToolCallComplete { .. } => "tool_call.complete",
+        NormalizedEvent::ClientToolsRequested { .. } => "client_tools.requested",
         NormalizedEvent::ToolResult { .. } => "tool_result",
         NormalizedEvent::Usage { .. } => "usage",
         NormalizedEvent::SandboxOutput { .. } => "sandbox.output",
@@ -422,6 +432,11 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "name": name,
                 "arguments_json": arguments_json
             }),
+        ),
+        NormalizedEvent::ClientToolsRequested { batch_id, calls } => (
+            "agui.client_tools.requested",
+            serde_json::json!({"kind":"client_tools", "request_id":request_id,
+                "batch_id":batch_id, "calls":calls}),
         ),
         NormalizedEvent::ToolResult {
             id,

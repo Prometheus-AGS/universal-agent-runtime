@@ -144,6 +144,7 @@ impl GraphToolHost {
         run_id: &str,
         mut messages: Vec<serde_json::Value>,
         system_prompt: Option<String>,
+        graph_state: serde_json::Value,
     ) -> anyhow::Result<super::turn::GraphModelTurn> {
         anyhow::ensure!(
             run_id == self.run_id,
@@ -166,7 +167,7 @@ impl GraphToolHost {
             "Previous graph operation requires settlement"
         );
         let run_id = self.run_id.clone();
-        let orchestrator = Arc::clone(&self.orchestrator);
+        let orchestrator = Arc::new((*self.orchestrator).clone().with_client_graph_state(graph_state));
         let events = Arc::clone(&self.events);
         let cancellation = self.cancellation.clone();
         let conversation = self.conversation.clone();

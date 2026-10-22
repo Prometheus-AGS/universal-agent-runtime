@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 pub mod accounting;
 pub mod agui_runs;
+pub mod client_tools;
 pub mod mcp_elicitations;
 pub mod approval_decisions;
 pub mod ingestion_records;
@@ -98,6 +99,14 @@ impl DurableStoreEligibility {
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
+    fn supports_durable_client_tools(&self) -> bool { false }
+    /// Persist before exposing a caller-tool handoff. Existing batches are never overwritten.
+    async fn create_client_tool_continuation(&self, _row: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
+    async fn load_client_tool_continuation(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
+    async fn load_client_tool_continuation_for_run(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _run: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
+    /// Atomic full-batch claim/completion. A miss must not authorize host effects.
+    async fn compare_and_swap_client_tool_continuation(&self, _before: &client_tools::ClientToolContinuation, _after: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
+
     fn supports_durable_mcp_elicitations(&self) -> bool { false }
     async fn create_mcp_elicitation(&self, _row: &mcp_elicitations::McpElicitationRecord) -> Result<()> { anyhow::bail!("durable_elicitation_unsupported") }
     async fn list_mcp_elicitations(&self, _owner: &str, _run: &str) -> Result<Vec<mcp_elicitations::McpElicitationRecord>> { anyhow::bail!("durable_elicitation_unsupported") }

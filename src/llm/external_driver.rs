@@ -111,6 +111,9 @@ mod tests {
                     "type": "function",
                     "function": {"name": "noop"}
                 })],
+                output_token_cap: None,
+                tool_choice: None,
+                parallel_tool_calls: None,
                 cache_strategy: None,
                 thinking_config: None,
                 anthropic_system: None,

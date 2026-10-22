@@ -114,6 +114,7 @@ pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
     db.query(include_str!("../../../../migrations/surrealdb/agui_runs.surql")).await?.check()?;
     db.query(include_str!("../../../../migrations/surrealdb/run_history.surql")).await?.check()?;
     db.query(include_str!("../../../../migrations/surrealdb/mcp_elicitations.surql")).await?.check()?;
+    db.query(include_str!("../../../../migrations/surrealdb/client_tool_continuations.surql")).await?.check()?;
 
     Ok(())
 }

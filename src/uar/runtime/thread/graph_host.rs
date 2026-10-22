@@ -220,6 +220,15 @@ impl GraphRootSupervisor {
         }
     }
 
+    /// Join one already admitted root without cancelling unrelated roots.
+    /// Job::join retains its handle and session when this waiter is dropped.
+    pub(crate) async fn join_run(&self, run_id: &str) -> anyhow::Result<()> {
+        let job = self.jobs.lock().map_err(|_| anyhow::anyhow!("Graph root registry unavailable"))?
+            .entries.get(run_id).cloned();
+        if let Some(job) = job { job.join().await?; }
+        Ok(())
+    }
+
     pub(crate) async fn shutdown(&self) -> anyhow::Result<()> {
         let jobs = {
             let mut jobs = self

@@ -1,0 +1,14 @@
+{
+  "command": "pnpm_config_verify_deps_before_run=false pnpm github-actions-policy:validate",
+  "authorization": "Operator: Authorize scoped pre/post policy checks,2026-10-22",
+  "pre": {
+    "exitCode": 0,
+    "output": "GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml)."
+  },
+  "edit": "Removed unsupported macOS debug linker suppression block from build.rs; no replacement flag.",
+  "post": {
+    "exitCode": 0,
+    "output": "GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml)."
+  },
+  "scope": "Deployment policy only; no compiler/build/runtime acceptance result."
+}

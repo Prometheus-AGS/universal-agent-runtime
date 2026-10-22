@@ -37,6 +37,101 @@ struct RunAgentInput {
 #[serde(rename_all = "camelCase")]
 struct ResumeEntry { interrupt_id: String, status: String, payload: Option<Value> }
 
+/// UAR-specific controls use standard forwardedProps, not new AG-UI fields.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CallerToolControls {
+    tool_choice: Option<crate::llm::ToolChoice>,
+    parallel_tool_calls: Option<bool>,
+}
+fn caller_controls(input: &RunAgentInput) -> Result<Option<CallerToolControls>,Response> {
+    input.forwarded_props.as_ref().and_then(|props|props.pointer("/uar/client_tools"))
+        .map(|value|serde_json::from_value(value.clone()).map_err(|_|failure(StatusCode::BAD_REQUEST,"invalid_frontend_tool_controls")))
+        .transpose()
+}
+
+/// AG-UI tools are caller-owned functions, never host executable registrations.
+/// Match the pinned ToolSchema before converting to the shared function shape.
+fn caller_tool_definitions(tools: &[Value]) -> Result<Vec<Value>, Response> {
+    tools.iter().map(|tool| {
+        let Some(name) = tool.get("name").and_then(Value::as_str) else {
+            return Err(failure(StatusCode::BAD_REQUEST,"invalid_frontend_tool"));
+        };
+        let Some(description) = tool.get("description").and_then(Value::as_str) else {
+            return Err(failure(StatusCode::BAD_REQUEST,"invalid_frontend_tool"));
+        };
+        if tool.get("parameters").is_some_and(Value::is_null)
+            || tool.get("metadata").is_some_and(|metadata| !metadata.is_object()) {
+            return Err(failure(StatusCode::BAD_REQUEST,"invalid_frontend_tool"));
+        }
+        let parameters = tool.get("parameters").cloned().unwrap_or_else(||json!({"type":"object","properties":{}}));
+        Ok(json!({"type":"function","function":{"name":name,"description":description,"parameters":parameters}}))
+    }).collect()
+}
+
+fn caller_history(messages: &[Value]) -> Result<Vec<Value>, Response> {
+    messages.iter().map(|message| {
+        let role = message.get("role").and_then(Value::as_str).unwrap_or("");
+        if !matches!(role,"user"|"assistant"|"tool")
+            || (!message.get("content").is_some_and(Value::is_string)
+                && !(role == "assistant" && message.get("toolCalls").is_some_and(Value::is_array))) {
+            return Err(failure(StatusCode::BAD_REQUEST,"unsupported_history_message"));
+        }
+        let mut value = json!({"role":role,"content":message.get("content").cloned().unwrap_or_else(||json!(""))});
+        if let Some(calls) = message.get("toolCalls") { value["tool_calls"] = calls.clone(); }
+        if let Some(id) = message.get("toolCallId") { value["tool_call_id"] = id.clone(); }
+        Ok(value)
+    }).collect()
+}
+
+async fn prepare_frontend_continuation(
+    state: &RunApiState, user: &UserContext, previous: &AguiRunBinding, input: &RunAgentInput,
+) -> Result<super::client_tools::ClientToolPreparation,Response> {
+    let Some(store) = &state.manager.persistence else { return Err(unavailable()); };
+    let source = state.manager.get_run_for_context(user,&previous.native_run_id).await
+        .ok_or_else(||failure(StatusCode::CONFLICT,"caller_tool_source_unavailable"))?;
+    let principal = CredentialPrincipal::from_verified_context(user)
+        .map_err(|_|failure(StatusCode::UNAUTHORIZED,"verified_principal_required"))?;
+    let session_owner = user.session_owner_key().map_err(|_|failure(StatusCode::UNAUTHORIZED,"verified_principal_required"))?;
+    let saved = store.load_client_tool_continuation_for_run(&session_owner,principal.tenant_id(),&source.agent_id,&previous.native_run_id).await
+        .map_err(|_|unavailable())?.ok_or_else(||failure(StatusCode::CONFLICT,"caller_tool_batch_unavailable"))?;
+    if saved.session_id.as_deref() != Some(previous.session_id.as_str()) || saved.protocol != "agui" {
+        return Err(failure(StatusCode::CONFLICT,"caller_tool_context_conflict"));
+    }
+    let expected = previous.terminal.as_ref().and_then(|terminal|terminal.event.pointer("/outcome/pendingToolCallIds"))
+        .and_then(Value::as_array).ok_or_else(||failure(StatusCode::CONFLICT,"caller_tool_batch_unavailable"))?;
+    if expected != &saved.pending_call_ids.iter().map(|id|json!(id)).collect::<Vec<_>>() {
+        return Err(failure(StatusCode::CONFLICT,"caller_tool_batch_conflict"));
+    }
+    let mut history = caller_history(&input.messages)?;
+    if history.iter().all(|message|message["role"] == "tool") {
+        let mut prefix = saved.visible_transcript.as_array().cloned()
+            .ok_or_else(||failure(StatusCode::CONFLICT,"caller_tool_history_unavailable"))?;
+        prefix.append(&mut history);
+        history = prefix;
+    }
+    let tools = if input.tools.is_empty() {
+        saved.client_schemas.get("tools").and_then(Value::as_array).cloned()
+            .ok_or_else(||failure(StatusCode::CONFLICT,"caller_tool_schema_unavailable"))?
+    } else { caller_tool_definitions(&input.tools)? };
+    let caller = crate::uar::runtime::turn::client_tools::ClientToolInput {
+        tools,
+        tool_choice: match caller_controls(input)? {
+            Some(controls) => controls.tool_choice,
+            None => serde_json::from_value(saved.client_schemas.get("tool_choice").cloned().unwrap_or(Value::Null))
+                .map_err(|_|failure(StatusCode::CONFLICT,"caller_tool_schema_unavailable"))?,
+        },
+        parallel_tool_calls: match caller_controls(input)? {
+            Some(controls) => controls.parallel_tool_calls,
+            None => serde_json::from_value(saved.client_schemas.get("parallel_tool_calls").cloned().unwrap_or(Value::Null))
+                .map_err(|_|failure(StatusCode::CONFLICT,"caller_tool_schema_unavailable"))?,
+        },
+        history,visible_history:None,graph_state:None,budget_snapshot:None,output_token_cap:None,protocol:"agui".into(),
+    };
+    super::client_tools::prepare(state.manager.as_ref(),store.as_ref(),&session_owner,principal.tenant_id(),&source.agent_id,&caller).await
+        .map_err(|_|failure(StatusCode::CONFLICT,"caller_tool_continuation_conflict"))
+}
+
 fn failure(status: StatusCode, code: &str) -> Response {
     (status, Json(json!({"code":code}))).into_response()
 }
@@ -81,10 +176,12 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
             || entry.get("metadata").is_some_and(|metadata| !metadata.is_object()))) {
         return failure(StatusCode::BAD_REQUEST,"invalid_run_agent_input");
     }
-    if !input.tools.is_empty() { return failure(StatusCode::BAD_REQUEST,"frontend_tools_not_supported"); }
+    if let Err(response) = caller_tool_definitions(&input.tools) { return response; }
+    if let Err(response) = caller_controls(&input) { return response; }
     let workspace = super::targets::workspace(&headers).map(str::to_owned);
     let owner = match owner(&policy, &user, workspace.as_deref()) { Ok(owner) => owner, Err(response) => return response };
     let Some(db) = state.manager.persistence.as_ref().filter(|db| db.supports_durable_agui_runs()) else { return unavailable(); };
+    if !input.tools.is_empty() && !db.supports_durable_client_tools() { return unavailable(); }
     let digest = Sha256::digest(raw.to_string().as_bytes()).iter().map(|byte| format!("{byte:02x}")).collect::<String>();
     match db.load_agui_run(&owner,&agent,&input.thread_id,&input.run_id).await {
         Ok(Some(row)) => {
@@ -111,6 +208,36 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
         .map(|terminal| terminal.interrupt_ids.iter().cloned().collect()).unwrap_or_default();
     if expected != input.resume.iter().map(|entry| entry.interrupt_id.clone()).collect::<HashSet<_>>() {
         return failure(StatusCode::CONFLICT,"resume_must_cover_all_open_interrupts");
+    }
+    let frontend_pending = previous.as_ref().and_then(|row|row.terminal.as_ref())
+        .and_then(|terminal|terminal.event.pointer("/outcome/pendingToolCallIds"))
+        .and_then(Value::as_array).is_some_and(|calls|!calls.is_empty());
+    let mut caller_claim = None;
+    let mut caller_continuation = None;
+    if frontend_pending {
+        if resuming || input.messages.last().and_then(|message|message.get("role")).and_then(Value::as_str) != Some("tool") {
+            return failure(StatusCode::CONFLICT,"caller_tool_results_required");
+        }
+        match prepare_frontend_continuation(&state,&user,previous.as_ref().expect("frontend predecessor"),&input).await {
+            Ok(super::client_tools::ClientToolPreparation::Continue {input,claim}) => {
+                caller_continuation = Some(input); caller_claim = Some(claim);
+            }
+            Ok(super::client_tools::ClientToolPreparation::Replay {response,..}) => {
+                let saved: AguiRunBinding = match serde_json::from_value(response) {
+                    Ok(saved) => saved, Err(_) => return unavailable(),
+                };
+                if saved.owner != owner || saved.agent_id != agent || saved.thread_id != input.thread_id || saved.workspace_id != workspace {
+                    return failure(StatusCode::CONFLICT,"caller_tool_replay_context_conflict");
+                }
+                let saved = match db.load_agui_run(&saved.owner,&saved.agent_id,&saved.thread_id,&saved.wire_run_id).await {
+                    Ok(Some(row)) if row.native_run_id == saved.native_run_id => row,
+                    _ => return unavailable(),
+                };
+                return stream(state,user,saved,&headers).await;
+            }
+            Ok(super::client_tools::ClientToolPreparation::Fresh(_)) => return failure(StatusCode::CONFLICT,"caller_tool_results_required"),
+            Err(response) => return response,
+        }
     }
     let mut views = Vec::new();
     let mut elicitation_views = Vec::new();
@@ -161,7 +288,7 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     let resources = input.forwarded_props.as_ref().and_then(|props|props.get("uar")).cloned().unwrap_or_else(||json!({}));
     if !resources.is_object() { return failure(StatusCode::BAD_REQUEST,"invalid_host_resources"); }
     let create = if !resuming {
-        match create_request(&input,&agent,&session_id,resources.clone()) { Ok(request) => Some(request), Err(response) => return response }
+        match create_request(&input,&agent,&session_id,resources.clone(),caller_continuation) { Ok(request) => Some(request), Err(response) => return response }
     } else { None };
     if resuming && ["input","history","session_id","artifact"].iter().any(|key| resources.get(key).is_some_and(|value| !value.is_null())) {
         return failure(StatusCode::BAD_REQUEST,"resume_uses_protected_history_and_identity");
@@ -194,6 +321,12 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
         observe(Arc::clone(&state),user.clone(),row.clone()).await;
         return response;
     }
+    if let Some(claim) = caller_claim {
+        // For AG-UI, Completed stores a durable admission receipt, not model
+        // completion. Replays attach to this exact already-admitted run.
+        let receipt = match serde_json::to_value(&row) { Ok(receipt) => receipt, Err(_) => return unavailable() };
+        if super::client_tools::complete(db.as_ref(),&claim,receipt,Vec::new()).await.is_err() { return unavailable(); }
+    }
     if cold_denied {
         let terminal = AguiTerminal { source_cursor:0,event:json!({"type":"RUN_ERROR","code":"approval_denied","message":"The protected tool continuation was denied"}),interrupt_ids:Vec::new() };
         if seal(&state,&row,terminal).await.is_err() { return unavailable(); }
@@ -202,10 +335,12 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     stream(state,user,row,&headers).await
 }
 
-fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resources: Value) -> Result<routes::CreateRunRequest,Response> {
+fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resources: Value, continuation: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>) -> Result<routes::CreateRunRequest,Response> {
     let Some((last,history)) = input.messages.split_last() else { return Err(failure(StatusCode::BAD_REQUEST,"user_message_required")); };
-    if last.get("role").and_then(Value::as_str) != Some("user") { return Err(failure(StatusCode::BAD_REQUEST,"last_message_must_be_user")); }
-    let mut prompt = last.get("content").and_then(Value::as_str).filter(|text| !text.trim().is_empty()).ok_or_else(||failure(StatusCode::BAD_REQUEST,"text_message_required"))?.to_owned();
+    if continuation.is_none() && last.get("role").and_then(Value::as_str) != Some("user") { return Err(failure(StatusCode::BAD_REQUEST,"last_message_must_be_user")); }
+    let mut prompt = if continuation.is_some() { String::new() } else {
+        last.get("content").and_then(Value::as_str).filter(|text| !text.trim().is_empty()).ok_or_else(||failure(StatusCode::BAD_REQUEST,"text_message_required"))?.to_owned()
+    };
     let mut history_input = Vec::new();
     for message in history {
         let role = message.get("role").and_then(Value::as_str).unwrap_or("");
@@ -227,8 +362,31 @@ fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resourc
     }
     object.insert("input".into(),json!(prompt));
     object.insert("session_id".into(),json!(session));
-    if !history_input.is_empty() { object.insert("history".into(),json!({"session_id":session,"messages":history_input})); }
-    serde_json::from_value(resources).map_err(|_|failure(StatusCode::BAD_REQUEST,"invalid_host_resources"))
+    if continuation.is_none() && !history_input.is_empty() { object.insert("history".into(),json!({"session_id":session,"messages":history_input})); }
+    let mut request: routes::CreateRunRequest = serde_json::from_value(resources).map_err(|_|failure(StatusCode::BAD_REQUEST,"invalid_host_resources"))?;
+    if let Some(mut continuation) = continuation {
+        if !input.context.is_empty() || input.state.is_some() {
+            continuation.history.push(json!({"role":"user","content":prompt}));
+        }
+        request.client_tools = Some(continuation);
+    } else if !input.tools.is_empty() || caller_controls(input)?.is_some() {
+        let visible = caller_history(&input.messages)?;
+        let mut canonical = visible.clone();
+        if let Some(last) = canonical.last_mut() { last["content"] = json!(prompt); }
+        let caller_tools = crate::uar::runtime::turn::client_tools::ClientToolInput {
+            tools: caller_tool_definitions(&input.tools)?,
+            tool_choice: caller_controls(input)?.as_ref().and_then(|controls|controls.tool_choice.clone()),
+            parallel_tool_calls: caller_controls(input)?.and_then(|controls|controls.parallel_tool_calls),
+            history: canonical,
+            visible_history: Some(visible),
+            graph_state: None,
+            budget_snapshot: None, output_token_cap: None,
+            protocol: "agui".into(),
+        };
+        caller_tools.validate().map_err(|_|failure(StatusCode::BAD_REQUEST,"invalid_frontend_tool"))?;
+        request.client_tools = Some(caller_tools);
+    }
+    Ok(request)
 }
 
 async fn reconnect(State(state): State<Arc<RunApiState>>, Extension(policy): Extension<AdmissionPolicy>, Extension(user): Extension<UserContext>, Path((agent,thread,run)): Path<(String,String,String)>, headers: HeaderMap) -> Response {
@@ -254,11 +412,41 @@ async fn pending_elicitations(state: &RunApiState,user: &UserContext,row: &AguiR
     Ok(views.into_iter().filter(|view|view.record.state == crate::uar::persistence::mcp_elicitations::ElicitationState::Pending).collect())
 }
 fn finished(row: &AguiRunBinding, outcome: Value) -> Value { json!({"type":"RUN_FINISHED","threadId":row.thread_id,"runId":row.wire_run_id,"outcome":outcome}) }
+fn frontend_terminal(row: &AguiRunBinding, cursor: u64, calls: &[crate::llm::ToolCall]) -> AguiTerminal {
+    let mut event = finished(row,json!({"type":"success","pendingToolCallIds":calls.iter().map(|call|&call.id).collect::<Vec<_>>()}));
+    // Standard metadata retains the handoff projection through loss of bounded
+    // native event history. It carries no executable registration or authority.
+    event["metadata"] = json!({"uar":{"clientToolCalls":calls}});
+    AguiTerminal {source_cursor:cursor,event,interrupt_ids:Vec::new()}
+}
 async fn seal(state: &RunApiState,row: &AguiRunBinding,terminal: AguiTerminal) -> anyhow::Result<AguiRunBinding> {
     let db = state.manager.persistence.as_ref().ok_or_else(||anyhow::anyhow!("persistence unavailable"))?;
     let mut next = row.clone(); next.revision += 1; next.terminal = Some(terminal);
     if db.compare_and_swap_agui_run(row,&next).await? { return Ok(next); }
     db.load_agui_run(&row.owner,&row.agent_id,&row.thread_id,&row.wire_run_id).await?.ok_or_else(||anyhow::anyhow!("run correlation unavailable"))
+}
+async fn seal_frontend_handoff(
+    state: &RunApiState, user: &UserContext, row: &AguiRunBinding,
+    cursor: u64, calls: &[crate::llm::ToolCall],
+) -> anyhow::Result<AguiRunBinding> {
+    let source = state.manager.get_run_for_context(user, &row.native_run_id).await
+        .ok_or_else(|| anyhow::anyhow!("caller_tool_source_unavailable"))?;
+    let owner = user.session_owner_key()?;
+    let store = state.manager.persistence.as_deref()
+        .ok_or_else(|| anyhow::anyhow!("durable_client_tools_unsupported"))?;
+    if super::client_tools::confirm_handoff_for_run(
+        state.manager.as_ref(), store, &owner,
+        user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+        &source.agent_id, &row.native_run_id,
+    ).await.is_err() {
+        return seal(state, row, AguiTerminal {
+            source_cursor: cursor,
+            event: json!({"type":"RUN_ERROR","code":"host_cleanup_unconfirmed",
+                "message":"The host did not confirm caller-tool source cleanup"}),
+            interrupt_ids: Vec::new(),
+        }).await;
+    }
+    seal(state, row, frontend_terminal(row, cursor, calls)).await
 }
 async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -> anyhow::Result<AguiRunBinding> {
     if row.terminal.is_some() { return Ok(row); }
@@ -279,6 +467,28 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             interrupts.push(json!({"id":view.record.id,"reason":"mcp_elicitation","message":request.get("message").and_then(Value::as_str).unwrap_or("MCP server requires input"),"expiresAt":view.record.expires_at.to_rfc3339(),"responseSchema":{"type":"object","properties":properties,"required":["action"],"additionalProperties":false},"metadata":{"uar":{"serverName":view.record.server_name,"request":request,"resolvable":view.resolvable}}}));
         }
         return seal(state,&row,AguiTerminal {source_cursor:cursor,event:finished(&row,json!({"type":"interrupt","interrupts":interrupts})),interrupt_ids:ids}).await.context("agui reconcile: seal");
+    }
+    // This event is published only after the host commits the caller-owned
+    // batch. The native AG-UI frontend handoff is a completed segment whose
+    // success outcome names the calls the application must answer next.
+    for event in &history {
+        if let NormalizedEvent::ClientToolsRequested {calls,..} = &event.event {
+            return seal_frontend_handoff(state,user,&row,event.id,calls).await.context("agui reconcile: seal caller-tool handoff");
+        }
+    }
+    // A process may stop after committing a caller batch and before publishing
+    // its event. Recover that exact handoff, without submitting another run.
+    if let Some(source) = state.manager.get_run_for_context(user,&row.native_run_id).await {
+        let principal = CredentialPrincipal::from_verified_context(user)?;
+        let session_owner = user.session_owner_key()?;
+        if let Some(pending) = db.load_client_tool_continuation_for_run(&session_owner,principal.tenant_id(),&source.agent_id,&row.native_run_id).await? {
+            anyhow::ensure!(pending.protocol == "agui" && pending.session_id.as_deref() == Some(row.session_id.as_str()), "caller_tool_context_conflict");
+            let calls: Vec<crate::llm::ToolCall> = pending.visible_transcript.as_array()
+                .and_then(|messages|messages.last()).and_then(|message|message.get("tool_calls"))
+                .cloned().map(serde_json::from_value).transpose()?.ok_or_else(||anyhow::anyhow!("caller_tool_calls_unavailable"))?;
+            anyhow::ensure!(calls.iter().map(|call|&call.id).eq(pending.pending_call_ids.iter()), "caller_tool_batch_conflict");
+            return seal_frontend_handoff(state,user,&row,cursor,&calls).await.context("agui reconcile: recover caller-tool handoff");
+        }
     }
     let Some(status) = state.manager.settled_run_status_for_context(user,&row.native_run_id).await else { return Ok(row); };
     if status == crate::uar::domain::runs::RunStatus::Error {
@@ -346,6 +556,12 @@ async fn observe(state: Arc<RunApiState>, user: UserContext, row: AguiRunBinding
 #[derive(Default)]
 struct Projector { text: bool, tools: HashSet<String> }
 impl Projector {
+    fn caller_tools(&mut self,row: &AguiRunBinding,calls: &[crate::llm::ToolCall]) -> Vec<Value> {
+        calls.iter().filter_map(|call| {
+            if row.resumed_tool_ids.contains(&call.id) || !self.tools.insert(call.id.clone()) { return None; }
+            Some(vec![json!({"type":"TOOL_CALL_START","toolCallId":call.id,"toolCallName":call.function.name}),json!({"type":"TOOL_CALL_ARGS","toolCallId":call.id,"delta":call.function.arguments}),json!({"type":"TOOL_CALL_END","toolCallId":call.id})])
+        }).flatten().collect()
+    }
     fn project(&mut self,row: &AguiRunBinding,event: &NormalizedEvent) -> Vec<Value> {
         let message = format!("{}:assistant",row.wire_run_id);
         match event {
@@ -356,6 +572,7 @@ impl Projector {
             }
             NormalizedEvent::ToolStart {tool_call_id,tool,input,..} if !row.resumed_tool_ids.contains(tool_call_id) && self.tools.insert(tool_call_id.clone()) => vec![json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":tool}),json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":input.to_string()}),json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id})],
             NormalizedEvent::ToolCallApprovalRequired {tool_call_id,name,arguments_json,..} if self.tools.insert(tool_call_id.clone()) => vec![json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":name}),json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":arguments_json}),json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id})],
+            NormalizedEvent::ClientToolsRequested {calls,..} => self.caller_tools(row,calls),
             NormalizedEvent::ToolEnd {tool_call_id,output,..} if self.tools.contains(tool_call_id) || row.resumed_tool_ids.contains(tool_call_id) => vec![json!({"type":"TOOL_CALL_RESULT","messageId":format!("{}:result:{}",row.wire_run_id,tool_call_id),"toolCallId":tool_call_id,"role":"tool","content":output.to_string()})],
             // Mirrors adapters.rs:134 (`uar.skill.activated`): same CUSTOM `name` and `value` shape. The adapter's closure is not callable
             // here, and its `runId`/`threadId` carry the native run id, whereas this stream's identity is the wire thread/run (as RUN_STARTED).
@@ -409,10 +626,21 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
             }
             if let Some(terminal) = &row.terminal {
                 let cursor = terminal.source_cursor;
-                if let Some(value) = projector.close(&row) {
-                    if after.is_none_or(|after|(cursor,90)>after) { yield Ok(frame(&row,cursor,90,value)); }
+                let mut terminal_index = 100;
+                if let Some(calls) = terminal.event.pointer("/metadata/uar/clientToolCalls") {
+                    let calls = match serde_json::from_value::<Vec<crate::llm::ToolCall>>(calls.clone()) {
+                        Ok(calls) => calls,
+                        Err(_) => { yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"caller_tool_projection_unavailable","message":"The durable caller-tool projection is unavailable"}))); break; }
+                    };
+                    terminal_index = calls.len().saturating_mul(3).saturating_add(100);
+                    for (index,value) in projector.caller_tools(&row,&calls).into_iter().enumerate() {
+                        if after.is_none_or(|after|(cursor,index+1)>after) { yield Ok(frame(&row,cursor,index+1,value)); }
+                    }
                 }
-                if after.is_none_or(|after|(cursor,100)>after) { yield Ok(frame(&row,cursor,100,terminal.event.clone())); }
+                if let Some(value) = projector.close(&row) {
+                    if after.is_none_or(|after|(cursor,terminal_index-10)>after) { yield Ok(frame(&row,cursor,terminal_index-10,value)); }
+                }
+                if after.is_none_or(|after|(cursor,terminal_index)>after) { yield Ok(frame(&row,cursor,terminal_index,terminal.event.clone())); }
                 break;
             }
             let Some(events) = events.as_mut() else {

@@ -6292,3 +6292,12 @@ functional acceptance is still unverified and closed; no Boss work performed.
 
 ## 2026-10-22 — v1.2.0 publication preparation
 Issue425 scoped implementation authored; attestation corrects source to035bbdc7 with operator approval. Policy gates passed only by exact exceptions; product verification CLOSED. Local registry push403; fixed-index deployment alias job authored. Child/parent pending ledger preserved. Publication receipt: child v1.2.0-release-publication.md.
+
+## 2026-10-22 — Five-interface caller tools source implementation
+Operator approved OpenAI plan and expanded AG-UI, Anthropic, A2A and ACP. Six bounded writers authored provider/runtime/persistence/native transports/accounting/acceptance/docs; all verification CLOSED. User selected canonical current CLI phase uar-post-lifecycle-verification-readiness after stale waypoint disagreement; typed revise/register corrected projections, no handedit. Frozen1.2.0 solehandoffcomment6344680321 posted andissue425closed;421remainsopen. New1.2.1candidate sourceversion only, notbuilt/published. Source tasks1-11 handedoff; acceptanceauthorship andwholephaseinventory finalization continue.
+
+2026-10-22 caller-tools closeout: operator selected current CLI phase uar-post-lifecycle-verification-readiness. All27 phase source tasks authored;99-file byte inventory records dirty candidate. OpenAI/AGUI/Anthropic/A2A/ACP caller tools, durable ownership/CAS replay, graph/budget restoration and settled-cleanup acknowledgment authored. No feature executable verification. Operator authorized one isolated artifact-only source review; other gates CLOSED. Frozen1.2.0 preserved; issue425 single receipt delivered separately.
+
+2026-10-22 authorized caller-tools build once exited101 with two compile errors (graph state capture, shared SSE event exhaustiveness). Both repaired in source; no rerun.100-file source inventory refreshed. Unchanged vendored SurrealDB unused-import warning retained. Verification CLOSED pending renewed exact-command approval; no tests/publication.
+
+2026-10-22 caller-tools build003 PASS: exact approved server-full,postgres-backend production binary build exited0 in1m15s. No UAR warnings; existing vendored SurrealDB unused import retained. No product tests/startup/restart/publication. Functional acceptance pending.

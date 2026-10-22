@@ -16,6 +16,7 @@ pub(crate) struct GraphModelTurn {
     pub(crate) text: String,
     pub(crate) error: Option<String>,
     pub(crate) receipt_error: Option<String>,
+    pub(crate) caller_handoff: bool,
 }
 
 pub(crate) struct GraphTurnTranscript {
@@ -29,6 +30,7 @@ pub(crate) struct GraphTurnTranscript {
     text: String,
     calls: Vec<ToolCall>,
     outstanding: BTreeMap<String, (usize, String)>,
+    caller_handoff: bool,
 }
 
 impl GraphTurnTranscript {
@@ -52,6 +54,7 @@ impl GraphTurnTranscript {
             text: String::new(),
             calls: Vec::new(),
             outstanding: BTreeMap::new(),
+            caller_handoff: false,
         }
     }
 
@@ -202,6 +205,12 @@ impl GraphTurnTranscript {
             NormalizedEvent::Error { message, .. } => {
                 anyhow::bail!("Graph model turn failed: {message}")
             }
+            NormalizedEvent::ClientToolsRequested { batch_id, calls } => {
+                self.caller_handoff = true;
+                self.calls.extend(calls.clone());
+                self.flush_assistant();
+                Some(RuntimeEvent::ClientToolsRequested { run_id, batch_id, calls })
+            }
             NormalizedEvent::Done => return Ok(true),
             // The graph engine owns RuntimeStep numbering. Model wrappers own
             // usage charges; neither counter is reconstructed from UI events.
@@ -246,6 +255,7 @@ impl GraphTurnTranscript {
             text,
             error,
             receipt_error: None,
+            caller_handoff: self.caller_handoff,
         }
     }
 }

@@ -81,6 +81,9 @@ pub struct ToolDef {
     pub description: String,
     /// JSON Schema for tool input.
     pub input_schema: serde_json::Value,
+    /// Strict tool argument validation requested by the caller.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strict: Option<bool>,
     /// Optional cache control annotation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_control: Option<CacheControl>,
@@ -91,13 +94,26 @@ pub struct ToolDef {
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum ToolChoice {
     /// Let the model decide whether to use tools.
-    Auto,
+    Auto {
+        /// Disable multiple tool uses in one response.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        disable_parallel_tool_use: Option<bool>,
+    },
+    /// Prohibit tool use.
+    None,
     /// Force the model to use at least one tool.
-    Any,
+    Any {
+        /// Disable multiple tool uses in one response.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        disable_parallel_tool_use: Option<bool>,
+    },
     /// Force the model to use a specific tool.
     Tool {
         /// Name of the required tool.
         name: String,
+        /// Disable multiple tool uses in one response.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        disable_parallel_tool_use: Option<bool>,
     },
 }
 

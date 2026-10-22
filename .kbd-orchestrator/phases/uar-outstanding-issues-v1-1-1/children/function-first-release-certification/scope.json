@@ -29,9 +29,28 @@
     "docs/releases/v1.1.1.md",
     ".prometheus/decisions.md",
     ".agent-team/uar-core/reviews/function-first-release-certification/implementation-findings.md",
-    ".agent-team/uar-core/reviews/function-first-release-certification/implementation-corrective-findings.md"
+    ".agent-team/uar-core/reviews/function-first-release-certification/implementation-corrective-findings.md",
+    "openspec/changes/openai-client-tools/**",
+    "src/normalized.rs",
+    "src/llm/**",
+    "src/server.rs",
+    "src/uar/api/**",
+    "src/uar/domain/events.rs",
+    "src/uar/persistence/**",
+    "src/uar/runtime/**",
+    "tests/context_history_integrity.rs",
+    "tests/model_path_resiliency.rs",
+    "tests/support/post_lifecycle_count.rs",
+    "tests/fixtures/client_tools_provider.py",
+    "scripts/release/client_tools_acceptance.py",
+    "docs/releases/v1.2.1-kubo.md",
+    "docs/releases/v1.2.1.md",
+    "docs/releases/v1.2.0-issue425-handoff.md",
+    "CHANGELOG.md",
+    ".agent-team/uar-core/client-tools-runtime-handoff-20261022.md",
+    ".prometheus/session-log.md"
   ],
   "deniedPaths": [],
   "inheritsConstraints": true,
-  "__note": "FC1 exact coordination scope from the accepted child plan. Ownership remains one writer per file; this list grants no native permission or verification authority. Operator verification lock CLOSED. Canonical KBD projections are written only through the root lead's actual CLI. No foreign repository or private staging-file edit is authorized."
+  "__note": "FC1 exact coordination scope from the accepted child plan. Ownership remains one writer per file; this list grants no native permission or verification authority. Operator verification lock CLOSED. Canonical KBD projections are written only through the root lead's actual CLI. No foreign repository or private staging-file edit is authorized. Operator-approved client-tools cohort expands to all five transports; exact writers recorded in openspec/changes/openai-client-tools/design.md. CLOSED gate remains in force."
 }

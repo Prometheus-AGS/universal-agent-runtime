@@ -154,6 +154,7 @@ pub enum AgentMessage {
         run_id: String,
         content: String,
         credential_capture: AuthenticatedCredentialCapture,
+        client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
         artifacts: crate::uar::runtime::thread::artifacts::RunArtifactCollector,
         reply: tokio::sync::oneshot::Sender<
             Result<crate::uar::persistence::agent_threads::PersistedAgentThread, ActorRunError>,

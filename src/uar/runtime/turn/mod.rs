@@ -2,6 +2,7 @@
 
 pub(crate) mod bindings;
 pub mod builtin;
+pub mod client_tools;
 pub mod contributors;
 pub mod host;
 pub mod plan;

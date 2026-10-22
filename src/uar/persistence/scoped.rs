@@ -94,6 +94,7 @@ fn transport_outcome_unknown(error: &anyhow::Error) -> bool {
 // as an uncertain mutation. New operations conservatively retain uncertainty.
 fn read_only_operation(method: &str) -> bool {
     matches!(method,
+        "load_client_tool_continuation" | "load_client_tool_continuation_for_run" |
         "list_mcp_elicitations" | "load_agui_run" | "list_agui_runs" |
         "load_a2a_binding" | "list_a2a_bindings" | "load_run_history_record" |
         "load_run_history_events" | "get_accounting_delegation" | "get_accounting_scope" |
@@ -120,6 +121,36 @@ fn read_only_operation(method: &str) -> bool {
 
 #[async_trait]
 impl PersistenceLayer for ScopedPersistence {
+    fn supports_durable_client_tools(&self) -> bool { self.inner.supports_durable_client_tools() }
+
+    async fn create_client_tool_continuation(&self, row: &client_tools::ClientToolContinuation) -> Result<bool> {
+        let row = row.clone();
+        self.dispatch("create_client_tool_continuation", move |inner| async move {
+            inner.create_client_tool_continuation(&row).await
+        }).await
+    }
+
+    async fn load_client_tool_continuation(&self, owner: &str, tenant: Option<&str>, agent: &str, batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> {
+        let (owner, tenant, agent, batch) = (owner.to_owned(), tenant.map(str::to_owned), agent.to_owned(), batch.to_owned());
+        self.dispatch("load_client_tool_continuation", move |inner| async move {
+            inner.load_client_tool_continuation(&owner, tenant.as_deref(), &agent, &batch).await
+        }).await
+    }
+
+    async fn load_client_tool_continuation_for_run(&self, owner: &str, tenant: Option<&str>, agent: &str, run: &str) -> Result<Option<client_tools::ClientToolContinuation>> {
+        let (owner, tenant, agent, run) = (owner.to_owned(), tenant.map(str::to_owned), agent.to_owned(), run.to_owned());
+        self.dispatch("load_client_tool_continuation_for_run", move |inner| async move {
+            inner.load_client_tool_continuation_for_run(&owner, tenant.as_deref(), &agent, &run).await
+        }).await
+    }
+
+    async fn compare_and_swap_client_tool_continuation(&self, before: &client_tools::ClientToolContinuation, after: &client_tools::ClientToolContinuation) -> Result<bool> {
+        let (before, after) = (before.clone(), after.clone());
+        self.dispatch("compare_and_swap_client_tool_continuation", move |inner| async move {
+            inner.compare_and_swap_client_tool_continuation(&before, &after).await
+        }).await
+    }
+
     fn supports_durable_mcp_elicitations(&self) -> bool {
         self.inner.supports_durable_mcp_elicitations()
     }

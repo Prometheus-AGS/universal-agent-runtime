@@ -369,6 +369,9 @@ fn direct_liter_request() -> LlmRequest {
             "content": "exercise the provider HTTP boundary"
         })],
         tools: Vec::new(),
+        output_token_cap: None,
+        tool_choice: None,
+        parallel_tool_calls: None,
         cache_strategy: None,
         thinking_config: None,
         anthropic_system: None,

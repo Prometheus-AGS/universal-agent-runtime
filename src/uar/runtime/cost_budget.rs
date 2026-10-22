@@ -81,7 +81,7 @@ pub(crate) fn client_failure(error: &anyhow::Error) -> Option<(&'static str, Str
 }
 
 /// The dimension a budget / spend record is keyed on.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum BudgetScope {
     Run,
     Task,
@@ -186,7 +186,7 @@ struct RunUsage {
     token_window: VecDeque<(Instant, u64)>,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(crate) struct RunUsageSnapshot {
     pub(crate) usage_reports: u64,
     pub(crate) completed_usage_reports: u64,
@@ -195,6 +195,110 @@ pub(crate) struct RunUsageSnapshot {
     pub(crate) cost_usd: f64,
     pub(crate) model_requests: u64,
     pub(crate) tool_calls: u64,
+}
+
+/// Immutable local-accounting evidence retained across a caller-tool handoff.
+/// Durable monetary liabilities remain in the existing accounting store.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClientToolBudgetSnapshot {
+    version: u32,
+    owner: String,
+    source_usage_id: String,
+    captured_at_ms: i64,
+    elapsed_root_ms: u64,
+    deadline_at_ms: Option<i64>,
+    limits: ThreadBudgets,
+    scopes: Vec<ClientToolScopeSnapshot>,
+    activity: ClientToolActivitySnapshot,
+    remote: Option<ClientToolRemoteSnapshot>,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+struct ClientToolScopeSnapshot {
+    scope: BudgetScope, id: String, tokens: u64, cost_usd: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+struct ClientToolActivitySnapshot {
+    cumulative: RunUsageSnapshot,
+    requests: Vec<(i64, u64)>,
+    tokens: Vec<(i64, u64)>,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+struct ClientToolRemoteSnapshot {
+    accounting_id: String, elapsed_ms: u64, activity: ClientToolActivitySnapshot,
+}
+
+fn handoff_activity(usage: Option<&RunUsage>, now: Instant, wall_ms: i64) -> anyhow::Result<ClientToolActivitySnapshot> {
+    let windows = |entries: Option<&VecDeque<(Instant, u64)>>| -> anyhow::Result<Vec<(i64, u64)>> {
+        entries.into_iter().flatten().filter(|(at, _)| now.saturating_duration_since(*at) < Duration::from_secs(60))
+            .map(|(at, count)| {
+                let age = i64::try_from(now.saturating_duration_since(*at).as_millis())?;
+                Ok((wall_ms.checked_sub(age).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?, *count))
+            }).collect()
+    };
+    Ok(ClientToolActivitySnapshot {
+        cumulative: RunUsageSnapshot {
+            usage_reports: usage.map_or(0, |v| v.usage_reports),
+            completed_usage_reports: usage.map_or(0, |v| v.completed_usage_reports),
+            unpriced_usage: usage.is_some_and(|v| v.unpriced_usage),
+            total_tokens: usage.map_or(0, |v| v.total_tokens), cost_usd: usage.map_or(0.0, |v| v.cost_usd),
+            model_requests: usage.map_or(0, |v| v.total_requests), tool_calls: usage.map_or(0, |v| v.tool_calls),
+        },
+        requests: windows(usage.map(|v| &v.requests))?, tokens: windows(usage.map(|v| &v.token_window))?,
+    })
+}
+
+fn restore_handoff_activity(usage: &mut RunUsage, saved: &ClientToolActivitySnapshot, now: Instant, wall_ms: i64) -> anyhow::Result<()> {
+    let total = &saved.cumulative;
+    anyhow::ensure!(total.cost_usd.is_finite() && total.cost_usd >= 0.0, "invalid_client_budget_usage");
+    usage.usage_reports = usage.usage_reports.max(total.usage_reports);
+    usage.completed_usage_reports = usage.completed_usage_reports.max(total.completed_usage_reports);
+    usage.unpriced_usage |= total.unpriced_usage;
+    usage.total_tokens = usage.total_tokens.max(total.total_tokens);
+    usage.cost_usd = usage.cost_usd.max(total.cost_usd);
+    usage.total_requests = usage.total_requests.max(total.model_requests);
+    usage.tool_calls = usage.tool_calls.max(total.tool_calls);
+    // Per-wall-second maxima make repeated restoration idempotent and preserve
+    // already observed activity without charging a usage delta a second time.
+    let merge = |current: &mut VecDeque<(Instant, u64)>, entries: &[(i64, u64)]| -> anyhow::Result<()> {
+        let mut buckets = std::collections::BTreeMap::<i64, u64>::new();
+        for (at, count) in current.iter() {
+            let age = i64::try_from(now.saturating_duration_since(*at).as_millis())?;
+            let timestamp = wall_ms.checked_sub(age).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+            let bucket = buckets.entry(timestamp.div_euclid(1000)).or_default();
+            *bucket = bucket.saturating_add(*count);
+        }
+        let mut saved_buckets = std::collections::BTreeMap::<i64, u64>::new();
+        for (timestamp, count) in entries {
+            anyhow::ensure!(*timestamp <= wall_ms, "client_budget_clock_reversed");
+            let bucket = saved_buckets.entry(timestamp.div_euclid(1000)).or_default();
+            *bucket = bucket.saturating_add(*count);
+        }
+        for (second, count) in saved_buckets {
+            let bucket = buckets.entry(second).or_default();
+            *bucket = (*bucket).max(count);
+        }
+        let mut merged = VecDeque::new();
+        for (second, count) in buckets {
+            // Use the end of the bucket: rounding may extend the restriction
+            // by under a second, but cannot expire observed spend early.
+            let timestamp = second.checked_mul(1000).and_then(|v| v.checked_add(999))
+                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?.min(wall_ms);
+            let age = u64::try_from(wall_ms - timestamp)?;
+            if age < 60_000 {
+                merged.push_back((now.checked_sub(Duration::from_millis(age))
+                    .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?, count));
+            }
+        }
+        *current = merged;
+        Ok(())
+    };
+    merge(&mut usage.requests, &saved.requests)?;
+    merge(&mut usage.token_window, &saved.tokens)?;
+    Ok(())
 }
 
 /// Target-local binding for the cumulative capacity leased by a source UAR.
@@ -749,6 +853,111 @@ pub(crate) struct ModelCallBudget {
 }
 
 impl ModelCallBudget {
+    /// Capture counters without recording another accounting charge.
+    pub(crate) fn snapshot_client_handoff(&self) -> anyhow::Result<ClientToolBudgetSnapshot> {
+        let durable = self.durable.as_ref().ok_or_else(|| anyhow::anyhow!("client_budget_durable_accounting_required"))?;
+        let now = Instant::now();
+        let wall_ms = chrono::Utc::now().timestamp_millis();
+        let inner = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+        anyhow::ensure!(!inner.remote_reservations.values().any(|reservation|
+            reservation.usage_id == self.usage_id
+                || self.remote.as_ref().is_some_and(|remote| reservation.usage_id == remote.accounting_id)),
+            "client_budget_remote_liability_unresolved");
+        let scopes = self.scopes.iter().map(|(scope, id)| {
+            let key = (*scope, id.clone());
+            ClientToolScopeSnapshot { scope: *scope, id: id.clone(),
+                tokens: inner.tokens.get(&key).copied().unwrap_or(0),
+                cost_usd: inner.spend.get(&key).copied().unwrap_or(0.0) }
+        }).collect();
+        let deadline_at_ms = self.deadline.map(|deadline| {
+            let remaining = i64::try_from(deadline.saturating_duration_since(now).as_millis())?;
+            wall_ms.checked_add(remaining).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))
+        }).transpose()?;
+        let remote = self.remote.as_ref().map(|remote| -> anyhow::Result<ClientToolRemoteSnapshot> {
+            Ok(ClientToolRemoteSnapshot { accounting_id: remote.accounting_id.clone(),
+                elapsed_ms: u64::try_from(now.saturating_duration_since(remote.started_at).as_millis())?,
+                activity: handoff_activity(inner.runs.get(&remote.accounting_id), now, wall_ms)? })
+        }).transpose()?;
+        Ok(ClientToolBudgetSnapshot { version: 1, owner: durable.owner.clone(),
+            source_usage_id: self.usage_id.clone(), captured_at_ms: wall_ms,
+            elapsed_root_ms: u64::try_from(now.saturating_duration_since(self.started_at).as_millis())?,
+            deadline_at_ms, limits: self.limits.clone(), scopes,
+            activity: handoff_activity(inner.runs.get(&self.usage_id), now, wall_ms)?, remote })
+    }
+
+    /// Restore a host-owned snapshot under freshly resolved policy and authority.
+    /// Existing durable scope liabilities are rebound, never replayed as charges.
+    pub(crate) async fn restore_client_handoff(
+        mut self, snapshot: &ClientToolBudgetSnapshot,
+        owner: &crate::uar::runtime::actor::messages::ActorOwner,
+    ) -> anyhow::Result<Self> {
+        let durable = self.durable.as_ref().ok_or_else(|| anyhow::anyhow!("client_budget_durable_accounting_required"))?;
+        let store = Arc::clone(&durable.store);
+        anyhow::ensure!(snapshot.version == 1 && !snapshot.source_usage_id.is_empty() && durable.owner == snapshot.owner
+            && owner.session_owner_key()? == snapshot.owner, "client_budget_owner_mismatch");
+        snapshot.limits.validate()?;
+        anyhow::ensure!(snapshot.scopes.len() == self.scopes.len()
+            && snapshot.scopes.iter().map(|scope| (scope.scope, scope.id.as_str()))
+                .collect::<std::collections::HashSet<_>>().len() == snapshot.scopes.len()
+            && snapshot.scopes.iter().filter(|scope| scope.scope == BudgetScope::Run).count() == 1
+            && snapshot.scopes.iter().all(|scope| !scope.id.is_empty() && scope.cost_usd.is_finite() && scope.cost_usd >= 0.0
+                && (scope.scope == BudgetScope::Run || self.scopes.contains(&(scope.scope, scope.id.clone())))),
+            "client_budget_scope_mismatch");
+        anyhow::ensure!(snapshot.remote.as_ref().map(|v| &v.accounting_id)
+            == self.remote.as_ref().map(|v| &v.accounting_id), "client_budget_remote_scope_mismatch");
+        let now = Instant::now();
+        let wall_ms = chrono::Utc::now().timestamp_millis();
+        let away_ms = u64::try_from(wall_ms.checked_sub(snapshot.captured_at_ms)
+            .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?)
+            .map_err(|_| anyhow::anyhow!("client_budget_clock_reversed"))?;
+        let elapsed = snapshot.elapsed_root_ms.checked_add(away_ms)
+            .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+        self.started_at = now.checked_sub(Duration::from_millis(elapsed))
+            .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+        self.limits = self.limits.intersect(&snapshot.limits);
+        let saved_deadline = snapshot.deadline_at_ms.map(|deadline| -> anyhow::Result<Instant> {
+            let remaining = u64::try_from(deadline.checked_sub(wall_ms)
+                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?)
+                .map_err(|_| anyhow::anyhow!("client_budget_deadline_exceeded"))?;
+            anyhow::ensure!(remaining > 0, "client_budget_deadline_exceeded");
+            now.checked_add(Duration::from_millis(remaining)).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))
+        }).transpose()?;
+        self.deadline = [self.deadline, saved_deadline, Self::deadline(self.started_at, &self.limits)?]
+            .into_iter().flatten().min();
+        if let (Some(current), Some(saved)) = (&mut self.remote, &snapshot.remote) {
+            let elapsed = saved.elapsed_ms.checked_add(away_ms).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+            current.started_at = now.checked_sub(Duration::from_millis(elapsed))
+                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+        }
+        {
+            let mut inner = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+            for scope in &snapshot.scopes {
+                let key = (scope.scope, scope.id.clone());
+                // Current policy's run-specific ceiling follows the retained
+                // economic scope; persistent scope limits remain authoritative.
+                if scope.scope == BudgetScope::Run
+                    && let Some(current_id) = self.scopes.iter().find(|(kind, _)| *kind == BudgetScope::Run)
+                    && let Some(current_limit) = inner.limits.get(current_id).copied() {
+                    let retained = inner.limits.entry(key.clone()).or_insert(current_limit);
+                    retained.limit_usd = retained.limit_usd.min(current_limit.limit_usd);
+                    retained.warn_at = retained.warn_at.min(current_limit.warn_at);
+                }
+                let tokens = inner.tokens.entry(key.clone()).or_default();
+                *tokens = (*tokens).max(scope.tokens);
+                let cost = inner.spend.entry(key).or_default();
+                *cost = (*cost).max(scope.cost_usd);
+            }
+            restore_handoff_activity(inner.runs.entry(self.usage_id.clone()).or_default(), &snapshot.activity, now, wall_ms)?;
+            if let Some(remote) = &snapshot.remote {
+                restore_handoff_activity(inner.runs.entry(remote.accounting_id.clone()).or_default(), &remote.activity, now, wall_ms)?;
+            }
+        }
+        self.scopes = snapshot.scopes.iter().map(|scope| (scope.scope, scope.id.clone())).collect();
+        self = self.with_durable_accounting(Some(store), Some(owner)).await?;
+        self.admit()?;
+        Ok(self)
+    }
+
     pub(crate) fn for_run(
         tracker: CostBudgetTracker,
         run_id: String,
@@ -1329,6 +1538,9 @@ mod tests {
         LlmRequest {
             messages: vec![serde_json::json!({"role": "user", "content": "delegate"})],
             tools: Vec::new(),
+            output_token_cap: None,
+            tool_choice: None,
+            parallel_tool_calls: None,
             cache_strategy: None,
             thinking_config: None,
             anthropic_system: None,

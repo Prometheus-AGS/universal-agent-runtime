@@ -1,0 +1,617 @@
+{
+  "kind": "uar.whole-phase-source-authoring-inventory/v1",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "planRevision": 91,
+  "head": "ee4826f000916e2025207efdda6da33db2a93f7f",
+  "sourceIdentity": "HEAD plus listed dirty/untracked file bytes; not a built candidate",
+  "verification": "Authorized build003 PASS exit0; functional acceptance NOT RUN; other gates CLOSED",
+  "sourceAuthoringComplete": true,
+  "phaseSourceTasks": {
+    "baseline": 13,
+    "callerTools": 17,
+    "total": 30
+  },
+  "coverage": [
+    "shared ownership and controls",
+    "durable migrations and CAS replay",
+    "host/caller orchestration",
+    "graph/session/budget retention",
+    "OpenAI",
+    "AG-UI",
+    "Anthropic",
+    "A2A",
+    "ACP",
+    "settled source cleanup acknowledgment",
+    "production acceptance authoring",
+    "contracts/specs/changelog"
+  ],
+  "remaining": [
+    "One corrective source-only review of cleanup/HOME repairs requires explicit authorization; exact local runtime gate separately named in proposal.",
+    "independent source review requires authorization",
+    "local production build and configured integration gates require authorization",
+    "actual durable DB/provider/MCP/graph/budget provisioning and lifecycle receipts",
+    "separate 1.2.1 artifact publication after acceptance and authorization"
+  ],
+  "preservedOutsideScope": [
+    ".codex/config.toml",
+    "private Liter submodule state",
+    "unrelated untracked .prometheus wiki history"
+  ],
+  "baselineInventory": "implementation-inventory.final.json (historical acceptance is not inherited)",
+  "files": [
+    {
+      "path": ".agent-team/uar-core/client-tools-runtime-handoff-20261022.md",
+      "sha256": "ccdb4ed1d1b53f0bdb59f5a4857fe3dcbfb5b270ed4e30152d109e9051a7cd4b"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "86980525099cb132170c3ffc0c41a2b0299bc1d7262fe217cc9d076cc9cc8c30"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "4968f23561840aee17ca2d5c4713b32727eae062f3d7df0475d2631a020ebce7"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "120302a7c2131188e73f7fdaa6672cc5a1873f07820fab8461f5acc83bdd81cc"
+    },
+    {
+      "path": "build.rs",
+      "sha256": "5945d4c7830ef8ebcad4c331c69f21b47226a7d086cfab6618967154bd4a5e4d"
+    },
+    {
+      "path": "docs/releases/v1.2.0-issue425-handoff.md",
+      "sha256": "105900630a238d8e5c8676ca17adfa0d90c29ba181e5cc94fe0e9aeb2265ebf6"
+    },
+    {
+      "path": "docs/releases/v1.2.1-kubo.md",
+      "sha256": "01050b6342071350f85bcb570d2db0a1c613f0ff903565edc52cf8f313400193"
+    },
+    {
+      "path": "docs/releases/v1.2.1.md",
+      "sha256": "68b57ec179265abe42249b35b53e991276c1f02b3cd2ce029bcbcf2ae92e1a2a"
+    },
+    {
+      "path": "migrations/20261022010000_client_tool_continuations.sql",
+      "sha256": "06a83bdf376f653e1a4f2dd43c1cbe03038933dc2d405f75fc244852495d0877"
+    },
+    {
+      "path": "migrations/surrealdb/client_tool_continuations.surql",
+      "sha256": "5e3c9a739eece683473c9f01bbec277e72efcbdc043c521034252bcc73a332c1"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/design.md",
+      "sha256": "88ead6c1283562eb9fcd2850ad6c8c42de3f0e94e3b7da519e5829fd7bb421f1"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/a2a.md",
+      "sha256": "49115a18d17aa3f6d5d3686ef79d22983cfd41d757a56ce0fa6fc2b6b45c3fe6"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/acceptance.md",
+      "sha256": "456e02f45a8fb62be7b98a4d4390f1f668c351215ffbee85f22dcbed1f34134e"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/accounting.md",
+      "sha256": "e3e063b78a388ec7a9cecee7ae49674845dee657faab88b734710b07ad3784b1"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/acp.md",
+      "sha256": "bbc3df01534662c52b3a48cfdec07be018561b2b14174d972b80d691e28cce02"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/agui.md",
+      "sha256": "6b4ce54d9b2b083f927ce7e30b41deca7245814a18e1a5d831b432b288d3c371"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/anthropic.md",
+      "sha256": "abba45e57603c89d9b5dd70e09d41163ca443417aec2333bead1820e21b62e7e"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/documentation.md",
+      "sha256": "6e53bf7a1b75522e86a9e8ce8619c176ed33b113118e48943358cbf8ad71a999"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/local-gate.md",
+      "sha256": "5842496c74069172d39792c03c00ec9bd117b9ae5d95471212fd65056eeddab5"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/openai.md",
+      "sha256": "2d0bd466472e89c607f78c662eb01b39a4f40afcf3743cb90a64c06de2d3f37c"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/persistence.md",
+      "sha256": "3c49116d40462cd671b98fadb90b273e457806db0274d451c81f1162370d0bb2"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/provider.md",
+      "sha256": "281c33b4c3b47b28c3bc6a160551dadcca2a8ab3953ea0cd54893f0212651493"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/services.md",
+      "sha256": "272d1556ee3ea48ee18994a052a0e8cdfad1c0e449e0bc967b44db359f979927"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/proposal.md",
+      "sha256": "5f0251145db034090964ade00bc37ef8d54f8159c0f29c9667cb5d950181a088"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/specs/caller-tool-continuation/spec.md",
+      "sha256": "048422681ad8ff8e16940b0245d70d42f453288d3fdc9a596c4bbe4fb56514fa"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/specs/openai-compatible-client-tools/spec.md",
+      "sha256": "413e6f42ded3d98528a9b6f4435a72a51e13eeeea6afb34cad2d48333a3555d9"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/tasks.md",
+      "sha256": "edf50e00bf1a02cc00518ac732022a2afd10e6c5d50eb036e65100173abb2ad8"
+    },
+    {
+      "path": "scripts/post_lifecycle/controlled_peer.py",
+      "sha256": "89d8a83dfa3f509e289a5f151c28c8b14ed3539e92fab029894ae7b6aaeef407"
+    },
+    {
+      "path": "scripts/post_lifecycle/main_boundary.py",
+      "sha256": "b55b4cc91186926ec042b486d497e68be9153bdd54f9c5fdac163e06a4eaa13b"
+    },
+    {
+      "path": "scripts/post_lifecycle/manifest-requirements.md",
+      "sha256": "7d3bd237793515fac26dc4909f79ecab17699a82bf37e190ed492ef8e4d66e7a"
+    },
+    {
+      "path": "scripts/post_lifecycle/scenario-recipes.json",
+      "sha256": "84ab60be0aa954acfed921a1a9be7c7d64ae7e28d0b33ed994d1b1b1893e95f3"
+    },
+    {
+      "path": "scripts/post_lifecycle/stream-tool-recipes.json",
+      "sha256": "67dbd36fd465500434e7dabd7bbedf3d702906602f897afc6fc777627df42bc1"
+    },
+    {
+      "path": "scripts/release/client_tools_acceptance.py",
+      "sha256": "2ee026f14b959f1cc5f89987051b7899685c593704f9dc08ba3a746e35c9b3c4"
+    },
+    {
+      "path": "scripts/release/client_tools_local_gate.py",
+      "sha256": "b87c639470a0e218b4bcd360c181716ea17f7625bfd6cec7094a73f1bdcea9d2"
+    },
+    {
+      "path": "src/llm/anthropic_cache.rs",
+      "sha256": "63a3ad2d63f844c0ca57032033bb95ea03f8b3f8d24a1f19b3c3ff48edcafb8f"
+    },
+    {
+      "path": "src/llm/anthropic_driver.rs",
+      "sha256": "6f824f2bf64f206c424faa5bfd37d470a7017a52110a675f39ee05526cda2c27"
+    },
+    {
+      "path": "src/llm/anthropic_types.rs",
+      "sha256": "d63edeb2462a42dbdd73777c726a1663463bfd3141f4c4cc1f72701e371cc2da"
+    },
+    {
+      "path": "src/llm/external_driver.rs",
+      "sha256": "46ba5146325db652f85bbd2b5f24d4daa976980a9d6a46ffee005c48a4fa5447"
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "sha256": "5ef53c34e4659302e7f7fe19af826e73a67301c3a02f572f2199b631d617549e"
+    },
+    {
+      "path": "src/llm/mod.rs",
+      "sha256": "1dc0c09ff5c0b49e210aee341186690477f3c8c41da4b8d774dff807a488925c"
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "952220f8f23333df9ae31841412187aa39f1c760e0d5676d17d2973c795501b0"
+    },
+    {
+      "path": "src/llm/xml_tool_injector.rs",
+      "sha256": "63dec9681c547fb0d636eb726d8fb50354cbd4fb250db0bea990b143f671dd62"
+    },
+    {
+      "path": "src/normalized.rs",
+      "sha256": "fd7f362715286fbe8fb6ca7e759bed6f92a2db14fa4d895905cf6750359dde43"
+    },
+    {
+      "path": "src/server.rs",
+      "sha256": "0068c80c837ddc29421529237e2c7eb165a5dc08fb0ff484cff0797dc89251a7"
+    },
+    {
+      "path": "src/uar/api/a2a/client_tools.rs",
+      "sha256": "53bb0f23986edf99eafc7ba970eb619642b333c328cd5efa08c8cc3a1092ab08"
+    },
+    {
+      "path": "src/uar/api/a2a/mod.rs",
+      "sha256": "33ddc30007fb3c2c5d914a096ff16a2ca34486293e384377912d95590ee71878"
+    },
+    {
+      "path": "src/uar/api/a2a/thread_service.rs",
+      "sha256": "01e00103c0aa00f515240ad4bf4aa2cb44938d2cd31ab2a681cdc6c7d6b2886b"
+    },
+    {
+      "path": "src/uar/api/a2a/v1.rs",
+      "sha256": "a361b2be199d59fbad4f6918530e1602e08b8ce249737c778c8597b00bde4952"
+    },
+    {
+      "path": "src/uar/api/acp/handler.rs",
+      "sha256": "aa3736ae3ba9d11c8773bc71b59ab71941371d6748e8e9ce3e84b7409fd889d7"
+    },
+    {
+      "path": "src/uar/api/acp/mod.rs",
+      "sha256": "0ed5b779d18cb96a008a53b738f2665bee0959cc24866ea203c6ec0f8ffeb2f5"
+    },
+    {
+      "path": "src/uar/api/acp/routes.rs",
+      "sha256": "27f27191e8bee44ff5d297f1046a715b1ecc75c574216927d7901a4f66890b34"
+    },
+    {
+      "path": "src/uar/api/acp/types.rs",
+      "sha256": "e86ababb74fa365ad055139ca336f39316cbb014cf2b02b55ef7821a48a3c2ea"
+    },
+    {
+      "path": "src/uar/api/adapters.rs",
+      "sha256": "092548097d92025681f34f5a540ce0501b98697c5df64342b8b6bd28e9a9e61a"
+    },
+    {
+      "path": "src/uar/api/agui.rs",
+      "sha256": "cc94da0044b7d06843da774c41f8c5c40cd2775954dbda458f9cc2388a71c7b0"
+    },
+    {
+      "path": "src/uar/api/client_tools.rs",
+      "sha256": "20c77015b850623c6c96bfacf6769f90d32a8b2bd4e55272a7f7784496d5c25c"
+    },
+    {
+      "path": "src/uar/api/mod.rs",
+      "sha256": "85158cd5d890ae95e75ee7cf6593be1d772e0f77f666335acf4bfb70d2eb64e5"
+    },
+    {
+      "path": "src/uar/api/openai/routes.rs",
+      "sha256": "6d044578a7e55a5d6616b8c29b746903b75ebd2f48f0c3a24c9009f75f66f291"
+    },
+    {
+      "path": "src/uar/api/openai/types.rs",
+      "sha256": "1a610dcf67e76416258f94cf9ab56b86a12394739c8077ccda89d078489f2e90"
+    },
+    {
+      "path": "src/uar/api/providers.rs",
+      "sha256": "06f6c368b7dd9f2a1698cb17fd2c4a39f4ab6fb30d95a588ed1a85d5ef7ac34b"
+    },
+    {
+      "path": "src/uar/api/routes.rs",
+      "sha256": "13bdfab2a5488effc2ad82bfdfd2ae8e1b6f2fc979cf902190baec0fb6c63df0"
+    },
+    {
+      "path": "src/uar/api/sse.rs",
+      "sha256": "0df99418fa8af17fbc359205a3e2ed2fc1f0de42eed3751b9c7758189c97257c"
+    },
+    {
+      "path": "src/uar/domain/events.rs",
+      "sha256": "67341b3ea9bae6d1c50fcb198fe78acef2c4765640caf67f9187ad4bac9ade54"
+    },
+    {
+      "path": "src/uar/persistence/accounting.rs",
+      "sha256": "36eef44c6c4d6163c55793b5e0642209a231784384c446d8dfe428e6f73afa72"
+    },
+    {
+      "path": "src/uar/persistence/client_tools.rs",
+      "sha256": "0c63d5894bea90169a781142e19cf84694ae528423ccc5841d12d13ec81a2576"
+    },
+    {
+      "path": "src/uar/persistence/mod.rs",
+      "sha256": "e2edca44dbe4d0b353eeecfcf0f26b1916f085e4ede0ba8910a0698ba77b1a89"
+    },
+    {
+      "path": "src/uar/persistence/providers/accounting/surreal.rs",
+      "sha256": "235d830736c7747ebf49211572591c361758335237ef7fae96d7a5b801cf9829"
+    },
+    {
+      "path": "src/uar/persistence/providers/client_tools/postgres.rs",
+      "sha256": "d60279acf4f08b0aeb4a4dd2d8af560a97ab79b1039a667ac8b5d0050ad37192"
+    },
+    {
+      "path": "src/uar/persistence/providers/client_tools/surreal.rs",
+      "sha256": "2fb4b8bb08fe228b58128d78412075836f649c50e7b3ba6875741275d455aa82"
+    },
+    {
+      "path": "src/uar/persistence/providers/postgres.rs",
+      "sha256": "37737d3c73caf5d49fdbb1a4dd98d4d08df4a60f7c5e956b42f269640583cfdc"
+    },
+    {
+      "path": "src/uar/persistence/providers/surreal.rs",
+      "sha256": "25848444b584762dd58f1a34130e36c70ece5c8af95940d15832a2303396c12a"
+    },
+    {
+      "path": "src/uar/persistence/providers/surreal_host.rs",
+      "sha256": "5c13f274ba0f5dafa337b8dd0a078dd5fc7a737d83ed982553876449849854a5"
+    },
+    {
+      "path": "src/uar/persistence/scoped.rs",
+      "sha256": "c1788b6f78a6bb3d2243b21b52ad0e95c2b907a00fec303e7eebdc48609e63ae"
+    },
+    {
+      "path": "src/uar/runtime/actor/agent_actor.rs",
+      "sha256": "43693cb1374c3b4ec29cab4e38b1682a69abd0db24c39bdaa19ab3fe573f4996"
+    },
+    {
+      "path": "src/uar/runtime/actor/messages.rs",
+      "sha256": "93196dea061aeafce7dd8fffc06da3ccf051be48acbad4d87859d7d9d9355b60"
+    },
+    {
+      "path": "src/uar/runtime/actor/system.rs",
+      "sha256": "9854cc10698ed65f14467b43f3d30f259b37e3eebb7f03b0f929d4144720e4a1"
+    },
+    {
+      "path": "src/uar/runtime/context/budget.rs",
+      "sha256": "0da1291affee358ad6d9c43b855c1d3b638c157b0c53b64e54df527eb49c0706"
+    },
+    {
+      "path": "src/uar/runtime/context/manager.rs",
+      "sha256": "07a239817e9d9a76cc5dd437b10969dc0e592bca941e58e5dd5ea49b3bee94d3"
+    },
+    {
+      "path": "src/uar/runtime/context/reduce.rs",
+      "sha256": "c5f1f8fb64e80cb37d9ab2c2f5df56ea80179a652ed7e5cfb50976d9e220f69b"
+    },
+    {
+      "path": "src/uar/runtime/context/summarizer.rs",
+      "sha256": "df789990c950a10a81094126040c961a3872dad0759ffd10e52a556f7ec499a2"
+    },
+    {
+      "path": "src/uar/runtime/cost_budget.rs",
+      "sha256": "e7ab2f48978c88ab5f3e8797729a54d835da9404c6ea5c847ed5b9904bda6b05"
+    },
+    {
+      "path": "src/uar/runtime/graph/engine.rs",
+      "sha256": "f2c232cf370728166e85547562db43166113d6606700d4b2844bcd146dd54533"
+    },
+    {
+      "path": "src/uar/runtime/graph/nodes/llm_node.rs",
+      "sha256": "d138ff12917fd823c0ec33664695c37e67b0a74f3c04707b159244ddd917a2db"
+    },
+    {
+      "path": "src/uar/runtime/graph/nodes/router_node.rs",
+      "sha256": "79e19332983a21dfb7b498840b90dc351482676095ed8bae7826a170674cfc8d"
+    },
+    {
+      "path": "src/uar/runtime/graph/tools.rs",
+      "sha256": "96fd5f2319407f072ef3103ac1d45e68cedf0a390130e8fe01991feb590eec67"
+    },
+    {
+      "path": "src/uar/runtime/graph/turn.rs",
+      "sha256": "f6e7729512bb99e1797a8b28267d96dceb6937703f2ca2b83d35e95ffb26a1ce"
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "c43aa6213eda6dbe41ac1fc2591ecd6126ca0ab3a4d499ca193746376be2249e"
+    },
+    {
+      "path": "src/uar/runtime/presentation_history_tests.rs",
+      "sha256": "9b60dedd5effb040f9803570ae7504999919c4681d024129c4f473dbb9682544"
+    },
+    {
+      "path": "src/uar/runtime/thread/actor_host.rs",
+      "sha256": "eeef03723f6458b9b20e3cde86b0375d9b4947c551a71979a3f74773e6684272"
+    },
+    {
+      "path": "src/uar/runtime/thread/graph_host.rs",
+      "sha256": "18ba14a5c0537de8d9a610cbd1623f404216d4a40eae94a69eca5b6ad065889b"
+    },
+    {
+      "path": "src/uar/runtime/turn/builtin.rs",
+      "sha256": "10d2df160780e38bf676203fefe2bac8ef8ff2a71880e4e206f26a4b130c3493"
+    },
+    {
+      "path": "src/uar/runtime/turn/client_tools.rs",
+      "sha256": "946fcf5e495ce702d88391d8e3f15874db1d915cd209db8a400ca16113499251"
+    },
+    {
+      "path": "src/uar/runtime/turn/host/event_projection.rs",
+      "sha256": "1600a4f8685ef322180fa8d52858dba850b2586041e0b20c5b009603a578125c"
+    },
+    {
+      "path": "src/uar/runtime/turn/host/secret_stream.rs",
+      "sha256": "7c3c103692b2ac589384a414c4e37ae51cf5e5e896f1f674710948c0efb93a92"
+    },
+    {
+      "path": "src/uar/runtime/turn/mod.rs",
+      "sha256": "40032d519c67045dab228595be768d323a677d07545f42d2fe8135325a44d044"
+    },
+    {
+      "path": "src/uar/runtime/turn/request.rs",
+      "sha256": "0fa813162dbf4a7e36f9d534edde321374b904e4470b4b2bd7970f62f7392c32"
+    },
+    {
+      "path": "src/uar/runtime/turn/resolved.rs",
+      "sha256": "9f5db6cc9e44fb4a73d82b9a2ecf8c8a02ffbb4632611a94f6f46f86e73a25aa"
+    },
+    {
+      "path": "tests/context_history_integrity.rs",
+      "sha256": "d185a30a676683de0244520a4e48c4b7a75f11afbab94d7c6a1d0f76d04d0b57"
+    },
+    {
+      "path": "tests/fixtures/client_tools_provider.py",
+      "sha256": "b3c9ba68834f51b3c49538f0135e34ada612c6060d5e149548ac56ab95d90e7e"
+    },
+    {
+      "path": "tests/model_path_resiliency.rs",
+      "sha256": "5002cbc3735aa61a670f25c909221119a52069bb650eece658a4a892731bb818"
+    },
+    {
+      "path": "tests/post_lifecycle_main.rs",
+      "sha256": "c7fd8193fd927d0027cadd8f2d07c01bc7d825f585e620d63938a3ba88685c23"
+    },
+    {
+      "path": "tests/run_cost_settlement.rs",
+      "sha256": "4887bdd89c22d1845b911d0b4794890df47d82ab64d6e4ff7b1f6991ef67486c"
+    },
+    {
+      "path": "tests/support/post_lifecycle_count.rs",
+      "sha256": "e4be492f3f959a57cfab5651204fd5828825312c30eadc9c9abfe572518090c0"
+    },
+    {
+      "path": "tests/support/post_lifecycle_store.rs",
+      "sha256": "529536a6a1be006f5cd728891178618d717cdf9d73eb07e68d51ececb1eafbb3"
+    }
+  ],
+  "review": "Prior isolated source review completed; build-driven graph/SSE repairs have no corrective-review or compiler receipt.",
+  "canonicalRevision": 166,
+  "aggregateReconciliation": {
+    "rootCompletion": {
+      "completed": 144,
+      "total": 166,
+      "status": "in_progress",
+      "summary": null,
+      "blockers": []
+    },
+    "meaning": "Run-wide aggregate; remaining changes belong to other phases, not the operator-selected active phase. No completion overridden.",
+    "incompleteElsewhere": [
+      {
+        "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+        "change": "certify-operational-resilience",
+        "status": "pending"
+      },
+      {
+        "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+        "change": "certify-release-candidate",
+        "status": "pending"
+      },
+      {
+        "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+        "change": "produce-supply-chain-artifacts",
+        "status": "pending"
+      },
+      {
+        "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+        "change": "release-1-0-0",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "frontend-lint-zero-warning",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "moonshot-provider-status",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "openspec-global-validation-cleanup",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "runtime-console-archive-readiness",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "runtime-console-live-visual-tests",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "runtime-event-replay-entity-sync-tests",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-console-validation-hardening",
+        "change": "surreal-memory-workflow-mirror-tests",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-harness-gap-closure",
+        "change": "harness-governed-evaluation",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-harness-gap-closure",
+        "change": "harness-knowledge-evidence",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-harness-gap-closure",
+        "change": "harness-model-profiles-routing",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-harness-gap-closure",
+        "change": "harness-skill-activation-quality",
+        "status": "pending"
+      },
+      {
+        "phase": "runtime-harness-gap-closure",
+        "change": "harness-task-graph-lifecycle",
+        "status": "pending"
+      },
+      {
+        "phase": "uar-final-production-hardening-2026-07",
+        "change": "certify-operational-resilience",
+        "status": "pending"
+      },
+      {
+        "phase": "uar-final-production-hardening-2026-07",
+        "change": "certify-release-candidate",
+        "status": "pending"
+      },
+      {
+        "phase": "uar-final-production-hardening-2026-07",
+        "change": "produce-supply-chain-artifacts",
+        "status": "pending"
+      },
+      {
+        "phase": "uar-final-production-hardening-2026-07",
+        "change": "release-1-0-0",
+        "status": "pending"
+      },
+      {
+        "phase": "uar-outstanding-issues-v1-1-1",
+        "change": "uar-outstanding-issues-v1-1-1",
+        "status": "in_progress"
+      },
+      {
+        "phase": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
+        "change": "uar-outstanding-issues-v1-1-1",
+        "status": "pending"
+      }
+    ],
+    "activePhaseChanges": {
+      "openai-client-tools": {
+        "status": "complete",
+        "tasksComplete": 17,
+        "tasksTotal": 17
+      },
+      "pl-main-boundary-evidence": {
+        "status": "complete",
+        "tasksComplete": 3,
+        "tasksTotal": 3
+      },
+      "pl-main-budget-reconciliation": {
+        "status": "complete",
+        "tasksComplete": 3,
+        "tasksTotal": 3
+      },
+      "pl-main-compatible-budget-errors": {
+        "status": "complete",
+        "tasksComplete": 2,
+        "tasksTotal": 2
+      },
+      "pl-main-destination-budget-contract": {
+        "status": "complete",
+        "tasksComplete": 2,
+        "tasksTotal": 2
+      },
+      "pl-main-persistence-discriminators": {
+        "status": "complete",
+        "tasksComplete": 3,
+        "tasksTotal": 3
+      }
+    }
+  },
+  "reviewArtifact": ".agent-team/uar-core/reviews/client-tools/source-review.md",
+  "lastBuildReceipt": "client-tools-build-003.json",
+  "postBuildDocumentation": "Corrected stale --model acceptance example to actual separate --openai-model/--anthropic-model flags; production source unchanged since build003.",
+  "proposedUnexecutedRuntimeGate": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-001",
+  "localGateReview": "Initial review BLOCKED cleanup; writer repaired source and isolated HOME. No corrective review or execution yet.",
+  "releaseDirection": "Operator requested immediate1.2.1 publication before functional acceptance; source tag/Docker publication authorized, acceptance still pending."
+}

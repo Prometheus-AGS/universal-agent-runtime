@@ -81,6 +81,10 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
     };
 
     let mapped = match event {
+        NormalizedEvent::ClientToolsRequested { run_id, batch_id, calls } => custom(
+            "uar.client_tools.requested", Some(run_id),
+            serde_json::json!({"batchId":batch_id,"calls":calls}),
+        ),
         NormalizedEvent::RunStart { run_id, agent_id } => (
             "RUN_STARTED",
             serde_json::json!({

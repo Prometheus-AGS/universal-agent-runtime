@@ -1,3 +1,5 @@
+#[path = "client_tools/postgres.rs"]
+mod client_tools;
 use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
 #[path = "a2a_bindings/postgres.rs"]
 mod a2a_bindings;
@@ -133,6 +135,11 @@ async fn insert_agent_thread(
 #[async_trait]
 impl PersistenceLayer for PostgresProvider {
     fn supports_durable_tool_receipts(&self) -> bool { true }
+    fn supports_durable_client_tools(&self) -> bool { true }
+    async fn create_client_tool_continuation(&self, row: &crate::uar::persistence::client_tools::ClientToolContinuation) -> Result<bool> { client_tools::create(self,row).await }
+    async fn load_client_tool_continuation(&self, owner: &str, tenant: Option<&str>, agent: &str, batch: &str) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> { client_tools::load(self,owner,tenant,agent,batch).await }
+    async fn load_client_tool_continuation_for_run(&self, owner: &str, tenant: Option<&str>, agent: &str, run: &str) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> { client_tools::load_for_run(self,owner,tenant,agent,run).await }
+    async fn compare_and_swap_client_tool_continuation(&self, before: &crate::uar::persistence::client_tools::ClientToolContinuation, after: &crate::uar::persistence::client_tools::ClientToolContinuation) -> Result<bool> { client_tools::transition(self,before,after).await }
     fn supports_durable_mcp_elicitations(&self) -> bool { true }
     async fn create_mcp_elicitation(&self, row: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<()> { mcp_elicitations::create(self,row).await }
     async fn list_mcp_elicitations(&self, owner: &str, run: &str) -> Result<Vec<crate::uar::persistence::mcp_elicitations::McpElicitationRecord>> { mcp_elicitations::list(self,owner,run).await }

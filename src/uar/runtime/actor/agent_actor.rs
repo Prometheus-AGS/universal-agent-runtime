@@ -125,6 +125,7 @@ impl Actor for AgentActor {
                 run_id,
                 content,
                 credential_capture,
+                client_tools,
                 artifacts,
                 reply,
             } => {
@@ -133,7 +134,7 @@ impl Actor for AgentActor {
                 } else {
                     let mut session = state.session.lock().await;
                     match session.refresh_owner(owner) {
-                        Ok(()) => session.execute_named_with_capture(content, run_id, Some(artifacts.clone()), credential_capture)
+                        Ok(()) => session.execute_named_with_client_tools(content, run_id, Some(artifacts.clone()), credential_capture, client_tools)
                             .await.map_err(super::messages::ActorRunError::Host),
                         Err(error) => Err(super::messages::ActorRunError::Host(error)),
                     }

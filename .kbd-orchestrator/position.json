@@ -2,41 +2,39 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3200,
-  "derivedRevision": 3200,
+  "sourceRevision": 166,
+  "derivedRevision": 166,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 170,
-    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
-    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
-    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
-    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
-    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
-    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
-    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
-    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 54,
+    "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
-  "updatedAt": "2026-10-21T10:09:37.536876Z",
+  "updatedAt": "2026-10-22T16:41:35.571503Z",
   "cursor": [
-    "uar-outstanding-issues-v1-1-1",
-    "function-first-release-certification",
-    "execute-lifecycle",
-    "uar-outstanding-issues-v1-1-1",
-    "4.1"
+    "uar-post-lifecycle-verification-readiness",
+    "execute"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "ready",
     "progress": {
-      "done": 138,
-      "total": 153
+      "done": 144,
+      "total": 166
     },
     "children": [
+      {
+        "type": "phase",
+        "id": "add-push-channels-backend",
+        "canonicalId": "add-push-channels-backend",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
       {
         "type": "phase",
         "id": "allow-loopback-tools-without-jwt",
@@ -52,11 +50,35 @@
             "id": "allow-loopback-tools-without-jwt",
             "status": "COMPLETE",
             "progress": {
-              "done": 9,
-              "total": 9
+              "done": 0,
+              "total": 0
             }
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "browser-smoke-providers-and-agents",
+        "canonicalId": "browser-smoke-providers-and-agents",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "ci-frontend-tests",
+        "canonicalId": "ci-frontend-tests",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       },
       {
@@ -74,11 +96,47 @@
             "id": "deploy-cleanup-issue-265-release",
             "status": "COMPLETE",
             "progress": {
-              "done": 7,
-              "total": 7
+              "done": 0,
+              "total": 0
             }
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "direct-entity-migration-agents",
+        "canonicalId": "direct-entity-migration-agents",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "direct-entity-migration-models",
+        "canonicalId": "direct-entity-migration-models",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "direct-entity-migration-providers",
+        "canonicalId": "direct-entity-migration-providers",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       },
       {
@@ -92,24 +150,12 @@
         },
         "children": [
           {
-            "type": "phase",
-            "id": "issue-379-dot-replan",
-            "canonicalId": "dot-feature-support::issue-379-dot-replan",
-            "status": "COMPLETE",
-            "progress": {
-              "done": 0,
-              "total": 0
-            },
-            "children": [],
-            "annotations": []
-          },
-          {
             "type": "change",
             "id": "dot-01-release-provenance",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -117,8 +163,8 @@
             "id": "dot-02-principal-credentials",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -126,8 +172,8 @@
             "id": "dot-03-durable-api-keys",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -135,8 +181,8 @@
             "id": "dot-04-truthful-tool-outcomes",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -144,8 +190,8 @@
             "id": "dot-05-stream-terminal-contract",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -153,8 +199,8 @@
             "id": "dot-06-fresh-process-resume",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -162,8 +208,8 @@
             "id": "dot-07-approval-recovery",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -171,8 +217,8 @@
             "id": "dot-08-durable-ingestion",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -180,8 +226,8 @@
             "id": "dot-09-idempotent-settlement",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -189,8 +235,8 @@
             "id": "dot-10-durable-budget-admission",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -198,8 +244,8 @@
             "id": "dot-11-supervisor-fencing",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -207,8 +253,8 @@
             "id": "dot-12-memory-isolation",
             "status": "COMPLETE",
             "progress": {
-              "done": 3,
-              "total": 3
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -216,8 +262,8 @@
             "id": "dot-13-memory-controls",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -225,8 +271,8 @@
             "id": "dot-14-durable-schedules",
             "status": "COMPLETE",
             "progress": {
-              "done": 3,
-              "total": 3
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -234,8 +280,8 @@
             "id": "dot-15-proactive-followups",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -243,8 +289,8 @@
             "id": "dot-16-assistant-capability-surface",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -252,8 +298,8 @@
             "id": "dot-18-a2a-conformance",
             "status": "COMPLETE",
             "progress": {
-              "done": 2,
-              "total": 2
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -261,8 +307,8 @@
             "id": "dot-19-interactive-protocols",
             "status": "COMPLETE",
             "progress": {
-              "done": 3,
-              "total": 3
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -270,8 +316,8 @@
             "id": "dot-20-safe-host-settings",
             "status": "COMPLETE",
             "progress": {
-              "done": 3,
-              "total": 3
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -279,8 +325,8 @@
             "id": "dot-17-assistant-release-acceptance",
             "status": "COMPLETE",
             "progress": {
-              "done": 3,
-              "total": 3
+              "done": 0,
+              "total": 0
             }
           }
         ],
@@ -288,9 +334,33 @@
       },
       {
         "type": "phase",
+        "id": "emit-runtime-step-events",
+        "canonicalId": "emit-runtime-step-events",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "eval-harness-hardening",
+        "canonicalId": "eval-harness-hardening",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "fix-broken-session-configuration-ui",
         "canonicalId": "fix-broken-session-configuration-ui",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 4,
           "total": 4
@@ -350,8 +420,8 @@
             "id": "provider-model-picker-key-mask",
             "status": "COMPLETE",
             "progress": {
-              "done": 4,
-              "total": 4
+              "done": 0,
+              "total": 0
             }
           }
         ],
@@ -372,11 +442,47 @@
             "id": "fix-settings-namespace-read-routes",
             "status": "COMPLETE",
             "progress": {
-              "done": 6,
-              "total": 6
+              "done": 0,
+              "total": 0
             }
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "fix-skills-page-utils-test-fixtures",
+        "canonicalId": "fix-skills-page-utils-test-fixtures",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "full-frontend-entity-mgmt-migration",
+        "canonicalId": "full-frontend-entity-mgmt-migration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "gate-activation-and-security-cleanup",
+        "canonicalId": "gate-activation-and-security-cleanup",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       },
       {
@@ -394,11 +500,35 @@
             "id": "fix-kbd-uninitialized-runtime",
             "status": "COMPLETE",
             "progress": {
-              "done": 7,
-              "total": 7
+              "done": 0,
+              "total": 0
             }
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "issue-379-dot-replan",
+        "canonicalId": "issue-379-dot-replan",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "knowledge-page-aesthetic-pass",
+        "canonicalId": "knowledge-page-aesthetic-pass",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       },
       {
@@ -415,7 +545,7 @@
             "type": "phase",
             "id": "fix-container-rust-toolchain-pin-consistency",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-container-rust-toolchain-pin-consistency",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -437,7 +567,7 @@
             "type": "phase",
             "id": "fix-embedded-sse-offline-reconnect",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-embedded-sse-offline-reconnect",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -459,7 +589,7 @@
             "type": "phase",
             "id": "fix-frontend-pnpm-lock-consistency",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-frontend-pnpm-lock-consistency",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -481,7 +611,7 @@
             "type": "phase",
             "id": "fix-graceful-shutdown-deadline-semantics",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-graceful-shutdown-deadline-semantics",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -503,7 +633,7 @@
             "type": "phase",
             "id": "fix-mcp-reconnect-shared-service-state",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-mcp-reconnect-shared-service-state",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -525,7 +655,7 @@
             "type": "phase",
             "id": "fix-pnpm-lock-submodule-consistency",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-pnpm-lock-submodule-consistency",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -547,7 +677,7 @@
             "type": "phase",
             "id": "fix-provider-default-settings-consistency",
             "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-provider-default-settings-consistency",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -696,6 +826,18 @@
       },
       {
         "type": "phase",
+        "id": "prometheus-package-integration",
+        "canonicalId": "prometheus-package-integration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "provider-settings-search-then-accessibility",
         "canonicalId": "provider-settings-search-then-accessibility",
         "status": "COMPLETE",
@@ -709,8 +851,8 @@
             "id": "provider-model-search",
             "status": "COMPLETE",
             "progress": {
-              "done": 5,
-              "total": 5
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -718,8 +860,8 @@
             "id": "provider-settings-accessibility-dirty-state",
             "status": "COMPLETE",
             "progress": {
-              "done": 7,
-              "total": 7
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -727,8 +869,108 @@
             "id": "fix-provider-settings-panel-width-responsiveness",
             "status": "COMPLETE",
             "progress": {
-              "done": 10,
-              "total": 10
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "readme-architecture-diagram",
+        "canonicalId": "readme-architecture-diagram",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "runtime-console-ux",
+        "canonicalId": "runtime-console-ux",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "runtime-console-validation-hardening",
+        "canonicalId": "runtime-console-validation-hardening",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 7
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "frontend-lint-zero-warning",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-console-live-visual-tests",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-event-replay-entity-sync-tests",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "surreal-memory-workflow-mirror-tests",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "openspec-global-validation-cleanup",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "moonshot-provider-status",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-console-archive-readiness",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
             }
           }
         ],
@@ -738,7 +980,7 @@
         "type": "phase",
         "id": "runtime-harness-gap-closure",
         "canonicalId": "runtime-harness-gap-closure",
-        "status": "IN_PROGRESS",
+        "status": "PENDING",
         "progress": {
           "done": 1,
           "total": 6
@@ -747,7 +989,7 @@
           {
             "type": "phase",
             "id": "runtime-harness-profile-certification",
-            "canonicalId": "runtime-harness-profile-certification",
+            "canonicalId": "runtime-harness-gap-closure::runtime-harness-profile-certification",
             "status": "PENDING",
             "progress": {
               "done": 0,
@@ -761,8 +1003,8 @@
             "id": "harness-protected-context",
             "status": "COMPLETE",
             "progress": {
-              "done": 8,
-              "total": 8
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -770,8 +1012,8 @@
             "id": "harness-model-profiles-routing",
             "status": "PENDING",
             "progress": {
-              "done": 5,
-              "total": 8
+              "done": 0,
+              "total": 0
             }
           },
           {
@@ -780,7 +1022,7 @@
             "status": "PENDING",
             "progress": {
               "done": 0,
-              "total": 8
+              "total": 0
             }
           },
           {
@@ -789,7 +1031,7 @@
             "status": "PENDING",
             "progress": {
               "done": 0,
-              "total": 6
+              "total": 0
             }
           },
           {
@@ -798,7 +1040,7 @@
             "status": "PENDING",
             "progress": {
               "done": 0,
-              "total": 6
+              "total": 0
             }
           },
           {
@@ -807,7 +1049,7 @@
             "status": "PENDING",
             "progress": {
               "done": 0,
-              "total": 8
+              "total": 0
             }
           }
         ],
@@ -817,7 +1059,7 @@
         "type": "phase",
         "id": "runtime-image-polyglot-toolchain-completion",
         "canonicalId": "runtime-image-polyglot-toolchain-completion",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 6,
           "total": 6
@@ -882,9 +1124,21 @@
       },
       {
         "type": "phase",
+        "id": "settings-store-retirement",
+        "canonicalId": "settings-store-retirement",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "skills-a2ui-library-and-runtime-observability",
         "canonicalId": "skills-a2ui-library-and-runtime-observability",
-        "status": "IN_PROGRESS",
+        "status": "PENDING",
         "progress": {
           "done": 0,
           "total": 0
@@ -894,7 +1148,7 @@
             "type": "phase",
             "id": "agui-a2ui-selection-architecture",
             "canonicalId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
-            "status": "IN_PROGRESS",
+            "status": "COMPLETE",
             "progress": {
               "done": 3,
               "total": 3
@@ -915,8 +1169,8 @@
                     "id": "classify-readiness-diagnostic-websocket-frame",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 4,
-                      "total": 4
+                      "done": 0,
+                      "total": 0
                     }
                   }
                 ],
@@ -937,8 +1191,8 @@
                     "id": "context-history-integrity",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 19,
-                      "total": 19
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -946,8 +1200,8 @@
                     "id": "fail-closed-tool-arguments",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 20,
-                      "total": 20
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -955,8 +1209,8 @@
                     "id": "deterministic-prompt-assembly",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 22,
-                      "total": 22
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -964,8 +1218,8 @@
                     "id": "model-path-resiliency",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 22,
-                      "total": 23
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -973,8 +1227,8 @@
                     "id": "progressive-skill-runtime",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 20,
-                      "total": 20
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -982,8 +1236,8 @@
                     "id": "typed-turn-assembly",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 17,
-                      "total": 17
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -991,8 +1245,8 @@
                     "id": "projected-mcp-runtime",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 22,
-                      "total": 22
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -1000,8 +1254,8 @@
                     "id": "thread-native-subagents",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 31,
-                      "total": 31
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -1009,8 +1263,8 @@
                     "id": "project-instructions-world-state",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 14,
-                      "total": 23
+                      "done": 0,
+                      "total": 0
                     }
                   },
                   {
@@ -1018,8 +1272,8 @@
                     "id": "typed-turn-default-flip",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 8,
-                      "total": 8
+                      "done": 0,
+                      "total": 0
                     }
                   }
                 ],
@@ -1040,8 +1294,8 @@
                     "id": "diagnose-database-readiness-latency",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 5,
-                      "total": 5
+                      "done": 0,
+                      "total": 0
                     }
                   }
                 ],
@@ -1051,7 +1305,7 @@
                 "type": "phase",
                 "id": "handle-readiness-diagnostic-zero-length-ping",
                 "canonicalId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::handle-readiness-diagnostic-zero-length-ping",
-                "status": "IN_PROGRESS",
+                "status": "COMPLETE",
                 "progress": {
                   "done": 1,
                   "total": 1
@@ -1062,8 +1316,8 @@
                     "id": "handle-readiness-diagnostic-zero-length-ping",
                     "status": "COMPLETE",
                     "progress": {
-                      "done": 4,
-                      "total": 4
+                      "done": 0,
+                      "total": 0
                     }
                   }
                 ],
@@ -1074,8 +1328,8 @@
                 "id": "establish-presentation-catalog-workspace",
                 "status": "COMPLETE",
                 "progress": {
-                  "done": 4,
-                  "total": 4
+                  "done": 0,
+                  "total": 0
                 }
               },
               {
@@ -1083,8 +1337,8 @@
                 "id": "scope-presentation-capabilities",
                 "status": "COMPLETE",
                 "progress": {
-                  "done": 4,
-                  "total": 4
+                  "done": 0,
+                  "total": 0
                 }
               },
               {
@@ -1092,14 +1346,62 @@
                 "id": "select-and-observe-presentations",
                 "status": "COMPLETE",
                 "progress": {
-                  "done": 4,
-                  "total": 4
+                  "done": 0,
+                  "total": 0
                 }
               }
             ],
             "annotations": []
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "submodule-entity-management-implementation",
+        "canonicalId": "submodule-entity-management-implementation",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "submodule-skills-and-entity-devtools-expansion",
+        "canonicalId": "submodule-skills-and-entity-devtools-expansion",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "thread-topic-chat-sidebar",
+        "canonicalId": "thread-topic-chat-sidebar",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "tool-mcp-status-push-channels",
+        "canonicalId": "tool-mcp-status-push-channels",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       },
       {
@@ -1116,7 +1418,7 @@
             "type": "phase",
             "id": "jsonwebtoken-crypto-provider-spike",
             "canonicalId": "uar-1-0-readiness::jsonwebtoken-crypto-provider-spike",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 1,
               "total": 1
@@ -1152,8 +1454,8 @@
             "id": "uar-1-1-0-kubo-conformance",
             "status": "COMPLETE",
             "progress": {
-              "done": 7,
-              "total": 7
+              "done": 0,
+              "total": 0
             }
           }
         ],
@@ -1163,7 +1465,7 @@
         "type": "phase",
         "id": "uar-branded-documentation-site",
         "canonicalId": "uar-branded-documentation-site",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 11,
           "total": 11
@@ -1269,6 +1571,42 @@
             }
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-carryover-audit",
+        "canonicalId": "uar-carryover-audit",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-dependabot-remediation-2026-07",
+        "canonicalId": "uar-dependabot-remediation-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-eval-harness",
+        "canonicalId": "uar-eval-harness",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       },
       {
@@ -1502,9 +1840,69 @@
       },
       {
         "type": "phase",
+        "id": "uar-frontend-typecheck-cleanup",
+        "canonicalId": "uar-frontend-typecheck-cleanup",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-grade-a-upgrade-2026-07",
+        "canonicalId": "uar-grade-a-upgrade-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-harness-parity",
+        "canonicalId": "uar-harness-parity",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-hybrid-app-architecture",
+        "canonicalId": "uar-hybrid-app-architecture",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-kreuzberg-v4-migration",
+        "canonicalId": "uar-kreuzberg-v4-migration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "uar-native-service-deployment",
         "canonicalId": "uar-native-service-deployment",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 5,
           "total": 5
@@ -1560,6 +1958,18 @@
       },
       {
         "type": "phase",
+        "id": "uar-next-harness",
+        "canonicalId": "uar-next-harness",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "uar-outstanding-issues-v1-1-1",
         "canonicalId": "uar-outstanding-issues-v1-1-1",
         "status": "IN_PROGRESS",
@@ -1572,7 +1982,7 @@
             "type": "phase",
             "id": "function-first-release-certification",
             "canonicalId": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
-            "status": "IN_PROGRESS",
+            "status": "PENDING",
             "progress": {
               "done": 1,
               "total": 2
@@ -1582,7 +1992,7 @@
                 "type": "phase",
                 "id": "embedding-primary-backup-lifecycle",
                 "canonicalId": "uar-outstanding-issues-v1-1-1::function-first-release-certification::embedding-primary-backup-lifecycle",
-                "status": "BLOCKED",
+                "status": "PENDING",
                 "progress": {
                   "done": 0,
                   "total": 0
@@ -1594,7 +2004,7 @@
                 "type": "phase",
                 "id": "startup-config-lifecycle-root-cause",
                 "canonicalId": "uar-outstanding-issues-v1-1-1::function-first-release-certification::startup-config-lifecycle-root-cause",
-                "status": "COMPLETE",
+                "status": "PENDING",
                 "progress": {
                   "done": 0,
                   "total": 0
@@ -1607,8 +2017,8 @@
                 "id": "deterministic-lifecycle-management",
                 "status": "COMPLETE",
                 "progress": {
-                  "done": 22,
-                  "total": 22
+                  "done": 0,
+                  "total": 0
                 }
               },
               {
@@ -1616,8 +2026,8 @@
                 "id": "uar-outstanding-issues-v1-1-1",
                 "status": "PENDING",
                 "progress": {
-                  "done": 5,
-                  "total": 9
+                  "done": 0,
+                  "total": 0
                 }
               }
             ],
@@ -1628,8 +2038,8 @@
             "id": "uar-outstanding-issues-v1-1-1",
             "status": "IN_PROGRESS",
             "progress": {
-              "done": 35,
-              "total": 39
+              "done": 0,
+              "total": 0
             }
           }
         ],
@@ -1637,9 +2047,148 @@
       },
       {
         "type": "phase",
+        "id": "uar-post-dependabot-followup-2026-07",
+        "canonicalId": "uar-post-dependabot-followup-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-post-lifecycle-verification-readiness",
+        "canonicalId": "uar-post-lifecycle-verification-readiness",
+        "status": "IN_PROGRESS",
+        "progress": {
+          "done": 6,
+          "total": 6
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "pl-main-budget-reconciliation",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "pl-main-compatible-budget-errors",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "pl-main-destination-budget-contract",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "pl-main-persistence-discriminators",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "pl-main-boundary-evidence",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "openai-client-tools",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 17,
+              "total": 17
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-production-readiness-gaps",
+        "canonicalId": "uar-production-readiness-gaps",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-production-ready-uiux-2026-07",
+        "canonicalId": "uar-production-ready-uiux-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-safety-and-evals",
+        "canonicalId": "uar-safety-and-evals",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-security-audit-alerts-gate-2026-07",
+        "canonicalId": "uar-security-audit-alerts-gate-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-security-deps-and-hygiene",
+        "canonicalId": "uar-security-deps-and-hygiene",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "uar-spec-conformance-2026-08",
         "canonicalId": "uar-spec-conformance-2026-08",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 6,
           "total": 6
@@ -1704,9 +2253,21 @@
       },
       {
         "type": "phase",
+        "id": "uar-spec-v2-and-polish",
+        "canonicalId": "uar-spec-v2-and-polish",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
         "id": "uar-uiux-full-migration-2026-08",
         "canonicalId": "uar-uiux-full-migration-2026-08",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 21,
           "total": 21
@@ -1902,6 +2463,78 @@
             }
           }
         ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-uiux-refinement-2026-08",
+        "canonicalId": "uar-uiux-refinement-2026-08",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-wisc-cli",
+        "canonicalId": "uar-wisc-cli",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "ui-base-ui-migration",
+        "canonicalId": "ui-base-ui-migration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "use-optimistic-patch-helper-extraction",
+        "canonicalId": "use-optimistic-patch-helper-extraction",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "vitest-contract-test-suite",
+        "canonicalId": "vitest-contract-test-suite",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "wire-dead-metric-recorders",
+        "canonicalId": "wire-dead-metric-recorders",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
         "annotations": []
       }
     ],

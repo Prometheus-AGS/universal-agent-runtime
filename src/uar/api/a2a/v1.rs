@@ -37,7 +37,15 @@ pub fn agent_card(base_url: &str, grpc_url: Option<&str>) -> Value {
 }
 
 pub async fn handle_agent_card(State(state): State<Arc<A2AState>>) -> Json<Value> {
-    Json(agent_card(&state.base_url, state.grpc_url.as_deref()))
+    let mut card = agent_card(&state.base_url, state.grpc_url.as_deref());
+    if state.threads.supports_client_tools() {
+        card["capabilities"]["extensions"] = json!([{
+            "uri": super::client_tools::CLIENT_TOOLS_EXTENSION,
+            "description": "Caller-owned function declarations, durable pending calls and exact task/context result continuation",
+            "required": false,
+        }]);
+    }
+    Json(card)
 }
 
 pub async fn handle_rpc(

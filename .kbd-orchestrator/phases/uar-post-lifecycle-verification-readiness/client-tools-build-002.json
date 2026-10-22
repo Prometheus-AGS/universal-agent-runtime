@@ -1,0 +1,29 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "authorization": "Operator: Authorize this build rerun once,2026-10-22",
+  "session": 84642,
+  "exitCode": 101,
+  "artifactProduced": false,
+  "result": "Rust source compiled through binary link; binary link failed. This is not a successful build.",
+  "observedDiagnostics": [
+    {
+      "message": "linking with cc failed: exit status:1; ld: unknown options: -no_warn_eh_frame_too_large",
+      "origin": "build.rs:16 emits macOS debug linker argument"
+    },
+    {
+      "message": "ResumeRequest::for_client_tools unused",
+      "origin": "src/uar/api/routes.rs:1612"
+    },
+    {
+      "message": "unused import OnceLockExt",
+      "origin": "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs:12"
+    }
+  ],
+  "repairsAuthored": [
+    "Removed unused ResumeRequest::for_client_tools helper; no callsites exist."
+  ],
+  "pendingRepair": "build.rs unsupported linker suppression; pre/post GitHub Actions policy validator permission required before editing workflow-invoked build script.",
+  "verificationAfterRepairs": "NONE; gate CLOSED",
+  "tests": "NOT RUN",
+  "publication": "NONE"
+}

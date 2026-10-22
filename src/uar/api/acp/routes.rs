@@ -122,7 +122,7 @@ async fn handle_rpc_stream(
 ) -> Response {
     // For non-runs/create methods, fall back to regular JSON response.
     let method = req_val.get("method").and_then(Value::as_str).unwrap_or("");
-    if method != "runs/create" {
+    if method != "runs/create" && method != "runs/submit_tool_results" {
         return handle_rpc(req_val, state, sessions, user, auth_required, headers, credential_capture).await;
     }
 
@@ -142,6 +142,16 @@ async fn handle_rpc_stream(
     let resp = dispatch_with_capture(req, Arc::clone(&state), Arc::clone(&sessions), &user, credential_capture).await;
     if resp.error.is_some() {
         return (StatusCode::OK, Json(resp)).into_response();
+    }
+
+    // Caller-tool continuations are persisted and completed before public replay.
+    if let Some(events) = resp.result.as_ref().and_then(|result| result.get("events")).and_then(Value::as_array) {
+        let mut serialized = events.iter().map(|event| Event::default().data(event.to_string())).collect::<Vec<_>>();
+        if let Some(result) = &resp.result {
+            serialized.push(Event::default().event("acp_result").data(result.to_string()));
+        }
+        let replay = stream::iter(serialized.into_iter().map(Ok::<Event, Infallible>));
+        return Sse::new(replay).into_response();
     }
 
     let run_id = resp

@@ -1,0 +1,40 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "authorization": "Operator: Authorize this build once,2026-10-22",
+  "session": 8940,
+  "exitCode": 101,
+  "artifactProduced": false,
+  "observedDiagnostics": [
+    {
+      "code": "E0425",
+      "file": "src/uar/runtime/graph/tools.rs",
+      "line": 114,
+      "message": "cannot find value graph_state in this scope"
+    },
+    {
+      "code": "E0004",
+      "file": "src/uar/api/sse.rs",
+      "line": 390,
+      "message": "non-exhaustive NormalizedEvent::ClientToolsRequested match"
+    },
+    {
+      "level": "warning",
+      "file": "src/uar/runtime/graph/tools.rs",
+      "line": 147,
+      "message": "unused variable graph_state"
+    },
+    {
+      "level": "warning",
+      "file": "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs",
+      "line": 12,
+      "message": "unused import OnceLockExt; unchanged vendored source"
+    }
+  ],
+  "repairsAuthored": [
+    "Moved graph-state binding into model_turn; tool execute retains base orchestrator",
+    "Mapped caller handoff to existing legacy agui.client_tools.requested event shape in shared SSE projector"
+  ],
+  "verificationAfterRepairs": "NONE; once-only build authorization consumed; gate CLOSED",
+  "tests": "NOT RUN",
+  "publication": "NONE"
+}
