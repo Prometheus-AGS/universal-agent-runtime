@@ -1,0 +1,55 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-009 --extended",
+  "session": 31279,
+  "exitCode": 1,
+  "cases": 95,
+  "passed": 90,
+  "failures": [
+    {
+      "scenario": "a2a:simultaneous-identical-results",
+      "status": "failed",
+      "error": "race/disconnect initial handoff failed"
+    },
+    {
+      "scenario": "a2a:disconnect-held-continuation",
+      "status": "failed",
+      "error": "race/disconnect initial handoff failed"
+    },
+    {
+      "scenario": "a2a:upstream:truncated_stream",
+      "status": "failed",
+      "error": "A2A stream terminal task read failed"
+    },
+    {
+      "scenario": "a2a:upstream:invalid_stream",
+      "status": "failed",
+      "error": "A2A stream terminal task read failed"
+    },
+    {
+      "scenario": "a2a:mixed-host-caller",
+      "status": "failed",
+      "error": "initial request rejected: {\"status\": 408, \"body\": {\"unparsed\": \"Request timed out\"}}"
+    }
+  ],
+  "candidateCleanup": [
+    {
+      "process": "candidate",
+      "pid": 37994,
+      "joined": true,
+      "exit_code": 0,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    }
+  ],
+  "extended": "Not run; matrixfailed",
+  "acceptance": "Failed; no1.2.2publication",
+  "rootCauseSourceFindings": [
+    "A2A mixed canonical transcript ends with settled host tool result; projecting last canonical tool_calls yielded Conflict loop. Public pending calls must come from visible assistant transcript.",
+    "A2A upstream negative tests received actual successful GetTask RPC with TASK_STATE_FAILED; driver conflated failed task with failed RPC read.",
+    "Candidate shutdown joined exit0 without forced kill."
+  ]
+}

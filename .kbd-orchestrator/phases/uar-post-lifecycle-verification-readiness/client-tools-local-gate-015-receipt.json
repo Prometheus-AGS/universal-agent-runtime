@@ -1,0 +1,18 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-015 --extended",
+  "exitCode": 1,
+  "corePassed": 95,
+  "safetyPassed": 60,
+  "cancellationPassed": 5,
+  "ordinaryColdPassed": 5,
+  "graphWarmColdPassed": 5,
+  "budgetWarmColdPassed": 5,
+  "mixedCrashSeedFailure": "Pre-handoff samebatchrequestcannotcontainlaterhostresult; peeractualoneproviderrequest+oneeffect, fixtureassertionwrong",
+  "ownedShutdownClean": true,
+  "cleanupStatus": "confirmed",
+  "remaining": [
+    "13.27 seedproof",
+    "CT5 mixedcrash",
+    "CT7 publication/image"
+  ]
+}

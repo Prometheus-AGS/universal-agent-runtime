@@ -1,0 +1,40 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-008 --extended",
+  "exitCode": 1,
+  "matrixComplete": true,
+  "perProtocol": {
+    "openai": {
+      "passed": 19
+    },
+    "anthropic": {
+      "passed": 19
+    },
+    "agui": {
+      "passed": 19
+    },
+    "a2a": {
+      "failed": 10,
+      "passed": 9
+    },
+    "acp": {
+      "passed": 19
+    }
+  },
+  "cleanup": "failed_or_uncertain",
+  "children": [
+    [
+      "matrix",
+      1
+    ],
+    [
+      "candidate",
+      -9
+    ],
+    [
+      "provider-peer",
+      -15
+    ]
+  ],
+  "extended": "Not reached; matrixfailed",
+  "acceptance": "FAILED85/95; A2A10fail andforcedcleanup"
+}

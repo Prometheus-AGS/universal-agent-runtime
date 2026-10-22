@@ -28,6 +28,14 @@ def tool_results(messages):
     return results
 
 
+def prompt_identity(request):
+    parts = [message.get("content", "") for message in request.get("messages", [])
+        if message.get("role") in ("system", "developer")]
+    if "system" in request:
+        parts.append(request["system"])
+    return json.dumps(parts)
+
+
 def produce(request, settings):
     tools = request.get("tools", [])
     names = [tool.get("function", tool).get("name") for tool in tools]
@@ -37,10 +45,23 @@ def produce(request, settings):
     named = choice.get("function", {}).get("name", choice.get("name")) if isinstance(choice, dict) else None
     results = tool_results(request.get("messages", []))
     scenario = settings.get("scenario", "single")
-    if scenario == "graph" and settings.get("graph_after_marker") in json.dumps(request):
-        return [], "client-tools-graph-after-node-complete"
+    if scenario == "graph":
+        identity = prompt_identity(request)
+        if settings["graph_before_marker"] in identity and not tools:
+            return [], "general-purpose"
+        if settings["graph_after_marker"] not in identity:
+            raise ValueError("graph request lost router or worker prompt identity")
     if scenario == "provider_error":
         return None, None
+    host_result = any(message.get("role") == "tool" and message.get("tool_call_id") == "fixture-host-call" for message in request.get("messages", []))
+    if scenario == "host_after_results" and results:
+        if host_result:
+            return [], "client-tools-final:host-result"
+        host = settings["host_tool"]
+        # Deliberately ignore advertisement: a denied tool must stay denied
+        # even when a malicious provider emits its known executable name.
+        return [{"id": "fixture-host-call", "type": "function", "function": {
+            "name": host["name"], "arguments": json.dumps(host["arguments"])}}], ""
     if choice_type == "none" or not names:
         return [], "client-tools-final:no-call"
     required_results = 2 if scenario in ("two_round", "parallel", "force_parallel") else 1
@@ -55,22 +76,22 @@ def produce(request, settings):
         "name": (names[index % len(names)] if count > 1 else chosen),
         "arguments": '{"query":' if scenario == "malformed_arguments" else json.dumps({"query": "fixture-" + str(len(results) + index)})
     }} for index in range(count)]
-    host_result = any(message.get("role") == "tool" and message.get("tool_call_id") == "fixture-host-call" for message in request.get("messages", []))
     if scenario == "mixed" and not results and not host_result:
         host = settings.get("host_tool")
         if not host or not any(tool.get("function", tool).get("name") == host["name"] for tool in tools):
             raise ValueError("mixed scenario requires an advertised host_tool name and arguments")
         calls.insert(0, {"id": "fixture-host-call", "type": "function", "function": {
             "name": host["name"], "arguments": json.dumps(host["arguments"])}})
-    return calls, ""
+    return calls, "client-tools-mixed-text" if scenario == "mixed_text" else ""
 
 
-def openai(request, calls, text):
+def openai(request, calls, text, wire_usage):
     model = request.get("model", "fixture-model")
     message = {"role": "assistant", "content": text or None}
     if calls:
         message["tool_calls"] = calls
-    usage = {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 5}
+    usage = {"prompt_tokens": wire_usage["input_tokens"], "completion_tokens": wire_usage["output_tokens"],
+        "total_tokens": wire_usage["input_tokens"] + wire_usage["output_tokens"]}
     if not request.get("stream"):
         return json.dumps({"id": "fixture-completion", "object": "chat.completion", "model": model,
             "choices": [{"index": 0, "message": message, "finish_reason": "tool_calls" if calls else "stop"}], "usage": usage}).encode(), "application/json"
@@ -78,6 +99,8 @@ def openai(request, calls, text):
         return frame({"id": "fixture-completion", "object": "chat.completion.chunk", "created": 0, "model": model,
             "choices": [{"index": 0, "delta": delta, "finish_reason": finish}]})
     body = chunk({"role": "assistant"})
+    if calls and text:
+        body += chunk({"content": text})
     if calls:
         for index, call in enumerate(calls):
             arguments = call["function"]["arguments"]
@@ -92,23 +115,26 @@ def openai(request, calls, text):
     return body + b"data: [DONE]\n\n", "text/event-stream"
 
 
-def anthropic(request, calls, text):
+def anthropic(request, calls, text, wire_usage):
     blocks = [{"type": "tool_use", "id": call["id"], "name": call["function"]["name"],
         "input": json.loads(call["function"]["arguments"])} for call in calls] if calls else [{"type": "text", "text": text}]
+    if calls and text:
+        blocks.insert(0, {"type": "text", "text": text})
     message = {"id": "fixture-message", "type": "message", "role": "assistant", "model": request.get("model"),
         "content": blocks, "stop_reason": "tool_use" if calls else "end_turn", "stop_sequence": None,
-        "usage": {"input_tokens": 2, "output_tokens": 3}}
+        "usage": dict(wire_usage)}
     if not request.get("stream"):
         return json.dumps(message).encode(), "application/json"
     start = dict(message, content=[], stop_reason=None)
     body = frame({"type": "message_start", "message": start}, "message_start")
     for index, block in enumerate(blocks):
-        initial = dict(block, input={}) if calls else {"type": "text", "text": ""}
+        is_tool = block["type"] == "tool_use"
+        initial = dict(block, input={}) if is_tool else {"type": "text", "text": ""}
         body += frame({"type": "content_block_start", "index": index, "content_block": initial}, "content_block_start")
-        delta = {"type": "input_json_delta", "partial_json": json.dumps(block["input"])} if calls else {"type": "text_delta", "text": text}
+        delta = {"type": "input_json_delta", "partial_json": json.dumps(block["input"])} if is_tool else {"type": "text_delta", "text": block["text"]}
         body += frame({"type": "content_block_delta", "index": index, "delta": delta}, "content_block_delta")
         body += frame({"type": "content_block_stop", "index": index}, "content_block_stop")
-    body += frame({"type": "message_delta", "delta": {"stop_reason": message["stop_reason"], "stop_sequence": None}, "usage": {"output_tokens": 3}}, "message_delta")
+    body += frame({"type": "message_delta", "delta": {"stop_reason": message["stop_reason"], "stop_sequence": None}, "usage": {"output_tokens": wire_usage["output_tokens"]}}, "message_delta")
     return body + frame({"type": "message_stop"}, "message_stop"), "text/event-stream"
 
 
@@ -124,6 +150,8 @@ def main():
     release = threading.Event()
     release.set()
     held = {"count": 0}
+    host_binding = {"enabled": True}
+    binding_requests = []
     args.trace.touch(mode=0o600)
     args.trace.chmod(0o600)
 
@@ -143,7 +171,8 @@ def main():
                 self.reply(405, b'{"error":"stateless MCP uses POST"}')
                 return
             with lock:
-                value = {"settings": dict(settings), "requests": list(traces), "host_effects": list(effects), "held_requests": held["count"]} if self.path == "/_trace" else {"object": "list", "data": [{"id": "fixture-model", "object": "model"}]}
+                value = {"settings": dict(settings), "requests": list(traces), "host_effects": list(effects), "held_requests": held["count"],
+                    "host_binding": dict(host_binding), "binding_requests": list(binding_requests)} if self.path == "/_trace" else {"object": "list", "data": [{"id": "fixture-model", "object": "model"}]}
             self.reply(200, json.dumps(value).encode())
 
         def do_POST(self):
@@ -158,14 +187,37 @@ def main():
                     self.reply(200, b'{"released":true}')
                     return
                 if self.path == "/_control":
+                    usage = request.get("provider_usage", {"input_tokens": 2, "output_tokens": 3})
+                    if (not isinstance(usage, dict) or set(usage) != {"input_tokens", "output_tokens"}
+                        or any(type(value) is not int or value < 0 for value in usage.values())):
+                        self.reply(422, b'{"error":"provider_usage requires nonnegative integer input_tokens/output_tokens"}')
+                        return
                     settings.clear()
                     settings.update(request)
                     traces.clear()
                     effects.clear()
+                    binding_requests.clear()
+                    host_binding["enabled"] = True
                     self.reply(200, b'{"configured":true}')
+                    return
+                if self.path == "/_host_binding":
+                    if set(request) != {"enabled"} or type(request["enabled"]) is not bool:
+                        self.reply(422, b'{"error":"enabled boolean required"}')
+                        return
+                    host_binding["enabled"] = request["enabled"]
+                    receipt = {"kind": "host_binding_change", "enabled": request["enabled"]}
+                    binding_requests.append(receipt)
+                    with args.trace.open("a") as output:
+                        output.write(json.dumps(receipt) + "\n")
+                    self.reply(200, json.dumps(receipt).encode())
                     return
                 if self.path == "/mcp":
                     method, identifier = request.get("method"), request.get("id")
+                    if method in ("tools/list", "tools/call"):
+                        receipt = {"kind": "real_mcp_binding_request", "method": method, "enabled": host_binding["enabled"]}
+                        binding_requests.append(receipt)
+                        with args.trace.open("a") as output:
+                            output.write(json.dumps(receipt) + "\n")
                     if method == "notifications/initialized":
                         self.reply(202, b"")
                         return
@@ -175,12 +227,19 @@ def main():
                     elif method == "tools/list":
                         result = {"tools": [{"name": "effect", "description": "Record one acceptance effect", "inputSchema": {
                             "type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"], "additionalProperties": False}}]}
+                        if not host_binding["enabled"]:
+                            result["tools"] = []
                     elif method == "tools/call" and request.get("params", {}).get("name") == "effect":
+                        if not host_binding["enabled"]:
+                            self.reply(200, json.dumps({"jsonrpc": "2.0", "id": identifier,
+                                "error": {"code": -32601, "message": "Tool binding withdrawn"}}).encode())
+                            return
                         receipt = {"sequence": len(effects) + 1, "arguments": request["params"].get("arguments", {})}
+                        result = {"content": [{"type": "text", "text": json.dumps(receipt)}], "isError": False}
+                        receipt["mcp_result"] = result
                         effects.append(receipt)
                         with args.trace.open("a") as output:
                             output.write(json.dumps({"kind": "real_mcp_effect", **receipt}) + "\n")
-                        result = {"content": [{"type": "text", "text": json.dumps(receipt)}], "isError": False}
                     elif method == "ping":
                         result = {}
                     else:
@@ -188,7 +247,8 @@ def main():
                         return
                     self.reply(200, json.dumps({"jsonrpc": "2.0", "id": identifier, "result": result}).encode())
                     return
-                captured = {"path": self.path, "request": request, "scenario": settings.get("scenario")}
+                captured = {"path": self.path, "request": request, "scenario": settings.get("scenario"),
+                    "provider_usage": dict(settings.get("provider_usage", {"input_tokens": 2, "output_tokens": 3}))}
                 traces.append(captured)
                 with args.trace.open("a") as output:
                     output.write(json.dumps(captured) + "\n")
@@ -221,7 +281,12 @@ def main():
                 if calls is None:
                     self.reply(503, b'{"error":{"message":"fixture provider unavailable","type":"server_error"}}')
                     return
-                body, content_type = anthropic(request, calls, text) if self.path.endswith("/messages") else openai(request, calls, text)
+                wire_usage = current.get("provider_usage", {"input_tokens": 2, "output_tokens": 3})
+                body, content_type = anthropic(request, calls, text, wire_usage) if self.path.endswith("/messages") else openai(request, calls, text, wire_usage)
+                with lock:
+                    captured["response"] = {"tool_calls": calls, "content_type": content_type, "wire_body": body.decode()}
+                    with args.trace.open("a") as output:
+                        output.write(json.dumps({"kind": "real_provider_response", "request": request, **captured["response"]}) + "\n")
                 self.reply(200, body, content_type)
             except (ValueError, KeyError) as error:
                 self.reply(422, json.dumps({"error": {"message": str(error)}}).encode())

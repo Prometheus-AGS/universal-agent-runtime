@@ -7237,15 +7237,22 @@ impl RunManager {
             let graph_thread_delegate = graph_controls
                 .zip(authorized_tools.get("spawn_agent").cloned())
                 .map(|(controls, descriptor)| {
-                    Arc::new(
-                        crate::uar::runtime::graph::delegation::GraphThreadDelegate::new(
-                            run_id.clone(),
-                            controls,
-                            Arc::clone(&budget_gate),
-                            Arc::clone(&tool_admission),
-                            descriptor,
-                        ),
-                    )
+                    let mut delegate = crate::uar::runtime::graph::delegation::GraphThreadDelegate::new(
+                        run_id.clone(), controls, Arc::clone(&budget_gate),
+                        Arc::clone(&tool_admission), descriptor,
+                    );
+                    if let (Some(input), Some(store), Some(owner)) = (
+                        client_tools.as_ref().filter(|input| !input.tools.is_empty()),
+                        self.persistence.as_ref(), verified_owner.as_ref(),
+                    ) {
+                        let capture = crate::uar::runtime::turn::client_tools::GraphCallerTurnCapture::new(
+                            input.clone(), artifact.id.clone(), run_id.clone(), session.id().to_owned(),
+                            serde_json::Value::Null,
+                        );
+                        delegate = delegate.with_caller_tools(capture, self.clone(), Arc::clone(store),
+                            owner.clone(), Arc::new(emitter.clone()));
+                    }
+                    Arc::new(delegate)
                 });
             (
                 Arc::new(o.with_tool_approval_gate(budget_gate)),
@@ -7597,7 +7604,8 @@ impl RunManager {
                             code: String::new(),
                         })
                         .await;
-                } else if let Some(route) = final_state.get::<String>("_route") {
+                } else if final_state.get::<bool>("_client_tool_handoff") != Some(true)
+                    && let Some(route) = final_state.get::<String>("_route") {
                     let output_key = format!("_agent_output_{route}");
                     match final_state.get::<String>(&output_key) {
                         Some(output) => {
@@ -8937,7 +8945,14 @@ impl RunManager {
                         if let Some(join) = handle.as_mut() {
                             let outcome = join.await;
                             *handle = None;
-                            outcome.map_err(|_| anyhow::anyhow!("run_producer_join_failed"))?;
+                            if outcome.is_err() {
+                                // Publish failure while retaining the producer-slot
+                                // lock, before another joiner can observe it empty.
+                                if let Some(state) = self.active_runs.write().await.get_mut(run_id) {
+                                    state.run.status = RunStatus::Error;
+                                }
+                                anyhow::bail!("run_producer_join_failed");
+                            }
                         }
                     }
                     CheckpointProducer::Actor(root) => root.finish().await?,
@@ -8952,8 +8967,14 @@ impl RunManager {
             }
             return Err(error);
         }
-        self.settled_run_status(run_id).await
-            .ok_or_else(|| anyhow::anyhow!("run_settlement_unconfirmed"))
+        // Joining establishes settlement for this waiter. A concurrent waiter
+        // may now hold the same producer slot for an idempotent join; probing
+        // that mutex with try_lock would incorrectly revoke this proof.
+        let status = self.get_run(run_id).await
+            .ok_or_else(|| anyhow::anyhow!("run_settlement_unconfirmed"))?.status;
+        anyhow::ensure!(matches!(status, RunStatus::Done | RunStatus::Error | RunStatus::Cancelled),
+            "run_settlement_unconfirmed");
+        Ok(status)
     }
 
     pub async fn get_run_for_owner(

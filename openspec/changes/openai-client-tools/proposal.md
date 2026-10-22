@@ -12,3 +12,6 @@ Add typed caller declarations/choice/parallel controls, full conversation input,
 
 ## Uncomfortable limitations
 No new behavior is compiled or accepted while the operator verification gate is CLOSED. A claimed continuation interrupted after side effects is not automatically re-executed. Unsupported provider controls return explicit errors. Release1.2.1 publication needs separate authorization and a new digest;1.2.0 stays fixed.
+
+## Finite delivery boundary — 2026-10-22
+The operator requested a KBD-derived finish contract. The existing feature now uses `.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md` (CT-1–CT-7). Local built-in AgentNode team delegation is in scope; remote federation, arbitrary graph certification, new providers and broader estate checks are excluded. Stop on passing immutable-image evidence, or report the defined no-progress blocker without waiving functional failures.

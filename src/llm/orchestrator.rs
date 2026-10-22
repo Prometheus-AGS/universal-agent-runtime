@@ -2413,6 +2413,13 @@ impl Orchestrator {
                             }
                             s
                         }
+                        Err(e) if crate::uar::runtime::cost_budget::client_failure(&e).is_some() => {
+                            // A host budget refusal precedes provider dispatch.
+                            // Preserve it without cooling down a healthy provider
+                            // or attempting another model for the same refused call.
+                            yield orchestrator.provider_failure(&e, false);
+                            break;
+                        }
                         Err(e) if orchestrator.failover_config.enabled => {
                             if let Some(health) = &orchestrator.health_monitor {
                                 health
@@ -3277,12 +3284,28 @@ impl Orchestrator {
                         anyhow::ensure!(store.supports_durable_client_tools(), "durable_client_tools_unsupported");
                         let mut visible = input.visible_history.as_ref().unwrap_or(&input.history).clone();
                         visible.push(serde_json::json!({"role":"assistant", "content":orchestrator.secret_scrubber.scrub(&caller_visible_assistant_text), "tool_calls":caller_calls}));
+                        let (agent_id, source_run_id, session_id, execution_source, graph_state) =
+                            if let Some(binding) = &input.delegation {
+                                anyhow::ensure!(binding.executing_run_id == turn.environment().run_id,
+                                    "graph_caller_execution_binding_conflict");
+                                (binding.root_agent_id.clone(), binding.root_run_id.clone(),
+                                    binding.root_session_id.clone(),
+                                    Some(crate::uar::persistence::client_tools::ClientToolExecutionSource {
+                                        agent_id: turn.artifact().id.clone(),
+                                        run_id: binding.executing_run_id.clone(),
+                                        thread_id: binding.executing_thread_id.clone(),
+                                    }), input.graph_state.clone())
+                            } else {
+                                (turn.artifact().id.clone(), turn.environment().run_id.clone(),
+                                    turn.environment().session_id.clone(), None,
+                                    orchestrator.client_graph_state.clone())
+                            };
                         let pending = crate::uar::persistence::client_tools::ClientToolContinuation {
                             owner_key: owner.session_owner_key()?, tenant_id: owner.tenant_id().map(str::to_owned),
-                            agent_id: turn.artifact().id.clone(), batch_id: batch_id.clone(), protocol: input.protocol.clone(),
-                            source_run_id: turn.environment().run_id.clone(), source_settled: false,
-                            session_id: Some(turn.environment().session_id.clone()),
-                            graph_state: orchestrator.client_graph_state.clone(),
+                            agent_id, batch_id: batch_id.clone(), protocol: input.protocol.clone(),
+                            source_run_id, execution_source, source_settled: false,
+                            session_id: Some(session_id),
+                            graph_state,
                             output_token_cap: turn.output_token_cap(),
                             budget_snapshot: Some(orchestrator.client_tool_budget.as_ref()
                                 .ok_or_else(|| anyhow::anyhow!("client_tool_budget_missing"))?.snapshot_client_handoff()?),

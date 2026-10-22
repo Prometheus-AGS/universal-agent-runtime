@@ -59,3 +59,22 @@ pub(super) async fn load_for_run(store: &SurrealDbProvider, owner: &str, tenant:
     }
     Ok(matched)
 }
+
+pub(super) async fn load_for_session(store: &SurrealDbProvider, owner: &str, tenant: Option<&str>, session: &str, batch: &str) -> anyhow::Result<Option<ClientToolContinuation>> {
+    anyhow::ensure!(store.durable_instances, "durable_client_tools_unsupported");
+    // Existing durable rows store the full binding as serialized data. Filter the
+    // authenticated owner's rows without changing their immutable representation.
+    let mut response = store.db.query("SELECT VALUE data FROM client_tool_continuations WHERE owner_key=$owner")
+        .bind(("owner",owner.to_owned())).await?.check()?;
+    let rows: Vec<String> = response.take(0)?;
+    let mut matched = None;
+    for row in rows {
+        let row: ClientToolContinuation = serde_json::from_str(&row)?;
+        if row.tenant_id.as_deref() == tenant && row.session_id.as_deref() == Some(session) && row.batch_id == batch {
+            row.validate()?;
+            anyhow::ensure!(row.owner_key == owner && matched.is_none(), "client_tool_session_binding_conflict");
+            matched = Some(row);
+        }
+    }
+    Ok(matched)
+}

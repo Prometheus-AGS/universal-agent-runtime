@@ -594,7 +594,15 @@ impl CapturedThreadKernel {
             .with_verified_owner(self.resources.owner.clone());
         request.session_id = Some(thread.thread_id.clone());
         request.host_secret_scrubber = self.resources.secret_scrubber.clone();
-        request.inherited_history = Some(turn.messages);
+        // The trusted graph capture already carries the worker's canonical
+        // paired tool history. Generic parent fork history cannot replace it.
+        request.inherited_history = Some(match &turn.client_tools {
+            Some(input) => serde_json::from_value::<Vec<Message>>(
+                serde_json::Value::Array(input.history.clone()),
+            )?,
+            None => turn.messages,
+        });
+        request.client_tools = turn.client_tools;
         request.service_binding = self.resources.service_binding.clone();
         let run_id = thread
             .run_id

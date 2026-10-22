@@ -126,7 +126,7 @@ async fn prepare_frontend_continuation(
             None => serde_json::from_value(saved.client_schemas.get("parallel_tool_calls").cloned().unwrap_or(Value::Null))
                 .map_err(|_|failure(StatusCode::CONFLICT,"caller_tool_schema_unavailable"))?,
         },
-        history,visible_history:None,graph_state:None,budget_snapshot:None,output_token_cap:None,protocol:"agui".into(),
+        history,visible_history:None,graph_state:None,budget_snapshot:None,delegation:None,output_token_cap:None,protocol:"agui".into(),
     };
     super::client_tools::prepare(state.manager.as_ref(),store.as_ref(),&session_owner,principal.tenant_id(),&source.agent_id,&caller).await
         .map_err(|_|failure(StatusCode::CONFLICT,"caller_tool_continuation_conflict"))
@@ -189,6 +189,57 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
             return stream(state,user,row,&headers).await;
         }
         Err(_) => return unavailable(), Ok(None) => {}
+    }
+    // An identical result retry may use a fresh wire run ID after another
+    // contender already admitted the continuation. Resolve its completed
+    // caller batch before enforcing the latest-run rule for new execution.
+    if input.resume.is_empty()
+        && input.messages.last().and_then(|message|message.get("role")).and_then(Value::as_str) == Some("tool")
+        && let Some(parent) = &input.parent_run_id
+    {
+        let predecessor = match db.load_agui_run(&owner,&agent,&input.thread_id,parent).await {
+            Ok(Some(row)) if row.workspace_id == workspace => Some(row),
+            Ok(_) => None,
+            Err(_) => return unavailable(),
+        };
+        if let Some(predecessor) = predecessor
+            && let Some(source) = state.manager.get_run_for_context(&user,&predecessor.native_run_id).await
+        {
+            let history = match caller_history(&input.messages) { Ok(history) => history, Err(response) => return response };
+            let call_id = history.last().and_then(|message|message.get("tool_call_id")).and_then(Value::as_str);
+            if let Some(call_id) = call_id {
+                let tenant = user.tenant_id.as_ref().map(|tenant|tenant.as_str());
+                let saved = match super::client_tools::load_by_call_id(db.as_ref(),&owner,tenant,&source.agent_id,call_id).await {
+                    Ok(saved) => saved,
+                    Err(_) => return failure(StatusCode::CONFLICT,"caller_tool_continuation_conflict"),
+                };
+                if saved.as_ref().is_some_and(|saved|
+                    saved.state == crate::uar::persistence::client_tools::ClientToolContinuationState::Completed
+                        && saved.source_run_id == predecessor.native_run_id
+                        && saved.session_id.as_deref() == Some(predecessor.session_id.as_str())
+                        && saved.protocol == "agui")
+                {
+                    match prepare_frontend_continuation(&state,&user,&predecessor,&input).await {
+                        Ok(super::client_tools::ClientToolPreparation::Replay {response,..}) => {
+                            let saved: AguiRunBinding = match serde_json::from_value(response) {
+                                Ok(saved) => saved, Err(_) => return unavailable(),
+                            };
+                            if saved.owner != owner || saved.agent_id != agent || saved.thread_id != input.thread_id
+                                || saved.workspace_id != workspace || saved.previous_wire_run_id.as_deref() != Some(parent.as_str()) {
+                                return failure(StatusCode::CONFLICT,"caller_tool_replay_context_conflict");
+                            }
+                            let saved = match db.load_agui_run(&saved.owner,&saved.agent_id,&saved.thread_id,&saved.wire_run_id).await {
+                                Ok(Some(row)) if row.native_run_id == saved.native_run_id => row,
+                                _ => return unavailable(),
+                            };
+                            return stream(state,user,saved,&headers).await;
+                        }
+                        Ok(_) => return failure(StatusCode::CONFLICT,"caller_tool_continuation_conflict"),
+                        Err(response) => return response,
+                    }
+                }
+            }
+        }
     }
     let previous = match db.list_agui_runs(&owner,&agent,&input.thread_id).await {
         Ok(rows) => rows.into_iter().max_by_key(|row| row.ordinal), Err(_) => return unavailable(),
@@ -380,7 +431,7 @@ fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resourc
             history: canonical,
             visible_history: Some(visible),
             graph_state: None,
-            budget_snapshot: None, output_token_cap: None,
+            budget_snapshot: None, delegation: None, output_token_cap: None,
             protocol: "agui".into(),
         };
         caller_tools.validate().map_err(|_|failure(StatusCode::BAD_REQUEST,"invalid_frontend_tool"))?;
@@ -434,11 +485,18 @@ async fn seal_frontend_handoff(
     let owner = user.session_owner_key()?;
     let store = state.manager.persistence.as_deref()
         .ok_or_else(|| anyhow::anyhow!("durable_client_tools_unsupported"))?;
-    if super::client_tools::confirm_handoff_for_run(
+    if let Err(error) = super::client_tools::confirm_handoff_for_run(
         state.manager.as_ref(), store, &owner,
         user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
         &source.agent_id, &row.native_run_id,
-    ).await.is_err() {
+    ).await {
+        let category = if error.to_string() == "run_settlement_unconfirmed" {
+            "run_settlement_unconfirmed"
+        } else {
+            "caller_tool_settlement_failed"
+        };
+        tracing::warn!(run_id = %row.native_run_id, error_category = category,
+            "AG-UI caller-tool source cleanup was not confirmed");
         return seal(state, row, AguiTerminal {
             source_cursor: cursor,
             event: json!({"type":"RUN_ERROR","code":"host_cleanup_unconfirmed",
@@ -490,7 +548,19 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             return seal_frontend_handoff(state,user,&row,cursor,&calls).await.context("agui reconcile: recover caller-tool handoff");
         }
     }
-    let Some(status) = state.manager.settled_run_status_for_context(user,&row.native_run_id).await else { return Ok(row); };
+    let terminal_observed = history.iter().any(|event| matches!(&event.event,
+        NormalizedEvent::RunDone {..} | NormalizedEvent::RunDoneWithUsage {..}
+            | NormalizedEvent::Cancelled {..} | NormalizedEvent::Error {..}));
+    let status = if terminal_observed {
+        // The terminal frame precedes outer producer finalization. Join that
+        // producer rather than waiting for a second event that it never emits.
+        state.manager.get_run_for_context(user,&row.native_run_id).await
+            .ok_or_else(||anyhow::anyhow!("run correlation unavailable"))?;
+        state.manager.await_settled_run_status(&row.native_run_id).await?
+    } else {
+        let Some(status) = state.manager.settled_run_status_for_context(user,&row.native_run_id).await else { return Ok(row); };
+        status
+    };
     if status == crate::uar::domain::runs::RunStatus::Error {
         let (source_cursor,event) = history.iter().find_map(|event| match &event.event {
             NormalizedEvent::Error {code,message,..} => Some((event.id,json!({"type":"RUN_ERROR","code":code,"message":message}))),

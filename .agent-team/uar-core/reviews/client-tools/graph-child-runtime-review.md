@@ -1,0 +1,28 @@
+# Graph child caller-tool runtime source review
+
+Task 13.21, Execute. Artifact-only review of the integrated capture/plumbing/delegate/AgentNode/manager/orchestrator/shared-ack changes, repair plan and thread-plumbing handoff. Reviewed actual spawn admission, child artifact/policy resolution, model bindings, history assembly, graph cursor and first-turn publication source. Own report only.
+
+## Disposition
+
+No blocking source finding in the scoped integrated contract. This is source clearance, not executable or production acceptance evidence.
+
+- `GraphCallerTurnCapture` has private fields, a crate-only constructor and no Deserialize implementation. Model-facing `AgentSpawnRequest` gains no authority field. Capture is installed by the verified root host, checked against ThreadService's retained root agent/run and consumed once after the service mints actual executing child thread/run IDs. Nested delegated binding is refused. Caller JSON cannot select those root/executing identities through this contract.
+- Captured local spawn shares ordinary intent validation, current spawn capability checks, real approval/budget admission, authoritative child-artifact lookup, parent-policy intersection, bound credential/model selection, cancellation and persistence paths. The child kernel still uses inherited root executable resources. Model `for_policy` narrows the same shared budget and accepts only inherited credential grants; the child handoff snapshots that actual budget rather than constructing a replacement. Fresh root continuation rebuilds resources and child admission through existing paths.
+- Captured canonical caller history takes precedence over generic inherited fork history; manager decodes it as complete Message history and suppresses extra delegated input appending. Prepared continuation retains hidden paired host results and adds the exact validated caller results through shared preparation. Visible transcript remains separate. The saved trusted GraphState carries the same AgentNode resume cursor, while the engine preserves route/data/iteration and skips the router on that continuation. Invalid cursor nodes fail through the existing graph error path.
+- The child persists a root API agent/run/session-scoped batch while retaining the executing child agent/run/thread identity. Delegate obtains the actual first-turn receipt, joins that child, and verifies durable owner/tenant/root/session/Pending state plus exact child identity, ordered pending IDs, assistant role and text shape before making a GraphCallerHandoff. The public event uses visible text/caller calls rather than hidden host results. A generic empty Completed result without this evidence still hits AgentNode's existing error path.
+- AgentNode explicitly finishes a handoff segment; manager skips ordinary route attribution and missing-output logic only for that marker. Existing graph failure and resource cleanup processing still controls terminal status. No attributed text prefix is inserted into the persisted visible handoff. API confirmation joins the parent and the correlated child before persisting source settlement; an existing acknowledged receipt remains the durable restart proof.
+- No parent/child self-join cycle was found: delegate waits only for the actual child, never confirms the executing parent; the API joins the parent after its graph segment returns. Parent finalization retains the existing child/resource shutdown path. Producer handles remain manager-owned across ordinary waiter cancellation. Ordinary local spawn, remote delegation, and nongraph requests have no capture and retain their existing paths; capture is not automatically applied to arbitrary grandchildren.
+
+## Evidence and limits
+
+Only source reads (`cat`, `sed`, `rg`, scoped `git diff`/`git diff --stat`) and this report write ran. No tests, checks, builds, imports, formatting, compiler probes, runtime or network commands ran. No production files were edited. Global reviewer verification stays CLOSED; the lead owns its scoped local functional test/fix loop. Same-family isolated source review is not cross-model adversarial evidence.
+
+Borrow/type correctness, real approval flow, worker schema dispatch, exact provider sequence, no host-effect replay, current worker policy/credentials after changes, shared budget charging, cold restart, cancellation and failed-cleanup behavior remain unverified by execution. No CI/merge, acceptance or publication claim is made. The repair plan's initial “planned” status prose is superseded by its implementation handoffs but cannot itself certify the delivered behavior.
+
+## Final integration follow-up
+
+Source-confirmed the public Anthropic/server, OpenAI, ACP, A2A and both AG-UI ClientToolInput construction spans explicitly initialize `delegation: None`. Public decoding therefore does not mint the graph capture binding. The unused `GraphCallerTurnCapture::graph_state` accessor was removed; the private stored graph state still enters the captured input through `bind_executing`, so propagation is unchanged.
+
+Also inspected `execution_source`'s `#[serde(default, skip_serializing_if = "Option::is_none")]`: absent old records deserialize without adding an execution source, and reserialization omits None, preserving the old record's absent-field shape for serialized CAS comparison. This source observation does not replace the independent persistence review or prove a database CAS run.
+
+No new blocking source finding. Only `rg`/`sed` source inspection and this report append ran; no checks, tests, builds, imports, runtime or network commands ran. All executable and same-family-review limitations above remain.

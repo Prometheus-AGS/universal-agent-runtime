@@ -1,0 +1,66 @@
+{
+  "status": "failed",
+  "evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-002",
+  "auth_enabled": true,
+  "persistence": "fresh embedded SurrealKV",
+  "external_gate_inputs_remaining": [
+    "Real cold restart modes retain the same store and provider peer and need separate explicit gate authorization.",
+    "Graph cursor modes require a configured real graph agent with before/after node prompt markers.",
+    "Budget and cold budget modes require a configured real cumulative-budget agent."
+  ],
+  "failure": "GateFailure: candidate authenticated readiness process exited before readiness; inspect its retained log",
+  "owned_shutdown_clean": true,
+  "owned_exit_statuses_expected": false,
+  "cleanup_status": "confirmed",
+  "lifecycle": [
+    {
+      "process": "provider-peer",
+      "pid": 62107,
+      "command": [
+        "/Users/gqadonis/miniconda3/bin/python3",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/fixtures/client_tools_provider.py",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "0",
+        "--port-file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-002/provider.port",
+        "--trace",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-002/provider-trace.jsonl"
+      ]
+    },
+    {
+      "process": "candidate",
+      "pid": 62111,
+      "command": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+        "--config",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-002/config.yaml"
+      ]
+    },
+    {
+      "process": "candidate",
+      "pid": 62111,
+      "joined": true,
+      "exit_code": 1,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": false,
+      "clean_shutdown": false,
+      "cleanup_errors": []
+    },
+    {
+      "process": "provider-peer",
+      "pid": 62107,
+      "joined": true,
+      "exit_code": -15,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    }
+  ]
+}

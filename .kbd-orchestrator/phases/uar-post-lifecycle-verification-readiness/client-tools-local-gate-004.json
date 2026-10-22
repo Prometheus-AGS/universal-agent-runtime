@@ -1,0 +1,33 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-004",
+  "exitCode": 1,
+  "results": {
+    "failed": 95
+  },
+  "perProtocol": {
+    "openai": {
+      "failed": 19
+    },
+    "anthropic": {
+      "failed": 19
+    },
+    "agui": {
+      "failed": 19
+    },
+    "a2a": {
+      "failed": 19
+    },
+    "acp": {
+      "failed": 19
+    }
+  },
+  "cleanup": "confirmed",
+  "candidateExit": 0,
+  "findings": [
+    "OpenAI model_not_verified",
+    "AGUI provider_model_unavailable",
+    "Liter detects gpt-4o-mini as provider; explicit tool controls rejected"
+  ],
+  "evidence": "target/client-tools-local-gate-004",
+  "acceptance": "FAILED; no tool-loop pass"
+}

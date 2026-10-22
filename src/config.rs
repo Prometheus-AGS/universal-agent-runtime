@@ -584,6 +584,9 @@ pub struct ServerConfig {
     pub mcp_shared_transports_enabled: bool,
     pub port: u16,
     pub host: String,
+    /// Directory watched for ingestion. Defaults to the container data mount.
+    #[serde(default = "ServerConfig::default_ingest_directory")]
+    pub ingest_directory: std::path::PathBuf,
     /// Exact browser origins allowed by CORS. Empty means no cross-origin access.
     #[serde(default)]
     pub cors_allowed_origins: Vec<String>,
@@ -601,6 +604,10 @@ pub struct ServerConfig {
 
 impl ServerConfig {
     fn default_mcp_shared_transports_enabled() -> bool { true }
+
+    fn default_ingest_directory() -> std::path::PathBuf {
+        std::path::PathBuf::from("/data/ingest")
+    }
 
     fn default_shutdown_timeout_secs() -> u64 {
         30

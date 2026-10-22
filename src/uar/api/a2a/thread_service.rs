@@ -549,12 +549,20 @@ impl A2AThreadService {
         }
         let turn = if let Some(mut record) = entry.durable.clone() {
             if !entry.task.history.is_empty() {
+                // A public get may have committed approval/status metadata
+                // after the local projection. Rebase on that exact same run,
+                // never on a continuation or cancellation won by another caller.
+                let current = self.actors.persistence().map_err(TaskError::Host)?
+                    .load_a2a_binding(&record.owner_key, &record.agent_id, &record.task_id)
+                    .await.map_err(TaskError::Host)?.ok_or(TaskError::NotFound)?;
+                if current.run_id != record.run_id || current.process_id != record.process_id
+                    || current.cancellation_requested { return Err(TaskError::Conflict); }
+                record = current;
                 let before = record.clone();
                 record.revision = record.revision.checked_add(1).ok_or(TaskError::Conflict)?;
                 record.run_id = uuid::Uuid::new_v4().to_string();
                 record.cancellation_requested = false;
                 record.request_digest = reservation.as_ref().ok_or(TaskError::Conflict)?.1.clone();
-                record.task = entry.task.clone();
                 record.task.history.push(params.message.clone());
                 record.task.status.state = TaskState::Submitted;
                 record.process_id = self.process_id.clone();
@@ -601,23 +609,63 @@ impl A2AThreadService {
             let observed_run = entry.run_id.clone();
             let manager = Arc::clone(self.actors.run_manager());
             let scope = manager.lifecycle_scope();
-            let Some(mut events) = manager.subscribe(observed_run.as_deref().unwrap_or_default()).await else {
-                scope.record_unresolved_effect("a2a-durable-projection:run-event-source-unavailable");
+            // Enqueueing an actor turn precedes manager run registration. Keep
+            // the exact mailbox completion as an observation source even when
+            // admission fails before a run event channel can be installed.
+            if entry.turn.is_none() {
                 self.persist_projection(&mut entry).await?;
                 return Ok(entry.task.clone());
-            };
+            }
+            let mut registrations = manager.subscribe_run_registrations();
             let mut committed_work = manager.subscribe_committed_work();
+            let mut events = manager.subscribe(observed_run.as_deref().unwrap_or_default()).await;
             let cancellation = scope.cancellation_token();
             if scope.spawn("a2a-durable-projection", async move {
+                // Extract only after lifecycle admission. Rejected task admission
+                // must leave Entry's original completion receiver untouched.
+                let (mut actor_completion, mut completion_sender) = {
+                    let mut entry = entry_handle.lock().await;
+                    if entry.run_id != observed_run { return Ok(()); }
+                    match entry.turn.as_mut() {
+                        Some(turn) => {
+                            let (sender, receiver) = tokio::sync::oneshot::channel();
+                            (Some(std::mem::replace(&mut turn.completion, receiver)), Some(sender))
+                        }
+                        None => (None, None),
+                    }
+                };
+                let outcome = async {
                 let mut first_snapshot = true;
                 loop {
+                    if cancellation.is_cancelled() { return Ok(()); }
                     if !first_snapshot {
                         tokio::select! {
                             _ = cancellation.cancelled() => return Ok(()),
-                            event = events.recv() => match event {
+                            completed = async {
+                                match &mut actor_completion {
+                                    Some(completion) => completion.await,
+                                    None => std::future::pending().await,
+                                }
+                            } => {
+                                actor_completion = None;
+                                if let Some(sender) = completion_sender.take() {
+                                    if let Ok(result) = completed { let _ = sender.send(result); }
+                                }
+                            },
+                            event = async {
+                                match &mut events {
+                                    Some(events) => events.recv().await,
+                                    None => std::future::pending().await,
+                                }
+                            } => match event {
                                 Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
                                 Err(tokio::sync::broadcast::error::RecvError::Closed) => {
                                     return Err(anyhow::anyhow!("A2A durable projection lost its run event source"));
+                                }
+                            },
+                            changed = registrations.changed() => {
+                                if changed.is_err() {
+                                    return Err(anyhow::anyhow!("A2A durable projection lost its run registration source"));
                                 }
                             },
                             changed = committed_work.changed() => {
@@ -628,6 +676,9 @@ impl A2AThreadService {
                         }
                     }
                     first_snapshot = false;
+                    if events.is_none() {
+                        events = manager.subscribe(observed_run.as_deref().unwrap_or_default()).await;
+                    }
                     let mut entry = entry_handle.lock().await;
                     if entry.run_id != observed_run { return Ok(()); }
                     if let Some(before) = &entry.durable {
@@ -656,11 +707,33 @@ impl A2AThreadService {
                     entry.refresh();
                     let settled = entry.turn.is_none();
                     if let Err(error) = persist_entry_projection(persistence.as_ref(), manager.as_ref(), &mut entry).await {
-                        if matches!(error, TaskError::Conflict) { continue; }
+                        if matches!(error, TaskError::Conflict) {
+                            first_snapshot = true;
+                            continue;
+                        }
                         return Err(anyhow::anyhow!("A2A durable completion projection failed: {error}"));
                     }
-                    if settled { return Ok(()); }
+                    if settled {
+                        // Mailbox completion is distinct from producer settlement.
+                        // Wake exact-task waiters only after consuming and projecting it.
+                        manager.notify_committed_work();
+                        return Ok(());
+                    }
                 }
+                }.await;
+                // Cancellation or another observation failure must not close a
+                // still-live actor completion merely because its observer exits.
+                if let Some(original) = actor_completion.take() {
+                    let mut entry = entry_handle.lock().await;
+                    if entry.run_id == observed_run
+                        && let Some(turn) = entry.turn.as_mut()
+                        && Some(turn.run_id.as_str()) == observed_run.as_deref()
+                    {
+                        turn.completion = original;
+                    }
+                }
+                drop(completion_sender);
+                outcome
             }).is_err() {
                 scope.record_unresolved_effect("a2a-durable-projection:scope-admission-closed");
             }
@@ -796,14 +869,14 @@ impl A2AThreadService {
             if params.task_id.is_none() {
                 return Err(TaskError::Invalid("messageId already identifies a different message"));
             }
-            let task = self.get_durable(owner, agent, &id).await?;
-            if task.status.state != TaskState::InputRequired {
-                return Err(TaskError::Conflict);
-            }
             if caller_tools.is_some() {
                 let current = persistence.load_a2a_binding(&owner_key, agent, &id).await
                     .map_err(TaskError::Host)?.ok_or(TaskError::NotFound)?;
                 return self.resume_client_tools(owner, instance, agent, current, params, digest, capture).await;
+            }
+            let task = self.get_durable(owner, agent, &id).await?;
+            if task.status.state != TaskState::InputRequired {
+                return Err(TaskError::Conflict);
             }
             if self.entry(owner, agent, &id).await.is_err() {
                 return self.resume_durable(owner, user, agent, record, params, digest, capture, None).await;
@@ -838,7 +911,7 @@ impl A2AThreadService {
         capture: AuthenticatedCredentialCapture,
     ) -> Result<Task, TaskError> {
         use crate::uar::api::client_tools::{self, ClientToolPreparation};
-        if record.cancellation_requested || params.context_id.as_deref() != Some(record.context_id.as_str()) {
+        if params.context_id.as_deref() != Some(record.context_id.as_str()) {
             return Err(TaskError::Invalid("Caller-tool continuation requires its exact task and context"));
         }
         if params.message.role != Role::User { return Err(TaskError::Invalid("Caller-tool results require a user message")); }
@@ -854,11 +927,6 @@ impl A2AThreadService {
                 return Err(TaskError::Invalid("Continuation delegation does not match the authenticated peer"));
             }
         }
-        if let Ok(entry) = self.entry(owner, agent, &record.task_id).await {
-            let mut entry = entry.lock().await;
-            entry.refresh();
-            if entry.closed || entry.turn.is_some() { return Err(TaskError::Conflict); }
-        }
         let input = super::client_tools::ClientToolsExtension::parse(&params.metadata)
             .map_err(TaskError::Invalid)?.ok_or(TaskError::Invalid("Caller-tools extension required"))?.into_input();
         let call_id = input.history.last().and_then(|message| message.get("tool_call_id"))
@@ -867,15 +935,37 @@ impl A2AThreadService {
             .map_err(|_| TaskError::Invalid("Invalid caller-tool call identity"))?;
         let persistence = self.actors.persistence().map_err(TaskError::Host)?;
         let tenant = owner.tenant_id();
-        let batch = persistence.load_client_tool_continuation_for_run(&record.owner_key, tenant, agent, &record.run_id)
+        let batch = persistence.load_client_tool_continuation(&record.owner_key, tenant, agent, &batch_id)
             .await.map_err(TaskError::Host)?.ok_or(TaskError::Conflict)?;
         if batch.batch_id != batch_id { return Err(TaskError::Invalid("Caller-tool batch does not belong to this task turn")); }
+        let session_id = format!("a2a-context-{}", super::durable::A2aBinding::storage_key_for(
+            &record.owner_key, agent, &record.context_id));
+        if batch.session_id.as_deref() != Some(session_id.as_str()) {
+            return Err(TaskError::Invalid("Caller-tool batch belongs to another context session"));
+        }
+        if batch.state != crate::uar::persistence::client_tools::ClientToolContinuationState::Completed {
+            if record.cancellation_requested { return Err(TaskError::Conflict); }
+            if batch.source_run_id != record.run_id { return Err(TaskError::Conflict); }
+            let task = self.get_durable(owner, agent, &record.task_id).await?;
+            if task.status.state != TaskState::InputRequired { return Err(TaskError::Conflict); }
+            if let Ok(entry) = self.entry(owner, agent, &record.task_id).await {
+                let mut entry = entry.lock().await;
+                entry.refresh();
+                if entry.closed || entry.turn.is_some() { return Err(TaskError::Conflict); }
+            }
+            self.actors.run_manager().resolve_registered_agent(agent).await.map_err(|error| TaskError::Host(error.into()))?;
+        }
         let preparation = client_tools::prepare(self.actors.run_manager().as_ref(), persistence.as_ref(), &record.owner_key, tenant, agent, &input)
             .await.map_err(|_| TaskError::Invalid("Caller-tool continuation conflicts with its durable batch"))?;
         let (input, claim) = match preparation {
             ClientToolPreparation::Continue { input, claim } => (input, claim),
-            ClientToolPreparation::Replay { response, .. } => return serde_json::from_value(response)
-                .map_err(|error| TaskError::Host(error.into())),
+            ClientToolPreparation::Replay { response, .. } => {
+                let task: Task = serde_json::from_value(response).map_err(|error| TaskError::Host(error.into()))?;
+                if task.id != record.task_id || task.context_id.as_deref() != Some(record.context_id.as_str()) {
+                    return Err(TaskError::Invalid("Caller-tool replay belongs to another task"));
+                }
+                return Ok(task);
+            },
             ClientToolPreparation::Fresh(_) => return Err(TaskError::Invalid("Caller-tool results required")),
         };
         if self.entry(owner, agent, &record.task_id).await.is_err() {
@@ -914,6 +1004,7 @@ impl A2AThreadService {
         };
         let mut task = if local && !record.context_closed() { self.get(owner, agent, id).await? }
             else { project_durable(persistence.as_ref(), owner, agent, record.clone()).await? };
+        let mut pending_approval = false;
         if let Some(state) = &self.run_api {
             let (_, views) = state.manager.approval_records_for_owner(owner, &record.run_id, None).await.map_err(TaskError::Host)?;
             let pending = views.iter().any(|view| view.record.state == crate::uar::persistence::approval_decisions::ApprovalState::Pending
@@ -922,11 +1013,38 @@ impl A2AThreadService {
                 task.metadata.insert("uar_denied".into(), serde_json::json!(true));
             }
             if pending && !record.cancellation_requested {
+                pending_approval = true;
                 task.status.state = TaskState::InputRequired;
             }
             task.metadata.insert("uar.approvals".into(), serde_json::to_value(views).map_err(|error| TaskError::Host(error.into()))?);
         }
-        if !record.cancellation_requested && persistence.supports_durable_client_tools()
+        if local && !record.context_closed() {
+            // Serialize approval metadata with mailbox projection and new-turn
+            // admission. An out-of-lock projection otherwise leaves Entry's
+            // expected revision stale and can race the caller-tool claim.
+            let entry = self.entry(owner, agent, id).await?;
+            let mut entry = entry.lock().await;
+            if entry.run_id.as_deref() != Some(record.run_id.as_str()) { return Err(TaskError::Conflict); }
+            entry.refresh();
+            if let Some(approvals) = task.metadata.get("uar.approvals") {
+                entry.task.metadata.insert("uar.approvals".into(), approvals.clone());
+            }
+            if let Some(denied) = task.metadata.get("uar_denied") {
+                entry.task.metadata.insert("uar_denied".into(), denied.clone());
+            }
+            // Pending approval is a distinct live interaction from a completed
+            // caller-tool handoff; retain its existing projection semantics.
+            if pending_approval {
+                entry.task.status.state = TaskState::InputRequired;
+            }
+            self.refresh_governed_metadata(&mut entry);
+            self.persist_projection(&mut entry).await?;
+            return Ok(entry.task.clone());
+        }
+        // The local get already projects caller-tool handoff after consuming
+        // the mailbox completion. Do not override its still-working snapshot
+        // merely because the execution producer has finished first.
+        if !local && !record.cancellation_requested && persistence.supports_durable_client_tools()
             && let Some(batch) = persistence.load_client_tool_continuation_for_run(
                 &record.owner_key, owner.tenant_id(), agent, &record.run_id,
             ).await.map_err(TaskError::Host)?
@@ -956,12 +1074,13 @@ impl A2AThreadService {
         self: &Arc<Self>, owner: &ActorOwner, agent: &str, initial: &Task,
     ) -> Result<tokio::sync::mpsc::Receiver<Result<Task, TaskError>>, TaskError> {
         let manager = Arc::clone(self.actors.run_manager());
-        let run_id = initial.metadata.get("run_id").and_then(serde_json::Value::as_str);
-        let mut run_events = match run_id {
+        let run_id = initial.metadata.get("run_id").and_then(serde_json::Value::as_str).map(str::to_owned);
+        let mut registrations = manager.subscribe_run_registrations();
+        let mut committed_work = manager.subscribe_committed_work();
+        let mut run_events = match run_id.as_deref() {
             Some(run_id) => manager.subscribe(run_id).await,
             None => None,
         };
-        let mut committed_work = manager.subscribe_committed_work();
         let scope = manager.lifecycle_scope();
         let cancellation = scope.cancellation_token();
         let service = Arc::clone(self);
@@ -991,9 +1110,8 @@ impl A2AThreadService {
                     previous = Some(snapshot);
                 }
                 if !active { return Ok(()); }
-                if run_events.is_none() {
-                    let _ = sender.try_send(Err(TaskError::Conflict));
-                    return Ok(());
+                if run_events.is_none() && let Some(run_id) = run_id.as_deref() {
+                    run_events = manager.subscribe(run_id).await;
                 }
                 let event = tokio::select! {
                     biased;
@@ -1008,6 +1126,7 @@ impl A2AThreadService {
                             None => std::future::pending::<Result<(), tokio::sync::broadcast::error::RecvError>>().await,
                         }
                     } => event.map_err(|_| TaskError::Conflict),
+                    changed = registrations.changed() => changed.map_err(|_| TaskError::Conflict),
                     changed = committed_work.changed() => changed.map_err(|_| TaskError::Conflict),
                 };
                 if let Err(error) = event {
@@ -1038,11 +1157,12 @@ impl A2AThreadService {
             .get("run_id")
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned);
-        let mut run_events = match run_id {
-            Some(run_id) => manager.subscribe(&run_id).await,
+        let mut registrations = manager.subscribe_run_registrations();
+        let mut committed_work = manager.subscribe_committed_work();
+        let mut run_events = match run_id.as_deref() {
+            Some(run_id) => manager.subscribe(run_id).await,
             None => None,
         };
-        let mut committed_work = manager.subscribe_committed_work();
         loop {
             let task = self.get_durable(owner, agent, id).await?;
             let active = matches!(task.status.state, TaskState::Submitted | TaskState::Working)
@@ -1050,6 +1170,9 @@ impl A2AThreadService {
                     != Some(&serde_json::Value::Bool(true));
             if !active {
                 return Ok(task);
+            }
+            if run_events.is_none() && let Some(run_id) = run_id.as_deref() {
+                run_events = manager.subscribe(run_id).await;
             }
             tokio::select! {
                 event = async {
@@ -1060,6 +1183,9 @@ impl A2AThreadService {
                 } => match event {
                     Ok(()) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => return Err(TaskError::Conflict),
+                },
+                changed = registrations.changed() => {
+                    if changed.is_err() { return Err(TaskError::Conflict); }
                 },
                 changed = committed_work.changed() => {
                     if changed.is_err() {
@@ -1153,8 +1279,20 @@ async fn project_settled_client_tools(
             crate::uar::api::client_tools::confirm_handoff_for_run(manager, persistence,
                 &batch.owner_key, batch.tenant_id.as_deref(), &batch.agent_id, run_id)
                 .await.map_err(TaskError::Host)?;
-            let calls = batch.canonical_transcript.as_array().and_then(|history| history.last())
-                .and_then(|message| message.get("tool_calls")).cloned().ok_or(TaskError::Conflict)?;
+            // Mixed turns append hidden host-tool results to the canonical
+            // transcript. Only the visible assistant record contains exactly
+            // the caller-owned calls that this handoff may disclose.
+            let calls = batch.visible_transcript.as_array().and_then(|history| history.last())
+                .filter(|message| message.get("role").and_then(serde_json::Value::as_str) == Some("assistant"))
+                .and_then(|message| message.get("tool_calls"))
+                .and_then(serde_json::Value::as_array)
+                .ok_or_else(|| TaskError::Host(anyhow::anyhow!("A2A public caller-tool handoff is malformed")))?;
+            let ids = calls.iter().map(|call| call.get("id").and_then(serde_json::Value::as_str))
+                .collect::<Option<std::collections::BTreeSet<_>>>();
+            let expected = batch.pending_call_ids.iter().map(String::as_str).collect::<std::collections::BTreeSet<_>>();
+            if ids.as_ref() != Some(&expected) || calls.len() != expected.len() {
+                return Err(TaskError::Host(anyhow::anyhow!("A2A public caller-tool handoff IDs do not match the durable batch")));
+            }
             task.status.state = TaskState::InputRequired;
             task.metadata.insert(super::client_tools::CLIENT_TOOLS_EXTENSION.into(), serde_json::json!({
                 "batch_id": batch.batch_id, "pending_calls": calls,
@@ -1193,7 +1331,14 @@ async fn persist_entry_projection(
             &current.owner_key, entry.tenant_id.as_deref(), &current.agent_id, &current.run_id,
         ).await.map_err(TaskError::Host)?
         && batch.state == crate::uar::persistence::client_tools::ClientToolContinuationState::Pending {
-        project_settled_client_tools(&mut entry.task, manager, persistence, &current.run_id, &batch).await?;
+        if entry.turn.is_none() {
+            project_settled_client_tools(&mut entry.task, manager, persistence, &current.run_id, &batch).await?;
+        } else {
+            // A pending durable batch proves the model yielded, not that the
+            // actor mailbox has released this turn for another prompt.
+            entry.task.status.state = TaskState::Working;
+            entry.task.metadata.remove(super::client_tools::CLIENT_TOOLS_EXTENSION);
+        }
     }
     let before = &current;
     if serde_json::to_value(&before.task).map_err(|error| TaskError::Host(error.into()))?

@@ -1,0 +1,41 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-011 --extended",
+  "session": 61270,
+  "exitCode": 1,
+  "passedGates": {
+    "core": 95,
+    "safety": 60,
+    "explicitCancellation": 5,
+    "ordinaryColdSeedResume": "passed allfive"
+  },
+  "graph": "5failed strictargs; actualpublic rendered argumentsJson {operation:spawn_agent,detailsAvailable:false}, no approvalsgranted",
+  "remaining": "graph warm/cold,budget warm/cold,mixedcrash",
+  "ownedShutdownClean": true,
+  "candidateJoins": [
+    {
+      "process": "candidate",
+      "pid": 84704,
+      "joined": true,
+      "exit_code": 0,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    },
+    {
+      "process": "candidate-2",
+      "pid": 88640,
+      "joined": true,
+      "exit_code": 0,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    }
+  ],
+  "acceptance": "Failedextended; no1.2.2publication"
+}

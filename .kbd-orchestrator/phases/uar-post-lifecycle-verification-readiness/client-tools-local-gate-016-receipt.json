@@ -1,0 +1,37 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-016 --extended",
+  "exitCode": 1,
+  "corePassed": 95,
+  "safetyPassed": 60,
+  "cancellationPassed": 5,
+  "ordinaryColdPassed": 5,
+  "graphWarmColdPassed": 5,
+  "budgetWarmColdPassed": 5,
+  "mixedCrashSeedPassed": 5,
+  "expectedCrash": {
+    "action": "expected_crash_for_recovery",
+    "process": "candidate-4",
+    "pid": 55352,
+    "generation": 4,
+    "signal": 9,
+    "started_at_unix": 1792706520.101011,
+    "joined_at_unix": 1792706520.118757,
+    "joined": true,
+    "exit_code": -9,
+    "signal_delivered": true,
+    "expected_crash_confirmed": true,
+    "exit_status_expected": true,
+    "clean_shutdown": false,
+    "cleanup_confirmed": false,
+    "cleanup_errors": []
+  },
+  "mixedColdFailure": "Firstactualrecoveredhostcall/resultretained; argsJSONcompactwhitespace differs fromwire, assertionunfairlycomparesstringbytes",
+  "ownedShutdownClean": true,
+  "ownedShutdownCleanExcludesExpectedCrash": true,
+  "cleanupStatus": "confirmed",
+  "remaining": [
+    "13.27 semanticargproof",
+    "CT5 mixedcoldallfive",
+    "CT7 publication/image"
+  ]
+}

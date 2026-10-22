@@ -330,7 +330,8 @@ async fn handle_runs_create(
         }
     };
 
-    // Verify session exists
+    // Cold identity recovery remains private until full continuation admission.
+    let mut session_to_restore = None;
     let session = match sessions.get(&owner_id, &session_id).await {
         Some(session) => session,
         None => {
@@ -346,17 +347,24 @@ async fn handle_runs_create(
             let (Some(call_id), Some(store)) = (call_id, state.persistence.as_ref()) else {
                 return JsonRpcResponse::err(id, ACP_SESSION_NOT_FOUND, format!("Session '{session_id}' not found"));
             };
-            match crate::uar::api::client_tools::load_by_call_id(
-                store.as_ref(), &owner_id, user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
-                &crate::uar::defaults::default_agent().id, call_id,
+            let batch_id = match crate::uar::api::client_tools::batch_id_from_call_id(call_id) {
+                Ok(batch) => batch,
+                Err(error) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, error.to_string()),
+            };
+            match store.load_client_tool_continuation_for_session(
+                &owner_id, user.tenant_id.as_ref().map(|tenant| tenant.as_str()), &session_id, &batch_id,
             ).await {
-                Ok(Some(row)) if row.protocol == "acp" && row.session_id.as_deref() == Some(session_id.as_str()) => {
-                    let mut restored = AcpSession::new("default");
+                Ok(Some(row)) if row.protocol == "acp"
+                    && row.owner_key == owner_id
+                    && row.tenant_id.as_deref() == user.tenant_id.as_ref().map(|tenant| tenant.as_str())
+                    && row.session_id.as_deref() == Some(session_id.as_str())
+                    && row.pending_call_ids.iter().any(|pending| pending == call_id) => {
+                    let mut restored = AcpSession::new(row.agent_id);
                     restored.session_id = session_id.clone();
-                    restored.client_tools = Some(supplied_tools);
-                    sessions.sessions.write().await.insert(
-                        crate::uar::persistence::tenant_storage_key(&owner_id, &session_id), restored.clone(),
-                    );
+                    let mut declarations = supplied_tools;
+                    declarations.history.clear();
+                    restored.client_tools = Some(declarations);
+                    session_to_restore = Some(restored.clone());
                     restored
                 }
                 _ => return JsonRpcResponse::err(id, ACP_SESSION_NOT_FOUND, format!("Session '{session_id}' not found")),
@@ -364,12 +372,25 @@ async fn handle_runs_create(
         }
     };
     let client_tools = match parse_client_tools(Some(&params)) {
-        Ok(tools) => tools.or(session.client_tools),
+        Ok(Some(tools)) => Some(tools),
+        Ok(None) => session.client_tools.clone().map(|mut tools| {
+            // Session defaults contain declarations, never a previous request's
+            // result batch. A fresh convenience input becomes its own history.
+            if tools.history.is_empty() && !input.is_empty() {
+                tools.history.push(json!({"role":"user", "content":input}));
+            }
+            tools
+        }),
         Err(error) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, error.to_string()),
     };
 
-    // Delegate to RunManager using the default agent
-    let artifact = crate::uar::defaults::default_agent();
+    // Re-resolve the selected catalog artifact on every turn; a restored batch
+    // binds identity, never a stale policy or credential snapshot.
+    let selected_agent = if session.agent_id == "default" { "default-agent" } else { &session.agent_id };
+    let artifact = match state.run_manager.resolve_registered_agent(selected_agent).await {
+        Ok(artifact) => artifact,
+        Err(error) => return JsonRpcResponse::err(id, ACP_AGENT_NOT_FOUND, error.to_string()),
+    };
     let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
         .with_user_context(user)
     {
@@ -395,22 +416,30 @@ async fn handle_runs_create(
                 store.as_ref(), &owner_id, user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
                 &request.artifact.id, call_id,
             ).await {
-                Ok(Some(row)) if row.session_id.as_deref() == Some(session_id.as_str()) => {}
+                Ok(Some(row)) if row.protocol == "acp" && row.session_id.as_deref() == Some(session_id.as_str()) => {}
                 Ok(_) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Caller-tool continuation does not belong to this session"),
                 Err(error) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, error.to_string()),
             }
         }
-        match crate::uar::api::client_tools::prepare(
+        let preparation = match crate::uar::api::client_tools::prepare(
             state.run_manager.as_ref(), store.as_ref(), &owner_id, user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
             &request.artifact.id, &input,
         ).await {
-            Ok(crate::uar::api::client_tools::ClientToolPreparation::Fresh(input)) => request.client_tools = Some(input),
-            Ok(crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim }) => {
+            Ok(preparation) => preparation,
+            Err(error) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, error.to_string()),
+        };
+        if let Some(restored) = session_to_restore.take() {
+            sessions.sessions.write().await.insert(
+                crate::uar::persistence::tenant_storage_key(&owner_id, &session_id), restored,
+            );
+        }
+        match preparation {
+            crate::uar::api::client_tools::ClientToolPreparation::Fresh(input) => request.client_tools = Some(input),
+            crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim } => {
                 request.client_tools = Some(input);
                 continuation_claim = Some(claim);
             }
-            Ok(crate::uar::api::client_tools::ClientToolPreparation::Replay { response, .. }) => return JsonRpcResponse::ok(id, response),
-            Err(error) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, error.to_string()),
+            crate::uar::api::client_tools::ClientToolPreparation::Replay { response, .. } => return JsonRpcResponse::ok(id, response),
         }
     }
     request.session_id = continuation_claim.as_ref().map_or(Some(session_id), |claim| claim.session_id.clone());
@@ -424,7 +453,18 @@ async fn handle_runs_create(
         };
         match state.run_manager.await_settled_run_status(&run_id).await {
             Ok(crate::uar::domain::runs::RunStatus::Done) => {}
-            Ok(status) => return JsonRpcResponse::err(id, RPC_INTERNAL_ERROR, format!("Caller-tool run did not settle successfully: {status:?}")),
+            Ok(status) => {
+                let observed_error = if status == crate::uar::domain::runs::RunStatus::Error {
+                    events.iter().find_map(|event| {
+                        if event.get("type").and_then(Value::as_str) != Some("Error") { return None; }
+                        let code = event.pointer("/data/code").and_then(Value::as_str)?;
+                        let message = event.pointer("/data/message").and_then(Value::as_str)?;
+                        Some(format!("{code}: {message}"))
+                    })
+                } else { None };
+                return JsonRpcResponse::err(id, RPC_INTERNAL_ERROR, observed_error
+                    .unwrap_or_else(|| format!("Caller-tool run did not settle successfully: {status:?}")));
+            }
             Err(error) => return JsonRpcResponse::err(id, RPC_INTERNAL_ERROR, error.to_string()),
         }
         let pending_batch = events.iter().find_map(|event| {

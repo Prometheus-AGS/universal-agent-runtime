@@ -87,9 +87,6 @@ pub async fn chat_completions(
     Json(req): Json<ChatCompletionRequest>,
 ) -> impl IntoResponse {
     let run_manager = &state.run_manager;
-    let conversation_id = Uuid::new_v4().to_string();
-    let created = unix_now_secs();
-
     if req.messages.is_empty() {
         return openai_error(StatusCode::BAD_REQUEST, "invalid_request_error", "invalid_messages", "messages must not be empty");
     }
@@ -104,16 +101,38 @@ pub async fn chat_completions(
         Err(error) => return agent_resolution_response(error),
     };
 
-    let input = match req.client_tool_input() {
+    let run_request = match crate::uar::runtime::turn::RunExecutionRequest::new(agent, String::new())
+        .with_user_context(&user_context)
+    {
+        Ok(request) => request.with_credential_capture(credential_capture.map(|Extension(capture)| capture)),
+        Err(_) => return openai_error(StatusCode::UNAUTHORIZED, "invalid_request_error", "invalid_principal", "Invalid run principal"),
+    };
+    execute_prepared_chat_completion(state, user_context, req, run_request, None, None).await
+}
+
+/// Project caller tools through the same host request already admitted by an ingress.
+pub(crate) async fn execute_prepared_chat_completion(
+    state: AppState,
+    user_context: UserContext,
+    req: ChatCompletionRequest,
+    mut run_request: crate::uar::runtime::turn::RunExecutionRequest,
+    input_finding: Option<crate::uar::guardrails::GuardrailFinding>,
+    response_timeout_ms: Option<u64>,
+) -> axum::response::Response {
+    let run_manager = &state.run_manager;
+    let conversation_id = run_request.session_id.clone().unwrap_or_else(|| Uuid::new_v4().to_string());
+    let created = unix_now_secs();
+    let agent_id = run_request.artifact.id.clone();
+    let mut input = match req.client_tool_input() {
         Ok(input) => input,
         Err(error) => return openai_error(StatusCode::BAD_REQUEST, "invalid_request_error", "invalid_client_tools", error),
     };
-    let mut run_request = match crate::uar::runtime::turn::RunExecutionRequest::new(agent, String::new())
-        .with_user_context(&user_context)
-    {
-        Ok(request) => request,
-        Err(_) => return openai_error(StatusCode::UNAUTHORIZED, "invalid_request_error", "invalid_principal", "Invalid run principal"),
-    };
+    input.output_token_cap = run_request.output_token_cap;
+    if let Some(binding) = &run_request.collaboration_binding {
+        if let Err(error) = binding.revalidate(&run_request.artifact).await {
+            return openai_error(StatusCode::CONFLICT, "invalid_request_error", "target_binding_changed", error.to_string());
+        }
+    }
     let owner_key = match user_context.session_owner_key() {
         Ok(owner) => owner,
         Err(error) => return openai_error(StatusCode::UNAUTHORIZED, "invalid_request_error", "invalid_principal", error.to_string()),
@@ -127,7 +146,7 @@ pub async fn chat_completions(
             if needs_persistence && !store.supports_durable_client_tools() {
                 return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "durable_client_tools_unsupported", "Durable client tool continuations are unavailable");
             }
-            match crate::uar::api::client_tools::prepare(run_manager.as_ref(), store, &owner_key, user_context.tenant_id.as_ref().map(|tenant| tenant.as_str()), agent_id, &input).await {
+            match crate::uar::api::client_tools::prepare(run_manager.as_ref(), store, &owner_key, user_context.tenant_id.as_ref().map(|tenant| tenant.as_str()), &agent_id, &input).await {
                 Ok(crate::uar::api::client_tools::ClientToolPreparation::Fresh(input)) => (input, None),
                 Ok(crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim }) => (input, Some(claim)),
                 Ok(crate::uar::api::client_tools::ClientToolPreparation::Replay { response, events }) => return completion_response(req.stream, response, events),
@@ -137,7 +156,6 @@ pub async fn chat_completions(
         None if needs_persistence => return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "durable_client_tools_unsupported", "Durable client tool continuations are unavailable"),
         None => (input, None),
     };
-    run_request = run_request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
     run_request.input = None;
     run_request.client_tools = Some(input);
     run_request.session_id = match &claim { Some(claim) => claim.session_id.clone(), None => Some(conversation_id) };
@@ -146,7 +164,12 @@ pub async fn chat_completions(
         Ok(observed) => observed,
         Err(error) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_observation_lost", error.to_string()),
     };
-    let runtime_agent_id = agent_id.to_owned();
+    if let Some(finding) = input_finding {
+        run_manager.emit_to_run(&run_id, NormalizedEvent::GuardrailFlagged {
+            run_id: Some(run_id.clone()), category: finding.category.as_str().to_owned(), reason: finding.reason,
+        }).await;
+    }
+    let runtime_agent_id = agent_id;
     let handoff_tenant = user_context.tenant_id.as_ref().map(|tenant| tenant.as_str().to_owned());
     let mut replay = observed.into_iter();
     let id = format!("chatcmpl-{run_id}");
@@ -257,71 +280,83 @@ pub async fn chat_completions(
         };
         return Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default()).into_response();
     }
-    let mut content = String::new();
-    let mut pending_calls = Vec::new();
-    let mut events = vec![chunk(&id, created, &req.model, serde_json::json!({"role":"assistant","content":""}), None)];
-    let (calls, finish_reason, usage) = loop {
-        let received = match replay.next() {
-            Some(event) => Ok(event),
-            None => rx.recv().await,
-        };
-        let event = match received {
-            Ok(event) => event.event,
-            Err(error) => return completion_failure(req.stream, events, "server_error", "run_observation_lost", format!("Run observation lost: {error}")),
-        };
-        match event {
-            NormalizedEvent::ChatDelta { text_delta, .. } => {
-                content.push_str(&text_delta);
-                events.push(chunk(&id, created, &req.model, serde_json::json!({"content":text_delta}), None));
-            }
-            NormalizedEvent::ClientToolsRequested { calls, .. } => {
-                pending_calls = calls;
-            }
-            terminal @ (NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. }) => {
-                match run_manager.await_settled_run_status(&run_id).await {
-                    Ok(crate::uar::domain::runs::RunStatus::Done) => {}
-                    Ok(status) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_settlement_failed", format!("Run settled without success: {status:?}")),
-                    Err(error) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_settlement_failed", error.to_string()),
+    let response_deadline = response_timeout_ms.map(|millis| tokio::time::Instant::now() + Duration::from_millis(millis));
+    // The deadline covers settlement and durable writes as well as observation.
+    // Dropping this projection leaves the manager-owned producer handles tracked.
+    let projection = async {
+        let mut content = String::new();
+        let mut pending_calls = Vec::new();
+        let mut events = vec![chunk(&id, created, &req.model, serde_json::json!({"role":"assistant","content":""}), None)];
+        let (calls, finish_reason, usage) = loop {
+            let received = match replay.next() {
+                Some(event) => Ok(event),
+                None => rx.recv().await,
+            };
+            let event = match received {
+                Ok(event) => event.event,
+                Err(error) => return completion_failure(req.stream, events, "server_error", "run_observation_lost", format!("Run observation lost: {error}")),
+            };
+            match event {
+                NormalizedEvent::ChatDelta { text_delta, .. } => {
+                    content.push_str(&text_delta);
+                    events.push(chunk(&id, created, &req.model, serde_json::json!({"content":text_delta}), None));
                 }
-                let calls = std::mem::take(&mut pending_calls);
-                let finish_reason = if calls.is_empty() { "stop" } else { "tool_calls" };
-                break (calls, finish_reason, super::usage::from_run_done(&terminal));
+                NormalizedEvent::ClientToolsRequested { calls, .. } => {
+                    pending_calls = calls;
+                }
+                terminal @ (NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. }) => {
+                    match run_manager.await_settled_run_status(&run_id).await {
+                        Ok(crate::uar::domain::runs::RunStatus::Done) => {}
+                        Ok(status) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_settlement_failed", format!("Run settled without success: {status:?}")),
+                        Err(error) => return openai_error(StatusCode::BAD_GATEWAY, "server_error", "run_settlement_failed", error.to_string()),
+                    }
+                    let calls = std::mem::take(&mut pending_calls);
+                    let finish_reason = if calls.is_empty() { "stop" } else { "tool_calls" };
+                    break (calls, finish_reason, super::usage::from_run_done(&terminal));
+                }
+                NormalizedEvent::Error { code, message, .. } => {
+                    let kind = if code.starts_with("budget_") { "budget_error" } else { "server_error" };
+                    return completion_failure(req.stream, events, kind, &code, message);
+                }
+                NormalizedEvent::Cancelled { .. } => return completion_failure(req.stream, events, "server_error", "run_cancelled", "Run cancelled".to_owned()),
+                _ => {}
             }
-            NormalizedEvent::Error { code, message, .. } => {
-                let kind = if code.starts_with("budget_") { "budget_error" } else { "server_error" };
-                return completion_failure(req.stream, events, kind, &code, message);
+        };
+        if !calls.is_empty() {
+            let Some(store) = store.as_deref() else {
+                return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "client_tool_handoff_unconfirmed", "Continuation storage unavailable");
+            };
+            if let Err(error) = crate::uar::api::client_tools::confirm_handoff_for_run(
+                run_manager.as_ref(), store, &owner_key, handoff_tenant.as_deref(), &runtime_agent_id, &run_id,
+            ).await {
+                return openai_error(StatusCode::BAD_GATEWAY, "server_error", "client_tool_handoff_unconfirmed", error.to_string());
             }
-            NormalizedEvent::Cancelled { .. } => return completion_failure(req.stream, events, "server_error", "run_cancelled", "Run cancelled".to_owned()),
-            _ => {}
         }
+        let response = completion(&id, created, &req.model, &content, &calls, finish_reason, usage);
+        for (index, call) in calls.iter().enumerate() {
+            events.push(chunk(&id, created, &req.model, serde_json::json!({"tool_calls":[{
+                "index":index,"id":call.id,"type":"function",
+                "function":{"name":call.function.name,"arguments":call.function.arguments}
+            }]}), None));
+        }
+        events.push(chunk(&id, created, &req.model, serde_json::json!({}), Some(finish_reason)));
+        if let Some(claim) = &claim {
+            let Some(store) = store.as_deref() else {
+                return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "client_tool_completion_failed", "Continuation storage unavailable");
+            };
+            if let Err(error) = crate::uar::api::client_tools::complete(store, claim, response.clone(), events.clone()).await {
+                return openai_error(StatusCode::BAD_GATEWAY, "server_error", "client_tool_completion_failed", error.to_string());
+            }
+        }
+        completion_response(req.stream, response, events)
     };
-    if !calls.is_empty() {
-        let Some(store) = store.as_deref() else {
-            return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "client_tool_handoff_unconfirmed", "Continuation storage unavailable");
-        };
-        if let Err(error) = crate::uar::api::client_tools::confirm_handoff_for_run(
-            run_manager.as_ref(), store, &owner_key, handoff_tenant.as_deref(), &runtime_agent_id, &run_id,
-        ).await {
-            return openai_error(StatusCode::BAD_GATEWAY, "server_error", "client_tool_handoff_unconfirmed", error.to_string());
-        }
+    match response_deadline {
+        Some(deadline) => match tokio::time::timeout_at(deadline, projection).await {
+            Ok(response) => response,
+            Err(_) => openai_error(StatusCode::GATEWAY_TIMEOUT, "timeout_error", "model_response_timeout", "Timed out waiting for model response"),
+        },
+        None => projection.await,
     }
-    let response = completion(&id, created, &req.model, &content, &calls, finish_reason, usage);
-    for (index, call) in calls.iter().enumerate() {
-        events.push(chunk(&id, created, &req.model, serde_json::json!({"tool_calls":[{
-            "index":index,"id":call.id,"type":"function",
-            "function":{"name":call.function.name,"arguments":call.function.arguments}
-        }]}), None));
-    }
-    events.push(chunk(&id, created, &req.model, serde_json::json!({}), Some(finish_reason)));
-    if let Some(claim) = &claim {
-        let Some(store) = store.as_deref() else {
-            return openai_error(StatusCode::SERVICE_UNAVAILABLE, "server_error", "client_tool_completion_failed", "Continuation storage unavailable");
-        };
-        if let Err(error) = crate::uar::api::client_tools::complete(store, claim, response.clone(), events.clone()).await {
-            return openai_error(StatusCode::BAD_GATEWAY, "server_error", "client_tool_completion_failed", error.to_string());
-        }
-    }
-    completion_response(req.stream, response, events)
 }
 
 fn openai_error(status: StatusCode, kind: &str, code: &str, message: impl Into<String>) -> axum::response::Response {

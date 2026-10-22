@@ -51,7 +51,11 @@ fn scope_changes(before: &[AccountingScope], after: &[AccountingScope]) -> Resul
 fn checked(mut response: surrealdb::IndexedResults) -> Result<()> {
     let errors = response.take_errors();
     if errors.values().any(|e| e.to_string().contains("accounting_revision_conflict")) { return Err(AccountingError::Conflict.into()); }
-    if let Some((_,error)) = errors.into_iter().min_by_key(|(index,_)| *index) { return Err(error.into()); }
+    // A failed transaction replaces earlier successful statement results with
+    // NotExecuted. Prefer its actual failure over those rollback placeholders.
+    if let Some((_,error)) = errors.into_iter().min_by_key(|(index,error)| (
+        matches!(error.query_details(), Some(surrealdb::types::QueryError::NotExecuted)), *index,
+    )) { return Err(error.into()); }
     Ok(())
 }
 pub(super) async fn admit(store: &SurrealDbProvider, admission: &CallAdmission) -> Result<AccountingCall> {

@@ -16,7 +16,58 @@ pub struct ClientToolInput {
     pub(crate) graph_state: Option<Value>,
     pub(crate) output_token_cap: Option<u32>,
     pub(crate) budget_snapshot: Option<crate::uar::runtime::cost_budget::ClientToolBudgetSnapshot>,
+    /// Minted by the graph host; caller JSON cannot select another root identity.
+    pub(crate) delegation: Option<GraphClientToolBinding>,
     pub protocol: String,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct GraphClientToolBinding {
+    pub(crate) root_agent_id: String,
+    pub(crate) root_run_id: String,
+    pub(crate) root_session_id: String,
+    pub(crate) executing_thread_id: String,
+    pub(crate) executing_run_id: String,
+}
+
+/// Opaque host capability, deliberately separate from model-facing spawn intent.
+/// Only the admitted graph root can construct it; it is never deserialized.
+#[derive(Debug, Clone)]
+pub struct GraphCallerTurnCapture {
+    input: ClientToolInput,
+    root_agent_id: String,
+    root_run_id: String,
+    root_session_id: String,
+    graph_state: Value,
+}
+
+impl GraphCallerTurnCapture {
+    pub(crate) fn new(input: ClientToolInput, root_agent_id: String, root_run_id: String,
+        root_session_id: String, graph_state: Value) -> Self {
+        Self { input, root_agent_id, root_run_id, root_session_id, graph_state }
+    }
+
+    pub(crate) fn input(&self) -> &ClientToolInput { &self.input }
+    pub(crate) fn root_agent_id(&self) -> &str { &self.root_agent_id }
+    pub(crate) fn root_run_id(&self) -> &str { &self.root_run_id }
+    pub(crate) fn root_session_id(&self) -> &str { &self.root_session_id }
+    pub(crate) fn bind_executing(self, executing_thread_id: String,
+        executing_run_id: String) -> anyhow::Result<ClientToolInput> {
+        for identity in [&self.root_agent_id, &self.root_run_id, &self.root_session_id,
+            &executing_thread_id, &executing_run_id] {
+            anyhow::ensure!(!identity.is_empty() && identity.trim() == identity
+                && !identity.chars().any(char::is_control), "invalid_graph_caller_binding");
+        }
+        let mut input = self.input;
+        input.validate()?;
+        anyhow::ensure!(input.delegation.is_none(), "nested_graph_caller_binding");
+        input.graph_state = Some(self.graph_state);
+        input.delegation = Some(GraphClientToolBinding {
+            root_agent_id: self.root_agent_id, root_run_id: self.root_run_id,
+            root_session_id: self.root_session_id, executing_thread_id, executing_run_id,
+        });
+        Ok(input)
+    }
 }
 
 impl ClientToolInput {

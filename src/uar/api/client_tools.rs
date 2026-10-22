@@ -49,6 +49,10 @@ pub async fn confirm_handoff_for_run(
     anyhow::ensure!(row.state == ClientToolContinuationState::Pending, "client_tool_continuation_state_conflict");
     anyhow::ensure!(manager.await_settled_run_status(run_id).await?
         == crate::uar::domain::runs::RunStatus::Done, "client_tool_source_not_settled");
+    if let Some(source) = &row.execution_source {
+        anyhow::ensure!(manager.await_settled_run_status(&source.run_id).await?
+            == crate::uar::domain::runs::RunStatus::Done, "client_tool_child_source_not_settled");
+    }
     let mut settled = row.clone();
     settled.source_settled = true;
     if store.compare_and_swap_client_tool_continuation(&row, &settled).await? { return Ok(()); }

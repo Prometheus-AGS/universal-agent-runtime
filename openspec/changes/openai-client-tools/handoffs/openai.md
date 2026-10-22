@@ -45,3 +45,60 @@ handoff. This persists the trusted source_settled acknowledgment needed for cold
 Pending continuation; a historical RunDone event alone cannot authorize restart.
 The SSE path owns manager, owner, tenant and agent data across its async lifetime.
 Only routes.rs and this handoff changed. Verification remains CLOSED; no check ran.
+
+## Cohort 13.10 mounted OpenAI bridge
+
+Observed gate006 root cause: the mounted server `/v1/chat/completions` handler
+accepted tools as unused compatibility values and discarded assistant tool calls
+and tool-result identity. It did not enter the durable OpenAI projection above.
+
+Changed `src/server.rs` request decoding and its fresh caller branch to retain
+nullable assistant content, calls, role-tool results, typed declarations, choice
+and parallel controls. It converts complete text history into the shared OpenAI
+wire request, preserving the existing model verification, current principal,
+credential capture, target selection, conversation policy, memory context, input
+screening, output cap and response-timeout admission. A result-bearing request
+recovers its owner/tenant/agent-bound persisted session before conversation policy
+resolution. Explicit conflicting session identity fails admission.
+
+Changed `src/uar/api/openai/routes.rs` by extracting
+`execute_prepared_chat_completion`: the mounted handler supplies its admitted
+RunExecutionRequest, rather than resolving a second agent or executor. The
+helper revalidates any collaboration binding before durable prepare or exact
+receipt replay, carries input-screen findings into the observed run, and retains
+the existing atomic startup observation, live text, actual producer settlement,
+durable handoff acknowledgment and terminal receipt persistence. JSON collection
+honors the mounted ingress's configured response deadline. Runtime error and
+cancellation events remain errors, without successful finish or completed receipt.
+The existing legacy server path remains in place. Stale ignored-tools prose and
+diagnostic text now describe caller declarations.
+
+Caller-tool requests explicitly reject attachments, non-text message arrays,
+non-OpenAI stream modes and cursor replay headers instead of silently losing
+history or presenting incompatible events. Durable exact body retries remain the
+supported caller continuation replay. The extracted caller projection does not
+add the legacy server's session/run response headers; completion IDs and durable
+call IDs retain their native identities. These limitations are visible source
+contracts, not passing acceptance claims.
+
+No tests, builds, compiler probes, imports, formatting, review gates or other
+verification commands ran in this cohort. Only source inspection and authorized
+Rust/handoff writing occurred. Existing real HTTP caller matrix coverage is the
+planned mounted-path regression gate; lead owns its execution after independent
+source review. No unrelated functionality or speculative guards were added.
+
+### Cohort 13.10 reviewer repairs
+
+The JSON projection now runs inside one absolute `timeout_at` covering event
+collection, producer/graph settlement, durable handoff acknowledgment and receipt
+persistence. A timeout returns 504 without a successful projection. Runtime-owned
+join handles remain in their manager slots across the cancelled await; it does
+not report host effects cancelled or undone. A persistence operation that already
+committed remains durable and may be recovered by exact replay; timeout does not
+manufacture or roll back a completion claim.
+
+Caller requests containing the legacy `message` alias now fail explicitly before
+screening or execution. This closes the demonstrated mismatch where the legacy
+extractor screened `message` while the caller executor consumed `messages`.
+Legacy requests without caller tooling retain their original alias behavior.
+These are source-only repairs; no verification command ran.

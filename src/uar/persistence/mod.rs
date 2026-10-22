@@ -104,6 +104,8 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn create_client_tool_continuation(&self, _row: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
     async fn load_client_tool_continuation(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
     async fn load_client_tool_continuation_for_run(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _run: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
+    /// Recover a protocol session's trusted selected agent without a caller-supplied agent override.
+    async fn load_client_tool_continuation_for_session(&self, _owner: &str, _tenant: Option<&str>, _session: &str, _batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
     /// Atomic full-batch claim/completion. A miss must not authorize host effects.
     async fn compare_and_swap_client_tool_continuation(&self, _before: &client_tools::ClientToolContinuation, _after: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
 

@@ -9,7 +9,7 @@ No import performs I/O. This program never builds or starts a candidate.
 import argparse
 import copy
 import concurrent.futures
-import http.client
+import http.client as http_client
 import threading
 import json
 import os
@@ -40,19 +40,40 @@ def require(condition, message):
         raise AssertionError(message)
 
 
-def http(url, body=None, token=None, headers=None):
+def read_http_body(response, deadline):
+    if deadline is None:
+        return response.read().decode()
+    chunks = []
+    while True:
+        require(time.monotonic() < deadline, "graph HTTP response did not reach EOF before deadline")
+        part = response.read1(65536)
+        if not part:
+            break
+        chunks.append(part)
+    return b"".join(chunks).decode()
+
+
+def http(url, body=None, token=None, headers=None, method=None, timeout=180, deadline=None):
     if getattr(TRANSPORT, "capture", False):
         raise CapturedRequest(url, body, token, headers)
     values = {"Content-Type": "application/json", **(headers or {})}
     if token:
         values["Authorization"] = "Bearer " + token
-    request = urllib.request.Request(url, data=None if body is None else json.dumps(body).encode(), headers=values)
+    request = urllib.request.Request(url, data=None if body is None else json.dumps(body).encode(), headers=values, method=method)
+    request_deadline = deadline if deadline is not None else getattr(TRANSPORT, "deadline", None)
+    if request_deadline is not None:
+        require(time.monotonic() < request_deadline, "graph HTTP deadline expired before request")
+        timeout = min(timeout, 10, request_deadline - time.monotonic())
     try:
-        with urllib.request.urlopen(request, timeout=180) as response:
-            raw = response.read().decode()
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw = read_http_body(response, request_deadline)
             status, content_type = response.status, response.headers.get_content_type()
     except urllib.error.HTTPError as error:
-        raw = error.read().decode()
+        if request_deadline is None:
+            raw = error.read().decode()
+        else:
+            with error:
+                raw = read_http_body(error, request_deadline)
         status, content_type = error.code, error.headers.get_content_type()
     if content_type == "text/event-stream":
         events, done = [], False
@@ -88,6 +109,23 @@ def failed(reply):
     return any(event.get("error") or event.get("type") in ("error", "RUN_ERROR", "Error", "Cancelled") or event.get("type") == "RUN_FINISHED" and event.get("outcome", {}).get("type") == "cancelled" for event in reply.get("events", []))
 
 
+def a2a_read_diagnostic(reply):
+    detail = {"http_status": reply.get("status")}
+    body = reply.get("body", {})
+    error = body.get("error")
+    if isinstance(error, dict):
+        detail["error"] = {"code": error.get("code") if type(error.get("code")) is int else "omitted",
+            "message_present": "message" in error}
+    result = body.get("result", {})
+    if isinstance(result, dict):
+        task = result.get("task", result)
+        if isinstance(task, dict):
+            state = task.get("status", {}).get("state")
+            if state in ("TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELED", "TASK_STATE_REJECTED", "TASK_STATE_AUTH_REQUIRED", "TASK_STATE_UNSPECIFIED"):
+                detail["task_state"] = state
+    return json.dumps(detail, separators=(",", ":"))
+
+
 class Driver:
     def __init__(self, args, protocol, agent=None):
         self.args, self.protocol, self.agent = args, protocol, agent or args.agent_id
@@ -103,7 +141,11 @@ class Driver:
         self.last_reply = None
         self.acp_rpc_id = None
         self.agui_requests = {}
+        self.agui_graph_projections = {}
         self.message_ids = {}
+        self.graph_approval_receipts = []
+        self.graph_approval_observations = []
+        self.graph_selection = None
 
     def common(self):
         choice = {"type": self.choice} if self.choice != "named" else {"type": "named", "name": "test_lookup"}
@@ -140,7 +182,7 @@ class Driver:
             if self.choice != "none":
                 choice["disable_parallel_tool_use"] = not self.parallel
             body = {"model": self.args.anthropic_model, "agent_id": self.agent, "max_tokens": 256, "messages": messages,
-                "tools": [{"name": tool["function"]["name"], "description": tool["function"]["description"], "input_schema": SCHEMA, "strict": True} for tool in self.tools],
+                "tools": [{"name": tool["function"]["name"], "description": tool["function"]["description"], "input_schema": tool["function"]["parameters"], "strict": True} for tool in self.tools],
                 "tool_choice": choice, "stream": stream}
             reply = http(self.args.base_url.rstrip("/") + "/v1/messages", body, token, {"anthropic-version": "2023-06-01"})
         elif self.protocol == "agui":
@@ -152,7 +194,7 @@ class Driver:
                 **({"toolCalls": message["tool_calls"]} if message.get("tool_calls") else {}),
                 **({"toolCallId": message["tool_call_id"]} if message.get("tool_call_id") else {})} for index, message in enumerate(self.history)]
             body = {"threadId": self.thread, "runId": self.run, "protocolVersion": "1.0", "messages": messages,
-                "tools": [{"name": tool["function"]["name"], "description": tool["function"]["description"], "parameters": SCHEMA} for tool in self.tools],
+                "tools": [{"name": tool["function"]["name"], "description": tool["function"]["description"], "parameters": tool["function"]["parameters"]} for tool in self.tools],
                 "forwardedProps": {"uar": {"client_tools": {"tool_choice": self.common()["tool_choice"], "parallel_tool_calls": self.parallel}}}}
             if previous:
                 body["parentRunId"] = previous
@@ -178,14 +220,16 @@ class Driver:
             if not failed(reply):
                 if "events" in reply:
                     snapshots = [event.get("result", {}).get("task") for event in reply["events"] if event.get("result", {}).get("task")]
-                    require(snapshots, "A2A stream missing initial task snapshot")
+                    require(snapshots, "A2A stream missing initial task snapshot: " + a2a_read_diagnostic(reply))
                     task = snapshots[0]
                 else:
                     task = reply["body"]["result"].get("task", reply["body"]["result"])
                 self.task, self.context = task["id"], task["contextId"]
                 if stream:
                     current = self.rpc(endpoint, "GetTask", {"id": self.task}, token, {"A2A-Version": "1.0"})
-                    require(not failed(current), "A2A stream terminal task read failed")
+                    require(current["status"] < 400 and not current.get("body", {}).get("error")
+                        and isinstance(current.get("body", {}).get("result"), dict),
+                        "A2A stream terminal task read failed: " + a2a_read_diagnostic(current))
                     task = current["body"]["result"]
                 self.task, self.context = task["id"], task["contextId"]
                 deadline = time.monotonic() + 150
@@ -193,7 +237,9 @@ class Driver:
                     require(time.monotonic() < deadline, "A2A terminal deadline expired")
                     time.sleep(0.2)
                     reply = self.rpc(endpoint, "GetTask", {"id": self.task}, token, {"A2A-Version": "1.0"})
-                    require(not failed(reply), "A2A task read failed")
+                    require(reply["status"] < 400 and not reply.get("body", {}).get("error")
+                        and isinstance(reply.get("body", {}).get("result"), dict),
+                        "A2A task read failed: " + a2a_read_diagnostic(reply))
                     task = reply["body"]["result"]
                 reply = {"status": 200, "body": {"result": task}}
         self.last_reply = reply
@@ -243,14 +289,14 @@ class Driver:
             self.history = extension["history"][:-1]
         return extension.get("pending_calls", [])
 
-    def answer(self, calls, value="fixture-result"):
+    def answer(self, calls, value="fixture-result", assistant_text=""):
         require(calls, "expected caller tool requests")
         require(all(call["id"].startswith("uar_client_") for call in calls), "caller IDs lack durable host-issued locator")
         require(all(call["function"]["name"] in ("test_lookup", "test_second") for call in calls), "host executable leaked as caller tool")
         for call in calls:
             arguments = json.loads(call["function"]["arguments"])
             require(isinstance(arguments.get("query"), str), "caller arguments lost declared schema")
-        self.history += [{"role": "assistant", "content": "", "tool_calls": copy.deepcopy(calls)}]
+        self.history += [{"role": "assistant", "content": assistant_text, "tool_calls": copy.deepcopy(calls)}]
         self.history += [{"role": "tool", "tool_call_id": call["id"], "content": value + ":" + str(index)} for index, call in enumerate(calls)]
         self.acp_rpc_id = None
 
@@ -258,8 +304,16 @@ class Driver:
 def configure(args, scenario):
     settings = {"scenario": scenario}
     if scenario == "graph":
-        require(args.graph_before_marker and args.graph_after_marker, "graph scenario requires distinct node prompt markers")
+        require(args.graph_agent_id == "orchestrator-agent", "graph scenario requires the installed orchestrator-agent graph")
+        require(args.graph_before_marker and args.graph_after_marker and args.graph_before_marker != args.graph_after_marker, "graph scenario requires distinct router and worker prompt markers")
+        settings["graph_before_marker"] = args.graph_before_marker
         settings["graph_after_marker"] = args.graph_after_marker
+    if args.mode.startswith("budget"):
+        require(args.budget_provider_usage_json, "budget requires source-bound reservation limits and explicit provider wire usage; numeric bounds remain an operator prerequisite")
+        usage = json.loads(args.budget_provider_usage_json.read_text())
+        require(isinstance(usage, dict) and set(usage) == {"input_tokens", "output_tokens"}
+            and all(type(value) is int and value >= 0 for value in usage.values()), "invalid provider wire usage")
+        settings["provider_usage"] = usage
     if args.host_tool_json:
         settings["host_tool"] = json.loads(args.host_tool_json.read_text())
     reply = http(args.provider_base_url.rstrip("/") + "/_control", settings)
@@ -270,11 +324,261 @@ def trace(args):
     return http(args.provider_base_url.rstrip("/") + "/_trace")["body"]["requests"]
 
 
+def graph_waiting_response(driver, response):
+    if driver.protocol == "agui":
+        return any(event.get("type") == "RUN_FINISHED" and event.get("outcome", {}).get("type") == "interrupt"
+            for event in response.get("events", []))
+    if driver.protocol == "a2a":
+        task = response.get("body", {}).get("result", {})
+        state = task.get("status", {}).get("state")
+        return state in ("TASK_STATE_SUBMITTED", "TASK_STATE_WORKING") or state == "TASK_STATE_INPUT_REQUIRED" and not task.get("metadata", {}).get(EXTENSION, {}).get("pending_calls")
+    return False
+
+
+def graph_completed_retry(driver, stream=False):
+    return graph_send(driver, stream=stream, allow_spawn=False)
+
+
+def graph_owned_request(call, deadline, *arguments, **keywords):
+    previous = getattr(TRANSPORT, "deadline", None)
+    TRANSPORT.deadline = deadline
+    try:
+        return call(*arguments, **keywords)
+    finally:
+        TRANSPORT.deadline = previous
+
+
+def graph_selection_receipt(driver):
+    args = driver.args
+    require(not driver.graph_approval_receipts or driver.graph_selection is not None,
+        "graph continuation lacks its persisted initial router selection receipt")
+    marker = driver.history[0]["content"].removesuffix(":earlier-user")
+    peer = http(args.provider_base_url.rstrip("/") + "/_trace", timeout=10)["body"]
+    settings = peer["settings"]
+    require(settings.get("scenario") == "graph" and settings.get("graph_before_marker") == args.graph_before_marker
+        and settings.get("graph_after_marker") == args.graph_after_marker, "redacted spawn lacks the controlled graph fixture binding")
+    selected = []
+    for entry in peer["requests"]:
+        request = entry["request"]
+        prompt = [message.get("content", "") for message in request.get("messages", []) if message.get("role") in ("system", "developer")]
+        if "system" in request:
+            prompt.append(request["system"])
+        identity = json.dumps(prompt)
+        if marker in json.dumps(request) and args.graph_before_marker in identity:
+            require(not request.get("tools") and args.graph_after_marker not in identity, "redacted spawn router identity is not tool-free and distinct")
+            selected.append(request)
+    require(len(selected) == 1, "redacted spawn requires exactly one actual router selection for its conversation")
+    receipt = {"marker": marker, "router_request": selected[0], "selected_worker": "general-purpose",
+        "fixture_settings": settings, "selection_basis": "controlled peer graph produce path returns exactly general-purpose"}
+    if driver.graph_selection is not None:
+        require(driver.graph_selection == receipt, "graph continuation changed its saved controlled router selection")
+    else:
+        driver.graph_selection = receipt
+    return receipt
+
+
+def graph_child_receipt(driver, root, worker_offset):
+    args = driver.args
+    snapshot = http(args.base_url.rstrip("/") + "/api/uar/runs/" + urllib.parse.quote(root, safe="") + "/events",
+        token=driver.token, headers=args.workspace_headers, timeout=10)
+    require(snapshot["status"] == 200 and snapshot["body"].get("runId") == root
+        and snapshot["body"].get("gapReason") is None, "graph child identity snapshot is absent or has a retention gap")
+    children = []
+    for event in snapshot["body"].get("events", []):
+        if event.get("eventName", "").startswith("agui.subagent."):
+            data = event.get("data", {})
+            lifecycle = data.get("lifecycle", {})
+            require(data.get("request_id") == root and lifecycle.get("parent_run_id") == root
+                and lifecycle.get("artifact_id") == "general-purpose", "approved graph produced an unexpected child identity")
+            require(lifecycle.get("root_thread_id") and lifecycle.get("parent_thread_id")
+                and lifecycle.get("child_thread_id"), "graph child lifecycle lacks actual thread IDs")
+            children.append(event)
+    require(children and len({event["data"]["lifecycle"]["child_thread_id"] for event in children}) == 1,
+        "graph approval did not produce exactly one public selected child")
+    child_runs = {event["data"]["lifecycle"]["child_run_id"] for event in children if event["data"]["lifecycle"].get("child_run_id")}
+    require(len(child_runs) == 1, "graph selected child has no unique actual model-run identity")
+    peer = http(args.provider_base_url.rstrip("/") + "/_trace", timeout=10)["body"]
+    worker = peer["requests"][worker_offset:]
+    require(len(worker) == 1, "graph approved root did not make exactly one selected worker model call")
+    request = worker[0]["request"]
+    prompt = [message.get("content", "") for message in request.get("messages", []) if message.get("role") in ("system", "developer")]
+    if "system" in request:
+        prompt.append(request["system"])
+    require(args.graph_after_marker in json.dumps(prompt) and args.graph_before_marker not in json.dumps(prompt)
+        and driver.graph_selection["marker"] in json.dumps(request), "approved graph selected the wrong worker prompt/conversation")
+    return {"public_events": snapshot, "selected_child_events": children, "worker_request": worker[0],
+        "identity_basis": "owned approved root lifecycle and its isolated post-decision provider trace"}
+
+
+def graph_send(driver, stream=False, allow_spawn=True):
+    args = driver.args
+    runs_url = args.base_url.rstrip("/") + "/api/uar/runs"
+    baseline = http(runs_url, token=driver.token, headers=args.workspace_headers, timeout=10)
+    require(baseline["status"] == 200, "graph approval cannot inspect the owner run baseline")
+    old_ids = {run["run_id"] for run in baseline["body"]}
+    old_effects = peer_state(args)["host_effects"] if not allow_spawn else None
+    observation = {"baseline": baseline, "allow_spawn": allow_spawn, "approvals": [], "cleanup": []}
+    driver.graph_approval_observations.append(observation)
+    EVIDENCE.append({"graph_approval_observation": observation})
+    root = None
+    challenge = None
+    failure = None
+    response = None
+    deadline = time.monotonic() + 90
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        request = pool.submit(graph_owned_request, driver.send, deadline, stream=stream)
+        requests = [request]
+        try:
+            while True:
+                require(time.monotonic() < deadline, "graph request/approval coordinator deadline expired")
+                if request.done():
+                    response = request.result(timeout=180)
+                    projection = driver.agui_graph_projections.get(json.dumps(driver.history, sort_keys=True))
+                    if driver.protocol == "agui" and not allow_spawn and projection is not None:
+                        require(response["status"] < 400 and not failed(response), "graph duplicate AG-UI submission failed before projection attachment")
+                        driver.run = projection
+                        attach = args.base_url.rstrip("/") + "/api/uar/ag-ui/agents/" + urllib.parse.quote(driver.agent, safe="")
+                        attach += "/threads/" + urllib.parse.quote(driver.thread, safe="") + "/runs/" + urllib.parse.quote(projection, safe="") + "/stream"
+                        observation["duplicate_submission_response"] = response
+                        response = http(attach, token=driver.token, headers={"Accept": "text/event-stream", **args.workspace_headers}, timeout=10, deadline=deadline)
+                        observation["projection_attach_response"] = response
+                    if driver.protocol == "a2a" and challenge is not None and graph_waiting_response(driver, response):
+                        task_endpoint = args.a2a_path or "/a2a/v1/agents/" + urllib.parse.quote(driver.agent, safe="")
+                        response = http(args.base_url.rstrip("/") + task_endpoint,
+                            {"jsonrpc": "2.0", "id": str(uuid.uuid4()), "method": "GetTask", "params": {"id": driver.task}},
+                            driver.token, {"A2A-Version": "1.0", **args.workspace_headers}, timeout=10)
+                        require(response["status"] < 400 and not response.get("body", {}).get("error")
+                            and isinstance(response.get("body", {}).get("result"), dict),
+                            "graph A2A attach read failed: " + a2a_read_diagnostic(response))
+                        task = response["body"]["result"]
+                        require(task.get("id") == driver.task and task.get("contextId") == driver.context,
+                            "graph A2A attach changed task/context identity")
+                        observation.setdefault("task_reads", []).append(response)
+                    if not graph_waiting_response(driver, response):
+                        if allow_spawn:
+                            require(challenge is not None, "graph request completed without servicing its required spawn approval")
+                        break
+                    require(allow_spawn, "completed graph replay returned an approval interrupt")
+                if root is None:
+                    current = http(runs_url, token=driver.token, headers=args.workspace_headers, timeout=10)
+                    require(current["status"] == 200, "graph approval cannot inspect current owner runs")
+                    candidates = [run for run in current["body"] if run["run_id"] not in old_ids
+                        and run["agent_id"] == "orchestrator-agent" and run["status"] in ("pending", "running", "paused")]
+                    require(len(candidates) <= 1, "graph approval root identity is ambiguous")
+                    if candidates:
+                        root = candidates[0]["run_id"]
+                        require(all(receipt["root_run_id"] != root for receipt in driver.graph_approval_receipts),
+                            "graph continuation reused a prior approval root")
+                        observation["root_snapshot"] = current
+                        observation["root_run_id"] = root
+                if root is not None:
+                    endpoint = runs_url + "/" + urllib.parse.quote(root, safe="") + "/tool-approval"
+                    pending_reply = http(endpoint + "/pending", token=driver.token, headers=args.workspace_headers, timeout=10)
+                    require(pending_reply["status"] == 200 and pending_reply["body"].get("runId") == root,
+                        "graph approval pending read lost the exact native root")
+                    pending = pending_reply["body"].get("pending")
+                    if pending is not None:
+                        require(allow_spawn, "graph replay requested a new spawn approval")
+                        require(pending.get("rootRunId") == root and pending.get("name") == "spawn_agent",
+                            "graph approval is not the expected live root spawn")
+                        approval_id = pending.get("approvalId")
+                        require(approval_id and approval_id == pending.get("challengeId") and pending.get("toolCallId"),
+                            "graph approval challenge identity is incomplete")
+                        require(challenge == approval_id or all(receipt["pending"]["body"]["pending"]["approvalId"] != approval_id
+                            for receipt in driver.graph_approval_receipts), "graph continuation reused a prior spawn approval")
+                        arguments = json.loads(pending["argumentsJson"])
+                        require(isinstance(arguments, dict) and set(arguments) == {"operation", "detailsAvailable"}
+                            and arguments["operation"] == "spawn_agent" and arguments["detailsAvailable"] is False,
+                            "graph spawn approval display differs from the exact redacted public contract")
+                        if challenge != approval_id:
+                            require(challenge is None, "graph request produced a second spawn challenge")
+                            selection = graph_selection_receipt(driver)
+                            worker_offset = len(trace(args))
+                            if driver.protocol == "agui":
+                                if not request.done():
+                                    time.sleep(0.05)
+                                    continue
+                                original = request.result(timeout=180)
+                                terminal = next((event for event in original.get("events", [])
+                                    if event.get("type") == "RUN_FINISHED"), None)
+                                interrupts = (terminal or {}).get("outcome", {}).get("interrupts", [])
+                                require(terminal and terminal.get("threadId") == driver.thread and terminal.get("runId") == driver.run
+                                    and len(interrupts) == 1 and interrupts[0].get("id") == approval_id
+                                    and interrupts[0].get("reason") == "tool_approval", "graph AG-UI sealed interrupt does not match the exact approval")
+                                parent_wire = driver.run
+                                driver.run = str(uuid.uuid4())
+                                driver.agui_graph_projections[json.dumps(driver.history, sort_keys=True)] = driver.run
+                                resume = {"threadId": driver.thread, "runId": driver.run, "parentRunId": parent_wire,
+                                    "protocolVersion": "1.0", "messages": [], "tools": [], "forwardedProps": {"uar": {}},
+                                    "resume": [{"interruptId": approval_id, "status": "resolved", "payload": {"approved": True}}]}
+                                native_url = args.base_url.rstrip("/") + "/api/uar/ag-ui/agents/" + urllib.parse.quote(driver.agent, safe="")
+                                request = pool.submit(graph_owned_request, http, deadline, native_url, resume, driver.token,
+                                    {"Accept": "text/event-stream", **args.workspace_headers})
+                                requests.append(request)
+                                decided = {"native_resume_request": resume, "sealed_interrupt_response": original}
+                            else:
+                                decided = http(endpoint, {"approval_id": approval_id, "approved": True}, driver.token,
+                                    args.workspace_headers, timeout=10)
+                                require(decided["status"] == 200 and decided["body"].get("resolved") is True
+                                    and decided["body"].get("decision") == "allow", "graph spawn approval was not delivered")
+                            challenge = approval_id
+                            receipt = {"root_run_id": root, "pending": pending_reply, "public_display": arguments,
+                                "hidden_arguments_verified": False, "controlled_selection": selection, "decision": decided}
+                            observation["approvals"].append(receipt)
+                            driver.graph_approval_receipts.append(receipt)
+                time.sleep(0.05)
+            if allow_spawn:
+                require(challenge is not None, "graph request completed without servicing its required spawn approval")
+                observation["approvals"][0]["child_identity"] = graph_child_receipt(driver, root, worker_offset)
+                if driver.protocol == "agui":
+                    records = http(endpoint, token=driver.token, headers=args.workspace_headers, timeout=10)
+                    require(records["status"] == 200 and records["body"].get("runId") == root, "graph AG-UI approval receipt read failed")
+                    approved = [record for record in records["body"].get("records", []) if record.get("challengeId") == challenge]
+                    require(len(approved) == 1 and approved[0].get("state") == "approved"
+                        and approved[0].get("decision", {}).get("approved") is True, "graph AG-UI native resume did not commit the exact approval")
+                    observation["approvals"][0]["decision"]["approval_records"] = records
+                    observation["approvals"][0]["decision"]["native_resume_response"] = response
+                    final_roots = http(runs_url, token=driver.token, headers=args.workspace_headers, timeout=10)
+                    require(final_roots["status"] == 200, "graph AG-UI cannot confirm its physical root")
+                    require({run["run_id"] for run in final_roots["body"] if run["run_id"] not in old_ids
+                        and run["agent_id"] == "orchestrator-agent"} == {root}, "graph AG-UI approval resume admitted another physical root")
+                    observation["final_snapshot"] = final_roots
+            else:
+                final_runs = http(runs_url, token=driver.token, headers=args.workspace_headers, timeout=10)
+                require(final_runs["status"] == 200, "graph replay cannot inspect final owner roots")
+                observation["final_snapshot"] = final_runs
+                require(not any(run["run_id"] not in old_ids and run["agent_id"] == "orchestrator-agent"
+                    for run in final_runs["body"]), "completed graph replay admitted a new root")
+                require(peer_state(args)["host_effects"] == old_effects, "completed graph replay repeated a real host effect")
+        except BaseException as error:
+            failure = error
+        finally:
+            if failure is not None and root is not None:
+                try:
+                    observation["cleanup"].append(http(runs_url + "/" + urllib.parse.quote(root, safe="") + "/cancel",
+                        {}, driver.token, args.workspace_headers, timeout=10))
+                except Exception as error:
+                    observation["cleanup"].append({"cancel_error_type": type(error).__name__})
+            for owned in requests:
+                try:
+                    owned.result(timeout=180)
+                except Exception as error:
+                    observation.setdefault("request_error_types", []).append(type(error).__name__)
+                    if failure is None:
+                        failure = error
+            observation["requests_joined"] = len(requests)
+    observation["executor_joined"] = True
+    if failure is not None:
+        raise failure
+    driver.last_reply = response
+    return response
+
+
 def loop_case(args, protocol, scenario="single", choice="auto", parallel=True, stream=False, agent=None):
     configure(args, scenario)
     driver = Driver(args, protocol, agent)
     driver.choice, driver.parallel = choice, parallel
-    first = driver.send(stream=stream)
+    first = graph_send(driver, stream=stream) if scenario == "graph" else driver.send(stream=stream)
     require(not failed(first), "initial request rejected: " + json.dumps(first))
     calls = driver.calls(first)
     if choice == "none":
@@ -293,7 +597,7 @@ def loop_case(args, protocol, scenario="single", choice="auto", parallel=True, s
             require("tool_calls" in reasons and "stop" not in reasons, "OpenAI stream falsely stopped tool handoff")
     if protocol == "anthropic" and "body" in first:
         require(first["body"].get("stop_reason") == "tool_use", "Anthropic handoff stop reason lost")
-    captured_request = trace(args)[0]["request"]
+    captured_request = trace(args)[1 if scenario == "graph" else 0]["request"]
     if protocol != "agui":
         forwarded = [tool.get("function", tool) for tool in captured_request.get("tools", [])]
         lookup = next((tool for tool in forwarded if tool.get("name") == "test_lookup"), None)
@@ -317,13 +621,13 @@ def loop_case(args, protocol, scenario="single", choice="auto", parallel=True, s
         handoffs += 1
         require(handoffs <= 4, "caller loop did not converge")
         driver.answer(calls)
-        reply = driver.send(stream=stream)
+        reply = graph_send(driver, stream=stream) if scenario == "graph" else driver.send(stream=stream)
         require(not failed(reply), "result submission rejected: " + json.dumps(reply))
         calls = driver.calls(reply)
     contacts = len(trace(args))
     require(contacts >= 2, "result continuation did not reach real provider")
     before = contacts
-    repeated = driver.send(stream=stream)
+    repeated = graph_completed_retry(driver, stream=stream) if scenario == "graph" else driver.send(stream=stream)
     require(not failed(repeated), "identical completed result retry rejected")
     require(not driver.calls(repeated), "completed result retry reissued tool calls")
     require(len(trace(args)) == before, "completed result retry executed provider again")
@@ -332,12 +636,34 @@ def loop_case(args, protocol, scenario="single", choice="auto", parallel=True, s
         require(len(peer["host_effects"]) == 1, "real MCP host effect did not execute exactly once across completed retry")
     captured = json.dumps(trace(args))
     require("fixture-result" in captured, "provider did not receive caller tool result")
-    require(driver.history[0]["content"] in captured and driver.history[1]["content"] in captured, "provider lost earlier full history")
-    return {"provider_contacts": contacts, "handoffs": handoffs, "retry_provider_contacts": 0}
+    if scenario != "graph":
+        require(driver.history[0]["content"] in captured and driver.history[1]["content"] in captured, "provider lost earlier full history")
+    observed = {"provider_contacts": contacts, "handoffs": handoffs, "retry_provider_contacts": 0}
+    if scenario == "graph":
+        require(len(driver.graph_approval_receipts) == 2, "graph warm loop lost its two independently governed spawn decisions")
+        observed["graph_approvals"] = driver.graph_approval_receipts
+    return observed
 
 
 def rejection_case(args, protocol, mutation):
     configure(args, "parallel")
+    if protocol == "openai" and mutation == "history":
+        fresh = Driver(args, protocol)
+        TRANSPORT.capture = True
+        try:
+            try:
+                fresh.send()
+            except CapturedRequest as captured:
+                url, body, token, headers = captured.request
+            else:
+                raise AssertionError("fresh OpenAI caller-tool request was not captured")
+        finally:
+            TRANSPORT.capture = False
+        body["message"] = "legacy alias conflicts with the supplied messages history"
+        before = len(trace(args))
+        alias_reply = http(url, body, token, headers)
+        require(400 <= alias_reply["status"] < 500, "legacy message alias was not rejected with a client error: " + json.dumps(alias_reply))
+        require(len(trace(args)) == before, "legacy message alias rejection contacted provider")
     driver = Driver(args, protocol)
     initial = driver.send()
     require(not failed(initial), "rejection setup failed")
@@ -362,7 +688,10 @@ def rejection_case(args, protocol, mutation):
     reply = driver.send(token=os.environ[args.other_bearer_token_env] if mutation == "owner" else None)
     require(failed(reply), "invalid continuation accepted: " + mutation + ":" + json.dumps(reply))
     require(len(trace(args)) == before, "rejected continuation contacted provider")
-    return {"rejected": mutation, "provider_contacts_after_rejection": 0}
+    observed = {"rejected": mutation, "provider_contacts_after_rejection": 0}
+    if protocol == "openai" and mutation == "history":
+        observed["legacy_message_alias_status"] = alias_reply["status"]
+    return observed
 
 
 def peer_state(args):
@@ -427,7 +756,7 @@ def disconnect_case(args, protocol):
     finally:
         TRANSPORT.capture = False
     target = urllib.parse.urlsplit(url)
-    connection_type = http.client.HTTPSConnection if target.scheme == "https" else http.client.HTTPConnection
+    connection_type = http_client.HTTPSConnection if target.scheme == "https" else http_client.HTTPConnection
     connection = connection_type(target.hostname, target.port, timeout=180)
     request_headers = {"Content-Type": "application/json", "Accept": "text/event-stream", **(headers or {})}
     if token:
@@ -466,47 +795,316 @@ def provider_failure_case(args, protocol, scenario):
     return {"upstream": scenario, "public_failure": True, "provider_contacts": len(trace(args))}
 
 
+def cancellation_case(args, protocol):
+    driver = prepared_results(args, protocol, mixed=True)
+    require(len(peer_state(args)["host_effects"]) == 1, "cancellation setup did not settle one real host effect")
+    before = len(trace(args))
+    runs_url = args.base_url.rstrip("/") + "/api/uar/runs"
+    snapshot = http(runs_url, token=driver.token)
+    require(snapshot["status"] == 200, "cannot retain owner-visible run baseline")
+    old_runs = {run["run_id"] for run in snapshot["body"]}
+    TRANSPORT.capture = True
+    try:
+        try:
+            driver.send(stream=True)
+        except CapturedRequest as captured:
+            url, body, token, headers = captured.request
+        else:
+            raise AssertionError("cancellation continuation was not captured")
+    finally:
+        TRANSPORT.capture = False
+    require(http(args.provider_base_url.rstrip("/") + "/_hold", {})["status"] == 200, "provider hold failed")
+    native_run = None
+    cancel_reply = None
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        pending = None
+        try:
+            pending = pool.submit(http, url, body, token, headers)
+            wait_peer(args, lambda state: state["held_requests"] >= 1, "cancel continuation did not reach held real provider")
+            if protocol == "a2a":
+                endpoint = args.a2a_path or "/a2a/v1/agents/" + urllib.parse.quote(driver.agent, safe="")
+                cancel_reply = driver.rpc(endpoint, "CancelTask", {"id": driver.task}, headers={"A2A-Version": "1.0", **args.workspace_headers})
+                require(cancel_reply["status"] == 200 and not cancel_reply.get("body", {}).get("error"), "native A2A cancellation failed")
+                task = cancel_reply["body"]["result"]
+                require(task["status"]["state"] == "TASK_STATE_CANCELED" and not task.get("metadata", {}).get("cleanup_unconfirmed"), "A2A cancellation did not confirm cleanup")
+            else:
+                current = http(runs_url, token=driver.token)
+                require(current["status"] == 200, "cannot inspect actual owner cancellation identity")
+                active = [run for run in current["body"] if run["run_id"] not in old_runs
+                    and run["agent_id"] == driver.agent and run["status"] in ("pending", "running")]
+                require(len(active) == 1, "held continuation has no unique new owner-visible native run")
+                native_run = active[0]["run_id"]
+                cancel_reply = http(runs_url + "/" + urllib.parse.quote(native_run, safe="") + "/cancel", {}, driver.token)
+                require(cancel_reply["status"] == 200 and cancel_reply["body"].get("cancelled") is True, "native run cancellation was not accepted")
+        finally:
+            try:
+                released = http(args.provider_base_url.rstrip("/") + "/_release", {})
+                require(released["status"] == 200, "provider release failed after cancellation")
+            finally:
+                # Joining this owned request is mandatory even after a failed
+                # cancellation assertion; no request worker escapes the case.
+                if pending is not None:
+                    reply = pending.result(timeout=180)
+    wait_peer(args, lambda state: state["held_requests"] == 0, "cancellation left a held provider request")
+    if protocol == "a2a":
+        terminal = driver.rpc(endpoint, "GetTask", {"id": driver.task}, headers={"A2A-Version": "1.0", **args.workspace_headers})
+        require(terminal["body"]["result"]["status"]["state"] == "TASK_STATE_CANCELED", "cancelled task changed to a successful terminal")
+        require("TASK_STATE_COMPLETED" not in json.dumps(reply), "cancelled A2A stream emitted completion")
+    else:
+        require(failed(reply), "explicit cancellation emitted a successful native result")
+        inspected = http(runs_url + "/" + urllib.parse.quote(native_run, safe=""), token=driver.token)
+        require(inspected["status"] == 200 and inspected["body"]["status"] == "cancelled", "owner-visible run did not retain cancelled status")
+    for event in reply.get("events", []):
+        for choice in event.get("choices", []):
+            require(choice.get("finish_reason") not in ("stop", "tool_calls"), "cancelled OpenAI response emitted success")
+        require(not (event.get("type") == "message_delta" and event.get("delta", {}).get("stop_reason") in ("end_turn", "tool_use")), "cancelled Anthropic response emitted success")
+        require(not (event.get("type") == "RUN_FINISHED" and event.get("outcome", {}).get("type", "success") == "success"), "cancelled AG-UI response emitted success")
+        require(not (event.get("status") in ("done", "client_tools_required")), "cancelled ACP response emitted success")
+    require(len(trace(args)) == before + 1, "cancellation executed extra provider work")
+    require(len(peer_state(args)["host_effects"]) == 1, "cancellation repeated a settled host effect")
+    contacts = len(trace(args))
+    retried = http(url, body, token, headers)
+    require(failed(retried) or protocol == "a2a" and "TASK_STATE_CANCELED" in json.dumps(retried), "cancelled claimed batch retry became success")
+    require(len(trace(args)) == contacts and len(peer_state(args)["host_effects"]) == 1, "cancelled claimed batch retry repeated effects")
+    return {"protocol": protocol, "native_run_id": native_run, "task_id": driver.task,
+        "explicit_cancel_response": cancel_reply, "continuation_response": reply,
+        "settled_host_effects": 1, "retry_provider_contacts": 0, "owned_request_joined": True, "provider_released": True}
+
+
 def graph_sequence(args, marker):
+    marker = marker.removesuffix(":earlier-user")
     requests = [entry["request"] for entry in trace(args) if marker in json.dumps(entry["request"])]
     sequence = []
     for request in requests:
-        serialized = json.dumps(request)
-        if args.graph_after_marker in serialized:
-            sequence.append("after")
-        elif args.graph_before_marker in serialized:
-            sequence.append("before")
+        prompt = [message.get("content", "") for message in request.get("messages", [])
+            if message.get("role") in ("system", "developer")]
+        if "system" in request:
+            prompt.append(request["system"])
+        identity = json.dumps(prompt)
+        router = args.graph_before_marker in identity
+        worker = args.graph_after_marker in identity
+        require(router != worker, "graph request must identify exactly one active router or worker prompt")
+        if router:
+            require(not request.get("tools"), "router unexpectedly received tools")
+            sequence.append("router")
+        elif worker:
+            sequence.append("worker")
         else:
-            raise AssertionError("graph provider request lost both configured node markers")
-    require(sequence == ["before", "before", "after"], "graph cursor replayed or skipped a node: " + json.dumps(sequence))
+            raise AssertionError("graph provider request lost both configured prompt markers")
+    require(sequence == ["router", "worker", "worker"], "graph cursor replayed or skipped a node: " + json.dumps(sequence))
     return sequence
+
+
+def safety_input_case(args, protocol, mutation):
+    configure(args, "single")
+    driver = Driver(args, protocol, args.safety_agent_id)
+    if mutation == "duplicate_names":
+        driver.tools[1]["function"]["name"] = driver.tools[0]["function"]["name"]
+    elif mutation == "host_collision":
+        driver.tools[0]["function"]["name"] = json.loads(args.host_tool_json.read_text())["name"]
+    elif mutation == "malformed_schema":
+        driver.tools[0]["function"]["parameters"] = {"type": "not-a-json-schema-type"}
+    reply = driver.send()
+    require(failed(reply), "invalid caller declaration accepted: " + mutation)
+    require(not trace(args), "invalid caller declaration reached provider: " + mutation)
+    require(not peer_state(args)["host_effects"], "invalid caller declaration executed host tool")
+    return {"rejected": mutation, "provider_contacts": 0, "host_effects": 0}
+
+
+def safety_success_case(args, protocol, scenario, stream=False):
+    configure(args, scenario)
+    driver = Driver(args, protocol, args.safety_agent_id)
+    reply = driver.send(stream=stream)
+    require(not failed(reply), "safety caller handoff failed: " + json.dumps(reply))
+    calls = driver.calls(reply)
+    require(len(calls) == (2 if scenario == "parallel" else 1), "safety handoff lost the complete parallel batch")
+    if scenario == "mixed_text":
+        require("client-tools-mixed-text" in json.dumps(reply), "mixed text/tool response lost assistant text")
+    require(not peer_state(args)["host_effects"], "UAR executed caller-owned function before handoff")
+    driver.answer(calls, assistant_text="client-tools-mixed-text" if scenario == "mixed_text" else "")
+    completed = driver.send(stream=stream)
+    require(not failed(completed) and not driver.calls(completed), "safety caller result batch did not complete")
+    require(not peer_state(args)["host_effects"], "UAR executed caller-owned function during continuation")
+    require(len(trace(args)) == 2, "caller result batch did not use exactly one continuation call")
+    return {"caller_calls": len(calls), "provider_contacts": 2, "host_effects": 0, "stream": stream}
+
+
+def safety_provider_case(args, protocol, scenario):
+    configure(args, scenario)
+    driver = Driver(args, protocol, args.safety_agent_id)
+    if scenario == "force_parallel":
+        driver.parallel = False
+    reply = driver.send(stream=True)
+    require(failed(reply), "provider violation became a successful handoff: " + scenario + ":" + json.dumps(reply))
+    for event in reply.get("events", []):
+        for choice in event.get("choices", []):
+            require(choice.get("finish_reason") not in ("stop", "tool_calls"), "provider violation emitted successful OpenAI terminal")
+        require(not (event.get("type") == "message_delta" and event.get("delta", {}).get("stop_reason") in ("end_turn", "tool_use")), "provider violation emitted successful Anthropic terminal")
+        require(not (event.get("type") == "RUN_FINISHED" and event.get("outcome", {}).get("type", "success") == "success"), "provider violation emitted successful AG-UI terminal")
+    require(trace(args), "provider violation did not exercise the actual upstream path")
+    require(not peer_state(args)["host_effects"], "provider violation executed a host tool")
+    return {"provider_violation": scenario, "public_failure": True, "host_effects": 0}
+
+
+def safety_policy_case(args, protocol):
+    configure(args, "host_after_results")
+    driver = Driver(args, protocol, args.safety_agent_id)
+    first = driver.send()
+    require(not failed(first), "current-policy setup failed before caller handoff")
+    driver.answer(driver.calls(first))
+    require(not peer_state(args)["host_effects"], "host effect executed before caller result submission")
+    endpoint = args.base_url.rstrip("/") + "/api/agents/" + urllib.parse.quote(args.safety_agent_id, safe="")
+    original_reply = http(endpoint, token=driver.token)
+    require(original_reply["status"] == 200, "cannot retain original registered safety agent")
+    original = original_reply["body"]
+    host_name = json.loads(args.host_tool_json.read_text())["name"]
+    require(host_name in original["policy"]["tools"]["allow"], "safety agent did not originally allow the real host tool")
+    advertised = [tool.get("function", tool).get("name") for tool in trace(args)[0]["request"].get("tools", [])]
+    require(host_name in advertised, "policy scenario never established the initially executable host tool")
+    before = len(trace(args))
+    try:
+        changed = http(endpoint, {"policy": {"tools": {"allow": [], "deny": [host_name]}}}, driver.token, method="PATCH")
+        require(changed["status"] == 200, "current-agent policy mutation failed")
+        require(changed["body"]["policy"]["tools"]["deny"] == [host_name], "agent policy mutation did not persist the host denial")
+        reply = driver.send()
+        requests = trace(args)[before:]
+        require(requests, "policy continuation did not reach the real provider host-call probe")
+        for entry in requests:
+            names = [tool.get("function", tool).get("name") for tool in entry["request"].get("tools", [])]
+            require(host_name not in names, "continuation advertised a host tool denied by current agent policy")
+        require(failed(reply), "malicious provider's denied host call became a successful continuation")
+        require(not peer_state(args)["host_effects"], "current agent denial failed to prevent the real MCP effect")
+    finally:
+        restored = http(endpoint, original, driver.token, method="PUT")
+        require(restored["status"] == 200, "failed to restore original safety agent after policy mutation")
+        require(restored["body"]["policy"] == original["policy"], "restored safety agent policy differs from original")
+    return {"current_agent_policy_reloaded": True, "denied_host_schema_absent": True,
+        "malicious_provider_call_refused": True, "host_effects": 0, "original_policy_restored": True}
+
+
+def safety_tenant_case(args, protocol):
+    configure(args, "single")
+    driver = Driver(args, protocol, args.safety_agent_id)
+    first = driver.send()
+    require(not failed(first), "cross-tenant setup did not reach caller handoff")
+    driver.answer(driver.calls(first))
+    before = len(trace(args))
+    reply = driver.send(token=os.environ[args.other_tenant_bearer_token_env])
+    require(failed(reply), "different tenant accepted the pending caller batch")
+    require(len(trace(args)) == before, "cross-tenant result submission contacted provider")
+    require(not peer_state(args)["host_effects"], "cross-tenant result submission executed a host effect")
+    return {"different_tenant_rejected": True, "provider_contacts_after_rejection": 0, "host_effects": 0,
+        "credential_provenance": "supervisor must attest same subject and distinct signed tenant claims"}
+
+
+def safety_binding_case(args, protocol):
+    configure(args, "host_after_results")
+    driver = Driver(args, protocol, args.safety_agent_id)
+    first = driver.send()
+    require(not failed(first), "binding withdrawal setup failed before caller handoff")
+    driver.answer(driver.calls(first))
+    host_name = json.loads(args.host_tool_json.read_text())["name"]
+    first_names = [tool.get("function", tool).get("name") for tool in trace(args)[0]["request"].get("tools", [])]
+    require(host_name in first_names, "binding withdrawal never established live host advertisement")
+    endpoint = args.provider_base_url.rstrip("/") + "/_host_binding"
+    before = len(trace(args))
+    try:
+        disabled = http(endpoint, {"enabled": False})
+        require(disabled["status"] == 200, "real MCP binding withdrawal failed")
+        offset = len(peer_state(args)["binding_requests"])
+        reply = driver.send()
+        state = peer_state(args)
+        observed = state["binding_requests"][offset:]
+        require(any(entry.get("method") == "tools/list" and entry["enabled"] is False for entry in observed),
+            "continuation did not rediscover the real withdrawn MCP binding")
+        require(not any(entry.get("method") == "tools/call" for entry in observed), "continuation attempted the withdrawn MCP executable")
+        require(failed(reply), "withdrawn executable binding became a successful continuation")
+        require(not state["host_effects"], "withdrawn MCP binding executed a real effect")
+        for entry in trace(args)[before:]:
+            names = [tool.get("function", tool).get("name") for tool in entry["request"].get("tools", [])]
+            require(host_name not in names, "continuation advertised a withdrawn MCP executable")
+    finally:
+        restored = http(endpoint, {"enabled": True})
+        require(restored["status"] == 200, "failed to restore real MCP binding")
+    return {"real_mcp_tools_list_refreshed": True, "withdrawn_executable_refused": True,
+        "host_effects": 0, "host_binding_restored": True}
+
+
+def mixed_host_exchange(request, host_name):
+    messages = request.get("messages", [])
+    for index, message in enumerate(messages):
+        if message.get("role") != "assistant":
+            continue
+        for call in message.get("tool_calls", []):
+            if call.get("function", {}).get("name") == host_name:
+                for result_index in range(index + 1, len(messages)):
+                    result = messages[result_index]
+                    if result.get("role") == "tool" and result.get("tool_call_id") == call["id"]:
+                        return {"call": call, "result": result, "call_index": index, "result_index": result_index}
+    raise AssertionError("actual provider history lacks the ordered real host call/result exchange")
 
 
 def restart_case(args, resume):
     budget_mode = args.mode.startswith("budget-")
     graph_mode = args.mode.startswith("graph-")
+    mixed_crash = args.mode.startswith("mixed-crash-")
     selected_agent = args.budget_agent_id if budget_mode else args.graph_agent_id if graph_mode else args.agent_id
     require(selected_agent, "restart variant requires its configured budget or graph agent")
     if graph_mode:
-        require(args.graph_before_marker and args.graph_after_marker, "graph restart requires node markers")
+        require(args.graph_agent_id == "orchestrator-agent" and args.graph_before_marker and args.graph_after_marker, "graph restart requires orchestrator-agent and router/worker markers")
     if not resume:
-        configure(args, "two_round" if budget_mode else "graph" if graph_mode else "single")
+        configure(args, "mixed" if mixed_crash else "two_round" if budget_mode else "graph" if graph_mode else "single")
         saved = []
         for protocol in args.protocols:
             driver = Driver(args, protocol, selected_agent)
-            reply = driver.send()
+            effects_before = len(peer_state(args)["host_effects"]) if mixed_crash else None
+            reply = graph_send(driver) if graph_mode else driver.send()
             require(not failed(reply), "restart seed failed")
+            exchange = None
+            if mixed_crash:
+                peer = peer_state(args)
+                require(len(peer["host_effects"]) == effects_before + 1, "mixed crash seed did not settle exactly one new real host effect")
+                matching = [entry for entry in peer["requests"] if driver.history[0]["content"] in json.dumps(entry["request"])]
+                require(len(matching) == 1, "mixed crash seed did not use exactly one real same-batch provider response")
+                response = matching[0].get("response", {})
+                host_name = json.loads(args.host_tool_json.read_text())["name"]
+                host_calls = [call for call in response.get("tool_calls", []) if call.get("function", {}).get("name") == host_name]
+                require(len(host_calls) == 1 and response.get("wire_body"), "mixed crash seed lacks its actual emitted host call/wire receipt")
+                effect = peer["host_effects"][effects_before]
+                require(json.loads(host_calls[0]["function"]["arguments"]) == effect["arguments"], "emitted mixed host call differs from actual MCP effect arguments")
+                require(isinstance(effect.get("mcp_result"), dict), "mixed crash seed lacks the actual MCP result receipt")
+                exchange = {"call": host_calls[0], "mcp_result": effect["mcp_result"],
+                    "effect_receipt": effect, "provider_response": response}
             driver.answer(driver.calls(reply))
-            saved.append({key: value for key, value in driver.__dict__.items() if key not in ("args", "token", "last_reply")})
-        args.restart_state.write_text(json.dumps({"instance": args.instance_identity, "drivers": saved}, indent=2))
+            entry = {key: value for key, value in driver.__dict__.items() if key not in ("args", "token", "last_reply")}
+            if mixed_crash:
+                entry["mixed_host_exchange"] = exchange
+            saved.append(entry)
+        state = {"instance": args.instance_identity, "drivers": saved}
+        if mixed_crash:
+            state.update({"mode": "mixed-crash", "host_effect_receipts": peer_state(args)["host_effects"]})
+            require(len(state["host_effect_receipts"]) == len(args.protocols), "mixed crash seed host-effect total mismatch")
+        args.restart_state.write_text(json.dumps(state, indent=2))
         args.restart_state.chmod(0o600)
+        if mixed_crash:
+            return {"seed_ready": True, "pending_batches": len(saved), "mixed_host_effects": len(state["host_effect_receipts"]),
+                "host_effect_receipts": state["host_effect_receipts"],
+                "next": "Supervisor must SIGKILL and join only its owned candidate, retain peer/config/store/JWT/state, restart, then invoke mixed-crash-resume."}
         return {"pending_batches": len(saved), "next": "Stop and join candidate, restart same durable database and credentials, then invoke restart-resume with a distinct recorded instance identity."}
     saved = json.loads(args.restart_state.read_text())
     require(saved["instance"] != args.instance_identity, "restart requires distinct externally recorded process identity")
     receipts = []
+    acp_fresh_runs = []
+    mixed_receipts = []
+    graph_receipts = []
+    if mixed_crash:
+        require(saved.get("mode") == "mixed-crash", "mixed crash resume requires its exact mixed seed state")
+        require(peer_state(args)["host_effects"] == saved["host_effect_receipts"], "real host effect receipts changed across candidate crash")
     for state in saved["drivers"]:
         driver = Driver(args, state["protocol"])
         driver.__dict__.update(state)
-        reply = driver.send()
+        contacts_before = len(trace(args))
+        reply = graph_send(driver) if graph_mode else driver.send()
         if budget_mode:
             require(failed(reply) and "budget" in json.dumps(reply).lower(), "cold continuation did not retain cumulative budget")
             before = len(trace(args))
@@ -515,13 +1113,61 @@ def restart_case(args, resume):
         else:
             require(not failed(reply), "cold durable result submission failed: " + json.dumps(reply))
             require(not driver.calls(reply), "cold continuation did not complete")
+            if mixed_crash:
+                resumed = trace(args)[contacts_before:]
+                require(len(resumed) == 1, "mixed crash resume did not make exactly one new provider contact")
+                request = resumed[0]["request"]
+                marker = state["history"][0]["content"]
+                require(marker in json.dumps(request), "mixed crash provider request lost the selected conversation marker")
+                exchange = mixed_host_exchange(request, json.loads(args.host_tool_json.read_text())["name"])
+                result_content = exchange["result"].get("content")
+                decoded_result = json.loads(result_content) if isinstance(result_content, str) else result_content
+                actual_call = copy.deepcopy(exchange["call"])
+                saved_call = copy.deepcopy(state["mixed_host_exchange"]["call"])
+                for call in (actual_call, saved_call):
+                    call["function"]["arguments"] = json.loads(call["function"]["arguments"])
+                require(actual_call == saved_call
+                    and decoded_result == state["mixed_host_exchange"]["mcp_result"],
+                    "mixed crash continuation changed its settled host call/result")
+                messages = request.get("messages", [])
+                for result in (message for message in state["history"] if message.get("role") == "tool"):
+                    indices = [index for index, message in enumerate(messages) if message.get("role") == "tool"
+                        and message.get("tool_call_id") == result["tool_call_id"] and message.get("content") == result["content"]]
+                    require(len(indices) == 1 and exchange["result_index"] < indices[0], "mixed crash history lost host-before-caller result ordering")
+                require(peer_state(args)["host_effects"] == saved["host_effect_receipts"], "mixed crash continuation repeated a settled host effect")
+                mixed_receipts.append({"protocol": driver.protocol, "marker": marker, "host_call_id": exchange["call"]["id"],
+                    "retained_host_result": exchange["result"], "provider_contacts": 1, "host_effects_repeated": 0})
             before = len(trace(args))
-            again = driver.send()
+            again = graph_completed_retry(driver) if graph_mode else driver.send()
             require(not failed(again) and len(trace(args)) == before, "cold completed retry reexecuted")
+            if mixed_crash:
+                require(peer_state(args)["host_effects"] == saved["host_effect_receipts"], "mixed crash exact retry repeated host effects")
             if graph_mode:
                 graph_sequence(args, driver.history[0]["content"])
+                require(len(driver.graph_approval_receipts) == 2, "cold graph lost its initial/fresh continuation approval receipts")
+                graph_receipts.append({"protocol": driver.protocol, "approvals": driver.graph_approval_receipts})
+            elif driver.protocol == "acp" and not mixed_crash:
+                old_ids = {call["id"] for message in driver.history for call in message.get("tool_calls", [])}
+                marker = "caller-tools-cold-acp-fresh:" + str(uuid.uuid4())
+                before_fresh = len(trace(args))
+                fresh = driver.rpc(args.acp_path, "runs/create", {"session_id": driver.session, "input": marker})
+                require(not failed(fresh), "cold restored ACP session rejected a fresh default-tools run")
+                fresh_history = fresh.get("body", {}).get("result", {}).get("client_tools", {}).get("history", [])
+                require(any(message.get("role") == "user" and marker in str(message.get("content", "")) for message in fresh_history),
+                    "fresh ACP response history replayed the old prompt instead of the new input")
+                fresh_calls = driver.calls(fresh)
+                require(fresh_calls and all(call["id"].startswith("uar_client_") and call["id"] not in old_ids for call in fresh_calls),
+                    "fresh ACP default-tools run replayed old caller handoff IDs")
+                fresh_contacts = trace(args)[before_fresh:]
+                require(fresh_contacts and any(marker in json.dumps(entry["request"]) for entry in fresh_contacts),
+                    "fresh ACP input did not reach a new real provider request")
+                acp_fresh_runs.append({"session_id": driver.session, "input_marker": marker,
+                    "provider_contacts": len(fresh_contacts), "new_handoff_ids": [call["id"] for call in fresh_calls],
+                    "client_tools_omitted": True, "new_prompt_in_response_history": True})
         receipts.append(driver.protocol)
-    return {"cold_protocols": receipts, "lifecycle_identity": "operator supplied; retain supervisor stop/join/restart evidence separately"}
+    return {"cold_protocols": receipts, "acp_fresh_default_runs": acp_fresh_runs, "mixed_crash_continuations": mixed_receipts,
+        "graph_approvals": graph_receipts,
+        "lifecycle_identity": "operator supplied; retain supervisor stop/join/restart evidence separately"}
 
 
 def main():
@@ -530,6 +1176,7 @@ def main():
     parser.add_argument("--provider-base-url", required=True)
     parser.add_argument("--bearer-token-env", required=True)
     parser.add_argument("--other-bearer-token-env", required=True)
+    parser.add_argument("--other-tenant-bearer-token-env", help="Supervisor-signed JWT for the same subject with a distinct tenant")
     parser.add_argument("--agent-id", required=True)
     parser.add_argument("--openai-model", help="OpenAI model/registered-agent selector; defaults to the selected scenario agent")
     parser.add_argument("--anthropic-model", required=True, help="Provider-qualified model selected for the bound Anthropic agent")
@@ -540,10 +1187,12 @@ def main():
     parser.add_argument("--workspace-id")
     parser.add_argument("--host-tool-json", type=Path)
     parser.add_argument("--budget-agent-id")
+    parser.add_argument("--safety-agent-id", help="Dedicated mutable registered agent initially allowing the real host tool")
+    parser.add_argument("--budget-provider-usage-json", type=Path, help="Explicit synthetic provider input_tokens/output_tokens; requires separately established R1/R2/L/S reservation proof")
     parser.add_argument("--graph-agent-id")
-    parser.add_argument("--graph-before-marker")
-    parser.add_argument("--graph-after-marker")
-    parser.add_argument("--mode", choices=("matrix", "restart-seed", "restart-resume", "budget", "graph", "budget-restart-seed", "budget-restart-resume", "graph-restart-seed", "graph-restart-resume"), default="matrix")
+    parser.add_argument("--graph-before-marker", help="Installed RouterNode system prompt marker")
+    parser.add_argument("--graph-after-marker", help="Persisted general-purpose worker system prompt marker")
+    parser.add_argument("--mode", choices=("matrix", "safety", "cancellation", "mixed-crash-seed", "mixed-crash-resume", "restart-seed", "restart-resume", "budget", "graph", "budget-restart-seed", "budget-restart-resume", "graph-restart-seed", "graph-restart-resume"), default="matrix")
     parser.add_argument("--restart-state", type=Path)
     parser.add_argument("--instance-identity")
     parser.add_argument("--report", required=True, type=Path)
@@ -552,16 +1201,50 @@ def main():
     args.workspace_headers = {"x-uar-workspace-id": args.workspace_id} if args.workspace_id else {}
     args.a2a_metadata = json.loads(args.a2a_metadata_json.read_text()) if args.a2a_metadata_json else {}
     results, gaps = [], []
+    def checkpoint(fatal_error=None):
+        report = {"mode": args.mode, "results": results, "coverage_gaps": gaps,
+            "http_evidence": EVIDENCE, "execution_complete": False,
+            "verification": "Incomplete driver execution; retained observations do not establish acceptance."}
+        if fatal_error is not None:
+            report["fatal_error"] = fatal_error
+        args.report.write_text(json.dumps(report, indent=2))
+        args.report.chmod(0o600)
     def record(name, work):
         try:
             results.append({"scenario": name, "status": "passed", "observed": work()})
         except (AssertionError, KeyError, ValueError, OSError, urllib.error.URLError) as error:
             results.append({"scenario": name, "status": "failed", "error": str(error)})
-    if "restart-" in args.mode:
+        except Exception as error:
+            failure = type(error).__name__ + ": " + str(error)
+            results.append({"scenario": name, "status": "failed", "error": failure})
+            checkpoint(failure)
+            raise
+        checkpoint()
+    if args.mode == "cancellation":
+        require(args.host_tool_json, "cancellation requires the actual safe real --host-tool-json")
+        for protocol in args.protocols:
+            record(protocol + ":explicit-cancellation", lambda protocol=protocol: cancellation_case(args, protocol))
+    elif args.mode == "safety":
+        require(args.safety_agent_id and args.host_tool_json and args.other_tenant_bearer_token_env, "safety mode requires --safety-agent-id, --host-tool-json and --other-tenant-bearer-token-env")
+        require(os.environ[args.other_tenant_bearer_token_env] != os.environ[args.bearer_token_env], "cross-tenant credential must differ from the owner credential")
+        for protocol in args.protocols:
+            for mutation in ("duplicate_names", "host_collision", "malformed_schema"):
+                record(protocol + ":safety:input:" + mutation, lambda protocol=protocol, mutation=mutation: safety_input_case(args, protocol, mutation))
+            record(protocol + ":safety:parallel-batch", lambda protocol=protocol: safety_success_case(args, protocol, "parallel"))
+            for stream in (False, True):
+                record(protocol + ":safety:mixed-text:stream=" + str(stream), lambda protocol=protocol, stream=stream: safety_success_case(args, protocol, "mixed_text", stream))
+            for scenario in ("provider_error", "malformed_arguments", "force_parallel"):
+                record(protocol + ":safety:provider:" + scenario, lambda protocol=protocol, scenario=scenario: safety_provider_case(args, protocol, scenario))
+            record(protocol + ":safety:current-agent-policy", lambda protocol=protocol: safety_policy_case(args, protocol))
+            record(protocol + ":safety:cross-tenant", lambda protocol=protocol: safety_tenant_case(args, protocol))
+            record(protocol + ":safety:withdrawn-executable", lambda protocol=protocol: safety_binding_case(args, protocol))
+    elif "restart-" in args.mode or args.mode.startswith("mixed-crash-"):
         require(args.restart_state and args.instance_identity, "restart modes require --restart-state and --instance-identity")
+        if args.mode.startswith("mixed-crash-"):
+            require(args.host_tool_json, "mixed crash recovery requires the actual safe real --host-tool-json")
         record(args.mode, lambda: restart_case(args, args.mode.endswith("resume")))
     elif args.mode == "graph":
-        require(args.graph_agent_id and args.graph_before_marker and args.graph_after_marker, "graph mode requires a two-model-node graph agent and distinct configured node prompt markers")
+        require(args.graph_agent_id == "orchestrator-agent" and args.graph_before_marker and args.graph_after_marker, "graph mode requires orchestrator-agent and distinct router/worker prompt markers")
         for protocol in args.protocols:
             def graph(protocol=protocol):
                 observed = loop_case(args, protocol, "graph", agent=args.graph_agent_id)
@@ -569,7 +1252,7 @@ def main():
                 return observed
             record(protocol + ":graph-cursor", graph)
     elif args.mode == "budget":
-        require(args.budget_agent_id, "budget mode requires an agent configured with a cumulative token ceiling below 10 tokens")
+        require(args.budget_agent_id, "budget mode requires an agent with a source-bound cumulative token ceiling satisfying R1 <= L, R2 <= L, S + R2 > L")
         for protocol in args.protocols:
             def budget(protocol=protocol):
                 configure(args, "two_round")
@@ -602,7 +1285,7 @@ def main():
             else:
                 gaps.append(protocol + ": mixed host/caller requires --host-tool-json naming a configured safe real host executable and its arguments.")
         gaps += ["Cold restart is a separate two-invocation restart-seed/restart-resume gate with externally retained stop/join evidence.", "Cumulative budget is a separate budget/budget-restart gate with a configured durable budget-limited agent.", "Graph cursor is a separate graph/graph-restart gate with configured node prompt markers."]
-    report = {"mode": args.mode, "results": results, "coverage_gaps": gaps, "http_evidence": EVIDENCE,
+    report = {"mode": args.mode, "results": results, "coverage_gaps": gaps, "http_evidence": EVIDENCE, "execution_complete": True,
         "environment": {"base_url": args.base_url, "provider_base_url": args.provider_base_url, "agent_id": args.agent_id},
         "verification": "Executed HTTP observations only; candidate/database provenance and lifecycle evidence are supplied by the operator."}
     args.report.write_text(json.dumps(report, indent=2))

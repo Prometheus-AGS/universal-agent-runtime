@@ -30,14 +30,52 @@ fn storage_error_kind(error: &anyhow::Error) -> &'static str {
     if error.chain().any(|cause| cause.is::<AccountingError>()) { "accounting_error" } else { "non_storage" }
 }
 
-/// Closed SurrealDB error-kind label ("Outer" or "Outer<-Innermost"), built only from `&'static str` kinds.
+/// Closed SurrealDB kind/subkind chain; never formats error text or detail fields.
 fn storage_error_detail(error: &anyhow::Error) -> String {
     #[cfg(feature = "surreal-backend")]
     for cause in error.chain() {
         if let Some(storage) = cause.downcast_ref::<surrealdb::Error>() {
-            let mut innermost = storage;
-            while let Some(inner) = innermost.cause() { innermost = inner; }
-            return if std::ptr::eq(innermost, storage) { storage.kind_str().to_owned() } else { format!("{}<-{}", storage.kind_str(), innermost.kind_str()) };
+            use surrealdb::types::{ConfigurationError, ErrorDetails, NotFoundError, QueryError, SerializationError, ValidationError};
+            let label = |storage: &surrealdb::Error| {
+                let subtype = match storage.details() {
+                    ErrorDetails::Query(Some(QueryError::NotExecuted)) => Some("NotExecuted"),
+                    ErrorDetails::Query(Some(QueryError::TimedOut { .. })) => Some("TimedOut"),
+                    ErrorDetails::Query(Some(QueryError::Cancelled)) => Some("Cancelled"),
+                    ErrorDetails::Query(Some(QueryError::TransactionConflict)) => Some("TransactionConflict"),
+                    ErrorDetails::Validation(Some(ValidationError::Parse)) => Some("Parse"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidRequest)) => Some("InvalidRequest"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidParams)) => Some("InvalidParams"),
+                    ErrorDetails::Validation(Some(ValidationError::NamespaceEmpty)) => Some("NamespaceEmpty"),
+                    ErrorDetails::Validation(Some(ValidationError::DatabaseEmpty)) => Some("DatabaseEmpty"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidParameter { .. })) => Some("InvalidParameter"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidContent { .. })) => Some("InvalidContent"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidMerge { .. })) => Some("InvalidMerge"),
+                    ErrorDetails::Configuration(Some(ConfigurationError::LiveQueryNotSupported)) => Some("LiveQueryNotSupported"),
+                    ErrorDetails::Configuration(Some(ConfigurationError::BadLiveQueryConfig)) => Some("BadLiveQueryConfig"),
+                    ErrorDetails::Configuration(Some(ConfigurationError::BadGraphqlConfig)) => Some("BadGraphqlConfig"),
+                    ErrorDetails::Configuration(Some(ConfigurationError::DialectNotSupported)) => Some("DialectNotSupported"),
+                    ErrorDetails::Serialization(Some(SerializationError::Serialization)) => Some("Serialization"),
+                    ErrorDetails::Serialization(Some(SerializationError::Deserialization)) => Some("Deserialization"),
+                    ErrorDetails::NotFound(Some(NotFoundError::Table { .. })) => Some("Table"),
+                    ErrorDetails::NotFound(Some(NotFoundError::Record { .. })) => Some("Record"),
+                    ErrorDetails::NotFound(Some(NotFoundError::Namespace { .. })) => Some("Namespace"),
+                    ErrorDetails::NotFound(Some(NotFoundError::Database { .. })) => Some("Database"),
+                    ErrorDetails::NotFound(Some(NotFoundError::Transaction)) => Some("Transaction"),
+                    ErrorDetails::Query(None) | ErrorDetails::Validation(None)
+                    | ErrorDetails::Configuration(None) | ErrorDetails::Serialization(None)
+                    | ErrorDetails::NotFound(None) => Some("Unspecified"),
+                    _ => None,
+                };
+                subtype.map_or_else(|| storage.kind_str().to_owned(), |subtype| format!("{}:{subtype}", storage.kind_str()))
+            };
+            let mut detail = label(storage);
+            let mut current = storage;
+            while let Some(inner) = current.cause() {
+                detail.push_str("<-");
+                detail.push_str(&label(inner));
+                current = inner;
+            }
+            return detail;
         }
     }
     let _ = error;

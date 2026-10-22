@@ -118,7 +118,7 @@ impl AcpClientTools {
             history: self.history,
             visible_history: None,
             graph_state: None,
-            budget_snapshot: None, output_token_cap: None,
+            budget_snapshot: None, delegation: None, output_token_cap: None,
             protocol: "acp".to_owned(),
         }
     }

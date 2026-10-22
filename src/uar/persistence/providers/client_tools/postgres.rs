@@ -40,3 +40,18 @@ pub(super) async fn load_for_run(store: &PostgresProvider, owner: &str, tenant: 
     }
     Ok(matched)
 }
+
+pub(super) async fn load_for_session(store: &PostgresProvider, owner: &str, tenant: Option<&str>, session: &str, batch: &str) -> anyhow::Result<Option<ClientToolContinuation>> {
+    let rows = sqlx::query("SELECT data FROM client_tool_continuations WHERE owner_key=$1 AND data->>'session_id'=$2 AND data->>'batch_id'=$3 AND (data->>'tenant_id') IS NOT DISTINCT FROM $4")
+        .bind(owner).bind(session).bind(batch).bind(tenant).fetch_all(&store.pool).await?;
+    let mut matched = None;
+    for row in rows {
+        let row: ClientToolContinuation = serde_json::from_value(row.try_get("data")?)?;
+        if row.tenant_id.as_deref() == tenant && row.session_id.as_deref() == Some(session) && row.batch_id == batch {
+            row.validate()?;
+            anyhow::ensure!(row.owner_key == owner && matched.is_none(), "client_tool_session_binding_conflict");
+            matched = Some(row);
+        }
+    }
+    Ok(matched)
+}

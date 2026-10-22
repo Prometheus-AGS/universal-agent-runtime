@@ -1,0 +1,42 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-010 --extended",
+  "session": 19226,
+  "exitCode": 1,
+  "interruptedByLead": "SIGTERM44548 after observed graph504 pendingrequiredspawnapproval",
+  "passedGates": {
+    "core": 95,
+    "safety": 60,
+    "explicitCancellation": 5,
+    "ordinaryColdSeedResume": "passed allfive"
+  },
+  "graph": "Firstcase504; remaining incomplete; no graphacceptance",
+  "remaining": "graph warm/cold,budget warm/cold,mixedcrash",
+  "ownedShutdownClean": true,
+  "candidateJoins": [
+    {
+      "process": "candidate",
+      "pid": 44550,
+      "joined": true,
+      "exit_code": 0,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    },
+    {
+      "process": "candidate-2",
+      "pid": 45627,
+      "joined": true,
+      "exit_code": 0,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    }
+  ],
+  "acceptance": "Incomplete; no1.2.2publication"
+}

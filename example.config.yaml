@@ -16,6 +16,9 @@ server:
   # Default: 127.0.0.1
   # Env: UAR_SERVER__HOST
   host: "127.0.0.1"
+  # Watched ingestion directory; native hosts can select a writable local path.
+  # Env: UAR_SERVER__INGEST_DIRECTORY
+  ingest_directory: "/data/ingest"
   # Exact origins only; empty denies cross-origin browser access.
   # Env: UAR_SERVER__CORS_ALLOWED_ORIGINS (comma-separated, no spaces).
   cors_allowed_origins: []

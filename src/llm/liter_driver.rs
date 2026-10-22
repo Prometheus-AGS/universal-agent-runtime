@@ -36,6 +36,15 @@ struct ToolAccum {
     args: String,
 }
 
+// Keep aligned with pinned Liter client::build_provider. DashScope's exact
+// matches_model implementation strips only its own prefix before comparison.
+fn uses_generic_chat_adapter(config: &ClientConfig, model: &str) -> bool {
+    config.base_url.is_some()
+        && !["azure/", "anthropic/", "gemini/", "google_ai/", "vertex_ai/", "bedrock/"]
+            .iter().any(|prefix| model.starts_with(prefix))
+        && model.strip_prefix("dashscope/").unwrap_or(model) != "tongyi-embedding-vision-plus"
+}
+
 /// LLM driver powered by liter-llm's `DefaultClient`.
 ///
 /// Handles provider auto-detection, streaming, and tool-call normalization
@@ -46,6 +55,7 @@ pub struct LiterLlmDriver {
     parallel_tool_calls: Option<bool>,
     budget_endpoint_fingerprint: Option<String>,
     endpoint_profile: Option<EndpointRequestProfile>,
+    generic_chat_adapter: bool,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -106,6 +116,10 @@ impl LiterLlmDriver {
         parallel_tool_calls: Option<bool>,
     ) -> anyhow::Result<Self> {
         let budget_endpoint_fingerprint = config.base_url.as_deref().map(endpoint_fingerprint);
+        // Mirror pinned Liter's client::build_provider explicit-endpoint branch.
+        // Its generic adapter has a no-op request transform; the registry ID
+        // and the wire model are not evidence of which adapter was constructed.
+        let generic_chat_adapter = uses_generic_chat_adapter(&config, &model);
         let client = Arc::new(DefaultClient::new(config, Some(&model))?);
         Ok(Self {
             client,
@@ -113,6 +127,7 @@ impl LiterLlmDriver {
             parallel_tool_calls,
             budget_endpoint_fingerprint,
             endpoint_profile: None,
+            generic_chat_adapter,
         })
     }
 
@@ -130,6 +145,7 @@ impl LiterLlmDriver {
             parallel_tool_calls,
             budget_endpoint_fingerprint,
             endpoint_profile: None,
+            generic_chat_adapter: false,
         }
     }
 
@@ -173,6 +189,7 @@ impl LiterLlmDriver {
             self.parallel_tool_calls,
             self.budget_endpoint_fingerprint.as_deref(),
             self.endpoint_profile.as_ref(),
+            self.generic_chat_adapter,
             request,
         )?;
         let serialized = prepared
@@ -470,6 +487,7 @@ fn build_chat_request(
     parallel_tool_calls: Option<bool>,
     budget_endpoint_fingerprint: Option<&str>,
     endpoint_profile: Option<&EndpointRequestProfile>,
+    generic_chat_adapter: bool,
     req: &LlmRequest,
 ) -> anyhow::Result<PreparedChatRequest> {
     anyhow::ensure!(req.output_token_cap != Some(0), "Output token cap must be positive");
@@ -484,20 +502,20 @@ fn build_chat_request(
     chat_req.parallel_tool_calls = req.parallel_tool_calls.or(parallel_tool_calls);
     // Liter provider adapters may strip unsupported fields. Refuse explicit
     // caller settings unless this path preserves their exact semantics.
-    let provider = super::detect_provider(model);
+    let provider = if generic_chat_adapter { "openai-compatible" } else { super::detect_provider(model) };
     if req.parallel_tool_calls.is_some()
-        && !matches!(provider, "openai" | "azure" | "azure_openai")
+        && !matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible")
         && endpoint_profile.is_none()
     {
         anyhow::bail!("provider capability error: explicit parallel_tool_calls is unsupported by the {provider} Liter adapter");
     }
     if req.tool_choice.is_some()
-        && !matches!(provider, "openai" | "azure" | "azure_openai" | "anthropic")
+        && !matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible" | "anthropic")
         && endpoint_profile.is_none()
     {
         anyhow::bail!("provider capability error: explicit tool_choice is unsupported by the {provider} Liter adapter");
     }
-    if !matches!(provider, "openai" | "azure" | "azure_openai")
+    if !matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible")
         && endpoint_profile.is_none()
         && req.tools.iter().any(|tool| tool.pointer("/function/strict").is_some())
     {
@@ -579,7 +597,7 @@ fn build_chat_request(
 pub(crate) fn request_budget_bound(model: &str, req: &LlmRequest) -> anyhow::Result<(u64,u64)> {
     let contract = req.budget_contract.as_ref()
         .ok_or_else(|| anyhow::anyhow!("request budget contract is required"))?;
-    let prepared = build_chat_request(model, Some(true), Some(&contract.destination_endpoint_fingerprint), None, req)?;
+    let prepared = build_chat_request(model, Some(true), Some(&contract.destination_endpoint_fingerprint), None, false, req)?;
     let bytes = prepared.validated_wire.as_ref()
         .ok_or_else(|| anyhow::anyhow!("validated final request bytes are required"))?;
     let count = TokenService::count_serialized(contract.counting, bytes)?;
@@ -604,6 +622,7 @@ pub(crate) fn preflight_budgeted_request(model: &str, req: &LlmRequest) -> anyho
         Some(true),
         Some(&contract.destination_endpoint_fingerprint),
         None,
+        false,
         req,
     )?;
     Ok(())
@@ -645,6 +664,7 @@ impl LlmDriver for LiterLlmDriver {
             self.budget_endpoint_fingerprint.clone(),
         );
         driver.endpoint_profile = self.endpoint_profile.clone();
+        driver.generic_chat_adapter = self.generic_chat_adapter;
         Ok(Arc::new(driver))
     }
 
@@ -663,6 +683,7 @@ impl LlmDriver for LiterLlmDriver {
             self.parallel_tool_calls,
             self.budget_endpoint_fingerprint.as_deref(),
             self.endpoint_profile.as_ref(),
+            self.generic_chat_adapter,
             &req,
         )
         .map_err(|error| ProviderError::invalid_request(error.to_string()))?
@@ -868,12 +889,13 @@ mod prompt_caching_tests {
             Some(true),
             None,
             None,
+            false,
             &request(Some(CacheStrategy::default())),
         )
         .expect("enabled request")
         .request;
         let disabled =
-            build_chat_request("openai/gpt-test", Some(true), None, None, &request(None))
+            build_chat_request("openai/gpt-test", Some(true), None, None, false, &request(None))
                 .expect("disabled request")
                 .request;
 
@@ -882,6 +904,43 @@ mod prompt_caching_tests {
             serde_json::to_value(disabled).expect("serialize disabled request"),
             "UAR prompt-caching policy must not alter OpenAI-compatible bodies"
         );
+    }
+
+    #[test]
+    fn explicit_endpoint_bare_model_preserves_tool_controls() {
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url("http://127.0.0.1:1/v1")
+            .build();
+        let driver = LiterLlmDriver::new(config, "gpt-4o-mini".into(), None)
+            .expect("construct generic endpoint adapter");
+        let mut req = request(None);
+        req.parallel_tool_calls = Some(false);
+        req.tool_choice = Some(crate::llm::ToolChoice::Named("lookup".into()));
+        req.tools = vec![serde_json::json!({"type":"function","function":{
+            "name":"lookup", "strict":true,
+            "parameters":{"type":"object","properties":{},"additionalProperties":false}
+        }})];
+        let prepared = build_chat_request(&driver.model, None,
+            driver.budget_endpoint_fingerprint.as_deref(), None,
+            driver.generic_chat_adapter, &req).expect("preserve explicit controls");
+        let body = serde_json::to_value(prepared.request).expect("serialize typed request");
+        assert_eq!(body["model"], "gpt-4o-mini");
+        assert_eq!(body["parallel_tool_calls"], false);
+        assert_eq!(body["tool_choice"]["function"]["name"], "lookup");
+        assert_eq!(body["tools"][0]["function"]["strict"], true);
+
+        // Explicit endpoint native adapters must retain their refusal semantics.
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url("http://127.0.0.1:1/v1").build();
+        assert!(!uses_generic_chat_adapter(&config, "anthropic/claude-test"));
+        let failure = build_chat_request("anthropic/claude-test", None, None,
+            None, uses_generic_chat_adapter(&config, "anthropic/claude-test"), &req)
+            .err().expect("native unsupported parallel control must fail");
+        assert!(failure.to_string().contains("explicit parallel_tool_calls is unsupported"));
+        for model in ["tongyi-embedding-vision-plus", "dashscope/tongyi-embedding-vision-plus",
+            "azure/deployment", "gemini/model", "google_ai/model", "vertex_ai/model", "bedrock/model"] {
+            assert!(!uses_generic_chat_adapter(&config, model), "native adapter: {model}");
+        }
     }
 
     #[tokio::test]

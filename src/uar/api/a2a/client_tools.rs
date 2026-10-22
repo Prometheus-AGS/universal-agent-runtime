@@ -41,7 +41,7 @@ impl ClientToolsExtension {
         crate::uar::runtime::turn::client_tools::ClientToolInput {
             tools: self.tools, tool_choice: self.tool_choice,
             parallel_tool_calls: self.parallel_tool_calls, history: self.history,
-            visible_history: None, graph_state: None, budget_snapshot: None, output_token_cap: None, protocol: "a2a".to_owned(),
+            visible_history: None, graph_state: None, budget_snapshot: None, delegation: None, output_token_cap: None, protocol: "a2a".to_owned(),
         }
     }
 }

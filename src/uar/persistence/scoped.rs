@@ -94,7 +94,7 @@ fn transport_outcome_unknown(error: &anyhow::Error) -> bool {
 // as an uncertain mutation. New operations conservatively retain uncertainty.
 fn read_only_operation(method: &str) -> bool {
     matches!(method,
-        "load_client_tool_continuation" | "load_client_tool_continuation_for_run" |
+        "load_client_tool_continuation" | "load_client_tool_continuation_for_run" | "load_client_tool_continuation_for_session" |
         "list_mcp_elicitations" | "load_agui_run" | "list_agui_runs" |
         "load_a2a_binding" | "list_a2a_bindings" | "load_run_history_record" |
         "load_run_history_events" | "get_accounting_delegation" | "get_accounting_scope" |
@@ -141,6 +141,13 @@ impl PersistenceLayer for ScopedPersistence {
         let (owner, tenant, agent, run) = (owner.to_owned(), tenant.map(str::to_owned), agent.to_owned(), run.to_owned());
         self.dispatch("load_client_tool_continuation_for_run", move |inner| async move {
             inner.load_client_tool_continuation_for_run(&owner, tenant.as_deref(), &agent, &run).await
+        }).await
+    }
+
+    async fn load_client_tool_continuation_for_session(&self, owner: &str, tenant: Option<&str>, session: &str, batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> {
+        let (owner, tenant, session, batch) = (owner.to_owned(), tenant.map(str::to_owned), session.to_owned(), batch.to_owned());
+        self.dispatch("load_client_tool_continuation_for_session", move |inner| async move {
+            inner.load_client_tool_continuation_for_session(&owner, tenant.as_deref(), &session, &batch).await
         }).await
     }
 

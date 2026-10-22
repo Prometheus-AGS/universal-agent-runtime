@@ -1,0 +1,9 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "session": 21312,
+  "exitCode": 101,
+  "diagnostic": "E0631thread_service.rs956 AgentStoreError requires explicitconversionintoanyhow::Error forTaskError::Host",
+  "otherDiagnostics": "Existing vendored OnceLockExt unused import only; final1error",
+  "authority": "Operator localfunctionaltest/fix/retestloop",
+  "acceptance": "Failedcompilation; no runtimegate009started"
+}

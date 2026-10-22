@@ -1,0 +1,18 @@
+{
+  "version": "1.2.1",
+  "sourceCommit": "dd896d5a66eda825f0076c1f35ba05f2dea6324c",
+  "gitTag": "v1.2.1",
+  "push": "success",
+  "workflowRun": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39817481663",
+  "workflowEvent": "workflow_dispatch on v1.2.1",
+  "dockerTags": [
+    "ghcr.io/prometheus-ags/universal-agent-runtime:1.2.1",
+    "ghcr.io/prometheus-ags/universal-agent-runtime:v1.2.1"
+  ],
+  "indexDigest": "sha256:a012df13ba86668410c30b92625c018950a5c3764bb83d5254146a3295845ea4",
+  "status": "PUBLISHED",
+  "acceptance": "PENDING; operator explicitly requested publication before functional acceptance",
+  "frozen120": "Both tags retain exact dec5284e canonical index",
+  "commitHooks": "Policy validation and commitlint passed, automatic installs disabled; no hook bypass",
+  "registryReceipt": "docs/releases/v1.2.1-registry-provenance.json"
+}

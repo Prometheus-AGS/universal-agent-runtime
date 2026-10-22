@@ -1,0 +1,66 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-017 --extended",
+  "exitCode": 2,
+  "status": "extended_passed_remaining_release_gates",
+  "exitMeaning": "All scoped local scenarios passed;2 retains broader release/backend certification outside finite CT contract",
+  "source": "HEAD dd896d5 plus reviewed1.2.2 source inventory; build015",
+  "binarySha256": "0c08fb35f63d2662a51aeb94d6187e44cdb295bc062396802e22f99e7c801d34",
+  "platform": "Intel macOS x86_64",
+  "backend": "SurrealKV",
+  "provider": "Isolated controlled LLM/MCP HTTP peer through production runtime and drivers",
+  "corePassed": 95,
+  "safetyPassed": 60,
+  "cancellationPassed": 5,
+  "ordinaryColdPassed": 5,
+  "graphWarmColdPassed": 5,
+  "budgetWarmColdPassed": 5,
+  "mixedCrashRecoveredProtocols": [
+    "openai",
+    "anthropic",
+    "agui",
+    "a2a",
+    "acp"
+  ],
+  "repeatedHostEffects": 0,
+  "expectedCrash": {
+    "action": "expected_crash_for_recovery",
+    "process": "candidate-4",
+    "pid": 59053,
+    "generation": 4,
+    "signal": 9,
+    "started_at_unix": 1792706944.9564512,
+    "joined_at_unix": 1792706944.993633,
+    "joined": true,
+    "exit_code": -9,
+    "signal_delivered": true,
+    "expected_crash_confirmed": true,
+    "exit_status_expected": true,
+    "clean_shutdown": false,
+    "cleanup_confirmed": false,
+    "cleanup_errors": []
+  },
+  "ownedShutdownClean": true,
+  "ownedExitStatusesExpected": true,
+  "cleanupStatus": "confirmed",
+  "completedLocalGates": [
+    "matrix",
+    "safety",
+    "cancellation",
+    "ordinary-cold",
+    "graph-warm",
+    "graph-cold",
+    "budget-warm",
+    "budget-cold",
+    "mixed-crash-recovery"
+  ],
+  "remaining": [
+    "CT7 immutable1.2.2 publication and exactimage Linux acceptance"
+  ],
+  "excluded": [
+    "PostgreSQL functional matrix",
+    "arm64 functional acceptance",
+    "paidprovider certification",
+    "arbitrary remotegraphs",
+    "broader estate certification"
+  ]
+}

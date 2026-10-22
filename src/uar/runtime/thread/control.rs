@@ -15,6 +15,7 @@ use crate::uar::domain::policy::{
     RUN_POLICY_VERSION, RunPolicy, SelectionMode, ToolApprovalPolicy,
 };
 use crate::uar::persistence::agent_threads::PersistedAgentThread;
+use crate::uar::runtime::turn::client_tools::GraphCallerTurnCapture;
 
 use super::limits::AgentLimitError;
 use super::messages::InterAgentMessage;
@@ -157,6 +158,15 @@ pub trait AgentThreadHost: Send + Sync {
         scope: &AgentControlScope,
         request: AgentSpawnRequest,
     ) -> anyhow::Result<AgentThread>;
+    /// Spawn a local graph child with a trusted, non-model caller-tool capture.
+    async fn spawn_graph(
+        &self,
+        _scope: &AgentControlScope,
+        _request: AgentSpawnRequest,
+        _capture: GraphCallerTurnCapture,
+    ) -> anyhow::Result<AgentThread> {
+        anyhow::bail!("Thread host does not support captured graph delegation")
+    }
     async fn spawn_remote(
         &self,
         scope: &AgentControlScope,
@@ -371,17 +381,33 @@ impl AgentToolContext {
         &self,
         request: AgentSpawnRequest,
     ) -> Result<AgentSummary, AgentControlError> {
+        self.spawn_captured(request, None).await
+    }
+
+    /// Host-only graph delegation; ordinary spawn arguments carry no capture.
+    pub(crate) async fn spawn_graph(
+        &self,
+        request: AgentSpawnRequest,
+        capture: GraphCallerTurnCapture,
+    ) -> Result<AgentSummary, AgentControlError> {
+        self.spawn_captured(request, Some(capture)).await
+    }
+
+    async fn spawn_captured(
+        &self,
+        request: AgentSpawnRequest,
+        capture: Option<GraphCallerTurnCapture>,
+    ) -> Result<AgentSummary, AgentControlError> {
         request
             .validate()
             .map_err(|_| AgentControlError::InvalidArguments)?;
         self.require_current("spawn_agent").await?;
         let artifact_id = request.artifact_id.clone();
         let task_name = request.task_name.clone();
-        let thread = self
-            .host
-            .spawn(&self.scope, request)
-            .await
-            .map_err(AgentControlError::Host)?;
+        let thread = match capture {
+            Some(capture) => self.host.spawn_graph(&self.scope, request, capture).await,
+            None => self.host.spawn(&self.scope, request).await,
+        }.map_err(AgentControlError::Host)?;
         self.validate_thread(&thread)?;
         AgentEdge::between(&self.scope.caller, &thread)
             .map_err(|_| AgentControlError::InvalidHostResult)?;

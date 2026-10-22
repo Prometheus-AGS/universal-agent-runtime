@@ -17,3 +17,56 @@ Uncomfortable limitations: caller-tool SSE is buffered until manager termination
 Cohort 11.1: after collecting caller-tool run events, ACP now awaits manager.await_settled_run_status and accepts only Done before completion/public response. Error, Cancelled or join failure becomes JSON-RPC error. No verification ran.
 
 Cohort 11.1 durable cleanup acknowledgment: ACP calls confirm_handoff_for_run for each nonempty pending batch before public pending state/events/response. Same owner/tenant/agent/run scope; only actual settled Done yields the durable source_settled acknowledgment consumed by cold continuation admission. No verification ran.
+
+## Cohort 13.16 selected agent and cold session recovery
+
+Observed defect: runs/create ignored the agent selected by sessions/create and
+always built the default artifact. Cold result submission also searched only the
+default agent's batch scope. Selected-agent policy and routing therefore did not
+survive either the fresh path or restart.
+
+`src/uar/api/acp/handler.rs` now resolves the session's selected registered artifact
+on every run/result submission. Public alias default maps to default-agent; an
+explicit selected ID is never replaced by that default. Cold restoration derives
+the batch locator from a host-issued call ID and loads the exact authenticated
+owner, tenant, session and batch binding. It accepts only ACP rows containing that
+call ID, restores the stored agent ID, then re-resolves its current artifact.
+The existing exact-agent continuation lookup and full-history prepare/CAS remain
+in force. Each request still receives the current UserContext and credential
+capture; the durable row supplies identity/history, not frozen execution policy.
+
+Added load_client_tool_continuation_for_session to the PersistenceLayer contract,
+scoped facade/read classification, both provider implementations and their
+client_tools helper modules. PostgreSQL filters the existing JSONB binding fields;
+Surreal filters the authenticated owner's existing serialized rows and compares
+all session/tenant/batch fields before selecting. Both reject multiple matches
+and validate the selected durable row. No schema migration or row rewrite is
+required; neither lookup accepts caller-selected agent authority.
+
+Owned files: src/uar/api/acp/handler.rs; src/uar/persistence/mod.rs;
+src/uar/persistence/scoped.rs; src/uar/persistence/providers/postgres.rs;
+src/uar/persistence/providers/surreal.rs;
+src/uar/persistence/providers/client_tools/postgres.rs;
+src/uar/persistence/providers/client_tools/surreal.rs; this handoff.
+
+No tests, checks, builds, formatting, imports, probes or runtime requests ran.
+Source inspection and authorized writing only. Source behavior and backend query
+compatibility remain unverified. The driver owner was notified to exercise the
+selected mutable registered agent across actual cold restart without a caller
+agent override; lead owns that gate. The uncomfortable limit is that Surreal's
+legacy serialized representation requires an owner-scoped row scan for recovery;
+this bounded repair does not introduce an index migration or alter durable rows.
+
+### Cohort 13.16 review repair: deferred session publication
+
+Cold restoration now keeps recovered session identity local until the exact-agent
+lookup and shared full-history/schema/result prepare succeed. The validated
+session is published for both Continue and exact Replay outcomes; rejection
+publishes nothing. Restored defaults retain declarations/controls with history
+cleared, while explicit submitted continuation history remains request-local.
+A later fresh runs/create inheriting declaration defaults translates its input
+into a fresh user history, so it executes the new prompt instead of replaying an
+old result batch or discarding input. No persisted continuation receipt or retry
+comparison was weakened. Only handler.rs and this handoff changed in this repair.
+No verification ran; invalid-history publication and fresh-after-cold execution
+remain required real-path observations for the lead-owned gate.

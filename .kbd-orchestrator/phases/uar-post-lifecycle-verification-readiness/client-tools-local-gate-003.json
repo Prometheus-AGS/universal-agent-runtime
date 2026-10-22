@@ -1,0 +1,128 @@
+{
+  "status": "failed",
+  "evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-003",
+  "auth_enabled": true,
+  "persistence": "fresh embedded SurrealKV",
+  "external_gate_inputs_remaining": [
+    "Real cold restart modes retain the same store and provider peer and need separate explicit gate authorization.",
+    "Graph cursor modes require a configured real graph agent with before/after node prompt markers.",
+    "Budget and cold budget modes require a configured real cumulative-budget agent."
+  ],
+  "shipped_policy_files": [
+    {
+      "path": "policies/default.cedar",
+      "sha256": "533be695da370d80c039259788fff40b757be1b44e2b833a72ef3039e1a5b7d4"
+    },
+    {
+      "path": "policies/skill-mutation.cedar",
+      "sha256": "6feacc9af1090ad2f1d6871e15e76d56c185d6302e329cc603ff40958346ae9e"
+    },
+    {
+      "path": "policies/tool-approval.cedar",
+      "sha256": "f6c7844b10c6cabd594f05e94af314eb176e23a7fce908a35ddb9382afbf80f6"
+    }
+  ],
+  "failure": "GateFailure: one or more actual matrix cases failed; inspect matrix.json and retained logs",
+  "owned_shutdown_clean": true,
+  "owned_exit_statuses_expected": false,
+  "cleanup_status": "confirmed",
+  "lifecycle": [
+    {
+      "process": "provider-peer",
+      "pid": 65430,
+      "command": [
+        "/Users/gqadonis/miniconda3/bin/python3",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/fixtures/client_tools_provider.py",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "0",
+        "--port-file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-003/provider.port",
+        "--trace",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-003/provider-trace.jsonl"
+      ]
+    },
+    {
+      "process": "candidate",
+      "pid": 65433,
+      "command": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+        "--config",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-003/config.yaml"
+      ]
+    },
+    {
+      "process": "matrix",
+      "pid": 65496,
+      "command": [
+        "/Users/gqadonis/miniconda3/bin/python3",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/release/client_tools_acceptance.py",
+        "--base-url",
+        "http://127.0.0.1:55788",
+        "--provider-base-url",
+        "http://127.0.0.1:55786",
+        "--bearer-token-env",
+        "UAR_CLIENT_TOOLS_GATE_OWNER",
+        "--other-bearer-token-env",
+        "UAR_CLIENT_TOOLS_GATE_OTHER",
+        "--agent-id",
+        "client-tools-local-45262d6989834f68bbff44ddea262c24",
+        "--openai-model",
+        "client-tools-local-45262d6989834f68bbff44ddea262c24",
+        "--anthropic-model",
+        "fixture/gpt-4o-mini",
+        "--protocols",
+        "openai",
+        "anthropic",
+        "agui",
+        "a2a",
+        "acp",
+        "--acp-path",
+        "/acp",
+        "--host-tool-json",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-003/host-tool.json",
+        "--mode",
+        "matrix",
+        "--report",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-003/matrix.json"
+      ]
+    },
+    {
+      "process": "matrix",
+      "pid": 65496,
+      "joined": true,
+      "exit_code": 1,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": false,
+      "clean_shutdown": false,
+      "cleanup_errors": []
+    },
+    {
+      "process": "candidate",
+      "pid": 65433,
+      "joined": true,
+      "exit_code": 1,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": false,
+      "clean_shutdown": false,
+      "cleanup_errors": []
+    },
+    {
+      "process": "provider-peer",
+      "pid": 65430,
+      "joined": true,
+      "exit_code": -15,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "cleanup_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    }
+  ]
+}

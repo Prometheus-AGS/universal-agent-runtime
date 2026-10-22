@@ -243,6 +243,12 @@ impl ActorThreadSession {
         credential_capture: AuthenticatedCredentialCapture,
         client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
     ) -> anyhow::Result<PersistedAgentThread> {
+        if client_tools.is_some() && self.instance.is_none() {
+            // A caller handoff releases the previous root. A warm mailbox must
+            // not turn its old artifact into authority for the next root.
+            self.artifact = self.manager.resolve_registered_agent(&self.artifact.id).await
+                .context("caller_tool_current_agent_unavailable")?;
+        }
         let mut request = match &self.instance {
             Some(instance) => {
                 let mut request = RunExecutionRequest::from_bound_agent(
@@ -280,7 +286,33 @@ impl ActorThreadSession {
                 .presentation_negotiation
                 .clone()
                 .unwrap_or_default();
-            request.resolved_policy = Some(constraints.policy.clone());
+            if request.client_tools.is_some() && self.instance.is_none() {
+                // Resolve current agent/global policy again. Delegated policy
+                // remains a ceiling rather than replacing that fresh policy.
+                request.host_policy_constraint = Some(match &constraints.a2a_delegation {
+                    Some(contract) => contract.execution_policy(),
+                    None => {
+                        use crate::uar::domain::policy::{ResourceSelection, RunPolicy};
+                        RunPolicy {
+                            version: constraints.policy.version,
+                            chat_mode: Some(constraints.policy.chat_mode),
+                            agent_id: constraints.policy.agent_id.clone(),
+                            model: constraints.policy.model.clone(),
+                            skills: ResourceSelection::selected(constraints.policy.skills.ids.clone()),
+                            tools: ResourceSelection::selected(constraints.policy.tools.ids.clone()),
+                            mcp_servers: ResourceSelection::selected(constraints.policy.mcp_servers.ids.clone()),
+                            knowledge_bases: ResourceSelection::selected(constraints.policy.knowledge_bases.ids.clone()),
+                            presentations: ResourceSelection::selected(constraints.policy.presentations.ids.clone()),
+                            memory_enabled: Some(constraints.policy.memory_enabled),
+                            prompt_caching_enabled: Some(constraints.policy.prompt_caching_enabled),
+                            context_strategy: Some(constraints.policy.context_strategy.clone()),
+                            tool_approval: constraints.policy.tool_approval,
+                        }
+                    }
+                });
+            } else {
+                request.resolved_policy = Some(constraints.policy.clone());
+            }
             request.host_budget_constraint = Some(constraints.budgets.clone());
             request.host_usage_grant = Some(constraints.usage_grant.clone());
             request.host_sandbox_constraint = Some(constraints.sandbox.clone());

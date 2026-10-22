@@ -1,0 +1,18 @@
+{
+  "command": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-012 --extended",
+  "exitCode": 1,
+  "result": "failed_extended",
+  "corePassed": 95,
+  "safetyPassed": 60,
+  "cancellationPassed": 5,
+  "ordinaryColdPassed": 5,
+  "graphPassed": 0,
+  "graphFailure": "Approved child fails before worker contact; source_run_not_found",
+  "ownedShutdownClean": true,
+  "cleanupStatus": "confirmed",
+  "remaining": [
+    "CT4 graph",
+    "CT5 budget and settled mixed crash",
+    "CT7 published-image proof"
+  ]
+}

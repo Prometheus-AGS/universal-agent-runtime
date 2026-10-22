@@ -1,0 +1,25 @@
+{
+  "checkpointUTC": "2026-10-22T21:42:47Z",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "stage": "execute",
+  "canonicalRevision": 249,
+  "planRevision": 93,
+  "sourceTasksComplete": 56,
+  "sourceTasksTotal": 57,
+  "phaseChangesComplete": 5,
+  "phaseChangesTotal": 6,
+  "activeWriters": "Lead records/docs; budget_storage_repair source-only13.26 diagnosis",
+  "activeBuild": null,
+  "activeRuntime": null,
+  "gateAuthority": "User explicit scoped local functional test/fix/retest/publication execution; unrelated verification CLOSED",
+  "commandsSincePreviousCheckpoint": [
+    "Build010 through014; allpassed except009earlierrecordedE0631repair",
+    "Gates009 through014 retained localreceipts; actualgraphwarm/coldpassed013/014; budgetwarmallfivepassed014; coldACPproviderselectionfailureobserved014",
+    "Boundedsourceauthors/isolatedcritics and canonicalKBDwrites",
+    "Installedkbd-plan finiteCT1-CT7scope+no-progresscontract plan92, pointerrefresh93",
+    "No externalpublication since prior1.2.1 receipt"
+  ],
+  "acceptance": "Remaining coldACPbudget, mixedsettledcrash and exactpublishedrepairimage",
+  "violationObserved": false,
+  "next": "Resolve sourcecause13.26 only, refreshinventory, rerunexistinggate015; rebuildonlyifproductionchanges"
+}

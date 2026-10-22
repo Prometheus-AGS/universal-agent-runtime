@@ -178,7 +178,7 @@ impl ChatCompletionRequest {
             tools, tool_choice, parallel_tool_calls: self.parallel_tool_calls, history,
             visible_history: None,
             graph_state: None,
-            budget_snapshot: None, output_token_cap: None,
+            budget_snapshot: None, delegation: None, output_token_cap: None,
             protocol: "openai".to_owned(),
         };
         input.validate().map_err(|error| error.to_string())?;

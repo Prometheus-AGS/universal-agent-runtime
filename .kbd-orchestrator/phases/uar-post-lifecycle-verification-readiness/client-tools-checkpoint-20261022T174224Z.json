@@ -1,0 +1,33 @@
+{
+  "checkpointUTC": "2026-10-22T17:42:24Z",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "stage": "execute",
+  "sourceTasksComplete": 31,
+  "sourceTasksTotal": 31,
+  "activeWriter": "lead only; no source writers active",
+  "activeBuild": "session83576; target/uar-post-lifecycle-main; existing exact server-full,postgres-backend build for1.2.2 repair",
+  "gateAuthority": "CLOSED to unrelated checks; operator explicitly authorized local all-five functional test/fix/retest and republish needed fixes. Prior exact gate and publication-hook approvals retained.",
+  "commandsSincePriorCheckpoint": [
+    "source inspections and typed KBD ledger writes",
+    "authorized source-only reviews and review editorial screening",
+    "build001 exit101 compile errors, source repairs",
+    "build002 exit101 unsupported linker argument, source repair",
+    "authorized pre/post deployment policy validators both exit0",
+    "build003 exit0",
+    "authorized release commit policy/commitlint hooks both passed, pushmain+v1.2.1 and deploy.yml dispatch39817481663",
+    "local gate001 exit1 before readiness; no interfacecasesrun; both childprocessesjoined",
+    "source startup-path/config/supervisor repair; scoped reviews no blocker",
+    "1.2.2 rebuild in progress; no overlapping local target writer"
+  ],
+  "publication": {
+    "sourceTag": "v1.2.1",
+    "commit": "dd896d5a66eda825f0076c1f35ba05f2dea6324c",
+    "arm64": "build success",
+    "amd64": "build in progress",
+    "index": "not yet published",
+    "frozen120": "unchanged; historical alias job skipped"
+  },
+  "acceptance": "No interface acceptance pass yet; local gate001 failed before readiness",
+  "violationObserved": false,
+  "next": "Complete current build, execute exact local supervisor with fresh evidence002, repair only observed failures, retain separate restart/graph/budget obligations."
+}

@@ -76,6 +76,8 @@ impl AgentNode {
                 "Graph child execution requires a host thread service".into(),
             );
         };
+        let mut resume_state = state.clone();
+        resume_state.set("_client_tool_resume_node", &self.id);
         let outcome = match delegate
             .execute(
                 &ctx.run_id,
@@ -86,6 +88,7 @@ impl AgentNode {
                     task_name: None,
                     history_fork: self.history_fork,
                 },
+                serde_json::json!(resume_state),
             )
             .await
         {
@@ -97,7 +100,16 @@ impl AgentNode {
                 );
             }
         };
-        self.apply_outcome(state, outcome)
+        if let Some(handoff) = outcome.handoff {
+            if let Err(error) = delegate.publish_handoff(handoff).await {
+                return NodeResult::Error(state, error.to_string());
+            }
+            let mut state = state;
+            state.set(&format!("_agent_thread_id_{}", self.id), &outcome.turn.agent.thread_id);
+            state.set("_client_tool_handoff", true);
+            return NodeResult::Finished(state);
+        }
+        self.apply_outcome(state, outcome.turn)
     }
 
     fn apply_outcome(

@@ -1,0 +1,28 @@
+{
+  "contract": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md",
+  "sha256": "6189d5c82e837a4c91af01e2e1bd7ed9f1e8f6ff8bf7d766900a27743cf9f1db",
+  "canonicalPlanRevision": 92,
+  "canonicalSourceRevision": 239,
+  "method": "Installed kbd-plan skill + isolated planner child + source-grounded plan self-screen",
+  "planningOnly": false,
+  "sycophancyScreen": {
+    "score": 0.01785714365541935,
+    "mandatoryCorrection": false,
+    "finding": "Low word-count heuristic on full contract; retained necessary requirement/evidence/stop clauses. No extra capability added."
+  },
+  "progressBudgetStartedUTC": "2026-10-22T21:04:12Z",
+  "noProgressSameScenarioCycles": 0,
+  "latestRequiredProgress": "Native CT1\u2013CT6 passed gate017 allfive including mixed crash; cleanupconfirmed. Exit2 intentionallykeeps broaderoutofscope certificationpending.",
+  "scope": "CT-1 through CT-7; excludes broader certification and new features",
+  "actualExecutionAuthority": "Prior operator local functional test/fix/retest/publication loop; unrelated gate CLOSED",
+  "latestRequiredProgressUTC": "2026-10-22T22:11:00Z",
+  "contractRows": {
+    "CT-1": "PASS native gate017",
+    "CT-2": "PASS native gate017",
+    "CT-3": "PASS native gate017",
+    "CT-4": "PASS native gate017",
+    "CT-5": "PASS native gate017",
+    "CT-6": "PASS native gate017",
+    "CT-7": "PENDING immutablepublication and exactimage proof"
+  }
+}

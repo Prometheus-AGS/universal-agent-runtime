@@ -1328,6 +1328,14 @@ async fn run_server_with_listener(
             info!("Default knowledge base ensured.");
         }
 
+        // Resolve filesystem failures before admitting the watcher producer, so
+        // startup reports the configured path and original I/O cause.
+        let ingest_dir = config.server.ingest_directory.clone();
+        tokio::fs::create_dir_all(&ingest_dir).await.map_err(|error| anyhow::anyhow!(
+            "Failed to create ingestion directory '{}': {error}", ingest_dir.display()
+        ))?;
+        startup_checkpoint!("ingestion directory preparation");
+
         // The host owns the watcher until its cancellation is acknowledged.
         let ingest_svc_clone = Arc::clone(&ingest);
         let watcher_scope = shutdown_coordinator.supervisor.register("ingestion-files", "uar-host").await?;
@@ -1335,10 +1343,6 @@ async fn run_server_with_listener(
         let watcher_stop = watcher_scope.cancellation_token();
         let (watcher_ready, watcher_readiness) = tokio::sync::oneshot::channel();
         watcher_scope.spawn("filesystem-events", async move {
-            let ingest_dir = std::path::PathBuf::from("/data/ingest");
-            if !ingest_dir.exists() {
-                tokio::fs::create_dir_all(&ingest_dir).await?;
-            }
             ingest_svc_clone.watch_with_readiness(ingest_dir, "default".to_string(),
                 watcher_stop, Some(watcher_ready)).await?;
             Ok(())
@@ -4736,11 +4740,14 @@ fn convert_anthropic_messages_to_openai(req: &AnthropicMessagesRequest) -> Vec<V
             }
 
             if !text.is_empty() || !tool_calls.is_empty() {
-                out.push(json!({
+                let mut assistant = json!({
                     "role": "assistant",
-                    "content": text,
-                    "tool_calls": if tool_calls.is_empty() { Value::Null } else { Value::Array(tool_calls) }
-                }));
+                    "content": text
+                });
+                if !tool_calls.is_empty() {
+                    assistant["tool_calls"] = Value::Array(tool_calls);
+                }
+                out.push(assistant);
             }
             continue;
         }
@@ -4928,7 +4935,7 @@ async fn api_bound_anthropic_messages(
     let input = crate::uar::runtime::turn::client_tools::ClientToolInput {
         tools: convert_anthropic_tools_to_openai(&req.tools), tool_choice, parallel_tool_calls,
         history, visible_history: None, graph_state: None, output_token_cap: req.max_tokens,
-        budget_snapshot: None, protocol: "anthropic".to_owned(),
+        budget_snapshot: None, delegation: None, protocol: "anthropic".to_owned(),
     };
     if let Err(error) = input.validate() {
         return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
@@ -5035,7 +5042,7 @@ async fn api_bound_anthropic_messages(
                         next_index += 1;
                     }
                 }
-                RunEvent::Error { message, .. } => failed = Some(message),
+                RunEvent::Error { code, message, .. } => failed = Some(format!("{code}: {message}")),
                 RunEvent::Cancelled { .. } => { failed = Some("Run cancelled".to_owned()); terminal = true; }
                 RunEvent::RunDoneWithUsage { input_tokens, output_tokens, .. } => {
                     usage.input_tokens = input_tokens.unwrap_or(0);
@@ -5053,7 +5060,13 @@ async fn api_bound_anthropic_messages(
             match state.run_manager.await_settled_run_status(&run_id).await {
                 Ok(crate::uar::domain::runs::RunStatus::Done) => {}
                 Ok(status) => {
-                    yield Err(anyhow::anyhow!("Messages run did not settle successfully: {status:?}"));
+                    if status == crate::uar::domain::runs::RunStatus::Error
+                        && let Some(message) = failed.take()
+                    {
+                        yield Err(anyhow::anyhow!(message));
+                    } else {
+                        yield Err(anyhow::anyhow!("Messages run did not settle successfully: {status:?}"));
+                    }
                     break;
                 }
                 Err(error) => { yield Err(error); break; }
@@ -5811,6 +5824,10 @@ struct OpenAiMessageInput {
     role: String,
     #[serde(default)]
     content: serde_json::Value,
+    #[serde(default)]
+    tool_calls: Vec<uar::api::openai::types::OpenAIToolCall>,
+    #[serde(default)]
+    tool_call_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -5871,9 +5888,17 @@ pub(crate) struct ChatCompletionRequest {
     /// Optional temperature (accepted for compatibility).
     #[serde(default)]
     temperature: Option<f32>,
-    /// Optional tools (accepted for compatibility).
+    /// Caller-owned function declarations; these never grant host execution.
     #[serde(default)]
     tools: Option<Vec<serde_json::Value>>,
+    #[serde(default)]
+    tool_choice: Option<serde_json::Value>,
+    #[serde(default)]
+    parallel_tool_calls: Option<bool>,
+    #[serde(default)]
+    max_tokens: Option<u32>,
+    #[serde(default)]
+    max_completion_tokens: Option<u32>,
     /// Stream response chunks if true.
     #[serde(default)]
     stream: bool,
@@ -6258,6 +6283,46 @@ impl ChatStreamCursor {
     }
 }
 
+fn caller_openai_request(
+    req: &ChatCompletionRequest,
+) -> Result<Option<uar::api::openai::types::ChatCompletionRequest>, Response> {
+    let caller = req.tools.is_some() || req.tool_choice.is_some() || req.parallel_tool_calls.is_some()
+        || req.messages.iter().any(|message| !message.tool_calls.is_empty() || message.tool_call_id.is_some() || message.role == "tool");
+    if !caller { return Ok(None); }
+    if req.message.is_some() {
+        return Err(openai_error_response(StatusCode::BAD_REQUEST,
+            "Caller tools require messages without the legacy message alias", Some("ambiguous_client_tool_history")));
+    }
+    if !matches!(req.stream_mode, StreamMode::Openai) || !req.attachments.is_empty() {
+        return Err(openai_error_response(StatusCode::BAD_REQUEST,
+            "Caller tools require the OpenAI stream format and message-contained text history", Some("unsupported_client_tool_payload")));
+    }
+    if req.messages.is_empty() {
+        return Err(openai_error_response(StatusCode::BAD_REQUEST, "Caller tools require a complete messages history", Some("invalid_messages")));
+    }
+    let mut messages = Vec::with_capacity(req.messages.len());
+    for message in &req.messages {
+        let content = match &message.content {
+            Value::String(text) => Some(text.clone()),
+            Value::Null => None,
+            _ => return Err(openai_error_response(StatusCode::BAD_REQUEST,
+                "Caller-tool message content must be text or assistant null content with calls", Some("unsupported_client_tool_content"))),
+        };
+        messages.push(uar::api::openai::types::OpenAIMessage {
+            role: message.role.clone(), content, tool_calls: message.tool_calls.clone(), tool_call_id: message.tool_call_id.clone(),
+        });
+    }
+    let tools = serde_json::from_value(Value::Array(req.tools.clone().unwrap_or_default()))
+        .map_err(|error| openai_error_response(StatusCode::BAD_REQUEST, &error.to_string(), Some("invalid_client_tools")))?;
+    let caller = uar::api::openai::types::ChatCompletionRequest {
+        model: req.model.clone().unwrap_or_default(), messages, tools, stream: req.stream,
+        tool_choice: req.tool_choice.clone(), parallel_tool_calls: req.parallel_tool_calls,
+        presentation_negotiation: req.presentation_negotiation.clone(),
+    };
+    caller.client_tool_input().map_err(|error| openai_error_response(StatusCode::BAD_REQUEST, &error, Some("invalid_client_tools")))?;
+    Ok(Some(caller))
+}
+
 /// OpenAI-compatible completion endpoint with explicit, owner-bound SSE replay.
 pub(crate) async fn api_chat_completion(
     State(state): State<AppState>,
@@ -6293,6 +6358,17 @@ pub(crate) async fn api_chat_completion(
             );
         }
     };
+    let mut caller_request = match caller_openai_request(&req) {
+        Ok(request) => request,
+        Err(response) => return response,
+    };
+    if caller_request.is_some() && resume.is_some() {
+        return openai_error_response(StatusCode::BAD_REQUEST, "Caller-tool retries use the exact messages/result batch", Some("unsupported_client_tool_cursor"));
+    }
+    if req.max_tokens == Some(0) || req.max_completion_tokens == Some(0)
+        || matches!((req.max_tokens, req.max_completion_tokens), (Some(first), Some(second)) if first != second) {
+        return openai_error_response(StatusCode::BAD_REQUEST, "Output token caps must be positive and consistent", Some("invalid_output_token_cap"));
+    }
     let resuming = resume.is_some();
     let cursor = resume.as_ref().map(|(_, cursor)| *cursor);
     let cursor_format = req.stream_mode.cursor_format();
@@ -6307,7 +6383,7 @@ pub(crate) async fn api_chat_completion(
         tracing::debug!(temperature = temp, "temperature received");
     }
     if let Some(tools) = &req.tools {
-        tracing::debug!(tool_count = tools.len(), "tools payload received");
+        tracing::debug!(tool_count = tools.len(), "caller function declarations received");
     }
 
     let (
@@ -6433,7 +6509,7 @@ pub(crate) async fn api_chat_completion(
             }
         }
 
-        let session_id = match resolve_session_id(&req, &headers) {
+        let mut session_id = match resolve_session_id(&req, &headers) {
             Ok(Some(value)) => value,
             Ok(None) => Uuid::new_v4().to_string(),
             Err(resp) => return resp,
@@ -6492,6 +6568,31 @@ pub(crate) async fn api_chat_completion(
                 Ok(agent)=>agent,Err(error)=>return error.into_response(),
             },
         };
+        if let Some(call_id) = caller_request.as_ref().and_then(|request| request.messages.last())
+            .filter(|message| message.role == "tool").and_then(|message| message.tool_call_id.as_deref()) {
+            let owner = match user_ctx.session_owner_key() {
+                Ok(owner) => owner,
+                Err(_) => return openai_error_response(StatusCode::UNAUTHORIZED, "Invalid caller-tool principal", Some("invalid_run_principal")),
+            };
+            let Some(store) = state.persistence.as_ref() else {
+                return openai_error_response(StatusCode::SERVICE_UNAVAILABLE, "Durable caller-tool persistence is unavailable", Some("durable_client_tools_unsupported"));
+            };
+            let row = match uar::api::client_tools::load_by_call_id(store.as_ref(), &owner,
+                user_ctx.tenant_id.as_ref().map(|tenant|tenant.as_str()), &agent.id, call_id).await {
+                Ok(Some(row)) => row,
+                Ok(None) => return openai_error_response(StatusCode::CONFLICT, "Caller-tool continuation is unavailable", Some("client_tool_continuation_rejected")),
+                Err(error) => return openai_error_response(StatusCode::CONFLICT, &error.to_string(), Some("client_tool_continuation_rejected")),
+            };
+            let Some(saved_session) = row.session_id else {
+                return openai_error_response(StatusCode::CONFLICT, "Caller-tool session is unavailable", Some("client_tool_continuation_rejected"));
+            };
+            match resolve_session_id(&req, &headers) {
+                Ok(Some(requested)) if requested != saved_session => return openai_error_response(StatusCode::CONFLICT,
+                    "Caller-tool session does not match the pending batch", Some("client_tool_continuation_rejected")),
+                Err(response) => return response,
+                _ => session_id = saved_session,
+            }
+        }
         let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
             &state,
             &user_ctx,
@@ -6707,6 +6808,12 @@ pub(crate) async fn api_chat_completion(
         run_request.memory_hits = memory_recall_items;
         run_request.resolved_policy = Some(effective_run_policy);
         run_request.presentation_negotiation = req.presentation_negotiation.clone();
+        run_request.output_token_cap = req.max_completion_tokens.or(req.max_tokens);
+        if let Some(mut caller) = caller_request.take() {
+            caller.model = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
+            return uar::api::openai::routes::execute_prepared_chat_completion(state, user_ctx, caller, run_request, input_finding,
+                Some(effective_resilience_policy.request_timeout_ms)).await;
+        }
         let run_id = if bound_execution {
             match state.run_manager.execute_bound_request(run_request).await {
                 Ok(id)=>id,

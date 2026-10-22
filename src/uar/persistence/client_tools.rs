@@ -8,6 +8,14 @@ use sha2::{Digest, Sha256};
 #[serde(rename_all = "snake_case")]
 pub enum ClientToolContinuationState { Pending, Claimed, Completed }
 
+/// Actual delegated producer, bound by the host rather than caller history.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClientToolExecutionSource {
+    pub agent_id: String,
+    pub run_id: String,
+    pub thread_id: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ClientToolContinuation {
     pub owner_key: String,
@@ -16,6 +24,8 @@ pub struct ClientToolContinuation {
     pub batch_id: String,
     pub protocol: String,
     pub source_run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_source: Option<ClientToolExecutionSource>,
     pub session_id: Option<String>,
     /// Protected graph execution state; never reconstructed from caller history.
     pub graph_state: Option<Value>,
@@ -51,6 +61,14 @@ impl ClientToolContinuation {
             anyhow::ensure!(!id.is_empty() && id.trim() == id && !id.chars().any(char::is_control), "invalid_client_tool_identity");
         }
         anyhow::ensure!(self.output_token_cap.is_none_or(|cap| cap > 0), "invalid_client_tool_output_token_cap");
+        if let Some(source) = &self.execution_source {
+            for identity in [&source.agent_id, &source.run_id, &source.thread_id] {
+                anyhow::ensure!(!identity.is_empty() && identity.trim() == identity
+                    && !identity.chars().any(char::is_control), "invalid_client_tool_execution_source");
+            }
+            anyhow::ensure!(source.run_id != self.source_run_id && self.graph_state.is_some(),
+                "invalid_delegated_client_tool_binding");
+        }
         anyhow::ensure!(self.budget_snapshot.is_some(), "client_tool_budget_snapshot_required");
         anyhow::ensure!(self.canonical_transcript.is_array() && self.visible_transcript.is_array() && self.client_schemas.is_object(), "invalid_client_tool_transcript_binding");
         let calls: BTreeSet<_> = self.pending_call_ids.iter().collect();

@@ -1,0 +1,60 @@
+{
+  "status": "failed_cleanup",
+  "evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-001",
+  "auth_enabled": true,
+  "persistence": "fresh embedded SurrealKV",
+  "external_gate_inputs_remaining": [
+    "Real cold restart modes retain the same store and provider peer and need separate explicit gate authorization.",
+    "Graph cursor modes require a configured real graph agent with before/after node prompt markers.",
+    "Budget and cold budget modes require a configured real cumulative-budget agent."
+  ],
+  "failure": "GateFailure: candidate authenticated readiness process exited before readiness; inspect its retained log",
+  "owned_shutdown_clean": false,
+  "lifecycle": [
+    {
+      "process": "provider-peer",
+      "pid": 52399,
+      "command": [
+        "/Users/gqadonis/miniconda3/bin/python3",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/fixtures/client_tools_provider.py",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "0",
+        "--port-file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-001/provider.port",
+        "--trace",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-001/provider-trace.jsonl"
+      ]
+    },
+    {
+      "process": "candidate",
+      "pid": 52400,
+      "command": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+        "--config",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-local-gate-001/config.yaml"
+      ]
+    },
+    {
+      "process": "candidate",
+      "pid": 52400,
+      "joined": true,
+      "exit_code": 1,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "clean_shutdown": false,
+      "cleanup_errors": []
+    },
+    {
+      "process": "provider-peer",
+      "pid": 52399,
+      "joined": true,
+      "exit_code": -15,
+      "forced_kill_attempted": false,
+      "forced_kill": false,
+      "clean_shutdown": true,
+      "cleanup_errors": []
+    }
+  ]
+}

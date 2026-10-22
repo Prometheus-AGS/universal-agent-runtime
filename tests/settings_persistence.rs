@@ -135,6 +135,7 @@ fn minimal_config() -> AppConfig {
         supervisor_recovery: None,
         server: ServerConfig {
             mcp_shared_transports_enabled: true,
+            ingest_directory: std::path::PathBuf::from("/data/ingest"),
             port: 3000,
             host: "127.0.0.1".to_string(),
             cors_allowed_origins: Vec::new(),

@@ -1,0 +1,32 @@
+{
+  "total": 95,
+  "counts": {
+    "failed": 95
+  },
+  "perInterface": {
+    "openai": {
+      "failed": 19
+    },
+    "anthropic": {
+      "failed": 19
+    },
+    "agui": {
+      "failed": 19
+    },
+    "a2a": {
+      "failed": 19
+    },
+    "acp": {
+      "failed": 19
+    }
+  },
+  "providerTraceLines": 0,
+  "observedBlockers": [
+    "model_not_verified on OpenAI",
+    "rate limit429 masks latercases",
+    "Anthropic invalid_client_tool_calls ontextassistant",
+    "durableaccounting admission Query error",
+    "A2A event-source-unavailable shutdownliability"
+  ],
+  "originalEvidence": "target/client-tools-local-gate-003"
+}

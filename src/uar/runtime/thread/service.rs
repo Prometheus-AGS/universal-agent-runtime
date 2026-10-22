@@ -14,6 +14,7 @@ use crate::uar::persistence::{
     PersistenceLayer,
     agent_threads::{self, PersistedAgentThread},
 };
+use crate::uar::runtime::turn::client_tools::{ClientToolInput, GraphCallerTurnCapture};
 
 use super::control::{
     AgentControlScope, AgentInterruptReceipt, AgentThreadHost, AgentToolContext,
@@ -36,6 +37,7 @@ pub struct HostedThreadTurn {
     pub messages: Vec<Message>,
     pub controls: Arc<AgentToolContext>,
     pub cancellation: CancellationToken,
+    pub client_tools: Option<ClientToolInput>,
 }
 
 impl std::fmt::Debug for HostedThreadTurn {
@@ -80,6 +82,7 @@ struct Entry {
     sequence: u64,
     worker_running: bool,
     target: ChildTarget,
+    graph_caller_capture: Option<GraphCallerTurnCapture>,
 }
 
 enum ChildTarget {
@@ -254,6 +257,7 @@ impl ThreadService {
             sequence: 0,
             worker_running: true,
             target: ChildTarget::Local,
+            graph_caller_capture: None,
         };
         Ok(Self {
             inner: Arc::new(RootHost {
@@ -667,8 +671,14 @@ impl ThreadService {
         &self,
         scope: AgentControlScope,
         request: AgentSpawnRequest,
+        graph_caller_capture: Option<GraphCallerTurnCapture>,
     ) -> anyhow::Result<AgentThread> {
         request.validate()?;
+        if let Some(capture) = &graph_caller_capture {
+            anyhow::ensure!(capture.root_run_id() == self.inner.root.root_run_id
+                && capture.root_agent_id() == self.inner.root.artifact_id,
+                "Graph caller capture belongs to another root");
+        }
         let mut entries = self.inner.entries.lock().await;
         let parent = self
             .authorize(&entries, &scope, Some("spawn_agent"))
@@ -732,6 +742,7 @@ impl ThreadService {
             sequence: 0,
             worker_running: false,
             target: ChildTarget::Local,
+            graph_caller_capture,
         };
         entries.insert(child.thread_id.clone(), entry);
         let entry = entries
@@ -872,6 +883,7 @@ impl ThreadService {
                 execution: None,
                 execution_admitted: false,
             }),
+            graph_caller_capture: None,
         };
         entries.insert(child.thread_id.clone(), entry);
         let entry = entries
@@ -1013,6 +1025,11 @@ impl ThreadService {
                         anyhow::bail!("Child cancelled before kernel entry");
                     }
                     self.inner.kernel.check_budget(&entry.policy).await?;
+                    let client_tools = entry.graph_caller_capture.take().map(|capture| {
+                        let run_id = entry.record.thread.run_id.clone()
+                            .ok_or_else(|| anyhow::anyhow!("Graph child run identity is missing"))?;
+                        capture.bind_executing(entry.record.thread.thread_id.clone(), run_id)
+                    }).transpose()?;
                     TurnWork::Local(HostedThreadTurn {
                         record: entry.record.clone(),
                         policy: Arc::clone(&entry.policy),
@@ -1020,6 +1037,7 @@ impl ThreadService {
                         messages,
                         controls: self.context(entry)?,
                         cancellation: entry.cancellation.clone(),
+                        client_tools,
                     })
                 }
                 ChildTarget::Remote(remote) => {
@@ -1506,8 +1524,19 @@ impl AgentThreadHost for ThreadService {
     ) -> anyhow::Result<AgentThread> {
         let service = self.clone();
         let scope = scope.clone();
-        self.tracked(async move { service.spawn_inner(scope, request).await })
+        self.tracked(async move { service.spawn_inner(scope, request, None).await })
             .await
+    }
+
+    async fn spawn_graph(
+        &self,
+        scope: &AgentControlScope,
+        request: AgentSpawnRequest,
+        capture: GraphCallerTurnCapture,
+    ) -> anyhow::Result<AgentThread> {
+        let service = self.clone();
+        let scope = scope.clone();
+        self.tracked(async move { service.spawn_inner(scope, request, Some(capture)).await }).await
     }
 
     async fn spawn_remote(

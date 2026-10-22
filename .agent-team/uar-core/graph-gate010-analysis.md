@@ -1,0 +1,11 @@
+# Graph gate010 analysis
+
+Evidence inspected without executing a gate: graph.json, provider-trace.jsonl, candidate-2.log (the candidate after ordinary cold restart), current graph and delegation source.
+
+The OpenAI graph request timed out after approximately 30 seconds. Its actual router provider request appears at provider-trace.jsonl line 579 with the configured router prompt and no tools. candidate-2.log line 319 records the router driver completing at 20:03:23.511 with two normalized events; line 320 records the HTTP 504 at 20:03:53.384. No general-purpose worker provider request appears between them. The router prompt marker itself is correct.
+
+The installed builtin graph is RouterNode -> AgentNode(general-purpose/rust-reviewer), from defaults::orchestrator_graph. It does not use LlmNode. AgentNode calls GraphThreadDelegate.execute, whose admit method uses the real spawn_agent descriptor and the ordinary host approval gate. agents/mod.rs declares Spawn ApprovalClass::Required; manager's approval_required includes that class regardless of Auto. The graph acceptance driver does not answer an approval. The trace/source therefore supports a governed-spawn approval wait as the timeout explanation. The retained artifact does not include an approval queue read, so that specific live pending row has not been independently queried. Do not bypass approval to make the graph test pass; exercise the real approval API.
+
+After that approval, an additional production integration gap remains: implemented LlmNode caller handoff/cursor support does not cover the actual builtin AgentNode child delegation path. GraphThreadDelegate spawns and waits for a child through AgentSpawnRequest, which carries no caller-tool definition/continuation contract. AgentNode handles Completed/Failed/Cancelled/Yielded child outcomes but no caller-tool handoff outcome. A child's pending caller batch would also need correlation to the root API agent identity and correct parent graph cursor, not silently bind to an unrelated child agent. This requires a deliberate runtime contract extension before claiming builtin graph caller-tool support.
+
+No production edits, build/check/test/probe/import/network/runtime calls were performed. Gate010 was live during inspection. Lead owns remaining assignment and retest.

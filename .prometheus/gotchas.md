@@ -2046,3 +2046,22 @@ cache-driven offline resolution changes. After repair ce241cf5, run 39685313234
 passed resolution but exposed E0164: Network is now a struct variant. Match
 Network { .. } while retaining Transport classification. Lock metadata success
 does not prove compilation; require both native image builds and manifest merge.
+
+## 2026-10-22 — caller tools must reach the mounted protocol handler
+
+Local five-interface gate006 reached the real server and found that `/v1/chat/completions` was mounted to `server::api_chat_completion`, while the authored caller-tool service in `uar/api/openai/routes.rs` was not that ingress. The mounted request retained compatibility-only tools and discarded caller fields. Anthropic passed19 cases in the same run; that did not certify OpenAI. Bind the actual mounted handler through existing admission into the shared service, then rerun real HTTP acceptance. The same run found AG-UI terminal delivery preceding producer finalization: a nonblocking status probe could miss its last wake, and concurrent join observers could falsely revoke settlement. Source review and compilation alone did not establish these wire behaviors.
+
+## 2026-10-22 — Optional continuation fields must preserve stored CAS bytes
+Continuation providers compare the stored serialized record against a serialized expected value. A new optional field with serde(default) alone turns historical missing fields into null on reserialization and prevents legacy pending rows from settling or claiming. The graph execution_source field therefore also skips serialization when None. This was caught by isolated source review; no migration or runtime acceptance is claimed.
+
+## 2026-10-22 — Approval argumentsJson can be a redacted display
+Gate011 graph approvals exposed exactly {operation:spawn_agent,detailsAvailable:false}. The public argumentsJson is the host action_display, not the raw AgentSpawnRequest. Do not weaken production redaction or claim hidden arguments were verified. The isolated graph fixture must bind the exact owner/root/challenge and source-defined display, retain its controlled router selection, and prove actual child/worker identity afterward. Raw-DTO equality refused every legitimate approval and prevented graph acceptance.
+
+## 2026-10-22 — Captured caller history still satisfies trusted child admission
+Gate012 real graph approvals reached children, but the13.21 kernel supplied inherited_history=None for caller tools while manager trusted-child admission requires Some, including an empty canonical history. The child failed before active-run registration, then graph settlement lookup masked child_bindings_unavailable as source_run_not_found. Supply the captured canonical paired history in inherited_history and preserve non-Completed child outcomes before looking up settlement. Source review previously missed this cross-module contract; runtime acceptance is still pending.
+
+## 2026-10-22 — Budget refusals are not provider outages
+Gate014 cold budget cases restored usage correctly, but three local pre-provider accounting_budget_exhausted errors incremented shared provider-health failures and opened cooldown. Later ACP selection reported provider_model_unavailable. Typed cost_budget::client_failure distinguishes these from ProviderError; the primary stream-error path now returns the budget failure before health/failover handling. Real provider failures retain the existing path. Fallback-specific classification was not expanded in this repair; runtime proof remains pending gate015.
+
+## 2026-10-22 — Same-batch handoff has no post-host provider request
+Gate015 mixed-crash seed incorrectly searched the initial provider request for the host result produced by that response. Mixed host/client batches must settle host calls and hand off caller calls without another provider request. Bind the seed to actual controlled provider response and real MCP result receipts, then prove exact ordered canonical assistant-call/tool-result history after crash continuation. Do not add a forbidden provider call to make an impossible assertion pass.

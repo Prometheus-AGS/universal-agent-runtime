@@ -1,15 +1,17 @@
 {
   "kind": "uar.whole-phase-source-authoring-inventory/v1",
   "phase": "uar-post-lifecycle-verification-readiness",
-  "planRevision": 91,
-  "head": "ee4826f000916e2025207efdda6da33db2a93f7f",
-  "sourceIdentity": "HEAD plus listed dirty/untracked file bytes; not a built candidate",
-  "verification": "Authorized build003 PASS exit0; functional acceptance NOT RUN; other gates CLOSED",
+  "planRevision": 94,
+  "head": "dd896d5a66eda825f0076c1f35ba05f2dea6324c",
+  "sourceIdentity": "HEAD dd896d5 plus listed reviewed1.2.2 bytes; build015/gate017 nativeaccepted",
+  "verification": "Native finite CT1\u2013CT6 PASS gate017 exit2 preserves outofscopecertification; CT7 publication/imagepending",
   "sourceAuthoringComplete": true,
   "phaseSourceTasks": {
     "baseline": 13,
-    "callerTools": 17,
-    "total": 30
+    "callerTools": 46,
+    "total": 59,
+    "complete": 59,
+    "inProgress": 0
   },
   "coverage": [
     "shared ownership and controls",
@@ -26,11 +28,7 @@
     "contracts/specs/changelog"
   ],
   "remaining": [
-    "One corrective source-only review of cleanup/HOME repairs requires explicit authorization; exact local runtime gate separately named in proposal.",
-    "independent source review requires authorization",
-    "local production build and configured integration gates require authorization",
-    "actual durable DB/provider/MCP/graph/budget provisioning and lifecycle receipts",
-    "separate 1.2.1 artifact publication after acceptance and authorization"
+    "CT7 immutablepublication+exactimage"
   ],
   "preservedOutsideScope": [
     ".codex/config.toml",
@@ -40,20 +38,104 @@
   "baselineInventory": "implementation-inventory.final.json (historical acceptance is not inherited)",
   "files": [
     {
+      "path": ".agent-team/uar-core/a2a-current-policy-repair.md",
+      "sha256": "824249b571f1d460fee28b9ec2ca3211c8070dffae414f19231fb776c09ed383"
+    },
+    {
+      "path": ".agent-team/uar-core/a2a-observation-repair.md",
+      "sha256": "599eb482fbe8a888a71e8e69ccff6df6e0cdf9120ac221828f73a65a018778da"
+    },
+    {
+      "path": ".agent-team/uar-core/a2a-shutdown-analysis.md",
+      "sha256": "cfc7a272740c617aa11e3fcf9b2d72a5ddacd3f0e121ce3cbe7a8d908d01bb6d"
+    },
+    {
+      "path": ".agent-team/uar-core/agui-concurrent-replay-repair.md",
+      "sha256": "3d4970e4fdd5fa9e936cef7d32d910d9bcf8125834defa6ed07e50b9ff1d2dca"
+    },
+    {
+      "path": ".agent-team/uar-core/agui-settlement-repair.md",
+      "sha256": "7921ead4fbe3b7421a43aec1f95439f499b03231ae33771a2b50dc387e454288"
+    },
+    {
       "path": ".agent-team/uar-core/client-tools-runtime-handoff-20261022.md",
-      "sha256": "ccdb4ed1d1b53f0bdb59f5a4857fe3dcbfb5b270ed4e30152d109e9051a7cd4b"
+      "sha256": "584d6ca81c3292ba0c212f72c13452d43e7ee35f22d1b2ce6ef50e7d67f466be"
+    },
+    {
+      "path": ".agent-team/uar-core/graph-gate010-analysis.md",
+      "sha256": "d0fc11533b2d187416c1c3dfb04e9813ec9a700a0f268daec6760e521cbe5576"
+    },
+    {
+      "path": ".agent-team/uar-core/remaining-safety-plan.md",
+      "sha256": "9b3d11048a2cd6e6b28c3faf8ee732c85506374a659f1a00e992d8965895f5c6"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/a2a-mixed-projection-review.md",
+      "sha256": "9240c2cf5d28562c9e4994162075b5ee1327964d917c71f1aabb5815d22654f5"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/budget-error-projection-review.md",
+      "sha256": "202f91232be457fe9168a01c415d1d0d2fe9784f5783bc972b4f4df8c1e1d80d"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/cancellation-crash-review.md",
+      "sha256": "259b6a674c6a388530dec5c79c8ab2a37f1903ad34feb395f1148ac09f1a5732"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/cold-budget-health-review.md",
+      "sha256": "74bd8e60a07d0651244a6847286d9e7c4800e85c4443a7ac0d8e4e5f650548c4"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/graph-approval-driver-review.md",
+      "sha256": "b9e069f9f508cd4a7a8195a56e9aa3ad4c4487b710cdd00b47f502fc2502a682"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/graph-child-history-review.md",
+      "sha256": "978b5007fe49a409ab09056019bad6b217b86fa60b12959946961d26b786ce8f"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/graph-child-persistence-review.md",
+      "sha256": "f996b664fec78f731fe81e4776b681349f152bd30bdfc1c758eeb474b0b2c9c0"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/graph-child-runtime-review.md",
+      "sha256": "0fb0801252c2c5ea9fd83f4a18d72a5668368b83c8e5000f347923dfea7e3247"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/graph-redacted-approval-review.md",
+      "sha256": "3436ce1d1233c298e68b458572ad0019030fbcaf9498e71aec7ca542a6e48ec0"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/client-tools/mixed-crash-seed-proof-review.md",
+      "sha256": "2d215f9bc477a34d45ce82628e7938d8ef3e6c9343fd2bfb4994f3c48680287c"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract-recommendation.md",
+      "sha256": "66477be70e2ceb13a8a0704440735f9c7c1d36dde060810c4a8fcd5fff1bda68"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md",
+      "sha256": "6189d5c82e837a4c91af01e2e1bd7ed9f1e8f6ff8bf7d766900a27743cf9f1db"
+    },
+    {
+      "path": ".prometheus/decisions.md",
+      "sha256": "78e6d5c0224d6a247586e09a693a82a8cc17655f476f2e95302d70b71dc28893"
+    },
+    {
+      "path": ".prometheus/gotchas.md",
+      "sha256": "9fdcebb07fb607998a0308e71a5f95cad481376c59feb0966d40b1e95eee722e"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "86980525099cb132170c3ffc0c41a2b0299bc1d7262fe217cc9d076cc9cc8c30"
+      "sha256": "c027ee2277da51e5d3e161c583876b388d51c94242b8e99b03c528e6b55f8693"
     },
     {
       "path": "Cargo.lock",
-      "sha256": "4968f23561840aee17ca2d5c4713b32727eae062f3d7df0475d2631a020ebce7"
+      "sha256": "a3b99e4c6aa17a93c27adf222d7059d0262459c88a218671aff7ace06b95efea"
     },
     {
       "path": "Cargo.toml",
-      "sha256": "120302a7c2131188e73f7fdaa6672cc5a1873f07820fab8461f5acc83bdd81cc"
+      "sha256": "b1d320abea0401df14aff9707a433b0a915620d868a6f2adbc7bbe74148d707b"
     },
     {
       "path": "build.rs",
@@ -72,6 +154,14 @@
       "sha256": "68b57ec179265abe42249b35b53e991276c1f02b3cd2ce029bcbcf2ae92e1a2a"
     },
     {
+      "path": "docs/releases/v1.2.2-kubo.md",
+      "sha256": "bdd2e7499b19d4dbce4d890f86a0ca04d0a20d47ee55a53c74e138b0765d43ab"
+    },
+    {
+      "path": "example.config.yaml",
+      "sha256": "b5381399f0787aeddcc22e470305928708528af90027eb87989ebe0400ce0807"
+    },
+    {
       "path": "migrations/20261022010000_client_tool_continuations.sql",
       "sha256": "06a83bdf376f653e1a4f2dd43c1cbe03038933dc2d405f75fc244852495d0877"
     },
@@ -82,6 +172,10 @@
     {
       "path": "openspec/changes/openai-client-tools/design.md",
       "sha256": "88ead6c1283562eb9fcd2850ad6c8c42de3f0e94e3b7da519e5829fd7bb421f1"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/a2a-mailbox-handoff-repair.md",
+      "sha256": "511d2e4d8ca8932a569e78af137517a1d74d4a660a597800e1ae9304714c82fa"
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/a2a.md",
@@ -97,35 +191,91 @@
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/acp.md",
-      "sha256": "bbc3df01534662c52b3a48cfdec07be018561b2b14174d972b80d691e28cce02"
+      "sha256": "7b14067f750027315f3e47b732234e70bf890cdba35bc1f04d922a8f2d27e7d2"
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/agui.md",
       "sha256": "6b4ce54d9b2b083f927ce7e30b41deca7245814a18e1a5d831b432b288d3c371"
     },
     {
+      "path": "openspec/changes/openai-client-tools/handoffs/anthropic-history-repair.md",
+      "sha256": "53ea6f2c90d15ff664253289fa470c3103e19b2d0f19eba67282313a54932081"
+    },
+    {
       "path": "openspec/changes/openai-client-tools/handoffs/anthropic.md",
       "sha256": "abba45e57603c89d9b5dd70e09d41163ca443417aec2333bead1820e21b62e7e"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/budget-error-projection-repair.md",
+      "sha256": "b22c5e9f55bb3eaa4c79b83720bff421e7ef6aeac81a9feb431f3d2fb204de2b"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/budget-storage-repair.md",
+      "sha256": "e142149cce44bc4a23ef00dee2d1d1941344222a0471ecdfe9b6716108c4d0a3"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/cold-budget-provider-health-repair.md",
+      "sha256": "98e3370c453d9055a85168fdea8116ee99c84606fa8240217b49488dbba744c5"
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/documentation.md",
       "sha256": "6e53bf7a1b75522e86a9e8ce8619c176ed33b113118e48943358cbf8ad71a999"
     },
     {
+      "path": "openspec/changes/openai-client-tools/handoffs/graph-approval-gate-plan.md",
+      "sha256": "7d9cc31034e14ba6d55424cccc744ac611c299fb0d2d3c8cb3c86f8a180c94c5"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/graph-child-tools-repair-plan.md",
+      "sha256": "289e71eff00f2d9884f054e96ca691d2d145f67fb2398fe4bd6b7c80904d3b91"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/graph-child-tools-thread-plumbing.md",
+      "sha256": "74c1d7129e5ecfaf09c4afc153438d3ee4aa6895d48ff9678eb0befe9d2dc0c5"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/graph-source-run-repair.md",
+      "sha256": "8789568308371833e4497df5a3122dba9d125a28181ecd677c3bb894f3898da7"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/local-gate-remaining-plan.md",
+      "sha256": "480e609f4da30ed5c0756d75e04d869bbb3b23978348e29b078a03d97a4d25cd"
+    },
+    {
       "path": "openspec/changes/openai-client-tools/handoffs/local-gate.md",
-      "sha256": "5842496c74069172d39792c03c00ec9bd117b9ae5d95471212fd65056eeddab5"
+      "sha256": "125d207f0e37ea0e5e831564c7d99ef5653f6da4324176ae7aed5ead3d14e36e"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/mixed-crash-seed-proof-repair.md",
+      "sha256": "2ecb06b339eeac18982ed917db5b85e8fdd51c8c9d32ba847fe44290cc2411aa"
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/openai.md",
-      "sha256": "2d0bd466472e89c607f78c662eb01b39a4f40afcf3743cb90a64c06de2d3f37c"
+      "sha256": "89f0b71ae4c254147340f1cf739efea7c1471b8b120adff8bdbab894991fe65f"
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/persistence.md",
       "sha256": "3c49116d40462cd671b98fadb90b273e457806db0274d451c81f1162370d0bb2"
     },
     {
+      "path": "openspec/changes/openai-client-tools/handoffs/provider-identity-repair.md",
+      "sha256": "414c2d0f879205550c42d9334a19d2dfb5b676e2398aa2d3c5c74839c18fc84b"
+    },
+    {
       "path": "openspec/changes/openai-client-tools/handoffs/provider.md",
       "sha256": "281c33b4c3b47b28c3bc6a160551dadcca2a8ab3953ea0cd54893f0212651493"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/remaining-acceptance-audit.md",
+      "sha256": "98876f9836bd9f4bd16d73ac8c3fffb0686c8914f6fc1004085daf0193b186b8"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/remaining-driver-repair.md",
+      "sha256": "1903d6edfab31b86c40420f05dee9ee63f3c587084af9428158e7a9781b67c4e"
+    },
+    {
+      "path": "openspec/changes/openai-client-tools/handoffs/remaining-safety-authoring.md",
+      "sha256": "c07de30a8a8c002b316eb825de40cc9e69c73a97201c9118181ec03aeba55bbd"
     },
     {
       "path": "openspec/changes/openai-client-tools/handoffs/services.md",
@@ -133,11 +283,11 @@
     },
     {
       "path": "openspec/changes/openai-client-tools/proposal.md",
-      "sha256": "5f0251145db034090964ade00bc37ef8d54f8159c0f29c9667cb5d950181a088"
+      "sha256": "34a108ec499d59004d535dc88d251ec4444ab47b3d0cea0955c0d5d03effcf40"
     },
     {
       "path": "openspec/changes/openai-client-tools/specs/caller-tool-continuation/spec.md",
-      "sha256": "048422681ad8ff8e16940b0245d70d42f453288d3fdc9a596c4bbe4fb56514fa"
+      "sha256": "f523c39b4cbde6d8a3bc2540e1b865b2bb6b9f1bfbb5b6f78229a6330175547f"
     },
     {
       "path": "openspec/changes/openai-client-tools/specs/openai-compatible-client-tools/spec.md",
@@ -145,7 +295,7 @@
     },
     {
       "path": "openspec/changes/openai-client-tools/tasks.md",
-      "sha256": "edf50e00bf1a02cc00518ac732022a2afd10e6c5d50eb036e65100173abb2ad8"
+      "sha256": "0c53c5641d1e148a501d53dd29ce6683c60031dda7b92fbff8d043d5c05722cc"
     },
     {
       "path": "scripts/post_lifecycle/controlled_peer.py",
@@ -169,11 +319,15 @@
     },
     {
       "path": "scripts/release/client_tools_acceptance.py",
-      "sha256": "2ee026f14b959f1cc5f89987051b7899685c593704f9dc08ba3a746e35c9b3c4"
+      "sha256": "d8e1d79a9153362191b65e777b865a53afb2c1bd64b430a72a2f612cd0fbe2d2"
     },
     {
       "path": "scripts/release/client_tools_local_gate.py",
-      "sha256": "b87c639470a0e218b4bcd360c181716ea17f7625bfd6cec7094a73f1bdcea9d2"
+      "sha256": "4638673f7849eefd740ca6914b248f6333fe6ca76058561c2d968f1d3c20768d"
+    },
+    {
+      "path": "src/config.rs",
+      "sha256": "652f26f8aae67919eda0db18c5e9658406032286f25d195cc23fe181938c3036"
     },
     {
       "path": "src/llm/anthropic_cache.rs",
@@ -193,7 +347,7 @@
     },
     {
       "path": "src/llm/liter_driver.rs",
-      "sha256": "5ef53c34e4659302e7f7fe19af826e73a67301c3a02f572f2199b631d617549e"
+      "sha256": "8504807d41920a9e2c72dbb261dbec21834e4199f6a5997cc06a3994acabda90"
     },
     {
       "path": "src/llm/mod.rs",
@@ -201,7 +355,7 @@
     },
     {
       "path": "src/llm/orchestrator.rs",
-      "sha256": "952220f8f23333df9ae31841412187aa39f1c760e0d5676d17d2973c795501b0"
+      "sha256": "5ad6323e60d098d995a7efc4eea16a7a9382a89d5fe64a60bfa6254d6a7011f8"
     },
     {
       "path": "src/llm/xml_tool_injector.rs",
@@ -213,11 +367,11 @@
     },
     {
       "path": "src/server.rs",
-      "sha256": "0068c80c837ddc29421529237e2c7eb165a5dc08fb0ff484cff0797dc89251a7"
+      "sha256": "1273ebf9dddcd737413ca7f92a0ffc4d9d01e18f61bbdeca272969b68b0941d9"
     },
     {
       "path": "src/uar/api/a2a/client_tools.rs",
-      "sha256": "53bb0f23986edf99eafc7ba970eb619642b333c328cd5efa08c8cc3a1092ab08"
+      "sha256": "ce14878abfd55b31f8cabcb2da4110b5daed8a4c84ee5b4ee456177c8457e5ca"
     },
     {
       "path": "src/uar/api/a2a/mod.rs",
@@ -225,7 +379,7 @@
     },
     {
       "path": "src/uar/api/a2a/thread_service.rs",
-      "sha256": "01e00103c0aa00f515240ad4bf4aa2cb44938d2cd31ab2a681cdc6c7d6b2886b"
+      "sha256": "968e3948591eaf867f0acf873bc10ec36a4cef4e8953d14585abf04e004ce3c4"
     },
     {
       "path": "src/uar/api/a2a/v1.rs",
@@ -233,7 +387,7 @@
     },
     {
       "path": "src/uar/api/acp/handler.rs",
-      "sha256": "aa3736ae3ba9d11c8773bc71b59ab71941371d6748e8e9ce3e84b7409fd889d7"
+      "sha256": "5c9f4a497e6727311a94d5dce821955cd2bcbf6d0491ffcc4be24e1acf1e7215"
     },
     {
       "path": "src/uar/api/acp/mod.rs",
@@ -245,7 +399,7 @@
     },
     {
       "path": "src/uar/api/acp/types.rs",
-      "sha256": "e86ababb74fa365ad055139ca336f39316cbb014cf2b02b55ef7821a48a3c2ea"
+      "sha256": "568ef8629b627a74d3219b0404671cd8dc00d2010339ef922e6f116e66992138"
     },
     {
       "path": "src/uar/api/adapters.rs",
@@ -253,11 +407,11 @@
     },
     {
       "path": "src/uar/api/agui.rs",
-      "sha256": "cc94da0044b7d06843da774c41f8c5c40cd2775954dbda458f9cc2388a71c7b0"
+      "sha256": "7e0113921ef66fefeef36cf91fb16708e56c99aa17940c3c3fd89bfb0b1daf22"
     },
     {
       "path": "src/uar/api/client_tools.rs",
-      "sha256": "20c77015b850623c6c96bfacf6769f90d32a8b2bd4e55272a7f7784496d5c25c"
+      "sha256": "3b3534ff53485b8228702e6d4d5a20425c5689a0591485a26f19a7905ebd8e55"
     },
     {
       "path": "src/uar/api/mod.rs",
@@ -265,11 +419,11 @@
     },
     {
       "path": "src/uar/api/openai/routes.rs",
-      "sha256": "6d044578a7e55a5d6616b8c29b746903b75ebd2f48f0c3a24c9009f75f66f291"
+      "sha256": "92d4563af7f486a4e0087c9427615d2facd5c9f065f8a105d015904fb0fdd023"
     },
     {
       "path": "src/uar/api/openai/types.rs",
-      "sha256": "1a610dcf67e76416258f94cf9ab56b86a12394739c8077ccda89d078489f2e90"
+      "sha256": "16a8623f816428665b2c1c9e96e5cc1effe71752d4f55617188567e8f719d51e"
     },
     {
       "path": "src/uar/api/providers.rs",
@@ -293,31 +447,31 @@
     },
     {
       "path": "src/uar/persistence/client_tools.rs",
-      "sha256": "0c63d5894bea90169a781142e19cf84694ae528423ccc5841d12d13ec81a2576"
+      "sha256": "ae7f3dcee8bd886a5be4462f0025d3e0ae27f26bbe6563fd3969fda724d4c57d"
     },
     {
       "path": "src/uar/persistence/mod.rs",
-      "sha256": "e2edca44dbe4d0b353eeecfcf0f26b1916f085e4ede0ba8910a0698ba77b1a89"
+      "sha256": "8b70fb0f75841918d9dc6566116c3666c095ec1fca94bb98a4f56d6da0b27259"
     },
     {
       "path": "src/uar/persistence/providers/accounting/surreal.rs",
-      "sha256": "235d830736c7747ebf49211572591c361758335237ef7fae96d7a5b801cf9829"
+      "sha256": "ba01b8938483ccc6e83facb30bc90813cc77527fea60c97f6114d789da960a09"
     },
     {
       "path": "src/uar/persistence/providers/client_tools/postgres.rs",
-      "sha256": "d60279acf4f08b0aeb4a4dd2d8af560a97ab79b1039a667ac8b5d0050ad37192"
+      "sha256": "028f8d9b5daaf397eda30d4309c9005e87efce424862101ef097a9f52d93a8d7"
     },
     {
       "path": "src/uar/persistence/providers/client_tools/surreal.rs",
-      "sha256": "2fb4b8bb08fe228b58128d78412075836f649c50e7b3ba6875741275d455aa82"
+      "sha256": "253379b6561e4720d99555ed73241396d83794cd18df61a6b45df5e4d2bf6483"
     },
     {
       "path": "src/uar/persistence/providers/postgres.rs",
-      "sha256": "37737d3c73caf5d49fdbb1a4dd98d4d08df4a60f7c5e956b42f269640583cfdc"
+      "sha256": "cfd38dc1541487c5d2358fade7ec29564b8ab0516d6a5e5185df7a3eacd541b7"
     },
     {
       "path": "src/uar/persistence/providers/surreal.rs",
-      "sha256": "25848444b584762dd58f1a34130e36c70ece5c8af95940d15832a2303396c12a"
+      "sha256": "78c99df08b752be462dc188182a98f19d68f80391a3961ea33b7965f3fb6f8ec"
     },
     {
       "path": "src/uar/persistence/providers/surreal_host.rs",
@@ -325,7 +479,7 @@
     },
     {
       "path": "src/uar/persistence/scoped.rs",
-      "sha256": "c1788b6f78a6bb3d2243b21b52ad0e95c2b907a00fec303e7eebdc48609e63ae"
+      "sha256": "ff86bbfcaeb5cfa2df08bea455858154c8db280d2a79e0f264cbd0627726014e"
     },
     {
       "path": "src/uar/runtime/actor/agent_actor.rs",
@@ -357,11 +511,19 @@
     },
     {
       "path": "src/uar/runtime/cost_budget.rs",
-      "sha256": "e7ab2f48978c88ab5f3e8797729a54d835da9404c6ea5c847ed5b9904bda6b05"
+      "sha256": "45248cab0de43b8b449f9e6a0401a1a693534921329dcfc5c7025526541bbc39"
+    },
+    {
+      "path": "src/uar/runtime/graph/delegation.rs",
+      "sha256": "1360a7a68176af83c4ac25db7a278cce8c8b3624ac65d621284b92b984002586"
     },
     {
       "path": "src/uar/runtime/graph/engine.rs",
       "sha256": "f2c232cf370728166e85547562db43166113d6606700d4b2844bcd146dd54533"
+    },
+    {
+      "path": "src/uar/runtime/graph/nodes/agent_node.rs",
+      "sha256": "7cc2b2722a75ebbea8a5c3ba4599226f7f5bc34af16e44891662184a39348dec"
     },
     {
       "path": "src/uar/runtime/graph/nodes/llm_node.rs",
@@ -381,7 +543,7 @@
     },
     {
       "path": "src/uar/runtime/manager.rs",
-      "sha256": "c43aa6213eda6dbe41ac1fc2591ecd6126ca0ab3a4d499ca193746376be2249e"
+      "sha256": "f738b05f5fe08d8e943ef7a74190179c9ee73fb099d10280e11b364d37576b7b"
     },
     {
       "path": "src/uar/runtime/presentation_history_tests.rs",
@@ -389,11 +551,23 @@
     },
     {
       "path": "src/uar/runtime/thread/actor_host.rs",
-      "sha256": "eeef03723f6458b9b20e3cde86b0375d9b4947c551a71979a3f74773e6684272"
+      "sha256": "cb50224cbefddcfbbafacae4cbe8e11442315c2c567689aad257d74659728831"
+    },
+    {
+      "path": "src/uar/runtime/thread/control.rs",
+      "sha256": "2c4175e5136cd6feaf1fe1a25de2a9f95fc8cb5343bfca30bc5ae7fa9e0aa6fe"
     },
     {
       "path": "src/uar/runtime/thread/graph_host.rs",
       "sha256": "18ba14a5c0537de8d9a610cbd1623f404216d4a40eae94a69eca5b6ad065889b"
+    },
+    {
+      "path": "src/uar/runtime/thread/kernel.rs",
+      "sha256": "c74d8c02d410b4bfe340b920374072ef09fb42f7177ec6b9aeb5b5289d0f3460"
+    },
+    {
+      "path": "src/uar/runtime/thread/service.rs",
+      "sha256": "2a5dc0a2e03e1ddd66b153559303212f43891cb5d4e9d611a3246c9c3c42e4de"
     },
     {
       "path": "src/uar/runtime/turn/builtin.rs",
@@ -401,7 +575,7 @@
     },
     {
       "path": "src/uar/runtime/turn/client_tools.rs",
-      "sha256": "946fcf5e495ce702d88391d8e3f15874db1d915cd209db8a400ca16113499251"
+      "sha256": "b7d3262ab907f9ee0fd934e178c44a288e0cbf9fb0d7fb2d0e5ccafe618e94bc"
     },
     {
       "path": "src/uar/runtime/turn/host/event_projection.rs",
@@ -429,7 +603,7 @@
     },
     {
       "path": "tests/fixtures/client_tools_provider.py",
-      "sha256": "b3c9ba68834f51b3c49538f0135e34ada612c6060d5e149548ac56ab95d90e7e"
+      "sha256": "a27bb24518bbf68e6c52923710dd9fafcc17f561788a23bef08aa44c27d69f14"
     },
     {
       "path": "tests/model_path_resiliency.rs",
@@ -444,6 +618,10 @@
       "sha256": "4887bdd89c22d1845b911d0b4794890df47d82ab64d6e4ff7b1f6991ef67486c"
     },
     {
+      "path": "tests/settings_persistence.rs",
+      "sha256": "aa5be1cf203b8ce84c38a0634eafeb29e0b048e8d67a2b07e6bf37e2513ffb0d"
+    },
+    {
       "path": "tests/support/post_lifecycle_count.rs",
       "sha256": "e4be492f3f959a57cfab5651204fd5828825312c30eadc9c9abfe572518090c0"
     },
@@ -453,7 +631,7 @@
     }
   ],
   "review": "Prior isolated source review completed; build-driven graph/SSE repairs have no corrective-review or compiler receipt.",
-  "canonicalRevision": 166,
+  "canonicalRevision": 257,
   "aggregateReconciliation": {
     "rootCompletion": {
       "completed": 144,
@@ -576,16 +754,6 @@
       }
     ],
     "activePhaseChanges": {
-      "openai-client-tools": {
-        "status": "complete",
-        "tasksComplete": 17,
-        "tasksTotal": 17
-      },
-      "pl-main-boundary-evidence": {
-        "status": "complete",
-        "tasksComplete": 3,
-        "tasksTotal": 3
-      },
       "pl-main-budget-reconciliation": {
         "status": "complete",
         "tasksComplete": 3,
@@ -605,13 +773,52 @@
         "status": "complete",
         "tasksComplete": 3,
         "tasksTotal": 3
+      },
+      "pl-main-boundary-evidence": {
+        "status": "complete",
+        "tasksComplete": 3,
+        "tasksTotal": 3
+      },
+      "openai-client-tools": {
+        "status": "complete",
+        "tasksComplete": 41,
+        "tasksTotal": 41
       }
     }
   },
   "reviewArtifact": ".agent-team/uar-core/reviews/client-tools/source-review.md",
-  "lastBuildReceipt": "client-tools-build-003.json",
-  "postBuildDocumentation": "Corrected stale --model acceptance example to actual separate --openai-model/--anthropic-model flags; production source unchanged since build003.",
-  "proposedUnexecutedRuntimeGate": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-001",
-  "localGateReview": "Initial review BLOCKED cleanup; writer repaired source and isolated HOME. No corrective review or execution yet.",
-  "releaseDirection": "Operator requested immediate1.2.1 publication before functional acceptance; source tag/Docker publication authorized, acceptance still pending."
+  "lastBuildReceipt": "client-tools-build-015.json",
+  "postBuildDocumentation": "Sourcechangedafterbuild011: realAgentNode graphchildcaller capture/rootbinding+joins andnativeapprovaldriver. BothreviewsCLEAR; budgetcatalogueproof sourceaudit unchanged.",
+  "proposedUnexecutedRuntimeGate": "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-017 --extended",
+  "localGateReview": "All current bounded source reviews have no blocking findings; compilation and functional acceptance pending.",
+  "releaseDirection": "1.2.1 published beforeacceptance per operator. Repairs are1.2.2candidate; publish newimmutablepatch afterpassing localacceptance, preserve1.2.0/v1.2.1tags.",
+  "canonicalSourceRevision": 257,
+  "reviewArtifacts": [
+    ".agent-team/uar-core/reviews/client-tools/a2a-mailbox-review.md",
+    ".agent-team/uar-core/reviews/client-tools/a2a-mixed-projection-review.md",
+    ".agent-team/uar-core/reviews/client-tools/acp-selected-agent-review.md",
+    ".agent-team/uar-core/reviews/client-tools/actor-current-policy-review.md",
+    ".agent-team/uar-core/reviews/client-tools/agui-concurrent-replay-review.md",
+    ".agent-team/uar-core/reviews/client-tools/agui-settlement-review.md",
+    ".agent-team/uar-core/reviews/client-tools/budget-proof-plan.md",
+    ".agent-team/uar-core/reviews/client-tools/cancellation-crash-review.md",
+    ".agent-team/uar-core/reviews/client-tools/extended-supervisor-review.md",
+    ".agent-team/uar-core/reviews/client-tools/gate-ingest-repair-review.md",
+    ".agent-team/uar-core/reviews/client-tools/gate-model-verification-review.md",
+    ".agent-team/uar-core/reviews/client-tools/gate-policy-fixture-review.md",
+    ".agent-team/uar-core/reviews/client-tools/graph-approval-driver-review.md",
+    ".agent-team/uar-core/reviews/client-tools/graph-child-persistence-review.md",
+    ".agent-team/uar-core/reviews/client-tools/graph-child-runtime-review.md",
+    ".agent-team/uar-core/reviews/client-tools/graph-redacted-approval-review.md",
+    ".agent-team/uar-core/reviews/client-tools/local-gate-corrective-review.md",
+    ".agent-team/uar-core/reviews/client-tools/local-gate-source-review.md",
+    ".agent-team/uar-core/reviews/client-tools/matrix-batch-rust-review.md",
+    ".agent-team/uar-core/reviews/client-tools/mounted-openai-review.md",
+    ".agent-team/uar-core/reviews/client-tools/remaining-driver-review.md",
+    ".agent-team/uar-core/reviews/client-tools/safety-gate-review.md",
+    ".agent-team/uar-core/reviews/client-tools/source-review.md",
+    ".agent-team/uar-core/reviews/client-tools/startup-repair-review.md"
+  ],
+  "postPublicationGatePlan": "Run same extended supervisor inside canonical published1.2.2 image digest with minimal source-only bundle, isolated writable evidence and --network none. Tests local; bundledUI/skilltoolchains not certified.",
+  "exitContract": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md"
 }

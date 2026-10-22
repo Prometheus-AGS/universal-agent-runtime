@@ -1,0 +1,10 @@
+{
+  "version": "1.2.2 candidate",
+  "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "session": 51431,
+  "exitCode": 0,
+  "output": "Finished dev profile [unoptimized + debuginfo] in 3m 32s",
+  "warning": "Existing vendored SurrealDB OnceLockExt unused import only",
+  "authority": "Operator explicit local functional test/fix/retest loop",
+  "acceptance": "Build only; functional acceptance pending"
+}

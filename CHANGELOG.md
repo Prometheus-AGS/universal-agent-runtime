@@ -4,6 +4,24 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.2.2 — 2026-10-22 (native contract passed; image proof pending)
+
+- Wired the actual mounted OpenAI endpoint to the durable caller-tool loop with
+  complete history, controls, output caps and existing protected admission.
+- Corrected AG-UI cleanup observation and completed concurrent replay; A2A mailbox,
+  binding revision, replay and observer cancellation; and ACP selected-agent and
+  validated cold-session restoration.
+- Re-resolve current agent policy for caller-tool actor roots while preserving
+  remote restrictions. Corrected Anthropic optional history fields and explicit
+  endpoint adapter capability identity.
+- Added configurable native ingestion directory, preserving `/data/ingest`, and
+  retained substantive accounting diagnostics. Added real all-five safety and
+  warm/cold continuation gates, plus governed graph-child caller handoff and
+  root/child producer correlation. Preserve Anthropic/ACP budget-error reasons and
+  keep local budget refusals out of provider outage cooldown. Functional acceptance
+  passed locally across all five interfaces, including warm/cold graph, budgets and
+  settled mixed-host-effect crash recovery. Exact published-image proof is pending.
+
 ## 1.2.1 — 2026-10-22 (functional acceptance pending)
 
 - Authored caller-owned function declarations, selection/parallel controls,
