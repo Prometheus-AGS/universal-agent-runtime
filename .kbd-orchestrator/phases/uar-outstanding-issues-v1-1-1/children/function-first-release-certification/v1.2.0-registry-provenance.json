@@ -1,0 +1,95 @@
+{
+  "canonical_index": "sha256:dec5284e97b78ff65a66ef19eb43632154e23ea946f05a1d241cf979dd09566d",
+  "manifests": [
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:2c4cee9cc7f8a55dce6e537eb06153be92c46cde04535e507cd8e42f751dec5f",
+      "size": 3562,
+      "platform": {
+        "architecture": "arm64",
+        "os": "linux"
+      }
+    },
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:c96ae1623fc0d64130ad6699e86408bb96eccd9a1e9fd0ed30b8f0e788947165",
+      "size": 838,
+      "annotations": {
+        "vnd.docker.reference.digest": "sha256:2c4cee9cc7f8a55dce6e537eb06153be92c46cde04535e507cd8e42f751dec5f",
+        "vnd.docker.reference.type": "attestation-manifest"
+      },
+      "platform": {
+        "architecture": "unknown",
+        "os": "unknown"
+      }
+    },
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:5f087ad0c0558cc2e48c68dda75e5db98faf00a47cbd9b0b7e146c0b3502d9fa",
+      "size": 3562,
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:bc2d81ebb55fddfaeb3909793dc3e0b8dfce5b0274f0a466a67d5bf1e09c718a",
+      "size": 838,
+      "annotations": {
+        "vnd.docker.reference.digest": "sha256:5f087ad0c0558cc2e48c68dda75e5db98faf00a47cbd9b0b7e146c0b3502d9fa",
+        "vnd.docker.reference.type": "attestation-manifest"
+      },
+      "platform": {
+        "architecture": "unknown",
+        "os": "unknown"
+      }
+    }
+  ],
+  "attestations": [
+    {
+      "manifest": "sha256:c96ae1623fc0d64130ad6699e86408bb96eccd9a1e9fd0ed30b8f0e788947165",
+      "subject": [
+        {
+          "name": "pkg:docker/ghcr.io/prometheus-ags/universal-agent-runtime@latest?platform=linux%2Farm64",
+          "digest": {
+            "sha256": "2c4cee9cc7f8a55dce6e537eb06153be92c46cde04535e507cd8e42f751dec5f"
+          }
+        }
+      ],
+      "predicate_type": "https://slsa.dev/provenance/v1",
+      "vcs_revision": "035bbdc702ba20daaa1add7294b35f5783ed6e0e",
+      "vcs_source": "https://github.com/Prometheus-AGS/universal-agent-runtime"
+    },
+    {
+      "manifest": "sha256:bc2d81ebb55fddfaeb3909793dc3e0b8dfce5b0274f0a466a67d5bf1e09c718a",
+      "subject": [
+        {
+          "name": "pkg:docker/ghcr.io/prometheus-ags/universal-agent-runtime@latest?platform=linux%2Famd64",
+          "digest": {
+            "sha256": "5f087ad0c0558cc2e48c68dda75e5db98faf00a47cbd9b0b7e146c0b3502d9fa"
+          }
+        }
+      ],
+      "predicate_type": "https://slsa.dev/provenance/v1",
+      "vcs_revision": "035bbdc702ba20daaa1add7294b35f5783ed6e0e",
+      "vcs_source": "https://github.com/Prometheus-AGS/universal-agent-runtime"
+    }
+  ],
+  "canonical_build_run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39696576430",
+  "source_commit": "035bbdc702ba20daaa1add7294b35f5783ed6e0e",
+  "functional_acceptance": "pending; operator gate CLOSED",
+  "alias_run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39797458655",
+  "published_aliases": {
+    "1.2.0": "sha256:dec5284e97b78ff65a66ef19eb43632154e23ea946f05a1d241cf979dd09566d",
+    "v1.2.0": "sha256:dec5284e97b78ff65a66ef19eb43632154e23ea946f05a1d241cf979dd09566d"
+  },
+  "historical_index_pullable": true,
+  "historical_index": "sha256:acb2f941d3749c976df6af6b2f329a496072b48b4cee83c36287b8634345c015",
+  "index_difference": "Runtime platform manifests identical; descriptor ordering differs; historical attestations name75bf899b7ec4e77b45861826c828dd360c034c66 whereas canonical attestations name035bbdc702ba20daaa1add7294b35f5783ed6e0e.",
+  "git_tag": {
+    "name": "v1.2.0",
+    "tag_object": "aac0e6079d912aaea64ebec5df56af058dba85ac",
+    "commit": "035bbdc702ba20daaa1add7294b35f5783ed6e0e"
+  }
+}

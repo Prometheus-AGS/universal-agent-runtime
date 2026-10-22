@@ -7,9 +7,9 @@
 
 ## Delivery
 - [x] Run explicitly approved pre/post deployment policy commands.
-- [ ] Commit and push scoped records/workflow with authorized commit hooks.
-- [ ] Pause deployment workflow, publish historical git tag and restore workflow.
-- [ ] Dispatch fixed-index alias publication.
+- [x] Commit and push scoped records/workflow with authorized commit hooks.
+- [x] Pause deployment workflow, publish historical git tag and restore workflow.
+- [x] Dispatch fixed-index alias publication.
 - [ ] Publish GitHub release and integration contract asset.
 - [ ] Report publication receipts on #425; retain acceptance in #421.
 
