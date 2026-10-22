@@ -6289,3 +6289,6 @@ CI's imagetools inspection verified both platforms under index
 sha256:acb2f941d3749c976df6af6b2f329a496072b48b4cee83c36287b8634345c015.
 Lock repair and compiler compatibility are delivered. Broader lifecycle
 functional acceptance is still unverified and closed; no Boss work performed.
+
+## 2026-10-22 — v1.2.0 publication preparation
+Issue425 scoped implementation authored; attestation corrects source to035bbdc7 with operator approval. Policy gates passed only by exact exceptions; product verification CLOSED. Local registry push403; fixed-index deployment alias job authored. Child/parent pending ledger preserved. Publication receipt: child v1.2.0-release-publication.md.

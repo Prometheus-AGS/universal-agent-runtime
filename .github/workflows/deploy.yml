@@ -13,8 +13,35 @@ on:
       # jobs below). Does NOT match the boss-sidecar-*-v* tags above.
       - "v*"
   workflow_dispatch:
+    inputs:
+      publish_v1_2_0_alias:
+        description: Copy the existing immutable 1.2.0 index to v1.2.0 without rebuilding
+        type: boolean
+        default: false
 
 jobs:
+  ghcr-v1-2-0-alias:
+    name: Publish existing v1.2.0 alias
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_v1_2_0_alias && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Copy the complete immutable index
+        run: >-
+          docker buildx imagetools create
+          --tag ghcr.io/prometheus-ags/universal-agent-runtime:v1.2.0
+          ghcr.io/prometheus-ags/universal-agent-runtime@sha256:dec5284e97b78ff65a66ef19eb43632154e23ea946f05a1d241cf979dd09566d
+
   # ── 1. GHCR Multi-Arch Publish ───────────────────────────────────────────
   # Publishes a public ghcr.io/prometheus-ags/universal-agent-runtime image so
   # other projects can `docker pull` UAR instead of rebuilding it from source.
@@ -22,7 +49,7 @@ jobs:
   # boss-sidecar-* tags used by the sidecar release jobs below.
   ghcr-build:
     name: GHCR Build (${{ matrix.platform }})
-    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && github.ref != 'refs/tags/v1.2.0' && !inputs.publish_v1_2_0_alias }}
     runs-on: ${{ matrix.runner }}
     # ~3GB 5-toolchain image and a full Rust release compile; a cold GHA
     # cache needs >30min. Native arm64 runner avoids QEMU emulation entirely.
@@ -115,7 +142,7 @@ jobs:
 
   ghcr-merge:
     name: GHCR Merge Manifest
-    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && github.ref != 'refs/tags/v1.2.0' && !inputs.publish_v1_2_0_alias }}
     needs: ghcr-build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -150,8 +177,8 @@ jobs:
           tags: |
             type=sha,format=long
             type=raw,value=main,enable={{is_default_branch}}
-            type=raw,value=1.2.0,enable={{is_default_branch}}
             type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
