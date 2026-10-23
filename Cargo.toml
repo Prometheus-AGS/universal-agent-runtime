@@ -37,7 +37,7 @@ surrealdb-kvs-surrealkv = { path = "vendor/patches/surrealdb-lifecycle/surrealdb
 surrealdb-kvs-rocksdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0" }
 
 [workspace.dependencies]
-jsonwebtoken = { version = "=11.0.0", default-features = false, features = ["rust_crypto"] }
+jsonwebtoken = { version = "=11.1.0", default-features = false, features = ["rust_crypto"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-service = "=0.8.1"
