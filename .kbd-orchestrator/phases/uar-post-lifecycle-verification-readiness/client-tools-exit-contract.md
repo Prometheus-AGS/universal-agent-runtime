@@ -59,3 +59,7 @@ Current evidence: build012 passed compilation. Gate011 passed95 core,60 safety,f
 ## Current execution receipt, 2026-10-22T23:44Z
 
 The historical Current evidence paragraph above is superseded by nativegate017 anddiagnosticgate018: all9scopedgroupspassed, actualownedcleanupconfirmed. Immutable1.2.2 publishedsourcec065/index048d9c8e thenfailedexactLinuxamd64 image001 onAGUIhandoffsetup(94/95core); extendedimagegatesnotrun. Newsource61/61 completeatrevision265/plan96 includes reviewedper-runacknowledgmentserialization, fixedstagediagnostics andversion1.2.3/contracts. Build017active, nativegate019 next, thenimmutable1.2.3publication/exactimagegate002. Originalinnererrorunproven; noacceptancewaiverornewscope. Earlier1.2.0/1.2.1/1.2.2 tags remainfixed.
+
+## Finite exit achieved, 2026-10-23
+
+CT1–CT6 passed nativegate019 for1.2.3. CT7 passed exactpublishedLinuxamd64 imagegate002 at index7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195, sourcec4a656251b643bd83c8f1407286480dbfac76708:95core60safety5cancel, all9groups andownedcleanup/expectedexitsconfirmed. Pairedtags/source/platforms/attestations andalloldtagdigestsverified. Finalrelease/records publication completes the handoff; no further feature work or expanded verification is needed. Whole-estate andexcludedARM/PG/paidprovider acceptance are not claimed.

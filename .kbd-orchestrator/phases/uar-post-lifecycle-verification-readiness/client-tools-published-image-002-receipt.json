@@ -1,0 +1,78 @@
+{
+  "sourceCommit": "c4a656251b643bd83c8f1407286480dbfac76708",
+  "gitTag": "v1.2.3",
+  "canonicalIndex": "sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+  "platform": "linux/amd64",
+  "command": "docker run --rm --name uar-client-tools-v123-39875057583 --network none --no-healthcheck --platform linux/amd64 --user 501:20 --mount type=bind,source=/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-image-bundle-v1.2.3,target=/workspace --workdir /workspace --entrypoint python3 ghcr.io/prometheus-ags/universal-agent-runtime@sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195 scripts/release/client_tools_local_gate.py --binary /usr/local/bin/universal-agent-runtime --evidence target/client-tools-published-image-002 --extended",
+  "exitCode": 2,
+  "exitMeaning": "All nine finite CT groups passed;2 retains broader certification explicitly outside scope",
+  "status": "extended_passed_remaining_release_gates",
+  "acceptedFiniteContract": true,
+  "counts": {
+    "matrix": {
+      "passed": 95,
+      "failed": 0
+    },
+    "safety": {
+      "passed": 60,
+      "failed": 0
+    },
+    "cancellation": {
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "corePassedByProtocol": {
+    "openai": 19,
+    "anthropic": 19,
+    "agui": 19,
+    "a2a": 19,
+    "acp": 19
+  },
+  "completedLocalGates": [
+    "matrix",
+    "safety",
+    "cancellation",
+    "ordinary-cold",
+    "graph-warm",
+    "graph-cold",
+    "budget-warm",
+    "budget-cold",
+    "mixed-crash-recovery"
+  ],
+  "ownedShutdownClean": true,
+  "ownedShutdownCleanExcludesExpectedCrash": true,
+  "ownedExitStatusesExpected": true,
+  "cleanupStatus": "confirmed",
+  "expectedCrash": {
+    "action": "expected_crash_for_recovery",
+    "process": "candidate-4",
+    "pid": 2252,
+    "generation": 4,
+    "signal": 9,
+    "started_at_unix": 1792716703.5318942,
+    "joined_at_unix": 1792716703.5555105,
+    "joined": true,
+    "exit_code": -9,
+    "signal_delivered": true,
+    "expected_crash_confirmed": true,
+    "exit_status_expected": true,
+    "clean_shutdown": false,
+    "cleanup_confirmed": false,
+    "cleanup_errors": []
+  },
+  "backend": "Real SurrealKV through actual production HTTP/runtime/provider paths",
+  "provider": "Isolated controlled LLM/MCP HTTP peer",
+  "evidenceRoot": "target/client-tools-image-bundle-v1.2.3/target/client-tools-published-image-002",
+  "scope": "OpenAI Chat Completions, Anthropic Messages, AG-UI, A2A, ACP; CT1\u2013CT7 selected finite contract",
+  "excluded": [
+    "arm64 functional acceptance (image build only)",
+    "PostgreSQL functional acceptance (compiled only)",
+    "paidprovider certification",
+    "arbitrary remote graphs",
+    "crash-mid-effect exactly-once execution",
+    "every bundled asset",
+    "broader estate certification"
+  ],
+  "handoffAtReceiptCreation": "Acceptance completed before release publication; final handoff outcome is in v1.2.3-publication-receipt.json"
+}

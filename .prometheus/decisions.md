@@ -2334,3 +2334,5 @@ Operator requested kbd-plan to bound completion. CT-1–CT-7 in the active phase
 
 
 2026-10-22 — Preserve published1.2.2 after failedexactimageacceptance. Deliver necessary production correction onlyunder1.2.3; retainactual joins/durableCAS/authentication andfailclosedbehavior. Addressobserveddisagreeingconcurrenthandoffconfirmers withone source-runwriter; donotclaimunderlyingdiscardedstorageerrorproven. Exactnewimageacceptance remainsrequired.
+
+2026-10-23 — Supersedes pending1.2.3 publication/acceptance state only: exact image002 passed the finite CT1–CT7 contract and releasev1.2.3 is published. Preserve image/source identities permanently; do not broaden this successful gate. Original discarded1.2.2 inner error remains unproven; no upstream-defect or generic exactly-once assertion is introduced.

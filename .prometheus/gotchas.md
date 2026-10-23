@@ -2065,3 +2065,7 @@ Gate014 cold budget cases restored usage correctly, but three local pre-provider
 
 ## 2026-10-22 — Same-batch handoff has no post-host provider request
 Gate015 mixed-crash seed incorrectly searched the initial provider request for the host result produced by that response. Mixed host/client batches must settle host calls and hand off caller calls without another provider request. Bind the seed to actual controlled provider response and real MCP result receipts, then prove exact ordered canonical assistant-call/tool-result history after crash continuation. Do not add a forbidden provider call to make an impossible assertion pass.
+
+
+## 2026-10-23 — Native success is not delivered-image acceptance
+Nativegate017 passed but published1.2.2 image001 failed94/95 at AG-UI handoff acknowledgment. Exact call IDs proved another source run had disagreeing confirmation observers; the old generic warning hid the inner operation. Keep fixed-stage diagnostics without replacing original errors, serialize cooperating source-run acknowledgments and test the actual digest. Published1.2.3 image002 then passed all finite groups. The precise original inner error and any upstream cause remain unproven.

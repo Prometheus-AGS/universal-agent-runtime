@@ -1,10 +1,10 @@
 {
   "kind": "uar.whole-phase-source-authoring-inventory/v1",
   "phase": "uar-post-lifecycle-verification-readiness",
-  "planRevision": 97,
-  "head": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
-  "sourceIdentity": "HEADc065 plus reviewed frozen1.2.3 two-Rust-file correction, root version/lock and docs; production bytes accepted by nativegate019. Commit identity follows enabled hooks.",
-  "verification": "Native1.2.3 build017/gate019 PASS finite CT1\u2013CT6; exact published-image CT7 remains pending",
+  "planRevision": 98,
+  "head": "c4a656251b643bd83c8f1407286480dbfac76708",
+  "sourceIdentity": "Immutable release/image sourcec4a656251b643bd83c8f1407286480dbfac76708; production source unchanged after native019 and exact image002. Final main update contains records/docs only.",
+  "verification": "PASS finite CT1\u2013CT7: native019/exactLinuxamd64image002 all9groups, source/registry/tag/release proof delivered",
   "sourceAuthoringComplete": true,
   "phaseSourceTasks": {
     "baseline": 13,
@@ -27,11 +27,7 @@
     "production acceptance authoring",
     "contracts/specs/changelog"
   ],
-  "remaining": [
-    "Immutable1.2.3 source/tag/image publication",
-    "Exactimagegate002 CT7",
-    "Finalrelease/receipts"
-  ],
+  "remaining": [],
   "preservedOutsideScope": [
     ".codex/config.toml",
     "private Liter submodule state",
@@ -200,12 +196,16 @@
       "sha256": "ec70533c6a7ccb32016d43762d294382c48b87f00187f3a526dfb84f223d3a92"
     },
     {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-execution.md",
+      "sha256": "0db6b5b518868ed56681d89683cf75978a31ff916edabaaa50720849a7b33e23"
+    },
+    {
       "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract-recommendation.md",
       "sha256": "66477be70e2ceb13a8a0704440735f9c7c1d36dde060810c4a8fcd5fff1bda68"
     },
     {
       "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md",
-      "sha256": "0007961e54aa1b05213df70b1b986b8eeb54d8e4daf7ec464906fff7678c51cc"
+      "sha256": "1263e56a3437e1629ea69b48391a148d86b1fa795fae56772438fd36965cbc0d"
     },
     {
       "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-local-gate-018-receipt.json",
@@ -224,24 +224,36 @@
       "sha256": "779fa6eb8aa09e638ad69fc47ed1587917dfd92b6af82d2bc12ffcf01b46a8b0"
     },
     {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-002-command.json",
+      "sha256": "9687d2564c036ce43c0825ab9cd849b91bffbb52bbdb48658cec1e5dc38a5875"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-published-image-002-receipt.json",
+      "sha256": "fe71a161960c6737a00aaa651fd7c33ce8b32cc24aba4937bdb4a2582de1024f"
+    },
+    {
       "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.2.2-publication-receipt.json",
       "sha256": "17807f367cca8e3905237ae6a1e5060a54db9395f135f7b2dbc7d2a8b248e3c0"
     },
     {
+      "path": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.2.3-publication-receipt.json",
+      "sha256": "557506fac7de27745d89f5cdbfaeb7f740c76db5006035207398d5d0a4c13fbf"
+    },
+    {
       "path": ".prometheus/decisions.md",
-      "sha256": "3214383cf50f51bb37cd69eabd70298a3a1b0d23f398a9d1d09c781b839c0222"
+      "sha256": "5656a44cc655eecbd89efd62208ba7934c9fab1d375e003bb9dab23fddfa2143"
     },
     {
       "path": ".prometheus/gotchas.md",
-      "sha256": "9fdcebb07fb607998a0308e71a5f95cad481376c59feb0966d40b1e95eee722e"
+      "sha256": "293250dd9cbbad582ba3d8c58373375428d3d33a17d92220113c11dac7e101ad"
     },
     {
       "path": ".prometheus/session-log.md",
-      "sha256": "2ea6d96849d36305775ba8c5cd0500a06823cc4916da259cf76aeb320b3f8cf3"
+      "sha256": "33520456efe36f222f06038f9991e0a6f03419228fbe5f268c75ffa2ad8ebdf6"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "8ead4771f0e18c74aafbd919d1c017984dc31542cd3934a01017b8d4d4e28a52"
+      "sha256": "2c216f1ad753142d9cc8b8feda6bab84e352293472a524732b00315cc13b4d29"
     },
     {
       "path": "Cargo.lock",
@@ -280,8 +292,20 @@
       "sha256": "19d9d80da07d3e6048024c47bdd4d7f73477057c65c98320622582cb11f2eb5f"
     },
     {
+      "path": "docs/releases/v1.2.3-acceptance.md",
+      "sha256": "1f2bad992dab51f9073f1a06bc8e85c71fd7d903e23d5976dbf622cc93982b0b"
+    },
+    {
       "path": "docs/releases/v1.2.3-kubo.md",
-      "sha256": "cd6fb5223442d1597ff72d91f14b79faa0e12d076c93e40785c08e7b03cdfa85"
+      "sha256": "b3e919b257c5e2b5002e18d1a6777d9a0e680e0702f5dd12a5feed9ecc456446"
+    },
+    {
+      "path": "docs/releases/v1.2.3-publication.md",
+      "sha256": "92e5a21d1d7e70ae8764d48f6657ccd8ebce2e406341051873f8cd59c4cdd6ef"
+    },
+    {
+      "path": "docs/releases/v1.2.3-registry-provenance.json",
+      "sha256": "aca3b83aa2250f07bd9aafe67399cbf3482555fbe25428f2c3a4a3c7e459c7e6"
     },
     {
       "path": "example.config.yaml",
@@ -441,7 +465,7 @@
     },
     {
       "path": "openspec/changes/openai-client-tools/tasks.md",
-      "sha256": "4a747443e66ce92b8b47c4308c6e5d9e46a013133ebcbb7d6ed17085575b909a"
+      "sha256": "ee1a2ff94fda6c49fe35ac9b75108003cae4ddbbbe2f7e99f044cff8b32ec2e2"
     },
     {
       "path": "scripts/post_lifecycle/controlled_peer.py",
@@ -777,7 +801,7 @@
     }
   ],
   "review": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
-  "canonicalRevision": 266,
+  "canonicalRevision": 268,
   "aggregateReconciliation": {
     "rootCompletion": {
       "completed": 144,
@@ -935,10 +959,10 @@
   "reviewArtifact": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
   "lastBuildReceipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-build-017.json",
   "postBuildDocumentation": "Sourcechangedafterbuild011: realAgentNode graphchildcaller capture/rootbinding+joins andnativeapprovaldriver. BothreviewsCLEAR; budgetcatalogueproof sourceaudit unchanged.",
-  "proposedUnexecutedRuntimeGate": "Exact published Linuxamd64 imagegate002, index-bound command recorded after registry publication",
+  "proposedUnexecutedRuntimeGate": null,
   "localGateReview": "All current bounded source reviews have no blocking findings; compilation and functional acceptance pending.",
-  "releaseDirection": "Immutable1.2.3 source/tag/pairedimage after nativegate019, exactimagegate002 required; never move earlier versions",
-  "canonicalSourceRevision": 266,
+  "releaseDirection": "Complete; stop scoped work",
+  "canonicalSourceRevision": 268,
   "reviewArtifacts": [
     ".agent-team/uar-core/reviews/client-tools/a2a-mailbox-review.md",
     ".agent-team/uar-core/reviews/client-tools/a2a-mixed-projection-review.md",
@@ -966,23 +990,72 @@
     ".agent-team/uar-core/reviews/client-tools/startup-repair-review.md",
     ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md"
   ],
-  "postPublicationGatePlan": "Exactindex Linuxamd64 isolated container, minimalownedfixturebundle andexisting allfiveextendedsupervisor; no extraprobes",
+  "postPublicationGatePlan": "Completed imagegate002; no further gate requested",
   "exitContract": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-exit-contract.md",
   "diagnosticSource": {
     "path": "src/uar/api/client_tools.rs",
-    "sha256": "d66611f2efc2888bdb3f450b5f4ed8d2ed15e926065ba5207d30e5f36dbd6b0e"
+    "sha256": "d66611f2efc2888bdb3f450b5f4ed8d2ed15e926065ba5207d30e5f36dbd6b0e",
+    "supersededBy": "13.30 hashes in productionSourceHashes; old diagnostic-only hash is historical"
   },
-  "nextCommands": [
-    "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
-    "python3 scripts/release/client_tools_local_gate.py --evidence target/client-tools-local-gate-019 --extended"
-  ],
-  "generatedAtUTC": "2026-10-22T23:55:35.258742+00:00",
-  "sourceAuthoringFileCount": 184,
+  "nextCommands": [],
+  "generatedAtUTC": "2026-10-23T00:57:07.812584+00:00",
+  "sourceAuthoringFileCount": 191,
   "writerHandoffs": {
     "acknowledgment": "openspec/changes/openai-client-tools/handoffs/image-agui-singlewriter.md",
     "diagnostics": "openspec/changes/openai-client-tools/handoffs/image-agui-cleanup-diagnosis.md",
     "review": ".agent-team/uar-core/reviews/client-tools/image-agui-singlewriter-review.md",
     "otherSource": "Prior61-item inventory/sourcehandsoffs retained in files"
   },
-  "nativeAcceptanceReceipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-local-gate-019-receipt.json"
+  "nativeAcceptanceReceipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/client-tools-local-gate-019-receipt.json",
+  "publication": {
+    "sourceCommit": "c4a656251b643bd83c8f1407286480dbfac76708",
+    "gitTag": "v1.2.3",
+    "dockerTags": [
+      "1.2.3",
+      "v1.2.3"
+    ],
+    "normalHooks": {
+      "githubActionsPolicy": "passed0.66s",
+      "commitlint": "passed0.91s",
+      "automaticDependencyInstall": false,
+      "initialCommitAttempt": "policy passed; commitlint rejected long body line, message wrapped and normal hooks rerun; no bypass"
+    },
+    "push": "main andannotatedv1.2.3 succeeded",
+    "newDockerTagBeforeDispatch": "1.2.3 notfound; no prior image overwritten",
+    "dispatchCommand": "gh workflow run deploy.yml --ref v1.2.3",
+    "runId": 39875057583,
+    "runUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39875057583",
+    "state": "complete",
+    "nativeAcceptance": "CT1\u2013CT6 passed gate019; exactimageCT7 notyetexecuted",
+    "buildWaitStartedUTC": "2026-10-22T23:56:57Z",
+    "buildWaitPolicy": "External deployment build wait excluded from active no-progress budget",
+    "preserved": "1.2.0/1.2.1/1.2.2 source/image tags never moved",
+    "remaining": [
+      "pairedindex/source/platform/attestation/frozenoldtag proof",
+      "Exactindex Linuxamd64 full local gate002",
+      "GitHubrelease andfinalrecords"
+    ],
+    "runConclusion": "success",
+    "canonicalIndex": "sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+    "releaseUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.2.3"
+  },
+  "finiteContractComplete": true,
+  "releaseUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.2.3",
+  "canonicalIndex": "sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+  "publicationReceipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.2.3-publication-receipt.json",
+  "productionSourceHashes": {
+    "src/uar/api/client_tools.rs": "60607261fa271e3ff027127b357a0d88301bf9699118f36da2b8ff4a78d4b76d",
+    "src/uar/runtime/manager.rs": "241d0b86557a9a9fb1cda1eb334477123790b368f09370028bed22f04a77a1cb",
+    "Cargo.toml": "2fbda42e8f3a46d49631ae49c86044dbfd625a7b75e46b9d3a31351e0e5d85b4",
+    "Cargo.lock": "c9e79a339f61da7d28f95994bebc4b169ef5d6751c614215b43358c8e7d06bbb"
+  },
+  "excludedAcceptance": [
+    "arm64 functional acceptance (image build only)",
+    "PostgreSQL functional acceptance (compiled only)",
+    "paidprovider certification",
+    "arbitrary remote graphs",
+    "crash-mid-effect exactly-once execution",
+    "every bundled asset",
+    "broader estate certification"
+  ]
 }

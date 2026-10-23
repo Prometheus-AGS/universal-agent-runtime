@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 266,
-  "derivedRevision": 266,
+  "sourceRevision": 268,
+  "derivedRevision": 268,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 154,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 156,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
@@ -31,10 +31,10 @@
   "completionMetric": "implementation",
   "implementationCompleted": 144,
   "implementationTotal": 166,
-  "planRevision": 97,
-  "revision": 266,
-  "exactNextCommand": "Commit reviewed1.2.3 with enabled required hooks, push main and annotatedv1.2.3, dispatch test-disableddeploy; prove source/pairedindex/platforms/attestations/frozenoldtags, run exactimagegate002 locally, publish finalrelease/receipts andstop.",
+  "planRevision": 98,
+  "revision": 268,
+  "exactNextCommand": "STOP scoped caller-tool work after final records push. Releasev1.2.3 sourcec4a/index7fa7973f accepted under finite CT1-CT7. Broader phase/ARMfunctional/PGfunctional/paidprovider verification remains CLOSED and unclaimed.",
   "nextChange": null,
   "nextTask": null,
-  "updatedAt": "2026-10-22T23:55:34.809853Z"
+  "updatedAt": "2026-10-23T00:57:07.499024Z"
 }

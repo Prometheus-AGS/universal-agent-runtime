@@ -4,7 +4,7 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
-## 1.2.3 — 2026-10-22 (native contract passed; image proof pending)
+## 1.2.3 — 2026-10-22 (published; scoped functional acceptance passed)
 
 - Serialize caller-tool source acknowledgment across observers of the same live
   run while retaining actual producer joins, durable settlement CAS and exact
@@ -13,7 +13,9 @@ contracts identified in the product support matrix.
 - Addresses the competing AG-UI confirmation paths observed during exact-image
   testing of1.2.2. The original inner error was discarded, so the precise failing
   operation is not claimed proven. Nativegate019 passed the complete finite
-  CT1–CT6 contract; exact published-image acceptance remains pending.
+  CT1–CT6 contract. The exact published Linuxamd64 image then passed all nine
+  finite groups (95core,60safety,fivecancellation plus recovery), with confirmed
+  cleanup. Arm64 is built; its functional acceptance remains outside this gate.
 - Preserves the five-interface caller/host ownership and continuation contract.
   Published1.2.0,1.2.1 and1.2.2 tags remain immutable. See
   [the1.2.3 integration contract](docs/releases/v1.2.3-kubo.md).

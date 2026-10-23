@@ -1,0 +1,141 @@
+{
+  "sourceCommit": "c4a656251b643bd83c8f1407286480dbfac76708",
+  "gitTag": "v1.2.3",
+  "dockerTags": [
+    "1.2.3",
+    "v1.2.3"
+  ],
+  "normalHooks": {
+    "githubActionsPolicy": "passed0.66s",
+    "commitlint": "passed0.91s",
+    "automaticDependencyInstall": false,
+    "initialCommitAttempt": "policy passed; commitlint rejected long body line, message wrapped and normal hooks rerun; no bypass"
+  },
+  "push": "main andannotatedv1.2.3 succeeded",
+  "newDockerTagBeforeDispatch": "1.2.3 notfound; no prior image overwritten",
+  "dispatchCommand": "gh workflow run deploy.yml --ref v1.2.3",
+  "runId": 39875057583,
+  "runUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39875057583",
+  "state": "COMPLETE: immutable Docker/git publication, finite exact-image acceptance and GitHub release delivered",
+  "nativeAcceptance": "CT1\u2013CT6 passed gate019; exactimageCT7 notyetexecuted",
+  "buildWaitStartedUTC": "2026-10-22T23:56:57Z",
+  "buildWaitPolicy": "External deployment build wait excluded from active no-progress budget",
+  "preserved": "1.2.0/1.2.1/1.2.2 source/image tags never moved",
+  "remaining": [],
+  "runConclusion": "success",
+  "canonicalIndex": "sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+  "platforms": {
+    "linux/amd64": "sha256:8c1fa48479fd45330ab1cde63a90e46b9e6fb863fc8d04cc7f508ea9599d5ad0",
+    "linux/arm64": "sha256:9b89331e76c4eed885e0866ccfc0993816cae1a2c174f2c21c2674e3b71ce474"
+  },
+  "sourceAttestationRevisions": {
+    "linux/amd64": "c4a656251b643bd83c8f1407286480dbfac76708",
+    "linux/arm64": "c4a656251b643bd83c8f1407286480dbfac76708"
+  },
+  "remoteGitTags": {
+    "refs/tags/v1.2.0": "aac0e6079d912aaea64ebec5df56af058dba85ac",
+    "refs/tags/v1.2.0^{}": "035bbdc702ba20daaa1add7294b35f5783ed6e0e",
+    "refs/tags/v1.2.1": "a07cbb747c5aebd1ab4325071022a13f2e01be71",
+    "refs/tags/v1.2.1^{}": "dd896d5a66eda825f0076c1f35ba05f2dea6324c",
+    "refs/tags/v1.2.2": "6f2801eb49298d6c5d5cfb07faa8ff8f8d6ce111",
+    "refs/tags/v1.2.2^{}": "c065bb0798f5bbbd4a878a0c41c04cb4e8a75ad6",
+    "refs/tags/v1.2.3": "0eb60d6face9481b32547067152897475a3d4821",
+    "refs/tags/v1.2.3^{}": "c4a656251b643bd83c8f1407286480dbfac76708"
+  },
+  "oldDockerTagsUnchanged": true,
+  "postPublicationAcceptance": {
+    "sourceCommit": "c4a656251b643bd83c8f1407286480dbfac76708",
+    "gitTag": "v1.2.3",
+    "canonicalIndex": "sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+    "platform": "linux/amd64",
+    "command": "docker run --rm --name uar-client-tools-v123-39875057583 --network none --no-healthcheck --platform linux/amd64 --user 501:20 --mount type=bind,source=/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-image-bundle-v1.2.3,target=/workspace --workdir /workspace --entrypoint python3 ghcr.io/prometheus-ags/universal-agent-runtime@sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195 scripts/release/client_tools_local_gate.py --binary /usr/local/bin/universal-agent-runtime --evidence target/client-tools-published-image-002 --extended",
+    "exitCode": 2,
+    "exitMeaning": "All nine finite CT groups passed;2 retains broader certification explicitly outside scope",
+    "status": "extended_passed_remaining_release_gates",
+    "acceptedFiniteContract": true,
+    "counts": {
+      "matrix": {
+        "passed": 95,
+        "failed": 0
+      },
+      "safety": {
+        "passed": 60,
+        "failed": 0
+      },
+      "cancellation": {
+        "passed": 5,
+        "failed": 0
+      }
+    },
+    "corePassedByProtocol": {
+      "openai": 19,
+      "anthropic": 19,
+      "agui": 19,
+      "a2a": 19,
+      "acp": 19
+    },
+    "completedLocalGates": [
+      "matrix",
+      "safety",
+      "cancellation",
+      "ordinary-cold",
+      "graph-warm",
+      "graph-cold",
+      "budget-warm",
+      "budget-cold",
+      "mixed-crash-recovery"
+    ],
+    "ownedShutdownClean": true,
+    "ownedShutdownCleanExcludesExpectedCrash": true,
+    "ownedExitStatusesExpected": true,
+    "cleanupStatus": "confirmed",
+    "expectedCrash": {
+      "action": "expected_crash_for_recovery",
+      "process": "candidate-4",
+      "pid": 2252,
+      "generation": 4,
+      "signal": 9,
+      "started_at_unix": 1792716703.5318942,
+      "joined_at_unix": 1792716703.5555105,
+      "joined": true,
+      "exit_code": -9,
+      "signal_delivered": true,
+      "expected_crash_confirmed": true,
+      "exit_status_expected": true,
+      "clean_shutdown": false,
+      "cleanup_confirmed": false,
+      "cleanup_errors": []
+    },
+    "backend": "Real SurrealKV through actual production HTTP/runtime/provider paths",
+    "provider": "Isolated controlled LLM/MCP HTTP peer",
+    "evidenceRoot": "target/client-tools-image-bundle-v1.2.3/target/client-tools-published-image-002",
+    "scope": "OpenAI Chat Completions, Anthropic Messages, AG-UI, A2A, ACP; CT1\u2013CT7 selected finite contract",
+    "excluded": [
+      "arm64 functional acceptance (image build only)",
+      "PostgreSQL functional acceptance (compiled only)",
+      "paidprovider certification",
+      "arbitrary remote graphs",
+      "crash-mid-effect exactly-once execution",
+      "every bundled asset",
+      "broader estate certification"
+    ],
+    "remainingFiniteContractWork": [
+      "Final GitHub release and committed records"
+    ]
+  },
+  "releaseUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.2.3",
+  "releasePublished": true,
+  "releaseDraft": false,
+  "releasePrerelease": false,
+  "releaseAssets": [
+    "client-tools-build-017.json",
+    "client-tools-local-gate-019-receipt.json",
+    "client-tools-published-image-002-command.json",
+    "client-tools-published-image-002-receipt.json",
+    "v1.2.3-acceptance.md",
+    "v1.2.3-kubo.md",
+    "v1.2.3-registry-provenance.json"
+  ],
+  "exitContract": "CT1\u2013CT7 satisfied; stop scoped work",
+  "broaderAcceptance": "Unrelated phase and excluded functional matrices remain CLOSED/unclaimed"
+}

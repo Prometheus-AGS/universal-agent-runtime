@@ -32,7 +32,7 @@
 - [x] 15. Record explicit operator authorization for the local functional test/fix/retest loop and necessary scoped source reviews/builds.
 - [x] 16. Run authorized serialized native production gates and retain actual results (current1.2.3 finite CT1–CT6 passed gate019; exact-image proof remains17.1).
 - [x] 17. Publish separately authorized1.2.1 immutable digest a012df13… before acceptance per operator reprioritization; never move1.2.0.
-- [ ] 17.1. Publish corrected1.2.3 after nativegate019, preserving failed immutable1.2.2, then verify the exact published artifact locally.
+- [x] 17.1. Publish corrected1.2.3 after nativegate019, preserving failed immutable1.2.2, then verify the exact published artifact locally (imagegate002 passed all finite groups).
 
 - [x] 13.7. Correct provider adapter capability binding and OpenAI acceptance model selector.
 - [x] 13.8. Bind remaining cold restart, graph and cumulative-budget acceptance to real supported paths.

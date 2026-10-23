@@ -1,0 +1,40 @@
+{
+  "command": "docker run --rm --name uar-client-tools-v123-39875057583 --network none --no-healthcheck --platform linux/amd64 --user 501:20 --mount type=bind,source=/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-image-bundle-v1.2.3,target=/workspace --workdir /workspace --entrypoint python3 ghcr.io/prometheus-ags/universal-agent-runtime@sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195 scripts/release/client_tools_local_gate.py --binary /usr/local/bin/universal-agent-runtime --evidence target/client-tools-published-image-002 --extended",
+  "argv": [
+    "docker",
+    "run",
+    "--rm",
+    "--name",
+    "uar-client-tools-v123-39875057583",
+    "--network",
+    "none",
+    "--no-healthcheck",
+    "--platform",
+    "linux/amd64",
+    "--user",
+    "501:20",
+    "--mount",
+    "type=bind,source=/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/client-tools-image-bundle-v1.2.3,target=/workspace",
+    "--workdir",
+    "/workspace",
+    "--entrypoint",
+    "python3",
+    "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+    "scripts/release/client_tools_local_gate.py",
+    "--binary",
+    "/usr/local/bin/universal-agent-runtime",
+    "--evidence",
+    "target/client-tools-published-image-002",
+    "--extended"
+  ],
+  "sourceCommit": "c4a656251b643bd83c8f1407286480dbfac76708",
+  "canonicalIndex": "sha256:7fa7973fdcc0968d1fd0fa3a497f9c5a51daa97a653a48f01a2a1507fdbe3195",
+  "platform": "linux/amd64",
+  "scope": "Existing finite allfive extended production gate, actual published binary; minimalownedfixturebundle with networknone",
+  "implementationInventory": "client-tools-implementation-inventory.json,61/61sourcecomplete",
+  "authority": "Latest explicit operator execute finite contract, localfunctionaltest/fix/publish; no unrelatedchecks",
+  "remaining": [
+    "ExactimageCT7 functional proof",
+    "FinalGitHubrelease/records"
+  ]
+}

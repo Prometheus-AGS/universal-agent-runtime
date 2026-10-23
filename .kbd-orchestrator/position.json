@@ -2,14 +2,14 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 266,
-  "derivedRevision": 266,
+  "sourceRevision": 268,
+  "derivedRevision": 268,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 154,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 156,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
-  "updatedAt": "2026-10-22T23:55:34.809853Z",
+  "updatedAt": "2026-10-23T00:57:07.499024Z",
   "cursor": [
     "uar-post-lifecycle-verification-readiness",
     "execute"
