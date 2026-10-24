@@ -1,4 +1,5 @@
 [package]
+workspace = "../.."
 name = "prometheus-parking-lot-embedded"
 description = "Crash-safe embedded (redb) lease queue and result mailbox for prometheus_parking_lot (desktop and single-node)."
 documentation = "https://docs.rs/prometheus-parking-lot-embedded"

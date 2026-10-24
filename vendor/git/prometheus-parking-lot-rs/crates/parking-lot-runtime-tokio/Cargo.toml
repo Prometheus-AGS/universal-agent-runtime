@@ -1,4 +1,5 @@
 [package]
+workspace = "../.."
 name = "prometheus-parking-lot-runtime-tokio"
 description = "Tokio runtime layer of prometheus_parking_lot: ResourcePool, native WorkerPool, shutdown and cancellation."
 documentation = "https://docs.rs/prometheus-parking-lot-runtime-tokio"

@@ -1,4 +1,5 @@
 [package]
+workspace = "../.."
 name = "prometheus-parking-lot-core"
 description = "Runtime-free core of prometheus_parking_lot: scheduling contracts, hooks, in-memory queue and mailbox."
 documentation = "https://docs.rs/prometheus-parking-lot-core"

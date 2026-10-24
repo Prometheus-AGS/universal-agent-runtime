@@ -1,4 +1,5 @@
 [package]
+workspace = "../.."
 name = "prometheus-parking-lot-ffi"
 description = "UniFFI (Kotlin, Swift) bindings over the embedded parking-lot lease queue and result mailbox."
 documentation = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs/tree/main/bindings"

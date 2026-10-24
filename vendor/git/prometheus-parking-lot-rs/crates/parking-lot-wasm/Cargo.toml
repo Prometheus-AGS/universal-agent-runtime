@@ -1,4 +1,5 @@
 [package]
+workspace = "../.."
 name = "prometheus-parking-lot-wasm"
 description = "WASM WorkerPool for prometheus_parking_lot (async tasks instead of OS threads)."
 documentation = "https://docs.rs/prometheus-parking-lot-wasm"

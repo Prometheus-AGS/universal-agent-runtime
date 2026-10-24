@@ -1,4 +1,5 @@
 [package]
+workspace = "../.."
 name = "prometheus-parking-lot-iggy"
 description = "Apache Iggy lifecycle events and mailbox notifications for prometheus_parking_lot."
 documentation = "https://docs.rs/prometheus-parking-lot-iggy"

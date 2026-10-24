@@ -33,11 +33,17 @@ and lint inheritance remain intact, including the upstream Rust 1.95 minimum.
 UAR enables only `tokio-runtime`; optional PostgreSQL, embedded and Iggy
 backends and the standalone FFI member are retained as upstream source.
 
-Implementation source and nested crate manifests are copied byte-for-byte.
-The root manifest alone drops its four explicit benchmark targets and eight
-explicit example targets, whose development-only files are not exported.
+Implementation source is copied byte-for-byte. Each of the seven nested crate
+manifests adds `[package] workspace = "../.."` to retain the vendored workspace
+as the owner of inherited package fields, dependency declarations and lints when
+UAR consumes a nested crate through a direct path dependency. The original
+export omitted that explicit owner; the v1.3.0 deployment failed to load the
+core manifest because Cargo inherited `edition` from UAR, which does not define
+`workspace.package.edition`. The root vendored manifest drops its four explicit
+benchmark targets and eight explicit example targets, whose development-only
+files are not exported.
 Tests, benches, examples, VCS metadata, workflow tooling, and agent state are
 omitted; upstream implementation files containing inline tests are preserved
 without rewriting. Refresh from the exact commit through GitHub git blobs,
-export the same production paths, and reapply only this documented manifest
-adaptation. No upstream modification or verification is implied.
+export the same production paths, and reapply these documented manifest
+adaptations. No upstream modification or verification is implied.
