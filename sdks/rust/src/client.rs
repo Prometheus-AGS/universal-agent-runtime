@@ -30,11 +30,23 @@ impl Client {
     /// Create a client for a runtime URL.
     ///
     /// # Errors
-    /// Returns [`Error::InvalidUrl`] when `base_url` is invalid.
+    /// Returns [`Error::InvalidUrl`] when `base_url` is invalid, or
+    /// [`Error::Http`] when the HTTP client or bundled TLS roots cannot initialize.
     pub fn new(base_url: impl AsRef<str>) -> Result<Self> {
+        let base_url = Url::parse(base_url.as_ref())?;
+        let http = reqwest::Client::builder();
+        #[cfg(not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "none"))))]
+        let http = {
+            // Preserve bundled roots without requiring Android JVM verifier setup.
+            let roots = webpki_root_certs::TLS_SERVER_ROOT_CERTS
+                .iter()
+                .map(|certificate| reqwest::Certificate::from_der(certificate.as_ref()))
+                .collect::<std::result::Result<Vec<_>, _>>()?;
+            http.tls_backend_rustls().tls_certs_only(roots)
+        };
         Ok(Self {
-            base_url: Url::parse(base_url.as_ref())?,
-            http: reqwest::Client::new(),
+            base_url,
+            http: http.build()?,
             api_key: None,
         })
     }

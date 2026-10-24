@@ -28,18 +28,22 @@ The Parking Lot export for issue #426 records upstream source snapshot
 replacing `ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0`. This is a pinned
 source snapshot, not a claim that the version is published. The facade, seven
 workspace crates, target-specific sources, PostgreSQL migrations, required
-README files and shipped licenses are preserved. Workspace package, dependency
-and lint inheritance remain intact, including the upstream Rust 1.95 minimum.
-UAR enables only `tokio-runtime`; optional PostgreSQL, embedded and Iggy
+README files and shipped licenses are preserved. Package metadata, dependency requirements and features, and lints are materialized
+into standalone manifests, including the upstream Rust 1.95 minimum.
+UAR depends directly on the runtime-free core; its existing host owns worker
+execution. The facade, Tokio runtime, optional PostgreSQL, embedded and Iggy
 backends and the standalone FFI member are retained as upstream source.
 
-Implementation source is copied byte-for-byte. Each of the seven nested crate
-manifests adds `[package] workspace = "../.."` to retain the vendored workspace
-as the owner of inherited package fields, dependency declarations and lints when
-UAR consumes a nested crate through a direct path dependency. The original
-export omitted that explicit owner; the v1.3.0 deployment failed to load the
-core manifest because Cargo inherited `edition` from UAR, which does not define
-`workspace.package.edition`. The root vendored manifest drops its four explicit
+Implementation source is copied byte-for-byte. The facade and seven nested
+crate manifests are standalone: inherited package fields, dependencies and lints
+are copied from the pinned upstream workspace into each consuming manifest.
+Sibling path dependencies are relative to each crate; dependency requirements,
+features, optional flags, target conditions, and lint values retain upstream
+semantics. The vendored workspace declaration and explicit nested workspace-owner
+pointers are removed. UAR excludes the facade and all seven nested packages from
+its own workspace. This resolves the v1.3.0 deployment manifest failures: implicit
+inheritance first selected UAR's workspace, while adding explicit nested owners
+then produced multiple workspace roots. The facade drops its four explicit
 benchmark targets and eight explicit example targets, whose development-only
 files are not exported.
 Tests, benches, examples, VCS metadata, workflow tooling, and agent state are

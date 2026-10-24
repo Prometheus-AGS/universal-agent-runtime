@@ -248,15 +248,15 @@ impl HttpsPeer {
             address: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
         }
     }
-    fn client(&self) -> reqwest_mcp::Client {
+    fn client(&self) -> reqwest::Client {
         liter_llm::ensure_crypto_provider();
         // Concrete trusted-host test transport: TLS verification stays enabled.
         let certificate =
-            reqwest_mcp::Certificate::from_pem(&std::fs::read(self.root.join("ca.pem")).unwrap())
+            reqwest::Certificate::from_pem(&std::fs::read(self.root.join("ca.pem")).unwrap())
                 .unwrap();
-        let mut builder = reqwest_mcp::Client::builder()
+        let mut builder = reqwest::Client::builder()
             .no_proxy()
-            .redirect(reqwest_mcp::redirect::Policy::none())
+            .redirect(reqwest::redirect::Policy::none())
             .add_root_certificate(certificate)
             .timeout(WAIT);
         for host in HOSTS {

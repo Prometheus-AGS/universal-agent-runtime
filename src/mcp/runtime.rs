@@ -78,7 +78,7 @@ impl ConfiguredMcpConnector {
 #[derive(Clone)]
 pub(crate) struct RunHttpHeaders {
     bearer: Option<secrecy::SecretString>,
-    custom: HashMap<reqwest_mcp::header::HeaderName, reqwest_mcp::header::HeaderValue>,
+    custom: HashMap<reqwest::header::HeaderName, reqwest::header::HeaderValue>,
 }
 
 impl fmt::Debug for RunHttpHeaders {
@@ -110,13 +110,13 @@ impl RunHttpHeaders {
         let mut bearer = None;
         let mut custom = HashMap::new();
         for (name, value) in values {
-            let name = reqwest_mcp::header::HeaderName::from_bytes(name.as_bytes())
+            let name = reqwest::header::HeaderName::from_bytes(name.as_bytes())
                 .map_err(|_| anyhow::anyhow!("MCP header name is invalid"))?;
             anyhow::ensure!(
-                name != reqwest_mcp::header::HOST && name.as_str() != "mcp-session-id",
+                name != reqwest::header::HOST && name.as_str() != "mcp-session-id",
                 "MCP transport-owned header is forbidden"
             );
-            if name == reqwest_mcp::header::AUTHORIZATION {
+            if name == reqwest::header::AUTHORIZATION {
                 let token = value
                     .expose_secret()
                     .strip_prefix("Bearer ")
@@ -126,7 +126,7 @@ impl RunHttpHeaders {
                 bearer = Some(secrecy::SecretString::from(token.to_owned()));
             } else {
                 let value =
-                    reqwest_mcp::header::HeaderValue::from_bytes(value.expose_secret().as_bytes())
+                    reqwest::header::HeaderValue::from_bytes(value.expose_secret().as_bytes())
                         .map_err(|_| anyhow::anyhow!("MCP header value is invalid"))?;
                 anyhow::ensure!(
                     custom.insert(name, value).is_none(),

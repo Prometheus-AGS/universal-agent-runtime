@@ -366,9 +366,9 @@ async fn canceled_and_timed_out_retrieval_waiters_cannot_return_a_running_slot()
 
 #[tokio::test]
 async fn production_admission_rejects_oversized_work_and_wakes_fifo_after_a_grant_drop() {
-    use prometheus_parking_lot::{
-        core::{ScheduledTask, SchedulerError, TaskMetadata},
-        util::serde::{Priority, ResourceCost, ResourceKind},
+    use prometheus_parking_lot_core::{
+        ScheduledTask, SchedulerError, TaskMetadata,
+        Priority, ResourceCost, ResourceKind,
     };
     use universal_agent_runtime::uar::rag::ingestion_admission::IngestionAdmission;
 

@@ -183,8 +183,8 @@ impl SupervisorRecoveryHost {
             .map_err(|_| SupervisorError::Invalid)?;
         let identity = reqwest::Identity::from_pem(&std::fs::read(&config.client_identity)?)
             .map_err(|_| SupervisorError::Invalid)?;
-        let client = reqwest::Client::builder().use_rustls_tls().tls_built_in_root_certs(false)
-            .add_root_certificate(ca).identity(identity).no_proxy()
+        let client = reqwest::Client::builder().tls_backend_rustls().tls_certs_only([ca])
+            .identity(identity).no_proxy()
             .redirect(reqwest::redirect::Policy::none()).timeout(Duration::from_secs(60))
             .build().map_err(|_| SupervisorError::Unavailable)?;
         let mut peers = BTreeMap::new();

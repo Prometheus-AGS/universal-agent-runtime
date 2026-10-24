@@ -950,9 +950,9 @@ async fn connect_configured_http(
     let environment =
         McpBindingEnvironment::resolve(directory, std::env::vars_os().collect(), entry)?;
     let headers = super::runtime::RunHttpHeaders::from_configuration(entry, &environment, None)?;
-    let client = reqwest_mcp::Client::builder()
+    let client = reqwest::Client::builder()
         .no_proxy()
-        .redirect(reqwest_mcp::redirect::Policy::none())
+        .redirect(reqwest::redirect::Policy::none())
         .build()?;
     let transport_config = headers.apply(StreamableHttpClientTransportConfig::with_uri(
         endpoint.to_string(),
@@ -1065,9 +1065,9 @@ async fn connect_http_snapshot(
         .ok_or_else(|| McpBindingError::ConnectionFailed {
             server: name.to_owned(),
         })?;
-    let client = reqwest_mcp::Client::builder()
+    let client = reqwest::Client::builder()
         .no_proxy()
-        .redirect(reqwest_mcp::redirect::Policy::none())
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|_| McpBindingError::ConnectionFailed {
             server: name.to_owned(),

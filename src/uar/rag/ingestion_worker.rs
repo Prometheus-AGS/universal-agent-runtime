@@ -17,9 +17,9 @@ use futures::FutureExt as _;
 use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionState, IngestionStoreError};
 use tokio::sync::{Notify, mpsc};
 use async_trait::async_trait;
-use prometheus_parking_lot::{
-    core::{SchedulerError, TaskError, TaskMetadata, WorkerExecutor, ScheduledTask},
-    util::serde::{MailboxKey, Priority, ResourceCost, ResourceKind},
+use prometheus_parking_lot_core::{
+    SchedulerError, TaskError, TaskMetadata, WorkerExecutor, ScheduledTask,
+    MailboxKey, Priority, ResourceCost, ResourceKind,
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio_util::sync::CancellationToken;

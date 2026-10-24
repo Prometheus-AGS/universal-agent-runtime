@@ -1,5 +1,4 @@
 [package]
-workspace = "../.."
 name = "prometheus-parking-lot-wasm"
 description = "WASM WorkerPool for prometheus_parking_lot (async tasks instead of OS threads)."
 documentation = "https://docs.rs/prometheus-parking-lot-wasm"
@@ -7,13 +6,13 @@ keywords = ["scheduler", "wasm", "worker", "ai"]
 categories = ["asynchronous", "wasm"]
 readme = "README.md"
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-repository.workspace = true
-homepage.workspace = true
-license.workspace = true
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Prometheus AI Team"]
+repository = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+homepage = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+license = "MIT"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -22,21 +21,28 @@ targets = ["wasm32-unknown-unknown"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-prometheus-parking-lot-core.workspace = true
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0" }
 
 # The implementation compiles only for wasm32 (see src/lib.rs), so its
 # dependencies are not built for other targets.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-futures-channel.workspace = true
-gloo-timers.workspace = true
-js-sys.workspace = true
-parking_lot.workspace = true
-tracing.workspace = true
-wasm-bindgen-futures.workspace = true
+futures-channel = "0.3"
+gloo-timers = { version = "0.4", features = ["futures"] }
+js-sys = "0.3"
+parking_lot = "0.12"
+tracing = "0.1"
+wasm-bindgen-futures = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-async-trait.workspace = true
-wasm-bindgen-test.workspace = true
+async-trait = "0.1"
+wasm-bindgen-test = "0.3"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"

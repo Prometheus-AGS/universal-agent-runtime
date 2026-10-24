@@ -182,12 +182,12 @@ impl McpServerEntry {
             anyhow::ensure!(!url.trim().is_empty(), "MCP server {name:?} requires a URL");
             let mut normalized = BTreeSet::new();
             for (raw_name, value) in headers {
-                let header = reqwest_mcp::header::HeaderName::from_bytes(raw_name.as_bytes())
+                let header = reqwest::header::HeaderName::from_bytes(raw_name.as_bytes())
                     .map_err(|_| {
                         anyhow::anyhow!("MCP server {name:?} has an invalid header name")
                     })?;
                 anyhow::ensure!(
-                    header != reqwest_mcp::header::HOST && header.as_str() != "mcp-session-id",
+                    header != reqwest::header::HOST && header.as_str() != "mcp-session-id",
                     "MCP server {name:?} configures a transport-owned header"
                 );
                 anyhow::ensure!(
@@ -200,7 +200,7 @@ impl McpServerEntry {
                             !is_sensitive_header(&header),
                             "MCP server {name:?} must use a secret reference for credential headers"
                         );
-                        reqwest_mcp::header::HeaderValue::from_bytes(value.as_bytes()).map_err(
+                        reqwest::header::HeaderValue::from_bytes(value.as_bytes()).map_err(
                             |_| anyhow::anyhow!("MCP server {name:?} has an invalid header value"),
                         )?;
                     }
@@ -259,7 +259,7 @@ impl McpServerEntry {
     }
 }
 
-fn is_sensitive_header(name: &reqwest_mcp::header::HeaderName) -> bool {
+fn is_sensitive_header(name: &reqwest::header::HeaderName) -> bool {
     matches!(
         name.as_str(),
         "authorization" | "proxy-authorization" | "cookie" | "set-cookie" | "x-api-key" | "api-key"

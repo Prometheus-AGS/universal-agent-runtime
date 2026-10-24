@@ -1,91 +1,4 @@
-# Workspace layout and dependency rules: docs/adr/0001-workspace-split.md.
-#
-# The repository root is both the workspace and the published facade crate
-# `prometheus_parking_lot`; the layered crates live under crates/.
-
-[workspace]
-resolver = "3"
-members = [
-    "crates/parking-lot-core",
-    "crates/parking-lot-runtime-tokio",
-    "crates/parking-lot-pg",
-    "crates/parking-lot-embedded",
-    "crates/parking-lot-iggy",
-    "crates/parking-lot-wasm",
-    "crates/parking-lot-ffi",
-]
-
-[workspace.package]
-version = "0.3.0"
-edition = "2024"
-rust-version = "1.95"
-authors = ["Prometheus AI Team"]
-repository = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
-homepage = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
-license = "MIT"
-
-[workspace.dependencies]
-# Workspace crates: path for development, version for publishing.
-prometheus-parking-lot-core = { path = "crates/parking-lot-core", version = "0.3.0" }
-prometheus-parking-lot-runtime-tokio = { path = "crates/parking-lot-runtime-tokio", version = "0.3.0" }
-prometheus-parking-lot-pg = { path = "crates/parking-lot-pg", version = "0.3.0" }
-prometheus-parking-lot-embedded = { path = "crates/parking-lot-embedded", version = "0.3.0" }
-prometheus-parking-lot-iggy = { path = "crates/parking-lot-iggy", version = "0.3.0" }
-prometheus-parking-lot-wasm = { path = "crates/parking-lot-wasm", version = "0.3.0" }
-
-# Third-party version requirements are pinned once, here; crates add features.
-anyhow = "1"
-async-trait = "0.1"
-crossbeam-channel = "0.5"
-num_cpus = "1.16"
-parking_lot = "0.12"
-redb = "4.4"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-sqlx = { version = "0.9.0", default-features = false }
-thiserror = "2.0.17"
-tokio = "1"
-tokio-util = "0.7"
-tracing = "0.1"
-tracing-subscriber = "0.3"
-# Apache Iggy client, pinned exactly: Iggy is pre-1.0 and crosses wire breaks (plan section 8).
-iggy = "=0.11.0"
-uuid = "1"
-
-# wasm32-unknown-unknown only (crates/parking-lot-wasm). wasm-bindgen-cli in CI is
-# pinned to the wasm-bindgen version in Cargo.lock (see .github/workflows/ci.yml).
-futures-channel = "0.3"
-gloo-timers = { version = "0.4", features = ["futures"] }
-js-sys = "0.3"
-wasm-bindgen-futures = "0.4"
-
-# Mobile bindings (crates/parking-lot-ffi). Proc-macro API only: the `cargo-metadata`
-# default feature and the `cli` bindgen are not linked into the library; the generator
-# is built separately (bindings/uniffi-bindgen) so clap and askama stay out of this graph.
-uniffi = { version = "0.32", default-features = false }
-
-# Test and benchmark tooling.
-criterion = "0.8.1"
-flume = "0.12"
-futures = "0.3"
-loom = "0.7"
-proptest = "1"
-reqwest = "0.13"
-tempfile = "3.14"
-wasm-bindgen-test = "0.3"
-testcontainers = "0.28"
-
-[workspace.lints.rust]
-unsafe_code = "deny"
-missing_docs = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
-
-[workspace.lints.clippy]
-all = "warn"
-pedantic = "warn"
-nursery = "warn"
-
-# ── Facade package ───────────────────────────────────────────────────────────
+# Standalone vendored facade; inheritance is materialized for UAR consumption.
 
 [package]
 name = "prometheus_parking_lot"
@@ -95,13 +8,13 @@ readme = "README.md"
 keywords = ["scheduler", "queue", "tokio", "gpu", "ai"]
 categories = ["asynchronous", "concurrency"]
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*", "/CHANGELOG.md"]
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-repository.workspace = true
-homepage.workspace = true
-license.workspace = true
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Prometheus AI Team"]
+repository = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+homepage = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+license = "MIT"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -119,29 +32,36 @@ embedded = ["dep:prometheus-parking-lot-embedded"]
 iggy = ["dep:prometheus-parking-lot-iggy"]
 
 [dependencies]
-prometheus-parking-lot-core.workspace = true
-prometheus-parking-lot-runtime-tokio = { workspace = true, optional = true }
-prometheus-parking-lot-pg = { workspace = true, optional = true }
-prometheus-parking-lot-embedded = { workspace = true, optional = true }
-prometheus-parking-lot-iggy = { workspace = true, optional = true }
-serde.workspace = true
-serde_json.workspace = true
-tracing.workspace = true
-tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
+prometheus-parking-lot-core = { path = "crates/parking-lot-core", version = "0.3.0" }
+prometheus-parking-lot-runtime-tokio = { path = "crates/parking-lot-runtime-tokio", version = "0.3.0", optional = true }
+prometheus-parking-lot-pg = { path = "crates/parking-lot-pg", version = "0.3.0", optional = true }
+prometheus-parking-lot-embedded = { path = "crates/parking-lot-embedded", version = "0.3.0", optional = true }
+prometheus-parking-lot-iggy = { path = "crates/parking-lot-iggy", version = "0.3.0", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-prometheus-parking-lot-wasm.workspace = true
+prometheus-parking-lot-wasm = { path = "crates/parking-lot-wasm", version = "0.3.0" }
 
 [dev-dependencies]
-async-trait.workspace = true
-criterion = { workspace = true, features = ["async_tokio"] }
-parking_lot.workspace = true
-tempfile.workspace = true
-testcontainers.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
+async-trait = "0.1"
+criterion = { version = "0.8.1", features = ["async_tokio"] }
+parking_lot = "0.12"
+tempfile = "3.14"
+testcontainers = "0.28"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
 
 # Coverage profile for cargo-tarpaulin and cargo-llvm-cov
 [profile.coverage]

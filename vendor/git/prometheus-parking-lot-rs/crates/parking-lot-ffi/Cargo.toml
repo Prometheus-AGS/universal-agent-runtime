@@ -1,5 +1,4 @@
 [package]
-workspace = "../.."
 name = "prometheus-parking-lot-ffi"
 description = "UniFFI (Kotlin, Swift) bindings over the embedded parking-lot lease queue and result mailbox."
 documentation = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs/tree/main/bindings"
@@ -8,13 +7,13 @@ categories = ["api-bindings"]
 # Application-side artifact (a cdylib/staticlib that ships inside an app), not a library
 # crate to depend on from crates.io: not published (cr-44, docs/adr/0001-workspace-split.md).
 publish = false
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-repository.workspace = true
-homepage.workspace = true
-license.workspace = true
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Prometheus AI Team"]
+repository = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+homepage = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+license = "MIT"
 
 [lib]
 name = "parking_lot_ffi"
@@ -23,17 +22,24 @@ name = "parking_lot_ffi"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [dependencies]
-prometheus-parking-lot-core.workspace = true
-prometheus-parking-lot-embedded.workspace = true
-serde.workspace = true
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0" }
+prometheus-parking-lot-embedded = { path = "../parking-lot-embedded", version = "0.3.0" }
+serde = { version = "1", features = ["derive"] }
 # The embedded store spawns blocking work onto tokio, so exported futures must run on a
 # tokio runtime; this crate owns one (src/runtime.rs).
-tokio = { workspace = true, features = ["rt-multi-thread"] }
-uniffi.workspace = true
+tokio = { version = "1", features = ["rt-multi-thread"] }
+uniffi = { version = "0.32", default-features = false }
 
 [dev-dependencies]
-tempfile.workspace = true
-tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time"] }
+tempfile = "3.14"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"

@@ -1,5 +1,4 @@
 [package]
-workspace = "../.."
 name = "prometheus-parking-lot-iggy"
 description = "Apache Iggy lifecycle events and mailbox notifications for prometheus_parking_lot."
 documentation = "https://docs.rs/prometheus-parking-lot-iggy"
@@ -7,33 +6,40 @@ keywords = ["scheduler", "iggy", "events", "streaming", "ai"]
 categories = ["asynchronous", "network-programming"]
 readme = "README.md"
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-repository.workspace = true
-homepage.workspace = true
-license.workspace = true
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Prometheus AI Team"]
+repository = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+homepage = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs"
+license = "MIT"
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-prometheus-parking-lot-core.workspace = true
-iggy.workspace = true
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0" }
+iggy = "=0.11.0"
 # Parse-only access to the connection-string grammar (`ConnectionString`), pinned
 # with `iggy` so the two never disagree; the facade check must not build a client.
 iggy_common = "=0.11.0"
-serde.workspace = true
-serde_json.workspace = true
-tokio = { workspace = true, features = ["rt", "sync", "time"] }
-tracing.workspace = true
-uuid = { workspace = true, features = ["v5"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "sync", "time"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v5"] }
 
 [dev-dependencies]
-testcontainers.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+testcontainers = "0.28"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
