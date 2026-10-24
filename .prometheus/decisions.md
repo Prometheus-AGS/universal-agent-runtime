@@ -2356,3 +2356,28 @@ Treat localUAR1.3.0 as a fresh candidate, with original ten-scenario main bounda
 ## 2026-10-24 — UAR 1.3.0 finite verification exit preparation
 
 Phase uar-post-lifecycle-verification-readiness remains Execute, canonical revision299/plan100, gate CLOSED. Added proposed v1.3.0-exit-contract.md: finite required main/#426/profile/review/spec evidence, first-failure stop, preserved consumed-budget uncertainty, bounded repairs and renewed exact approval after edits. Source-only team recovery found signed COUNT metadata without contract body and historical1.2.3 embedded SurrealKV fixture incompatible with the main WebSocket-store boundary. No token values copied, service probe, test, build, validator, review or other verification ran. No acceptance, archive or reflection claimed. Remaining input: actual contract restoration/reviewed amendment and permitted isolated store/config/owner references.
+
+
+## 2026-10-24 — concrete 1.3.0 recovery packet and publication results
+
+Phase remains Execute, productverificationCLOSED. User authorized new replacement exitcontract and isolatedlocalfixture and source/imagepublicationfirst. Tagged/published3d9253fcv1.3.0; bothnativeimagebuilds40087378392failedbeforecompilation on nested workspaceinheritance. Prepared sevenmanifest workspace ../.. repair+provenance. Operator explicitly approvednormalhookscommit84747d9e, preservedoriginalv1.3.0-publication-001, leasedatomiccorrectionofonlynewv1.3.0; exactdeployrun40088426990running, noPASSclaim. Policy/commitlinthooks passed; initialpnpm auto-installattempt abortedbeforevalidator, laterauto-install-disabledruns passedwithoutbypass. No producttests/supportedacceptance/reviews ran.
+
+ReplacementJSON andconcreteloopbackdiskstore/main/peer/publicsyntheticauthconfig authoredwithboundedteamhandoffs. ExactA/F/V approvals inphase v1.3.0-unblock-approvals.md; no signing/trustrootmutation/adoption/fixturelaunch. ProposedB3finite dispositionpreservesruntimeNOT_EXERCISED; newverification-only240min/240calls/2repairs/3noprogress epoch requiresfreshsignedoperatorapproval; historicaleffortUNKNOWN, canonicalfloorspreserved. Canonical313/plan102,72/74authoringrowscomplete,5.1/5.2pending. No archive/reflection/phaseacceptance.
+
+
+## 2026-10-24 — first corrective publication failed; finite next approval
+
+Exact approved corrective run40088426990 ended failure onbothnativearchitectures beforecompilation: multipleworkspace roots /src andvendoredParkingLot. Merge skipped; no1.3.0image published. Logs retainedunderphase evidence/publication-v1.3.0-002. Prepared rootCargo.toml seven exactnestedcrate workspaceexclusions, onefilepatch9753d18e77db2515cf44f4496b60489edc5544cfdf61b1abf1809b64441349f9. No newbuild/checkorpublicationrerun. P2 exactcommit/backup-publication-002/leasedretag/oneworkflowrun approvalrequested; priorPdoesnotauthorizeit. ProductgateCLOSED. Canonical320/plan104,73/75authoredrowscomplete,5.1/5.2pending. Aauthoritypolicy approvalalsopending; no trustrootmutation, signing, adoption, fixturelaunch, producttestsorindependentreview. No livepublicationprocessremains.
+
+
+## 2026-10-24 — approved P2 publication and conditional A
+
+Operator expressly approved one-fileP2 rootworkspaceexclusion repair and A contractpolicies/publickeyregistration/template/adoption aftersuccessfulimagepublicationandactualsignature. P2 commitf870a9c3 passednormalpolicy0.69s/commitlint1.06s; backedup84747d9e asv1.3.0-publication-002; atomicleasedv1.3.0/sourcepushsucceeded. Exactdeployment40089259036running, observedbotharchitecturejobsBuildandpushbydigest. Nooutcomeclaim. Aconditionalnotexecuted; nosigning/trustregistration/adoption/fixturelaunch/producttests/review. F/VstillCLOSED. Anyfurtherpublicationfailurestops. Canonical322/plan105.
+
+## 2026-10-24 — publication dependency compatibility
+
+Operator prioritized immediate UAR 1.3.0 image publication and requested current compatible reqwest/dependencies. Publication source77446974 converges owned clients on reqwest0.13.5 and preserves explicit controller private-CA trust and SDK bundled roots. Standalone Parking Lot manifests remove nested workspace ambiguity; runtime consumes only its core. Compatible lock refresh needed explicit ZIP8.6 and SQLx0.8.6 holds after observed compiler errors; latest satisfying a broad transitive range was not API compatible. SDK mirrors six lifecycle source patches. Product acceptance remains closed. GH deployment40091743841 is running; no image publication claimed yet.
+
+## 2026-10-24 — UAR 1.3.0 publication completed
+
+Supersedes the historical publication-stop and build-running states above. Operator explicitly prioritized immediate publication and compatible dependency updates. Source774469746fee4de99be41dc1cd231857067e4487 is tagged v1.3.0; prior f870 source preserved as v1.3.0-publication-003. Deployment40091743841 passed native amd64 and arm64 release builds plus manifest merge. Registry inspection confirmed1.3.0/v1.3.0/latest/sha-774469746fee4de99be41dc1cd231857067e4487 share indexsha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697. Local server-full/PostgreSQL build passed in9m15s, two existing warnings retained. No product tests or SDK/mobile build claims. reqwest0.13.5, compatible lock refresh, standalone Parking Lot core and preserved TLS boundaries are independently source reviewed. Publication receipt attached to GitHub release. Canonical324/plan107 records completed publication, with product gates closed, task5.1/5.2 and signed verification authority pending. No phase archive/reflection.

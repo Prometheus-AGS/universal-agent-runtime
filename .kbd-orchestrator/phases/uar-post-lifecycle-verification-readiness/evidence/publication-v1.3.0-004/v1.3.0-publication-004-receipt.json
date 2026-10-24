@@ -1,0 +1,161 @@
+{
+  "status": "PUBLISHED_PRODUCT_ACCEPTANCE_PENDING",
+  "requestedVersion": "1.3.0",
+  "sourceTag": "v1.3.0",
+  "image": "ghcr.io/prometheus-ags/universal-agent-runtime",
+  "imageTags": [
+    "1.3.0",
+    "v1.3.0",
+    "latest",
+    "sha-774469746fee4de99be41dc1cd231857067e4487"
+  ],
+  "platforms": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
+  "verification": "PENDING_NOT_CERTIFIED",
+  "operatorAuthority": "2026-10-24: operator explicitly prioritizes immediate publication of current source, authorizes corrective publication work, and requests current compatible reqwest/dependency upgrades.",
+  "existingTagPolicy": "Preserve previous 1.3.0 publication sources; move newly created mutable v1.3.0 with explicit lease under operator publication authority. Preserve older release tags.",
+  "workflow": "deploy.yml",
+  "plannedDispatch": "gh workflow run deploy.yml --ref v1.3.0",
+  "localPolicy": {
+    "firstAttempt": "pnpm attempted automatic install; aborted before validator due to no TTY",
+    "passedCommand": "pnpm_config_verify_deps_before_run=false pnpm github-actions-policy:validate",
+    "output": "GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml)."
+  },
+  "productGates": "NOT_RUN; publication instruction does not adopt replacement contract or open product acceptance",
+  "recordedAtUTC": "2026-10-24T10:48:08.497721+00:00",
+  "sourceCommit": "774469746fee4de99be41dc1cd231857067e4487",
+  "runId": 40091743841,
+  "runUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/40091743841",
+  "normalHooks": {
+    "githubActionsPolicy": "PASS 0.65s",
+    "commitlint": "PASS 1.45s",
+    "hooksSkipped": false,
+    "automaticDependencyInstall": false
+  },
+  "sourceTagPublished": true,
+  "imagesPublished": true,
+  "runConclusion": "success",
+  "releaseUrl": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.3.0",
+  "releasePrerelease": true,
+  "releaseImmutable": false,
+  "failure": null,
+  "failureEvidence": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/publication-v1.3.0-003",
+  "nextAction": "Publication and compatible dependency corrections complete. Product acceptance, SDK/mobile validation, and whole-phase closure remain pending. Prepare renewed verification authority/inventory against source77446974 when operator resumes verification.",
+  "attempts": [
+    {
+      "runId": 40087378392,
+      "sourceCommit": "3d9253fc09e916d1ba7230c0b363f4631a07ce1e",
+      "conclusion": "failure",
+      "reason": "nested workspace ownership missing; both profiles failed before compilation",
+      "preservedSourceTag": "v1.3.0-publication-001"
+    },
+    {
+      "runId": 40088426990,
+      "sourceCommit": "84747d9e7ac8048a9b729ed0a908ee6bdcfb74df",
+      "conclusion": "failure",
+      "reason": "multiple workspace roots; both profiles failed before compilation",
+      "preservedSourceTag": "v1.3.0-publication-002"
+    },
+    {
+      "runId": 40089259036,
+      "sourceCommit": "f870a9c337a89142e56bd8945b89c652c3c1385d",
+      "conclusion": "failure",
+      "reason": "multiple workspace roots; both platforms failed before compilation",
+      "preservedSourceTag": "v1.3.0-publication-003"
+    }
+  ],
+  "correctiveApproval": "Operator selected Approve corrective1.3.0 tag and image publication in this session",
+  "correctiveCommitHooks": {
+    "githubActionsPolicy": "PASS0.69s",
+    "commitlint": "PASS1.08s",
+    "hooksSkipped": false
+  },
+  "correctiveTag": {
+    "expectedPreviousObject": "2773672a5d7a7ef735dd5b941475e7e6f1a0d328",
+    "newObject": "05d033e4074a473a3b48e548ec87c61c1b4125dd",
+    "push": "atomic force-with-lease succeeded",
+    "preservedOriginalTag": "v1.3.0-publication-001"
+  },
+  "secondRepairInventory": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-publication-repair-002-inventory.json",
+  "secondCorrectiveApproval": "Operator explicitly selected Approve this exact second corrective publication",
+  "secondCorrectiveCommitHooks": {
+    "githubActionsPolicy": "PASS0.69s",
+    "commitlint": "PASS1.06s",
+    "hooksSkipped": false
+  },
+  "secondCorrectiveTag": {
+    "expectedPreviousObject": "05d033e4074a473a3b48e548ec87c61c1b4125dd",
+    "newObject": "077144e1fa20b748762a9843f38911320902b708",
+    "push": "atomic force-with-lease succeeded",
+    "preservedOriginalTag": "v1.3.0-publication-002"
+  },
+  "dependencyReview": "docs/releases/v1.3.0-dependency-review.md",
+  "publicationBuildCommand": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+  "sourceTagObject": "6deeb7b0e47460bbde68c9ebcd7e4e2342474d3f",
+  "currentRepairHooks": {
+    "githubActionsPolicy": "PASS 0.72s",
+    "commitlint": "PASS 1.26s",
+    "hooksSkipped": false
+  },
+  "currentRepairTag": {
+    "expectedPreviousObject": "077144e1fa20b748762a9843f38911320902b708",
+    "newObject": "6deeb7b0e47460bbde68c9ebcd7e4e2342474d3f",
+    "push": "atomic force-with-lease succeeded",
+    "preservedOriginalTag": "v1.3.0-publication-003"
+  },
+  "correctedLocalBuild": {
+    "command": "CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime",
+    "exitCode": 0,
+    "observedOutput": "Finished dev profile [unoptimized + debuginfo] target(s) in 9m 15s",
+    "artifact": "target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+    "sourceCommit": "774469746fee4de99be41dc1cd231857067e4487",
+    "warnings": [
+      "Existing SurrealDB lifecycle source patch: unused OnceLockExt import",
+      "Existing IngestionAdmission type: missing Debug implementation"
+    ],
+    "log": "/private/tmp/uar-v130-publication-build.log",
+    "acceptanceScope": "Publication build only; no product integration tests or supported-profile suite."
+  },
+  "platformImagesPublished": {
+    "linux/amd64": {
+      "indexDigest": "sha256:98e00f50d80a173682c959ee55d9b883b4d6c96e60d715d500e281a46b070987",
+      "imageDigest": "sha256:20c58178cadb449acac00a88b72b33b5ab759e24375236ee5313e77f2d267506",
+      "registryInspection": "PASS docker buildx imagetools inspect, linux/amd64 plus attestation"
+    },
+    "linux/arm64": {
+      "indexDigest": "sha256:e5e087501702c64c3805993b279ecf18a8b9c66385508a31b2662391b48c0d9f",
+      "imageDigest": "sha256:3006fbfaf2fb9937663f6de49b62615af75fe79e0a4e6f8b20f42cd48bf5ff4b"
+    }
+  },
+  "imageIndexDigest": "sha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697",
+  "confirmedTagDigests": {
+    "1.3.0": "sha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697",
+    "v1.3.0": "sha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697",
+    "latest": "sha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697",
+    "sha-774469746fee4de99be41dc1cd231857067e4487": "sha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697"
+  },
+  "platformRuntimeDigests": {
+    "linux/amd64": "sha256:20c58178cadb449acac00a88b72b33b5ab759e24375236ee5313e77f2d267506",
+    "linux/arm64": "sha256:3006fbfaf2fb9937663f6de49b62615af75fe79e0a4e6f8b20f42cd48bf5ff4b"
+  },
+  "registryInspection": "PASS: all four tags resolve to the same index, containing linux/amd64 and linux/arm64 plus attestations",
+  "publishedAtUTC": "2026-10-24T12:39:59.744423+00:00",
+  "nativeReleaseBuilds": {
+    "linux/amd64": {
+      "jobId": 120865665116,
+      "conclusion": "success",
+      "output": "Finished release profile [optimized] target(s) in 29m 55s"
+    },
+    "linux/arm64": {
+      "jobId": 120865665046,
+      "conclusion": "success",
+      "output": "Finished release profile [optimized] target(s) in 32m 12s"
+    },
+    "manifestMerge": {
+      "jobId": 120874489896,
+      "conclusion": "success"
+    }
+  }
+}

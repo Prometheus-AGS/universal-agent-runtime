@@ -1,0 +1,26 @@
+Name:      ghcr.io/prometheus-ags/universal-agent-runtime:1.3.0
+MediaType: application/vnd.oci.image.index.v1+json
+Digest:    sha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697
+           
+Manifests: 
+  Name:        ghcr.io/prometheus-ags/universal-agent-runtime:1.3.0@sha256:20c58178cadb449acac00a88b72b33b5ab759e24375236ee5313e77f2d267506
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    linux/amd64
+               
+  Name:        ghcr.io/prometheus-ags/universal-agent-runtime:1.3.0@sha256:704402955889b31ddbbff8b24969129294344d72d8daa5526f82c37732382669
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    unknown/unknown
+  Annotations: 
+    vnd.docker.reference.type:   attestation-manifest
+    vnd.docker.reference.digest: sha256:20c58178cadb449acac00a88b72b33b5ab759e24375236ee5313e77f2d267506
+               
+  Name:        ghcr.io/prometheus-ags/universal-agent-runtime:1.3.0@sha256:3006fbfaf2fb9937663f6de49b62615af75fe79e0a4e6f8b20f42cd48bf5ff4b
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    linux/arm64
+               
+  Name:        ghcr.io/prometheus-ags/universal-agent-runtime:1.3.0@sha256:7721b5bd9adc2fcec5e3762105cbef76756d7e6f63949c088a2301c8e1a15b7e
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    unknown/unknown
+  Annotations: 
+    vnd.docker.reference.digest: sha256:3006fbfaf2fb9937663f6de49b62615af75fe79e0a4e6f8b20f42cd48bf5ff4b
+    vnd.docker.reference.type:   attestation-manifest
