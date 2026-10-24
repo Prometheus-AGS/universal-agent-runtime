@@ -5,6 +5,7 @@ pub mod embeddings;
 pub mod extraction;
 pub mod ingest;
 pub mod ingestion_worker;
+pub mod ingestion_admission;
 pub mod pipeline;
 pub mod retrieval;
 pub mod verification;

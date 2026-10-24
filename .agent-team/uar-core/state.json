@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 136,
+  "revision": 157,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -1034,6 +1034,116 @@
       "dependsOn": [],
       "evidence": [
         "docs/operations/lifecycle-budget-lead-handoff.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "issue-426-vendor",
+      "title": "Export exact Parking Lot source and provenance",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "vendor/git/prometheus-parking-lot-rs/**",
+        "vendor/git/README.md",
+        ".agent-team/uar-core/handoffs/issue-426-vendor.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "issue-426-adapter",
+      "title": "Implement bounded scope-owned ingestion admission",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "src/uar/rag/ingestion_worker.rs",
+        "src/uar/rag/ingestion_admission.rs",
+        "src/uar/rag/mod.rs",
+        ".agent-team/uar-core/handoffs/issue-426-adapter.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "issue-426-acceptance",
+      "title": "Author finite ingestion acceptance and delivery notes",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "tests/ingestion_admission.rs",
+        "tests/durable_ingestion.rs",
+        "tests/lifecycle_owned_resources.rs",
+        "docs/releases/v1.3.0-parking-lot.md",
+        ".agent-team/uar-core/handoffs/issue-426-acceptance.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "issue-426-lead",
+      "title": "Integrate contracts manifests lockfile version and canonical handoff",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        "openspec/changes/update-parking-lot-admission/**",
+        "Cargo.toml",
+        "Cargo.lock",
+        "src/server.rs",
+        "CHANGELOG.md",
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/issue-426-*",
+        ".agent-team/uar-core/handoffs/issue-426-lead.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "v130-ledger",
+      "title": "Reconcile source-authoring ledger against canonical phase",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-ledger-reconciliation.md",
+        "openspec/changes/pl-main-boundary-evidence/tasks.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "v130-boundary-packet",
+      "title": "Author proposed source-bound original boundary fixture packet",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/boundary-manifest.v1.3.0.proposed.json",
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixture-requirements.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "v130-lead-packet",
+      "title": "Prepare combined1.3.0 execution inventory and exact proposed gates",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/execution.md",
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-implementation-inventory.md",
+        ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-verification-packet.md"
       ],
       "remaining": []
     }
@@ -3661,6 +3771,411 @@
         "status": "complete",
         "evidence": [
           "docs/operations/lifecycle-budget-lead-handoff.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "9a0dcda4-4716-46cf-9e2f-e27e140a5a58",
+      "at": "2026-10-24T09:11:05.348Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "issue-426-vendor",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "0307f602-d4b0-4f32-ab93-22eaa6ebb96a",
+      "at": "2026-10-24T09:11:05.512Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "issue-426-vendor",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "vendor/git/prometheus-parking-lot-rs/**",
+          "vendor/git/README.md"
+        ],
+        "remaining": [
+          "Source implementation only; verification CLOSED; no checks, builds or review gates"
+        ]
+      }
+    },
+    {
+      "id": "ee396b70-2757-49c8-8d0c-6d5b9e2cd303",
+      "at": "2026-10-24T09:11:05.677Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "issue-426-adapter",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "e223da83-ab2c-4f82-a284-0795cdb5b5bb",
+      "at": "2026-10-24T09:11:05.888Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "issue-426-adapter",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "src/uar/rag/ingestion_worker.rs",
+          "src/uar/rag/ingestion_admission.rs",
+          "src/uar/rag/mod.rs"
+        ],
+        "remaining": [
+          "Source implementation only; verification CLOSED; no checks, builds or review gates"
+        ]
+      }
+    },
+    {
+      "id": "37be28a3-414e-4b64-b33d-413d42da7cc2",
+      "at": "2026-10-24T09:11:06.058Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "issue-426-acceptance",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "eaee4553-bbb3-42cb-9953-bf7118781c6b",
+      "at": "2026-10-24T09:11:06.221Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "issue-426-acceptance",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "tests/ingestion_admission.rs",
+          "tests/durable_ingestion.rs",
+          "tests/lifecycle_owned_resources.rs",
+          "docs/releases/v1.3.0-parking-lot.md"
+        ],
+        "remaining": [
+          "Source implementation only; verification CLOSED; no checks, builds or review gates"
+        ]
+      }
+    },
+    {
+      "id": "d43f473b-290c-4273-ac8e-a870ce14b4dd",
+      "at": "2026-10-24T09:11:06.384Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "issue-426-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "d0ccb1ec-b528-401e-82f1-77967415be33",
+      "at": "2026-10-24T09:11:06.549Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "issue-426-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          "openspec/changes/update-parking-lot-admission/**",
+          "Cargo.toml",
+          "Cargo.lock",
+          "src/server.rs",
+          "CHANGELOG.md",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/issue-426-*"
+        ],
+        "remaining": [
+          "Source implementation only; verification CLOSED; no checks, builds or review gates"
+        ]
+      }
+    },
+    {
+      "id": "da78d9d1-cdb3-4a22-a2ea-408fb391e2d3",
+      "at": "2026-10-24T09:39:48.684Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "issue-426-vendor",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "vendor/git/prometheus-parking-lot-rs/**",
+          "vendor/git/README.md",
+          ".agent-team/uar-core/handoffs/issue-426-vendor.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "f3bdc058-0bd0-4165-906e-bd1ddc1719c1",
+      "at": "2026-10-24T09:39:48.849Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "issue-426-adapter",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "src/uar/rag/ingestion_worker.rs",
+          "src/uar/rag/ingestion_admission.rs",
+          "src/uar/rag/mod.rs",
+          ".agent-team/uar-core/handoffs/issue-426-adapter.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "e5c8e4e3-e3fd-46d8-bcd6-9ee36d352e0f",
+      "at": "2026-10-24T09:39:49.016Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "issue-426-acceptance",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "tests/ingestion_admission.rs",
+          "tests/durable_ingestion.rs",
+          "tests/lifecycle_owned_resources.rs",
+          "docs/releases/v1.3.0-parking-lot.md",
+          ".agent-team/uar-core/handoffs/issue-426-acceptance.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "e79f17c1-8f90-491f-b5d3-01ebefe84c25",
+      "at": "2026-10-24T09:39:49.183Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "issue-426-lead",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "openspec/changes/update-parking-lot-admission/**",
+          "Cargo.toml",
+          "Cargo.lock",
+          "src/server.rs",
+          "CHANGELOG.md",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/issue-426-*",
+          ".agent-team/uar-core/handoffs/issue-426-lead.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "8eaf01c9-68da-492c-8ad8-50bda14d27e1",
+      "at": "2026-10-24T10:17:59.218Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "v130-ledger",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "dbc5cd7b-5045-4605-8c4e-a390467bf36e",
+      "at": "2026-10-24T10:17:59.386Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "v130-ledger",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-ledger-reconciliation.md",
+          "openspec/changes/pl-main-boundary-evidence/tasks.md"
+        ],
+        "remaining": [
+          "Author proposed artifact only; runnable fixture inputs and verification approval remain separate"
+        ]
+      }
+    },
+    {
+      "id": "50ccb966-e76f-468b-9ed7-3fc680080458",
+      "at": "2026-10-24T10:17:59.554Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "v130-ledger",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-ledger-reconciliation.md",
+          "openspec/changes/pl-main-boundary-evidence/tasks.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "d8c9ed3c-3277-4e1a-89df-37cc69c80a5a",
+      "at": "2026-10-24T10:17:59.721Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "v130-boundary-packet",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "0d7fef82-b780-4a18-aeb9-0e68af165556",
+      "at": "2026-10-24T10:17:59.883Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "v130-boundary-packet",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/boundary-manifest.v1.3.0.proposed.json",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixture-requirements.md"
+        ],
+        "remaining": [
+          "Author proposed artifact only; runnable fixture inputs and verification approval remain separate"
+        ]
+      }
+    },
+    {
+      "id": "2a51b45b-b430-43b8-9198-f8001384b435",
+      "at": "2026-10-24T10:18:00.051Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "v130-boundary-packet",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/boundary-manifest.v1.3.0.proposed.json",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixture-requirements.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "f04870d5-ebbc-4b4c-ba48-b047e7c29dfe",
+      "at": "2026-10-24T10:18:00.222Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "v130-lead-packet",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "f562230b-8329-4a95-9fb2-f739b2a4819e",
+      "at": "2026-10-24T10:18:00.423Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "v130-lead-packet",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/execution.md",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-implementation-inventory.md",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-verification-packet.md"
+        ],
+        "remaining": [
+          "Author proposed artifact only; runnable fixture inputs and verification approval remain separate"
+        ]
+      }
+    },
+    {
+      "id": "1cb8acbc-3230-4bc0-a464-94ffa02f50a8",
+      "at": "2026-10-24T10:18:00.590Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "v130-lead-packet",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/execution.md",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-implementation-inventory.md",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-verification-packet.md"
         ],
         "remaining": []
       }

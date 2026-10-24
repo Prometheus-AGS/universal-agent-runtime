@@ -4,6 +4,22 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.3.0 — unreleased (verification pending)
+
+- Upgrade vendored Parking Lot to exact source
+  `4b747350c6883497813bed33623a9937ad7a5894` (manifest 0.3.0), preserving its
+  workspace crates and UAR's pinned toolchain. Addresses #426.
+- Enforce bounded FIFO ingestion admission with one slot per document and
+  locally queued descriptors separate from the durable accepted backlog.
+  Source bytes load after admission; scope-owned execution retains capacity
+  through actual worker joins and durable outcome handling.
+- Preserve cooperative cancellation, retained shutdown, durable failure CAS
+  and generation-fenced publication. Add admission snapshots/result receipts
+  and finite integration cases for saturation, dropped waiters, failure/panic
+  and dependency release ordering.
+- Tests, builds and independent review remain unrun under the operator's CLOSED
+  verification gate. See [the integration contract](docs/releases/v1.3.0-parking-lot.md).
+
 ## 1.2.3 — 2026-10-22 (published; scoped functional acceptance passed)
 
 - Serialize caller-tool source acknowledgment across observers of the same live

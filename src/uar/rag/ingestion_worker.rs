@@ -18,11 +18,13 @@ use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionState, I
 use tokio::sync::{Notify, mpsc};
 use async_trait::async_trait;
 use prometheus_parking_lot::{
-    core::{PoolError, TaskMetadata, WorkerExecutor},
+    core::{SchedulerError, TaskError, TaskMetadata, WorkerExecutor, ScheduledTask},
     util::serde::{MailboxKey, Priority, ResourceCost, ResourceKind},
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio_util::sync::CancellationToken;
+use prometheus_parking_lot_core::{dispatch::{Dispatched, Grant}, semaphore::Permit};
+use super::ingestion_admission::IngestionAdmission;
 use tracing::{error, info, warn};
 
 // =============================================================================
@@ -92,34 +94,57 @@ impl DocumentIngestionExecutor {
 
 #[async_trait]
 impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestionExecutor {
-    async fn execute(&self, job: DocumentIngestionJob, meta: TaskMetadata) -> IngestionResult {
+    async fn execute(&self, job: DocumentIngestionJob, meta: TaskMetadata) -> Result<IngestionResult, TaskError> {
         let doc_id = job.document.id.clone();
-        let deadline_exceeded = meta.deadline_ms.is_some_and(|deadline| {
-            u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0) > deadline
-        });
-        let result = if self.cancellation.is_cancelled() || deadline_exceeded {
-            Err(anyhow::anyhow!("ingestion interrupted before preparation"))
-        } else {
-            self.process_document(&job).await
+        let result = std::panic::AssertUnwindSafe(async {
+            if self.cancellation.is_cancelled() || deadline_passed(meta.deadline_ms) {
+                anyhow::bail!("ingestion interrupted before preparation");
+            }
+            self.process_document(&job, meta.deadline_ms).await
+        }).catch_unwind().await;
+        let result = match result {
+            Ok(result) => result.map_err(TaskError::executor),
+            Err(_) => Err(TaskError::ExecutorPanicked { message: "document ingestion panicked".to_owned() }),
         };
         match result {
-            Ok(chunk_count) => IngestionResult { document_id: doc_id, chunk_count, status: DocumentStatus::Indexed },
+            Ok(chunk_count) => Ok(IngestionResult { document_id: doc_id, chunk_count, status: DocumentStatus::Indexed }),
             Err(error) => {
-                // CAS cannot overwrite a concurrent publication, retry, or deletion.
-                let failed = job.durable.failed_attempt(error.to_string());
-                if let Err(update_error) = self.persistence.transition_ingestion(&job.durable, &failed).await {
-                    error!(document_id = %doc_id, error = %update_error, "Could not persist ingestion failure; committed source remains discoverable");
-                }
-                warn!(document_id = %doc_id, error = %error, "Ingestion attempt did not publish");
-                IngestionResult { document_id: doc_id, chunk_count: 0, status: DocumentStatus::Failed { error: error.to_string() } }
+                self.persist_failure(&job.durable, &error).await;
+                Err(error)
             }
         }
     }
+
 }
 
 impl DocumentIngestionExecutor {
+    async fn persist_failure(&self, job: &IngestionJob, error: &TaskError) {
+        let failed = job.failed_attempt(error.to_string());
+        let settlement = std::panic::AssertUnwindSafe(
+            self.persistence.transition_ingestion(job, &failed)
+        ).catch_unwind().await;
+        match settlement {
+            // False is a settled stale attempt: retry, publication or deletion
+            // already revoked this exact CAS identity. Do not claim a new one.
+            Ok(Ok(_)) => {}
+            Ok(Err(update_error)) => {
+                error!(document_id = %job.document_id, error = %update_error, "Could not persist ingestion failure; committed source remains discoverable");
+                if let Some(scope) = &self.lifecycle_scope {
+                    scope.record_failure(format!("ingestion failure settlement: {update_error}"));
+                }
+            }
+            Err(_) => {
+                error!(document_id = %job.document_id, "Ingestion failure settlement panicked; durable outcome is unknown");
+                if let Some(scope) = &self.lifecycle_scope {
+                    scope.record_failure("ingestion failure settlement panicked");
+                    scope.record_unresolved_effect(format!("ingestion failure settlement outcome unknown: {}", job.storage_key()));
+                }
+            }
+        }
+    }
+
     /// Process a document and return chunk count.
-    async fn process_document(&self, job: &DocumentIngestionJob) -> Result<usize> {
+    async fn process_document(&self, job: &DocumentIngestionJob, deadline: Option<u128>) -> Result<usize> {
         let file_config = self.resolve_file_processing_config(job).await?;
         let mime_type = job
             .document
@@ -132,7 +157,7 @@ impl DocumentIngestionExecutor {
 
         // Check cancellation between stages so a shutdown during a slow
         // extraction is caught before we spend time on embedding.
-        if self.cancellation.is_cancelled() {
+        if self.cancellation.is_cancelled() || deadline_passed(deadline) {
             return Err(anyhow::anyhow!(
                 "cancelled between extraction and embedding"
             ));
@@ -143,7 +168,7 @@ impl DocumentIngestionExecutor {
 
         // Preparation is replayable; only the storage transaction publishes a generation.
         let publication = self.ingest_service.prepare_ingestion(&result.content, &job.durable, metadata).await?;
-        if self.cancellation.is_cancelled() { anyhow::bail!("ingestion interrupted before publication"); }
+        if self.cancellation.is_cancelled() || deadline_passed(deadline) { anyhow::bail!("ingestion interrupted before publication"); }
         let count = publication.chunks.len();
         self.persistence.publish_ingestion(&job.durable, &publication).await?;
         Ok(count)
@@ -316,22 +341,41 @@ fn build_chunk_metadata(
 // Worker Pool Wrapper
 // =============================================================================
 
+/// Inspectable local admission state; the durable store remains authoritative.
+#[derive(Clone, Debug, Default)]
+pub struct IngestionAdmissionSnapshot {
+    /// Grants retained through worker join and durable outcome settlement.
+    pub active_jobs: usize,
+    /// Descriptors parked locally without claiming or loading source bytes.
+    pub waiting_jobs: usize,
+    /// Active durable storage keys mapped to their result mailbox receipts.
+    pub active_mailboxes: HashMap<String, MailboxKey>,
+}
+
+type Descriptor = ScheduledTask<IngestionJob>;
+type WorkerResult = std::result::Result<IngestionResult, TaskError>;
+
+struct Completion {
+    key: String,
+    mailbox: MailboxKey,
+    permit: Permit,
+}
+
 /// Bounded document preparation owned by a trusted-host resource scope.
 pub struct IngestionWorkerPool {
     executor: DocumentIngestionExecutor,
     scope: crate::uar::runtime::lifecycle::ResourceScope,
-    permits: Arc<tokio::sync::Semaphore>,
-    results: std::sync::Mutex<HashMap<MailboxKey, tokio::sync::watch::Sender<Option<std::result::Result<IngestionResult, String>>>>>,
-    completed_tx: mpsc::UnboundedSender<String>,
-    /// Cancellation token — signalled on graceful shutdown so in-flight
-    /// executors can abort between processing stages.
+    admission: IngestionAdmission<Descriptor>,
+    results: std::sync::Mutex<HashMap<MailboxKey, tokio::sync::watch::Sender<Option<WorkerResult>>>>,
+    completed_tx: mpsc::UnboundedSender<Completion>,
     cancellation: CancellationToken,
-    /// Per-task deadline (ms) — `None` means unbounded.
     task_deadline_ms: Option<u128>,
     persistence: Arc<dyn PersistenceLayer>,
-    wake: Notify,
-    completed: std::sync::Mutex<Option<mpsc::UnboundedReceiver<String>>>,
+    wake: Arc<Notify>,
+    completed: std::sync::Mutex<Option<mpsc::UnboundedReceiver<Completion>>>,
     dispatch_capacity: usize,
+    max_queue_depth: usize,
+    admission_state: tokio::sync::watch::Sender<IngestionAdmissionSnapshot>,
 }
 
 impl std::fmt::Debug for IngestionWorkerPool {
@@ -341,62 +385,56 @@ impl std::fmt::Debug for IngestionWorkerPool {
 }
 
 impl IngestionWorkerPool {
-    /// Create a new ingestion worker pool.
-    ///
-    /// # Arguments
-    /// * `worker_count` - Number of worker threads (0 = auto-detect based on CPU)
-    /// * `max_queue_depth` - Maximum pending jobs before backpressure
-    /// * `ingest_service` - Shared ingest service
-    /// * `persistence` - Persistence layer for status updates
-    /// * `config` - Application config used for file-processing provider selection
-    /// * `scope` - Host ownership of accepted dispatch and blocking work
+    /// Construct a pool with `worker_count` slots (zero selects CPU count) and
+    /// at most `max_queue_depth` waiting descriptors, separate from durable work.
     pub fn new(
         worker_count: usize,
-        _max_queue_depth: usize,
+        max_queue_depth: usize,
         ingest_service: Arc<IngestService>,
         persistence: Arc<dyn PersistenceLayer>,
         config: Arc<AppConfig>,
         scope: crate::uar::runtime::lifecycle::ResourceScope,
-    ) -> Result<Self, PoolError> {
-        let worker_count = if worker_count == 0 {
-            num_cpus::get()
-        } else {
-            worker_count
-        };
-
+    ) -> Result<Self, SchedulerError> {
+        let worker_count = if worker_count == 0 { num_cpus::get() } else { worker_count };
+        let admission = IngestionAdmission::new(worker_count, max_queue_depth)?;
+        worker_count.checked_add(max_queue_depth)
+            .ok_or_else(|| SchedulerError::invalid_config("ingestion descriptor capacity overflows usize"))?;
+        let wake = Arc::new(Notify::new());
+        admission.install_release_wake(Arc::clone(&wake));
         let cancellation = scope.cancellation_token();
         let (completed_tx, completed_rx) = mpsc::unbounded_channel();
         let mut executor = DocumentIngestionExecutor::new(
             ingest_service, Arc::clone(&persistence), config, cancellation.clone(),
         );
         executor.lifecycle_scope = Some(scope.clone());
-        info!(worker_count, "Scope-owned ingestion workers initialized");
+        let (admission_state, _) = tokio::sync::watch::channel(IngestionAdmissionSnapshot::default());
+        info!(worker_count, max_queue_depth, "Scope-owned ingestion admission initialized");
         Ok(Self {
-            executor,
-            scope,
-            permits: Arc::new(tokio::sync::Semaphore::new(worker_count)),
-            results: std::sync::Mutex::new(HashMap::new()),
-            completed_tx,
-            cancellation,
-            task_deadline_ms: None,
-            persistence,
-            wake: Notify::new(),
+            executor, scope, admission, results: std::sync::Mutex::new(HashMap::new()),
+            completed_tx, cancellation, task_deadline_ms: None, persistence, wake,
             completed: std::sync::Mutex::new(Some(completed_rx)),
-            dispatch_capacity: worker_count,
+            dispatch_capacity: worker_count, max_queue_depth, admission_state,
         })
     }
 
-    /// Set the per-task deadline in milliseconds from now.
-    ///
-    /// When set, each submitted task receives an absolute deadline. Tasks still
-    /// running when the deadline passes are abandoned after the cancellation
-    /// check between stages.
+    /// Set an explicit cooperative deadline checked between processing stages.
+    /// The deadline never detaches work or releases a held grant early.
     pub fn with_task_deadline_ms(mut self, deadline_ms: Option<u128>) -> Self {
         self.task_deadline_ms = deadline_ms;
         self
     }
 
-    /// Compatibility entry point: commit acceptance before requesting dispatch.
+    /// Inspect admission and legitimate active-attempt mailbox receipts.
+    pub fn admission_snapshot(&self) -> IngestionAdmissionSnapshot {
+        self.admission_state.borrow().clone()
+    }
+
+    /// Observe local admission changes without polling the durable store.
+    pub fn subscribe_admission(&self) -> tokio::sync::watch::Receiver<IngestionAdmissionSnapshot> {
+        self.admission_state.subscribe()
+    }
+
+    /// Commit acceptance before requesting dispatch; local saturation is durable backlog.
     pub async fn submit(&self, document: KnowledgeDocument, file_content: Vec<u8>) -> Result<String> {
         let job = self.persistence.accept_ingestion(&document, &file_content).await?;
         self.notify_committed();
@@ -406,172 +444,265 @@ impl IngestionWorkerPool {
     /// Queue notifications accelerate discovery; losing one cannot lose a job.
     pub fn notify_committed(&self) { self.wake.notify_one(); }
 
-    /// Called once by the trusted server after wrapping this pool in an Arc.
+    fn publish_admission(&self, active: &HashMap<String, MailboxKey>) {
+        self.admission_state.send_replace(IngestionAdmissionSnapshot {
+            active_jobs: self.admission.active_jobs(),
+            waiting_jobs: self.admission.waiting_jobs(),
+            active_mailboxes: active.clone(),
+        });
+    }
+
+    /// Called once by the trusted host after wrapping this pool in an Arc.
     pub fn start_durable_dispatch(self: &Arc<Self>) {
         let eligibility = self.persistence.durable_store_eligibility();
         if !eligibility.permits_durable_work() || !self.persistence.supports_durable_ingestion() {
             warn!(durable_store_eligibility = eligibility.as_str(), "Durable ingestion dispatcher disabled: storage does not support durable uploads");
             return;
         }
-        let receiver = match self.completed.lock() {
-            Ok(mut receiver) => receiver.take(),
-            Err(error) => { error!(%error, "Could not start durable ingestion dispatcher"); return; }
-        };
+        let receiver = self.completed.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
         let Some(mut completed) = receiver else { return; };
         let shared = Arc::clone(self);
         self.notify_committed();
         let scope = self.scope.clone();
         if let Err(error) = scope.spawn("ingestion-dispatch", async move {
-            let mut active: HashMap<String, MailboxKey> = HashMap::new();
+            let mut active = HashMap::new();
+            let mut admitted = std::collections::HashSet::new();
             let mut reconciled = false;
+            let mut closing = false;
             loop {
-                let next_due = if active.len() < shared.dispatch_capacity {
+                if shared.cancellation.is_cancelled() && !closing {
+                    closing = true;
+                    for descriptor in shared.admission.close() {
+                        admitted.remove(&descriptor.payload.storage_key());
+                    }
+                    shared.publish_admission(&active);
+                }
+                if closing && active.is_empty() { break; }
+                let has_room = !closing && admitted.len() < shared.dispatch_capacity + shared.max_queue_depth;
+                // The durable schedule reports future due dates, excluding active rows.
+                let next_due = if has_room {
                     match shared.persistence.next_ingestion_due_at().await {
                         Ok(due) => due,
-                        Err(error) => { warn!(%error, "Ingestion due-date source unavailable; awaiting an authoritative change"); None }
+                        Err(error) => { warn!(%error, "Ingestion due-date source unavailable"); None }
                     }
                 } else { None };
                 let scheduled = async {
                     if let Some(due) = next_due {
                         let remaining = due.saturating_sub(chrono::Utc::now().timestamp());
                         tokio::time::sleep(std::time::Duration::from_secs(remaining.max(0) as u64)).await;
-                    } else {
-                        std::future::pending::<()>().await;
-                    }
+                    } else { std::future::pending::<()>().await; }
                 };
-                tokio::select! {
-                    _ = shared.cancellation.cancelled() => break,
-                    key = completed.recv() => {
-                        if let Some(key) = key {
-                            if let Some(mailbox) = active.remove(&key) {
-                                // Completion is published only after the blocking job is joined
-                                // and its result has been installed in retained state.
-                                if let Err(error) = shared.retrieve(&mailbox, std::time::Duration::ZERO).await {
-                                    warn!(%error, "Ingestion mailbox result unavailable; database remains authoritative");
+                let mut dispatched = tokio::select! {
+                    () = shared.cancellation.cancelled(), if !closing => continue,
+                    completion = completed.recv() => {
+                        let Some(completion) = completion else { break; };
+                        admitted.remove(&completion.key);
+                        active.remove(&completion.key);
+                        // The worker sends only after its actual blocking join and durable settlement.
+                        shared.results.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .remove(&completion.mailbox);
+                        shared.admission.complete(completion.permit, now_ms())
+                    }
+                    () = shared.wake.notified(), if !closing => shared.admission.poke(now_ms()),
+                    () = scheduled, if !closing => shared.admission.poke(now_ms()),
+                };
+                shared.start_grants(&mut dispatched, &mut active, &mut admitted).await;
+                if !closing && !shared.cancellation.is_cancelled() {
+                    if !reconciled {
+                        match shared.persistence.reconcile_ingestion().await {
+                            Ok(()) => reconciled = true,
+                            Err(error) => { error!(%error, "Could not reconcile legacy uploads"); continue; }
+                        }
+                    }
+                    let capacity = shared.dispatch_capacity + shared.max_queue_depth;
+                    if admitted.len() < capacity {
+                        let jobs = match shared.persistence.discover_ingestion(capacity).await {
+                            Ok(jobs) => jobs,
+                            Err(error) => { error!(%error, "Durable ingestion discovery failed"); shared.publish_admission(&active); continue; }
+                        };
+                        for job in jobs {
+                            if shared.cancellation.is_cancelled() || admitted.len() >= capacity { break; }
+                            let key = job.storage_key();
+                            if admitted.contains(&key) { continue; }
+                            let meta = TaskMetadata {
+                                id: uuid::Uuid::new_v4().as_u128() as u64, priority: Priority::Normal,
+                                cost: ResourceCost::new(ResourceKind::Cpu, 1), created_at_ms: now_ms(),
+                                deadline_ms: shared.task_deadline_ms.map(|duration| now_ms().saturating_add(duration)),
+                                mailbox: None, idempotency_key: None, sequence: 0,
+                            };
+                            match shared.admission.submit(ScheduledTask { meta, payload: job.clone() }, now_ms()) {
+                                Ok(admission) => {
+                                    admitted.insert(key);
+                                    let mut dispatched = admission.dispatched;
+                                    shared.start_grants(&mut dispatched, &mut active, &mut admitted).await;
+                                }
+                                Err(SchedulerError::QueueFull { .. }) => break,
+                                Err(error) => {
+                                    shared.executor.persist_failure(&job, &TaskError::executor(error)).await;
                                 }
                             }
                         }
                     }
-                    _ = shared.wake.notified() => {}
-                    () = scheduled => {}
                 }
-                if shared.cancellation.is_cancelled() { break; }
-                if !reconciled {
-                    match shared.persistence.reconcile_ingestion().await {
-                        Ok(()) => reconciled = true,
-                        Err(error) => { error!(%error, "Could not reconcile legacy uploads"); continue; }
+                shared.publish_admission(&active);
+            }
+            shared.publish_admission(&active);
+            Ok(())
+        }) { error!(%error, "Ingestion dispatcher admission closed"); }
+    }
+
+    async fn start_grants(
+        self: &Arc<Self>, dispatched: &mut Dispatched<Descriptor>,
+        active: &mut HashMap<String, MailboxKey>, admitted: &mut std::collections::HashSet<String>,
+    ) {
+        for descriptor in dispatched.expired.drain(..) {
+            admitted.remove(&descriptor.payload.storage_key());
+            self.executor.persist_failure(&descriptor.payload, &TaskError::DeadlineExpired).await;
+        }
+        for Grant { item, permit } in dispatched.started.drain(..) {
+            let key = item.payload.storage_key();
+            if self.cancellation.is_cancelled() {
+                admitted.remove(&key);
+                drop(permit);
+                continue;
+            }
+            let mailbox = MailboxKey { tenant: "uar-ingestion".to_owned(),
+                user_id: Some(uuid::Uuid::new_v4().to_string()), session_id: None };
+            let (result_tx, _) = tokio::sync::watch::channel(None);
+            self.results.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+                .insert(mailbox.clone(), result_tx.clone());
+            let shared = Arc::clone(self);
+            let task_key = key.clone();
+            let task_mailbox = mailbox.clone();
+            let spawned = self.scope.spawn("ingestion-prepare", async move {
+                // Permit remains in this parent through actual join and failure CAS.
+                let initial = item.payload.clone();
+                let mut claimed_attempt = None;
+                let result = match std::panic::AssertUnwindSafe(shared.run_descriptor(item, &mut claimed_attempt)).catch_unwind().await {
+                    Ok(result) => result,
+                    Err(_) => {
+                        let error = TaskError::ExecutorPanicked { message: "ingestion admission or claim panicked".to_owned() };
+                        // Retain the actual generated claim identity, including an
+                        // ambiguous store panic after commit. Never fabricate a generation.
+                        if let Some(claimed) = &claimed_attempt {
+                            shared.executor.persist_failure(claimed, &error).await;
+                        }
+                        shared.executor.persist_failure(&initial, &error).await;
+                        Err(error)
                     }
-                }
-                if active.len() >= shared.dispatch_capacity { continue; }
-                let jobs = match shared.persistence.discover_ingestion(shared.dispatch_capacity + active.len()).await {
-                    Ok(jobs) => jobs,
-                    Err(error) => { error!(%error, "Durable ingestion discovery failed"); continue; }
                 };
-                for job in jobs {
-                    if shared.cancellation.is_cancelled() || active.len() >= shared.dispatch_capacity { break; }
-                    let key = job.storage_key();
-                    if active.contains_key(&key) { continue; }
-                    match shared.dispatch(job).await {
-                        Ok(Some(mailbox)) => { active.insert(key, mailbox); }
-                        Ok(None) => {}
-                        Err(error) => { warn!(%error, "Ingestion dispatch failed; job remains durable"); }
-                    }
+                result_tx.send_replace(Some(result));
+                let _ = shared.completed_tx.send(Completion { key: task_key, mailbox: task_mailbox, permit });
+                Ok(())
+            });
+            match spawned {
+                Ok(()) => { active.insert(key, mailbox); }
+                Err(error) => {
+                    admitted.remove(&key);
+                    self.results.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&mailbox);
+                    warn!(%error, "Ingestion spawn refused; unclaimed descriptor remains durable");
                 }
             }
-            Ok(())
-        }) {
-            error!(%error, "Ingestion dispatcher admission closed");
         }
     }
 
-    async fn dispatch(&self, job: IngestionJob) -> Result<Option<MailboxKey>> {
-        job.validate_namespace()?;
-        let job = if job.state == IngestionState::Processing {
-            // Crash recovery can repeat pure preparation. Publication alone owns the fence.
-            job
+    async fn run_descriptor(&self, descriptor: Descriptor, claimed_attempt: &mut Option<IngestionJob>) -> WorkerResult {
+        let initial = descriptor.payload;
+        if self.cancellation.is_cancelled() {
+            return Err(TaskError::Cancelled { reason: "ingestion shutdown before claim".to_owned() });
+        }
+        if deadline_passed(descriptor.meta.deadline_ms) {
+            self.executor.persist_failure(&initial, &TaskError::DeadlineExpired).await;
+            return Err(TaskError::DeadlineExpired);
+        }
+        if let Err(error) = initial.validate_namespace() {
+            let error = TaskError::executor(error);
+            self.executor.persist_failure(&initial, &error).await;
+            return Err(error);
+        }
+        let job = if initial.state == IngestionState::Processing {
+            *claimed_attempt = Some(initial.clone());
+            initial
         } else {
-            let processing = job.processing();
-            if !self.persistence.transition_ingestion(&job, &processing).await? { return Ok(None); }
-            processing
-        };
-        let Some(file_content) = self.persistence.get_ingestion_source(&job).await? else { return Ok(None); };
-        let document = self.persistence.get_document(&job.owner_id, &job.document_id).await?
-            .ok_or(IngestionStoreError::Revoked)?;
-        let payload = DocumentIngestionJob { kb_id: job.kb_id.clone(), durable: job, document, file_content };
-        let now_ms = u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0);
-        let meta = TaskMetadata {
-            id: uuid::Uuid::new_v4().as_u128() as u64,
-            priority: Priority::Normal,
-            cost: ResourceCost { kind: ResourceKind::Cpu, units: 10 },
-            created_at_ms: now_ms,
-            deadline_ms: self.task_deadline_ms.map(|duration| now_ms + duration),
-            mailbox: None, idempotency_key: None,
-        };
-        let mailbox = MailboxKey {
-            tenant: "uar-ingestion".to_owned(), user_id: Some(uuid::Uuid::new_v4().to_string()),
-            session_id: None,
-        };
-        let (result_tx, _) = tokio::sync::watch::channel(None);
-        self.results.lock().unwrap_or_else(|error| error.into_inner())
-            .insert(mailbox.clone(), result_tx.clone());
-        let executor = self.executor.clone();
-        let permits = Arc::clone(&self.permits);
-        let completed = self.completed_tx.clone();
-        let key = payload.durable.storage_key();
-        let cancellation = self.cancellation.clone();
-        let task_scope = self.scope.clone();
-        let handle = tokio::runtime::Handle::current();
-        if let Err(error) = self.scope.spawn("ingestion-prepare", async move {
-            let permit = tokio::select! {
-                () = cancellation.cancelled() => {
-                    result_tx.send_replace(Some(Err("ingestion canceled before execution".to_owned())));
-                    let _ = completed.send(key);
-                    return Ok(());
+            let processing = initial.processing();
+            *claimed_attempt = Some(processing.clone());
+            match self.persistence.transition_ingestion(&initial, &processing).await {
+                Ok(true) => processing,
+                Ok(false) => return Err(TaskError::executor(IngestionStoreError::Revoked)),
+                Err(error) => {
+                    let error = TaskError::executor(error);
+                    self.executor.persist_failure(&processing, &error).await;
+                    self.executor.persist_failure(&initial, &error).await;
+                    return Err(error);
                 }
-                permit = permits.acquire_owned() => permit?,
-            };
+            }
+        };
+        let execution = std::panic::AssertUnwindSafe(async {
+            let file_content = self.persistence.get_ingestion_source(&job).await?
+                .ok_or(IngestionStoreError::Revoked)?;
+            let document = self.persistence.get_document(&job.owner_id, &job.document_id).await?
+                .ok_or(IngestionStoreError::Revoked)?;
+            let payload = DocumentIngestionJob { kb_id: job.kb_id.clone(), durable: job.clone(), document, file_content };
+            let executor = self.executor.clone();
+            let scope = self.scope.clone();
+            let handle = tokio::runtime::Handle::current();
             let result = tokio::task::spawn_blocking(move || {
-                let _permit = permit;
-                // Tokio task locals do not cross the blocking runtime entry.
-                // Keep the accepted worker under the pool's scope until the
-                // actual blocking operation returns and this parent task joins
-                // it.
-                handle.block_on(task_scope.run_in_scope(executor.execute(payload, meta)))
-            }).await.map_err(|_| "ingestion worker panicked".to_owned());
-            result_tx.send_replace(Some(result.clone()));
-            let _ = completed.send(key);
-            result.map(|_| ()).map_err(anyhow::Error::msg)
-        }) {
-            self.results.lock().unwrap_or_else(|error| error.into_inner()).remove(&mailbox);
-            return Err(anyhow::Error::new(error));
+                handle.block_on(scope.run_in_scope(executor.execute(payload, descriptor.meta)))
+            }).await;
+            Ok::<WorkerResult, anyhow::Error>(match result {
+                Ok(result) => result,
+                Err(error) => Err(TaskError::ExecutorPanicked { message: error.to_string() }),
+            })
+        }).catch_unwind().await;
+        match execution {
+            Ok(Ok(result)) => {
+                // Executor failures already settled against the exact processing attempt.
+                if let Err(error @ TaskError::ExecutorPanicked { .. }) = &result {
+                    self.executor.persist_failure(&job, error).await;
+                }
+                result
+            }
+            Ok(Err(error)) => {
+                let error = TaskError::executor(error);
+                self.executor.persist_failure(&job, &error).await;
+                Err(error)
+            }
+            Err(_) => {
+                let error = TaskError::ExecutorPanicked { message: "ingestion preparation panicked".to_owned() };
+                self.executor.persist_failure(&job, &error).await;
+                Err(error)
+            }
         }
-        Ok(Some(mailbox))
     }
 
-    /// Await a joined job result. The legacy timeout is not completion evidence.
+    /// Await a joined result. Dropping this waiter never cancels real execution.
     pub async fn retrieve(&self, key: &MailboxKey, _legacy_timeout: std::time::Duration)
-        -> Result<IngestionResult, PoolError>
+        -> Result<IngestionResult, SchedulerError>
     {
-        let mut state = self.results.lock().unwrap_or_else(|error| error.into_inner())
-            .get(key).ok_or(PoolError::ResultNotFound)?.subscribe();
+        let mut state = self.results.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(key).ok_or_else(|| SchedulerError::ResultNotFound { key: None })?.subscribe();
         loop {
             let result = state.borrow_and_update().clone();
-            if let Some(result) = result {
-                self.results.lock().unwrap_or_else(|error| error.into_inner()).remove(key);
-                return result.map_err(PoolError::Internal);
-            }
-            state.changed().await.map_err(|_| PoolError::PoolShutdown)?;
+            if let Some(result) = result { return result.map_err(SchedulerError::from); }
+            state.changed().await.map_err(|_| SchedulerError::PoolShutdown { pool: "uar-ingestion".to_owned() })?;
         }
     }
 
-    /// Request cancellation and await all actual job and dispatcher completion.
+    /// Cancel cooperatively and join actual dispatch/worker completion.
     pub async fn shutdown(&self) -> Result<()> {
         let report = self.scope.close().await;
         anyhow::ensure!(report.released, "ingestion closure failed: {:?}; unresolved: {:?}",
             report.failures, report.unresolved_effects);
         Ok(())
     }
+}
 
+fn now_ms() -> u128 {
+    u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0)
+}
+
+fn deadline_passed(deadline: Option<u128>) -> bool {
+    deadline.is_some_and(|deadline| now_ms() > deadline)
 }
 
 #[cfg(test)]

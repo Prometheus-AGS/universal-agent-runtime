@@ -1,0 +1,41 @@
+[package]
+name = "prometheus-parking-lot-wasm"
+description = "WASM WorkerPool for prometheus_parking_lot (async tasks instead of OS threads)."
+documentation = "https://docs.rs/prometheus-parking-lot-wasm"
+keywords = ["scheduler", "wasm", "worker", "ai"]
+categories = ["asynchronous", "wasm"]
+readme = "README.md"
+include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+# The implementation is wasm32-only; the default (native) docs.rs build is empty.
+targets = ["wasm32-unknown-unknown"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+prometheus-parking-lot-core.workspace = true
+
+# The implementation compiles only for wasm32 (see src/lib.rs), so its
+# dependencies are not built for other targets.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures-channel.workspace = true
+gloo-timers.workspace = true
+js-sys.workspace = true
+parking_lot.workspace = true
+tracing.workspace = true
+wasm-bindgen-futures.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+async-trait.workspace = true
+wasm-bindgen-test.workspace = true
+
+[lints]
+workspace = true

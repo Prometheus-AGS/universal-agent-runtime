@@ -2160,18 +2160,16 @@ async fn run_server_with_listener(
 
     // ── Shared ingestion worker pool ─────────────────────────────────────────────
     // Built once before router assembly. A single `Arc` is cloned into both
-    // knowledge-base router states so there is exactly one pool and one set of
-    // OS threads. The `Arc` is also retained here so we can call
-    // `ingestion_pool_shared.shutdown()` during graceful shutdown after the
-    // signal fires — `shutdown(&self)` is callable through `Arc` in the new
-    // crate revision (CR-02 fix).
+    // knowledge-base router states so local admission shares one capacity bound.
+    // The pool's ResourceScope retains the actual workers through shutdown;
+    // Parking Lot supplies admission grants rather than worker ownership.
     let ingestion_pool_shared: Option<Arc<IngestionWorkerPool>> =
         if let (Some(p), Some(ingest)) = (&persistence, &state.ingest_service) {
             let ingestion_scope = shutdown_coordinator.supervisor.register("ingestion", "uar-host").await?;
             startup_checkpoint!("ingestion worker registration");
             match IngestionWorkerPool::new(
                 0,   // auto-detect CPU count
-                100, // max queue depth
+                100, // locally waiting descriptors; durable backlog is separate
                 Arc::clone(ingest),
                 Arc::clone(p),
                 Arc::clone(&config),

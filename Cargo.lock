@@ -8907,30 +8907,58 @@ dependencies = [
 ]
 
 [[package]]
-name = "prometheus_parking_lot"
-version = "0.1.0"
+name = "prometheus-parking-lot-core"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "criterion",
- "crossbeam-channel",
- "dotenvy",
- "flume",
- "futures",
- "lock_api",
+ "loom",
  "num_cpus",
  "parking_lot",
- "parking_lot_core",
- "rand 0.9.4",
- "reqwest 0.12.28",
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "prometheus-parking-lot-runtime-tokio"
+version = "0.3.0"
+dependencies = [
+ "async-trait",
+ "crossbeam-channel",
+ "parking_lot",
+ "prometheus-parking-lot-core",
  "serde",
  "serde_json",
- "thiserror 2.0.20",
  "tokio",
  "tokio-util",
  "tracing",
+]
+
+[[package]]
+name = "prometheus-parking-lot-wasm"
+version = "0.3.0"
+dependencies = [
+ "futures-channel",
+ "gloo-timers",
+ "js-sys",
+ "parking_lot",
+ "prometheus-parking-lot-core",
+ "tracing",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "prometheus_parking_lot"
+version = "0.3.0"
+dependencies = [
+ "prometheus-parking-lot-core",
+ "prometheus-parking-lot-runtime-tokio",
+ "prometheus-parking-lot-wasm",
+ "serde",
+ "serde_json",
+ "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -14255,7 +14283,7 @@ checksum = "81e544489bf3d8ef66c953931f56617f423cd4b5494be343d9b9d3dda037b9a3"
 
 [[package]]
 name = "universal-agent-runtime"
-version = "1.2.3"
+version = "1.3.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -14308,6 +14336,7 @@ dependencies = [
  "ort-tract",
  "petgraph 0.8.3",
  "pgvector",
+ "prometheus-parking-lot-core",
  "prometheus_parking_lot",
  "proptest",
  "prost",

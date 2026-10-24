@@ -1,0 +1,46 @@
+[package]
+name = "prometheus-parking-lot-embedded"
+description = "Crash-safe embedded (redb) lease queue and result mailbox for prometheus_parking_lot (desktop and single-node)."
+documentation = "https://docs.rs/prometheus-parking-lot-embedded"
+keywords = ["scheduler", "queue", "embedded", "tauri", "ai"]
+categories = ["asynchronous", "filesystem"]
+readme = "README.md"
+include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+# Test-only: lets the crash-point tests stop the process at named points inside
+# a queue or mailbox operation (`PARKING_LOT_FAULT_POINT=<point>`). Never enable
+# it in a deployment. Enabled for this crate's own tests by the self
+# dev-dependency below.
+fault-injection = []
+
+[dependencies]
+prometheus-parking-lot-core.workspace = true
+redb.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# `spawn_blocking` keeps redb's synchronous, fsyncing transactions off async
+# worker threads.
+tokio = { workspace = true, features = ["rt"] }
+
+[dev-dependencies]
+prometheus-parking-lot-core = { workspace = true, features = ["conformance"] }
+# Path-only: cargo strips a dev-dependency that has no version when it packages,
+# so the unpublished crate does not have to resolve itself on crates.io.
+prometheus-parking-lot-embedded = { path = ".", features = ["fault-injection"] }
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time"] }
+
+[lints]
+workspace = true

@@ -181,3 +181,19 @@ Sentinel_8d3118c046848191a1e2323b355da735 approves existing trusted-builder COUN
 
 ## Operator-requested caller-tools finish contract — 2026-10-22
 Apply [client-tools-exit-contract.md](client-tools-exit-contract.md) to the existing openai-client-tools change. It fixes the functional scope and finite CT-1–CT-7 exit, preserves the baseline phase plan, excludes unrelated certification/new capabilities, and defines proof reuse plus a no-progress stop. Derived with kbd-plan and an isolated planning teammate. No new OpenSpec change is needed; the existing change already has matching spec deltas. Source/release execution authority remains the operator’s existing scoped instruction; this planning amendment does not open unrelated gates.
+
+
+## Operator-approved issue #426 implementation — 2026-10-24
+
+Operator approved the complete Parking Lot plan and its UAR1.3.0 minor-version amendment, then instructed implementation. Canonical change: `update-parking-lot-admission`, sequence7. The exact contract, single-writer map, per-task exit artifacts and command classifications are recorded in [issue-426-execution.md](issue-426-execution.md) and `openspec/changes/update-parking-lot-admission/`. Exact upstream SHA4b747350c6883497813bed33623a9937ad7a5894; dispatcher admission only, actual worker ownership stays in ResourceScope. The existing verification lock remains CLOSED; no source-authoring completion reopens it. See [issue-426-gates.proposed.md](issue-426-gates.proposed.md) for unapproved future commands. Do not reopen or overwrite older caller-tool receipts or contract authority.
+
+Native assignments: lead integrates root manifests/lock/version/coordination; parking_vendor exports exact source; parking_adapter implements owned bounded admission; parking_acceptance authors finite production-path tests/docs. All use the current native session's configured model; concrete native agent IDs and bounded ownership are retained in team handoffs. Independent Rust/code review remains pending until the operator opens the review boundary.
+
+
+## Operator-requested1.3.0 completion packet —2026-10-24
+
+Continue this existing phase against current local1.3.0 source. Canonical revision299/plan100 records preparation only. See execution.md, v1.3.0-ledger-reconciliation.md, v1.3.0-implementation-inventory.md and the single v1.3.0-verification-packet.md for ownership, current source and exact proposed gates. Two stale boundary authoring boxes are reconciled; caller-tools five additional OpenSpec rows are historical authorization/publication/gates, not missing implementation. Verification remains CLOSED; source tasks69/71 are complete with5.1/5.2 pending, not a runtime PASS.
+
+Known packet blockers are the absent actual COUNT-amended adopted-contract artifact and unbound existing isolated config/store/identity/provider/model/embedding references. Five concrete A–E documents are now authored. Do not run the proposed main manifest, manufacture approval or inherit1.2.3 receipts. Final binding and explicit exact-command/fixture/review approval must precede every gate. Required archive/reflection remain after actual exit criteria pass.
+
+Finite completion checklist: `v1.3.0-exit-contract.md` consolidates required A–E acceptance evidence and bounded repair/stop rules. It remains proposed alongside the exact command packet and does not replace the adopted contract. Source-only contract/fixture recovery is recorded in `.agent-team/uar-core/handoffs/v130-{contract,fixture}-recovery.md`; missing contract bytes and the incompatible historical embedded-store fixture remain actual input gaps. Verification stays CLOSED.

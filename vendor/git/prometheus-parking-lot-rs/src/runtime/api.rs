@@ -54,10 +54,14 @@ pub struct Health {
 }
 
 /// Submit a task to a pool. Placeholder; caller manages pool lookup.
+///
+/// # Errors
+///
+/// Returns the scheduler error rendered as a string when the pool rejects the
+/// task (expired deadline, full queue or backend failure).
 pub async fn submit_task<P, T, Q, M, E, S>(
     pool: &ResourcePool<P, T, Q, M, E, S>,
     req: TaskSubmission<P>,
-    now_ms: u128,
 ) -> Result<TaskStatus, String>
 where
     P: crate::core::TaskPayload,
@@ -65,7 +69,7 @@ where
     Q: crate::core::TaskQueue<P> + Send + 'static,
     M: crate::core::Mailbox<T> + Send + 'static,
     E: crate::core::TaskExecutor<P, T>,
-    S: crate::core::Spawn + Clone + Send + 'static,
+    S: crate::core::Spawn + Send + Sync + 'static,
 {
     let meta = crate::core::TaskMetadata {
         id: req.task_id,
@@ -75,15 +79,17 @@ where
         deadline_ms: req.deadline_ms,
         created_at_ms: req.created_at_ms,
         idempotency_key: None,
+        sequence: 0,
     };
     let task: ScheduledTask<P> = ScheduledTask {
         meta,
         payload: req.payload,
     };
-    pool.submit(task, now_ms).await.map_err(|e| e.to_string())
+    pool.submit(task).await.map_err(|e| e.to_string())
 }
 
 /// Build pool listings from config snapshot.
+#[must_use]
 pub fn list_pools(cfg: &crate::config::SchedulerConfig) -> Vec<PoolSnapshot> {
     cfg.pools
         .iter()
@@ -96,6 +102,7 @@ pub fn list_pools(cfg: &crate::config::SchedulerConfig) -> Vec<PoolSnapshot> {
 }
 
 /// Return a health payload.
-pub fn health() -> Health {
+#[must_use]
+pub const fn health() -> Health {
     Health { ok: true }
 }

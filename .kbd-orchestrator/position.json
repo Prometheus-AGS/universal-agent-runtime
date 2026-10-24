@@ -2,17 +2,19 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 268,
-  "derivedRevision": 268,
+  "sourceRevision": 299,
+  "derivedRevision": 299,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 156,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 187,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
-  "updatedAt": "2026-10-23T00:57:07.499024Z",
+  "updatedAt": "2026-10-24T10:23:08.509491Z",
   "cursor": [
     "uar-post-lifecycle-verification-readiness",
-    "execute"
+    "execute",
+    "update-parking-lot-admission",
+    "5.1"
   ],
   "root": {
     "type": "phase",
@@ -20,7 +22,7 @@
     "status": "ready",
     "progress": {
       "done": 144,
-      "total": 166
+      "total": 167
     },
     "children": [
       {
@@ -2064,7 +2066,7 @@
         "status": "IN_PROGRESS",
         "progress": {
           "done": 6,
-          "total": 6
+          "total": 7
         },
         "children": [
           {
@@ -2110,6 +2112,15 @@
             "progress": {
               "done": 3,
               "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "update-parking-lot-admission",
+            "status": "PENDING",
+            "progress": {
+              "done": 8,
+              "total": 10
             }
           },
           {

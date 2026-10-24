@@ -2,28 +2,28 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 265,
-  "derivedRevision": 265,
+  "sourceRevision": 296,
+  "derivedRevision": 296,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 153,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 184,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
   "phase": "uar-post-lifecycle-verification-readiness",
   "phaseId": "uar-post-lifecycle-verification-readiness",
   "parentPhase": null,
-  "last_updated": "2026-10-22T23:40:55.066921Z",
+  "last_updated": "2026-10-24T09:39:32.462355Z",
   "last_updated_by": "kbd-runtime",
-  "changes_total": 6,
+  "changes_total": 7,
   "changes_completed": 6,
-  "implementation_total": 6,
+  "implementation_total": 7,
   "implementation_completed": 6,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
       "completed": 6,
-      "total": 6,
-      "status": "COMPLETE"
+      "total": 7,
+      "status": "IN_PROGRESS"
     },
     "evidence": {
       "status": "NOT_TRACKED",
@@ -51,7 +51,7 @@
     "primaryCounter": "implementation",
     "implementation": {
       "completed": 144,
-      "total": 166,
+      "total": 167,
       "status": "IN_PROGRESS"
     },
     "evidence": {
@@ -124,6 +124,17 @@
       "tasks_done": 3,
       "last_task_completed": "Prepare complete implementation inventory and exact approval packet without running it",
       "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "update-parking-lot-admission",
+      "title": "Issue426 pinned Parking Lot upgrade with bounded owned ingestion and UAR1.3.0",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 10,
+      "tasks_done": 8,
+      "last_task_completed": "Collect handoffs and reconcile inventory remaining work and proposed gates",
+      "next_task_pending": "Operator-gated finite integration and supported-profile builds",
       "blockers": []
     },
     {

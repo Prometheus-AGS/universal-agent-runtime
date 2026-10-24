@@ -2336,3 +2336,23 @@ Operator requested kbd-plan to bound completion. CT-1–CT-7 in the active phase
 2026-10-22 — Preserve published1.2.2 after failedexactimageacceptance. Deliver necessary production correction onlyunder1.2.3; retainactual joins/durableCAS/authentication andfailclosedbehavior. Addressobserveddisagreeingconcurrenthandoffconfirmers withone source-runwriter; donotclaimunderlyingdiscardedstorageerrorproven. Exactnewimageacceptance remainsrequired.
 
 2026-10-23 — Supersedes pending1.2.3 publication/acceptance state only: exact image002 passed the finite CT1–CT7 contract and releasev1.2.3 is published. Preserve image/source identities permanently; do not broaden this successful gate. Original discarded1.2.2 inner error remains unproven; no upstream-defect or generic exactly-once assertion is introduced.
+
+
+## 2026-10-24 — Issue #426 approved Parking Lot integration
+
+Operator approved full issue implementation using exact upstream 4b747350c6883497813bed33623a9937ad7a5894 (manifest0.3.0), narrow dispatcher admission with ResourceScope-owned actual workers, one slot/job, CPU-count capacity, 100 locally waiting descriptors, Normal FIFO and no new default execution deadline. Durable overflow and publication fencing remain authoritative. Root UAR becomes1.3.0 before frozen acceptance; independent frontend/Tauri versions stay unchanged. Rationale: native WorkerPool execution budgets and bounded worker-exit waits widen the ownership migration. OpenSpec update-parking-lot-admission and phase issue-426-execution.md record scope. Verification remains CLOSED.
+
+
+## 2026-10-24 — Pinned dispatcher interface and settlement
+
+Exact upstream facade omits dispatch/semaphore re-exports. UAR directly depends on the core crate from the same source export rather than changing upstream implementation. A public admission snapshot/watch exposes real active mailbox receipts without transferring worker ownership. Source inspection of durable next-due queries showed only future deadlines, so the dispatcher retains retry scheduling while spare capacity exists. Panic recovery retains the exact generated attempted claim and catches failure-settlement provider panic; unknown durable outcomes remain explicit lifecycle evidence. These are source-authored decisions, not passing runtime evidence.
+
+
+## 2026-10-24 — Whole-phase verification candidate binding
+
+Treat localUAR1.3.0 as a fresh candidate, with original ten-scenario main boundary and issue426 regressions/profile builds in one ordered proposed packet. Reuse existing phase Cargo target serially. Old caller-tool1.2.3 receipts remain historical. Source ledger69/71 versus OpenSpec74/76 differs by five historical publication/authorization/gate rows; fix stale authoring boxes without claiming acceptance. Canonical contract digest/signature metadata does not replace the absent adopted contract bytes. Keep the proposed runnable manifest disabled until actual contract/config/store/identity/model bindings and exact operator permission are supplied. Rationale: prevent false phase closure from complete source boxes or a closed GitHub issue.
+
+
+## 2026-10-24 — UAR 1.3.0 finite verification exit preparation
+
+Phase uar-post-lifecycle-verification-readiness remains Execute, canonical revision299/plan100, gate CLOSED. Added proposed v1.3.0-exit-contract.md: finite required main/#426/profile/review/spec evidence, first-failure stop, preserved consumed-budget uncertainty, bounded repairs and renewed exact approval after edits. Source-only team recovery found signed COUNT metadata without contract body and historical1.2.3 embedded SurrealKV fixture incompatible with the main WebSocket-store boundary. No token values copied, service probe, test, build, validator, review or other verification ran. No acceptance, archive or reflection claimed. Remaining input: actual contract restoration/reviewed amendment and permitted isolated store/config/owner references.
