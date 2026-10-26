@@ -28,6 +28,9 @@ pub struct IngestionJob {
     pub attempts: u32,
     pub next_attempt_at: i64,
     pub last_error: Option<String>,
+    /// A KB cohort fence, independent of this document's retry generation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub regeneration: Option<String>,
 }
 
 impl IngestionJob {
@@ -42,6 +45,7 @@ impl IngestionJob {
             attempts: 0,
             next_attempt_at: chrono::Utc::now().timestamp(),
             last_error: None,
+            regeneration: None,
         })
     }
 
@@ -85,7 +89,7 @@ impl IngestionJob {
     pub fn validate_transition(&self, after: &Self) -> anyhow::Result<()> {
         self.validate_namespace()?;
         after.validate_namespace()?;
-        anyhow::ensure!(self.namespace == after.namespace && self.owner_id == after.owner_id && self.document_id == after.document_id && self.kb_id == after.kb_id,
+        anyhow::ensure!(self.namespace == after.namespace && self.owner_id == after.owner_id && self.document_id == after.document_id && self.kb_id == after.kb_id && self.regeneration == after.regeneration,
             "ingestion transition cannot change owner or document");
         let allowed = matches!((self.state, after.state),
             (IngestionState::Pending | IngestionState::Retryable, IngestionState::Processing)

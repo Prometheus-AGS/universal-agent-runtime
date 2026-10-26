@@ -1,4 +1,5 @@
 import type { Chunk, SkillActivationChunk } from "@/shared/content/chunk";
+import { agentSelectionChunk } from "@/shared/content/agent-selection";
 
 import type { UarAguiEvent } from "./agui-schema";
 
@@ -110,6 +111,9 @@ function customChunk(
   const name = text(event.name, "CUSTOM");
   const value = record(event.value);
   switch (name) {
+    case "uar.agent.selected":
+      return agentSelectionChunk(value, base, true)
+        ?? { ...base, kind: "raw", type: "invalid_agent_selection", payload: { reason: "Invalid selection metadata" } };
     case "uar.citation.added": {
       const citation = record(value.citation);
       return { ...base, kind: "citation", source: text(citation.title, text(citation.url, "Source")), content: text(citation.snippet), url: typeof citation.url === "string" ? citation.url : undefined };

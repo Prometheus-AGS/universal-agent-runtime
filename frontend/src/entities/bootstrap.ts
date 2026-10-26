@@ -6,6 +6,9 @@ import {
   registerPresentationEntities,
   registerPresentationAssignmentEntities,
   registerPresentationProvenanceEntities,
+  registerA2uiActionEntities,
+  bindA2uiActionPersistence,
+  persistGraphToStorage,
   startLocalFirstGraph,
 } from "@/platform/entities";
 import type {
@@ -73,6 +76,7 @@ export async function bootstrapEntityGraph() {
   registerPresentationEntities();
   registerPresentationAssignmentEntities();
   registerPresentationProvenanceEntities();
+  registerA2uiActionEntities();
 }
 
 export async function initializeDurableEntityGraph(
@@ -83,7 +87,14 @@ export async function initializeDurableEntityGraph(
   const runtime = dependencies.startLocalFirst(storage);
   try {
     await runtime.ready;
+    const status = runtime.getStatus();
+    if (status.error !== null || (status.phase !== "ready" && status.phase !== "offline")) {
+      throw new Error("Entity graph hydration did not complete successfully");
+    }
     const cleanup = await dependencies.startSync();
+    bindA2uiActionPersistence(async () => {
+      await persistGraphToStorage({ storage, key: "uar:entity-graph" });
+    });
     return { runtime, cleanup };
   } catch (error) {
     runtime.dispose();
@@ -115,6 +126,7 @@ export function bootstrapDurableEntityGraph(
  * Cleanup sync transport. Call on app unmount if needed.
  */
 export function teardownEntityGraph() {
+  bindA2uiActionPersistence(null);
   localFirstRuntime?.dispose();
   localFirstRuntime = null;
   if (syncCleanup) {

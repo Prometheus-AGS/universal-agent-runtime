@@ -27,7 +27,7 @@ const BLOCKS: ContentBlock[] = [
 
 const ALL_KINDS = [
   "text", "markdown", "reasoning", "thinking", "tool-call", "tool-approval", "tool-denied",
-  "skill-activation", "memory-recall", "memory-mutation", "memory-update", "citation", "rag-citations",
+  "skill-activation", "agent-selection", "memory-recall", "memory-mutation", "memory-update", "citation", "rag-citations",
   "context-update", "a2ui-display", "a2ui-input", "artifact", "image", "video", "file", "divider",
   "state-snapshot", "state-delta", "step", "usage", "error", "raw",
 ] as const satisfies readonly ChunkKind[];
@@ -42,6 +42,7 @@ const CHUNK_FIXTURES = {
   "tool-approval": { ...base, kind: "tool-approval", toolCallId: "tool", toolName: "write", args: {} },
   "tool-denied": { ...base, kind: "tool-denied", toolCallId: "tool", toolName: "write", reason: "denied" },
   "skill-activation": { ...base, kind: "skill-activation", skillId: "skill", skillName: "Research", status: "active" },
+  "agent-selection": { ...base, kind: "agent-selection", sourceAgentId: "orchestrator-agent", agentId: "specialist", agentName: "Specialist", selectedThreadId: "child", selectionMethod: "intent", rosterRevision: "roster" },
   "memory-recall": { ...base, kind: "memory-recall", items: [] },
   "memory-mutation": { ...base, kind: "memory-mutation", operation: "update", memoryId: "memory" },
   "memory-update": { ...base, kind: "memory-update", scope: "session", summary: "updated", itemCount: 1 },

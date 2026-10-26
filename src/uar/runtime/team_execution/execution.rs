@@ -1,4 +1,5 @@
 use super::TeamExecutionRuntime;
+use anyhow::Context as _;
 use crate::uar::{
     compiler::collaboration::CollaborationError,
     domain::team_execution::{TeamExecutionAttempt, TeamReservation},
@@ -281,6 +282,10 @@ impl TeamExecutionRuntime {
         if let Some(binding) = request.collaboration_binding.as_mut() {
             binding.team_instructions = guidance;
         }
+        let (_, output_token_cap) = crate::uar::runtime::cost_budget::team_token_allocation(
+            attempt.reservation.tokens,
+        )?;
+        request.output_token_cap = Some(u32::try_from(output_token_cap)?);
         request.session_id = Some(format!("team-attempt:{}", attempt.id));
         request.host_budget_constraint = Some(ThreadBudgets {
             max_tokens_per_turn: Some(attempt.reservation.tokens),
@@ -324,6 +329,16 @@ impl TeamExecutionRuntime {
             .await;
         // Failed starts can still own a persisted root or child cleanup; settle them.
         host.finish_abandoned().await?;
+        // Team attempts do not carry a logical-instance binding, so the actor
+        // host's instance-only persistence branch does not save this dialogue.
+        // Do not confirm a terminal team turn before its canonical history is
+        // durable; subsequent attempts and recovery consume that history.
+        if result.is_ok() {
+            self.manager
+                .persist_instance_session(owner, &format!("team-attempt:{}", attempt.id))
+                .await
+                .context("team_session_persistence_unconfirmed")?;
+        }
         result
     }
 }

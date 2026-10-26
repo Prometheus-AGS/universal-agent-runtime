@@ -679,6 +679,47 @@ async fn run_server_with_listener(
         config.models.vector_threshold,
     ));
 
+    // Local skill strategies have a separate fixed FastEmbed resource. The
+    // configured RAG backend may be hosted and must never acquire a local label.
+    let local_skill_finalizer: Arc<Mutex<Option<Weak<crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend>>>> =
+        Arc::new(Mutex::new(None));
+    let local_skill_finalizer_for_close = Arc::clone(&local_skill_finalizer);
+    let local_skill_scope = shutdown_coordinator.supervisor
+        .register_with_finalizer("local-skill-embedding", "uar-host", async move {
+            let backend = local_skill_finalizer_for_close.lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .as_ref().and_then(Weak::upgrade);
+            if let Some(backend) = backend {
+                backend.shutdown().await
+                    .map_err(|error| anyhow::anyhow!("local skill embedding cleanup failed: {error}"))?;
+            }
+            Ok(())
+        }).await?;
+    let local_skill_config = crate::uar::rag::embeddings::EmbeddingConfig {
+        backend: "fastembed".to_string(),
+        model: "bge-small-en-v1.5".to_string(),
+        vector_dimension: 384,
+        models_dir: config.models.models_dir.clone(),
+        strict_models_dir: true,
+        ..Default::default()
+    };
+    let local_skill_matcher = match crate::uar::rag::embeddings::build_local_backend(
+        &local_skill_config, local_skill_scope.clone(),
+    ) {
+        Ok(backend) => {
+            let backend = Arc::new(crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(backend));
+            *local_skill_finalizer.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Arc::downgrade(&backend));
+            local_skill_scope.mark_ready()?;
+            Some(Arc::new(VectorMatcher::new(backend, config.models.vector_threshold)))
+        }
+        Err(error) => {
+            warn!(%error, "Local skill matching is unavailable; hosted RAG routing is unchanged");
+            local_skill_scope.record_failure(format!("local skill embedding assets unavailable: {error}"));
+            None
+        }
+    };
+    startup_checkpoint!("local skill embedding resource registration");
+
     // Embeddings are intentionally lazy. UAR must bind its public interfaces
     // before optional ONNX/model preparation begins; keyword/TF-IDF skill
     // selection and chat do not require an embedding backend at startup.
@@ -1187,6 +1228,10 @@ async fn run_server_with_listener(
             .await
             .ok()
             .flatten();
+        let persisted_dimension = mgr
+            .get_typed::<usize>("llm.embedding.vector_dimension")
+            .await?;
+        let persisted_send_dimensions = mgr.get_typed::<bool>("llm.embedding.send_dimensions").await?;
         let mut effective = embedding_config.clone();
         if let Some(b) = persisted_backend
             && !b.trim().is_empty()
@@ -1198,8 +1243,18 @@ async fn run_server_with_listener(
         {
             effective.model = m;
         }
+        if let Some(dimension) = persisted_dimension {
+            anyhow::ensure!((1..=16_000).contains(&dimension),
+                "persisted embedding vector dimension is invalid");
+            effective.vector_dimension = dimension;
+        }
+        if let Some(send_dimensions) = persisted_send_dimensions {
+            effective.send_dimensions = send_dimensions;
+        }
         if effective.backend != embedding_config.backend
             || effective.model != embedding_config.model
+            || effective.vector_dimension != embedding_config.vector_dimension
+            || effective.send_dimensions != embedding_config.send_dimensions
         {
             let rebuilt = if effective.backend == "fastembed" {
                 crate::uar::rag::embeddings::build_local_backend(
@@ -1212,7 +1267,8 @@ async fn run_server_with_listener(
             match rebuilt {
                 Ok(backend)
                     if backend.backend_name() == effective.backend
-                        && backend.model_id() == effective.model =>
+                        && backend.model_id() == effective.model
+                        && backend.vector_dimension() == effective.vector_dimension =>
                 {
                     let (name, model, dimension) = (
                         backend.backend_name().to_string(),
@@ -1355,11 +1411,11 @@ async fn run_server_with_listener(
         startup_checkpoint!("ingestion file watcher readiness");
 
         // Seed built-in agents so they are persisted, realtime-backed entities.
-        // They are idempotently upserted on every boot so system prompt updates
-        // take effect without a manual re-seed.
-        if let Err(e) = seed_builtin_agents(&**p).await {
-            tracing::warn!("Failed to seed built-in agents: {:?}", e);
-        }
+        // Existing persisted definitions retain operator settings. Failure to
+        // establish the required built-ins must not publish false readiness;
+        // the startup owner joins registered resources on this error path.
+        seed_builtin_agents(&**p).await
+            .map_err(|error| anyhow::anyhow!("Failed to seed built-in agents: {error}"))?;
 
         if !p.supports_durable_accounting() {
             match p.list_agents().await {
@@ -1476,6 +1532,7 @@ async fn run_server_with_listener(
         startup_checkpoint!("memory lifecycle readiness");
     }
 
+    #[cfg(feature = "surreal-backend")]
     if let Some(memory) = memory_service.as_ref() {
         let bus = Arc::new(uar::realtime::surreal_bus::LiveQueryBus::start_memory(memory.subscription_client()?));
         let owner = Arc::clone(&bus);
@@ -1687,7 +1744,8 @@ async fn run_server_with_listener(
 
     // Skills initialization — use SkillService with filesystem provider
     let mut skill_service =
-        SkillService::new(persistence.clone(), Some(Arc::clone(&vector_matcher)));
+        SkillService::new(persistence.clone(), Some(Arc::clone(&vector_matcher)))
+            .with_local_skill_matcher(local_skill_matcher.clone());
     let roots = config.skill_source_roots.clone().unwrap_or_else(|| {
         let mut roots = vec![std::path::PathBuf::from("skills")];
         if let Some(home) = standard_agent_skills_dir() { roots.push(home); }
@@ -1845,6 +1903,7 @@ async fn run_server_with_listener(
         .attach_lifecycle(manager_scope.clone())
         .with_agent_graph(uar::defaults::orchestrator_graph())
         .with_skill_service(Arc::clone(&skill_service))
+        .with_local_skill_matcher(local_skill_matcher.clone())
         .with_skill_required_roles(config.security.skill_required_roles.clone())
         .with_credential_policy(Arc::clone(&credential_policy))
         .with_mcp_runtime(projected_mcp_runtime.clone(), Arc::clone(&mcp_environment))
@@ -5264,12 +5323,12 @@ async fn api_messages(
     );
 
     // Registered-agent binding: the explicit request `agent_id` wins; else the
-    // persisted conversation policy's `agent_id`; else the turn stays unbound.
+    // persisted conversation policy's `agent_id`; else the default agent.
     let agent_selector = req.agent_id.as_deref().or_else(|| {
         conversation_policy
             .as_ref()
             .and_then(|policy| policy.agent_id.as_deref())
-    });
+    }).or(Some("default-agent"));
     let bound_agent = match agent_selector {
         // Bound targets need the full resolve_bound/admit_bound path with the
         // workspace header (see the chat-completions glue); reject instead of
@@ -5874,6 +5933,8 @@ impl StreamMode {
 /// OpenAI-compatible completion request with UAR extensions.
 #[derive(Debug, Deserialize)]
 pub(crate) struct ChatCompletionRequest {
+    #[serde(default)]
+    response_format: Option<crate::llm::response_format::ResponseFormat>,
     /// Model name (`gpt-5.2`) or provider-scoped (`openai/gpt-5.2`).
     #[serde(default)]
     model: Option<String>,
@@ -6360,6 +6421,11 @@ pub(crate) async fn api_chat_completion(
         Ok(request) => request,
         Err(response) => return response,
     };
+    if let Some(format) = &req.response_format {
+        if let Err(error) = format.validate() {
+            return openai_error_response(StatusCode::BAD_REQUEST, &error.to_string(), Some("invalid_response_format"));
+        }
+    }
     if caller_request.is_some() && resume.is_some() {
         return openai_error_response(StatusCode::BAD_REQUEST, "Caller-tool retries use the exact messages/result batch", Some("unsupported_client_tool_cursor"));
     }
@@ -6807,6 +6873,7 @@ pub(crate) async fn api_chat_completion(
         run_request.resolved_policy = Some(effective_run_policy);
         run_request.presentation_negotiation = req.presentation_negotiation.clone();
         run_request.output_token_cap = req.max_completion_tokens.or(req.max_tokens);
+        run_request.response_format = req.response_format.clone();
         if let Some(mut caller) = caller_request.take() {
             caller.model = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
             return uar::api::openai::routes::execute_prepared_chat_completion(state, user_ctx, caller, run_request, input_finding,

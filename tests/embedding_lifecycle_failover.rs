@@ -557,6 +557,7 @@ fn local_config(models_dir: &Path, model: &str, vector_dimension: usize) -> Embe
         api_key_env: None,
         base_url: None,
         vector_dimension,
+        send_dimensions: true,
         batch_size: 32,
         models_dir: models_dir.display().to_string(),
         strict_models_dir: true,

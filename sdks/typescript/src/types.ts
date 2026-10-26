@@ -29,6 +29,7 @@ export interface ClientOptions {
 export interface ChatMessage { role: "system" | "user" | "assistant" | "tool"; content: string }
 export interface ChatRequest {
   messages: ChatMessage[];
+  agentId?: string;
   model?: string;
   sessionId?: string;
   temperature?: number;

@@ -1,0 +1,151 @@
+[
+  {
+    "description": "  As a user\n  I want the orchestrator to choose a writer from my registered agents\n  So that writing tasks are handled by the writer rather than the mathematics specialist",
+    "elements": [
+      {
+        "description": "",
+        "id": "route-a-writing-request-to-a-saved-writing-specialist;save-a-writer-and-let-intent-classification-route-a-blog-request",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Save a writer and let intent classification route a blog request",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40878205
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the running UAR contains the saved mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:25"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7154493
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I register a persistent blog and article writing agent",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:40"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 19554623
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the writing agent is saved alongside the mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:80"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1860202743
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I ask the orchestrator to write a community garden blog post",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 910437,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected one agent-selection event\n\n0 !== 1\n\n    + expected - actual\n\n    -0\n    +1\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/writing-orchestrator.steps.mjs:122:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "intent classification selects the writing agent instead of the mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:120"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "the writing agent returns a blog draft using its saved byline",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 435583
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJQZXJzaXN0IGEgd3JpdGluZyBhZ2VudCBhbmQgcm91dGUgYSB3cml0aW5nIHRhc2sgYnkgaW50ZW50IiwKICAic3RhdHVzIjogIkZBSUxFRCIsCiAgImNsaWVudF9wbGF0Zm9ybSI6ICJkYXJ3aW4iLAogICJtb2RlbCI6ICJsaXRlci9NaW5pTWF4LU0zIiwKICAid3JpdGVyX2lkIjogIndyaXRpbmctc3BlY2lhbGlzdCIsCiAgIm1hdGhfaWQiOiAibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwKICAiYWdlbnRfcmVjb3JkIjogIi9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudHMvd3JpdGluZy1zcGVjaWFsaXN0Lmpzb24iLAogICJ3cml0ZXJfY3JlYXRlZCI6IGZhbHNlLAogICJ0YXNrIjogIldyaXRlIGEgYmxvZyBwb3N0IG9mIGFwcHJveGltYXRlbHkgMTAwIHRvIDE2MCB3b3JkcyBhYm91dCBob3cgYSBjb21tdW5pdHkgZ2FyZGVuIGhlbHBzIG5laWdoYm9ycyBjb25uZWN0LiBJbmNsdWRlIGEgaGVhZGxpbmUgYW5kIGF0IGxlYXN0IHR3byBzdWJzdGFudGl2ZSBwYXJhZ3JhcGhzLiIsCiAgImV2ZW50cyI6IFsKICAgIHsKICAgICAgInR5cGUiOiAiUlVOX1NUQVJURUQiLAogICAgICAidGhyZWFkSWQiOiAiOGM1MmIxYTYtZTU2ZS00MmFhLTlhMzMtMzNlYjY0OTA3MzRjIiwKICAgICAgInJ1bklkIjogIjY0Y2Q5ODI0LWU4NTUtNDYzOS05YzllLTdiYWQzNGNhZjllMiIsCiAgICAgICJwcm90b2NvbFZlcnNpb24iOiAiMS4wIgogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiVE9PTF9DQUxMX1NUQVJUIiwKICAgICAgInRvb2xDYWxsSWQiOiAiNzFhZjliMWEtZWY5My00YWQ1LTkwY2YtNGZhMGQ2Y2RiMzdhIiwKICAgICAgInRvb2xDYWxsTmFtZSI6ICJzcGF3bl9hZ2VudCIKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogIlRPT0xfQ0FMTF9BUkdTIiwKICAgICAgInRvb2xDYWxsSWQiOiAiNzFhZjliMWEtZWY5My00YWQ1LTkwY2YtNGZhMGQ2Y2RiMzdhIiwKICAgICAgImRlbHRhIjogIntcIm9wZXJhdGlvblwiOlwic3Bhd25fYWdlbnRcIixcImRldGFpbHNBdmFpbGFibGVcIjpmYWxzZX0iCiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJUT09MX0NBTExfRU5EIiwKICAgICAgInRvb2xDYWxsSWQiOiAiNzFhZjliMWEtZWY5My00YWQ1LTkwY2YtNGZhMGQ2Y2RiMzdhIgogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiUlVOX0ZJTklTSEVEIiwKICAgICAgInRocmVhZElkIjogIjhjNTJiMWE2LWU1NmUtNDJhYS05YTMzLTMzZWI2NDkwNzM0YyIsCiAgICAgICJydW5JZCI6ICI2NGNkOTgyNC1lODU1LTQ2MzktOWM5ZS03YmFkMzRjYWY5ZTIiLAogICAgICAib3V0Y29tZSI6IHsKICAgICAgICAidHlwZSI6ICJpbnRlcnJ1cHQiLAogICAgICAgICJpbnRlcnJ1cHRzIjogWwogICAgICAgICAgewogICAgICAgICAgICAiaWQiOiAiOGJlNmMyNGQtYTEzNC00ZjY5LWI2NWUtNTRkZjY4YWRiZmZiIiwKICAgICAgICAgICAgInJlYXNvbiI6ICJ0b29sX2FwcHJvdmFsIiwKICAgICAgICAgICAgIm1lc3NhZ2UiOiAiQXBwcm92ZSBzcGF3bl9hZ2VudCIsCiAgICAgICAgICAgICJ0b29sQ2FsbElkIjogIjcxYWY5YjFhLWVmOTMtNGFkNS05MGNmLTRmYTBkNmNkYjM3YSIsCiAgICAgICAgICAgICJleHBpcmVzQXQiOiAiMjAyNi0xMC0yNlQwNzo0NDo1Ny44MDMxMTIrMDA6MDAiLAogICAgICAgICAgICAicmVzcG9uc2VTY2hlbWEiOiB7CiAgICAgICAgICAgICAgInR5cGUiOiAib2JqZWN0IiwKICAgICAgICAgICAgICAicHJvcGVydGllcyI6IHsKICAgICAgICAgICAgICAgICJhcHByb3ZlZCI6IHsKICAgICAgICAgICAgICAgICAgInR5cGUiOiAiYm9vbGVhbiIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICB9LAogICAgICAgICAgICAgICJyZXF1aXJlZCI6IFsKICAgICAgICAgICAgICAgICJhcHByb3ZlZCIKICAgICAgICAgICAgICBdLAogICAgICAgICAgICAgICJhZGRpdGlvbmFsUHJvcGVydGllcyI6IGZhbHNlCiAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICBdCiAgICAgIH0KICAgIH0KICBdLAogICJzZXJ2aWNlX2tlcHRfcnVubmluZyI6IHRydWUsCiAgImFnZW50c19yZXRhaW5lZCI6IHRydWUsCiAgImR1cmF0aW9uX21zIjogMTkzMgp9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@writing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "route-a-writing-request-to-a-saved-writing-specialist",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Route a writing request to a saved writing specialist",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@writing",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/writing-orchestrator.feature"
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Three-repetition simulator collection receipt; no phase acceptance",
+  "type":"object",
+  "required":["schema_version","platform","status","run_id","source","artifact","selection","repetitions","inventory","native_receipts","budget_before","budget_after","new_forwarding","corrections_consumed","shared_corrections_consumed","safety_stop","final_source_identity","final_artifact_identity"],
+  "properties":{
+    "schema_version":{"const":1},"platform":{"const":"ios-simulator"},
+    "status":{"enum":["PASS","FAIL","BLOCKED"]},"run_id":{"type":"string","minLength":1},
+    "source":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},
+    "artifact":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},
+    "final_source_identity":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},
+    "final_artifact_identity":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},
+    "selection":{"type":"object","required":["sdk_path","sdk_version","arch","target","xcode","developer_dir","runtime","device","udid"]},
+    "repetitions":{"const":3},"native_receipts":{"type":"array","maxItems":6},
+    "inventory":{"type":"array","minItems":6,"maxItems":6,"items":{
+      "type":"object","required":["item_id","dependency_ids","status"],"properties":{
+        "item_id":{"type":"string","pattern":"^ios:(seed|restore):[123]$"},
+        "dependency_ids":{"type":"array","maxItems":1,"items":{"type":"string"}},
+        "status":{"enum":["NOT_RUN","PASS","FAIL","BLOCKED"]}
+      }
+    }},
+    "corrections_consumed":{"type":"integer","minimum":0,"maximum":6},
+    "shared_corrections_consumed":{"type":"integer","minimum":0},
+    "safety_stop":{"type":"boolean"},
+    "budget_before":{"type":"object"},"budget_after":{"type":"object"},"new_forwarding":{"type":"object"}
+  },
+  "allOf":[{"if":{"properties":{"status":{"const":"PASS"}}},"then":{"properties":{
+    "native_receipts":{"minItems":6},"safety_stop":{"const":false},"new_forwarding":{"minProperties":1},
+    "inventory":{"items":{"properties":{"status":{"const":"PASS"}}}}
+  }}}]
+}

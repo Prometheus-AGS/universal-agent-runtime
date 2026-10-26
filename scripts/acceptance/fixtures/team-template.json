@@ -1,0 +1,18 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "TeamDefinition",
+  "id": "urn:uar:acceptance:template:team",
+  "version": "1.0.0",
+  "provenance": {"source": "run-owned genuine acceptance composition", "authors": ["UAR acceptance"]},
+  "requiredCapabilities": [],
+  "extensions": {},
+  "title": "Run-owned bounded team template",
+  "purpose": "The case installs its actual owned members, task graph, budget and instruction digest.",
+  "members": [],
+  "coordinatorRole": "coordinator",
+  "communication": [],
+  "taskAcceptance": {"mode": "coordinator-within-binding", "allowedWorkflows": []},
+  "routing": {"eligibilityFirst": true, "strategy": "operator-role-capacity-cost-stable-id", "explain": true},
+  "input": {},
+  "output": {}
+}

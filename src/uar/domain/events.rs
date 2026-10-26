@@ -54,6 +54,19 @@ pub enum NormalizedEvent {
         title: String,
         selection_method: String,
     },
+    /// A host-admitted orchestration decision. Contains routing metadata only,
+    /// never the classifier's reasoning or a private agent prompt.
+    AgentSelected {
+        run_id: String,
+        source_agent_id: String,
+        selected_agent_id: String,
+        selected_agent_name: String,
+        /// Persisted child thread created by host admission for this selection.
+        selected_thread_id: String,
+        selection_method: String,
+        /// Fingerprint of the eligible roster used for intent classification.
+        roster_revision: String,
+    },
     /// Host-owned MCP binding state; a binding may outlive an individual run.
     McpServerStateChanged {
         run_id: Option<String>,

@@ -176,7 +176,7 @@ impl CollaborationCatalogService {
             return Ok(None);
         };
         authority(&state, run)?;
-        if !crate::uar::api::capabilities::workflow_execution_enabled() {
+        if !crate::uar::domain::execution_capabilities::workflow_execution_enabled() {
             return Err(conflict("WORKFLOW_CAPABILITY_UNSUPPORTED"));
         }
         if !matches!(run.status.as_str(), "ready" | "running") {

@@ -14,6 +14,7 @@ pub struct OpenAiEmbeddingBackend {
     api_key: String,
     model: String,
     vector_dimension: usize,
+    send_dimensions: bool,
     /// Maximum inputs per request. Some OpenAI-compatible providers cap it
     /// (DashScope text-embedding-v4 rejects more than 10).
     batch_size: usize,
@@ -37,6 +38,7 @@ impl OpenAiEmbeddingBackend {
             api_key,
             model: config.model.clone(),
             vector_dimension: config.vector_dimension,
+            send_dimensions: config.send_dimensions,
             batch_size: config.batch_size.max(1),
         })
     }
@@ -80,7 +82,7 @@ impl OpenAiEmbeddingBackend {
         let body = OpenAiRequest {
             model: self.model.clone(),
             input: texts.iter().map(|s| s.to_string()).collect(),
-            dimensions: if self.vector_dimension != 1536 {
+            dimensions: if self.send_dimensions && self.vector_dimension != 1536 {
                 Some(self.vector_dimension)
             } else {
                 None
@@ -114,6 +116,14 @@ impl OpenAiEmbeddingBackend {
 
         let mut data = resp.data;
         data.sort_by_key(|d| d.index);
+        for embedding in &data {
+            if embedding.embedding.len() != self.vector_dimension {
+                return Err(EmbeddingError::DimensionMismatch {
+                    expected: self.vector_dimension,
+                    actual: embedding.embedding.len(),
+                });
+            }
+        }
         Ok(data.into_iter().map(|d| d.embedding).collect())
     }
 }

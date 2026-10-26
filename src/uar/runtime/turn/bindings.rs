@@ -390,6 +390,24 @@ impl RunModelBindings {
         )
     }
 
+    /// Auxiliary roles can select only an exact captured model identity.
+    pub(crate) fn auxiliary_model(&self, requested: &str) -> anyhow::Result<String> {
+        let qualified = if requested.contains('/') { requested.to_owned() } else {
+            let (provider, _) = crate::llm::registry::split_model_string_pub(&self.primary.model);
+            format!("{provider}/{requested}")
+        };
+        anyhow::ensure!(self.catalog.iter().any(|binding| binding.model == qualified),
+            "auxiliary_model_not_captured");
+        Ok(qualified)
+    }
+
+    pub(crate) fn auxiliary(&self, requested: &str) -> anyhow::Result<Arc<dyn LlmDriver>> {
+        let model = self.auxiliary_model(requested)?;
+        let binding = self.catalog.iter().find(|binding| binding.model == model)
+            .ok_or_else(|| anyhow::anyhow!("auxiliary_model_not_captured"))?;
+        Ok(self.budget.bind(binding.pricing_model.clone(), Arc::clone(&binding.driver)))
+    }
+
     pub(crate) fn config(&self) -> &LlmConfig {
         &self.config
     }

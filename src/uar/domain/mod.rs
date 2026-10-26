@@ -3,6 +3,7 @@ pub mod collaboration;
 pub mod artifact;
 pub mod context;
 pub mod events;
+pub mod execution_capabilities;
 pub mod graph;
 pub mod knowledge;
 pub mod matching;

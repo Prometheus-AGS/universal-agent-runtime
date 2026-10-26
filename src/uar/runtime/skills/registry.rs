@@ -377,31 +377,9 @@ impl SkillRegistry {
         &self,
         query: &str,
     ) -> Vec<crate::uar::domain::skills::SkillCandidate> {
-        if let (Some(db), Some(vm)) = (&self.persistence, &self.vector_matcher) {
-            match vm.embed_batch(vec![query.to_string()]).await {
-                Ok(embeddings) => {
-                    if let Some(q_vec) = embeddings.first() {
-                        match db.search_skills(q_vec, self.vector_candidate_limit()).await {
-                            Ok(matches) => {
-                                return matches
-                                    .into_iter()
-                                    .filter(|candidate| !candidate.skill.tombstoned)
-                                    .map(|candidate| crate::uar::domain::skills::SkillCandidate {
-                                        skill: candidate.skill,
-                                        score: candidate.score,
-                                    })
-                                    .collect();
-                            }
-                            Err(e) => {
-                                error!("Skill search failed: {:?}", e);
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    error!("Query embedding failed: {:?}", e);
-                }
-            }
+        match self.find_candidates_checked(query).await {
+            Ok(candidates) => return candidates,
+            Err(error) => tracing::warn!(%error, "Compatibility skill search using keyword fallback"),
         }
 
         // Fallback to keyword match
@@ -409,6 +387,29 @@ impl SkillRegistry {
             .iter()
             .map(|skill| crate::uar::domain::skills::SkillCandidate::keyword(skill, query))
             .collect()
+    }
+
+    /// Require the configured embedding and durable vector search resources.
+    /// An unavailable backend or failed query is never a keyword ranking.
+    pub async fn find_candidates_checked(
+        &self,
+        query: &str,
+    ) -> anyhow::Result<Vec<crate::uar::domain::skills::SkillCandidate>> {
+        let db = self.persistence.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("skill_vector_store_unavailable"))?;
+        let matcher = self.vector_matcher.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("skill_embedding_backend_unavailable"))?;
+        let embeddings = matcher.embed_batch(vec![query.to_owned()]).await?;
+        anyhow::ensure!(embeddings.len() == 1 && !embeddings[0].is_empty()
+            && embeddings[0].iter().all(|value| value.is_finite()), "skill_query_embedding_invalid");
+        let matches = db.search_skills(&embeddings[0], self.vector_candidate_limit()).await?;
+        anyhow::ensure!(matches.iter().all(|candidate| candidate.score.is_finite()),
+            "skill_vector_score_invalid");
+        Ok(matches.into_iter().filter(|candidate| !candidate.skill.tombstoned)
+            .map(|candidate| crate::uar::domain::skills::SkillCandidate {
+                skill: candidate.skill,
+                score: candidate.score,
+            }).collect())
     }
 
     fn vector_candidate_limit(&self) -> usize {

@@ -6,6 +6,7 @@
  */
 export {
   configureEngine,
+  persistGraphToStorage,
   createPGlitePersistenceAdapter,
   getEntityJsonSchema,
   getRegisteredEntityTypes,
@@ -48,3 +49,5 @@ export * from "./session-configuration";
 export * from "./presentations";
 export * from "./presentation-assignments";
 export * from "./presentation-provenance";
+
+export * from "./a2ui-actions";

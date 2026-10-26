@@ -1703,6 +1703,7 @@ impl AppConfig {
             .set_default("llm.embedding.backend", "fastembed")?
             .set_default("llm.embedding.model", "bge-small-en-v1.5")?
             .set_default("llm.embedding.vector_dimension", 384_i64)?
+            .set_default("llm.embedding.send_dimensions", true)?
             .set_default("llm.embedding.batch_size", 32_i64)?
             .set_default(
                 "llm.embedding.models_dir",
@@ -2259,6 +2260,10 @@ pub struct EmbeddingBackendConfig {
     /// Output vector dimension.
     #[serde(default = "EmbeddingBackendConfig::default_vector_dimension")]
     pub vector_dimension: usize,
+    /// Send the optional OpenAI-compatible dimensions request field. Disable
+    /// for endpoints that reject it; vector_dimension still validates results.
+    #[serde(default = "EmbeddingBackendConfig::default_send_dimensions")]
+    pub send_dimensions: bool,
     /// Maximum number of texts sent per request.
     #[serde(default = "EmbeddingBackendConfig::default_batch_size")]
     pub batch_size: usize,
@@ -2314,6 +2319,10 @@ impl EmbeddingBackendConfig {
         384
     }
 
+    fn default_send_dimensions() -> bool {
+        true
+    }
+
     fn default_batch_size() -> usize {
         32
     }
@@ -2332,6 +2341,7 @@ impl Default for EmbeddingBackendConfig {
             api_key_env: None,
             base_url: None,
             vector_dimension: Self::default_vector_dimension(),
+            send_dimensions: Self::default_send_dimensions(),
             batch_size: Self::default_batch_size(),
             models_dir: Self::default_models_dir(),
             failover: None,

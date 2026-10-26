@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "executable": false,
+  "epoch_id": "uar-user-outcomes-original-20261024",
+  "scope_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/private",
+  "composition_output_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/composed",
+  "selected_embedding_services": ["cohere"],
+  "validity": {"not_before_unix": null, "expires_unix": null},
+  "ports": {
+    "postgres_http": 49401, "postgres_grpc": 49402, "postgres": 49403,
+    "surreal_http": 49411, "surreal_grpc": 49412, "surreal": 49413,
+    "primary_proxy": 49421, "alternate_proxy": 49422, "structured_proxy": 49423,
+    "cohere_embedding_proxy": 49424, "structured_metadata": 49425, "negative_401_peer": 49426
+  },
+  "existing_key_sources": {
+    "COHERE_API_KEY": "/Users/gqadonis/.bash_profile",
+    "LITER_LLM_MASTER_KEY": "/Users/gqadonis/.prometheus/kbd/secrets.env"
+  },
+  "source_contracts": {
+    "claims": {"path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/claims.rs", "sha256": null},
+    "verifier": {"path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/verifier/mod.rs", "sha256": null},
+    "presentation_owner": {"path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/actor/messages.rs", "sha256": null},
+    "user_settings": {"path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/user_settings.rs", "sha256": null},
+    "collaboration_scope": {"path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/collaboration.rs", "sha256": null},
+    "session_storage": {"path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/mod.rs", "sha256": null}
+  },
+  "preparation_approval": {"path": null, "sha256": null},
+  "pending_operator_inputs": [
+    "Preserve original adopted epoch and all consumption; do not reset seed",
+    "Actual future token validity covering exact approved packet wall duration",
+    "Actual source digests and exact private preparation approval projection",
+    "Approved conservative per-request paid embedding ceiling using operator-supplied Cohere v3 text USD0.10 per million input tokens",
+    "Separate Cohere and unused OpenAI USD10 pool reconciliation plus all unknown reservations",
+    "Final artifact closures, signed authority and external derived adoption"
+  ]
+}

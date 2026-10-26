@@ -1000,6 +1000,37 @@ impl Orchestrator {
         }
     }
 
+    /// Only public turn inference gets the caller's output contract. Private
+    /// summarization/title inference continues to use prepare_attempt directly.
+    fn prepare_user_attempt(
+        &self,
+        model: &str,
+        request: LlmRequest,
+        canonical_messages: &[serde_json::Value],
+        fragments: &[crate::uar::runtime::prompt::PromptFragment],
+    ) -> anyhow::Result<LlmRequest> {
+        let mut request = self.prepare_attempt(model, request, canonical_messages, fragments)?;
+        if let Some(format) = self.resolved_turn.as_ref().and_then(|turn| turn.response_format()) {
+            format.validate()?;
+            // The native Anthropic driver has no response-format wire field.
+            // Do not let its ignored extra_params become a successful fallback.
+            let provider = if model == self.llm_config.model {
+                self.llm_config.host_provider_kind.as_deref()
+                    .or(self.llm_config.resolved_provider_id.as_deref())
+                    .unwrap_or_else(|| super::detect_provider(model))
+            } else { super::detect_provider(model) };
+            anyhow::ensure!(!format.is_structured() || provider != "anthropic",
+                "provider capability error: response_format is unsupported by the captured Anthropic path");
+            let projected = self.secret_scrubber.project_json_text(&serde_json::to_string(format)?);
+            let projected: super::response_format::ResponseFormat = serde_json::from_str(&projected)?;
+            projected.validate()?;
+            request.extra_params.get_or_insert_with(|| serde_json::json!({}))
+                .as_object_mut().ok_or_else(|| anyhow::anyhow!("Request parameters must be an object"))?
+                .insert("response_format".into(), serde_json::to_value(projected)?);
+        }
+        Ok(request)
+    }
+
     fn attempt_manifest(&self, model: &str, request: &LlmRequest) -> serde_json::Value {
         if let Some(profile) = self.endpoint_settings_profiles.get(model) {
             return serde_json::json!({
@@ -2179,7 +2210,7 @@ impl Orchestrator {
                     budget_contract: orchestrator.request_budget_contract.clone(),
                 };
                 let primary_model = orchestrator.llm_config.model.clone();
-                let req = match orchestrator.prepare_attempt(
+                let req = match orchestrator.prepare_user_attempt(
                     &primary_model,
                     base_req.clone(),
                     &canonical_message_json,
@@ -2323,7 +2354,7 @@ impl Orchestrator {
                         let model = retry_model.clone();
                         async move {
                             let profiled = !orchestrator.endpoint_settings_profiles.is_empty();
-                            let request = orchestrator.prepare_attempt(
+                            let request = orchestrator.prepare_user_attempt(
                                 &model,
                                 source,
                                 &canonical,
@@ -2452,7 +2483,7 @@ impl Orchestrator {
                                     fallback_model = %fallback.model,
                                     "Primary LLM driver failed; attempting fallback",
                                 );
-                                let fallback_result = match orchestrator.prepare_attempt(
+                                let fallback_result = match orchestrator.prepare_user_attempt(
                                     &fallback.model,
                                     attempt_source.clone(),
                                     &canonical_message_json,
@@ -2589,6 +2620,12 @@ impl Orchestrator {
                             match &event {
                                 NormalizedEvent::MessageDelta { text } => {
                                     assistant_text.push_str(text);
+                                    if orchestrator.resolved_turn.as_ref().and_then(|turn| turn.response_format())
+                                        .is_some_and(super::response_format::ResponseFormat::is_structured) {
+                                        // Tool-round prose and unvalidated partial JSON must not
+                                        // contaminate the single caller-visible JSON payload.
+                                        continue;
+                                    }
                                     caller_visible_assistant_text.push_str(text);
                                 }
                                 NormalizedEvent::ToolCallDelta {
@@ -2619,6 +2656,16 @@ impl Orchestrator {
                                     saw_terminal = true;
                                     // Don't yield Done yet if we have tool calls to process
                                     if !has_tool_calls {
+                                        if let Some(format) = orchestrator.resolved_turn.as_ref().and_then(|turn| turn.response_format()) {
+                                            let projected = orchestrator.secret_scrubber.scrub(&assistant_text);
+                                            if let Err(error) = format.validate_output(&projected) {
+                                                yield NormalizedEvent::Error { message: error.to_string(), code: Some("structured_output_invalid".into()) };
+                                                return;
+                                            }
+                                            if format.is_structured() {
+                                                yield NormalizedEvent::MessageDelta { text: projected };
+                                            }
+                                        }
                                         if orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_some_and(|input| matches!(input.tool_choice, Some(super::ToolChoice::Required | super::ToolChoice::Named(_)))) {
                                             yield NormalizedEvent::Error { message: "Provider completed without required caller tool call".into(), code: Some("client_tool_choice_not_honored".into()) };
                                             return;

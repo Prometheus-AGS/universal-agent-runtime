@@ -1,0 +1,121 @@
+[
+  {
+    "description": "  As a user\n  I want the agent's answer to arrive as incremental content\n  So that I can read it before the response finishes",
+    "elements": [
+      {
+        "description": "",
+        "id": "receive-a-streamed-answer-from-the-default-agent;the-default-agent-streams-a-complete-useful-answer",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "The default agent streams a complete useful answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 472273
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "UAR is running with a configured real model",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:8"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2552675304
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask the default agent to count from 1 to 20 using streaming",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:18"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 162879
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "I receive multiple content events before the stream finishes",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 118887
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the assembled answer contains the numbers 1 through 20 in order",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 76620
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "the stream ends successfully",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 347694
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJEZWZhdWx0IGFnZW50IHN0cmVhbXMgYSBjb21wbGV0ZSB1c2VmdWwgYW5zd2VyIiwKICAic3RhdHVzIjogIlBBU1NFRCIsCiAgImNsaWVudF9wbGF0Zm9ybSI6ICJkYXJ3aW4iLAogICJvc19yZWxlYXNlIjogIjI1LjYuMCIsCiAgImVuZHBvaW50IjogImh0dHA6Ly8xMjcuMC4wLjE6NTM1ODciLAogICJtb2RlbCI6ICJsaXRlci9NaW5pTWF4LU0zIiwKICAiYW5zd2VyIjogIjEgMiAzIDQgNSA2IDcgOCA5IDEwIDExIDEyIDEzIDE0IDE1IDE2IDE3IDE4IDE5IDIwIiwKICAiZXZlbnRzIjogWwogICAgewogICAgICAidHlwZSI6ICJydW50aW1lIiwKICAgICAgIm5hbWUiOiAicnVudGltZS5ydW4iCiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJydW50aW1lIiwKICAgICAgIm5hbWUiOiAicnVudGltZS5zdGVwIgogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiY29udGVudCIsCiAgICAgICJ0ZXh0IjogIjEiLAogICAgICAiZWxhcHNlZF9tcyI6IDIzNDYKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogImNvbnRlbnQiLAogICAgICAidGV4dCI6ICIgMiAzIDQgNSA2IDcgOCA5IDEwICIsCiAgICAgICJlbGFwc2VkX21zIjogMjQzOQogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiY29udGVudCIsCiAgICAgICJ0ZXh0IjogIjExIDEyIDEzIDE0IDE1IDE2IDE3IDE4IDE5IDIwIiwKICAgICAgImVsYXBzZWRfbXMiOiAyNTM5CiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJydW50aW1lIiwKICAgICAgIm5hbWUiOiAicnVudGltZS5ydW4iCiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJmaW5pc2giLAogICAgICAicmVhc29uIjogInN0b3AiCiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJkb25lIiwKICAgICAgImVsYXBzZWRfbXMiOiAyNTUyCiAgICB9CiAgXSwKICAiZHVyYXRpb25fbXMiOiAyNTUyCn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "receive-a-streamed-answer-from-the-default-agent",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Receive a streamed answer from the default agent",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@streaming",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/streaming.feature"
+  }
+]

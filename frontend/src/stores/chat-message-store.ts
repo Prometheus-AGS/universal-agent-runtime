@@ -12,6 +12,10 @@ import type {
 import type { A2uiDisplayChunk, Chunk, SkillActivationChunk } from "@/features/chat/model/chunk";
 import { toChunks } from "@/features/chat/model/to-chunks";
 import { A2UI_PROFILE } from "@/features/a2ui/a2ui-protocol";
+import { AGENT_SELECTION_MIME, agentSelectionChunk, portableSelection, selectionArtifact } from "@/shared/content/agent-selection";
+
+// UI hydration ownership only. Concurrent callers await the same database read.
+const historyLoads = new Map<string, Promise<void>>();
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -125,17 +129,28 @@ function chunkBase(message: RichMessage, runId: string) {
 }
 
 export const useChatMessageStore = create<ChatMessageStore>()(
-  immer((set) => ({
+  immer((set, get) => ({
     messagesByThread: {},
     streamingByThread: {},
 
-    loadMessagesFromDb: async (threadId) => {
-      const db = getDbInstance();
-      const messages = await db.getMessages(threadId);
-      set((state) => {
-        state.messagesByThread[threadId] = messages;
-        if (!state.streamingByThread[threadId]) state.streamingByThread[threadId] = { ...defaultStreamingState };
+    loadMessagesFromDb: (threadId) => {
+      if (get().streamingByThread[threadId]?.isStreaming) return Promise.resolve();
+      const pending = historyLoads.get(threadId);
+      if (pending) return pending;
+      const load = (async () => {
+        const messages = await getDbInstance().getMessages(threadId);
+        set((state) => {
+          // A late mount refresh cannot replace an already-owned live stream.
+          if (state.streamingByThread[threadId]?.isStreaming) return;
+          state.messagesByThread[threadId] = messages;
+          if (!state.streamingByThread[threadId]) state.streamingByThread[threadId] = { ...defaultStreamingState };
+        });
+      })();
+      const owned = load.finally(() => {
+        if (historyLoads.get(threadId) === owned) historyLoads.delete(threadId);
       });
+      historyLoads.set(threadId, owned);
+      return owned;
     },
 
     initThread: (threadId, messages) =>
@@ -338,6 +353,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
     addRuntimeChunk: (threadId, runId, chunk) =>
       set((state) => {
         ensureThread(state, threadId);
+        if (chunk.kind === "agent-selection") {
+          const selection = agentSelectionChunk(chunk, chunk, true);
+          if (!selection) return;
+          // Validate before deduplication: a malformed reserved ID cannot hide
+          // a later genuine notice. Check history before creating a new bubble.
+          const duplicate = state.messagesByThread[threadId].some((message) =>
+            ensureMessageChunks(message).some((existing) => existing.kind === "agent-selection"
+              && agentSelectionChunk(existing, existing)?.id === selection.id)
+            || message.content.some((block) => block.type === "artifact"
+              && block.kind === AGENT_SELECTION_MIME
+              && selectionArtifact(block.id, block.content, selection)?.id === selection.id));
+          if (duplicate) return;
+          chunk = selection;
+        }
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
           state.streamingByThread[threadId] = {
@@ -351,6 +380,10 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           };
         }
         const message = getOrCreateStreamingMessage(state, threadId, runId);
+        if (chunk.kind === "agent-selection") {
+          message.content.push({ type: "artifact", id: chunk.id, kind: AGENT_SELECTION_MIME,
+            content: portableSelection(chunk) });
+        }
         ensureMessageChunks(message, runId).push(chunk);
       }),
 

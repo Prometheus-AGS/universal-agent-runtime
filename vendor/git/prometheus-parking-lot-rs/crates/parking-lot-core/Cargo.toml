@@ -6,7 +6,7 @@ keywords = ["scheduler", "queue", "gpu", "ai", "no-runtime"]
 categories = ["asynchronous", "concurrency"]
 readme = "README.md"
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Prometheus AI Team"]
@@ -21,20 +21,20 @@ rustdoc-args = ["--cfg", "docsrs"]
 # Dependency rule (ADR 0001): no async runtime, IO, database or network crate.
 # Enforced by the core-has-no-infra-deps check in .kbd-orchestrator/constraints.md.
 [dependencies]
-anyhow = "1"
-async-trait = "0.1"
-parking_lot = "0.12"
+anyhow = { version = "1" }
+async-trait = { version = "0.1" }
+parking_lot = { version = "0.12" }
 serde = { version = "1", features = ["derive"] }
-thiserror = "2.0.17"
-tracing = "0.1"
+thiserror = { version = "2.0.17" }
+tracing = { version = "0.1" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-num_cpus = "1.16"
+num_cpus = { version = "1.16" }
 
 # Model checking only: present when built with `--cfg parking_lot_loom`
 # (the loom models in tests/loom_*.rs); never part of a normal build.
 [target.'cfg(parking_lot_loom)'.dependencies]
-loom = "0.7"
+loom = { version = "0.7" }
 
 [features]
 # Publishes `prometheus_parking_lot_core::conformance`: the backend conformance
@@ -43,13 +43,13 @@ loom = "0.7"
 conformance = []
 
 [dev-dependencies]
-futures = "0.3"
-serde_json = "1"
+futures = { version = "0.3" }
+serde_json = { version = "1" }
 
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(parking_lot_loom)", "cfg(parking_lot_negative_control, values(any()))"] }
 
 [lints.clippy]
 all = "warn"

@@ -189,6 +189,16 @@ impl PersistenceLayer for PostgresProvider {
     async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
     async fn publish_ingestion(&self, job: &IngestionJob, publication: &IngestionPublication) -> Result<()> { ingestion_records::publish(self, job, publication).await }
     async fn reconcile_ingestion(&self) -> Result<()> { ingestion_records::reconcile(self).await }
+    async fn begin_knowledge_regeneration(&self, owner: &str, kb: &str,
+        target: &crate::uar::domain::knowledge::EmbeddingFingerprint)
+        -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+        ingestion_records::begin_regeneration(self, owner, kb, target).await
+    }
+    async fn search_knowledge_scoped_in_space(&self, owner: &str, ids: &[&str], query: &[f32],
+        limit: usize, min_score: f32, space: &crate::uar::domain::knowledge::EmbeddingFingerprint)
+        -> Result<Vec<KnowledgeMatch>> {
+        ingestion_records::search_in_space(self, owner, Some(ids), query, limit, min_score, Some(space)).await
+    }
 
     fn supports_durable_approvals(&self) -> bool { true }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
@@ -724,8 +734,18 @@ impl PersistenceLayer for PostgresProvider {
                 continue;
             };
             if last_activity.with_timezone(&chrono::Utc) < cutoff {
-                // Parse owner_id and session_id from the storage key format "owner::session"
-                if let Some((owner_id, session_id)) = storage_id.split_once("::") {
+                // Session keys include a length-prefixed owner and may carry
+                // the principal-session namespace. Read logical identity from
+                // the persisted session, then fence it against its storage key.
+                if let (Some(owner_id), Some(session_id)) = (
+                    data.get("owner_id").and_then(serde_json::Value::as_str),
+                    data.get("id").and_then(serde_json::Value::as_str),
+                ) {
+                    if crate::uar::persistence::session_storage_key(owner_id, session_id)
+                        != storage_id
+                    {
+                        continue;
+                    }
                     expired.push((owner_id.to_string(), session_id.to_string()));
                 }
             }
@@ -1031,14 +1051,17 @@ impl PersistenceLayer for PostgresProvider {
         let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
         let config = serde_json::to_value(&kb.config)?;
 
-        sqlx::query(&namespace.query(r"
+        let changed = sqlx::query(&namespace.query(r"
             INSERT INTO knowledge_bases (id, owner_id, name, description, config, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
                 name = EXCLUDED.name,
                 description = EXCLUDED.description,
-                config = EXCLUDED.config,
+                config = (EXCLUDED.config - 'indexed_embedding') || jsonb_build_object('indexed_embedding',
+                    COALESCE(NULLIF(knowledge_bases.config->'indexed_embedding','null'::jsonb), EXCLUDED.config->'indexed_embedding')),
                 updated_at = NOW()
+            WHERE COALESCE(knowledge_bases.config->'regeneration'->>'state','complete')='complete'
+                AND COALESCE(knowledge_bases.config->'regeneration','null'::jsonb)=COALESCE(EXCLUDED.config->'regeneration','null'::jsonb)
             "))
         .bind(&kb.id)
         .bind(&kb.owner_id)
@@ -1047,11 +1070,20 @@ impl PersistenceLayer for PostgresProvider {
         .bind(config)
         .execute(&self.pool)
         .await?;
+        anyhow::ensure!(changed.rows_affected() == 1, crate::uar::rag::regeneration::RegenerationError::Conflict);
         Ok(())
     }
 
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(&chunk.owner_id)?;
+        let mut tx = self.pool.begin().await?;
+        let config = ingestion_records::lock_writable_kb(&mut tx, namespace, &chunk.owner_id, &chunk.kb_id).await?;
+        if let Some(indexed) = &config.indexed_embedding {
+            anyhow::ensure!(indexed.dimension == chunk.embedding.len(), "chunk embedding dimension differs from indexed knowledge space");
+            if let Some(space) = chunk.metadata.as_ref().and_then(|metadata| metadata.get("embedding_space")) {
+                anyhow::ensure!(*space == serde_json::to_value(indexed)?, "chunk embedding space was superseded");
+            }
+        }
         let embedding_vector = Vector::from(chunk.embedding.clone());
         let metadata = serde_json::to_value(&chunk.metadata)?;
 
@@ -1072,8 +1104,9 @@ impl PersistenceLayer for PostgresProvider {
         .bind(&chunk.content)
         .bind(metadata)
         .bind(embedding_vector)
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?;
+        tx.commit().await?;
         Ok(())
     }
 
@@ -1084,66 +1117,7 @@ impl PersistenceLayer for PostgresProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 =
-            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
-        let min_score_f64 = f64::from(min_score);
-
-        let rows = sqlx::query(&namespace.query(r"
-            SELECT id, owner_id, kb_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
-            FROM knowledge_chunks
-            WHERE owner_id = $4 AND 1 - (embedding <=> $1) >= $3
-            ORDER BY embedding <=> $1
-            LIMIT $2
-            "))
-        .bind(embedding_vector) // $1
-        .bind(limit_i64) // $2
-        .bind(min_score_f64) // $3
-        .bind(owner_id) // $4
-        .fetch_all(&self.pool)
-        .await?;
-
-        let mut matches = Vec::new();
-        for row in rows {
-            let id: uuid::Uuid = row.try_get("id")?;
-            let owner_id: String = row.try_get("owner_id")?;
-            let kb_id: String = row.try_get("kb_id")?;
-            let content: String = row.try_get("content")?;
-            let metadata_val: Option<serde_json::Value> = row.try_get("metadata")?;
-            // created_at in DB is likely TIMESTAMP. We want String (RFC3339).
-            // sqlx maps TIMESTAMP to chrono::NaiveDateTime or DateTime<Utc>
-            // We can treat it as DateTime<Utc> and format it?
-            // Need `chrono` here?
-            // If I map to String, sqlx might fail if type mismatch.
-            // But let's try `try_get::<String, _>("created_at")`? Postgres might support cast.
-            // If not, read as DateTime<Utc> then to_rfc3339().
-            // I need `chrono` crate.
-            // `use chrono::DateTime; use chrono::Utc;`
-
-            // To be safe and simple: just load it.
-            let created_at: Option<chrono::DateTime<chrono::Utc>> = row.try_get("created_at")?;
-            let created_at_str = created_at.map(|d| d.to_rfc3339()).unwrap_or_default();
-
-            let score: f64 = row.try_get("score")?;
-
-            let chunk = KnowledgeChunk {
-                id,
-                owner_id,
-                kb_id,
-                document_id: None, // Not returned in search results
-                content,
-                metadata: metadata_val,
-                embedding: vec![], // we don't return embedding in search results unless needed
-                created_at: created_at_str,
-            };
-
-            matches.push(KnowledgeMatch {
-                chunk,
-                score: score as f32,
-            });
-        }
-        Ok(matches)
+        ingestion_records::search_in_space(self, owner_id, None, query_vec, limit, min_score, None).await
     }
 
     // Agent Persistence
@@ -1410,61 +1384,7 @@ impl PersistenceLayer for PostgresProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        if kb_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 =
-            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
-        let min_score_f64 = f64::from(min_score);
-        let kb_ids_vec: Vec<String> = kb_ids.iter().copied().map(str::to_string).collect();
-
-        let rows = sqlx::query(&namespace.query(r"
-            SELECT id, owner_id, kb_id, document_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
-            FROM knowledge_chunks
-            WHERE owner_id = $5 AND kb_id = ANY($4) AND 1 - (embedding <=> $1) >= $3
-            ORDER BY embedding <=> $1
-            LIMIT $2
-            "))
-        .bind(embedding_vector)
-        .bind(limit_i64)
-        .bind(min_score_f64)
-        .bind(&kb_ids_vec)
-        .bind(owner_id)
-        .fetch_all(&self.pool)
-        .await?;
-
-        let mut matches = Vec::new();
-        for row in rows {
-            let id: uuid::Uuid = row.try_get("id")?;
-            let owner_id: String = row.try_get("owner_id")?;
-            let kb_id: String = row.try_get("kb_id")?;
-            let document_id: Option<String> = row.try_get("document_id")?;
-            let content: String = row.try_get("content")?;
-            let metadata_val: Option<serde_json::Value> = row.try_get("metadata")?;
-            let created_at: Option<chrono::DateTime<chrono::Utc>> = row.try_get("created_at")?;
-            let created_at_str = created_at.map(|d| d.to_rfc3339()).unwrap_or_default();
-            let score: f64 = row.try_get("score")?;
-
-            let chunk = KnowledgeChunk {
-                id,
-                owner_id,
-                kb_id,
-                document_id,
-                content,
-                metadata: metadata_val,
-                embedding: vec![],
-                created_at: created_at_str,
-            };
-
-            matches.push(KnowledgeMatch {
-                chunk,
-                score: score as f32,
-            });
-        }
-        Ok(matches)
+        ingestion_records::search_in_space(self, owner_id, Some(kb_ids), query_vec, limit, min_score, None).await
     }
 
     // =========================================================================
@@ -1473,6 +1393,8 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(&doc.owner_id)?;
+        let mut tx = self.pool.begin().await?;
+        ingestion_records::lock_writable_kb(&mut tx, namespace, &doc.owner_id, &doc.kb_id).await?;
         let status_str = match &doc.status {
             DocumentStatus::Pending => "pending",
             DocumentStatus::Processing => "processing",
@@ -1509,8 +1431,9 @@ impl PersistenceLayer for PostgresProvider {
         )
         .bind(status_str)
         .bind(error_msg)
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?;
+        tx.commit().await?;
         Ok(())
     }
 
@@ -1651,9 +1574,13 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let Some(document) = self.get_document(owner_id, doc_id).await? else { return Ok(()); };
+        let mut tx = self.pool.begin().await?;
+        ingestion_records::lock_writable_kb(&mut tx, namespace, owner_id, &document.kb_id).await?;
         // The composite foreign keys revoke source/job/chunks in this same transaction.
         sqlx::query(&namespace.query("DELETE FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
-            .bind(owner_id).bind(doc_id).execute(&self.pool).await?;
+            .bind(owner_id).bind(doc_id).execute(&mut *tx).await?;
+        tx.commit().await?;
         Ok(())
     }
 

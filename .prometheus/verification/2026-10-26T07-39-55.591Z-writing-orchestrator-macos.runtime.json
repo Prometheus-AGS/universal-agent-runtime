@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "node",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/writing.cucumber.mjs"
+  ],
+  "exit_code": 1,
+  "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T07-39-55.591Z-writing-orchestrator-macos.json",
+  "platform": "macos",
+  "runtime_pid": 26523,
+  "runtime_sha256": "25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c",
+  "runtime_built_source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "base_url": "http://127.0.0.1:53587",
+  "server_config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "model": "liter/MiniMax-M3",
+  "service_kept_running": true,
+  "authentication": "configured supporting owner and authorized workspace",
+  "policy": "Two explicit permits: orchestrator-agent spawn_agent/wait_agents only",
+  "previous_verified_behaviors_repeated": false
+}

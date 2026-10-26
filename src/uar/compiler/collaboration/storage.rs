@@ -132,7 +132,7 @@ impl CollaborationStorage for SurrealCollaborationStorage {
             }
         }
 
-        let mut response = self
+        let response = self
             .db
             .query(
                 "UPDATE type::record('uar_collaboration_state', 'catalog') \
@@ -142,6 +142,24 @@ impl CollaborationStorage for SurrealCollaborationStorage {
             .bind(("expected", expected_generation))
             .await
             .context("failed to compare-and-swap collaboration catalog state")?;
+        let mut response = match response.check() {
+            Ok(response) => response,
+            Err(error)
+                if matches!(
+                    error.query_details(),
+                    Some(surrealdb::types::QueryError::TransactionConflict)
+                ) => {
+                    // A transaction conflict can be unrelated to this record.
+                    // Treat it as a CAS miss only after the exact generation
+                    // predicate has been observed to change; an unchanged or
+                    // unreadable row retains the original typed failure.
+                    match self.load_state().await {
+                        Ok(current) if current.generation != expected_generation => return Ok(false),
+                        _ => return Err(error.into()),
+                    }
+                }
+            Err(error) => return Err(error.into()),
+        };
         let updated: Vec<serde_json::Value> = response
             .take(0)
             .context("failed to read collaboration catalog CAS result")?;

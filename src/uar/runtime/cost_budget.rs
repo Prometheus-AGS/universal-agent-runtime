@@ -19,6 +19,22 @@ use crate::uar::persistence::PersistenceLayer;
 use crate::uar::api::a2a::contract::{UarUsageGrant, UarUsageReceipt};
 use crate::uar::runtime::thread::policy_intersection::ThreadBudgets;
 
+/// The trusted team host allocates this maximum response slice before granting
+/// the remaining finite envelope to the request input allowance.
+pub(crate) const TEAM_MAX_OUTPUT_TOKENS: u64 = 64_000;
+
+/// Split a trusted team allocation into independently finite input and output
+/// allowances without treating either as a measured provider token count.
+pub(crate) fn team_token_allocation(total: u64) -> anyhow::Result<(u64, u64)> {
+    let output = TEAM_MAX_OUTPUT_TOKENS.min(total / 2);
+    let input = total
+        .checked_sub(output)
+        .ok_or_else(|| anyhow::anyhow!("team token allocation overflows"))?;
+    anyhow::ensure!(input > 0 && output > 0,
+        "team token allocation must leave nonzero input and output allowances");
+    Ok((input, output))
+}
+
 /// Closed, field-free storage classification for admission diagnostics; never exposes error text.
 fn storage_error_kind(error: &anyhow::Error) -> &'static str {
     #[cfg(feature = "surreal-backend")]
@@ -1446,9 +1462,11 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
 
     async fn stream(
         &self,
-        request: crate::llm::LlmRequest,
+        mut request: crate::llm::LlmRequest,
     ) -> anyhow::Result<crate::llm::ExternalDriverStream> {
         use futures::StreamExt;
+        self.budget.narrow_team_output_cap(&mut request).await
+            .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
         self.budget.admit()?;
         self.budget.tracker.admit(
             &self.budget.scopes,
@@ -1804,12 +1822,24 @@ impl ModelCallBudget {
     async fn begin_call(&self, model: &str, request: &crate::llm::LlmRequest) -> anyhow::Result<Option<DurableCall>> {
         self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Model).await?;
         let Some(durable) = &self.durable else { return Ok(None); };
-        let (input, output) = if request.budget_contract.is_some() {
+        let (input, output, reservation_source) = if request.budget_contract.is_some() {
             let (input,output) = crate::llm::liter_driver::request_budget_bound(&request.budget_contract.as_ref().ok_or(AccountingError::Unresolved)?.destination_model,request)?;
-            (Some(input),Some(output))
+            (Some(input),Some(output), "final_wire_contract")
+        } else if let Some(remote) = self.remote.as_ref()
+            .filter(|remote| remote.accounting_id.starts_with("team-budget:")) {
+            let total = remote.grant.max_total_tokens
+                .ok_or_else(|| anyhow::anyhow!("team token allocation is missing"))?;
+            let (input, allocated_output) = team_token_allocation(total)?;
+            let output = u64::from(request.output_token_cap
+                .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?);
+            anyhow::ensure!(output <= allocated_output,
+                "team request output token cap exceeds its host allocation");
+            // The host chooses this finite split; it is not a measured provider
+            // input count and therefore does not qualify a settings-only route.
+            (Some(input), Some(output), "team_host_input_allowance_and_output_cap")
         } else {
             let info = model.split_once('/').and_then(|(provider,model)| crate::llm::catalog::ModelCatalog::global().model(provider,model));
-            (info.map(|m| m.limits.context_window).filter(|v| *v > 0), info.map(|m| m.limits.max_output).filter(|v| *v > 0))
+            (info.map(|m| m.limits.context_window).filter(|v| *v > 0), info.map(|m| m.limits.max_output).filter(|v| *v > 0), "catalog_context_and_output")
         };
         let tokens = input.zip(output).and_then(|(input,output)| input.checked_add(output));
         let cost = input.zip(output).and_then(|(input,output)| {
@@ -1840,7 +1870,7 @@ impl ModelCallBudget {
                     storage_error_kind = storage_error_kind(&error),
                     storage_error_detail = storage_error_detail(&error),
                     diagnostic_reference = %reference,
-                    reservation_source = if request.budget_contract.is_some() { "final_wire_contract" } else { "catalog_context_and_output" },
+                    reservation_source,
                     reserved_tokens = ?tokens,
                     configured_turn_token_limit = ?self.limits.max_tokens_per_turn,
                     configured_session_token_limit = ?self.limits.max_tokens_per_session,
@@ -1849,6 +1879,51 @@ impl ModelCallBudget {
                 error
             })?;
         Ok(Some(DurableCall { store: durable.store.clone(), identity }))
+    }
+
+    /// Keep every team provider dispatch within the remaining durable grant.
+    /// Exact final-wire contracts already carry their own counted budget and are
+    /// deliberately left unchanged.
+    async fn narrow_team_output_cap(
+        &self,
+        request: &mut crate::llm::LlmRequest,
+    ) -> anyhow::Result<()> {
+        if request.budget_contract.is_some() {
+            return Ok(());
+        }
+        let Some(remote) = self.remote.as_ref()
+            .filter(|remote| remote.accounting_id.starts_with("team-budget:"))
+        else {
+            return Ok(());
+        };
+        let total = remote.grant.max_total_tokens
+            .ok_or_else(|| anyhow::anyhow!("team token allocation is missing"))?;
+        let (input, allocated_output) = team_token_allocation(total)?;
+        let configured_output = u64::from(request.output_token_cap
+            .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?);
+        anyhow::ensure!(configured_output <= allocated_output,
+            "team request output token cap exceeds its host allocation");
+        let durable = self.durable.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("team budget durable accounting is required"))?;
+
+        let mut remaining = total;
+        for binding in &durable.scopes {
+            let scope = durable.store.get_accounting_scope(&binding.identity).await?
+                .ok_or(AccountingError::Missing)?;
+            if scope.generation != binding.generation {
+                return Err(AccountingError::Conflict.into());
+            }
+            if let Some(limit) = scope.limits.tokens {
+                let available = limit.saturating_sub(
+                    scope.settled_tokens.saturating_add(scope.reserved_tokens),
+                );
+                remaining = remaining.min(available);
+            }
+        }
+        let output = configured_output.min(remaining.saturating_sub(input));
+        anyhow::ensure!(output > 0, "team token grant has no remaining output allowance");
+        request.output_token_cap = Some(u32::try_from(output)?);
+        Ok(())
     }
 
     /// The trusted host calls this; the read-only kernel only exposes the budget handle.

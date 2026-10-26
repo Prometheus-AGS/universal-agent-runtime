@@ -90,12 +90,20 @@ impl Drop for MemoryCompletion {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 fn transport_outcome_unknown(error: &anyhow::Error) -> bool {
     error.chain().any(|cause| {
         cause
             .downcast_ref::<surrealdb::types::Error>()
             .is_some_and(|error| error.is_connection())
     })
+}
+
+// Without a concrete backend classifier, an error cannot acknowledge a
+// mutating outcome. Keep the original error and the unresolved obligation.
+#[cfg(not(feature = "surreal-backend"))]
+fn transport_outcome_unknown(_error: &anyhow::Error) -> bool {
+    true
 }
 
 // Snapshots and searches have no durable effect to reconcile. New operations

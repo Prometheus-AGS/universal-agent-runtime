@@ -6,7 +6,7 @@ keywords = ["scheduler", "iggy", "events", "streaming", "ai"]
 categories = ["asynchronous", "network-programming"]
 readme = "README.md"
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Prometheus AI Team"]
@@ -19,25 +19,25 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0" }
-iggy = "=0.11.0"
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.4.0" }
+iggy = { version = "=0.11.0" }
 # Parse-only access to the connection-string grammar (`ConnectionString`), pinned
 # with `iggy` so the two never disagree; the facade check must not build a client.
 iggy_common = "=0.11.0"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1" }
 tokio = { version = "1", features = ["rt", "sync", "time"] }
-tracing = "0.1"
+tracing = { version = "0.1" }
 uuid = { version = "1", features = ["v5"] }
 
 [dev-dependencies]
-testcontainers = "0.28"
+testcontainers = { version = "0.28" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(parking_lot_loom)", "cfg(parking_lot_negative_control, values(any()))"] }
 
 [lints.clippy]
 all = "warn"

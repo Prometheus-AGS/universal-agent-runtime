@@ -1,41 +1,22 @@
-//! WASM-based intent classifier stub.
+//! Fuel- and memory-bounded Component Model intent classification.
 //!
 //! This module provides an adapter for WASM components that implement
-//! the intent classification interface. The actual WASM component loading
-//! is not implemented yet; this is a placeholder for future use.
+//! the WIT interface below. Guests receive no host filesystem, network, clock,
+//! environment or tool imports. Labels are intersected with the real registry.
 //!
-//! ## WIT Interface (proposed)
-//!
-//! ```wit
-//! package intent:classifier;
-//!
-//! interface classifier {
-//!     /// Classifies the input query and returns JSON with scores.
-//!     /// Returns: [{ "label": "skill_id", "score": 0.87 }, ...]
-//!     classify: func(input: string) -> string;
-//! }
-//!
-//! world intent-classifier {
-//!     export classifier;
-//! }
-//! ```
-//!
-//! ## Future Implementation
-//!
-//! When implemented, this will:
-//! 1. Load a WASM component from the configured path
-//! 2. Call the `classify` function via the WIT interface
-//! 3. Parse the JSON response into `IntentScore` structs
-//! 4. Enforce memory/time limits for sandboxing
+//! The exported interface is `intent:classifier/classifier@0.1.0`. Context is
+//! a JSON string array containing caller dialogue followed by public eligible
+//! skill metadata. The component returns the typed result declared below.
 
 use super::{ClassificationResult, IntentClassifier};
+#[cfg(feature = "wasm-runtime")]
+use super::IntentScore;
 use crate::uar::runtime::skills::SkillRegistry;
 use async_trait::async_trait;
 
 /// WASM-based intent classifier.
 ///
-/// This is currently a stub that returns an error. When implemented,
-/// it will load and call a WASM component for classification.
+/// Uses only the configured component and the current enabled registry.
 #[derive(Debug)]
 pub struct WasmClassifier {
     /// Path to the WASM component file
@@ -56,43 +37,92 @@ impl WasmClassifier {
 impl IntentClassifier for WasmClassifier {
     async fn classify(
         &self,
-        _query: &str,
-        _context: &[String],
-        _registry: &SkillRegistry,
+        query: &str,
+        context: &[String],
+        registry: &SkillRegistry,
     ) -> anyhow::Result<ClassificationResult> {
-        // Stub implementation - returns error until WASM support is added
-        if self.component_path.is_none() {
-            return Err(anyhow::anyhow!(
-                "WASM classifier not configured: no component_path specified"
-            ));
+        let path = self.component_path.as_ref().filter(|path| !path.trim().is_empty())
+            .ok_or_else(|| anyhow::anyhow!("WASM classifier not configured: no component_path specified"))?;
+        #[cfg(feature = "wasm-runtime")]
+        {
+            let skills = registry.list_enabled();
+            let metadata = skills.iter().map(|skill| serde_json::json!({
+                "skill_id":skill.skill_id,"title":skill.title,"description":skill.description,
+                "keywords":skill.triggers.keywords,"semantic":skill.triggers.semantic,
+            })).collect::<Vec<_>>();
+            let mut guest_context = context.to_vec();
+            guest_context.push(format!("Available eligible skills (JSON data): {}", serde_json::to_string(&metadata)?));
+            let path = path.clone();
+            let query = query.to_owned();
+            let context_json = serde_json::to_string(&guest_context)?;
+            tokio::task::spawn_blocking(move || classify_component(&path, &query, &context_json, &skills))
+                .await.map_err(|_| anyhow::anyhow!("wasm_classifier_worker_failed"))?
         }
-
-        // TODO: Implement WASM component loading and invocation
-        // This would involve:
-        // 1. Loading the WASM component using wasmtime or similar
-        // 2. Binding the WIT interface
-        // 3. Calling the classify function
-        // 4. Parsing the JSON response
-        //
-        // Example pseudocode:
-        // ```
-        // let engine = Engine::default();
-        // let component = Component::from_file(&engine, &path)?;
-        // let mut store = Store::new(&engine, ());
-        // let instance = Linker::new(&engine).instantiate(&mut store, &component)?;
-        // let classify = instance.get_typed_func::<&str, String>(&mut store, "classify")?;
-        // let result = classify.call(&mut store, query)?;
-        // let scores: Vec<IntentScore> = serde_json::from_str(&result)?;
-        // ```
-
-        Err(anyhow::anyhow!(
-            "WASM classifier not implemented yet. Component path: {:?}",
-            self.component_path
-        ))
+        #[cfg(not(feature = "wasm-runtime"))]
+        {
+            let _ = (path, query, context, registry);
+            anyhow::bail!("wasm_classifier_runtime_feature_required")
+        }
     }
 }
 
-/// Proposed WIT interface for intent classifiers.
+#[cfg(feature = "wasm-runtime")]
+fn classify_component(path: &str, query: &str, context: &str,
+    skills: &[crate::uar::domain::skills::Skill]) -> anyhow::Result<ClassificationResult>
+{
+    use wasmtime::component::{Component, Linker, Val};
+    use wasmtime::{Config, Engine, Store, StoreLimitsBuilder};
+    let mut config = Config::new();
+    config.wasm_component_model(true).consume_fuel(true);
+    let engine = Engine::new(&config).map_err(|_| anyhow::anyhow!("wasm_classifier_engine_failed"))?;
+    let component = Component::from_file(&engine, path)
+        .map_err(|_| anyhow::anyhow!("wasm_classifier_component_load_failed"))?;
+    let limits = StoreLimitsBuilder::new().memory_size(16 * 1024 * 1024)
+        .memories(1).table_elements(16_384).tables(4).instances(16).build();
+    let mut store = Store::new(&engine, limits);
+    store.limiter(|limits| limits);
+    store.set_fuel(10_000_000).map_err(|_| anyhow::anyhow!("wasm_classifier_fuel_failed"))?;
+    let linker = Linker::new(&engine);
+    let instance = linker.instantiate(&mut store, &component)
+        .map_err(|_| anyhow::anyhow!("wasm_classifier_import_or_instantiation_failed"))?;
+    let interface = instance.get_export_index(&mut store, None, "intent:classifier/classifier@0.1.0")
+        .ok_or_else(|| anyhow::anyhow!("wasm_classifier_interface_missing"))?;
+    let export = instance.get_export_index(&mut store, Some(&interface), "classify")
+        .ok_or_else(|| anyhow::anyhow!("wasm_classifier_export_missing"))?;
+    let function = instance.get_func(&mut store, &export)
+        .ok_or_else(|| anyhow::anyhow!("wasm_classifier_function_missing"))?;
+    let mut results = [Val::Bool(false)];
+    function.call(&mut store, &[Val::String(query.to_owned()), Val::String(context.to_owned())], &mut results)
+        .map_err(|_| anyhow::anyhow!("wasm_classifier_execution_failed"))?;
+    let Val::Result(Ok(Some(result))) = &results[0] else {
+        anyhow::bail!("wasm_classifier_guest_error_or_invalid_result");
+    };
+    let Val::Record(fields) = result.as_ref() else { anyhow::bail!("wasm_classifier_record_invalid"); };
+    let field = |name: &str| fields.iter().find(|(key, _)| key == name).map(|(_, value)| value);
+    let Some(Val::List(ranks)) = field("scores") else { anyhow::bail!("wasm_classifier_scores_invalid"); };
+    let Some(Val::Bool(out_of_scope)) = field("out-of-scope") else { anyhow::bail!("wasm_classifier_scope_invalid"); };
+    let mut seen = std::collections::HashSet::new();
+    let mut scores = Vec::new();
+    for rank in ranks {
+        let Val::Record(rank) = rank else { anyhow::bail!("wasm_classifier_rank_invalid"); };
+        let label = rank.iter().find_map(|(key, value)| match (key.as_str(), value) {
+            ("label", Val::String(label)) => Some(label), _ => None,
+        }).ok_or_else(|| anyhow::anyhow!("wasm_classifier_label_invalid"))?;
+        let score = rank.iter().find_map(|(key, value)| match (key.as_str(), value) {
+            ("score", Val::Float32(score)) => Some(*score), _ => None,
+        }).ok_or_else(|| anyhow::anyhow!("wasm_classifier_score_invalid"))?;
+        anyhow::ensure!(score.is_finite() && (0.0..=1.0).contains(&score)
+            && seen.insert(label.clone()), "wasm_classifier_score_invalid");
+        let skill = skills.iter().find(|skill| skill.skill_id == *label)
+            .ok_or_else(|| anyhow::anyhow!("wasm_classifier_unknown_selection"))?;
+        scores.push(IntentScore::with_skill(label.clone(), score, skill.clone()));
+    }
+    scores.sort_by(|left, right| right.score.total_cmp(&left.score)
+        .then_with(|| left.label.cmp(&right.label)));
+    Ok(ClassificationResult { scores, out_of_scope: *out_of_scope })
+}
+
+/// WIT interface required by the component classifier.
 ///
 /// This is the interface that WASM components should implement.
 /// Save this as `intent-classifier.wit` when building components.
@@ -153,7 +183,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_wasm_classifier_not_implemented() {
+    async fn missing_wasm_component_is_an_explicit_failure() {
         let classifier = WasmClassifier::new(Some("/path/to/classifier.wasm".to_string()));
         let registry = SkillRegistry::default();
 
@@ -164,7 +194,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("not implemented yet")
+                .contains("wasm_classifier_")
         );
     }
 }

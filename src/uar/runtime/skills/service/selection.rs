@@ -193,10 +193,15 @@ impl SkillService {
         registry.reconcile_selection().await?;
         let agent_skills = self.agent_skills.read().await.clone();
         let config = self.matching_config.read().await.clone();
+        let threshold = config.threshold;
         Ok(SkillMatchingSnapshot {
             registry: Arc::new(RwLock::new(registry.clone())),
             config,
             agent_skills,
+            local_skill_matcher: self.local_skill_matcher.as_ref().map(|matcher| Arc::new(
+                crate::uar::runtime::matching::vector::VectorMatcher::new(
+                    Arc::new(crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+                        matcher.pin_embedding())), threshold))),
         })
     }
 }

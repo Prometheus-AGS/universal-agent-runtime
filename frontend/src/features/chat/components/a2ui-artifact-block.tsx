@@ -1,11 +1,12 @@
 import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon } from "lucide-react";
-import { type FC, useMemo, useState } from "react";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { A2uiMessageSchema, MessageProcessor } from "@prometheus-ags/a2ui-core/v0_9";
 import { UarSurface, uarBasicCatalog, type UarComponentImplementation } from "@prometheus-ags/a2ui-uar";
 
 import {
   A2UI_PROFILE,
   A2UI_VERSION,
+  validateA2uiMessage,
   type A2uiComponent,
 } from "@/features/a2ui/a2ui-protocol";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/features/a2ui/a2ui-rendering-limits";
 import { A2uiSurfaceRenderer } from "@/features/a2ui/a2ui-surface-renderer";
 import { JsonSource } from "@/features/chat/ui/chunks/chunk-surface";
+import { useA2uiActionStatus, useA2uiActionContinuation, useA2uiActionIntent } from "@/platform/entities";
 import { useTheme } from "@/hooks/use-theme";
 import { useToolApprovalActions } from "@/hooks/use-tool-approval";
 
@@ -197,6 +199,7 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
 };
 
 interface A2uiDisplayBlockProps {
+  runId?: string;
   artifactType: string;
   title: string;
   content: string;
@@ -250,7 +253,11 @@ function validateMessage(raw: unknown) {
   if (message.version !== A2UI_VERSION) {
     throw new Error(`Unsupported A2UI version: ${String(message.version ?? "missing")}. Expected ${A2UI_VERSION}.`);
   }
-  const parsed = A2uiMessageSchema.parse(message);
+  const validated = validateA2uiMessage({ ...message, profile: A2UI_PROFILE });
+  if (!validated.success) throw new Error(validated.error);
+  const { profile: validatedProfile, ...canonical } = validated.data;
+  void validatedProfile;
+  const parsed = A2uiMessageSchema.parse(canonical);
   if ("updateComponents" in parsed) {
     for (const component of parsed.updateComponents.components) {
       if (component.component && !uarBasicCatalog.components.has(component.component)) {
@@ -264,8 +271,6 @@ function validateMessage(raw: unknown) {
 function processA2uiDisplayContent(content: string) {
   const processor = new MessageProcessor<UarComponentImplementation>(
     [uarBasicCatalog],
-    undefined,
-    { version: A2UI_VERSION },
   );
   const messages = parseMessageSource(content).map(validateMessage);
   if (messages.length === 0) throw new Error("The artifact contains no A2UI messages.");
@@ -287,7 +292,60 @@ function processA2uiDisplayContent(content: string) {
   return { surfaces, deleted };
 }
 
+type StandardSurfaceModel = ReturnType<typeof processA2uiDisplayContent>["surfaces"][number];
+
+function StandardActionSurface({ runId, surface, theme, resetKey }: {
+  runId: string; surface: StandardSurfaceModel; theme: "light" | "dark" | "high-contrast"; resetKey: string;
+}) {
+  const status = useA2uiActionStatus(runId, surface.id);
+  const continuation = useA2uiActionContinuation(runId, surface.id);
+  const submit = useA2uiActionIntent();
+  const [localMessage, setLocalMessage] = useState<string | null>(null);
+  const submitting = useRef(false);
+  const busy = (status === "pending" || status === "responding") && !localMessage;
+  const consumed = status !== undefined && status !== "rejected";
+  const uncertain = localMessage === "Action outcome is unconfirmed. Do not submit again.";
+  const guard = useRef({ consumed, uncertain });
+  useEffect(() => { guard.current = { consumed, uncertain }; }, [consumed, uncertain]);
+  useEffect(() => {
+    let current = true;
+    const subscription = surface.onAction.subscribe(async (action) => {
+      if (!current || !runId || submitting.current || guard.current.consumed || guard.current.uncertain || action.surfaceId !== surface.id) return;
+      submitting.current = true;
+      setLocalMessage(null);
+      try {
+        // Snapshot before the first await; later typing cannot mutate the sent action.
+        await submit(runId, { ...action, context: structuredClone(action.context),
+          a2uiClientDataModel: { [surface.id]: structuredClone(surface.dataModel.get("/")) } });
+      } catch (error) {
+        if (current) setLocalMessage(error instanceof Error ? error.message : "Action outcome is unconfirmed. Do not submit again.");
+      } finally { submitting.current = false; }
+    });
+    return () => { current = false; subscription.unsubscribe(); };
+  }, [runId, surface, submit]);
+  const message = !runId ? "Actions unavailable: this surface is not linked to a run."
+    : localMessage ?? (status === "pending" ? "Sending action…"
+    : status === "responding" ? "Agent is responding…"
+    : status === "completed" ? "Response complete"
+    : status === "rejected" ? "Action was rejected. Try again."
+    : status === "uncertain" ? "Action outcome is unconfirmed. Do not submit again."
+    : status === "interrupted" ? "The response was interrupted." : null);
+  const failed = status === "rejected" || status === "uncertain" || status === "interrupted" || Boolean(localMessage);
+  return (
+    <div>
+      <fieldset disabled={!runId || consumed || uncertain} aria-busy={busy} className="min-w-0 p-0">
+        <UarSurface surface={surface} theme={theme} resetKey={resetKey} />
+      </fieldset>
+      {message ? <p className="mt-2 text-sm text-fg-sub" role={failed ? "alert" : "status"}>{message}</p> : null}
+      {status === "interrupted" && continuation ? (
+        <p className="mt-1 break-all font-mono text-xs text-fg-faint" data-continuation-run-id={continuation}>{continuation}</p>
+      ) : null}
+    </div>
+  );
+}
+
 export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
+  runId,
   artifactType,
   title,
   content,
@@ -338,8 +396,9 @@ export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
       ) : renderedSuccessfully ? (
         <div className="space-y-3">
           {rendered.surfaces.map((surface) => (
-            <UarSurface
-              key={surface.id}
+            <StandardActionSurface
+              key={`${runId ?? "unbound"}:${surface.id}`}
+              runId={runId ?? ""}
               surface={surface}
               theme={theme}
               resetKey={`${surface.id}:${content.length}`}

@@ -73,6 +73,20 @@ impl ContextManager {
         request_budget_contract: Option<&super::budget::RequestBudgetContract>,
         eligible_prose: &[HostMarkedProseSpan],
     ) -> (Vec<Message>, Option<ContextAction>) {
+        let allowance = request_budget_contract.cloned().map(super::budget::AuxiliaryRequestAllowance::Exact);
+        self.apply_with_marked_prose_and_allowance(messages, model_token_limit, driver,
+            allowance.as_ref(), eligible_prose).await
+    }
+
+    /// Apply reductions with the host's exact or approximate auxiliary allowance.
+    pub async fn apply_with_marked_prose_and_allowance(
+        &self,
+        messages: Vec<Message>,
+        model_token_limit: usize,
+        driver: Option<&dyn LlmDriver>,
+        request_budget_contract: Option<&super::budget::AuxiliaryRequestAllowance>,
+        eligible_prose: &[HostMarkedProseSpan],
+    ) -> (Vec<Message>, Option<ContextAction>) {
         let current_tokens = self.count_messages(&messages);
         // Use configured max or model limit - buffer (e.g. 1000 tokens for output)
         let effective_max = self
@@ -246,7 +260,7 @@ impl ContextManager {
         token_budget: usize,
         original_tokens: usize,
         driver: &dyn LlmDriver,
-        request_budget_contract: Option<&super::budget::RequestBudgetContract>,
+        request_budget_contract: Option<&super::budget::AuxiliaryRequestAllowance>,
         eligible_prose: &[HostMarkedProseSpan],
     ) -> (Vec<Message>, Option<ContextAction>) {
         // Only marked spans in the older prefix may be replaced. System,
@@ -309,7 +323,7 @@ impl ContextManager {
         };
 
         let summary_budget = self.config.summary_budget.unwrap_or(summary_budget);
-        let summarized = match summarizer::summarize_marked_prose(
+        let summarized = match summarizer::summarize_marked_prose_with_allowance(
             &messages,
             &candidates,
             driver,

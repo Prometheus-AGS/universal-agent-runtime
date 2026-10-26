@@ -33,6 +33,6 @@ export const uarEntityCatalogComponents: UarComponentImplementation[] = [
 
 export const uarEntityCatalog = new Catalog<UarComponentImplementation>(
   UAR_A2UI_ENTITY_CATALOG_ID,
-  "v0.9",
+  "v0.9.1",
   uarEntityCatalogComponents,
 );

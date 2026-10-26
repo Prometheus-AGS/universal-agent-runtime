@@ -102,6 +102,101 @@ pub struct RequestBudgetContract {
     pub output_ceiling: OutputCeilingField,
 }
 
+/// Host-captured allowance for plain auxiliary classification/summarization.
+/// Estimated capacity is not a proven final-wire contract and never enters the
+/// strict planner as an exact or validated upper-bound token count.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuxiliaryRequestAllowance {
+    Exact(RequestBudgetContract),
+    Estimated {
+        destination_model: String,
+        input_allowance: usize,
+        output_ceiling: u32,
+        reserve_tokens: usize,
+        counting_revision: String,
+    },
+}
+
+impl AuxiliaryRequestAllowance {
+    pub fn bounded_output(&self, requested: usize) -> anyhow::Result<Self> {
+        anyhow::ensure!(requested > 0, "auxiliary_output_allowance_invalid");
+        let mut bounded = self.clone();
+        match &mut bounded {
+            Self::Exact(contract) => {
+                anyhow::ensure!(contract.limits.output_tokens > 0, "auxiliary_output_allowance_invalid");
+                contract.limits.output_tokens = contract.limits.output_tokens.min(i64::try_from(requested)?);
+            }
+            Self::Estimated { output_ceiling, .. } => {
+                *output_ceiling = (*output_ceiling).min(u32::try_from(requested)?);
+                anyhow::ensure!(*output_ceiling > 0, "auxiliary_output_allowance_invalid");
+            }
+        }
+        Ok(bounded)
+    }
+
+    pub fn output_ceiling(&self) -> anyhow::Result<usize> {
+        let ceiling = match self {
+            Self::Exact(contract) => usize::try_from(contract.limits.output_tokens)?,
+            Self::Estimated { output_ceiling, .. } => usize::try_from(*output_ceiling)?,
+        };
+        anyhow::ensure!(ceiling > 0, "auxiliary_output_allowance_invalid");
+        Ok(ceiling)
+    }
+
+    /// Prepare the actual auxiliary body immediately before governed dispatch.
+    /// The returned body count is Approximate even when Exact independently
+    /// enforces a proven final-wire contract at preflight and the leaf driver.
+    pub fn prepare_request(
+        &self,
+        model: &str,
+        request: &mut crate::llm::LlmRequest,
+    ) -> anyhow::Result<CountedTokens> {
+        use super::token_service::TokenService;
+        match self {
+            Self::Exact(contract) => {
+                anyhow::ensure!(contract.destination_model == model, "auxiliary_budget_destination_mismatch");
+                if let Some(existing) = &request.budget_contract {
+                    anyhow::ensure!(existing == contract, "auxiliary_exact_contract_mismatch");
+                }
+                request.budget_contract = Some(contract.clone());
+            }
+            Self::Estimated { destination_model, input_allowance, output_ceiling, reserve_tokens, counting_revision } => {
+                anyhow::ensure!(destination_model == model && !model.trim().is_empty(), "auxiliary_budget_destination_mismatch");
+                anyhow::ensure!(*input_allowance > 0 && *output_ceiling > 0 && *reserve_tokens > 0
+                    && *reserve_tokens < *input_allowance && !counting_revision.trim().is_empty(),
+                    "auxiliary_estimated_allowance_invalid");
+                anyhow::ensure!(request.budget_contract.is_none(), "auxiliary_estimate_cannot_replace_exact_contract");
+                anyhow::ensure!(request.tools.is_empty() && request.tool_choice.is_none()
+                    && request.parallel_tool_calls.is_none() && request.anthropic_system.is_none()
+                    && request.thinking_config.is_none() && request.extra_params.is_none(),
+                    "auxiliary_estimated_request_controls_unsupported");
+                anyhow::ensure!(!request.messages.is_empty() && request.messages.iter().all(|message| {
+                    message.as_object().is_some_and(|fields| fields.keys().all(|key| matches!(key.as_str(), "role" | "content")))
+                        && matches!(message.get("role").and_then(serde_json::Value::as_str), Some("system" | "user" | "assistant"))
+                        && message.get("content").is_some_and(serde_json::Value::is_string)
+                }), "auxiliary_estimated_plaintext_required");
+            }
+        }
+        let ceiling = u32::try_from(self.output_ceiling()?)?;
+        request.output_token_cap = Some(request.output_token_cap.map_or(ceiling, |current| current.min(ceiling)));
+        anyhow::ensure!(request.output_token_cap.is_some_and(|cap| cap > 0), "auxiliary_output_allowance_invalid");
+        if matches!(self, Self::Exact(_)) {
+            crate::llm::liter_driver::preflight_budgeted_request(model, request)?;
+        }
+        let bytes = serde_json::to_vec(&serde_json::json!({
+            "model": model, "messages": request.messages, "max_completion_tokens": request.output_token_cap,
+        }))?;
+        let mut count = TokenService::count_serialized(SerializedCountingContract::ApproximateCl100kJsonV1, &bytes)?;
+        if let Self::Estimated { input_allowance, reserve_tokens, counting_revision, .. } = self {
+            let required = usize::try_from(count.tokens)?.checked_add(*reserve_tokens)
+                .ok_or_else(|| anyhow::anyhow!("auxiliary_estimated_count_overflow"))?;
+            anyhow::ensure!(required <= *input_allowance, "auxiliary_estimated_input_overflow");
+            count.revision = counting_revision.clone();
+        }
+        Ok(count)
+    }
+}
+
 impl RequestBudgetContract {
     /// Deterministic exact contract for the supported synthetic fixture at
     /// one explicit base URL.

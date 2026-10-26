@@ -6,7 +6,7 @@ keywords = ["scheduler", "queue", "embedded", "tauri", "ai"]
 categories = ["asynchronous", "filesystem"]
 readme = "README.md"
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*"]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Prometheus AI Team"]
@@ -26,26 +26,26 @@ rustdoc-args = ["--cfg", "docsrs"]
 fault-injection = []
 
 [dependencies]
-prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0" }
-redb = "4.4"
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.4.0" }
+redb = { version = "4.4" }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1" }
 # `spawn_blocking` keeps redb's synchronous, fsyncing transactions off async
 # worker threads.
 tokio = { version = "1", features = ["rt"] }
 
 [dev-dependencies]
-prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0", features = ["conformance"] }
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.4.0", features = ["conformance"] }
 # Path-only: cargo strips a dev-dependency that has no version when it packages,
 # so the unpublished crate does not have to resolve itself on crates.io.
 prometheus-parking-lot-embedded = { path = ".", features = ["fault-injection"] }
-tempfile = "3.14"
+tempfile = { version = "3.14" }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
 
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(parking_lot_loom)", "cfg(parking_lot_negative_control, values(any()))"] }
 
 [lints.clippy]
 all = "warn"

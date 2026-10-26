@@ -1,0 +1,1158 @@
+{
+  "platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "profile": "wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff",
+  "retrieval_seal": "e0f8c635-cdf0-4f1f-93c7-a30244feed25",
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "retained_for_future_use": true,
+  "knowledge_base": {
+    "id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+    "name": "wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff",
+    "description": "Sourced wheel-graph critical group mathematics with a private retrieval profile",
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "bge-small-en-v1.5",
+      "vector_dimensions": 384,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 2048 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 3,
+      "indexed_embedding": null,
+      "regeneration": null
+    },
+    "created_at": "2026-10-26T08:19:30.114601+00:00",
+    "updated_at": "2026-10-26T08:19:30.114601+00:00",
+    "document_count": 0
+  },
+  "document": {
+    "id": "20303298-71bd-44b1-b1e2-d4b4b97b5110",
+    "kb_id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+    "filename": "wheel-graphs.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 0,
+    "status": "pending",
+    "error_message": null,
+    "created_at": "2026-10-26T08:19:30.170256+00:00",
+    "updated_at": "2026-10-26T08:19:30.170256+00:00"
+  },
+  "ingestion": {
+    "namespace": "principal_v1",
+    "owner_id": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+    "document_id": "20303298-71bd-44b1-b1e2-d4b4b97b5110",
+    "kb_id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+    "generation": "af1902a7-7dc3-425e-9b40-bb883cb479f6",
+    "state": "indexed",
+    "attempts": 1,
+    "next_attempt_at": 1793002770,
+    "last_error": null
+  },
+  "indexed_knowledge_base": {
+    "id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+    "name": "wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff",
+    "description": "Sourced wheel-graph critical group mathematics with a private retrieval profile",
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "bge-small-en-v1.5",
+      "vector_dimensions": 384,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 2048 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 3,
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "regeneration": null
+    },
+    "created_at": "2026-10-26T08:19:30.114601+00:00",
+    "updated_at": "2026-10-26T08:19:31.876017+00:00",
+    "document_count": 1
+  },
+  "agent": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "math-specialist-db64c2a8",
+    "metadata": {
+      "title": "Mathematics Specialist",
+      "description": "Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.",
+      "tags": [
+        "mathematics",
+        "arithmetic",
+        "calculations"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": true,
+        "knowledge_bases": [
+          "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e"
+        ],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:3fcca9706dc963dc8d516749e5649c3cc231b84d563b875e3c158c1cd76b63f2",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "question": "For research profile wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff, what are its rim_vertices, lucas_number and sandpile_group_order? Include its exact retrieval_seal and a numbered citation to the source. Return the research-profile JSON.",
+  "completion": {
+    "id": "chatcmpl-e41a1fe3-024a-469a-993a-39687a263184",
+    "object": "chat.completion",
+    "created": 1793002772,
+    "model": "liter/MiniMax-M3",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "<think>\nThe retrieved knowledge has the profile. Return JSON with keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation.\n\nCitation: \"[1] (wheel-graphs.txt)\". The instruction says \"Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1].\"\n\nProfile exact: \"wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff\". Retrieval seal: \"e0f8c635-cdf0-4f1f-93c7-a30244feed25\".\n\nReturn only JSON.\n\nShould I also render a2ui? The instruction says return only JSON. I'll just return JSON.\n</think>\n\n```json\n{\n  \"specialist\": \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\",\n  \"profile\": \"wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff\",\n  \"rim_vertices\": 11,\n  \"lucas_number\": 199,\n  \"sandpile_group_order\": 39601,\n  \"retrieval_seal\": \"e0f8c635-cdf0-4f1f-93c7-a30244feed25\",\n  \"citation\": \"[1] (wheel-graphs.txt)\"\n}\n```"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 3743,
+      "completion_tokens": 296,
+      "total_tokens": 4039
+    },
+    "session_id": "8e3f9797-1451-47c5-ae9e-ef44f2962373"
+  },
+  "run": {
+    "run_id": "e41a1fe3-024a-469a-993a-39687a263184",
+    "agent_id": "math-specialist-db64c2a8",
+    "conversation_id": "8e3f9797-1451-47c5-ae9e-ef44f2962373",
+    "status": "done",
+    "agent_revision": "sha256:3fcca9706dc963dc8d516749e5649c3cc231b84d563b875e3c158c1cd76b63f2",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "math-specialist-db64c2a8",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "auto",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "selected",
+        "ids": [
+          "a2ui_render",
+          "native__memory_capture_policy",
+          "native__memory_delete_by_id",
+          "native__memory_history",
+          "native__memory_list",
+          "native__memory_recall",
+          "native__memory_save",
+          "native__memory_update_by_id",
+          "native_echo",
+          "native_system_info",
+          "uar_compile",
+          "uar_session_check_completeness",
+          "uar_session_compile",
+          "uar_session_update_section"
+        ],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "auto",
+        "ids": [],
+        "source": "legacy"
+      },
+      "knowledge_bases": {
+        "mode": "selected",
+        "ids": [
+          "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e"
+        ],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "legacy"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "legacy",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "source_sha256": "sha256:51d757197d0d85e3ba3e3542e79ccb8e824335a63aa6c3276f6c2af1260df532",
+      "prepared_sha256": "sha256:51d757197d0d85e3ba3e3542e79ccb8e824335a63aa6c3276f6c2af1260df532",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 693,
+      "prepared_tokens": 693,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:51d757197d0d85e3ba3e3542e79ccb8e824335a63aa6c3276f6c2af1260df532",
+      "final_messages": 2,
+      "final_tokens": 693,
+      "input_allowance": 1045834,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1046707,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1045707,
+        "history_tokens": 1051,
+        "request_tokens": 1051,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "events": {
+    "version": 1,
+    "runId": "e41a1fe3-024a-469a-993a-39687a263184",
+    "after": 0,
+    "cursor": 62,
+    "retention": "process-local-bounded",
+    "firstAvailableEventId": 1,
+    "gapReason": null,
+    "events": [
+      {
+        "eventId": 1,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_id": "run-policy-e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_type": "effective_run_policy",
+          "title": "Effective run policy",
+          "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-e41a1fe3-024a-469a-993a-39687a263184\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-e41a1fe3-024a-469a-993a-39687a263184\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-e41a1fe3-024a-469a-993a-39687a263184\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · math-specialist-db64c2a8\",\"skills\":\"Skills · auto · 0 available · agent scope\",\"tools\":\"Tools · selected · 14 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · selected · 1 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+          "language": "a2ui",
+          "metadata": {
+            "profile": "uar.a2ui/1",
+            "protocol_version": "v0.9.1",
+            "catalog_id": "urn:uar:a2ui:catalog:1",
+            "version": 1,
+            "warnings": []
+          }
+        }
+      },
+      {
+        "eventId": 2,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "patch": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 3,
+        "eventName": "agui.rag_citations",
+        "data": {
+          "kind": "rag_citations",
+          "phase": "added",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "citations": [
+            {
+              "marker": 1,
+              "chunk_id": "3f5ca9df-3b93-9c2e-ec6d-cae3f5453231",
+              "document_id": "20303298-71bd-44b1-b1e2-d4b4b97b5110",
+              "knowledge_base_id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+              "document_name": "wheel-graphs.txt",
+              "relevance_score": 0.9022027850151062,
+              "snippet": "Local research profile wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=e0f8c635-cdf0-4f1f-93c7-a30244feed25. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 4,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_id": "turn-manifest-e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_type": "turn_manifest",
+          "title": "Turn manifest",
+          "content": "{\"schema_version\":1,\"manifest_hash\":\"b13c52eb177b273f540d6476ce6c39b65821ab2579613073786c86387783e60d\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"8f09b577f70c8a19af57122865da370543672eb56432876ee01efd1d9f1856ca\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"75805643c8087d7c58126f033007a4df9fc14d6f166f58461917ec1601826e7c\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"444e4427881e9d51af16c496f6e044d10481dd866e22ae8ef348e2276d91ca6b\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"b47fb26748b1a6cb8b76e34e8355598f3311c4b581d58391182a54334c429f7b\"}],\"counts\":{\"total\":7,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":4172,\"rendered_characters\":4172,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}",
+          "language": "json",
+          "metadata": {
+            "schema_version": 1,
+            "manifest_hash": "b13c52eb177b273f540d6476ce6c39b65821ab2579613073786c86387783e60d",
+            "fragment_count": 7
+          }
+        }
+      },
+      {
+        "eventId": 5,
+        "eventName": "agui.stream.start",
+        "data": {
+          "kind": "stream",
+          "phase": "start",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "agent_id": "math-specialist-db64c2a8"
+        }
+      },
+      {
+        "eventId": 6,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "e41a1fe3-024a-469a-993a-39687a263184",
+                "conversation_id": "8e3f9797-1451-47c5-ae9e-ef44f2962373",
+                "status": "running"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 8,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_id": "uar.turn:resolved_step",
+          "artifact_type": "provider_event",
+          "title": "resolved_step",
+          "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"4fd11997068481c6c2da7cf6e7ba50bae639da6dd6eb568307fcbdbc97c15b65\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"8f09b577f70c8a19af57122865da370543672eb56432876ee01efd1d9f1856ca\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"75805643c8087d7c58126f033007a4df9fc14d6f166f58461917ec1601826e7c\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"444e4427881e9d51af16c496f6e044d10481dd866e22ae8ef348e2276d91ca6b\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"b47fb26748b1a6cb8b76e34e8355598f3311c4b581d58391182a54334c429f7b\"}],\"counts\":{\"total\":7,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":4137,\"rendered_characters\":4137,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      },
+      {
+        "eventId": 9,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_id": "attempt-manifest-e41a1fe3-024a-469a-993a-39687a263184-MiniMax-M3",
+          "artifact_type": "attempt_manifest",
+          "title": "Provider attempt manifest",
+          "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+          "language": "json",
+          "metadata": {
+            "source": "uar.request",
+            "budgeting_label": "legacy_unbudgeted"
+          }
+        }
+      },
+      {
+        "eventId": 10,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "artifact_id": "uar.request:budget_receipt",
+          "artifact_type": "provider_event",
+          "title": "budget_receipt",
+          "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":3060,\"serialized_bytes\":13596,\"serialized_sha256\":\"7b9ab818664dd34a87bc5f0e6fa2124f17c5664ccb7e60f14f2d0ba96614e320\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      },
+      {
+        "eventId": 11,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "<think>\nTh"
+          }
+        }
+      },
+      {
+        "eventId": 12,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "e retrieved knowledge ha"
+          }
+        }
+      },
+      {
+        "eventId": 13,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "s the profile. Return JSON"
+          }
+        }
+      },
+      {
+        "eventId": 14,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " with key"
+          }
+        }
+      },
+      {
+        "eventId": 15,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "s specialist, profile, rim_vertice"
+          }
+        }
+      },
+      {
+        "eventId": 16,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "s, lucas_number, sandpile_group"
+          }
+        }
+      },
+      {
+        "eventId": 17,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "_order, retrieval_seal, citation.\n\n"
+          }
+        }
+      },
+      {
+        "eventId": 18,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "Citation"
+          }
+        }
+      },
+      {
+        "eventId": 19,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": ": \"["
+          }
+        }
+      },
+      {
+        "eventId": 20,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "1] ("
+          }
+        }
+      },
+      {
+        "eventId": 21,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "wheel-graphs.txt)\". The instruction"
+          }
+        }
+      },
+      {
+        "eventId": 22,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " says \"Copy the exact profile and retrieval"
+          }
+        }
+      },
+      {
+        "eventId": 23,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " seal from the document and its numbered sourc"
+          }
+        }
+      },
+      {
+        "eventId": 24,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "e marker such as [1].\"\n\nProfil"
+          }
+        }
+      },
+      {
+        "eventId": 25,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "e exact"
+          }
+        }
+      },
+      {
+        "eventId": 26,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": ": \"wheel-profile-e4f960"
+          }
+        }
+      },
+      {
+        "eventId": 27,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "6f-d819-4752-b"
+          }
+        }
+      },
+      {
+        "eventId": 28,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "ad5-55b4b800"
+          }
+        }
+      },
+      {
+        "eventId": 29,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "6bff\"."
+          }
+        }
+      },
+      {
+        "eventId": 30,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " Retrieval seal: \""
+          }
+        }
+      },
+      {
+        "eventId": 31,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "e0f8c635-cdf"
+          }
+        }
+      },
+      {
+        "eventId": 32,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "0-4f1f-93"
+          }
+        }
+      },
+      {
+        "eventId": 33,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "c7-a30244feed25\".\n\n"
+          }
+        }
+      },
+      {
+        "eventId": 34,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "Return only"
+          }
+        }
+      },
+      {
+        "eventId": 35,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " JSON.\n\n"
+          }
+        }
+      },
+      {
+        "eventId": 36,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "Should I also render"
+          }
+        }
+      },
+      {
+        "eventId": 37,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " a2"
+          }
+        }
+      },
+      {
+        "eventId": 38,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "ui? The instruction"
+          }
+        }
+      },
+      {
+        "eventId": 39,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " says return only JSON. I'll just"
+          }
+        }
+      },
+      {
+        "eventId": 40,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " return JSON."
+          }
+        }
+      },
+      {
+        "eventId": 41,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "\n</think>\n\n```"
+          }
+        }
+      },
+      {
+        "eventId": 42,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "json\n{\n  \"specialist"
+          }
+        }
+      },
+      {
+        "eventId": 43,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "\": \"M"
+          }
+        }
+      },
+      {
+        "eventId": 44,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "ATH-ce9324ee-0d"
+          }
+        }
+      },
+      {
+        "eventId": 45,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "63-4714-982f"
+          }
+        }
+      },
+      {
+        "eventId": 46,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "-f099e8c8f378"
+          }
+        }
+      },
+      {
+        "eventId": 47,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "\",\n  \"profile\": \"wheel-profil"
+          }
+        }
+      },
+      {
+        "eventId": 48,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "e-e4f9606f-d819"
+          }
+        }
+      },
+      {
+        "eventId": 49,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "-4752-bad5-55"
+          }
+        }
+      },
+      {
+        "eventId": 50,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "b4b8006bff\",\n"
+          }
+        }
+      },
+      {
+        "eventId": 51,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "  \"rim_vertices\": 11,\n"
+          }
+        }
+      },
+      {
+        "eventId": 52,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "  \"lucas_number\": 199"
+          }
+        }
+      },
+      {
+        "eventId": 53,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": ",\n  \"sandpile_group_order\":"
+          }
+        }
+      },
+      {
+        "eventId": 54,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " 39601,\n  \"retriev"
+          }
+        }
+      },
+      {
+        "eventId": 55,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "al_seal\": \"e0f"
+          }
+        }
+      },
+      {
+        "eventId": 56,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "8c635-cdf0-4"
+          }
+        }
+      },
+      {
+        "eventId": 57,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "f1f-93c7-"
+          }
+        }
+      },
+      {
+        "eventId": 58,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "a30244feed25\",\n  \"citation"
+          }
+        }
+      },
+      {
+        "eventId": 59,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": "\": \"[1]"
+          }
+        }
+      },
+      {
+        "eventId": 60,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "delta": {
+            "text": " (wheel-graphs.txt)\"\n}\n```"
+          }
+        }
+      },
+      {
+        "eventId": 61,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "patch": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 62,
+        "eventName": "agui.done",
+        "data": {
+          "kind": "done",
+          "request_id": "e41a1fe3-024a-469a-993a-39687a263184",
+          "usage": {
+            "input_tokens": 3743,
+            "output_tokens": 296,
+            "total_tokens": 4039,
+            "cost_usd_estimate": null,
+            "model": "MiniMax-M3"
+          }
+        }
+      }
+    ]
+  },
+  "scenario_status": "FAILED"
+}

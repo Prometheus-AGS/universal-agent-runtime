@@ -141,6 +141,7 @@ async fn matching_manager(
     service.register_builtins(vec![skill]).await;
     service
         .set_matching_config(SkillMatchingConfig {
+            engine: Default::default(),
             algorithm: SkillMatchingAlgorithm::Keyword,
             threshold: 0.5,
             margin_threshold: 0.0,

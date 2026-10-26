@@ -108,7 +108,7 @@ fn read_only_operation(method: &str) -> bool {
         "load_conversation_policy" | "load_principal_conversation_policy" |
         "load_user_prompt_caching_settings" | "search_skills" | "list_skills" |
         "get_knowledge_base" | "get_knowledge_base_by_name" | "list_knowledge_bases" |
-        "search_knowledge" | "search_knowledge_scoped" | "get_document" |
+        "search_knowledge" | "search_knowledge_scoped" | "search_knowledge_scoped_in_space" | "get_document" |
         "list_documents" | "count_documents" | "load_agent_thread" | "list_agent_threads" |
         "list_agent_edges" | "list_canonical_tool_receipts" | "list_approval_records" |
         "list_tool_admission_evidence" | "load_agent" | "load_agent_by_name" |
@@ -898,6 +898,33 @@ impl PersistenceLayer for ScopedPersistence {
         self.dispatch("save_knowledge_base", move |inner| async move {
                 inner.save_knowledge_base(&kb).await
             }).await
+    }
+
+    async fn begin_knowledge_regeneration(
+        &self, owner: &str, kb: &str,
+        target: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+        let owner = owner.to_owned();
+        let kb = kb.to_owned();
+        let target = target.clone();
+        self.dispatch("begin_knowledge_regeneration", move |inner| async move {
+            inner.begin_knowledge_regeneration(&owner, &kb, &target).await
+        }).await
+    }
+
+    async fn search_knowledge_scoped_in_space(
+        &self, owner_id: &str, kb_ids: &[&str], query_vec: &[f32],
+        limit: usize, min_score: f32,
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<KnowledgeMatch>> {
+        let owner_id = owner_id.to_owned();
+        let kb_ids = kb_ids.iter().map(|id| (*id).to_owned()).collect::<Vec<_>>();
+        let query_vec = query_vec.to_vec();
+        let space = space.clone();
+        self.dispatch("search_knowledge_scoped_in_space", move |inner| async move {
+            let ids = kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
+            inner.search_knowledge_scoped_in_space(&owner_id, &ids, &query_vec, limit, min_score, &space).await
+        }).await
     }
 
     async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {

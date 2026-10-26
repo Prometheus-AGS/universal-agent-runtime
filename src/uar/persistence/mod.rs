@@ -198,6 +198,13 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
+    /// Atomically freeze a KB's retained sources and revoke/requeue every member.
+    async fn begin_knowledge_regeneration(&self, _owner: &str, _kb: &str,
+        _target: &crate::uar::domain::knowledge::EmbeddingFingerprint)
+        -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+        Err(ingestion_records::IngestionStoreError::Unsupported.into())
+    }
+
     /// Channel-source observations are a separate, explicitly negotiated profile.
     fn supports_channel_observers(&self) -> bool { false }
 
@@ -544,6 +551,28 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // =========================================================================
     // Document Tracking
     // =========================================================================
+
+    /// Identity-aware retrieval; concrete durable stores fence one read snapshot.
+    async fn search_knowledge_scoped_in_space(&self, owner_id: &str, kb_ids: &[&str],
+        query_vec: &[f32], limit: usize, min_score: f32,
+        embedding: &crate::uar::domain::knowledge::EmbeddingFingerprint) -> Result<Vec<KnowledgeMatch>> {
+        let mut before = Vec::new();
+        for id in kb_ids {
+            let kb = self.get_knowledge_base(owner_id, id).await?
+                .ok_or_else(|| anyhow::anyhow!("knowledge base unavailable"))?;
+            anyhow::ensure!(!kb.regeneration_unavailable(), "knowledge regeneration is incomplete");
+            kb.ensure_embedding_space(embedding)?;
+            before.push(((*id).to_owned(), kb.config.indexed_embedding, kb.config.regeneration));
+        }
+        let result = self.search_knowledge_scoped(owner_id, kb_ids, query_vec, limit, min_score).await?;
+        for (id, indexed, regeneration) in before {
+            let after = self.get_knowledge_base(owner_id, &id).await?
+                .ok_or_else(|| anyhow::anyhow!("knowledge base was revoked during retrieval"))?;
+            anyhow::ensure!(after.config.indexed_embedding == indexed && after.config.regeneration == regeneration,
+                "knowledge generation changed during retrieval");
+        }
+        Ok(result)
+    }
 
     /// Save a document record.
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()>;

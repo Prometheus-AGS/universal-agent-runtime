@@ -1,0 +1,122 @@
+[
+  {
+    "description": "  As a user\n  I want the agent's answer to arrive as incremental content\n  So that I can read it before the response finishes",
+    "elements": [
+      {
+        "description": "",
+        "id": "receive-a-streamed-answer-from-the-default-agent;the-default-agent-streams-a-complete-useful-answer",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "The default agent streams a complete useful answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 488617
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "UAR is running with a configured real model",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:8"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 415151280,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- 'chat.completion.chunk'\n\n    at frame (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/streaming.steps.mjs:46:12)\n    at drain (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/streaming.steps.mjs:67:7)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/streaming.steps.mjs:72:5)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask the default agent to count from 1 to 20 using streaming",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:18"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "I receive multiple content events before the stream finishes",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:80"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the assembled answer contains the numbers 1 through 20 in order",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:87"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "the stream ends successfully",
+            "match": {
+              "location": "scripts/behaviors/steps/streaming.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 364900
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJEZWZhdWx0IGFnZW50IHN0cmVhbXMgYSBjb21wbGV0ZSB1c2VmdWwgYW5zd2VyIiwKICAic3RhdHVzIjogIkZBSUxFRCIsCiAgImNsaWVudF9wbGF0Zm9ybSI6ICJkYXJ3aW4iLAogICJvc19yZWxlYXNlIjogIjI1LjYuMCIsCiAgImVuZHBvaW50IjogImh0dHA6Ly8xMjcuMC4wLjE6NTM1ODciLAogICJtb2RlbCI6ICJsaXRlci9NaW5pTWF4LU0zIiwKICAiYW5zd2VyIjogIiIsCiAgImV2ZW50cyI6IFtdCn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "receive-a-streamed-answer-from-the-default-agent",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Receive a streamed answer from the default agent",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@streaming",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/streaming.feature"
+  }
+]

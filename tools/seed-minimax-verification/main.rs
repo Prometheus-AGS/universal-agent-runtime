@@ -209,7 +209,7 @@ async fn run() -> Result<()> {
         "updated_at": verified_at,
     });
     db.query("UPSERT type::record('settings', $rid) CONTENT $data")
-        .bind(("rid", record_id))
+        .bind(("rid", record_id.clone()))
         .bind(("data", setting_payload))
         .await
         .with_context(|| format!("upserting setting '{proof_key}'"))?
@@ -229,7 +229,7 @@ async fn run() -> Result<()> {
     // (`src/uar/persistence/providers/surreal.rs:get_setting`).
     let mut resp = db
         .query("SELECT * FROM type::record('settings', $rid)")
-        .bind(("rid", record_id))
+        .bind(("rid", record_id.clone()))
         .await
         .context("readback get_setting")?;
     let rows: Vec<surrealdb::types::Value> = resp

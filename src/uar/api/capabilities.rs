@@ -25,13 +25,12 @@ pub const AGUI_PROFILE: &str = "uar.agui/1";
 
 /// AG-UI profile revision of the runs stream.
 pub const AGUI_PROFILE_REVISION: u32 = 1;
-// C10 customer feedback requires the existing classify/draft interpreter in the normal profile.
-// Availability still requires team execution ownership; publication requires separate approval.
-pub const WORKFLOW_EXECUTION_QUALIFIED: bool = true;
-pub fn workflow_execution_enabled() -> bool {
-    WORKFLOW_EXECUTION_QUALIFIED
-        || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
-}
+pub use crate::uar::domain::execution_capabilities::{
+    TEAM_EXECUTION_B_CAPABILITIES, TEAM_EXECUTION_B_QUALIFICATION_RECEIPT,
+    TEAM_EXECUTION_B_QUALIFIED, TEAM_EXECUTION_PROFILE, WORKFLOW_EXECUTION_QUALIFIED,
+    team_execution_b_enabled, team_execution_profile_stage, workflow_execution_enabled,
+};
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowExecutionCapability {
@@ -41,27 +40,6 @@ pub struct WorkflowExecutionCapability {
     pub available: bool,
     pub qualified: bool,
 }
-pub const TEAM_EXECUTION_PROFILE: &str = "urn:prometheus:uar:team-execution:0.1.0";
-pub const TEAM_EXECUTION_B_CAPABILITIES: [&str; 3] = [
-    "team_execution_peer_tools_v1",
-    "team_execution_shared_instructions_v1",
-    "team_execution_continuations_v1",
-];
-/// Operated-source Gate B receipt in agent-fabric-convergence, committed at ad2ad1617.
-pub const TEAM_EXECUTION_B_QUALIFIED: bool = true;
-pub const TEAM_EXECUTION_B_QUALIFICATION_RECEIPT: Option<&str> =
-    Some("sha256:5a96786980812effbd79661290e51dee2ec1cde524854566d588eab934d1a058");
-pub fn team_execution_profile_stage() -> &'static str {
-    match std::env::var("UAR_TEAM_EXECUTION_PROFILE_STAGE").as_deref() {
-        Ok("operation") => "operation",
-        _ if TEAM_EXECUTION_B_QUALIFIED => "qualified",
-        _ => "unqualified",
-    }
-}
-pub fn team_execution_b_enabled() -> bool {
-    team_execution_profile_stage() != "unqualified"
-}
-
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.

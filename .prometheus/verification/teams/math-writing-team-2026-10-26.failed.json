@@ -1,0 +1,70 @@
+{
+  "status": "FAILED",
+  "platform": "macos",
+  "scenario": "Concurrent calculation and editorial work merge into one article",
+  "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T08-49-32.290Z-team-macos.json",
+  "evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/teams/72860111-231c-49ec-a973-e0a4e53f2a63.json",
+  "diagnostic": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/teams/72860111-231c-49ec-a973-e0a4e53f2a63.diagnostic.json",
+  "team_id": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+  "members": [
+    {
+      "id": "d893d451-78d9-411f-b800-2b396b4f9a5f",
+      "role": "math",
+      "definition": {
+        "id": "math-specialist-db64c2a8",
+        "version": "1.0.0-team-72860111-231c-49ec-a973-e0a4e53f2a63",
+        "digest": "sha256:bc32d4a4fc4fd2f7a8b863db984cd5ecd986a6e16ecf0a6dddde1383f52b7008"
+      }
+    },
+    {
+      "id": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+      "role": "writer",
+      "definition": {
+        "id": "writing-specialist",
+        "version": "1.0.0-team-72860111-231c-49ec-a973-e0a4e53f2a63",
+        "digest": "sha256:a9e22bb6b73248eac70649e68da34ee4c849cd5d703a624be917c6ba88cb1f4a"
+      }
+    }
+  ],
+  "passed_observations": [
+    "Created a durable actual UAR team instance",
+    "Added immutable snapshots of saved math/writer identities and instructions as its two members",
+    "Created independent calculation/outline tasks plus article depending on both",
+    "Admitted distinct member runs and roots"
+  ],
+  "failed": [
+    "Both native run events reported skill_selection_unavailable",
+    "Concurrent live execution assertion failed because runs errored",
+    "Team settlement log reported failed to read collaboration catalog CAS result; one attempt remained running/reserved-unknown in the diagnostic snapshot"
+  ],
+  "not_exercised": [
+    "Both specialist task outputs",
+    "Proven overlapping successful math/editorial execution",
+    "Dependent final article and merged output-artifact context"
+  ],
+  "current_pid": 64463,
+  "owner_exec_session": 66217,
+  "service_kept_running": true,
+  "product_source_modified": false,
+  "runtime": {
+    "command": [
+      "node",
+      "node_modules/@cucumber/cucumber/bin/cucumber.js",
+      "--config",
+      "scripts/behaviors/team.cucumber.mjs"
+    ],
+    "exit_code": 1,
+    "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T08-49-32.290Z-team-macos.json",
+    "base_url": "http://127.0.0.1:53587",
+    "pid": 64463,
+    "binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "binary_sha256": "25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c",
+    "built_source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+    "model": "liter/MiniMax-M3",
+    "embedding_spend_usd": {
+      "cohere": 0,
+      "openai": 0
+    },
+    "keep_running": true
+  }
+}

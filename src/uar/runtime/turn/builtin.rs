@@ -209,6 +209,9 @@ pub struct ContextStage {
     /// marked prose remains unchanged.
     pub summary_budget_contract:
         Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
+    /// Host-captured auxiliary allowance; approximate quality stays explicit.
+    pub summary_auxiliary_allowance:
+        Option<crate::uar::runtime::context::budget::AuxiliaryRequestAllowance>,
     /// Trusted-host marks over `AssemblyInputs::history`. Empty means every
     /// history record is protected from summarization.
     pub eligible_prose: Vec<crate::uar::runtime::context::summarizer::HostMarkedProseSpan>,
@@ -253,14 +256,17 @@ impl ContextContributor for ContextStage {
         } else {
             let mut history = vec![system];
             history.extend(inputs.history.clone());
+            let exact = self.summary_budget_contract.clone()
+                .map(crate::uar::runtime::context::budget::AuxiliaryRequestAllowance::Exact);
+            let summary_allowance = exact.as_ref().or(self.summary_auxiliary_allowance.as_ref());
             let (history, report) =
-                crate::uar::runtime::context::reduce::reduce_history_with_input_allowance(
+                crate::uar::runtime::context::reduce::reduce_history_with_input_allowance_and_auxiliary(
                     history,
                     &self.strategy,
                     &self.model,
                     self.input_allowance.saturating_sub(self.reserved_tokens),
                     self.driver.as_deref(),
-                    self.summary_budget_contract.as_ref(),
+                    summary_allowance,
                     &self.eligible_prose,
                 )
                 .await
@@ -312,7 +318,7 @@ impl ContextContributor for SkillBodiesStage {
             })
             .cloned()
             .collect::<Vec<_>>();
-        let (_, fragments) = crate::uar::runtime::skills::retention::reattach_fragments(
+        let (_, fragments, receipt) = crate::uar::runtime::skills::retention::reattach_fragments_with_receipt(
             &state.history,
             &bodies,
             &self.model,
@@ -320,8 +326,14 @@ impl ContextContributor for SkillBodiesStage {
             self.budget,
             self.options,
         );
+        let mut report = state.reduce_report.clone().unwrap_or_default();
+        let structural = report.structural_receipt.get_or_insert_with(|| serde_json::json!({}));
+        if let Some(structural) = structural.as_object_mut() {
+            structural.insert("skill_reattachment".into(), serde_json::json!(receipt));
+        }
         Ok(Contribution {
             fragments,
+            reduce_report: Some(report),
             ..Contribution::default()
         })
     }

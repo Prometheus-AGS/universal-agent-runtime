@@ -48,5 +48,10 @@ reqwest = "0.13.5"
 insta = "1.49.0"
 wiremock = "0.6.5"
 
+# Operator requested Parking Lot0.4.0; pin its official published v0.4.0 tag target.
+# Untagged upstream snapshot; UAR uses only its runtime-free core.
+prometheus_parking_lot = "0.4.0"
+prometheus_parking_lot_commit = "53682521cb2a7a49c06e046c826890d9e11b6bfe"
+
 [decisions]
 # id = "rationale"

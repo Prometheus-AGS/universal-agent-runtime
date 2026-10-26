@@ -1,7 +1,7 @@
 //! Local embedding intent classifier.
 //!
-//! Uses the existing `VectorMatcher` to embed skill descriptions and queries,
-//! then ranks skills by cosine similarity — all on-device, no API calls.
+//! Uses one captured FastEmbed asset-backed instance for descriptions and query;
+//! a hosted or unavailable embedding resource is rejected before inference.
 
 use super::{ClassificationResult, IntentClassifier, IntentScore};
 use crate::uar::domain::skills::Skill;
@@ -18,22 +18,81 @@ struct SkillEmbedding {
     embedding: Vec<f32>,
 }
 
-/// On-device embedding classifier using `VectorMatcher`.
+/// On-device embedding classifier with an immutable serving-instance pin.
 #[derive(Debug)]
 pub struct LocalEmbeddingClassifier {
-    vector_matcher: Arc<VectorMatcher>,
+    embedding_backend: Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend>,
     cache: RwLock<Vec<SkillEmbedding>>,
     topk: usize,
 }
 
 impl LocalEmbeddingClassifier {
-    /// Creates a new local embedding classifier.
+    /// Capture the resource once; existing constructor callers remain supported.
+    /// Hosted resources fail at classification/indexing rather than sending I/O.
     pub fn new(vector_matcher: Arc<VectorMatcher>, topk: usize) -> Self {
         Self {
-            vector_matcher,
+            embedding_backend: vector_matcher.pin_embedding(),
             cache: RwLock::new(Vec::new()),
             topk,
         }
+    }
+
+    fn require_local_resource(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(self.embedding_backend.backend_name() == "fastembed"
+            && self.embedding_backend.endpoint().is_none()
+            && self.embedding_backend.provenance().is_some(),
+            "local_embedding_requires_pinned_fastembed_assets");
+        Ok(())
+    }
+
+    /// Rank the service's already scoped candidates without reapplying global
+    /// enabled flags or allowing other scopes to consume the request's top-k.
+    pub(crate) async fn classify_candidates(
+        &self,
+        query: &str,
+        skills: &[Skill],
+    ) -> anyhow::Result<ClassificationResult> {
+        self.rebuild_skills(skills).await?;
+        self.score_skills(query, skills).await
+    }
+
+    async fn rebuild_skills(&self, skills: &[Skill]) -> anyhow::Result<()> {
+        self.require_local_resource()?;
+        if skills.is_empty() {
+            *self.cache.write().await = Vec::new();
+            return Ok(());
+        }
+        let texts = skills.iter().map(|skill| format!("{}: {} {}",
+            skill.title, skill.description, skill.triggers.keywords.join(" "))).collect::<Vec<_>>();
+        let inputs = texts.iter().map(String::as_str).collect::<Vec<_>>();
+        let embeddings = self.embedding_backend.embed(&inputs).await?;
+        anyhow::ensure!(embeddings.len() == skills.len(), "local_embedding_batch_length_mismatch");
+        *self.cache.write().await = skills.iter().zip(embeddings).map(|(skill, embedding)| SkillEmbedding {
+            skill_id: skill.skill_id.clone(), embedding,
+        }).collect();
+        tracing::info!(skills = skills.len(), "Local embedding index rebuilt");
+        Ok(())
+    }
+
+    async fn score_skills(&self, query: &str, skills: &[Skill]) -> anyhow::Result<ClassificationResult> {
+        self.require_local_resource()?;
+        let cache = self.cache.read().await;
+        if cache.is_empty() {
+            anyhow::ensure!(skills.is_empty(), "local_embedding_index_not_built");
+            return Ok(ClassificationResult::new(Vec::new()));
+        }
+        let query_embeddings = self.embedding_backend.embed(&[query]).await?;
+        let query_vec = query_embeddings.first()
+            .ok_or_else(|| anyhow::anyhow!("Failed to embed query"))?;
+        let skill_map = skills.iter().map(|skill| (skill.skill_id.as_str(), skill))
+            .collect::<std::collections::HashMap<_, _>>();
+        let mut scores = cache.iter().filter_map(|entry| {
+            skill_map.get(entry.skill_id.as_str()).map(|skill| IntentScore::with_skill(
+                entry.skill_id.clone(), cosine_similarity(&entry.embedding, query_vec), (*skill).clone()))
+        }).collect::<Vec<_>>();
+        scores.sort_by(|a, b| b.score.total_cmp(&a.score));
+        scores.truncate(self.topk);
+        Ok(ClassificationResult::new(scores))
     }
 }
 
@@ -45,86 +104,11 @@ impl IntentClassifier for LocalEmbeddingClassifier {
         _context: &[String],
         registry: &SkillRegistry,
     ) -> anyhow::Result<ClassificationResult> {
-        // Embed the query
-        let query_embeddings = self
-            .vector_matcher
-            .embed_batch(vec![query.to_string()])
-            .await?;
-        let query_vec = query_embeddings
-            .first()
-            .ok_or_else(|| anyhow::anyhow!("Failed to embed query"))?;
-
-        // Read cached skill embeddings
-        let cache = self.cache.read().await;
-
-        if cache.is_empty() {
-            // Cache not built yet — fallback to keyword
-            tracing::warn!("Local embedding cache empty, rebuild_index not called");
-            return Ok(ClassificationResult::new(Vec::new()));
-        }
-
-        // Compute cosine similarity for each cached skill
-        let all_skills = registry.list_enabled();
-        let skill_map: std::collections::HashMap<&str, &Skill> = all_skills
-            .iter()
-            .map(|s| (s.skill_id.as_str(), s))
-            .collect();
-
-        let mut scores: Vec<IntentScore> = cache
-            .iter()
-            .filter_map(|se| {
-                let score = cosine_similarity(&se.embedding, query_vec);
-                skill_map.get(se.skill_id.as_str()).map(|skill| {
-                    IntentScore::with_skill(se.skill_id.clone(), score, (*skill).clone())
-                })
-            })
-            .collect();
-
-        // Sort descending
-        scores.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        scores.truncate(self.topk);
-
-        Ok(ClassificationResult::new(scores))
+        self.score_skills(query, &registry.list_enabled()).await
     }
 
     async fn rebuild_index(&self, registry: &SkillRegistry) -> anyhow::Result<()> {
-        let skills = registry.list_enabled();
-        if skills.is_empty() {
-            *self.cache.write().await = Vec::new();
-            return Ok(());
-        }
-
-        // Build text representations
-        let texts: Vec<String> = skills
-            .iter()
-            .map(|s| {
-                format!(
-                    "{}: {} {}",
-                    s.title,
-                    s.description,
-                    s.triggers.keywords.join(" ")
-                )
-            })
-            .collect();
-
-        // Embed all at once
-        let embeddings = self.vector_matcher.embed_batch(texts).await?;
-
-        let mut entries = Vec::with_capacity(skills.len());
-        for (skill, emb) in skills.iter().zip(embeddings.into_iter()) {
-            entries.push(SkillEmbedding {
-                skill_id: skill.skill_id.clone(),
-                embedding: emb,
-            });
-        }
-
-        *self.cache.write().await = entries;
-        tracing::info!("Local embedding index rebuilt with {} skills", skills.len());
-        Ok(())
+        self.rebuild_skills(&registry.list_enabled()).await
     }
 }
 
