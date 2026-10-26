@@ -205,6 +205,37 @@ pub struct KbConfig {
     /// this field existed, so the space is unknown and not enforced.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub indexed_embedding: Option<EmbeddingFingerprint>,
+    /// Durable KB-wide rebuild. Incomplete cohorts are never queryable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub regeneration: Option<KnowledgeRegeneration>,
+}
+
+/// The durable cohort rebuilt from retained document sources.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KnowledgeRegeneration {
+    pub generation: String,
+    pub previous: Option<EmbeddingFingerprint>,
+    pub target: EmbeddingFingerprint,
+    pub document_ids: Vec<String>,
+    pub state: KnowledgeRegenerationState,
+    pub completed_documents: usize,
+    pub last_error: Option<String>,
+    pub started_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum KnowledgeRegenerationState { Running, Failed, Complete }
+
+impl KnowledgeRegeneration {
+    pub fn new(previous: Option<EmbeddingFingerprint>, target: EmbeddingFingerprint, document_ids: Vec<String>) -> Self {
+        let now = chrono::Utc::now().to_rfc3339();
+        Self { generation: Uuid::new_v4().to_string(), previous, target, state: if document_ids.is_empty() {
+            KnowledgeRegenerationState::Complete
+        } else { KnowledgeRegenerationState::Running }, document_ids, completed_documents: 0,
+            last_error: None, started_at: now.clone(), updated_at: now }
+    }
 }
 
 /// Identity of an embedding space: vectors are comparable only when all three
@@ -245,6 +276,12 @@ pub struct EmbeddingSpaceMismatch {
 }
 
 impl KnowledgeBase {
+    /// An incomplete rebuild is unavailable even when vector dimensions match.
+    #[must_use]
+    pub fn regeneration_unavailable(&self) -> bool {
+        self.config.regeneration.as_ref().is_some_and(|job| job.state != KnowledgeRegenerationState::Complete)
+    }
+
     /// Check that vectors from `active` are comparable with this KB's chunks.
     ///
     /// # Errors
@@ -294,6 +331,7 @@ impl Default for KbConfig {
             retrieval_min_score: None,
             retrieval_top_k: None,
             indexed_embedding: None,
+            regeneration: None,
         }
     }
 }

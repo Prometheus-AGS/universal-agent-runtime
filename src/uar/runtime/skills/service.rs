@@ -46,9 +46,23 @@ impl Default for SkillMatchingAlgorithm {
     }
 }
 
+/// Explicit owner of the run's skill matching operation.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SkillMatchingEngine {
+    /// Use the service algorithm, including for configurations predating this field.
+    #[default]
+    Service,
+    /// Use the explicitly configured intent classifier backend.
+    IntentClassifier,
+}
+
 /// Configuration for skill matching behavior.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkillMatchingConfig {
+    /// Select the matching owner explicitly; classifier defaults do not override it.
+    #[serde(default)]
+    pub engine: SkillMatchingEngine,
     /// Which algorithm to use for matching
     #[serde(default)]
     pub algorithm: SkillMatchingAlgorithm,
@@ -78,9 +92,19 @@ fn default_margin_threshold() -> f32 {
     0.05
 }
 
+fn is_configured_filesystem_provider(provider: &dyn SkillStorageProvider) -> bool {
+    provider.kind() == StorageProviderKind::Filesystem
+        && is_configured_filesystem_provider_id(provider.id())
+}
+
+fn is_configured_filesystem_provider_id(provider_id: &str) -> bool {
+    provider_id == "fs-skills" || provider_id.starts_with("filesystem-skills-")
+}
+
 impl Default for SkillMatchingConfig {
     fn default() -> Self {
         Self {
+            engine: SkillMatchingEngine::default(),
             algorithm: SkillMatchingAlgorithm::default(),
             threshold: default_threshold(),
             margin_threshold: default_margin_threshold(),
@@ -158,6 +182,7 @@ pub struct SkillService {
     agent_skills: RwLock<HashMap<String, Vec<String>>>,
     /// Optional governance engine for Cedar policy enforcement on skill mutations.
     governance: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
+    local_skill_matcher: Option<Arc<VectorMatcher>>,
 }
 
 /// Read-only matching inputs captured for one run. No storage-provider or
@@ -166,6 +191,7 @@ pub(crate) struct SkillMatchingSnapshot {
     pub(crate) registry: Arc<RwLock<SkillRegistry>>,
     pub(crate) config: SkillMatchingConfig,
     agent_skills: HashMap<String, Vec<String>>,
+    local_skill_matcher: Option<Arc<VectorMatcher>>,
 }
 
 impl SkillMatchingSnapshot {
@@ -175,18 +201,36 @@ impl SkillMatchingSnapshot {
         agent_id: Option<&str>,
         conversation_id: Option<&str>,
     ) -> SkillMatchResult {
+        self.match_skills_scoped_checked(query, agent_id, conversation_id, None).await
+            .unwrap_or_else(|error| {
+                warn!(%error, "Skill matching unavailable; compatibility caller receives no candidates");
+                SkillMatchResult::default()
+            })
+    }
+
+    /// Require the requested backend, with a captured governed binding for LLM
+    /// ranking. Registry state is cloned before model or vector I/O.
+    pub(crate) async fn match_skills_scoped_checked(
+        &self,
+        query: &str,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+        binding: Option<(&dyn crate::llm::LlmDriver, &str, &crate::uar::runtime::context::budget::AuxiliaryRequestAllowance)>,
+    ) -> anyhow::Result<SkillMatchResult> {
         let legacy_bindings = agent_id
             .and_then(|id| self.agent_skills.get(id))
             .filter(|ids| !ids.is_empty())
             .cloned();
-        let registry = self.registry.read().await;
-        SkillService::match_in_registry(
+        let registry = self.registry.read().await.clone();
+        SkillService::match_in_registry_checked(
             query,
             agent_id,
             conversation_id,
             legacy_bindings.as_ref(),
             &registry,
             &self.config,
+            self.local_skill_matcher.as_ref(),
+            binding,
         )
         .await
     }
@@ -212,7 +256,14 @@ impl SkillService {
             matching_config: RwLock::new(SkillMatchingConfig::default()),
             agent_skills: RwLock::new(HashMap::new()),
             governance: None,
+            local_skill_matcher: None,
         }
+    }
+
+    /// Attach the host-owned FastEmbed resource used only by LocalEmbedding.
+    pub fn with_local_skill_matcher(mut self, matcher: Option<Arc<VectorMatcher>>) -> Self {
+        self.local_skill_matcher = matcher;
+        self
     }
 
     /// Attach a governance engine for Cedar policy enforcement on skill mutations.
@@ -295,19 +346,32 @@ impl SkillService {
     /// API-created files beneath the reserved `dynamic/` directory reload with
     /// `provider_id = "api"` and are therefore outside this operation.
     pub(crate) async fn reconcile_config_skills(&self) -> anyhow::Result<()> {
-        let Some(config_provider) = self
+        let config_providers = self
             .providers
             .iter()
-            .find(|provider| provider.id() == "fs-skills")
-        else {
-            return Ok(());
-        };
-        let config_skills = config_provider
-            .list_skills()
-            .await?
-            .into_iter()
-            .filter(|skill| skill.provider_id == "fs-skills")
+            .filter(|provider| is_configured_filesystem_provider(provider.as_ref()))
             .collect::<Vec<_>>();
+        if config_providers.is_empty() {
+            return Ok(());
+        }
+
+        // Startup assigns every configured root a concrete provider id so its
+        // source is observable. Durable configuration ownership remains the
+        // stable `fs-skills` identity, however; otherwise the initial loaded
+        // registry has no matching durable rows when selection is captured.
+        // Later roots retain the same overwrite precedence as initialization.
+        let mut configured_by_id = HashMap::new();
+        for provider in config_providers {
+            let provider_id = provider.id();
+            for mut skill in provider.list_skills().await? {
+                if skill.provider_id != provider_id {
+                    continue;
+                }
+                skill.provider_id = "fs-skills".to_string();
+                configured_by_id.insert(skill.skill_id.clone(), skill);
+            }
+        }
+        let config_skills = configured_by_id.into_values().collect::<Vec<_>>();
         let stored_skills = self.registry.read().await.list_persisted().await?;
         let stored_by_id = stored_skills
             .iter()
@@ -315,7 +379,7 @@ impl SkillService {
             .collect::<HashMap<_, _>>();
         let stored_config_skill_count = stored_skills
             .iter()
-            .filter(|skill| skill.provider_id == "fs-skills")
+            .filter(|skill| is_configured_filesystem_provider_id(&skill.provider_id))
             .count();
 
         if config_skills.is_empty() && stored_config_skill_count > 0 {
@@ -332,7 +396,7 @@ impl SkillService {
             .collect::<HashSet<_>>();
         for mut configured in config_skills {
             if let Some(existing) = stored_by_id.get(&configured.skill_id) {
-                if existing.provider_id != "fs-skills" {
+                if !is_configured_filesystem_provider_id(&existing.provider_id) {
                     warn!(
                         skill_id = %configured.skill_id,
                         stored_provider_id = %existing.provider_id,
@@ -362,7 +426,7 @@ impl SkillService {
 
         for stored in stored_skills
             .iter()
-            .filter(|skill| skill.provider_id == "fs-skills")
+            .filter(|skill| is_configured_filesystem_provider_id(&skill.provider_id))
         {
             if configured_ids.contains(&stored.skill_id) || stored.tombstoned {
                 continue;
@@ -718,7 +782,24 @@ impl SkillService {
         agent_id: Option<&str>,
         conversation_id: Option<&str>,
     ) -> SkillMatchResult {
-        let registry = self.registry.read().await;
+        self.match_skills_scoped_checked(query, agent_id, conversation_id, None).await
+            .unwrap_or_else(|error| {
+                warn!(%error, "Skill matching unavailable; compatibility caller receives no candidates");
+                SkillMatchResult::default()
+            })
+    }
+
+    /// Match using the named backend without hiding failed/missing resources.
+    /// HTTP preview callers without run authority must pass no model binding;
+    /// selecting LLM there returns an explicit error rather than model I/O.
+    pub async fn match_skills_scoped_checked(
+        &self,
+        query: &str,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+        binding: Option<(&dyn crate::llm::LlmDriver, &str, &crate::uar::runtime::context::budget::AuxiliaryRequestAllowance)>,
+    ) -> anyhow::Result<SkillMatchResult> {
+        let registry = self.registry.read().await.clone();
         let legacy_bindings = if let Some(agent_id) = agent_id {
             self.agent_skills
                 .read()
@@ -730,25 +811,29 @@ impl SkillService {
             None
         };
         let config = self.matching_config.read().await.clone();
-        Self::match_in_registry(
+        Self::match_in_registry_checked(
             query,
             agent_id,
             conversation_id,
             legacy_bindings.as_ref(),
             &registry,
             &config,
+            self.local_skill_matcher.as_ref(),
+            binding,
         )
         .await
     }
 
-    async fn match_in_registry(
+    async fn match_in_registry_checked(
         query: &str,
         agent_id: Option<&str>,
         conversation_id: Option<&str>,
         legacy_bindings: Option<&Vec<String>>,
         registry: &SkillRegistry,
         config: &SkillMatchingConfig,
-    ) -> SkillMatchResult {
+        local_skill_matcher: Option<&Arc<VectorMatcher>>,
+        binding: Option<(&dyn crate::llm::LlmDriver, &str, &crate::uar::runtime::context::budget::AuxiliaryRequestAllowance)>,
+    ) -> anyhow::Result<SkillMatchResult> {
         let eligible = registry
             .list()
             .into_iter()
@@ -766,15 +851,32 @@ impl SkillService {
                 .collect::<Vec<_>>()
         };
         let candidates = match config.algorithm {
-            SkillMatchingAlgorithm::Keyword | SkillMatchingAlgorithm::Llm => {
-                if config.algorithm == SkillMatchingAlgorithm::Llm {
-                    warn!("LLM matching not yet implemented, falling back to keyword");
-                }
+            SkillMatchingAlgorithm::Keyword => {
                 Self::keyword_match(query, &eligible, config.top_k, config.threshold).candidates
             }
-            SkillMatchingAlgorithm::Embedding | SkillMatchingAlgorithm::LocalEmbedding => registry
-                .find_candidates(query)
-                .await
+            SkillMatchingAlgorithm::Llm => {
+                let (driver, model, contract) = binding
+                    .ok_or_else(|| anyhow::anyhow!("governed_llm_classifier_binding_required"))?;
+                anyhow::ensure!(config.model_name.as_deref().is_none_or(|requested| requested == model),
+                    "skill_classifier_requested_model_mismatch");
+                crate::uar::runtime::matching::intent::classify_skills_with_driver(
+                    query, &[], &eligible, driver, model, contract,
+                ).await?.scores.into_iter().filter_map(|score| {
+                    score.skill.map(|skill| SkillCandidate { skill, score: score.score })
+                }).collect()
+            }
+            SkillMatchingAlgorithm::LocalEmbedding => {
+                let matcher = local_skill_matcher
+                    .ok_or_else(|| anyhow::anyhow!("local_embedding_classifier_resource_required"))?;
+                let classifier = crate::uar::runtime::matching::intent::local_embedding::LocalEmbeddingClassifier::new(
+                    Arc::clone(matcher), config.top_k);
+                classifier.classify_candidates(query, &eligible).await?.scores.into_iter()
+                    .filter_map(|score| score.skill.map(|skill| SkillCandidate { skill, score: score.score }))
+                    .collect()
+            }
+            SkillMatchingAlgorithm::Embedding => registry
+                .find_candidates_checked(query)
+                .await?
                 .into_iter()
                 .filter_map(|candidate| {
                     eligible
@@ -791,7 +893,7 @@ impl SkillService {
                     .into_iter()
                     .map(|candidate| (candidate.skill.skill_id.clone(), candidate))
                     .collect::<HashMap<_, _>>();
-                for candidate in registry.find_candidates(query).await {
+                for candidate in registry.find_candidates_checked(query).await? {
                     if let Some(existing) = merged.get_mut(&candidate.skill.skill_id) {
                         // Both scores are confidence values; retain the stronger signal.
                         existing.score = existing.score.max(candidate.score);
@@ -800,12 +902,12 @@ impl SkillService {
                 merged.into_values().collect()
             }
         };
-        SkillMatchResult::resolve(
+        Ok(SkillMatchResult::resolve(
             candidates,
             config.threshold,
             config.margin_threshold,
             config.top_k,
-        )
+        ))
     }
 
     /// Keyword matching with the same scored-result contract as other backends.

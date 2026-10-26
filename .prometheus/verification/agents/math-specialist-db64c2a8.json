@@ -1,0 +1,88 @@
+{
+  "agent_id": "math-specialist-db64c2a8",
+  "agent": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "math-specialist-db64c2a8",
+    "metadata": {
+      "title": "Mathematics Specialist",
+      "description": "Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.",
+      "tags": [
+        "mathematics",
+        "arithmetic",
+        "calculations"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "You are a mathematics specialist for arithmetic, calculations and numerical problems. Always return only a JSON object with keys specialist and answer. Set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". Set answer to the numeric result requested by the user.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": false,
+        "knowledge_bases": [],
+        "citation_required": false
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:1860ef4bd1e3f92b8a0dc23c5f7b0294ba5d09e62f7bcf3f0998799447f7da71",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "base_url": "http://127.0.0.1:53587",
+  "server_config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "model": "liter/MiniMax-M3",
+  "status": "CREATED_NOT_YET_VERIFIED"
+}

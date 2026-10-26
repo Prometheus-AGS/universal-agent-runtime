@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["scheduler", "queue", "tokio", "gpu", "ai"]
 categories = ["asynchronous", "concurrency"]
 include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE*", "/CHANGELOG.md"]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Prometheus AI Team"]
@@ -32,31 +32,34 @@ embedded = ["dep:prometheus-parking-lot-embedded"]
 iggy = ["dep:prometheus-parking-lot-iggy"]
 
 [dependencies]
-prometheus-parking-lot-core = { path = "crates/parking-lot-core", version = "0.3.0" }
-prometheus-parking-lot-runtime-tokio = { path = "crates/parking-lot-runtime-tokio", version = "0.3.0", optional = true }
-prometheus-parking-lot-pg = { path = "crates/parking-lot-pg", version = "0.3.0", optional = true }
-prometheus-parking-lot-embedded = { path = "crates/parking-lot-embedded", version = "0.3.0", optional = true }
-prometheus-parking-lot-iggy = { path = "crates/parking-lot-iggy", version = "0.3.0", optional = true }
+prometheus-parking-lot-core = { path = "crates/parking-lot-core", version = "0.4.0" }
+prometheus-parking-lot-runtime-tokio = { path = "crates/parking-lot-runtime-tokio", version = "0.4.0", optional = true }
+prometheus-parking-lot-pg = { path = "crates/parking-lot-pg", version = "0.4.0", optional = true }
+prometheus-parking-lot-embedded = { path = "crates/parking-lot-embedded", version = "0.4.0", optional = true }
+prometheus-parking-lot-iggy = { path = "crates/parking-lot-iggy", version = "0.4.0", optional = true }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tracing = "0.1"
+serde_json = { version = "1" }
+tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-prometheus-parking-lot-wasm = { path = "crates/parking-lot-wasm", version = "0.3.0" }
+prometheus-parking-lot-wasm = { path = "crates/parking-lot-wasm", version = "0.4.0" }
 
 [dev-dependencies]
-async-trait = "0.1"
+async-trait = { version = "0.1" }
 criterion = { version = "0.8.1", features = ["async_tokio"] }
-parking_lot = "0.12"
-tempfile = "3.14"
-testcontainers = "0.28"
+parking_lot = { version = "0.12" }
+tempfile = { version = "3.14" }
+testcontainers = { version = "0.28" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
 
+# Benchmark suites (cr-40); see benches/README.md. The redb case of
+# `throughput` and `latency` needs the `embedded` feature: run with
+# `--all-features`, as CI does.
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(parking_lot_loom)", "cfg(parking_lot_negative_control, values(any()))"] }
 
 [lints.clippy]
 all = "warn"

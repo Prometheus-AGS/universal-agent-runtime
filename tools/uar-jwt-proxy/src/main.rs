@@ -57,6 +57,10 @@ struct Cli {
     #[arg(long, env = "PROXY_JWT_SUB", default_value = "dev")]
     sub: String,
 
+    /// Stable tenant identity supplied by the external local-development host.
+    #[arg(long, env = "PROXY_JWT_TENANT_ID")]
+    tenant_id: Option<String>,
+
     /// Optional `name` claim.
     #[arg(long, env = "PROXY_JWT_NAME", default_value = "Local Dev")]
     name: String,
@@ -99,8 +103,12 @@ struct SecuritySection {
 #[derive(Serialize)]
 struct Claims<'a> {
     sub: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tenant_id: Option<&'a str>,
     name: &'a str,
     roles: Vec<&'a str>,
+    iat: usize,
+    nbf: usize,
     exp: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
     iss: Option<&'a str>,
@@ -113,6 +121,7 @@ struct AppState {
     client: reqwest::Client,
     encoding_key: EncodingKey,
     sub: String,
+    tenant_id: Option<String>,
     name: String,
     roles: Vec<String>,
     ttl_secs: u64,
@@ -137,14 +146,17 @@ fn ensure_rustcrypto_provider() -> Result<()> {
 
 impl AppState {
     fn mint_token(&self) -> Result<String> {
-        let exp = SystemTime::now()
+        let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)?
-            .as_secs()
-            .saturating_add(self.ttl_secs) as usize;
+            .as_secs();
+        let exp = now.saturating_add(self.ttl_secs) as usize;
         let claims = Claims {
             sub: &self.sub,
+            tenant_id: self.tenant_id.as_deref(),
             name: &self.name,
             roles: self.roles.iter().map(String::as_str).collect(),
+            iat: now as usize,
+            nbf: now.saturating_sub(1) as usize,
             exp,
             iss: self.issuer.as_deref(),
             aud: self.audience.as_deref(),
@@ -210,6 +222,7 @@ async fn main() -> Result<()> {
             .context("failed to build reqwest client")?,
         encoding_key: EncodingKey::from_secret(secret.as_bytes()),
         sub: cli.sub,
+        tenant_id: cli.tenant_id,
         name: cli.name,
         roles,
         ttl_secs: cli.ttl_secs,
@@ -534,6 +547,7 @@ mod tests {
             client: reqwest::Client::new(),
             encoding_key: EncodingKey::from_secret(b"secret"),
             sub: "test-user".to_string(),
+            tenant_id: None,
             name: "Test User".to_string(),
             roles: vec!["user".to_string()],
             ttl_secs: 60,

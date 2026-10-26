@@ -48,6 +48,23 @@ impl From<serde_json::Error> for CollaborationError {
     }
 }
 
+fn storage_error(error: anyhow::Error) -> CollaborationError {
+    #[cfg(feature = "surreal-backend")]
+    if error.chain().any(|cause| {
+        cause.downcast_ref::<surrealdb::Error>().is_some_and(|storage| {
+            matches!(
+                storage.query_details(),
+                Some(surrealdb::types::QueryError::TransactionConflict)
+            )
+        })
+    }) {
+        return CollaborationError::Storage("transaction_conflict".to_owned());
+    }
+
+    let _ = error;
+    CollaborationError::Storage("storage_operation_failed".to_owned())
+}
+
 #[derive(Debug, Clone)]
 pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,
@@ -413,7 +430,7 @@ impl CollaborationCatalogService {
         self.storage
             .load_state()
             .await
-            .map_err(|error| CollaborationError::Storage(error.to_string()))
+            .map_err(storage_error)
     }
 
     pub(super) async fn cas(
@@ -424,7 +441,7 @@ impl CollaborationCatalogService {
         let committed = self.storage
             .compare_and_swap(generation, next)
             .await
-            .map_err(|error| CollaborationError::Storage(error.to_string()))?;
+            .map_err(storage_error)?;
         if committed {
             self.catalog_generation.send_replace(next.generation);
         }

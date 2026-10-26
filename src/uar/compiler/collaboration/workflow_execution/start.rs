@@ -49,8 +49,8 @@ impl CollaborationCatalogService {
                         WORKFLOW_CAPABILITY
                             | "collaboration_definition_packages_v1"
                             | "collaboration_definition_packages_v2"
-                    ) && !(crate::uar::api::capabilities::team_execution_b_enabled()
-                        && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES
+                    ) && !(crate::uar::domain::execution_capabilities::team_execution_b_enabled()
+                        && crate::uar::domain::execution_capabilities::TEAM_EXECUTION_B_CAPABILITIES
                             .contains(&capability))
                 })
             {

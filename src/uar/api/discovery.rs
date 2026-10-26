@@ -860,6 +860,17 @@ pub async fn save_agent_session_config(
     let Ok(owner_key) = user.session_owner_key() else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
+    if config.model.as_deref().is_some_and(|model| {
+        !model.split_once('/').is_some_and(|(provider, model)| {
+            !provider.trim().is_empty() && !model.trim().is_empty()
+        })
+    }) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "model must identify a nonempty provider/model"})),
+        )
+            .into_response();
+    }
     let Some(persistence) = &state.persistence else {
         let key = conversation_policy_cache_key(&owner_key, &session_id);
         let mut sessions = state.agent_sessions.write().await;

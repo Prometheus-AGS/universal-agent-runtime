@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { decodePersistedChatContent } from "@/platform/pglite/legacy-chat-content";
+import { agentSelectionChunk, AGENT_SELECTION_MIME, portableSelection } from "@/shared/content/agent-selection";
 import {
   selectRetryAttempt,
   selectRetryDelayMs,
@@ -15,6 +16,26 @@ describe("chat-message-store streaming", () => {
       messagesByThread: {},
       streamingByThread: {},
     });
+  });
+
+  test("dual selection frames and replay after hydration retain one persisted notice", () => {
+    const store = useChatMessageStore.getState();
+    const selection = agentSelectionChunk({ sourceAgentId: "orchestrator-agent", agent: { id: "registered", title: "Registered" },
+      selectedThreadId: "child", selectionMethod: "intent", rosterRevision: "revision" },
+    { id: "wire-event", at: "2026-10-25T00:00:00Z", seq: 1, runId: "run-selection" }, true)!;
+    store.beginStream(THREAD_ID, "run-selection");
+    store.addRuntimeChunk(THREAD_ID, "run-selection", selection);
+    store.addRuntimeChunk(THREAD_ID, "run-selection", { ...selection, sourceEventId: "legacy-event" });
+    expect(useChatMessageStore.getState().messagesByThread[THREAD_ID]?.[0]?.chunks).toHaveLength(1);
+    const content = [{ type: "artifact" as const, id: selection.id, kind: AGENT_SELECTION_MIME, content: portableSelection(selection) }];
+    const restored = decodePersistedChatContent(content, { messageId: "persisted-message", at: selection.at, finalized: true });
+    useChatMessageStore.setState({ streamingByThread: {} });
+    store.initThread(THREAD_ID, [{ id: "persisted-message", role: "assistant", createdAt: new Date(selection.at),
+      status: "complete", content: restored.content, chunks: restored.chunks }]);
+    store.addRuntimeChunk(THREAD_ID, "run-selection", selection);
+    expect(useChatMessageStore.getState().messagesByThread[THREAD_ID]).toHaveLength(1);
+    expect(useChatMessageStore.getState().streamingByThread[THREAD_ID]?.isStreaming).toBe(false);
+    expect(useChatMessageStore.getState().messagesByThread[THREAD_ID]?.[0]?.chunks?.[0]).toMatchObject({ announce: false });
   });
 
   test("beginStream marks thread as awaiting first token", () => {

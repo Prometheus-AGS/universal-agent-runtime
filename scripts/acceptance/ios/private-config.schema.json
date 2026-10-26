@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private iOS acceptance input; never commit a populated instance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["base_url", "proxy_token", "model", "budget_proxy_config", "scope_id", "context_window"],
+  "properties": {
+    "context_window": {"type":"integer", "minimum":2},
+    "scope_id": {"type":"string", "minLength":1},
+    "base_url": {"type": "string", "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/v1$"},
+    "proxy_token": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1, "pattern":"^[^/]+$"},
+    "budget_proxy_config": {"type": "string", "pattern": "^/"}
+  }
+}

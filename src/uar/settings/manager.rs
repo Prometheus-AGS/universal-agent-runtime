@@ -518,6 +518,14 @@ impl SettingsManager {
             .map_err(Into::into)
     }
 
+    /// Read the matching owner without treating failed storage as a missing setting.
+    /// Historical classifier configuration never implicitly selects that owner.
+    pub async fn skill_matching_engine_for_admission(
+        &self,
+    ) -> Result<crate::uar::runtime::skills::service::SkillMatchingEngine> {
+        Ok(self.get_typed_for_admission("skills.matching.engine").await?.unwrap_or_default())
+    }
+
     /// Conditionally update only Presentation intent, without replacing other policy fields.
     pub async fn update_presentation_assignment(
         &self,
@@ -1907,6 +1915,24 @@ fn build_core_schema(
     }
 
     // -------------------------------------------------------------------------
+    // skills.matching
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Skill Matching", "type": "object",
+            "properties": {
+                "engine": { "type": "string", "title": "Matching Engine",
+                    "enum": ["service", "intent_classifier"], "default": "service",
+                    "x-control": "select" }
+            }
+        });
+        let st = make_type("Skill Matching", "skills.matching", schema);
+        let settings = vec![make_setting(&st, "skills.matching.engine", "Matching Engine", json!("service"))];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
     // intent_classifier
     // -------------------------------------------------------------------------
     {
@@ -2762,6 +2788,18 @@ fn build_core_schema(
                     "title": "Embedding Model",
                     "description": "Model identifier within the selected embedding backend. Changing the model changes the embedding space.",
                     "x-control": "text"
+                },
+                "embedding.vector_dimension": {
+                    "type": "integer", "minimum": 1, "maximum": 16000,
+                    "title": "Embedding Vector Dimension",
+                    "description": "Actual embedding output dimension. A validated change swaps the shared backend; rebuild indexed knowledge bases through regeneration before querying them.",
+                    "x-control": "number"
+                },
+                "embedding.send_dimensions": {
+                    "type": "boolean",
+                    "title": "Send Embedding Dimensions",
+                    "description": "Send the optional dimensions field to OpenAI-compatible embedding endpoints. Disable when the endpoint rejects that field. Expected vector dimension is still validated.",
+                    "x-control": "switch"
                 }
             },
             "required": ["model"]
@@ -2850,6 +2888,10 @@ fn build_core_schema(
                 "Embedding Model",
                 json!(config.llm.embedding.model),
             ),
+            make_setting(&st, "llm.embedding.vector_dimension", "Embedding Vector Dimension",
+                json!(config.llm.embedding.vector_dimension)),
+            make_setting(&st, "llm.embedding.send_dimensions", "Send Embedding Dimensions",
+                json!(config.llm.embedding.send_dimensions)),
         ];
         result.push((st, settings));
     }

@@ -1,0 +1,17 @@
+{
+  "behavior": "A user can prompt the configured default agent",
+  "given": "A running UAR with a genuine provider/model configured",
+  "when": "What is 42 + 46? Reply with only the integer answer.",
+  "then": "The default agent responds with 88",
+  "timestamp": "2026-10-26T06:35:27.425Z",
+  "client_platform": "macos",
+  "os_release": "25.6.0",
+  "node_version": "v24.18.0",
+  "agent_id": "default-agent",
+  "status": "FAILED",
+  "endpoint": "http://127.0.0.1:53587/v1/chat/completions",
+  "http_status": 422,
+  "server_error": "{\"error\":{\"message\":\"Selected model is disabled, unverified, or its configuration changed; verify it in UAR settings\",\"type\":\"invalid_request_error\",\"param\":\"model\",\"code\":\"model_not_verified\"}}",
+  "error": "Expected HTTP 200, received 422\n\n422 !== 200\n",
+  "duration_ms": 39
+}

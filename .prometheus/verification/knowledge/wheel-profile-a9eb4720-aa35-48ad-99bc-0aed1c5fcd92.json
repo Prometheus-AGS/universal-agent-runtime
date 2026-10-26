@@ -1,0 +1,22 @@
+{
+  "platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "profile": "wheel-profile-a9eb4720-aa35-48ad-99bc-0aed1c5fcd92",
+  "retrieval_seal": "2c80f008-309f-4121-80ee-9e1f7fca2dbb",
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "retained_for_future_use": true,
+  "scenario_status": "FAILED"
+}

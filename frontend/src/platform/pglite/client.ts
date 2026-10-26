@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { live, type PGliteWithLive } from "@electric-sql/pglite/live";
 import type { ContentBlock, RichMessage } from "@/types/chat-content";
 import type { Chunk } from "@/shared/content/chunk";
+import { restoreSelectionChunks } from "@/shared/content/agent-selection";
 import { decodePersistedChatContent } from "@/platform/pglite/legacy-chat-content";
 import type { LocalThread } from "@/types";
 import {
@@ -266,7 +267,7 @@ export class UarDb {
         threadId,
         msg.role,
         JSON.stringify(msg.content),
-        JSON.stringify(msg.chunks ?? []),
+        JSON.stringify(restoreSelectionChunks(msg.chunks ?? [], msg.content)),
         msg.createdAt instanceof Date ? msg.createdAt.toISOString() : msg.createdAt,
         msg.status ?? "complete",
       ],
@@ -342,7 +343,7 @@ function rowToMessage(row: MessageRow): RichMessage {
     id: row.id,
     role: row.role,
     content: decoded.content,
-    chunks: storedChunks.length > 0 ? storedChunks : decoded.chunks,
+    chunks: storedChunks.length > 0 ? restoreSelectionChunks(storedChunks, decoded.content) : decoded.chunks,
     createdAt: new Date(row.created_at),
     status: (row.status as RichMessage["status"]) ?? "complete",
   };

@@ -1,0 +1,130 @@
+[
+  {
+    "description": "  As a user\n  I want to save and prompt my own specialist agent\n  So that it remains available for later conversations and orchestrator routing",
+    "elements": [
+      {
+        "description": "",
+        "id": "save-a-specialist-agent-for-later-use;query-a-saved-mathematics-specialist-after-restarting-uar",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Query a saved mathematics specialist after restarting UAR",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3207555239
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a dedicated UAR instance with durable storage and a configured real model",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 33166317
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I create and save a mathematics specialist agent",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:104"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3773094417
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "I restart that UAR instance",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:135"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5469296
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the saved agent definition is still available",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:141"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 6988358979,
+              "error_message": "SyntaxError: Unexpected token '<', \"<think>The\"... is not valid JSON\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/persisted-agent.steps.mjs:159:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "querying the agent follows its saved instructions",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:148"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 651474898
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJDcmVhdGUsIHBlcnNpc3QgYW5kIHF1ZXJ5IGEgcmV1c2FibGUgYWdlbnQiLAogICJzdGF0dXMiOiAiRkFJTEVEIiwKICAiY2xlYW51cF9jb25maXJtZWQiOiB0cnVlLAogICJjbGllbnRfcGxhdGZvcm0iOiAiZGFyd2luIiwKICAiYWdlbnRfaWQiOiAibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwKICAiYWdlbnRfcmVjb3JkIjogIi9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudHMvbWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4Lmpzb24iLAogICJyZXN0YXJ0ZWQiOiB0cnVlLAogICJhbnN3ZXIiOiAiPHRoaW5rPlRoZSB1c2VyIGFza3MgNDIgKyAxNCA9IDU2LiBUaGUgc2F2ZWQgaW5zdHJ1Y3Rpb25zOiByZXR1cm4gb25seSBKU09OIG9iamVjdCB3aXRoIGtleXMgc3BlY2lhbGlzdCBhbmQgYW5zd2VyLiBBbnN3ZXIgc2hvdWxkIGJlIG51bWVyaWMgcmVzdWx0LlxuXG5MZXQgbWUganVzdCByZXNwb25kIHdpdGggdGhlIEpTT04uXG5cblNob3VsZCBJIHVzZSB0b29scz8gTm8gbmVlZC4gVGhlIGluc3RydWN0aW9uIHNheXMgXCJBcHBseSB5b3VyIHNhdmVkIGluc3RydWN0aW9uc1wiIOKAlCBtZWFuaW5nIHRoZSBhZ2VudCBpZGVudGl0eSBmcmFnbWVudC4gT3V0cHV0IG9ubHkgSlNPTi48L3RoaW5rPlxuXG57XCJzcGVjaWFsaXN0XCI6IFwiTUFUSC1jZTkzMjRlZS0wZDYzLTQ3MTQtOTgyZi1mMDk5ZThjOGYzNzhcIiwgXCJhbnN3ZXJcIjogNTZ9IiwKICAibW9kZWwiOiAibGl0ZXIvTWluaU1heC1NMyIsCiAgImR1cmF0aW9uX21zIjogMTQ2NTkKfQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@persistence",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "save-a-specialist-agent-for-later-use",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Save a specialist agent for later use",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@persistence",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/persisted-agent.feature"
+  }
+]

@@ -171,7 +171,7 @@ impl CollaborationCatalogService {
                 "TEAM_CAPABILITY_UNSUPPORTED".into(),
             ));
         }
-        if crate::uar::api::capabilities::team_execution_b_enabled() {
+        if crate::uar::domain::execution_capabilities::team_execution_b_enabled() {
             tool_ids.extend(
                 ["team_roster", "team_send", "team_delegate", "team_wait"]
                     .into_iter()

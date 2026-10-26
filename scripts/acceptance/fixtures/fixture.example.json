@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "executable": false,
+  "source_identity": "REPLACE_WITH_FROZEN_SOURCE_IDENTITY",
+  "artifact_identity": "REPLACE_WITH_ACTUAL_INSTALLED_ARTIFACT_DIGEST",
+  "configuration_revision": "REPLACE_WITH_OWNED_CONFIGURATION_REVISION",
+  "schema_revision": "REPLACE_WITH_ACTUAL_SCHEMA_REVISION",
+  "positive_repetitions": 3,
+  "modules": ["cases_prompt"],
+  "required_cases": ["U01.configured-prompt", "U02.session-continuation"],
+  "frozen_files": [],
+  "provider": {
+    "kind": "genuine",
+    "qualified_model": "REPLACE_PROVIDER/REPLACE_MODEL",
+    "credential_env": "UAR_ACCEPTANCE_PRIMARY_PROVIDER_KEY",
+    "config": {
+      "id": "REPLACE_PROVIDER",
+      "display_name": "Owned genuine acceptance provider",
+      "base_url": "REPLACE_WITH_APPROVED_GENUINE_ENDPOINT",
+      "protocol": "chat",
+      "default_model": "REPLACE_MODEL",
+      "models": [{"id": "REPLACE_MODEL", "enabled": true}],
+      "enabled": true
+    }
+  },
+  "genuine_bindings": [],
+  "limits": {
+    "wall_seconds": 1800,
+    "request_seconds": 120,
+    "command_seconds": 120,
+    "cleanup_seconds": 15,
+    "http_requests": 300,
+    "response_bytes": 1048576,
+    "total_output_bytes": 16777216,
+    "output_tokens": 256
+  },
+  "backends": [
+    {
+      "name": "postgres_pgvector",
+      "profile_id": "REPLACE_WITH_ISOLATED_POSTGRES_PROFILE",
+      "durable": true,
+      "base_url": "http://127.0.0.1:REPLACE_OWNED_PORT",
+      "headers_env": {"Authorization": "UAR_ACCEPTANCE_OWNER_AUTHORIZATION", "x-uar-admin-key": "UAR_ACCEPTANCE_ADMIN_KEY"},
+      "environment_env": {},
+      "server": {"argv": []},
+      "observers": {"prepare": [], "ready": [], "admission": [], "inference": [], "session": [], "cleanup": []}
+    },
+    {
+      "name": "surreal_disk",
+      "profile_id": "REPLACE_WITH_ISOLATED_SURREAL_PROFILE",
+      "durable": true,
+      "base_url": "http://127.0.0.1:REPLACE_OWNED_PORT",
+      "headers_env": {"Authorization": "UAR_ACCEPTANCE_OWNER_AUTHORIZATION", "x-uar-admin-key": "UAR_ACCEPTANCE_ADMIN_KEY"},
+      "environment_env": {},
+      "server": {"argv": []},
+      "observers": {"prepare": [], "ready": [], "admission": [], "inference": [], "session": [], "cleanup": []}
+    }
+  ]
+}

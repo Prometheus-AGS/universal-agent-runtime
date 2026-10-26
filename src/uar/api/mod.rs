@@ -28,7 +28,9 @@ pub mod followups;
 pub mod auth;
 #[cfg(feature = "server")]
 pub mod capabilities;
+#[cfg(feature = "server")]
 pub mod delegation_grants;
+#[cfg(feature = "server")]
 pub mod collaboration;
 #[cfg(feature = "server")]
 pub mod compiler;

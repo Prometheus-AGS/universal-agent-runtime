@@ -70,7 +70,7 @@ impl CollaborationCatalogService {
         &self,
         owner: &str,
     ) -> Result<Vec<TeamExecutionAttempt>, CollaborationError> {
-        if !crate::uar::api::capabilities::workflow_execution_enabled() {
+        if !crate::uar::domain::execution_capabilities::workflow_execution_enabled() {
             return Ok(Vec::new());
         }
         let ids = self

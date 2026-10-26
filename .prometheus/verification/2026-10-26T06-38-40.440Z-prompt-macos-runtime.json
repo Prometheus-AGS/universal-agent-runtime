@@ -1,0 +1,33 @@
+{
+  "behavior": "A user can prompt the configured default agent",
+  "status": "VERIFIED",
+  "platform": "macos",
+  "native_runtime": {
+    "binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "sha256": "25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c",
+    "built_source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018"
+  },
+  "provider": "liter",
+  "model": "MiniMax-M3",
+  "provider_verification": {
+    "http_status": 200,
+    "ok": true,
+    "received_text": true,
+    "latency_ms": 1441,
+    "observed_tool_chunk": "e2d9f7"
+  },
+  "prompt_result": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-38-40.440Z-prompt-macos.json",
+  "prompt_command": "UAR_BASE_URL=http://127.0.0.1:53587 UAR_MODEL=liter/MiniMax-M3 node scripts/behaviors/prompt.mjs",
+  "observed_exit_code": 0,
+  "observed_tool_chunk": "ea4f04",
+  "earlier_results_retained": [
+    "2026-10-26T06-34-32.759Z-prompt-macos.json",
+    "2026-10-26T06-35-27.425Z-prompt-macos.json"
+  ],
+  "setup_findings": [
+    "Initial startup required the existing local skill assets directory",
+    "Initial GPT-5.4 provider verification failed because upstream subscription authentication expired",
+    "Selected configured MiniMax-M3 and supplied catalog capacity before provider verification succeeded"
+  ],
+  "scope": "One genuine default-agent prompt against the identified native1.3.0 artifact; not a current-whole-source/release/platform certification"
+}

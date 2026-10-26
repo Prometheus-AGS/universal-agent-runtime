@@ -1,0 +1,250 @@
+{
+  "7bf6e707-588b-4758-9f5f-0956c0746c52": [
+    {
+      "admission": {
+        "identity": {
+          "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "run_id": "7bf6e707-588b-4758-9f5f-0956c0746c52",
+          "call_id": "a465b2ab-ae81-4229-9f90-f7dae041a41c",
+          "attempt": 1
+        },
+        "model": "minimax/MiniMax-M3",
+        "scopes": [
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "remote_destination",
+              "scope_id": "team-budget:3be01017-83ed-4fd7-8c40-ab41ad510d0f"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "run",
+              "scope_id": "7bf6e707-588b-4758-9f5f-0956c0746c52"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "session",
+              "scope_id": "team-attempt:3be01017-83ed-4fd7-8c40-ab41ad510d0f"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "agent",
+              "scope_id": "math-specialist-db64c2a8"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "deployment",
+              "scope": "global",
+              "scope_id": "global"
+            },
+            "generation": 1
+          }
+        ],
+        "reserved_cost_usd": 0.09599999999999999,
+        "reserved_tokens": 128000,
+        "source_reservation": null
+      },
+      "revision": 2,
+      "state": "settled",
+      "observed_cost_usd": 0.0009238199999999999,
+      "observed_tokens": 2787,
+      "reconciliation_evidence": "host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:7bf6e707-588b-4758-9f5f-0956c0746c52:36:a465b2ab-ae81-4229-9f90-f7dae041a41c:1"
+    }
+  ],
+  "2a7cbb01-e14a-4025-841e-d8a1318d2e97": [
+    {
+      "admission": {
+        "identity": {
+          "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "run_id": "2a7cbb01-e14a-4025-841e-d8a1318d2e97",
+          "call_id": "98aa7bc7-98c6-498f-a2b7-90bc5495634a",
+          "attempt": 1
+        },
+        "model": "minimax/MiniMax-M3",
+        "scopes": [
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "remote_destination",
+              "scope_id": "team-budget:4276d67e-8951-4b98-afb7-a1d9e3329add"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "run",
+              "scope_id": "2a7cbb01-e14a-4025-841e-d8a1318d2e97"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "session",
+              "scope_id": "team-attempt:4276d67e-8951-4b98-afb7-a1d9e3329add"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "agent",
+              "scope_id": "writing-specialist"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "deployment",
+              "scope": "global",
+              "scope_id": "global"
+            },
+            "generation": 1
+          }
+        ],
+        "reserved_cost_usd": 0.0849624,
+        "reserved_tokens": 118802,
+        "source_reservation": null
+      },
+      "revision": 2,
+      "state": "settled",
+      "observed_cost_usd": 0.0006626399999999999,
+      "observed_tokens": 5124,
+      "reconciliation_evidence": "host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:2a7cbb01-e14a-4025-841e-d8a1318d2e97:36:98aa7bc7-98c6-498f-a2b7-90bc5495634a:1"
+    },
+    {
+      "admission": {
+        "identity": {
+          "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "run_id": "2a7cbb01-e14a-4025-841e-d8a1318d2e97",
+          "call_id": "c4708faf-d23f-4393-a402-00e1f64ed1d0",
+          "attempt": 1
+        },
+        "model": "minimax/MiniMax-M3",
+        "scopes": [
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "remote_destination",
+              "scope_id": "team-budget:4276d67e-8951-4b98-afb7-a1d9e3329add"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "run",
+              "scope_id": "2a7cbb01-e14a-4025-841e-d8a1318d2e97"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "session",
+              "scope_id": "team-attempt:4276d67e-8951-4b98-afb7-a1d9e3329add"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "agent",
+              "scope_id": "writing-specialist"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "deployment",
+              "scope": "global",
+              "scope_id": "global"
+            },
+            "generation": 1
+          }
+        ],
+        "reserved_cost_usd": 0.09599999999999999,
+        "reserved_tokens": 128000,
+        "source_reservation": null
+      },
+      "revision": 2,
+      "state": "settled",
+      "observed_cost_usd": 0.0028366199999999998,
+      "observed_tokens": 4387,
+      "reconciliation_evidence": "host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:2a7cbb01-e14a-4025-841e-d8a1318d2e97:36:c4708faf-d23f-4393-a402-00e1f64ed1d0:1"
+    },
+    {
+      "admission": {
+        "identity": {
+          "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "run_id": "2a7cbb01-e14a-4025-841e-d8a1318d2e97",
+          "call_id": "eeeb7bb1-520a-4989-9a38-c966e49a2d9c",
+          "attempt": 1
+        },
+        "model": "minimax/MiniMax-M3",
+        "scopes": [
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "remote_destination",
+              "scope_id": "team-budget:4276d67e-8951-4b98-afb7-a1d9e3329add"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "run",
+              "scope_id": "2a7cbb01-e14a-4025-841e-d8a1318d2e97"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "session",
+              "scope_id": "team-attempt:4276d67e-8951-4b98-afb7-a1d9e3329add"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "agent",
+              "scope_id": "writing-specialist"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "deployment",
+              "scope": "global",
+              "scope_id": "global"
+            },
+            "generation": 1
+          }
+        ],
+        "reserved_cost_usd": 0.09073559999999999,
+        "reserved_tokens": 123613,
+        "source_reservation": null
+      },
+      "revision": 2,
+      "state": "settled",
+      "observed_cost_usd": 0.00107484,
+      "observed_tokens": 4811,
+      "reconciliation_evidence": "host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:2a7cbb01-e14a-4025-841e-d8a1318d2e97:36:eeeb7bb1-520a-4989-9a38-c966e49a2d9c:1"
+    }
+  ]
+}

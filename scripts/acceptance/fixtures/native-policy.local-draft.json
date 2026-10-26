@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "example": true,
+  "executable": false,
+  "status": "SOURCE_BACKED_NATIVE_POLICY_NOT_EXECUTION_AUTHORITY",
+  "native_configuration": {
+    "security": {
+      "deployment_profile": "remote",
+      "jwt_required": true,
+      "jwt_algorithm": "HS256",
+      "jwt_secret": "@env:UAR_FIXTURE_JWT_SECRET@",
+      "jwt_validate_nbf": true,
+      "settings_mutation_auth_required": true,
+      "settings_admin_key": "@env:UAR_FIXTURE_ADMIN_KEY@",
+      "provider_credentials": {"mode": "single_owner"}
+    },
+    "resilience": {
+      "rate_limit_enabled": false,
+      "timeout_disabled": false,
+      "requests_per_second": 100.0,
+      "burst_size": 200.0,
+      "request_timeout_ms": 30000,
+      "stream_start_timeout_ms": 15000,
+      "stream_idle_timeout_ms": 30000,
+      "retries_enabled": true,
+      "retry_max_attempts": 3,
+      "retry_base_delay_ms": 1000,
+      "retry_backoff_multiplier": 2.0,
+      "retry_max_delay_ms": 10000,
+      "retry_jitter_mode": "full",
+      "retry_respect_retry_after": true,
+      "retryable_http_statuses": [429, 500, 502, 503, 504],
+      "retryable_transport_errors": true,
+      "retry_budget_ms": 20000
+    },
+    "runs": {"retention_after_terminal_secs": 600, "max_retained_terminal": 1000, "sweep_interval_secs": 30},
+    "sessions": {"idle_timeout_secs": 0, "max_retained": 0, "persisted_ttl_secs": 3600},
+    "file_processing": {
+      "provider": "kreuzberg",
+      "upload_dir": "@env:UAR_ACCEPTANCE_OWNED_STATE_DIR@",
+      "max_files_per_prompt": 10,
+      "max_file_size": 52428800,
+      "max_total_size": 104857600,
+      "allowed_mime_types": []
+    },
+    "vision": {"auto_detect": true},
+    "intent_classifier": {"backend": "rules", "topk": 5, "accept_threshold": 0.5, "margin_threshold": 0.05},
+    "harness": {
+      "mode": "typed",
+      "skill_activation_mode": "legacy_overlay",
+      "skill_reattachment": {"per_skill_tokens": 5000, "total_tokens": 25000}
+    },
+    "llm": {
+      "model": "fixture-primary/gpt-5.4",
+      "api_key": "@env:UAR_FIXTURE_INGRESS_RAW_KEY@",
+      "base_url": "http://127.0.0.1:49421/v1",
+      "protocol": "chat",
+      "parallel_tool_calls": true,
+      "timeout_secs": 60,
+      "max_retries": 0,
+      "cost_tracking": false,
+      "tracing": false,
+      "embedding": {
+        "backend": "openai",
+        "model": "embed-multilingual-v3.0",
+        "vector_dimension": 1024,
+        "send_dimensions": false,
+        "batch_size": 32,
+        "api_key": "@env:UAR_FIXTURE_INGRESS_RAW_KEY@",
+        "base_url": "http://127.0.0.1:49424/v1"
+      }
+    },
+    "native_tools": {
+      "file_tools_enabled": true,
+      "file_allowed_paths": ["@env:UAR_ACCEPTANCE_TOOLS_EFFECTS_ROOT@"],
+      "file_max_size_kb": 1024,
+      "file_write_max_kb": 512,
+      "web_fetch_enabled": false,
+      "terminal_exec_enabled": false,
+      "session_search_enabled": true,
+      "session_search_max_results": 10
+    },
+    "memory": {
+      "enabled": true,
+      "db_path": "@env:UAR_ACCEPTANCE_MEMORY_PATH@",
+      "embedding_provider": "openai",
+      "embedding_api": "openai",
+      "embedding_model": "embed-english-v3.0",
+      "embedding_api_key": "@env:UAR_FIXTURE_INGRESS_RAW_KEY@",
+      "embedding_base_url": "http://127.0.0.1:49424/v1",
+      "embedding_dim": 1024,
+      "auto_capture": true,
+      "inject_context": true,
+      "vector_weight": 0.7,
+      "bm25_weight": 0.3,
+      "max_context_tokens": 2000,
+      "mcp_http_enabled": true,
+      "mcp_http_path": "/mcp/memory",
+      "namespace": "@scope@",
+      "database": "@scope@"
+    },
+    "a2a": {"instance_id": "uar-acceptance-owned-instance", "trusted_peers": []},
+    "sycophancy": {"auto_correct": false}
+  },
+  "source_recipes": {
+    "teams": {
+      "model_binding": {
+        "credentialRef": "protected-credential://uar-acceptance/fixture-primary",
+        "profile": {"id": "uar.openai-compatible-chat.settings-v1", "revision": 1},
+        "settingsRevision": 1
+      },
+      "storage_ref": "protected-connection://uar-acceptance/catalog",
+      "reservation": {"tokens": 32768, "costMicrounits": 1000000, "elapsedSeconds": 180},
+      "budget": {"maxTokens": 262144, "maxCostMicrounits": 10000000, "currency": "USD", "maxElapsedSeconds": 600},
+      "case_seconds": 600,
+      "foreign_authorization_env": "UAR_FIXTURE_FOREIGN_AUTHORIZATION"
+    },
+    "protected_overflow": {
+      "kind": "over_limit",
+      "model": "fixture-primary/gpt-5.4",
+      "stream": false,
+      "max_completion_tokens": 2048,
+      "role": "user",
+      "input_role_is_protected": true,
+      "derive_from": "actual selected primary model context_window and mounted HTTP body bound",
+      "repeat_unit": "xq7 ",
+      "repeat_count_per_context_token": 2,
+      "requires_bounded_source_materialization": true,
+      "expected_evidence": "actual owned run protected_overflow before provider dispatch",
+      "guaranteed_fit": false,
+      "exact_boundary_claim": false,
+      "status": "RECIPE_NOT_A_MATERIALIZED_ACCEPTANCE_VECTOR"
+    }
+  }
+}

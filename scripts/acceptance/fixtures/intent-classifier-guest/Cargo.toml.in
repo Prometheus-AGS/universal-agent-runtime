@@ -1,0 +1,33 @@
+# Inert template. Copy as Cargo.toml only into the approved private generated root.
+[package]
+name = "uar-intent-classifier-fixture"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Keep dependency resolution/build artifacts separate from the product workspace.
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen-rt = "=0.41.0"
+serde_json = "=1.0.154"
+
+[package.metadata.component]
+package = "intent:classifier"
+
+[package.metadata.component.target]
+path = "wit"
+world = "intent-classifier"
+
+[package.metadata.component.bindings]
+format = false
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

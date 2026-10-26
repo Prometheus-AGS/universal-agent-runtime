@@ -101,6 +101,8 @@ function customToLegacy(wire: UarAguiEvent): [string, Record<string, unknown>] {
       return ["agui.artifact_input_request", { kind: "artifact_input_request", request_id, ...value }];
     case "uar.skill.activated":
       return ["agui.skill.activated", { kind: "skill", phase: "activated", request_id, ...value }];
+    case "uar.agent.selected":
+      return ["agui.agent.selected", { kind: "custom", request_id, name: "uar.agent.selected", value }];
     case "uar.context.updated":
       return ["agui.context.update", { kind: "context", phase: "update", request_id, ...value }];
     case "uar.tool.approval_required":
@@ -211,12 +213,21 @@ export class UarAguiAdapter {
 
     if (this.seen.has(adapted.eventId)) return null;
     this.seen.add(adapted.eventId);
-    // Never allow a late replay frame to regress already-reduced UI state.
-    if (adapted.sequence < this.lastSequence) return null;
-    this.lastSequence = adapted.sequence;
+    // Legacy frames without a wire sequence have no comparable ordering claim.
+    // Their display fallback must not suppress subsequent official dual frames.
+    if (typeof payload.sequence === "number") {
+      if (adapted.sequence < this.lastSequence) return null;
+      this.lastSequence = adapted.sequence;
+    }
 
     if (isUarAguiEvent(payload)) {
       Object.assign(adapted, this.normalizer.normalize(payload));
+    } else if (event === "agui.agent.selected") {
+      Object.assign(adapted, this.normalizer.normalize({
+        type: "CUSTOM", profile: "uar.agui/1", name: "uar.agent.selected",
+        value: record(payload.value), runId: String(payload.request_id ?? ""),
+        threadId: payload.thread_id, eventId: adapted.eventId, sequence: adapted.sequence,
+      }));
     }
 
     if (event === "STATE_SNAPSHOT") {

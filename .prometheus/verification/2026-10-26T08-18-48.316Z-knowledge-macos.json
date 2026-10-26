@@ -1,0 +1,127 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-saved-mathematics-agent-answers-from-its-assigned-knowledge-base;retrieve-specialized-wheel-graph-mathematics-with-source-provenance",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Retrieve specialized wheel-graph mathematics with source provenance",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 39889703
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved mathematics agent and a real embedding model are available",
+            "match": {
+              "location": "scripts/behaviors/steps/math-knowledge.steps.mjs:31"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 8863946,
+              "error_message": "AssertionError [ERR_ASSERTION]: HTTP 404: {\"error\":{\"message\":\"API route not found\",\"type\":\"invalid_request_error\",\"code\":\"api_route_not_found\"}}\n\n404 !== 201\n\n    + expected - actual\n\n    -404\n    +201\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/math-knowledge.steps.mjs:22:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/math-knowledge.steps.mjs:54:13)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I create a specialized mathematics knowledge base and upload a research note",
+            "match": {
+              "location": "scripts/behaviors/steps/math-knowledge.steps.mjs:52"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "the research note finishes indexing",
+            "match": {
+              "location": "scripts/behaviors/steps/math-knowledge.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "I assign that knowledge base to the saved mathematics agent",
+            "match": {
+              "location": "scripts/behaviors/steps/math-knowledge.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "I ask the mathematics agent about the private research profile",
+            "match": {
+              "location": "scripts/behaviors/steps/math-knowledge.steps.mjs:100"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the answer contains the correct mathematics and a citation to the retrieved note",
+            "match": {
+              "location": "scripts/behaviors/steps/math-knowledge.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1730369
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJwbGF0Zm9ybSI6ImRhcndpbiIsImFnZW50X2lkIjoibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwicHJvZmlsZSI6IndoZWVsLXByb2ZpbGUtYTllYjQ3MjAtYWEzNS00OGFkLTk5YmMtMGFlZDFjNWZjZDkyIiwicmV0cmlldmFsX3NlYWwiOiIyYzgwZjAwOC0zMDlmLTQxMjEtODBlZS05ZTFmN2ZjYTJkYmIiLCJlbWJlZGRpbmciOnsic3RhdHVzIjoic2VydmluZyIsInNwYWNlIjp7ImJhY2tlbmQiOiJmYXN0ZW1iZWQiLCJtb2RlbCI6ImJnZS1zbWFsbC1lbi12MS41IiwiZGltZW5zaW9uIjozODR9LCJlbmRwb2ludCI6bnVsbCwicHJvdmVuYW5jZSI6eyJzb3VyY2VfZGlyIjoiL1VzZXJzL2dxYWRvbmlzL1Byb2plY3RzL3Byb21ldGhldXMvdW5pdmVyc2FsLWFnZW50LXJ1bnRpbWUvdGFyZ2V0L3Byb21wdC1tYWNvcy1oYml0eGoyYy9tb2RlbHMiLCJhc3NldF9tYW5pZmVzdF9zaGEyNTYiOiJmNmRjYjg0ZWMwYzA0MTk4MDY5NDU5YWIzMzc0YWQ2NmMxYWZiMWQzMTNiMTAwNDg0NDBkYmFhMTg4ZGFhOGIzIn0sImZhaWxvdmVyIjpudWxsfSwicmV0YWluZWRfZm9yX2Z1dHVyZV91c2UiOnRydWUsInNjZW5hcmlvX3N0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-saved-mathematics-agent-answers-from-its-assigned-knowledge-base",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A saved mathematics agent answers from its assigned knowledge base",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/math-knowledge.feature"
+  }
+]

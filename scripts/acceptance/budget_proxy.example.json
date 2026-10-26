@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "executable": false,
+  "epoch_id": "REQUIRES_NAMED_OPERATOR_APPROVAL",
+  "ledger_root": "/PRIVATE_SHARED_PARENT/uar_budget_REPLACE_WITH_EPOCH_SHA256_PREFIX",
+  "approval_packet": {"path": "/PRIVATE_INPUTS/approved-packet.json", "sha256": "REPLACE_WITH_ADOPTED_DIGEST"},
+  "approval_signature": {"path": "/PRIVATE_INPUTS/approved-packet.signature", "sha256": "REPLACE_WITH_ADOPTED_DIGEST"},
+  "seed": {"path": "/PRIVATE_INPUTS/reconciled-epoch-seed.json", "sha256": "REPLACE_WITH_ADOPTED_DIGEST"},
+  "spend_pools": {
+    "cohere": {"limit_microunits": 10000000},
+    "openai_embeddings": {"limit_microunits": 10000000},
+    "liter": {"limit_microunits": 0}
+  },
+  "limits": {
+    "model_attempts": 0,
+    "embedding_attempts": 0,
+    "generated_tokens": 0,
+    "cost_microunits": 0,
+    "request_bytes": 0,
+    "response_bytes": 0,
+    "max_in_flight": 1,
+    "wall_seconds": 1
+  },
+  "upstream_timeout_seconds": 1,
+  "ingress_timeout_seconds": 1,
+  "bindings": [{
+    "id": "REPLACE_WITH_FROZEN_MODEL_BINDING",
+    "kind": "model",
+    "spend_pool": "liter",
+    "listen_port": 18081,
+    "request_path": "/v1/chat/completions",
+    "upstream_url": "https://operator-approved-provider.invalid/v1/chat/completions",
+    "model_path": "/model",
+    "allowed_models": ["REPLACE_WITH_EXACT_APPROVED_MODEL"],
+    "max_request_bytes": 1,
+    "max_response_bytes": 1,
+    "approved_charge_ceiling_microunits": 0,
+    "charge_approval": {"path": "/PRIVATE_INPUTS/model-charge-approval.json", "sha256": "REPLACE_WITH_ADOPTED_DIGEST"},
+    "headers_env": {"Authorization": "APPROVED_REAL_PROVIDER_AUTHORIZATION"},
+    "ingress_authorization_env": "APPROVED_BUDGET_INGRESS_AUTHORIZATION",
+    "output_token_paths": ["/max_tokens", "/max_completion_tokens"],
+    "max_output_tokens_per_attempt": 1
+  }]
+}

@@ -32,6 +32,7 @@ pub struct AgentNode {
     /// Agent ID (local) or full A2A endpoint URL (remote).
     agent_id_or_url: String,
     history_fork: HistoryForkMode,
+    selected_local: bool,
 }
 
 impl AgentNode {
@@ -45,7 +46,17 @@ impl AgentNode {
             id: id.into(),
             agent_id_or_url: agent_id_or_url.into(),
             history_fork: HistoryForkMode::None,
+            selected_local: false,
         }
+    }
+
+    /// Execute the registered local target selected by a live-roster router.
+    /// Both `_route` and `_agent_roster_revision` must be supplied by routing.
+    #[must_use]
+    pub fn selected_local(id: impl Into<String>) -> Self {
+        let mut node = Self::new(id, String::new());
+        node.selected_local = true;
+        node
     }
 
     /// Select how much parent dialogue the local child inherits. System
@@ -78,20 +89,40 @@ impl AgentNode {
         };
         let mut resume_state = state.clone();
         resume_state.set("_client_tool_resume_node", &self.id);
-        let outcome = match delegate
-            .execute(
+        let artifact_id = if self.selected_local {
+            match state.get::<String>("_route").filter(|id| !id.trim().is_empty()) {
+                Some(id) => id,
+                None => return NodeResult::Error(state, "graph_routing_selection_missing".into()),
+            }
+        } else {
+            self.agent_id_or_url.clone()
+        };
+        let request = AgentSpawnRequest {
+            artifact_id,
+            delegated_prompt: input_text.to_owned(),
+            task_name: None,
+            history_fork: self.history_fork,
+        };
+        let result = if self.selected_local {
+            let Some(roster_revision) = state.get::<String>("_agent_roster_revision") else {
+                return NodeResult::Error(state, "graph_routing_roster_revision_missing".into());
+            };
+            delegate.execute_selected(
                 &ctx.run_id,
                 state.iteration,
-                AgentSpawnRequest {
-                    artifact_id: self.agent_id_or_url.clone(),
-                    delegated_prompt: input_text.to_owned(),
-                    task_name: None,
-                    history_fork: self.history_fork,
-                },
+                request,
                 serde_json::json!(resume_state),
-            )
-            .await
-        {
+                &roster_revision,
+            ).await
+        } else {
+            delegate.execute(
+                &ctx.run_id,
+                state.iteration,
+                request,
+                serde_json::json!(resume_state),
+            ).await
+        };
+        let outcome = match result {
             Ok(outcome) => outcome,
             Err(error) => {
                 return NodeResult::Error(

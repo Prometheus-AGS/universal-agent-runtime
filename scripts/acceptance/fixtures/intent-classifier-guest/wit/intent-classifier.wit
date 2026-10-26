@@ -1,0 +1,19 @@
+package intent:classifier@0.1.0;
+
+interface classifier {
+    record intent-score {
+        label: string,
+        score: f32,
+    }
+
+    record classification-result {
+        scores: list<intent-score>,
+        out-of-scope: bool,
+    }
+
+    classify: func(input: string, context: string) -> result<classification-result, string>;
+}
+
+world intent-classifier {
+    export classifier;
+}

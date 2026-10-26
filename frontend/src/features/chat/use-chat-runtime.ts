@@ -66,7 +66,7 @@ export function useChatRuntime(threadId: string): {
   const { messages, isStreaming } = useChatMessages(threadId);
   const initialMessageSent = useRef(false);
   const titleGeneratedRef = useRef(false);
-  const messagesLoadedRef = useRef(false);
+  const messagesLoadedRef = useRef<string | undefined>(undefined);
   const attachmentManager = useAttachmentManager(threadId);
 
   const setActive = useThreadRegistryStore((s) => s.setActive);
@@ -86,9 +86,11 @@ export function useChatRuntime(threadId: string): {
     const existing = useThreadRegistryStore.getState().threads[threadId];
     if (!existing) registerThread(threadId);
 
-    if (!messagesLoadedRef.current) {
-      messagesLoadedRef.current = true;
-      void loadMessagesFromDb(threadId);
+    if (messagesLoadedRef.current !== threadId) {
+      messagesLoadedRef.current = threadId;
+      void loadMessagesFromDb(threadId).catch(() => {
+        useChatMessageStore.getState().setStreamError(threadId, "Conversation history could not be loaded.");
+      });
     }
   }, [threadId, setActive, registerThread, loadMessagesFromDb]);
 

@@ -57,6 +57,7 @@ impl IngestService {
             return Ok(());
         };
         let active = backend.fingerprint();
+        anyhow::ensure!(!kb.regeneration_unavailable(), "knowledge regeneration is incomplete");
         kb.ensure_embedding_space(&active)?;
         if kb.config.indexed_embedding.is_none() {
             kb.config.indexed_embedding = Some(active);
@@ -140,6 +141,7 @@ impl IngestService {
                 serde_json::Value::String(path.to_string_lossy().to_string()),
             );
             metadata.insert("index".to_string(), serde_json::json!(i));
+            metadata.insert("embedding_space".to_string(), serde_json::to_value(backend.fingerprint())?);
 
             let chunk_id = Uuid::new_v4(); // Or deterministic based on content?
 
@@ -213,6 +215,7 @@ impl IngestService {
             );
             metadata.insert("index".to_string(), serde_json::json!(i));
             metadata.extend(extra_metadata.clone());
+            metadata.insert("embedding_space".to_string(), serde_json::to_value(backend.fingerprint())?);
 
             let chunk_id = Uuid::new_v4();
 
@@ -247,13 +250,11 @@ impl IngestService {
             .ok_or(IngestionStoreError::Revoked)?;
         // ONE pinned backend for fingerprint check, chunking, and embeds.
         let backend = self.embedding_backend.pin();
-        // Bind the KB's embedding space on its first successful ingest so the
-        // query-side guard (`ensure_embedding_space`) is never vacuous for
-        // API-uploaded KBs either — a later backend swap must refuse this KB
-        // explicitly instead of scoring against another space's vectors.
-        self.bind_embedding_space(&job.owner_id, &job.kb_id, &backend).await?;
+        // Publication binds the initial space in the same transaction as its
+        // chunks. An authorized cohort may prepare the new target while the
+        // old indexed identity stays unavailable until every member settles.
         let fingerprint = backend.fingerprint();
-        kb.ensure_embedding_space(&fingerprint)?;
+        crate::uar::rag::regeneration::validate_preparation(&kb, job, &fingerprint)?;
         let segments = Chunker::new(kb.config.chunk_strategy, Some(Arc::clone(&backend)))
             .chunk(content).await?;
         let refs: Vec<&str> = segments.iter().map(String::as_str).collect();
@@ -273,6 +274,10 @@ impl IngestService {
             metadata.insert("document_id".to_string(), serde_json::json!(job.document_id));
             metadata.insert("index".to_string(), serde_json::json!(index));
             metadata.insert("ingestion_generation".to_string(), serde_json::json!(job.generation));
+            metadata.insert("embedding_space".to_string(), serde_json::json!(fingerprint));
+            if let Some(generation) = &job.regeneration {
+                metadata.insert("knowledge_regeneration".to_string(), serde_json::json!(generation));
+            }
             KnowledgeChunk {
                 id: Uuid::from_bytes(bytes), owner_id: job.owner_id.clone(), kb_id: job.kb_id.clone(),
                 document_id: Some(job.document_id.clone()), content,

@@ -10,6 +10,18 @@ import {
   initializeDurableEntityGraph,
   teardownEntityGraph,
 } from "@/entities/bootstrap";
+import { persistA2uiActionReceipt } from "@/platform/entities/a2ui-actions/durability";
+
+const readyStatus: ReturnType<LocalFirstGraphRuntime["getStatus"]> = {
+  phase: "ready",
+  isOnline: true,
+  isSynced: true,
+  pendingActions: 0,
+  lastHydratedAt: null,
+  lastPersistedAt: null,
+  storageKey: "uar:entity-graph",
+  error: null,
+};
 
 describe("durable entity graph bootstrap", () => {
   afterEach(() => {
@@ -28,7 +40,7 @@ describe("durable entity graph bootstrap", () => {
       dispose: vi.fn(),
       persistNow: vi.fn(),
       hydrate: vi.fn(),
-      getStatus: vi.fn(),
+      getStatus: vi.fn(() => ({ ...readyStatus })),
     } as unknown as LocalFirstGraphRuntime;
 
     const result = await initializeDurableEntityGraph(db, {
@@ -67,6 +79,7 @@ describe("durable entity graph bootstrap", () => {
     const healthyRuntime = {
       ready: Promise.resolve(),
       dispose: vi.fn(),
+      getStatus: vi.fn(() => ({ ...readyStatus })),
     } as unknown as LocalFirstGraphRuntime;
     const startLocalFirst = vi
       .fn<(storage: GraphPersistenceAdapter) => LocalFirstGraphRuntime>()
@@ -86,5 +99,25 @@ describe("durable entity graph bootstrap", () => {
     expect(failedRuntime.dispose).toHaveBeenCalledOnce();
     expect(startLocalFirst).toHaveBeenCalledTimes(2);
     expect(dependencies.startSync).toHaveBeenCalledOnce();
+  });
+
+  test("rejects a resolved runtime with a retained hydration error before sync or action persistence", async () => {
+    const runtime = {
+      ready: Promise.resolve(),
+      dispose: vi.fn(),
+      // Locked core can restore phase ready after malformed snapshot hydration.
+      getStatus: vi.fn(() => ({ ...readyStatus, error: "Invalid persisted graph snapshot" })),
+    } as unknown as LocalFirstGraphRuntime;
+    const startSync = vi.fn(async () => vi.fn());
+
+    await expect(initializeDurableEntityGraph({} as PGlitePersistenceClient, {
+      createStorage: vi.fn(async () => ({} as GraphPersistenceAdapter)),
+      startLocalFirst: vi.fn(() => runtime),
+      startSync,
+    })).rejects.toThrow("Entity graph hydration did not complete successfully");
+
+    expect(runtime.dispose).toHaveBeenCalledOnce();
+    expect(startSync).not.toHaveBeenCalled();
+    await expect(persistA2uiActionReceipt()).rejects.toThrow("Action receipt storage is unavailable");
   });
 });

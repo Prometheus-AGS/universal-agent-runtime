@@ -19,6 +19,18 @@ function wire(
 }
 
 describe("UarAguiAdapter", () => {
+  test("projects routing notices through both protocols without legacy sequence poisoning", () => {
+    const value = { sourceAgentId: "orchestrator-agent", agent: { id: "registered", title: "Registered" },
+      selectedThreadId: "child", selectionMethod: "intent", rosterRevision: "revision" };
+    const adapter = new UarAguiAdapter();
+    const legacy = adapter.ingest("agui.agent.selected", JSON.stringify({ request_id: "run-1", value }), 1);
+    expect(legacy?.runtimeChunk).toMatchObject({ kind: "agent-selection", selectedThreadId: "child", agentId: "registered" });
+    const official = adapter.ingest("CUSTOM", wire("CUSTOM", "2:8", 40, { name: "uar.agent.selected", value }), 2);
+    expect(official?.runtimeChunk).toMatchObject({ kind: "agent-selection", id: legacy?.runtimeChunk?.id });
+    expect(adapter.ingest("TEXT_MESSAGE_CONTENT", wire("TEXT_MESSAGE_CONTENT", "3:8", 56, { delta: "answer" }), 3)?.messageChunk)
+      .toMatchObject({ kind: "text", delta: "answer" });
+  });
+
   test("projects official frames into the canonical chat event shape", () => {
     const adapter = new UarAguiAdapter();
 

@@ -10,6 +10,7 @@ import { MemoryChunkView } from "./memory-chunk";
 import { DividerChunkView, ErrorChunkView, UsageChunkView } from "./meta-chunk";
 import { ReasoningChunkView } from "./reasoning-chunk";
 import { SkillChunkView } from "./skill-chunk";
+import { AgentSelectionChunkView } from "./agent-selection-chunk";
 import { TextChunkView } from "./text-chunk";
 import { ToolChunkView } from "./tool-chunk";
 
@@ -21,6 +22,7 @@ export function ChunkRenderer({ chunk }: { chunk: Chunk }) {
     case "tool-approval": return <ToolApprovalChunkView chunk={chunk} />;
     case "tool-denied": return <ToolDeniedChunkView chunk={chunk} />;
     case "skill-activation": return <SkillChunkView chunk={chunk} />;
+    case "agent-selection": return <AgentSelectionChunkView chunk={chunk} />;
     case "memory-recall": case "memory-mutation": case "memory-update": return <MemoryChunkView chunk={chunk} />;
     case "citation": case "rag-citations": return <CitationChunkView chunk={chunk} />;
     case "context-update": return <ContextChunkView chunk={chunk} />;

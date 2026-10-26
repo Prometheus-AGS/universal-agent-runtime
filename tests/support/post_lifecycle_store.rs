@@ -4,10 +4,9 @@
 
 use std::{fs::OpenOptions, io::Write, path::Path, sync::Arc, time::Duration};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use surrealdb::{Surreal, engine::any::{self, Any}, opt::auth::Root};
 use tokio::sync::Barrier;
-use universal_agent_runtime::uar::persistence::{PersistenceLayer,
+use universal_agent_runtime::uar::persistence::{DurableStoreEligibility, PersistenceLayer,
     providers::surreal::SurrealDbProvider, agui_runs::{AguiRunBinding, AguiTerminal}};
 
 type Result<T> = std::result::Result<T, String>;
@@ -90,7 +89,7 @@ async fn unrelated_conflict_schedule(provider: &SurrealDbProvider, db: &Surreal<
     owned.push(json!({"table":"agui_runs","key":before.storage_key(),"match":{
         "owner_key":before.owner,"agent_id":before.agent_id,"thread_id":before.thread_id}}));
     owned.push(json!({"table":"agui_contexts","key":before.context_key(),"match":{"run_key":before.storage_key()}}));
-    let suffix = format!("{:x}",Sha256::digest(before.storage_key().as_bytes()));
+    let suffix = super::hash(before.storage_key().as_bytes());
     let contention = format!("uar_post_lifecycle_contention_{suffix}");
     let event_name = format!("uar_post_lifecycle_{}",&suffix[..16]);
     db.query("CREATE type::record('agui_contexts',$key) SET run_key='fixture-initial'")
@@ -185,7 +184,8 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
     let mut events = Vec::new();
     let mut owned = Vec::new();
     let body = async {
-        if !provider.durable_store_eligibility().permits_durable_work() {
+        if !matches!(provider.durable_store_eligibility(),
+            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested) {
             return Err("store_durability_unproven_no_substitution".into());
         }
         let db = raw_client(manifest).await?;
@@ -194,7 +194,7 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
                 let before = AguiRunBinding { owner:owner.into(),agent_id:format!("{prefix}-agent"),
                     thread_id:format!("{prefix}-{ordering}"),wire_run_id:format!("{prefix}-run"),
                     native_run_id:format!("{prefix}-native"),session_id:format!("{prefix}-session"),
-                    workspace_id:None,input_digest:format!("{:x}",Sha256::digest(prefix.as_bytes())),
+                    workspace_id:None,input_digest:super::hash(prefix.as_bytes()),
                     ordinal:1,revision:1,start_cursor:0,previous_wire_run_id:None,resumed_tool_ids:Vec::new(),terminal:None };
                 if !provider.create_agui_run(&before,None).await.map_err(|_| "cas_seed_failed")? {
                     return Err("cas_seed_not_fresh".into());
@@ -221,6 +221,7 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
                 events.push(json!({"kind":"concurrent_cas","launchOrdering":ordering,"a":a_result,"b":b_result,
                     "exactReadbackMatched":matched_winner,"rowKey":before.storage_key(),
                     "expectedOrderingObserved":if ordering=="a-first" {matches!(a,Ok(true))} else {matches!(b,Ok(true))},
+                    "observedWinner":if matches!(a,Ok(true)) {Some("a")} else if matches!(b,Ok(true)) {Some("b")} else {None},
                     "winnerRevision":row.as_ref().map(|row|row.revision),"internalInterleavingGuaranteed":false}));
                 if !matched_winner { return Err("concurrent_cas_outcome_unresolved".into()); }
                 if provider.load_agui_run("different-owner",&before.agent_id,&before.thread_id,&before.wire_run_id)
@@ -250,7 +251,7 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
                 let before = AguiRunBinding { owner:owner.into(),agent_id:format!("{prefix}-agent"),
                     thread_id:format!("{prefix}-schedule"),wire_run_id:format!("{prefix}-run"),
                     native_run_id:format!("{prefix}-native"),session_id:format!("{prefix}-session"),
-                    workspace_id:None,input_digest:format!("{:x}",Sha256::digest(prefix.as_bytes())),
+                    workspace_id:None,input_digest:super::hash(prefix.as_bytes()),
                     ordinal:1,revision:1,start_cursor:0,previous_wire_run_id:None,resumed_tool_ids:Vec::new(),terminal:None };
                 unrelated_conflict_schedule(&provider,&db,&before,&mut events,&mut owned).await?;
             }
@@ -270,8 +271,14 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
         .filter(|intent| !events.iter().any(|event| event["kind"]=="fixture_schema_event_remove"
             && event["event"]==intent["event"] && event["removed"]==true))
         .map(|event| json!({"table":"agui_runs","name":event["event"],"outcome":"retained_or_uncertain"})).collect();
+    // Launch order does not establish commit order. Require both actual winner
+    // directions, each with the exact success/miss pair and matching stored row.
+    // A repeated winner remains BLOCKED; no winner or conflict assertion is skipped.
     let exact_orderings = events.iter().filter(|event| event["kind"]=="concurrent_cas"
-        && event["exactReadbackMatched"]==true && event["expectedOrderingObserved"]==true).count()==2;
+        && event["exactReadbackMatched"]==true).count()==2
+        && ["a","b"].iter().all(|winner| events.iter().any(|event|
+            event["kind"]=="concurrent_cas" && event["exactReadbackMatched"]==true
+                && event["observedWinner"].as_str()==Some(*winner)));
     let unrelated_preserved = events.iter().any(|event|
         event["classification"]=="PASS_UNRELATED_TRANSACTION_CONFLICT_RETAINED");
     let raw_closed = events.iter().any(|event| event["kind"]=="raw_client_close" && event["scopeReleased"]==true);
@@ -358,7 +365,9 @@ pub async fn cleanup_rows(manifest: &Value, evidence: &Path) -> Result<Value> {
 /// the caller. The durable record owner must match the existing manifest owner
 /// before any related event row can enter the cleanup ownership inventory.
 pub async fn history_cleanup_rows(manifest: &Value, run_ids: &[String]) -> Result<Vec<Value>> {
-    let expected_owner = text(&manifest["fixtureVariables"],"ownerStorageKey")?;
+    // Durable run history uses ActorOwner::presentation_owner_key, while
+    // accounting and CAS use the distinct credential-principal storage key.
+    let expected_owner = text(&manifest["fixtureVariables"],"historyOwnerKey")?;
     let db = raw_client(manifest).await?;
     let work = async {
         let mut owned = Vec::new();

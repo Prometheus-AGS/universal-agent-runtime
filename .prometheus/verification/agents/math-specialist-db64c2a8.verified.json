@@ -1,0 +1,61 @@
+{
+  "status": "VERIFIED",
+  "behavior": "Create a reusable agent, persist it across restart, and query its saved instructions",
+  "platform": "macos",
+  "agent_id": "math-specialist-db64c2a8",
+  "title": "Mathematics Specialist",
+  "specialty": "Arithmetic and numerical calculations",
+  "agent_definition": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.json",
+  "creation_restart_report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T07-09-18.272Z-persisted-agent-macos.json",
+  "creation_restart_steps": [
+    {
+      "name": "a dedicated UAR instance with durable storage and a configured real model",
+      "status": "passed"
+    },
+    {
+      "name": "I create and save a mathematics specialist agent",
+      "status": "passed"
+    },
+    {
+      "name": "I restart that UAR instance",
+      "status": "passed"
+    },
+    {
+      "name": "the saved agent definition is still available",
+      "status": "passed"
+    },
+    {
+      "name": "querying the agent follows its saved instructions",
+      "status": "failed"
+    },
+    {
+      "name": "Cucumber hook",
+      "status": "passed"
+    }
+  ],
+  "original_query_failure_retained": true,
+  "successful_query_report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T07-17-02.689Z-query-agent-macos.json",
+  "query_result": {
+    "behavior": "Query the previously persisted agent",
+    "status": "PASSED",
+    "service_kept_running": true,
+    "client_platform": "darwin",
+    "agent_id": "math-specialist-db64c2a8",
+    "agent_record": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.json",
+    "restarted": false,
+    "question": "What is 13 + 33? Apply your saved instructions.",
+    "expected_sum": 46,
+    "answer": "{\"specialist\":\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\",\"answer\":46}",
+    "model": "liter/MiniMax-M3",
+    "provider_reasoning_present": true,
+    "duration_ms": 3187
+  },
+  "base_url": "http://127.0.0.1:53587",
+  "runtime_pid": 10704,
+  "server_config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "runtime_sha256": "25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c",
+  "runtime_built_source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "service_kept_running": true,
+  "second_agent_created": false,
+  "orchestrator_test_run": false
+}

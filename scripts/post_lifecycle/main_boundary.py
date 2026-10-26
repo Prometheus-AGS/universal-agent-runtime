@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -81,8 +82,12 @@ def main():
     require(manifest.get("externalSpendAllowed") is False, "external spend is excluded")
     root = Path(manifest["projectRoot"]).resolve()
     require(root == Path.cwd().resolve(), "wrong project cwd")
-    candidate = (root / "target/uar-post-lifecycle-main/debug/universal-agent-runtime").resolve()
-    require(Path(manifest["candidatePath"]).resolve() == candidate, "wrong main candidate path")
+    build_output = (root / "target/uar-post-lifecycle-main/debug/universal-agent-runtime").resolve()
+    evidence = args.evidence_root.resolve()
+    candidate = evidence / "artifacts/universal-agent-runtime"
+    require(Path(manifest["buildOutputPath"]) == build_output, "wrong main build output path")
+    require(Path(manifest["candidatePath"]) == candidate, "wrong frozen main candidate path")
+    require(manifest["processes"]["main"]["argv"][0] == str(candidate), "wrong main executable argv")
     require(manifest.get("sourceInventoryDigest") and manifest.get("contractDigest"), "identity missing")
     inputs = manifest.get("boundInputs", [])
     require(inputs, "no source/config/fixture bindings")
@@ -113,10 +118,21 @@ def main():
         write_new(evidence / "body.json", {"outcome": build["outcome"], "testStarted": False})
         write_new(evidence / "teardown.json", {"outcome": "PASS", "fixtureChildrenStarted": False})
         return 1
-    built_hash = digest(candidate)
+    built_hash = digest(build_output)
+    artifacts = evidence / "artifacts"
+    artifacts.mkdir(mode=0o700)
+    with build_output.open("rb") as source, candidate.open("xb") as frozen:
+        shutil.copyfileobj(source, frozen)
+    os.chmod(candidate, 0o700)
+    frozen_hash = digest(candidate)
     write_new(evidence / "source-build-boot.json", {
         "sourceInventoryDigest": manifest["sourceInventoryDigest"],
-        "builtMainSha256": built_hash, "bootEvidence": "see process receipts; not inferred from build"})
+        "buildOutputPath": str(build_output), "buildOutputSha256": built_hash,
+        "candidatePath": str(candidate), "frozenMainSha256": frozen_hash,
+        "builtMainSha256": built_hash,
+        "freezeOutcome": "PASS" if frozen_hash == built_hash else "BLOCKED",
+        "bootEvidence": "see process receipts; not inferred from build"})
+    require(frozen_hash == built_hash, "frozen main differs from pre-copy build identity")
     env["UAR_BOUNDARY_BUILT_SHA256"] = built_hash
     test_dir = evidence / "raw/test"
     test_dir.mkdir(parents=True)

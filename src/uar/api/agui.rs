@@ -647,6 +647,7 @@ impl Projector {
             // Mirrors adapters.rs:134 (`uar.skill.activated`): same CUSTOM `name` and `value` shape. The adapter's closure is not callable
             // here, and its `runId`/`threadId` carry the native run id, whereas this stream's identity is the wire thread/run (as RUN_STARTED).
             NormalizedEvent::SkillActivated {skill_id,title,selection_method,..} => vec![json!({"type":"CUSTOM","name":"uar.skill.activated","value":{"skill":{"id":skill_id,"title":title},"selectionMethod":selection_method},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id})],
+            NormalizedEvent::AgentSelected {source_agent_id,selected_agent_id,selected_agent_name,selected_thread_id,selection_method,roster_revision,..} => vec![json!({"type":"CUSTOM","name":"uar.agent.selected","value":{"sourceAgentId":source_agent_id,"agent":{"id":selected_agent_id,"title":selected_agent_name},"selectedThreadId":selected_thread_id,"selectionMethod":selection_method,"rosterRevision":roster_revision},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id})],
             _ => Vec::new(),
         }
     }

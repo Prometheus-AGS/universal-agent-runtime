@@ -530,6 +530,11 @@ fn build_chat_request(
         if extra.contains_key("tool_choice") || extra.contains_key("parallel_tool_calls") || extra.contains_key("tools") {
             anyhow::bail!("tool controls must use typed request fields, not extra_params");
         }
+        if req.output_token_cap.is_some()
+            && (extra.contains_key("max_tokens") || extra.contains_key("max_completion_tokens"))
+        {
+            anyhow::bail!("output ceiling must use the typed request cap, not extra_params");
+        }
     }
     if let Some(cap) = req.output_token_cap {
         if provider == "anthropic" && anthropic_reasoning_minimum(req.extra_params.as_ref())?
@@ -564,6 +569,16 @@ fn build_chat_request(
     // persistence toggles) computed by `PromptDialectEngine`, merged
     // verbatim into the outbound request body.
     chat_req.extra_body = req.extra_params.clone();
+    if let Some(extra) = chat_req.extra_body.as_mut().and_then(serde_json::Value::as_object_mut)
+        && let Some(format) = extra.remove("response_format")
+    {
+        let format: super::response_format::ResponseFormat = serde_json::from_value(format)?;
+        format.validate()?;
+        anyhow::ensure!(!format.is_structured()
+            || matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible"),
+            "provider capability error: response_format is unsupported by the {provider} Liter adapter");
+        chat_req.response_format = Some(serde_json::from_value(serde_json::to_value(format)?)?);
+    }
     let mut validated_wire = enforce_request_budget(
         model,
         budget_endpoint_fingerprint,
@@ -678,7 +693,7 @@ impl LlmDriver for LiterLlmDriver {
         req: LlmRequest,
     ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
     {
-        let chat_req = build_chat_request(
+        let prepared = build_chat_request(
             &self.model,
             self.parallel_tool_calls,
             self.budget_endpoint_fingerprint.as_deref(),
@@ -686,8 +701,37 @@ impl LlmDriver for LiterLlmDriver {
             self.generic_chat_adapter,
             &req,
         )
-        .map_err(|error| ProviderError::invalid_request(error.to_string()))?
-        .request;
+        .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
+        // Count the same preserving final wire representation used for dispatch.
+        // Real model JSON tokenization is an estimate unless an installed exact
+        // destination contract proves the framing; catalog metadata cannot do so.
+        let wire_receipt = if prepared.validated_wire.is_some() || self.generic_chat_adapter
+            || matches!(super::detect_provider(&self.model), "openai" | "azure" | "azure_openai") {
+            let wire = self.client.chat_stream_request_body(&prepared.request)
+                .map_err(ProviderError::from_liter)?;
+            anyhow::ensure!(prepared.validated_wire.as_ref().is_none_or(|validated| validated == &wire),
+                "Final provider request differs from validated budget serialization");
+            let counting = req.budget_contract.as_ref().map(|contract| contract.counting)
+                .unwrap_or(crate::uar::runtime::context::token_service::SerializedCountingContract::ApproximateCl100kJsonV1);
+            let count = TokenService::count_serialized(counting, &wire)?;
+            let quality = match count.quality {
+                crate::uar::runtime::context::token_service::CountQuality::Exact => "exact",
+                crate::uar::runtime::context::token_service::CountQuality::ValidatedUpperBound => "validated_upper_bound",
+                crate::uar::runtime::context::token_service::CountQuality::Approximate => "approximate",
+            };
+            Some(serde_json::json!({
+                "schema_version":"uar.request-budget.v1", "representation":"final_provider_request",
+                "destination_model":self.model,
+                "serialized_request":true, "count_quality":quality, "counting_revision":count.revision,
+                "counted_input_tokens":count.tokens, "serialized_bytes":wire.len(),
+                "serialized_sha256":Sha256::digest(&wire).iter().map(|byte| format!("{byte:02x}")).collect::<String>(),
+                "tools_included":true, "instructions_included":true,
+                "fit_guarantee":req.budget_contract.is_some(),
+                "reserved_output_tokens":req.budget_contract.as_ref().map(|contract| contract.limits.output_tokens),
+                "output_ceiling_enforced":prepared.request.max_tokens.is_some() || prepared.request.max_completion_tokens.is_some(),
+            }))
+        } else { None };
+        let chat_req = prepared.request;
 
         // liter-llm returns an owned `'static` chunk stream. Return the normalized
         // stream immediately so the orchestrator's stream-start timeout covers
@@ -705,6 +749,9 @@ impl LlmDriver for LiterLlmDriver {
             .map_err(ProviderError::from_liter)?;
 
         let out = async_stream::stream! {
+            if let Some(payload) = wire_receipt {
+                yield Ok(NormalizedEvent::Custom { source:"uar.request".into(), event_name:"budget_receipt".into(), payload });
+            }
             let mut tool_accum: BTreeMap<u32, ToolAccum> = BTreeMap::new();
             let mut chunk_count: u64 = 0;
             let mut event_count: u64 = 0;

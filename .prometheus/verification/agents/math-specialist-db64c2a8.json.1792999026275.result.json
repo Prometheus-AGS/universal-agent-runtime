@@ -1,0 +1,15 @@
+{
+  "behavior": "Query the previously persisted agent",
+  "status": "PASSED",
+  "service_kept_running": true,
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "agent_record": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.json",
+  "restarted": false,
+  "question": "What is 13 + 33? Apply your saved instructions.",
+  "expected_sum": 46,
+  "answer": "{\"specialist\":\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\",\"answer\":46}",
+  "model": "liter/MiniMax-M3",
+  "provider_reasoning_present": true,
+  "duration_ms": 3187
+}

@@ -1,0 +1,18 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "DeploymentBinding",
+  "id": "urn:uar:acceptance:template:binding",
+  "version": "1.0.0",
+  "provenance": {"source": "run-owned genuine acceptance composition", "authors": ["UAR acceptance"]},
+  "requiredCapabilities": ["collaboration_deployment_bindings_v2"],
+  "extensions": {},
+  "exportClass": "private-installed-state",
+  "revision": 1,
+  "modelBindings": [],
+  "skillBindings": [],
+  "contextGrants": [],
+  "representationGrantRefs": [],
+  "policyRevision": "acceptance-owned-policy-v1",
+  "status": "ready",
+  "effectiveBindingReceiptRef": null
+}

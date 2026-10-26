@@ -54,6 +54,6 @@ export const uarBasicCatalogComponents: UarComponentImplementation[] = [
 /** The UAR basic catalog: the 9 `uar.a2ui/1` protocol-standard components, rendered with shadcn/ui + react-aria-components. */
 export const uarBasicCatalog = new Catalog<UarComponentImplementation>(
   UAR_A2UI_CATALOG_ID,
-  "v0.9",
+  "v0.9.1",
   uarBasicCatalogComponents,
 );
