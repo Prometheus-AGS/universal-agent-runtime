@@ -197,33 +197,45 @@ impl GraphNode for RouterNode {
             }
         }
 
-        // Registered IDs remain exact; fixed options preserve their historical
-        // case-insensitive matching.
-        let trimmed = response_text.trim();
-        let chosen = options
-            .iter()
-            .find(|opt| if self.registered_agents {
-                trimmed == opt.as_str()
-            } else {
-                trimmed.to_lowercase() == opt.to_lowercase()
-            })
-            .cloned();
-
-        let route = if let Some(opt) = chosen {
-            opt
-        } else if self.registered_agents {
-            // Classifier output is private routing data, not a public error or
-            // a reason to silently select the first registered artifact.
-            return NodeResult::Error(state, "graph_routing_selection_invalid".into());
+        let route = if self.registered_agents {
+            match select_registered(&response_text, &options) {
+                Ok(id) => id,
+                Err(rejection) => {
+                    // Classifier output is private routing data, not a public error or
+                    // a reason to silently select the first registered artifact. Log
+                    // only its shape so reasoning and formatting failures differ.
+                    warn!(
+                        node_id = %self.id,
+                        run_id = %ctx.run_id,
+                        code = rejection.code,
+                        answer_chars = rejection.answer_chars,
+                        had_reasoning = rejection.had_reasoning,
+                        unclosed = rejection.unclosed,
+                        normalized_changed = rejection.normalized_changed,
+                        "RouterNode: registered-agent selection rejected"
+                    );
+                    return NodeResult::Error(state, rejection.code.into());
+                }
+            }
         } else {
-            warn!(
-                node_id = %self.id,
-                run_id = %ctx.run_id,
-                response = %response_text,
-                options = ?self.options,
-                "RouterNode: LLM response did not match any option — using first option as fallback"
-            );
-            self.options.first().cloned().unwrap_or_default()
+            // Fixed options preserve their historical case-insensitive matching.
+            let trimmed = response_text.trim();
+            let chosen = options
+                .iter()
+                .find(|opt| trimmed.to_lowercase() == opt.to_lowercase())
+                .cloned();
+            if let Some(opt) = chosen {
+                opt
+            } else {
+                warn!(
+                    node_id = %self.id,
+                    run_id = %ctx.run_id,
+                    response = %response_text,
+                    options = ?self.options,
+                    "RouterNode: LLM response did not match any option — using first option as fallback"
+                );
+                self.options.first().cloned().unwrap_or_default()
+            }
         };
 
         state.set(&self.route_key, &route);
@@ -231,5 +243,129 @@ impl GraphNode for RouterNode {
             state.set("_agent_roster_revision", roster.revision);
         }
         NodeResult::Continue(state)
+    }
+}
+
+const SELECTION_INVALID: &str = "graph_routing_selection_invalid";
+const CLASSIFIER_INCOMPLETE: &str = "graph_routing_classifier_incomplete";
+const QUOTE_PAIRS: [(char, char); 4] = [
+    ('"', '"'),
+    ('\'', '\''),
+    ('\u{201c}', '\u{201d}'),
+    ('\u{2018}', '\u{2019}'),
+];
+
+/// Content-free reason a registered-agent classifier reply was refused.
+#[derive(Debug, PartialEq, Eq)]
+struct SelectionRejection {
+    code: &'static str,
+    answer_chars: usize,
+    had_reasoning: bool,
+    unclosed: bool,
+    normalized_changed: bool,
+}
+
+/// Exclude inline reasoning, then require exactly one eligible ID: first the
+/// answer as written, then after removing one layer of wrapper formatting.
+/// No substring, case-folded or first-candidate fallback is permitted.
+fn select_registered(reply: &str, eligible: &[String]) -> Result<String, SelectionRejection> {
+    let split = crate::llm::inline_reasoning::split_inline_reasoning(reply);
+    let normalized = normalize_selection(&split.answer);
+    let exact = |candidate: &str| eligible.iter().find(|id| id.as_str() == candidate).cloned();
+    if !split.unclosed
+        && let Some(id) = exact(split.answer.as_str()).or_else(|| exact(normalized))
+    {
+        return Ok(id);
+    }
+    Err(SelectionRejection {
+        code: if split.unclosed || split.answer.is_empty() {
+            CLASSIFIER_INCOMPLETE
+        } else {
+            SELECTION_INVALID
+        },
+        answer_chars: split.answer.chars().count(),
+        had_reasoning: split.had_reasoning,
+        unclosed: split.unclosed,
+        normalized_changed: normalized != split.answer,
+    })
+}
+
+/// Remove one layer of surrounding backticks, one layer of quotes and one
+/// trailing period, trimming whitespace between them.
+fn normalize_selection(answer: &str) -> &str {
+    let mut value = answer.trim();
+    if let Some(inner) = value.strip_prefix('`').and_then(|rest| rest.strip_suffix('`')) {
+        value = inner.trim();
+    }
+    for (open, close) in QUOTE_PAIRS {
+        if let Some(inner) = value.strip_prefix(open).and_then(|rest| rest.strip_suffix(close)) {
+            value = inner.trim();
+            break;
+        }
+    }
+    value.strip_suffix('.').map_or(value, str::trim_end)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn eligible() -> Vec<String> {
+        ["general-purpose", "math-specialist", "plant-clinic", "writing-specialist"]
+            .map(String::from)
+            .to_vec()
+    }
+
+    fn code(reply: &str) -> &'static str {
+        select_registered(reply, &eligible()).unwrap_err().code
+    }
+
+    #[test]
+    fn exact_id_is_selected() {
+        assert_eq!(select_registered(" plant-clinic\n", &eligible()), Ok("plant-clinic".into()));
+    }
+
+    #[test]
+    fn id_after_closed_reasoning_is_selected() {
+        let reply = "<think>\nThe fern question matches plant care.\n</think>\n\nplant-clinic";
+        assert_eq!(select_registered(reply, &eligible()), Ok("plant-clinic".into()));
+    }
+
+    #[test]
+    fn one_layer_of_formatting_is_removed_before_exact_match() {
+        for reply in ["`plant-clinic`", "\"plant-clinic\"", "\u{201c}plant-clinic\u{201d}", "plant-clinic.", "`'plant-clinic'`"] {
+            assert_eq!(select_registered(reply, &eligible()), Ok("plant-clinic".into()), "{reply}");
+        }
+    }
+
+    #[test]
+    fn unclosed_or_empty_reply_is_incomplete() {
+        assert_eq!(code("<think>The best match might be plant-clinic"), CLASSIFIER_INCOMPLETE);
+        assert_eq!(code("plant-clinic <think>checking"), CLASSIFIER_INCOMPLETE);
+        assert_eq!(code("<think>reasoning</think>"), CLASSIFIER_INCOMPLETE);
+        assert_eq!(code("   "), CLASSIFIER_INCOMPLETE);
+    }
+
+    #[test]
+    fn non_id_answer_is_invalid_without_fuzzy_fallback() {
+        assert_eq!(code("The best match is plant-clinic"), SELECTION_INVALID);
+        assert_eq!(code("Plant-Clinic"), SELECTION_INVALID);
+        assert_eq!(code("plant"), SELECTION_INVALID);
+        assert_eq!(code("deleted-specialist"), SELECTION_INVALID);
+    }
+
+    #[test]
+    fn rejection_reports_shape_only() {
+        let rejection = select_registered("<think>x</think>`Unknown`", &eligible()).unwrap_err();
+        assert_eq!(
+            rejection,
+            SelectionRejection {
+                code: SELECTION_INVALID,
+                answer_chars: 9,
+                had_reasoning: true,
+                unclosed: false,
+                normalized_changed: true,
+            }
+        );
     }
 }

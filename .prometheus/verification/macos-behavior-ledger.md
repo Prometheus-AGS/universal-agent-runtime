@@ -1,6 +1,6 @@
 # Mac behavior coverage — evidence reconciliation, 2026-10-26
 
-**33 validated behaviors across 30 user journeys.** The latest KB-UNLINK-ONE-01 journey passed on 2026-10-26; earlier receipts remain historical evidence. This records the agreed behavior split without converting partial legacy cases into full passes.
+**35 validated behaviors across 32 user journeys.** The latest KB-REENABLE-01 journey passed on 2026-10-27; earlier receipts remain historical evidence. This records the agreed behavior split without converting partial legacy cases into full passes.
 
 ## Confirmed behavior ledger
 
@@ -39,6 +39,8 @@
 | B31 | Relink an existing KB to an agent and restore grounded use of its unchanged document in a fresh conversation | [KB-RELINK-01 PASS](kb-relink-01-macos-pass.json) |
 | B32 | Link two KBs to an agent and combine private facts from both with matching source citations | [TWO-KB-ANSWER-01 PASS](two-kb-answer-01-macos-pass.json) |
 | B33 | Unlink one of two KBs so only the remaining source contributes facts/citations while both KBs remain searchable | [KB-UNLINK-ONE-01 PASS](kb-unlink-one-01-macos-pass.json) |
+| B34 | Disable agent KB access while preserving saved links; fresh inference omits private knowledge and citations, while the KB remains searchable | [KB-DISABLE-01 PASS](kb-disable-01-macos-pass.json) |
+| B35 | Re-enable agent KB access using retained links; fresh inference recovers the original private fact with matching provenance and unchanged source | [KB-REENABLE-01 PASS](kb-reenable-01-macos-pass.json) |
 
 ## Additional coverage found in the existing receipts
 
@@ -175,3 +177,165 @@ First attempt passed1scenario/4reportedsteps in7.925seconds. Restored originalKB
 ## TWO-KB-ANSWER-01 — 2026-10-26T20:29:35.070003-05:00
 
 First attempt passed: 1 scenario / 5 reported steps / 8.488 seconds. Genuine answer combined 233 + 864 = 1097, returned each private seal and matching actual KB/document citation. Both saved links and selected policy agreed; no unrelated citations, KB/document snapshots unchanged. Disposable agent and both KBs cleaned up. No credentials, hosted embeddings, global settings changes, production edits/build, restart or earlier scenario rerun. [Receipt](two-kb-answer-01-macos-pass.json), [scope](macos-two-kb-answer.md). Karpathy process/conversation logged; UAR running; stop.
+
+## Coverage audit reconciliation — 2026-10-27
+
+Audited all35manual labels and their saved evidence. Counts remain35bounded behaviors/32manual outcomes, now explicitly31direct workflows +1composite B03 persistence/query outcome.31all-passed formal reports (30Cucumber +1Playwright BDD) plus1direct prompt receipt;32authored feature files include the original persisted-agent.feature retained failure. No uncatalogued successful report found; all linked evidence exists. No execution rerun.
+
+Original mapping corrected24partial/73uncredited →28partial/69uncredited: nativechat agui_speccustom, shippedUIcustom, Surreal retainedknowledge adapter and none-strategy contextrestart. Existing rosterlisting/teamcreation/member assertions now explicit insideB04/B09, no labelinflation. B21 proves finalbudget fitting, not structuraltruncate_middle (changed=false,source=prepared12869,final4830). U04singledeletepath and U07wire-onlyscope corrected; U14newB33–B35 credited. Immutable receipts unchanged. Audit/index: coverage-audit-2026-10-27.md/.json and behavior-status.md. These supersede historical11/86 and24/73 snapshots, not their original receipts.
+
+## C33 REST-MODEL-RESTART-01 (B36) — 2026-10-27T06:05:58-05:00
+
+First attempt passed 1 scenario / 11 steps in 2m 4.7s. Model B liter/k3 was REST-saved as the provider default with output limit 1024, and model A liter/MiniMax-M3 as one session override. Requests naming no model ran on B/A with correct marked sums before and after an owned restart (PID 21601 → 69961, same binary/config/store). B's provider-reported output was exactly 1024 tokens against a 4096 request, both times. Stale revision 409 and invalid model 400 left saved state unchanged. Settled accounting under the pricing identities. Original provider config restored and its four verified routes re-verified; disposable agent/sessions removed. Run by a Claude Desktop session from the 2026-10-27 handoff; no earlier scenario rerun. [Receipt](c33-rest-model-restart-macos-pass.json), [evidence](rest-model-restart/246c766c-a558-4048-a119-71f521acdcc2.json). UAR running; stop.
+
+## C34 LIVE-ROSTER-ROUTING-01 attempt 1 — FAIL (test script) — 2026-10-27T06:30:19-05:00
+
+7 of 13 steps passed before the failure. The new disposable specialist joined the live roster and was selected by intent before its answer, which carried its private signature. After the 204 delete, the GET of the deleted agent correctly returned 404 with a plain-text body. The step helper JSON-parsed that body and threw, so the post-removal routes did not run. Cleanup completed. This is a fixture/measurement failure; no product defect was observed. Stopped for an operator decision before any repair or rerun. [Receipt](c34-live-roster-routing-attempt-001-fail.json), [evidence](live-roster-routing/77a2ece1-a35a-442f-a289-b44341e9ed89.json).
+
+## C34 LIVE-ROSTER-ROUTING-01 attempt 2 — FAIL (evidence review overrides Cucumber PASS) — 2026-10-27T06:32:37-05:00
+
+After the approved helper fix, Cucumber reported 13/13 passed in 39.4s. Evidence review invalidated that result: the routed specialist streamed only an unclosed `<think>` block (4,161 characters, ending mid-sentence), and its signature appears only inside that reasoning. The answer step strips only closed reasoning, so it counted reasoning as output. Valid observations: the live roster added and then removed the specialist; it was selected by intent before any text. The fresh houseplant task after removal was refused with `graph_routing_selection_invalid` and no selection. The unmatched request went to default-agent with a genuine answer. Cleanup completed. No credit; stopped for an operator decision. [Receipt](c34-live-roster-routing-attempt-002-fail.json).
+
+## C34 LIVE-ROSTER-ROUTING-01 attempt 3 — FAIL (product refusal) — 2026-10-27T06:44:59-05:00
+
+This attempt ran after the approved fix that treats an unclosed reasoning block as reasoning. The specialist was eligible, yet the orchestrator's router refused the matching fern question within 3.5s with `graph_routing_selection_invalid`: no selection and no approval. The UAR log confirms the router node error; the classifier text is not logged. The root cause is unconfirmed. Hypothesis: exact matching of raw classifier text that contains inline reasoning. Attempt 2's post-removal refusal may be the same defect. Cleanup completed. The operator opened a narrow KBD child phase (plan only). [Receipt](c34-live-roster-routing-attempt-003-fail.json).
+
+## C34 LIVE-ROSTER-ROUTING-01 attempt 4 — FAIL (reasoning-only specialist, reported honestly) — 2026-10-27T09:53:33-05:00
+
+Ran after the routing-reasoning repair, on binary `2ca5c057…eef28e817` (PID 24733). The router selected the eligible houseplant specialist by intent and the spawn approval was granted. The specialist's 252-event stream produced reasoning only, and the run now ends in `RUN_ERROR delegated_answer_missing: reasoning_only` instead of a false success; no reasoning reached the client. 5 of 13 steps passed, 7 skipped, 32.3s. Whether the specialist hit its 1,000-token allowance is unverified (no accounting row; finish reason not recorded). Receipt: `c34-live-roster-routing-attempt-004-fail.json`. No catalog credit.
+
+## C34 LIVE-ROSTER-ROUTING-01 attempt 5 — PASS (B37) — 2026-10-27
+
+Ran on binary `b4e68525…` (PID 340) after both child-phase changes: routing that tolerates reasoning, answer-only contributions, and the 8,192 delegated output allowance. 13/13 steps passed in 1m 4.9s.
+- **Roster and specialist:** the disposable specialist joined the live roster, was selected by intent before any answer text, and answered with its private signature. No reasoning was streamed.
+- **After deletion:** a fresh plant task went to `general-purpose` and the cheese request to `default-agent`, both on the current roster.
+- **Allowance:** the log confirms the specialist's run bound `output_token_cap=8192` from `delegated_default`.
+- **Limits:** this is one pass, and it does not prove the old cap would have failed this time. Raw evidence was reviewed.
+
+Receipt: `c34-live-roster-routing-macos-pass.json`. Credited as B37.
+
+
+## C37 — PASS (B38) — 2026-10-27
+
+Native file_write behind approval: approved write happened once with its real result in the answer; denied write had no effect and was reported honestly. Fixture: REST-enabled file tools for one owned directory plus a single-agent Cedar permit, restored with owned restarts. Receipt: `c37-native-tool-approval-macos-pass.json`.
+
+
+## C38 — PASS (B39) — 2026-10-27
+
+Owned loopback MCP peer granted per run: approved calls reached the peer (one write, one read) and the peer's value and revision reached the answer; a denied write never reached the peer and was reported honestly. Receipt: `c38-mcp-tool-approval-macos-pass.json`.
+
+
+## C39 — PASS (B40) — 2026-10-27
+
+Memory lifecycle on local embeddings: save → recall (memory_recall result) → update + restart → recall only new value → delete → UNKNOWN, still absent after another restart. Prompt-injected memory context never appeared; recall used the memory tools. Receipt: `c39-memory-lifecycle-macos-pass.json`.
+
+
+## C50 — PASS (B41) — 2026-10-27
+
+Live native run cancelled mid-stream: terminal cancelled, nothing after it, usage explicitly pending reconciliation, and the next ordinary prompt succeeded (42). Receipt: `c50-run-cancellation-macos-pass.json`.
+
+
+## C51 — PASS (B42) — 2026-10-27
+
+Mid-stream provider disconnect via owned fault proxy: honest error (provider_transport_failed), no answer, usage pending reconciliation, no model switch; fresh request after clearing the fault succeeded (42). Receipt: `c51-provider-failure-macos-pass.json`.
+
+
+## C41 — PASS (B43) — 2026-10-27
+
+Attached skill activated by attachment (not matching); answer 225 followed its private rule. Receipt: `c41-skill-attachment-macos-pass.json`.
+
+
+## C40 — PASS (B44) — 2026-10-27
+
+Skill pack discovery and reload: exact discovery, non-skills excluded, changed body used after reload (248 vs stale 156), removed pack gone. Required two SkillService::refresh fixes (persistence of new skills; live file supersedes persisted copy). Receipt: `c40-skill-reload-macos-pass.json`.
+
+
+## C47 — PASS (B45) — 2026-10-27
+
+KB source replacement: old note gone from retrieval; fresh answer used only the replacement value with its citation. Receipt: `c47-kb-source-replace-macos-pass.json`.
+
+
+## C44 — PASS (B46) — 2026-10-27
+
+Truncate-middle (2/2): receipt 12→5; first and latest facts used, middle absent. Receipt: `c44-truncate-middle-macos-pass.json`.
+
+
+## C45 — PASS (B47) — 2026-10-27
+
+Sliding window (4): receipt 12→5; recent fact used, oldest absent. Receipt: `c45-sliding-window-macos-pass.json`.
+
+
+## C46 — PASS (B48) — 2026-10-27
+
+Over-budget request refused before dispatch with typed context_overflow accounting for instructions, tools/world and output reserve; zero model calls. Receipt: `c46-request-overflow-macos-pass.json`.
+
+
+## C42 — PASS (B49) — 2026-10-27
+
+Lower-scope skill policy only narrows; none admits nothing; conversation-scoped disable is isolated and durable across restart. Receipt: `c42-skill-scope-policy-macos-pass.json`.
+
+## C48 / C49 — BLOCKED — 2026-10-27
+
+C48 ran once. The same-width model switch was refused correctly with `embedding_space_mismatch` at 384 vs 384, but regeneration could not reach the remote backend. The owned config blackholes it: `embedding.base_url http://127.0.0.1:1/v1`. No second genuine embedding binding is provisioned. C49 needs the same prerequisite and was not run. Receipts: `c48-embedding-same-dimension-attempt-001-blocked.json`, `c49-kb-regeneration-resume-blocked.json`.
+
+
+## C48 — PASS (B50) — 2026-10-27
+
+Same-width embedding switch refused until regenerated; regenerated index retrieved the fact. Host fixture provisioned and restored the real endpoint. Receipt: `c48-embedding-same-dimension-macos-pass.json`.
+
+
+## C49 — PASS (B51) — 2026-10-27
+
+Interrupted regeneration: honest unfinished state after restart, automatic resume to 60/60, single target generation, fact retrieved. Required ingestion write-conflict retry fixes. Receipt: `c49-regeneration-resume-macos-pass.json`.
+
+
+## C43 — PASS (B52) — 2026-10-27
+
+Genuine compaction applied; latest skill reattached whole within a 150-token allowance; oversized skill truncated; answer followed its rule. Required the summarizer reasoning fix. Receipt: `c43-skill-reattachment-macos-pass.json`.
+
+
+## C36 — PASS (B53) — 2026-10-27
+
+Team follow-up: premature join refused with no dispatch; private child-thread fact carried via the parent artifact; exact parent artifacts consumed once. Receipt: `c36-team-follow-up-macos-pass.json`.
+
+
+## C54 — PASS (B54) — 2026-10-27
+
+Team recovery: settled work unchanged across restart, cancelled work honest and not repeated, dependent conclusion via replacement tasks. Finding: team tools offered but governance-denied. Receipt: `c54-team-recovery-macos-pass.json`.
+
+## 2026-10-27 — C35, C53 attempt 2; C52 attempt 1
+
+- C35 attempt 2 FAIL (product, browser UI): after reload the thread list hydrated empty ("No threads yet"); the thread was the active list entry before reload. List reads only browser-local PGlite; root cause not confirmed. Receipt `c35-browser-history-reload-attempt-002-fail.json`.
+- C53 attempt 2 FAIL (mixed): server path correct for the writing turn (one POST, one run, intent selection of writing-specialist before text). Browser rendered the approval-paused turn with a duplicated user message and three assistant roots; approval chunk stayed "pending". Receipt `c53-browser-agent-selection-attempt-002-fail.json`.
+- C52 attempt 1 BLOCKED: needs a disposable instance with an empty, host-writable store and persisted_ttl_secs; enabling the TTL sweep on the owned store would delete prior sessions. Receipt `c52-startup-settings-retention-attempt-001-blocked.json`.
+- C35 diagnosis (read-only, 2026-10-27): product defect confirmed — the server still held session d8021c7f (cleanup DELETE 204; threads snapshot path and owner match), but the browser thread list after reload is built only from local PGlite (`hydrateFromDb`), and the graph sync ignores the server snapshot on first mount. Trace timing: New thread click 5.4 s, answer complete ~8.4–10.0 s, title set ~10.9 s, reload 11.15 s. Leading hypothesis: the non-ephemeral thread row had not reached IndexedDB before reload (all thread writes are fire-and-forget; PGlite flushes to IndexedDB asynchronously after each query), leaving only the hidden ephemeral row. Secondary: `hydrateFromDb` replaces `threads` wholesale, so a thread registered before hydration resolves is dropped and its later markPersisted/setTitle become no-ops. Not discriminated yet.
+- C35 reload probe (built-in browser, operator-approved 2026-10-27): probe A (one short turn, wait 20 s, reload) kept the thread; probe B (same turn, reload immediately after the answer and title appeared) lost it. Server held both sessions (58439dbc…, 9f6e49cd…; deleted afterwards, 204 each). IndexedDB inspection: each PGlite flush rewrites the whole 16 MB WAL segment (`pg_wal/000000010000000000000001`, 1034 files, 39 MB). Supports the durability-lag cause; excludes the hydration race for probe B (page loaded >20 s before the thread was created). One local-only probe row ("Reload probe A") remains in the built-in browser's PGlite; its menu Delete did not apply through the pane.
+- C35 attempt 3 FAIL (2026-10-27, after the send-time persistence change, pnpm build, static/ copied into target/manual-a2ui-browser-ui): reload kept the thread and the follow-up answered from history (CASE-f19b6bbd…, 1176), one POST per turn. Failed on a duplicated rendering of the just-sent user message (3 user roots for 2 turns; same defect as C53 attempt 2). Regression found in the change: generateThreadTitle returns "New conversation" without a request when the assistant text is empty, so no title was set and the post-answer title path was blocked. The 240 s title wait also put ~4 min before reload, so this run does not prove the persistence fix. Receipt `c35-browser-history-reload-attempt-003-fail.json`.
+- Title regression fixed (2026-10-27, operator-approved): generateThreadTitle now requests a title from the user message alone and sends assistant_message only when present; pnpm build; static/ copied into target/manual-a2ui-browser-ui (served bundle index-DaOe79A3.js). Not yet exercised by a scenario run.
+- Duplicate user message diagnosis (read-only): deterministic for every browser send on an existing thread. `onNew` (use-chat-runtime.ts) awaits `db.insertMessage` of the user message (UUID id), then `startStream` (chat-stream-store.ts:730, added in f156b6b9) reloads history from PGlite — now including that row — and appends its own `user-<timestamp>` copy (chat-stream-store.ts:738-752). The stream carries no user messages and assistant-ui adds no user copy. After reload only the PGlite copy remains, which matches 1 user message on reopen. Explains C35 attempt 3 (3 user roots) and C53 attempt 2 (duplicated writing request).
+- Duplicate user message fix applied (2026-10-27, operator-approved): `persistedUserMessageId` (client-only field on UarChatPayload) lets startStream skip its own copy when the reloaded history already holds onNew's saved message. Caveat: on that path the shown message is the saved text-only copy, so image attachment previews are not drawn in the live bubble.
+- C35 attempt 4 FAIL: duplicate gone (1 user message), title set (200) and the thread survived a quick reload with its title. After reopen the assistant reply (READY) was missing: finishStream saves it fire-and-forget and the reload came ~1 s later. Same IndexedDB flush lag; server session holds the full history. Receipt `c35-browser-history-reload-attempt-004-fail.json`.
+- Server backfill diagnosis (read-only, 2026-10-27): no single-session read route exists (`/api/uar/sessions/{id}` is DELETE only; `/api/sessions/*` is disabled). The only read is the owner list `GET /api/uar/sessions`, 743,548 bytes for 76 sessions with full messages. Persistence already has `load_session(owner, id)`. Server messages are role user/system/assistant with string content; one turn stores user, 4 world-state system messages, then assistant (raw `<think>` kept, which the live UI already shows as-is).
+
+
+## C35 — PASS (B55) — 2026-10-27
+
+C35 PASS (attempt 5) on binary a0f769d2 and UI bundle index-fJgR9a8v: quick-reload persistence, user-only title, duplicate user message, server backfill on reopen. Receipt c35-browser-history-reload-macos-pass.json. Receipt: `c35-browser-history-reload-macos-pass.json`.
+- C53 attempt 3 FAIL (2026-10-27, binary a0f769d2, UI index-fJgR9a8v): user message now shown once. Server path correct (one POST, intent selection of writing-specialist before text, approval answered). Browser draws the approval-paused turn as 3 assistant bubbles (policy/sources, approval+selection, answer); the answer appears once. Classified as script: the one-bubble-per-turn assertion is stricter than the contract. Receipt `c53-browser-agent-selection-attempt-003-fail.json`.
+- C52 fixture feasibility (read-only): config carries `providers`, `llm.api_key_env` and security/JWT fields, so a disposable instance can be a copy of the owned config with its own port, a loopback `ws://` store served by `surreal start --unauthenticated` (supported by the installed 3.2.0), and `sessions.persisted_ttl_secs`; the restart helper already reads the owned process environment (`processEnvironment`) without printing it. `sessions.last_activity` is an RFC 3339 string, so a host `surreal sql` UPDATE on one captured session ages it without touching any clock.
+- C53 attempt 4 FAIL (2026-10-27, revised per-turn checks): writing turn passed the revised checks (one answer bubble, notice before it, visible 12.9 s earlier). The math turn's approval was never answered and its lease expired (RUN_ERROR). Cause: after the second send the writing turn lost its policy card, approval card and selection notice — finishStream saves only the final streaming bubble, and startStream reloads history from PGlite before each send. The script's by-index approval lookup then waited for a button that never appeared. Receipt `c53-browser-agent-selection-attempt-004-fail.json`.
+
+
+## C53 — PASS (B56) — 2026-10-27
+
+C53 PASS (attempt 5) on binary a0f769d2 and UI bundle index-C1548hLS: save-every-bubble fix, position-based approval lookup. Receipt c53-browser-agent-selection-macos-pass.json. Receipt: `c53-browser-agent-selection-macos-pass.json`.
+- C35 revalidated (2026-10-27, attempt 6, UI index-C1548hLS) after the finishStream change: passed; follow-up 829 from history, 2 POSTs, 2 runs. Recorded on `c35-browser-history-reload-macos-pass.json` under `revalidation`; no new catalog credit.
+- C52 fixture written, NOT RUN (2026-10-27): host fixture `scripts/manual-host/c52-disposable-instance.mjs` (fresh `surreal start` on loopback with a random in-memory root password, copied owned config with its own ports/ingest dir/`ws://` store/`sessions.persisted_ttl_secs`, owned UAR binary and environment, second uar-jwt-proxy with the owned proxy's PROXY_JWT_* environment, host `surreal sql` aging of one captured session, full teardown) and scenario `features/startup-retention.feature`, `steps/startup-retention.steps.mjs`, `startup-retention.cucumber.mjs`. `processEnvironment` in restart-owned-uar.mjs is now exported with an argument-count parameter (default 3). Proposed run: `UAR_MODEL=liter/MiniMax-M3 node_modules/.bin/cucumber-js --config scripts/behaviors/startup-retention.cucumber.mjs`.
+- C52 attempt 2 FAIL (2026-10-27): the disposable UAR exited during Surreal initialisation ("Cannot execute statement using value: NONE") against a 3.2.0 server from /usr/local/bin; versions.toml pins surrealdb_server 3.3.0 (available at ~/.prometheus/bin/surreal). Fixture defect: a startup failure skipped teardown, leaving Surreal and cucumber running until stopped by hand. Leftover directory target/c52-disposable/09173039-… could not be removed (permission rule). Owned UAR untouched. Receipt `c52-startup-retention-attempt-002-fail.json`.
+- C52 attempt 3 FAIL (2026-10-27, Surreal 3.3.0 pinned binary): disposable UAR and proxy started cleanly on 3.3.0 (the 3.2.0 init failure did not recur) and teardown removed everything. The empty-store check was wrong: a fresh 3.3.0 server pre-creates namespace/database 'main'; the store namespace 'prompt' was absent. Receipt `c52-startup-retention-attempt-003-fail.json`.
+- C52 attempt 4 FAIL (2026-10-27): first five steps passed — empty store (only Surreal default 'main'), 5 built-ins seeded on initial startup and 0 on repeat, built-ins unchanged, REST override of harness.skill_reattachment kept value and revision across restart. First turn refused 422 model_not_verified: the fresh store has no model verification. Teardown complete. Receipt `c52-startup-retention-attempt-004-fail.json`.
+
+
+## C52 — PASS (B57) — 2026-10-27
+
+C52 PASS (attempt 5) with the disposable-instance fixture (Surreal 3.3.0, TTL 3600 s). Receipt c52-startup-retention-macos-pass.json. Receipt: `c52-startup-retention-macos-pass.json`.

@@ -1,0 +1,25 @@
+{
+  "scenario": "C43",
+  "label": "B52",
+  "behavior": "Active skill survives compaction within its reattachment budget",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 4,
+  "prior_attempts": "1 test design; 2 fixture (settings row removed by DELETE); 3 product defect: summarizer counted MiniMax-M3 inline reasoning as summary text, so every summary was discarded. Receipts c43-skill-reattachment-attempt-00{1,2,3}-*.json (attempt 3 carries the diagnosis).",
+  "product_fix": "Operator-approved: src/uar/runtime/context/summarizer.rs summarize_span keeps only the answer part (crate::llm::inline_reasoning::split_inline_reasoning), fails with summary_reasoning_unclosed / summary_answer_missing, and checks the budget on the answer only; src/uar/context/strategy.rs logs the full error chain when summarization fails.",
+  "binary_sha256": "cc1dbb8193b12536e01a1ce9869d70e4cc4fc29f166b1d106539ad4f5bd314b0",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/skill-reattachment.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed)",
+  "evidence": ".prometheus/verification/skill-reattachment/d0f0bd81-bf93-42be-807a-5d8398d347fa.json",
+  "files": ["scripts/behaviors/features/skill-reattachment.feature", "scripts/behaviors/skill-reattachment.cucumber.mjs", "scripts/behaviors/steps/skill-reattachment.steps.mjs"],
+  "evidence_review": {
+    "compaction": "summarize threshold 6, summary_max_tokens 1000, 14 long seeded messages: 7 completed summary tier calls applied; source 13505 → prepared 12581 tokens; changed true; summary_generated true; log 'Host-marked prose summarized'",
+    "reattachment": "harness.skill_reattachment 120/150: latest small skill reattached whole (34/34 tokens); oversized skill truncated 2069 → 55; rendered 149 <= 150 total (not widened)",
+    "answer": "66 = crates x the small skill's private factor"
+  },
+  "cleanup": {"skills_deleted": true, "agent_deleted": true, "sessions_deleted": true, "setting_restored": "5000/25000", "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

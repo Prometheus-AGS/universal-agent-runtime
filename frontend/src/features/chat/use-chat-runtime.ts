@@ -75,6 +75,7 @@ export function useChatRuntime(threadId: string): {
   const setTitle = useThreadRegistryStore((s) => s.setTitle);
   const touch = useThreadRegistryStore((s) => s.touch);
   const loadMessagesFromDb = useChatMessageStore((s) => s.loadMessagesFromDb);
+  const backfillFromServer = useChatMessageStore((s) => s.backfillFromServer);
   const { memoryEnabled } = useMemoryContext();
   const agentConfig = useAgentConfig();
   const agentSession = useAgentSession(threadId);
@@ -88,11 +89,14 @@ export function useChatRuntime(threadId: string): {
 
     if (messagesLoadedRef.current !== threadId) {
       messagesLoadedRef.current = threadId;
-      void loadMessagesFromDb(threadId).catch(() => {
+      void loadMessagesFromDb(threadId).then(() => {
+        // Non-fatal: if the server is unreachable the local history stands as loaded.
+        void backfillFromServer(threadId).catch(() => undefined);
+      }, () => {
         useChatMessageStore.getState().setStreamError(threadId, "Conversation history could not be loaded.");
       });
     }
-  }, [threadId, setActive, registerThread, loadMessagesFromDb]);
+  }, [threadId, setActive, registerThread, loadMessagesFromDb, backfillFromServer]);
 
   const afterStreamComplete = useCallback(
     async (userMsgText: string) => {
@@ -137,12 +141,24 @@ export function useChatRuntime(threadId: string): {
         await db.insertMessage(threadId, userMsg);
       }
 
+      // Make the thread visible and titled before the stream starts. PGlite
+      // reaches IndexedDB asynchronously, so writes issued only when the answer
+      // completes are lost by a reload right after it.
+      if (existing?.isEphemeral) markPersisted(threadId);
+      if (existing && existing.title === "New conversation" && !titleGeneratedRef.current) {
+        titleGeneratedRef.current = true;
+        void useThreadTitleStore.getState().generateTitle(userText, "")
+          .then((title) => setTitle(threadId, title))
+          .catch(() => { titleGeneratedRef.current = false; });
+      }
+
       await startStream(
         threadId,
         {
           message: userText,
           attachments: attachments.length ? attachments : undefined,
           memory_enabled: memoryEnabled,
+          ...(existing ? { persistedUserMessageId: userMsg.id } : {}),
           // The selected agent may remain an explicit turn input. Model is
           // deliberately omitted so the saved AgentSession policy can win.
           ...(effectiveAgentId ? { agent_id: effectiveAgentId } : {}),
@@ -150,7 +166,7 @@ export function useChatRuntime(threadId: string): {
         { onComplete: () => { void afterStreamComplete(userText); } },
       );
     },
-    [threadId, db, startStream, afterStreamComplete, attachmentManager, memoryEnabled, effectiveAgentId],
+    [threadId, db, startStream, afterStreamComplete, attachmentManager, memoryEnabled, effectiveAgentId, markPersisted, setTitle],
   );
 
   const onCancel = useCallback(async () => {

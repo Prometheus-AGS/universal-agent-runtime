@@ -1,0 +1,119 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "the-browser-shows-orchestrator-agent-selection-before-the-answer;a-writing-task-and-then-a-math-task-show-each-selected-specialist-first",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A writing task and then a math task show each selected specialist first",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math and writing specialists and an orchestrator conversation in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 2289000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a writing task in that conversation through the browser",
+            "result": {
+              "status": "passed",
+              "duration": 10049000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the browser shows the writing specialist selection before its specialist answer",
+            "result": {
+              "status": "failed",
+              "duration": 120020000000,
+              "error_message": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('[data-slot=\"aui_assistant-message-root\"][data-role=\"assistant\"]')\nExpected: 1\nReceived: 3\nTimeout:  120000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 120000ms\n  - waiting for locator('[data-slot=\"aui_assistant-message-root\"][data-role=\"assistant\"]')\n    3 × locator resolved to 2 elements\n      - unexpected value \"2\"\n    240 × locator resolved to 3 elements\n        - unexpected value \"3\"\n\n   at ../../scripts/behaviors/browser/browser-agent-selection.steps.mjs:192\n\n  190 |   s.ownedSessions.add(value.selectedThreadId);\n  191 |   record.selected_thread_id = value.selectedThreadId;\n> 192 |   await expect(assistantMessages(page)).toHaveCount(turnIndex);\n      |                                         ^\n  193 |   const last = assistantMessages(page).last();\n  194 |   await expect(last).toContainText(expected.signature);\n  195 |   const notices = page.locator('[data-agent-selection]');\n\n    at assertVisibleSelectionFirst (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:192:41)\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:267:9)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:58:48\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:22)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:57:19\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated/features/browser-agent-selection.feature.spec.js:9:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I send a math task in the same conversation through the browser",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the browser shows the math specialist selection before its specialist answer",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "each selected specialist matches execution with no duplicate answer or run",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2058000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@routing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "the-browser-shows-orchestrator-agent-selection-before-the-answer",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "The browser shows orchestrator agent selection before the answer",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@routing",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-agent-selection.feature"
+  }
+]

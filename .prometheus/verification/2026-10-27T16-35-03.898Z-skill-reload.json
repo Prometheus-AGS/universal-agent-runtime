@@ -1,0 +1,142 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "standard-skill-discovery-and-reload-change-usable-behavior;discover-a-skill-pack,-change-one-body,-reload,-and-use-the-new-body",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Discover a skill pack, change one body, reload, and use the new body",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 88108345
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and an owned skill pack with top-level and nested skills plus non-skill files",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:62"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1747387045
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I reload skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 549358737
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "exactly the pack's two manifest skills are discovered once and non-skills are excluded",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4895471305
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "a request with the top-level skill attached follows its original private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2381645331
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I change that skill's body on disk and reload skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5136267550
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "a new request with the skill attached follows the changed rule, not the cached one",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:133"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3273249609
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1yZWxvYWQvZDRmMjU0NGEtNWFhZS00M2RlLWEyODgtYjZjNzI4YzIxMGM4Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@reload",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "standard-skill-discovery-and-reload-change-usable-behavior",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Standard skill discovery and reload change usable behavior",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@reload",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-reload.feature"
+  }
+]

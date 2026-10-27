@@ -1,0 +1,138 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "active-skill-survives-compaction-within-its-reattachment-budget;a-small-permitted-skill-is-reattached-after-compaction-while-an-oversized-one-cannot-widen-the-budget",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A small permitted skill is reattached after compaction while an oversized one cannot widen the budget",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 262959489
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a small skill reattachment allowance and two attached skills, one small and one oversized",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 33898908862
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "a conversation long enough to be compacted continues with a task needing the small skill's rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:70"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1156097,
+              "error_message": "AssertionError [ERR_ASSERTION]: Reduction receipt: {\"schema_version\":1,\"requested_strategy\":{\"type\":\"summarize\",\"threshold\":6,\"summary_max_tokens\":200,\"model\":\"liter/MiniMax-M3\"},\"source_sha256\":\"sha256:6eafb06f5c0155d8ca96cd872fe35cc617b53e5fb78097318ed422465eb0bc7b\",\"prepared_sha256\":\"sha256:6eafb06f5c0155d8ca96cd872fe35cc617b53e5fb78097318ed422465eb0bc7b\",\"source_messages\":14,\"prepared_messages\":14,\"source_tokens\":11635,\"prepared_tokens\":11635,\n\nfalse !== true\n\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-reattachment.steps.mjs:101:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the conversation was genuinely compacted",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:98"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the small skill body was reattached within the allowance and the oversized body did not widen it",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:105"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the small skill's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 202113301
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1yZWF0dGFjaG1lbnQvMDY2YTc2Y2ItMDNkYS00NjA3LTkxNWQtZWU5ZDhjNjZmMjMwLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@compaction",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "active-skill-survives-compaction-within-its-reattachment-budget",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Active skill survives compaction within its reattachment budget",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@compaction",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-reattachment.feature"
+  }
+]

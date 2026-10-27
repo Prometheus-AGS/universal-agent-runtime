@@ -1,0 +1,594 @@
+{
+  "scenario": "C48-EMBEDDING-SAME-DIMENSION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.backend",
+      "status": 200,
+      "response": "{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"fastembed\",\"saved\":\"fastembed\",\"effective\":\"fastembed\",\"revision\":\"2026-10-27T16:56:12.806933000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:56:12.806933Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.model",
+      "status": 200,
+      "response": "{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"bge-small-en-v1.5\",\"saved\":\"bge-small-en-v1.5\",\"effective\":\"bge-small-en-v1.5\",\"revision\":\"2026-10-27T16:56:12.730724000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:56:12.730724Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.vector_dimension",
+      "status": 200,
+      "response": "{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:56:12.770832000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:56:12.770832Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "Regeneration BDD 6abada3c-d20c-4061-a766-ae9a80ec1265",
+        "description": "Disposable manual model migration scenario",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"name\":\"Regeneration BDD 6abada3c-d20c-4061-a766-ae9a80ec1265\",\"description\":\"Disposable manual model migration scenario\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-27T16:57:45.477347+00:00\",\"updated_at\":\"2026-10-27T16:57:45.477347+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents",
+      "request": {
+        "file": "The private Zephyr laboratory ledger assigns the violet lattice a normalization coefficient of 73. Its retrieval seal is REGEN-b3eee5d3-9a0d-4d07-973a-956f01032707. This is a synthetic research fact unique to this document."
+      },
+      "status": 202,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:57:45.517015+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents/a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+      "status": 200,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:57:45.517015+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents/a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+      "status": 200,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"processing\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:57:45.561761+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents/a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+      "status": 200,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"processing\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:57:45.561761+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents/a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+      "status": 200,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"processing\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:57:45.561761+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents/a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+      "status": 200,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:57:47.550782+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d",
+      "status": 200,
+      "response": "{\"id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"name\":\"Regeneration BDD 6abada3c-d20c-4061-a766-ae9a80ec1265\",\"description\":\"Disposable manual model migration scenario\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-27T16:57:45.477347+00:00\",\"updated_at\":\"2026-10-27T16:57:47.550782+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.backend",
+      "status": 200,
+      "response": "{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"fastembed\",\"saved\":\"fastembed\",\"effective\":\"fastembed\",\"revision\":\"2026-10-27T16:56:12.806933000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:56:12.806933Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.model",
+      "status": 200,
+      "response": "{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"bge-small-en-v1.5\",\"saved\":\"bge-small-en-v1.5\",\"effective\":\"bge-small-en-v1.5\",\"revision\":\"2026-10-27T16:56:12.730724000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:56:12.730724Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.vector_dimension",
+      "status": 200,
+      "response": "{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:56:12.770832000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:56:12.770832Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/llm",
+      "request": {
+        "data": {
+          "embedding.backend": "openai",
+          "embedding.model": "text-embedding-3-small",
+          "embedding.vector_dimension": 384
+        },
+        "expected_revisions": {
+          "embedding.backend": "2026-10-27T16:56:12.806933000Z",
+          "embedding.model": "2026-10-27T16:56:12.730724000Z",
+          "embedding.vector_dimension": "2026-10-27T16:56:12.770832000Z"
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"updated\":[{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:58:09.753147000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:58:09.753147Z\",\"source\":\"Api\",\"is_drift\":false},{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"openai\",\"saved\":\"openai\",\"effective\":\"openai\",\"revision\":\"2026-10-27T16:58:09.790887000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:09.790887Z\",\"source\":\"Api\",\"is_drift\":false},{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"text-embedding-3-small\",\"saved\":\"text-embedding-3-small\",\"effective\":\"text-embedding-3-small\",\"revision\":\"2026-10-27T16:58:09.826270000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:09.826270Z\",\"source\":\"Api\",\"is_drift\":false}],\"activation\":{\"llm.embedding.vector_dimension\":\"live\",\"llm.embedding.backend\":\"live\",\"llm.embedding.model\":\"live\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"endpoint\":\"https://api.openai.com/v1\",\"provenance\":null,\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/search",
+      "request": {
+        "query": "What normalization coefficient and retrieval seal does the private Zephyr ledger assign to the violet lattice?",
+        "limit": 5,
+        "min_score": 0
+      },
+      "status": 409,
+      "response": "{\"error\":{\"code\":\"embedding_space_mismatch\",\"message\":\"knowledge base 'e852fb4c-b3bf-4df0-89d6-151950fea53d' was indexed with fastembed/bge-small-en-v1.5 (384 dims) but the active embedding backend is openai/text-embedding-3-small (384 dims); re-ingest its documents or restore the original llm.embedding settings\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"active_embedding\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/regeneration",
+      "status": 202,
+      "response": "{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"running\",\"completed_documents\":0,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:09.887336+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/regeneration",
+      "status": 200,
+      "response": "{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"running\",\"completed_documents\":0,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:09.887336+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/regeneration",
+      "status": 200,
+      "response": "{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"running\",\"completed_documents\":0,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:09.947001+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/regeneration",
+      "status": 200,
+      "response": "{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"running\",\"completed_documents\":0,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:09.947001+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/regeneration",
+      "status": 200,
+      "response": "{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"running\",\"completed_documents\":0,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:09.947001+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/regeneration",
+      "status": 200,
+      "response": "{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"complete\",\"completed_documents\":1,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:11.683239+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d",
+      "status": 200,
+      "response": "{\"id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"name\":\"Regeneration BDD 6abada3c-d20c-4061-a766-ae9a80ec1265\",\"description\":\"Disposable manual model migration scenario\",\"config\":{\"embedding_provider\":\"openai\",\"embedding_model\":\"text-embedding-3-small\",\"vector_dimensions\":384,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"regeneration\":{\"generation\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"previous\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"target\":{\"backend\":\"openai\",\"model\":\"text-embedding-3-small\",\"dimension\":384},\"document_ids\":[\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"],\"state\":\"complete\",\"completed_documents\":1,\"last_error\":null,\"started_at\":\"2026-10-27T16:58:09.887336+00:00\",\"updated_at\":\"2026-10-27T16:58:11.683239+00:00\"}},\"created_at\":\"2026-10-27T16:57:45.477347+00:00\",\"updated_at\":\"2026-10-27T16:58:11.683239+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/documents/a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+      "status": 200,
+      "response": "{\"id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"kb_id\":\"e852fb4c-b3bf-4df0-89d6-151950fea53d\",\"filename\":\"zephyr-ledger.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T16:57:45.517015+00:00\",\"updated_at\":\"2026-10-27T16:58:11.683239+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d/search",
+      "request": {
+        "query": "What normalization coefficient and retrieval seal does the private Zephyr ledger assign to the violet lattice?",
+        "limit": 5,
+        "min_score": 0
+      },
+      "status": 200,
+      "response": "{\"results\":[{\"content\":\"The private Zephyr laboratory ledger assigns the violet lattice a normalization coefficient of 73. Its retrieval seal is REGEN-b3eee5d3-9a0d-4d07-973a-956f01032707. This is a synthetic research fact unique to this document.\\n\",\"score\":0.8344395,\"metadata\":{\"document_id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\",\"embedding_space\":{\"backend\":\"openai\",\"dimension\":384,\"model\":\"text-embedding-3-small\"},\"extraction\":{\"authors\":null,\"keywords\":null,\"language\":null,\"pages\":null,\"subject\":null,\"title\":null},\"filename\":\"zephyr-ledger.txt\",\"index\":0,\"ingestion_generation\":\"8745c99d-8717-49a4-b6c9-6175664ae376\",\"knowledge_regeneration\":\"30766ae7-c954-4237-bbb6-385726bddd14\",\"mime_type\":\"text/plain\",\"processor\":\"Kreuzberg\",\"source\":\"knowledge_upload\"},\"document_id\":\"a61e0d7f-2d82-4d3f-840a-9a705e24b4d2\"}]}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/e852fb4c-b3bf-4df0-89d6-151950fea53d",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.backend",
+      "status": 200,
+      "response": "{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"openai\",\"saved\":\"openai\",\"effective\":\"openai\",\"revision\":\"2026-10-27T16:58:09.790887000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:09.790887Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.model",
+      "status": 200,
+      "response": "{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"text-embedding-3-small\",\"saved\":\"text-embedding-3-small\",\"effective\":\"text-embedding-3-small\",\"revision\":\"2026-10-27T16:58:09.826270000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:09.826270Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.vector_dimension",
+      "status": 200,
+      "response": "{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:58:09.753147000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:58:09.753147Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/llm",
+      "request": {
+        "data": {
+          "embedding.backend": "fastembed",
+          "embedding.model": "bge-small-en-v1.5",
+          "embedding.vector_dimension": 384
+        },
+        "expected_revisions": {
+          "embedding.backend": "2026-10-27T16:58:09.790887000Z",
+          "embedding.model": "2026-10-27T16:58:09.826270000Z",
+          "embedding.vector_dimension": "2026-10-27T16:58:09.753147000Z"
+        }
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"updated\":[{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:58:15.107163000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:58:15.107163Z\",\"source\":\"Api\",\"is_drift\":false},{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"bge-small-en-v1.5\",\"saved\":\"bge-small-en-v1.5\",\"effective\":\"bge-small-en-v1.5\",\"revision\":\"2026-10-27T16:58:15.145091000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:15.145091Z\",\"source\":\"Api\",\"is_drift\":false},{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"fastembed\",\"saved\":\"fastembed\",\"effective\":\"fastembed\",\"revision\":\"2026-10-27T16:58:15.191404000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:15.191404Z\",\"source\":\"Api\",\"is_drift\":false}],\"activation\":{\"llm.embedding.vector_dimension\":\"live\",\"llm.embedding.model\":\"live\",\"llm.embedding.backend\":\"live\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.backend",
+      "status": 200,
+      "response": "{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"fastembed\",\"saved\":\"fastembed\",\"effective\":\"fastembed\",\"revision\":\"2026-10-27T16:58:15.191404000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:15.191404Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.model",
+      "status": 200,
+      "response": "{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"bge-small-en-v1.5\",\"saved\":\"bge-small-en-v1.5\",\"effective\":\"bge-small-en-v1.5\",\"revision\":\"2026-10-27T16:58:15.145091000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:15.145091Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.vector_dimension",
+      "status": 200,
+      "response": "{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:58:15.107163000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:58:15.107163Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    }
+  ],
+  "target": {
+    "backend": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 384
+  },
+  "hosting": {
+    "embedding_caps_usd": {
+      "openai": 10,
+      "cohere": 10
+    },
+    "cohere_used": false,
+    "openai_used": true,
+    "openai_rate_usd_per_million_tokens": 0.02,
+    "rate_source": "value used by the earlier KNOWLEDGE-REGENERATION-01 receipt",
+    "actual_billing_usage": "not exposed by UAR",
+    "estimated_two_input_cost_ceiling_usd": 0.00000666
+  },
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 33893
+  },
+  "original_settings": [
+    {
+      "id": "a854022e-f8ee-4bef-b0e1-9cbed32ded73",
+      "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+      "name": "Embedding Backend",
+      "key": "llm.embedding.backend",
+      "data": "fastembed",
+      "saved": "fastembed",
+      "effective": "fastembed",
+      "revision": "2026-10-27T16:56:12.806933000Z",
+      "apply": "next_turn",
+      "application_status": "effective",
+      "parent_id": null,
+      "created_at": "2026-10-26T06:32:43.369364Z",
+      "updated_at": "2026-10-27T16:56:12.806933Z",
+      "source": "Api",
+      "is_drift": false
+    },
+    {
+      "id": "550100be-f75c-46f2-98ac-a09b36412d56",
+      "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+      "name": "Embedding Model",
+      "key": "llm.embedding.model",
+      "data": "bge-small-en-v1.5",
+      "saved": "bge-small-en-v1.5",
+      "effective": "bge-small-en-v1.5",
+      "revision": "2026-10-27T16:56:12.730724000Z",
+      "apply": "next_turn",
+      "application_status": "effective",
+      "parent_id": null,
+      "created_at": "2026-10-26T06:32:43.369364Z",
+      "updated_at": "2026-10-27T16:56:12.730724Z",
+      "source": "Api",
+      "is_drift": false
+    },
+    {
+      "id": "d45dd164-00e7-4441-8f61-8a8fdd78571b",
+      "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+      "name": "Embedding Vector Dimension",
+      "key": "llm.embedding.vector_dimension",
+      "data": 384,
+      "saved": 384,
+      "effective": 384,
+      "revision": "2026-10-27T16:56:12.770832000Z",
+      "apply": "next_turn",
+      "application_status": "effective",
+      "parent_id": null,
+      "created_at": "2026-10-26T06:32:43.369365Z",
+      "updated_at": "2026-10-27T16:56:12.770832Z",
+      "source": "Api",
+      "is_drift": false
+    }
+  ],
+  "knowledge_base_id": "e852fb4c-b3bf-4df0-89d6-151950fea53d",
+  "original_document": {
+    "id": "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+    "kb_id": "e852fb4c-b3bf-4df0-89d6-151950fea53d",
+    "filename": "zephyr-ledger.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T16:57:45.517015+00:00",
+    "updated_at": "2026-10-27T16:57:47.550782+00:00"
+  },
+  "original_kb": {
+    "id": "e852fb4c-b3bf-4df0-89d6-151950fea53d",
+    "name": "Regeneration BDD 6abada3c-d20c-4061-a766-ae9a80ec1265",
+    "description": "Disposable manual model migration scenario",
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "vector_dimensions": null,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 512 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 5,
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "regeneration": null
+    },
+    "created_at": "2026-10-27T16:57:45.477347+00:00",
+    "updated_at": "2026-10-27T16:57:47.550782+00:00",
+    "document_count": 1
+  },
+  "seal": "REGEN-b3eee5d3-9a0d-4d07-973a-956f01032707",
+  "host_provision_restart": {
+    "previous_pid": 33893,
+    "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+    "config_sha256": "6f0da8efb28e8f1e8e8c237aaa7757d94f5e58ec13a5ce55f074fd3333d153e5",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-ea86a598-53c8-4f83-9e93-76eccd2cf97f.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "replaced_config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "previous_process_exited": true,
+    "new_pid": 4031,
+    "new_process_ready": true
+  },
+  "host_config": {
+    "original_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "prepared_sha256": "6f0da8efb28e8f1e8e8c237aaa7757d94f5e58ec13a5ce55f074fd3333d153e5"
+  },
+  "active": {
+    "status": "serving",
+    "space": {
+      "backend": "openai",
+      "model": "text-embedding-3-small",
+      "dimension": 384
+    },
+    "endpoint": "https://api.openai.com/v1",
+    "provenance": null,
+    "failover": null
+  },
+  "refusal": {
+    "error": {
+      "code": "embedding_space_mismatch",
+      "message": "knowledge base 'e852fb4c-b3bf-4df0-89d6-151950fea53d' was indexed with fastembed/bge-small-en-v1.5 (384 dims) but the active embedding backend is openai/text-embedding-3-small (384 dims); re-ingest its documents or restore the original llm.embedding settings",
+      "kb_id": "e852fb4c-b3bf-4df0-89d6-151950fea53d",
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "active_embedding": {
+        "backend": "openai",
+        "model": "text-embedding-3-small",
+        "dimension": 384
+      }
+    }
+  },
+  "regeneration_started": {
+    "generation": "30766ae7-c954-4237-bbb6-385726bddd14",
+    "previous": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "target": {
+      "backend": "openai",
+      "model": "text-embedding-3-small",
+      "dimension": 384
+    },
+    "document_ids": [
+      "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2"
+    ],
+    "state": "running",
+    "completed_documents": 0,
+    "last_error": null,
+    "started_at": "2026-10-27T16:58:09.887336+00:00",
+    "updated_at": "2026-10-27T16:58:09.887336+00:00"
+  },
+  "regeneration_completed": {
+    "generation": "30766ae7-c954-4237-bbb6-385726bddd14",
+    "previous": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "target": {
+      "backend": "openai",
+      "model": "text-embedding-3-small",
+      "dimension": 384
+    },
+    "document_ids": [
+      "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2"
+    ],
+    "state": "complete",
+    "completed_documents": 1,
+    "last_error": null,
+    "started_at": "2026-10-27T16:58:09.887336+00:00",
+    "updated_at": "2026-10-27T16:58:11.683239+00:00"
+  },
+  "final_kb": {
+    "id": "e852fb4c-b3bf-4df0-89d6-151950fea53d",
+    "name": "Regeneration BDD 6abada3c-d20c-4061-a766-ae9a80ec1265",
+    "description": "Disposable manual model migration scenario",
+    "config": {
+      "embedding_provider": "openai",
+      "embedding_model": "text-embedding-3-small",
+      "vector_dimensions": 384,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 512 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 5,
+      "indexed_embedding": {
+        "backend": "openai",
+        "model": "text-embedding-3-small",
+        "dimension": 384
+      },
+      "regeneration": {
+        "generation": "30766ae7-c954-4237-bbb6-385726bddd14",
+        "previous": {
+          "backend": "fastembed",
+          "model": "bge-small-en-v1.5",
+          "dimension": 384
+        },
+        "target": {
+          "backend": "openai",
+          "model": "text-embedding-3-small",
+          "dimension": 384
+        },
+        "document_ids": [
+          "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2"
+        ],
+        "state": "complete",
+        "completed_documents": 1,
+        "last_error": null,
+        "started_at": "2026-10-27T16:58:09.887336+00:00",
+        "updated_at": "2026-10-27T16:58:11.683239+00:00"
+      }
+    },
+    "created_at": "2026-10-27T16:57:45.477347+00:00",
+    "updated_at": "2026-10-27T16:58:11.683239+00:00",
+    "document_count": 1
+  },
+  "final_document": {
+    "id": "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+    "kb_id": "e852fb4c-b3bf-4df0-89d6-151950fea53d",
+    "filename": "zephyr-ledger.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T16:57:45.517015+00:00",
+    "updated_at": "2026-10-27T16:58:11.683239+00:00"
+  },
+  "retrieval": {
+    "results": [
+      {
+        "content": "The private Zephyr laboratory ledger assigns the violet lattice a normalization coefficient of 73. Its retrieval seal is REGEN-b3eee5d3-9a0d-4d07-973a-956f01032707. This is a synthetic research fact unique to this document.\n",
+        "score": 0.8344395,
+        "metadata": {
+          "document_id": "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2",
+          "embedding_space": {
+            "backend": "openai",
+            "dimension": 384,
+            "model": "text-embedding-3-small"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "zephyr-ledger.txt",
+          "index": 0,
+          "ingestion_generation": "8745c99d-8717-49a4-b6c9-6175664ae376",
+          "knowledge_regeneration": "30766ae7-c954-4237-bbb6-385726bddd14",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "a61e0d7f-2d82-4d3f-840a-9a705e24b4d2"
+      }
+    ]
+  },
+  "disposable_deleted": true,
+  "original_settings_restored": true,
+  "host_restore_restart": {
+    "previous_pid": 4031,
+    "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-b3ce82cb-3c51-41d0-b06b-b42687a40ded.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "replaced_config_sha256": "6f0da8efb28e8f1e8e8c237aaa7757d94f5e58ec13a5ce55f074fd3333d153e5",
+    "previous_process_exited": true,
+    "new_pid": 5671,
+    "new_process_ready": true
+  },
+  "host_config_restored": true,
+  "restored_embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "status": "PASSED",
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "duration_ms": 55607
+}

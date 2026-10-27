@@ -1,0 +1,117 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "saved-mathematics-knowledge-remains-usable-after-restart;retrieve-the-saved-math-agent's-research-note-after-uar-restarts",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Retrieve the saved math agent's research note after UAR restarts",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 113129441
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math agent retains its indexed research knowledge base",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-restart.steps.mjs:46"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12862837929
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "UAR restarts without changing the agent or knowledge store",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-restart.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7755484521
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I ask the math agent about its retained research profile in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-restart.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 986755,
+              "error_message": "AssertionError [ERR_ASSERTION]: Require an actual retained-document retrieval matching the answer citation\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/knowledge-restart.steps.mjs:129:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the answer uses the retained document with matching retrieval evidence",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-restart.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3061125
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rbm93bGVkZ2UtcmVzdGFydC9iZjdiNWJhYi05ZTk2LTQyZTgtOTNkYS1lZWJjNTkzMGU1MzYuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "saved-mathematics-knowledge-remains-usable-after-restart",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Saved mathematics knowledge remains usable after restart",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/knowledge-restart.feature"
+  }
+]

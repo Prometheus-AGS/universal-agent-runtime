@@ -1,0 +1,23 @@
+{
+  "scenario": "C35",
+  "status": "FAIL",
+  "attempt": 2,
+  "failure_class": "product (browser UI): the conversation is missing from the thread list after a page reload; root cause not confirmed",
+  "config": "scripts/behaviors/browser-history-reload.config.mjs with video off, screenshots and trace on; tier3.allow created for this run and removed after (operator-approved 2026-10-27)",
+  "evidence": "browser-history-reload/8c85afab-1bbd-4550-b86c-d9d3ca48fbfe.json; browser-history-reload/c35-attempt-002-artifacts/ (error-context.md, test-failed-1.png, trace.zip)",
+  "observed": {
+    "before_reload": "fact turn answered READY; title generation returned 200; the thread was the active entry in the thread list with title 'Remember for this conversation: reference CASE-23d965df-47a4-424'; 2 user and 1 assistant message visible",
+    "after_reload": "the thread list finished hydrating (aria-busy=false) and rendered 'No threads yet'; the expected entry count was 0 for 120 s (scripts/behaviors/browser/browser-history-reload.steps.mjs:198)",
+    "timing": "goto /threads at 3.4 s, reload at 11.2 s of the trace",
+    "page_errors": [],
+    "cleanup": "disposable agent and session deleted; no cleanup errors"
+  },
+  "source_reading": [
+    "The thread list reads only the browser-local PGlite store (frontend/src/stores/thread-registry-store.ts hydrateFromDb, idb://uar-threads in frontend/src/platform/pglite/client.ts:103).",
+    "Thread writes are fire-and-forget (void getDbInstance().upsertThread(...)); a failure is not surfaced.",
+    "useThreadGraphSync deliberately ignores the server Thread snapshot on first mount (frontend/src/stores/use-thread-graph-sync.ts), so the server session does not repopulate the list after reload.",
+    "Which write was lost (never issued, rejected, or not flushed to IndexedDB before reload) is not confirmed from source alone."
+  ],
+  "not_a_script_issue_because": "the thread was visible in the same list before reload and the list completed hydration after reload; the title locator matched the exact pre-reload text",
+  "next": "Product diagnosis and fix need operator approval. A rerun needs the tier-3 guard opened again."
+}

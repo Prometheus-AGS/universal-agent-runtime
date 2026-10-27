@@ -1,0 +1,152 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "approved-native-tool-results-reach-the-answer;-denial-has-no-effect;approve-one-native-file-write-and-deny-another",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Approve one native file write and deny another",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12801462902
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "native file tools are enabled for one owned directory after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 45124830
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a disposable agent that may use only the native file_write tool",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:133"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 7979466054,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected a tool approval interrupt: {\"type\":\"RUN_FINISHED\",\"threadId\":\"96a5c955-10e0-4f23-b1ff-aa8344abbc51\",\"runId\":\"6815eee7-08c7-4640-a472-b78e1e2151a1\",\"outcome\":{\"type\":\"success\"}}\n+ actual - expected\n\n+ 'success'\n- 'interrupt'\n\n    + expected - actual\n\n    -success\n    +interrupt\n\n    at writeWithDecision (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/native-tool-approval.steps.mjs:59:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/native-tool-approval.steps.mjs:153:19)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I ask the agent to write a private note and approve the file_write request",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:150"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the approved note exists exactly once on disk and the answer reports the tool's real result",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:156"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I ask the agent to write a second note and deny the file_write request",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:168"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the second note does not exist and the answer reports that the write was not performed",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:174"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 72537234,
+              "error_message": "AssertionError [ERR_ASSERTION]: Cleanup must succeed\n+ actual - expected\n\n+ [\n+   'Settings restore: AssertionError [ERR_ASSERTION]: DELETE /api/uar/settings/native_tools.file_allowed_paths: 500: {\"error\":\"If-Match revision is required\"}'\n+ ]\n- []\n\n    + expected - actual\n\n    -[\n    -  \"Settings restore: AssertionError [ERR_ASSERTION]: DELETE /api/uar/settings/native_tools.file_allowed_paths: 500: {\\\"error\\\":\\\"If-Match revision is required\\\"}\"\n    -]\n    +[]\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/native-tool-approval.steps.mjs:222:10)"
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9uYXRpdmUtdG9vbC1hcHByb3ZhbC9hMDdhNWU3Yi0yNzdmLTQ0OTQtYTBhNy0xNDJjZTM2NzVkNGYuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@tools",
+            "line": 1
+          },
+          {
+            "name": "@approval",
+            "line": 1
+          },
+          {
+            "name": "@native",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "approved-native-tool-results-reach-the-answer;-denial-has-no-effect",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Approved native tool results reach the answer; denial has no effect",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@tools",
+        "line": 1
+      },
+      {
+        "name": "@approval",
+        "line": 1
+      },
+      {
+        "name": "@native",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/native-tool-approval.feature"
+  }
+]

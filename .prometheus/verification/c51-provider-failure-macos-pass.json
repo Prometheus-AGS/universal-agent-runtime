@@ -1,0 +1,24 @@
+{
+  "scenario": "C51",
+  "label": "B42",
+  "behavior": "Provider failure produces an honest recoverable result",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 2,
+  "prior_attempts": "1 FAIL in cleanup only (restore omitted bumped execution-profile revision; provider restored manually and all five models re-verified). Receipt c51-provider-failure-attempt-001-fail.json",
+  "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/provider-failure.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 7 steps (7 passed); 0m 26.165s",
+  "evidence": ".prometheus/verification/provider-failure/734393ff-6998-4225-84b8-c04d0e7293bb.json",
+  "files": ["scripts/behaviors/features/provider-failure.feature", "scripts/behaviors/provider-failure.cucumber.mjs", "scripts/behaviors/steps/provider-failure.steps.mjs", "scripts/behaviors/support/provider-fault-proxy.mjs"],
+  "fault": "Owned loopback fault proxy in front of Liter; the liter provider base_url was routed through it with a keyless update (stored credential preserved, never seen by the test). Armed mode relays the first bytes then destroys the connection mid-stream.",
+  "evidence_review": {
+    "faulted": "proxy log: one POST /v1/chat/completions, 200, 1462 bytes, outcome disconnected; run status running→error; error code provider_transport_failed; no answer text; accounting call pending with accounting_unresolved diagnostic; effective model liter/MiniMax-M3 (no switch)",
+    "fresh": "fault cleared; proxy pass, complete; run done; answer 42; call settled (15825 tokens); same model"
+  },
+  "cleanup": {"provider_restored": "base_url http://127.0.0.1:4000/v1; all fields equal to original", "models_reverified": ["MiniMax-M3", "glm-5.3", "k3", "mimo-v2.5-pro", "qwen3.8-max"], "proxy_stopped": true, "sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

@@ -1,0 +1,129 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "replacing-a-kb-source-removes-the-old-fact;delete-the-old-document,-index-a-replacement,-and-answer-from-it-only",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Delete the old document, index a replacement, and answer from it only",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 692372007
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable knowledge base with one indexed note holding a private value",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-source-replace.steps.mjs:47"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37221916
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a disposable agent linked to that knowledge base with citations required",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-source-replace.steps.mjs:74"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 610281587
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I delete the old note and index a replacement note with a different value",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-source-replace.steps.mjs:90"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 106561707
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "retrieval returns only the replacement note",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-source-replace.steps.mjs:99"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3092405088
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "a fresh conversation answers with only the replacement value and its current citation",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-source-replace.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 190588990
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi1zb3VyY2UtcmVwbGFjZS84NTk2YTkyMi05YzE0LTQzYTQtOThjMy1kMTRkMDhiY2YyNDcuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge",
+            "line": 1
+          },
+          {
+            "name": "@replacement",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "replacing-a-kb-source-removes-the-old-fact",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Replacing a KB source removes the old fact",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge",
+        "line": 1
+      },
+      {
+        "name": "@replacement",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-source-replace.feature"
+  }
+]

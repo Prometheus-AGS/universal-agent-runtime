@@ -1,0 +1,25 @@
+{
+  "scenario": "C47",
+  "label": "B45",
+  "behavior": "Replacing a KB source removes the old fact",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 1,
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-source-replace.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 9.907s",
+  "evidence": ".prometheus/verification/kb-source-replace/4f0477fe-2275-4a9a-9edd-167058bfe3a6.json",
+  "files": ["scripts/behaviors/features/kb-source-replace.feature", "scripts/behaviors/kb-source-replace.cucumber.mjs", "scripts/behaviors/steps/kb-source-replace.steps.mjs"],
+  "evidence_review": {
+    "old": "indexed note with 283 moorings and seal OLD-…; deleted (204) and GET 404",
+    "replacement": "indexed replacement with 724 moorings and seal NEW-8DC980A9 (new document id, sha256 recorded)",
+    "retrieval": "search returns only the replacement document; document list holds only it",
+    "answer": "fresh conversation with the KB-linked agent: {moorings 724, seal NEW-8DC980A9, citation [1]}; rag citation [1] points at the replacement document with the new seal; no citation or answer text references the old note"
+  },
+  "embedding": "local retained embedder (fastembed); no paid embedding spend",
+  "cleanup": {"agent_deleted": true, "kb_deleted": true, "sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

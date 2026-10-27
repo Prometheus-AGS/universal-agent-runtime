@@ -1,18 +1,25 @@
 {
-  "updated_at": "2026-10-26T20:40:26.784956-05:00",
+  "updated_at": "2026-10-27T06:15:31-05:00",
   "platform": "Mac",
   "method": "Manual BDD; authentication supplied externally, never by test scripts",
   "base_url": "http://127.0.0.1:60675",
   "runtime_url": "http://127.0.0.1:53587",
-  "runtime_pid": 21601,
+  "runtime_pid": 78140,
   "external_identity_pid": 24808,
   "model": "liter/MiniMax-M3",
   "workspace_id": "uar-user-outcomes-007-supporting-workspace",
   "test_credential_variables": [],
-  "current_scenario": "KB-UNLINK-ONE-01",
-  "status": "KB-UNLINK-ONE-01 PASS; cleaned up disposable agent/KBs, UAR running; testing stopped",
-  "evidence": ".prometheus/verification/kb-unlink-one/5dfa7246-5221-4bb3-8d42-c582750f6fb3.json",
+  "current_scenario": "C33",
+  "status": "C33 PASS; provider configuration restored; disposable resources cleaned up; UAR running; stopped for operator direction",
+  "evidence": ".prometheus/verification/rest-model-restart/246c766c-a558-4048-a119-71f521acdcc2.json",
   "static_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-ui",
-  "binary_sha256": "f84baeaf99c7c0478fe01df20e9f2726f1f3f346b335d04d0958dbf2d800496d",
-  "last_receipt": ".prometheus/verification/kb-unlink-one-01-macos-pass.json"
+  "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+  "last_receipt": ".prometheus/verification/c33-rest-model-restart-macos-pass.json",
+  "available_models": [
+    "liter/MiniMax-M3 (default)",
+    "liter/k3",
+    "liter/glm-5.3",
+    "liter/mimo-v2.5-pro",
+    "liter/qwen3.8-max (Token Plan, Singapore)"
+  ]
 }

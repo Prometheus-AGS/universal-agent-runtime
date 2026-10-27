@@ -1,0 +1,23 @@
+{
+  "scenario": "C52",
+  "status": "BLOCKED",
+  "attempt": 1,
+  "reason": "No owned, initially empty store with a host-writable session record exists. The catalog requires one; it is BLOCKED until the operator approves provisioning it.",
+  "source_reading": {
+    "seed_path": "src/server.rs:1417 seed_builtin_agents runs on every startup; persisted definitions keep operator settings",
+    "retention_owner": "src/uar/runtime/manager.rs:1404 spawn_retention_sweeper wakes on session activity; the persisted TTL sweep (manager.rs:1660-1697) is opt-in through sessions.persisted_ttl_secs and deletes every session whose last_activity predates the cutoff (surreal.rs:2204 reads sessions.last_activity)",
+    "owned_runtime": "target/prompt-macos-hbitxj2c/config.json sets no sessions or runs section, so the TTL sweep is off; the store is embedded surrealkv (store.db) held open by the running process"
+  },
+  "why_the_current_owned_instance_cannot_be_used": [
+    "Its store is not empty: built-in seeding once cannot be observed.",
+    "Enabling persisted_ttl_secs there would let the real sweeper delete every older session in that store, including all prior scenario and operator data.",
+    "Embedded surrealkv is locked by the running process, so no host fixture can age one session's last_activity while UAR runs, which the contract requires."
+  ],
+  "provisioning_needed": [
+    "A second disposable UAR instance on its own loopback port with a fresh store served by a local surreal server (surreal 3.2.0 is installed at /usr/local/bin/surreal), so a host fixture can update one captured session's last_activity",
+    "Config for that instance: sessions.persisted_ttl_secs set (for example 3600) and the same model provider configuration as the owned instance",
+    "Owner context for its session APIs from a second uar-jwt-proxy listener pointed at that instance (external infrastructure; the test sends no credentials)"
+  ],
+  "no_resources_created": true,
+  "next": "Operator approval to provision the disposable instance, its surreal server and a second proxy listener; otherwise C52 stays BLOCKED."
+}

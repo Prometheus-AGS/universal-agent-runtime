@@ -188,8 +188,18 @@ async fn summarize_span(
     }
 
     ensure!(completed, "summarization stream ended without Done");
-    let summary = summary.trim();
-    ensure!(!summary.is_empty(), "summarization produced empty result");
+    // Reasoning models may stream inline reasoning as message text. Only the
+    // answer part is the summary, and only it counts against the budget.
+    let split = crate::llm::inline_reasoning::split_inline_reasoning(&summary);
+    ensure!(!split.unclosed, "summary_reasoning_unclosed: the reply ended inside reasoning");
+    let summary = split.answer.trim();
+    if summary.is_empty() {
+        bail!(if split.had_reasoning {
+            "summary_answer_missing: the reply contained only reasoning"
+        } else {
+            "summarization produced empty result"
+        });
+    }
     let summary_tokens = TokenService::count(model, summary);
     ensure!(
         summary_tokens <= output_ceiling,

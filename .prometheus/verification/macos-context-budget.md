@@ -38,3 +38,7 @@ Guard rationale: HTTP boundaries and bounded waits; owned agent cleanup; compari
 [Receipt](context-budget-01-macos-pass.json), [raw evidence](context-budget/6e963cf7-8709-4610-b8e0-59abbac9aaf1.json), [passing report](context-budget-002-macos/cucumber.json), [initial failed report](context-budget-001-macos/cucumber.json).
 
 Scope is keep-first/latest token reduction and warm follow-up recall on Mac. Summarization, hierarchical strategies, restart persistence, protected tool-record pressure, exact tokenizers, other platforms and repeat reliability remain unverified by this scenario. UAR remains running; stop for operator direction.
+
+## Audit clarification — 2026-10-27
+
+The retained detailed run has `context_reduction.changed=false` and `source_tokens=prepared_tokens=12869` with identical source/prepared hashes; final tokens are4830 with a changed final hash. This proves final budget fitting and successful fact recall. It does **not** prove that requested `truncate_middle` performed structural reduction. Earlier strategy-specific wording is superseded by this narrower mechanism interpretation; the bounded budget/recall PASS and immutable receipts remain valid. No rerun occurred.

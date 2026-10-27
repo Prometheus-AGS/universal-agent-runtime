@@ -1,0 +1,3227 @@
+{
+  "platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "profile": "wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab",
+  "retrieval_seal": "358c38e1-9be1-4afc-9cbe-832ad407e9f6",
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "retained_for_future_use": true,
+  "knowledge_base": {
+    "id": "a048de8e-3e19-41a6-935b-cea3818e3d1e",
+    "name": "wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab",
+    "description": "Sourced wheel-graph critical group mathematics with a private retrieval profile",
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "bge-small-en-v1.5",
+      "vector_dimensions": 384,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 2048 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 3,
+      "indexed_embedding": null,
+      "regeneration": null
+    },
+    "created_at": "2026-10-27T17:59:31.025437+00:00",
+    "updated_at": "2026-10-27T17:59:31.025437+00:00",
+    "document_count": 0
+  },
+  "document": {
+    "id": "5bf5e223-c549-406f-8983-a633d715e0a5",
+    "kb_id": "a048de8e-3e19-41a6-935b-cea3818e3d1e",
+    "filename": "wheel-graphs.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 0,
+    "status": "pending",
+    "error_message": null,
+    "created_at": "2026-10-27T17:59:31.067230+00:00",
+    "updated_at": "2026-10-27T17:59:31.067230+00:00"
+  },
+  "ingestion": {
+    "namespace": "principal_v1",
+    "owner_id": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+    "document_id": "5bf5e223-c549-406f-8983-a633d715e0a5",
+    "kb_id": "a048de8e-3e19-41a6-935b-cea3818e3d1e",
+    "generation": "acdc06d5-d8e4-4963-9be6-34ac6bca3c8e",
+    "state": "indexed",
+    "attempts": 1,
+    "next_attempt_at": 1793123971,
+    "last_error": null
+  },
+  "indexed_knowledge_base": {
+    "id": "a048de8e-3e19-41a6-935b-cea3818e3d1e",
+    "name": "wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab",
+    "description": "Sourced wheel-graph critical group mathematics with a private retrieval profile",
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "bge-small-en-v1.5",
+      "vector_dimensions": 384,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 2048 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 3,
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "regeneration": null
+    },
+    "created_at": "2026-10-27T17:59:31.025437+00:00",
+    "updated_at": "2026-10-27T17:59:31.361393+00:00",
+    "document_count": 1
+  },
+  "agent": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "math-specialist-db64c2a8",
+    "metadata": {
+      "title": "Mathematics Specialist",
+      "description": "Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.",
+      "tags": [
+        "mathematics",
+        "arithmetic",
+        "calculations"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": true,
+        "knowledge_bases": [
+          "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+          "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+          "a048de8e-3e19-41a6-935b-cea3818e3d1e"
+        ],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:9b973ff1988de20203018aae3dacf58fbbc29f642bd4890540833dd4caa5cbd9",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      },
+      "uar.run_policy": {
+        "knowledge_bases": {
+          "ids": [
+            "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+            "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+            "a048de8e-3e19-41a6-935b-cea3818e3d1e"
+          ],
+          "mode": "selected"
+        }
+      }
+    }
+  },
+  "question": "For research profile wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab, what are its rim_vertices, lucas_number and sandpile_group_order? Include its exact retrieval_seal and a numbered citation to the source. Return the research-profile JSON.",
+  "completion": {
+    "id": "chatcmpl-95283a04-eaf6-4d26-9155-2514596b0874",
+    "object": "chat.completion",
+    "created": 1793123974,
+    "model": "liter/MiniMax-M3",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "<think>The user asks for the research profile wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab. From the retrieved knowledge, source [2] matches exactly: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=358c38e1-9be1-4afc-9cbe-832ad407e9f6.\n\nReturn JSON with keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation.\n\nLet me also verify the arithmetic: Lucas number for 11 is L(11) = 199. Sandpile group order for wheel graph W_n... The profile says 39601 = 199^2. Indeed 199^2 = 39601. Good.\n\nCitation: \"[2] (wheel-graphs.txt)\".\n\nReturn only JSON.\n\nShould I also render an A2UI surface? Not required. Just return the JSON.\n\nLet me double-check memory recall isn't needed — the retrieved content already has it. But the policy says answer ONLY from retrieved knowledge documents. I could optionally verify with memory_recall, but the retrieved docs suffice. Let me just answer. Perhaps do a quick memory_recall to confirm? The memory tools are available and memory_enabled is false. The retrieved knowledge is authoritative. I'll just answer.\n\nActually, to be thorough, I could call native__memory_recall for the profile id to confirm the seal. But there's risk of conflicting data. The instruction: \"Copy the exact profile and retrieval seal from the document and its numbered source marker\". Source [2] is the exact match. Answer.</think>\n\n```json\n{\n  \"specialist\": \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\",\n  \"profile\": \"wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab\",\n  \"rim_vertices\": 11,\n  \"lucas_number\": 199,\n  \"sandpile_group_order\": 39601,\n  \"retrieval_seal\": \"358c38e1-9be1-4afc-9cbe-832ad407e9f6\",\n  \"citation\": \"[2] (wheel-graphs.txt) Local research profile wheel-profile-3017d19a-2aa0-4356-bc"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 20887,
+      "completion_tokens": 512,
+      "total_tokens": 21399
+    },
+    "session_id": "c32c238c-5fe6-4fde-8105-d6d8e96994be"
+  },
+  "run": {
+    "run_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+    "agent_id": "math-specialist-db64c2a8",
+    "conversation_id": "c32c238c-5fe6-4fde-8105-d6d8e96994be",
+    "status": "done",
+    "agent_revision": "sha256:9b973ff1988de20203018aae3dacf58fbbc29f642bd4890540833dd4caa5cbd9",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "math-specialist-db64c2a8",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "auto",
+        "ids": [
+          "actor-model",
+          "adversarial-review",
+          "android-compose-adaptive",
+          "android-edge-to-edge",
+          "api-connector-builder",
+          "argocd-multicloud",
+          "async-patterns",
+          "atproto-lexicon",
+          "atproto-oauth",
+          "atproto-publish-lexicon",
+          "axum-patterns",
+          "bdd-cucumber-js",
+          "bdd-cucumber-rs",
+          "bdd-lifecycle-loop",
+          "bdd-testing",
+          "bdd-video-proof",
+          "better-accessibility",
+          "better-colors",
+          "better-interface",
+          "better-layout",
+          "better-typography",
+          "better-ui",
+          "better-writing",
+          "break",
+          "carrier-relationship-management",
+          "ck",
+          "clean-architecture",
+          "clone-skill",
+          "continuous-learning-v2",
+          "cowork-management",
+          "create-native-agent",
+          "create-skill",
+          "customs-trade-compliance",
+          "dashboard-builder",
+          "deep-research",
+          "defi-amm-security",
+          "delivery-gate",
+          "design-taste-frontend",
+          "design-taste-frontend-v1",
+          "disk-space-guardian",
+          "ecc-recipes",
+          "energy-procurement",
+          "entity-audit",
+          "entity-crud-form",
+          "entity-crud-page",
+          "entity-crud-relations",
+          "entity-crud-table",
+          "entity-gc",
+          "entity-gql-hooks",
+          "entity-gql-setup",
+          "entity-gql-subscription",
+          "entity-graph-crud",
+          "entity-graph-detect",
+          "entity-graph-graphql",
+          "entity-graph-init",
+          "entity-graph-migrate",
+          "entity-graph-optimize",
+          "entity-graph-prisma",
+          "entity-graph-realtime",
+          "entity-graph-setup",
+          "entity-perf",
+          "entity-prisma-api",
+          "entity-prisma-generator",
+          "entity-prisma-migrate",
+          "entity-prisma-setup",
+          "entity-realtime-channel",
+          "entity-realtime-local-first",
+          "entity-realtime-setup",
+          "entity-realtime-surreal-live",
+          "error-handling",
+          "evm-token-decimals",
+          "evolve",
+          "evolve-analyze",
+          "evolve-assess",
+          "evolve-execute",
+          "evolve-plan",
+          "evolve-report",
+          "evolve-status",
+          "explain-interface",
+          "expo-animation",
+          "expo-design-system",
+          "expo-native-ui",
+          "expo-router",
+          "expo-ui",
+          "extend-skill",
+          "fabric-integration",
+          "feynman-loop",
+          "flint-sdk-csharp",
+          "flint-sdk-dart",
+          "flint-sdk-go",
+          "flint-sdk-kotlin",
+          "flint-sdk-swift",
+          "flint-sdk-ts",
+          "flutter-build-responsive-layout",
+          "flutter-fix-layout-issues",
+          "flutter-rust-ffi",
+          "flutter-setup-declarative-routing",
+          "flutter-setup-localization",
+          "full-output-enforcement",
+          "gitops-bootstrap",
+          "gitops-transform",
+          "go-base-patterns",
+          "gpt-taste",
+          "growth-log",
+          "healthcare-cdss-patterns",
+          "healthcare-emr-patterns",
+          "healthcare-eval-harness",
+          "healthcare-phi-compliance",
+          "high-end-visual-design",
+          "hipaa-compliance",
+          "htmx-alpine-lit",
+          "ideation-mindmap",
+          "impeccable",
+          "industrial-brutalist-ui",
+          "interface-review",
+          "inventory-demand-planning",
+          "iterative-evolver",
+          "karpathy-progress-memory",
+          "karpathy-tokenizer",
+          "kbd-analyze",
+          "kbd-apply",
+          "kbd-assess",
+          "kbd-audit",
+          "kbd-bottleneck-detector",
+          "kbd-cancel",
+          "kbd-child-exit",
+          "kbd-doctor",
+          "kbd-evolve",
+          "kbd-execute",
+          "kbd-goal",
+          "kbd-goal-check",
+          "kbd-handoff",
+          "kbd-init",
+          "kbd-inject-agent-rules",
+          "kbd-memory-recall",
+          "kbd-new-child",
+          "kbd-new-phase",
+          "kbd-next-child",
+          "kbd-next-phase",
+          "kbd-pause",
+          "kbd-plan",
+          "kbd-process-orchestrator",
+          "kbd-reflect",
+          "kbd-resume",
+          "kbd-spec",
+          "kbd-status",
+          "kreuzberg",
+          "kustomize-overlay",
+          "learn-about-system",
+          "learn-certify",
+          "learn-goal",
+          "learn-grade",
+          "learn-harness",
+          "learn-kb",
+          "learn-plan",
+          "learn-practice",
+          "learn-retain",
+          "learn-survey",
+          "librefang-wasm-skill",
+          "liter-llm-bridge",
+          "llm-trading-agent-security",
+          "llm-wiki",
+          "logistics-exception-management",
+          "mcp-server",
+          "minimalist-ui",
+          "motion-advanced",
+          "motion-foundations",
+          "motion-patterns",
+          "native-agent",
+          "nodejs-keccak256",
+          "performance",
+          "plan-canvas",
+          "pmpo-elicit",
+          "pmpo-evolver",
+          "pmpo-outer-loop",
+          "pmpo-skill-creator",
+          "production-scheduling",
+          "prometheus-context-bootstrap",
+          "prometheus-entity-skills",
+          "prometheus-impeccable-core",
+          "prometheus-rust-auditor",
+          "prometheus-ui-review",
+          "prometheus-ui-ux",
+          "pyo3-bridge",
+          "quality-nonconformance",
+          "react-vite-stack",
+          "redesign-existing-projects",
+          "returns-reverse-logistics",
+          "security-bounty-hunter",
+          "stage-01-planner",
+          "stage-02-search",
+          "stage-03-retrieve",
+          "stage-04-collect",
+          "stage-05-verify",
+          "stage-06-resolve",
+          "stage-07-graph",
+          "stage-08-cite",
+          "stage-09-report",
+          "stage-10-export",
+          "start-business-build",
+          "stitch-design-taste",
+          "tauri-react-vite",
+          "typescript-base-patterns",
+          "ui-surface",
+          "ui-ux-pro-max",
+          "upload-to-bossfang",
+          "validate-idea",
+          "validate-skill",
+          "value-scenario-discovery",
+          "value-scenario-verify",
+          "variant",
+          "workspace-structure"
+        ],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "selected",
+        "ids": [
+          "a2ui_render",
+          "native__memory_capture_policy",
+          "native__memory_delete_by_id",
+          "native__memory_history",
+          "native__memory_list",
+          "native__memory_recall",
+          "native__memory_save",
+          "native__memory_update_by_id",
+          "native_echo",
+          "native_system_info",
+          "uar_compile",
+          "uar_session_check_completeness",
+          "uar_session_compile",
+          "uar_session_update_section"
+        ],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "auto",
+        "ids": [],
+        "source": "legacy"
+      },
+      "knowledge_bases": {
+        "mode": "selected",
+        "ids": [
+          "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+          "a048de8e-3e19-41a6-935b-cea3818e3d1e",
+          "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e"
+        ],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "legacy"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "legacy",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": [
+        {
+          "skill_id": "deep-research",
+          "score": 1,
+          "accepted": true
+        },
+        {
+          "skill_id": "actor-model",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "adversarial-review",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "android-compose-adaptive",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "android-edge-to-edge",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "api-connector-builder",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "argocd-multicloud",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "async-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "atproto-lexicon",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "atproto-oauth",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "atproto-publish-lexicon",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "axum-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-cucumber-js",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-cucumber-rs",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-lifecycle-loop",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-testing",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-video-proof",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-accessibility",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-colors",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-interface",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-layout",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-typography",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-writing",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "break",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "carrier-relationship-management",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ck",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "clean-architecture",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "clone-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "continuous-learning-v2",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "cowork-management",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "create-native-agent",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "create-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "customs-trade-compliance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "dashboard-builder",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "defi-amm-security",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "delivery-gate",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "design-taste-frontend",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "design-taste-frontend-v1",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "disk-space-guardian",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ecc-recipes",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "energy-procurement",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-audit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-form",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-page",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-relations",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-table",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gc",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gql-hooks",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gql-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gql-subscription",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-crud",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-detect",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-graphql",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-init",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-migrate",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-optimize",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-prisma",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-realtime",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-perf",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-api",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-generator",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-migrate",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-channel",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-local-first",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-surreal-live",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "error-handling",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evm-token-decimals",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-analyze",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-assess",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-execute",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-plan",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-report",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-status",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "explain-interface",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-animation",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-design-system",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-native-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-router",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "extend-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "fabric-integration",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "feynman-loop",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-csharp",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-dart",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-go",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-kotlin",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-swift",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-ts",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-build-responsive-layout",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-fix-layout-issues",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-rust-ffi",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-setup-declarative-routing",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-setup-localization",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "full-output-enforcement",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "gitops-bootstrap",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "gitops-transform",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "go-base-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "gpt-taste",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "growth-log",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-cdss-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-emr-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-eval-harness",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-phi-compliance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "high-end-visual-design",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "hipaa-compliance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "htmx-alpine-lit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ideation-mindmap",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "impeccable",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "industrial-brutalist-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "interface-review",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "inventory-demand-planning",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "iterative-evolver",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "karpathy-progress-memory",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "karpathy-tokenizer",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-analyze",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-apply",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-assess",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-audit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-bottleneck-detector",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-cancel",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-child-exit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-doctor",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-evolve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-execute",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-goal",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-goal-check",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-handoff",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-init",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-inject-agent-rules",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-memory-recall",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-new-child",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-new-phase",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-next-child",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-next-phase",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-pause",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-plan",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-process-orchestrator",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-reflect",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-resume",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-spec",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-status",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kreuzberg",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kustomize-overlay",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-about-system",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-certify",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-goal",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-grade",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-harness",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-kb",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-plan",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-practice",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-retain",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-survey",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "librefang-wasm-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "liter-llm-bridge",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "llm-trading-agent-security",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "llm-wiki",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "logistics-exception-management",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "mcp-server",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "minimalist-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "motion-advanced",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "motion-foundations",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "motion-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "native-agent",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "nodejs-keccak256",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "performance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "plan-canvas",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-elicit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-evolver",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-outer-loop",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-skill-creator",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "production-scheduling",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-context-bootstrap",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-entity-skills",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-impeccable-core",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-rust-auditor",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-ui-review",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-ui-ux",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pyo3-bridge",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "quality-nonconformance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "react-vite-stack",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "redesign-existing-projects",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "returns-reverse-logistics",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "security-bounty-hunter",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-01-planner",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-02-search",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-03-retrieve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-04-collect",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-05-verify",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-06-resolve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-07-graph",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-08-cite",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-09-report",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-10-export",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "start-business-build",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stitch-design-taste",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "tauri-react-vite",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "typescript-base-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ui-surface",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ui-ux-pro-max",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "upload-to-bossfang",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "validate-idea",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "validate-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "value-scenario-discovery",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "value-scenario-verify",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "variant",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "workspace-structure",
+          "score": 0,
+          "accepted": false
+        }
+      ]
+    },
+    "activated_skills": [
+      "deep-research"
+    ],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "source_sha256": "sha256:80ba8b3995186f0d82c9ea58f67afd4c6a9b202b0bf466e7ffebb2a5d21f89e9",
+      "prepared_sha256": "sha256:80ba8b3995186f0d82c9ea58f67afd4c6a9b202b0bf466e7ffebb2a5d21f89e9",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 12001,
+      "prepared_tokens": 12001,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:80ba8b3995186f0d82c9ea58f67afd4c6a9b202b0bf466e7ffebb2a5d21f89e9",
+      "final_messages": 2,
+      "final_tokens": 12001,
+      "input_allowance": 1044741,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1046695,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1045695,
+        "history_tokens": 13440,
+        "request_tokens": 18443,
+        "rendered_tokens": 5000,
+        "rendered_sha256": "sha256:7954f5280c37f2c9506f77c7f2bbd9532a1cd44697c7090a4e6924dce25c9275",
+        "fragments": [
+          {
+            "fragment_id": "skill.deep-research",
+            "skill_id": "deep-research",
+            "original_body_tokens": 5143,
+            "retained_body_tokens": 4876,
+            "original_body_sha256": "sha256:f23e5418f58684a65496fd6fc6ea275ad11db140a08e371186164bfd16194a9e",
+            "retained_body_sha256": "sha256:f049a5111f33d580fde3f6fc43b932f3c5e3c771693c57e32a1d7284a71e1a0e",
+            "original_rendered_tokens": 5273,
+            "retained_rendered_tokens": 5000,
+            "original_rendered_sha256": "sha256:40ba72758e0ba52868342643d6cb4c521f540377f8dd4e4707d27f8df781a064",
+            "retained_rendered_sha256": "sha256:7954f5280c37f2c9506f77c7f2bbd9532a1cd44697c7090a4e6924dce25c9275",
+            "retained": true,
+            "truncated": true
+          }
+        ]
+      }
+    }
+  },
+  "events": {
+    "version": 1,
+    "runId": "95283a04-eaf6-4d26-9155-2514596b0874",
+    "after": 0,
+    "cursor": 124,
+    "retention": "process-local-bounded",
+    "firstAvailableEventId": 1,
+    "gapReason": null,
+    "events": [
+      {
+        "eventId": 1,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_id": "run-policy-95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_type": "effective_run_policy",
+          "title": "Effective run policy",
+          "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-95283a04-eaf6-4d26-9155-2514596b0874\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-95283a04-eaf6-4d26-9155-2514596b0874\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-95283a04-eaf6-4d26-9155-2514596b0874\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · math-specialist-db64c2a8\",\"skills\":\"Skills · auto · 212 available · agent scope\",\"tools\":\"Tools · selected · 14 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · selected · 3 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+          "language": "a2ui",
+          "metadata": {
+            "profile": "uar.a2ui/1",
+            "protocol_version": "v0.9.1",
+            "catalog_id": "urn:uar:a2ui:catalog:1",
+            "version": 1,
+            "warnings": []
+          }
+        }
+      },
+      {
+        "eventId": 2,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "patch": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 3,
+        "eventName": "agui.rag_citations",
+        "data": {
+          "kind": "rag_citations",
+          "phase": "added",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "citations": [
+            {
+              "marker": 1,
+              "chunk_id": "3658b944-0256-b9c6-f416-291ec981bf54",
+              "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+              "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+              "document_name": "wheel-graphs.txt",
+              "relevance_score": 0.8956781625747681,
+              "snippet": "Local research profile wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=1a60323f-e62d-4cfb-8a97-591440ca2fdc. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+            },
+            {
+              "marker": 2,
+              "chunk_id": "33d94c0d-676c-e381-e74c-a7b9e61e590f",
+              "document_id": "5bf5e223-c549-406f-8983-a633d715e0a5",
+              "knowledge_base_id": "a048de8e-3e19-41a6-935b-cea3818e3d1e",
+              "document_name": "wheel-graphs.txt",
+              "relevance_score": 0.8942644000053406,
+              "snippet": "Local research profile wheel-profile-3017d19a-2aa0-4356-bc2d-4feb203165ab: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=358c38e1-9be1-4afc-9cbe-832ad407e9f6. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+            },
+            {
+              "marker": 3,
+              "chunk_id": "3f5ca9df-3b93-9c2e-ec6d-cae3f5453231",
+              "document_id": "20303298-71bd-44b1-b1e2-d4b4b97b5110",
+              "knowledge_base_id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+              "document_name": "wheel-graphs.txt",
+              "relevance_score": 0.8934752345085144,
+              "snippet": "Local research profile wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=e0f8c635-cdf0-4f1f-93c7-a30244feed25. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 4,
+        "eventName": "agui.skill.activated",
+        "data": {
+          "kind": "skill",
+          "phase": "activated",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "skill": {
+            "id": "deep-research",
+            "title": "deep-research"
+          },
+          "selection_method": "implicit"
+        }
+      },
+      {
+        "eventId": 5,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_id": "turn-manifest-95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_type": "turn_manifest",
+          "title": "Turn manifest",
+          "content": "{\"schema_version\":1,\"manifest_hash\":\"ddcc73e833253819e9ae2cd878850d7afff134b5dec93ff8f972608e84df8eaa\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94db19f7643301f400a617bc017be47411e6641c04675d9c30c36fdcbf39be32\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d11ae7a4f4f0ee25f2a00e12cf3c56e0b6dbe3ff5e100fb13987a5abbf97edec\"},{\"id\":\"skill.deep-research\",\"section\":\"active_skills\",\"source\":\"skill:deep-research\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"e98352d4d0d2c4d28a23925492994fe4eabdc8c48ea61135d4f44a45ae3877ab\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2617415c116f95071c8635787928c580530006a8bc9303d9df73686cf69ad25e\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"980a6610864a8597fd87b0b40f2bbc1471312b30808747d4c8b89bd0af8fb340\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,a048de8e-3e19-41a6-935b-cea3818e3d1e,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"97ea06ef382188936f09e2d808882b4c73ed6b9c036295ad1ca84662415fffe3\"}],\"counts\":{\"total\":9,\"by_section\":{\"active_skills\":1,\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":2,\"system\":1}},\"budgets\":{\"rendered_bytes\":76196,\"rendered_characters\":75562,\"context_window_tokens\":1048576},\"selected_skills\":[\"deep-research\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}",
+          "language": "json",
+          "metadata": {
+            "schema_version": 1,
+            "manifest_hash": "ddcc73e833253819e9ae2cd878850d7afff134b5dec93ff8f972608e84df8eaa",
+            "fragment_count": 9
+          }
+        }
+      },
+      {
+        "eventId": 6,
+        "eventName": "agui.stream.start",
+        "data": {
+          "kind": "stream",
+          "phase": "start",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "agent_id": "math-specialist-db64c2a8"
+        }
+      },
+      {
+        "eventId": 7,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+                "conversation_id": "c32c238c-5fe6-4fde-8105-d6d8e96994be",
+                "status": "running"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 9,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_id": "uar.turn:resolved_step",
+          "artifact_type": "provider_event",
+          "title": "resolved_step",
+          "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"a46a2d794e7fd3cc5a17ca9ad5ee02910e4180d20e97cba0e3ce45f1662ef7c1\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94db19f7643301f400a617bc017be47411e6641c04675d9c30c36fdcbf39be32\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d11ae7a4f4f0ee25f2a00e12cf3c56e0b6dbe3ff5e100fb13987a5abbf97edec\"},{\"id\":\"skill.deep-research\",\"section\":\"active_skills\",\"source\":\"skill:deep-research\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"e98352d4d0d2c4d28a23925492994fe4eabdc8c48ea61135d4f44a45ae3877ab\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2617415c116f95071c8635787928c580530006a8bc9303d9df73686cf69ad25e\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"980a6610864a8597fd87b0b40f2bbc1471312b30808747d4c8b89bd0af8fb340\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,a048de8e-3e19-41a6-935b-cea3818e3d1e,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"97ea06ef382188936f09e2d808882b4c73ed6b9c036295ad1ca84662415fffe3\"}],\"counts\":{\"total\":9,\"by_section\":{\"active_skills\":1,\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":2,\"system\":1}},\"budgets\":{\"rendered_bytes\":76161,\"rendered_characters\":75527,\"context_window_tokens\":1048576},\"selected_skills\":[\"deep-research\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      },
+      {
+        "eventId": 10,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_id": "attempt-manifest-95283a04-eaf6-4d26-9155-2514596b0874-MiniMax-M3",
+          "artifact_type": "attempt_manifest",
+          "title": "Provider attempt manifest",
+          "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+          "language": "json",
+          "metadata": {
+            "source": "uar.request",
+            "budgeting_label": "legacy_unbudgeted"
+          }
+        }
+      },
+      {
+        "eventId": 11,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "artifact_id": "uar.request:budget_receipt",
+          "artifact_type": "provider_event",
+          "title": "budget_receipt",
+          "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":20934,\"serialized_bytes\":87709,\"serialized_sha256\":\"e19497221fed8641ecf7d37fce7f18072d23be3f45d690d910bdef45094c9bf8\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      },
+      {
+        "eventId": 12,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "<think>Th"
+          }
+        }
+      },
+      {
+        "eventId": 13,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e user asks for th"
+          }
+        }
+      },
+      {
+        "eventId": 14,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e research profile wheel"
+          }
+        }
+      },
+      {
+        "eventId": 15,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "-profile-3017d19a-"
+          }
+        }
+      },
+      {
+        "eventId": 16,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "2aa0-4356-b"
+          }
+        }
+      },
+      {
+        "eventId": 17,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "c2d-4feb203165ab"
+          }
+        }
+      },
+      {
+        "eventId": 18,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": ". From the retrieved"
+          }
+        }
+      },
+      {
+        "eventId": 19,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " knowledge, source [2] matche"
+          }
+        }
+      },
+      {
+        "eventId": 20,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s exactly: rim"
+          }
+        }
+      },
+      {
+        "eventId": 21,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "_vertices=11;"
+          }
+        }
+      },
+      {
+        "eventId": 22,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " lucas_number=199; sandpil"
+          }
+        }
+      },
+      {
+        "eventId": 23,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e_group_order=39601; retrieval_s"
+          }
+        }
+      },
+      {
+        "eventId": 24,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "eal=358c38e1"
+          }
+        }
+      },
+      {
+        "eventId": 25,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "-9b"
+          }
+        }
+      },
+      {
+        "eventId": 26,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e1-4af"
+          }
+        }
+      },
+      {
+        "eventId": 27,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "c-9"
+          }
+        }
+      },
+      {
+        "eventId": 28,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "cbe-832"
+          }
+        }
+      },
+      {
+        "eventId": 29,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "ad407e9"
+          }
+        }
+      },
+      {
+        "eventId": 30,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "f6.\n\nReturn JSON with key"
+          }
+        }
+      },
+      {
+        "eventId": 31,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s specialist, profile, rim_vertices,"
+          }
+        }
+      },
+      {
+        "eventId": 32,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " lucas_number, sandpile_group_order"
+          }
+        }
+      },
+      {
+        "eventId": 33,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": ", retrieval_seal, citation.\n\nLet"
+          }
+        }
+      },
+      {
+        "eventId": 34,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " me also"
+          }
+        }
+      },
+      {
+        "eventId": 35,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " verify the arithmetic:"
+          }
+        }
+      },
+      {
+        "eventId": 36,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " Luca"
+          }
+        }
+      },
+      {
+        "eventId": 37,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s number for 11 i"
+          }
+        }
+      },
+      {
+        "eventId": 38,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s L("
+          }
+        }
+      },
+      {
+        "eventId": 39,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "11) = 199. Sand"
+          }
+        }
+      },
+      {
+        "eventId": 40,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "pile group order for wheel"
+          }
+        }
+      },
+      {
+        "eventId": 41,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " graph W"
+          }
+        }
+      },
+      {
+        "eventId": 42,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "_n"
+          }
+        }
+      },
+      {
+        "eventId": 43,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "... The profil"
+          }
+        }
+      },
+      {
+        "eventId": 44,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e says 39601 ="
+          }
+        }
+      },
+      {
+        "eventId": 45,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " 199^2. Indeed 199"
+          }
+        }
+      },
+      {
+        "eventId": 46,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "^2 = 39601. Good"
+          }
+        }
+      },
+      {
+        "eventId": 47,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": ".\n\nCitation:"
+          }
+        }
+      },
+      {
+        "eventId": 48,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " \"[2] ("
+          }
+        }
+      },
+      {
+        "eventId": 49,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "wheel-graphs.txt)\".\n\nReturn"
+          }
+        }
+      },
+      {
+        "eventId": 50,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " only JSON.\n\n"
+          }
+        }
+      },
+      {
+        "eventId": 51,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "Should I also render an"
+          }
+        }
+      },
+      {
+        "eventId": 52,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " A2UI surface? Not"
+          }
+        }
+      },
+      {
+        "eventId": 53,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " required. Just return th"
+          }
+        }
+      },
+      {
+        "eventId": 54,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e JSON.\n\nLet me doubl"
+          }
+        }
+      },
+      {
+        "eventId": 55,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e-check memory"
+          }
+        }
+      },
+      {
+        "eventId": 56,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " recall isn't"
+          }
+        }
+      },
+      {
+        "eventId": 57,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " needed —"
+          }
+        }
+      },
+      {
+        "eventId": 58,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " th"
+          }
+        }
+      },
+      {
+        "eventId": 59,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e retrieved content already"
+          }
+        }
+      },
+      {
+        "eventId": 60,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " has it. But"
+          }
+        }
+      },
+      {
+        "eventId": 61,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " the policy say"
+          }
+        }
+      },
+      {
+        "eventId": 62,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s answer ONLY from retrieved knowledge documents. I"
+          }
+        }
+      },
+      {
+        "eventId": 63,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " could"
+          }
+        }
+      },
+      {
+        "eventId": 64,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " optionally"
+          }
+        }
+      },
+      {
+        "eventId": 65,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " verify"
+          }
+        }
+      },
+      {
+        "eventId": 66,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " with memory_recall, but the retrieved"
+          }
+        }
+      },
+      {
+        "eventId": 67,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " doc"
+          }
+        }
+      },
+      {
+        "eventId": 68,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s suffic"
+          }
+        }
+      },
+      {
+        "eventId": 69,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e. Let me just answer"
+          }
+        }
+      },
+      {
+        "eventId": 70,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": ". Perhap"
+          }
+        }
+      },
+      {
+        "eventId": 71,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s do a quick memory"
+          }
+        }
+      },
+      {
+        "eventId": 72,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "_re"
+          }
+        }
+      },
+      {
+        "eventId": 73,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "call to confirm? Th"
+          }
+        }
+      },
+      {
+        "eventId": 74,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e memory tool"
+          }
+        }
+      },
+      {
+        "eventId": 75,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s are available and"
+          }
+        }
+      },
+      {
+        "eventId": 76,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " memory_enabled is fals"
+          }
+        }
+      },
+      {
+        "eventId": 77,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e. The retrieved"
+          }
+        }
+      },
+      {
+        "eventId": 78,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " knowledg"
+          }
+        }
+      },
+      {
+        "eventId": 79,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e is authoritative. I'll just answer.\n\n"
+          }
+        }
+      },
+      {
+        "eventId": 80,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "Actually, to be thoroug"
+          }
+        }
+      },
+      {
+        "eventId": 81,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "h, I"
+          }
+        }
+      },
+      {
+        "eventId": 82,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " could call nativ"
+          }
+        }
+      },
+      {
+        "eventId": 83,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e__memory_recall for the profile id"
+          }
+        }
+      },
+      {
+        "eventId": 84,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " to confirm"
+          }
+        }
+      },
+      {
+        "eventId": 85,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " th"
+          }
+        }
+      },
+      {
+        "eventId": 86,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e seal. But"
+          }
+        }
+      },
+      {
+        "eventId": 87,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " there's ri"
+          }
+        }
+      },
+      {
+        "eventId": 88,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "sk of conflicting"
+          }
+        }
+      },
+      {
+        "eventId": 89,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " dat"
+          }
+        }
+      },
+      {
+        "eventId": 90,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "a. The instruction:"
+          }
+        }
+      },
+      {
+        "eventId": 91,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " \"Copy the exact profil"
+          }
+        }
+      },
+      {
+        "eventId": 92,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e and retrieval seal from the document and it"
+          }
+        }
+      },
+      {
+        "eventId": 93,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s numbered source marker\"."
+          }
+        }
+      },
+      {
+        "eventId": 94,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": " Sourc"
+          }
+        }
+      },
+      {
+        "eventId": 95,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e [2] is th"
+          }
+        }
+      },
+      {
+        "eventId": 96,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e exact match. Answer"
+          }
+        }
+      },
+      {
+        "eventId": 97,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "."
+          }
+        }
+      },
+      {
+        "eventId": 98,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "</think>\n\n```"
+          }
+        }
+      },
+      {
+        "eventId": 99,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "json\n{\n  \"specialist"
+          }
+        }
+      },
+      {
+        "eventId": 100,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "\": \"MATH-ce932"
+          }
+        }
+      },
+      {
+        "eventId": 101,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "4ee-0"
+          }
+        }
+      },
+      {
+        "eventId": 102,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "d63-471"
+          }
+        }
+      },
+      {
+        "eventId": 103,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "4-982f"
+          }
+        }
+      },
+      {
+        "eventId": 104,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "-f099"
+          }
+        }
+      },
+      {
+        "eventId": 105,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e8c8f378\",\n  \""
+          }
+        }
+      },
+      {
+        "eventId": 106,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "profile\": \"wheel-profile-3017"
+          }
+        }
+      },
+      {
+        "eventId": 107,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "d19a-2aa0-"
+          }
+        }
+      },
+      {
+        "eventId": 108,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "4356-bc2d-4"
+          }
+        }
+      },
+      {
+        "eventId": 109,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "feb203165ab\",\n  \"rim"
+          }
+        }
+      },
+      {
+        "eventId": 110,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "_vertices\": 11,\n  \"l"
+          }
+        }
+      },
+      {
+        "eventId": 111,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "ucas_number\": 199,\n  \""
+          }
+        }
+      },
+      {
+        "eventId": 112,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "sandpile_group_order\": 39601"
+          }
+        }
+      },
+      {
+        "eventId": 113,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": ",\n  \"retrieval_s"
+          }
+        }
+      },
+      {
+        "eventId": 114,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "eal\": \"358c38e1"
+          }
+        }
+      },
+      {
+        "eventId": 115,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "-9be1-4af"
+          }
+        }
+      },
+      {
+        "eventId": 116,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "c-9cbe-832ad407"
+          }
+        }
+      },
+      {
+        "eventId": 117,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "e9f6\",\n  \"citation"
+          }
+        }
+      },
+      {
+        "eventId": 118,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "\": \"[2] (wheel-graph"
+          }
+        }
+      },
+      {
+        "eventId": 119,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "s.txt) Local research profile wheel"
+          }
+        }
+      },
+      {
+        "eventId": 120,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "-profile-3017d19a-"
+          }
+        }
+      },
+      {
+        "eventId": 121,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "2aa0-4356-b"
+          }
+        }
+      },
+      {
+        "eventId": 122,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "delta": {
+            "text": "c"
+          }
+        }
+      },
+      {
+        "eventId": 123,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "patch": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 124,
+        "eventName": "agui.done",
+        "data": {
+          "kind": "done",
+          "request_id": "95283a04-eaf6-4d26-9155-2514596b0874",
+          "usage": {
+            "input_tokens": 20887,
+            "output_tokens": 512,
+            "total_tokens": 21399,
+            "cost_usd_estimate": null,
+            "model": "MiniMax-M3"
+          }
+        }
+      }
+    ]
+  },
+  "scenario_status": "FAILED"
+}

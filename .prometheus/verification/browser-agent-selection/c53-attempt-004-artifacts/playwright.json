@@ -1,0 +1,213 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "scripts/behaviors/browser-agent-selection.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser-agent-selection.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-004-artifacts/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 900000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-004-artifacts/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-004-artifacts/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/browser-agent-selection.feature.spec.js",
+      "file": "features/browser-agent-selection.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "The browser shows orchestrator agent selection before the answer",
+          "file": "features/browser-agent-selection.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A writing task and then a math task show each selected specialist first",
+              "ok": false,
+              "tags": [
+                "ui",
+                "orchestrator",
+                "routing"
+              ],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 328707,
+                      "error": {
+                        "message": "AssertionError: math_turn run failed\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m [\n\u001b[32m+\u001b[39m   {\n\u001b[32m+\u001b[39m     code: '',\n\u001b[32m+\u001b[39m     eventId: '15:8',\n\u001b[32m+\u001b[39m     message: \"AgentNode 'selected-agent' failed: Tool lease or budget reservation expired before claim\",\n\u001b[32m+\u001b[39m     profile: 'uar.agui/1',\n\u001b[32m+\u001b[39m     runId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     sequence: 240,\n\u001b[32m+\u001b[39m     threadId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     type: 'RUN_ERROR'\n\u001b[32m+\u001b[39m   }\n\u001b[32m+\u001b[39m ]\n\u001b[31m-\u001b[39m []\n",
+                        "stack": "AssertionError: math_turn run failed\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m [\n\u001b[32m+\u001b[39m   {\n\u001b[32m+\u001b[39m     code: '',\n\u001b[32m+\u001b[39m     eventId: '15:8',\n\u001b[32m+\u001b[39m     message: \"AgentNode 'selected-agent' failed: Tool lease or budget reservation expired before claim\",\n\u001b[32m+\u001b[39m     profile: 'uar.agui/1',\n\u001b[32m+\u001b[39m     runId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     sequence: 240,\n\u001b[32m+\u001b[39m     threadId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     type: 'RUN_ERROR'\n\u001b[32m+\u001b[39m   }\n\u001b[32m+\u001b[39m ]\n\u001b[31m-\u001b[39m []\n\n    at sendTurn (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:172:10)\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:282:12)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated/features/browser-agent-selection.feature.spec.js:10:5",
+                        "location": {
+                          "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs",
+                          "column": 10,
+                          "line": 172
+                        },
+                        "snippet": "   at ../../scripts/behaviors/browser/browser-agent-selection.steps.mjs:172\n\n  170 |     stream_selection_index: selections.length ? events.indexOf(selections[0]) : -1,\n  171 |     stream_first_text_index: events.findIndex(e => e.type === 'TEXT_MESSAGE_CONTENT') });\n> 172 |   assert.deepEqual(errors, [], `${label} run failed`);\n      |          ^\n  173 |   assert.equal(starts.length, 1, `${label}: exactly one run`);\n  174 |   assert.equal(finishes.length, 1, `${label}: exactly one terminal event`);\n  175 |   assert.equal(starts[0].runId, finishes[0].runId);"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs",
+                            "column": 10,
+                            "line": 172
+                          },
+                          "message": "AssertionError: math_turn run failed\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m [\n\u001b[32m+\u001b[39m   {\n\u001b[32m+\u001b[39m     code: '',\n\u001b[32m+\u001b[39m     eventId: '15:8',\n\u001b[32m+\u001b[39m     message: \"AgentNode 'selected-agent' failed: Tool lease or budget reservation expired before claim\",\n\u001b[32m+\u001b[39m     profile: 'uar.agui/1',\n\u001b[32m+\u001b[39m     runId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     sequence: 240,\n\u001b[32m+\u001b[39m     threadId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     type: 'RUN_ERROR'\n\u001b[32m+\u001b[39m   }\n\u001b[32m+\u001b[39m ]\n\u001b[31m-\u001b[39m []\n\n\n   at ../../scripts/behaviors/browser/browser-agent-selection.steps.mjs:172\n\n  170 |     stream_selection_index: selections.length ? events.indexOf(selections[0]) : -1,\n  171 |     stream_first_text_index: events.findIndex(e => e.type === 'TEXT_MESSAGE_CONTENT') });\n> 172 |   assert.deepEqual(errors, [], `${label} run failed`);\n      |          ^\n  173 |   assert.equal(starts.length, 1, `${label}: exactly one run`);\n  174 |   assert.equal(finishes.length, 1, `${label}: exactly one terminal event`);\n  175 |   assert.equal(starts[0].runId, finishes[0].runId);\n    at sendTurn (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:172:10)\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:282:12)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated/features/browser-agent-selection.feature.spec.js:10:5"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "EVIDENCE /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/75fa37fb-877d-4f0e-8a9b-a2006997986e.json status=failed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the saved math and writing specialists and an orchestrator conversation in the browser",
+                          "duration": 2318
+                        },
+                        {
+                          "title": "When I send a writing task in that conversation through the browser",
+                          "duration": 17773
+                        },
+                        {
+                          "title": "Then the browser shows the writing specialist selection before its specialist answer",
+                          "duration": 1577
+                        },
+                        {
+                          "title": "When I send a math task in the same conversation through the browser",
+                          "duration": 302868,
+                          "error": {
+                            "message": "AssertionError: math_turn run failed\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m [\n\u001b[32m+\u001b[39m   {\n\u001b[32m+\u001b[39m     code: '',\n\u001b[32m+\u001b[39m     eventId: '15:8',\n\u001b[32m+\u001b[39m     message: \"AgentNode 'selected-agent' failed: Tool lease or budget reservation expired before claim\",\n\u001b[32m+\u001b[39m     profile: 'uar.agui/1',\n\u001b[32m+\u001b[39m     runId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     sequence: 240,\n\u001b[32m+\u001b[39m     threadId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     type: 'RUN_ERROR'\n\u001b[32m+\u001b[39m   }\n\u001b[32m+\u001b[39m ]\n\u001b[31m-\u001b[39m []\n",
+                            "stack": "AssertionError: math_turn run failed\n\u001b[32m+ actual\u001b[39m \u001b[31m- expected\u001b[39m\n\n\u001b[32m+\u001b[39m [\n\u001b[32m+\u001b[39m   {\n\u001b[32m+\u001b[39m     code: '',\n\u001b[32m+\u001b[39m     eventId: '15:8',\n\u001b[32m+\u001b[39m     message: \"AgentNode 'selected-agent' failed: Tool lease or budget reservation expired before claim\",\n\u001b[32m+\u001b[39m     profile: 'uar.agui/1',\n\u001b[32m+\u001b[39m     runId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     sequence: 240,\n\u001b[32m+\u001b[39m     threadId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n\u001b[32m+\u001b[39m     type: 'RUN_ERROR'\n\u001b[32m+\u001b[39m   }\n\u001b[32m+\u001b[39m ]\n\u001b[31m-\u001b[39m []\n\n    at sendTurn (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:172:10)\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:282:12)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated/features/browser-agent-selection.feature.spec.js:10:5",
+                            "location": {
+                              "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs",
+                              "column": 10,
+                              "line": 172
+                            },
+                            "snippet": "   at ../../scripts/behaviors/browser/browser-agent-selection.steps.mjs:172\n\n  170 |     stream_selection_index: selections.length ? events.indexOf(selections[0]) : -1,\n  171 |     stream_first_text_index: events.findIndex(e => e.type === 'TEXT_MESSAGE_CONTENT') });\n> 172 |   assert.deepEqual(errors, [], `${label} run failed`);\n      |          ^\n  173 |   assert.equal(starts.length, 1, `${label}: exactly one run`);\n  174 |   assert.equal(finishes.length, 1, `${label}: exactly one terminal event`);\n  175 |   assert.equal(starts[0].runId, finishes[0].runId);"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-10-27T21:31:19.261Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-004-artifacts/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-004-artifacts/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-004-artifacts/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs",
+                        "column": 10,
+                        "line": 172
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "9435d2e72f8e6704d80d-5de06e8077d2a281e00c",
+              "file": "features/browser-agent-selection.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-27T21:31:18.642Z",
+    "duration": 333725.12,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

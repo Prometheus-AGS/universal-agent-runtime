@@ -1,0 +1,206 @@
+{
+  "scenario": "C33-REST-MODEL-RESTART-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "credentials_in_requests": false,
+  "previous_scenarios_rerun": false,
+  "request_model_override": false,
+  "binding_a": {
+    "provider": "liter",
+    "model": "MiniMax-M3"
+  },
+  "binding_b": {
+    "provider": "liter",
+    "model": "k3"
+  },
+  "output_limit": 1024,
+  "requested_output": 4096,
+  "model_dispatches": 0,
+  "runs": {},
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/providers/liter",
+      "status": 200,
+      "response": "{\"id\":\"liter\",\"display_name\":\"Configured Liter gateway\",\"base_url\":\"http://127.0.0.1:4000/v1\",\"protocol\":\"chat\",\"default_model\":\"MiniMax-M3\",\"models\":[{\"id\":\"MiniMax-M3\",\"pricing_identity\":{\"provider_id\":\"minimax\",\"model_id\":\"MiniMax-M3\"},\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":null,\"context_window\":1048576,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":false,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":64000,\"enabled\":true},{\"id\":\"k3\",\"pricing_identity\":{\"provider_id\":\"kimi-code-plan-global\",\"model_id\":\"k3\"},\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":\"Kimi K3 (Kimi Code plan)\",\"context_window\":262144,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":true,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":32768,\"enabled\":true},{\"id\":\"glm-5.3\",\"pricing_identity\":{\"provider_id\":\"zai-coding-plan\",\"model_id\":\"glm-5.3\"},\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":\"GLM-5.3 (Z.ai Coding plan)\",\"context_window\":200000,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":true,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":32768,\"enabled\":true},{\"id\":\"mimo-v2.5-pro\",\"pricing_identity\":{\"provider_id\":\"openrouter\",\"model_id\":\"xiaomi/mimo-v2.5-pro\"},\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":\"MiMo V2.5 Pro (OpenRouter)\",\"context_window\":262144,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":true,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":32768,\"enabled\":true},{\"id\":\"qwen3.8-max\",\"pricing_identity\":{\"provider_id\":\"alibaba\",\"model_id\":\"qwen3.8-max\"},\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":\"Qwen3.8 Max (Model Studio Singapore)\",\"context_window\":262144,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":true,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":32768,\"enabled\":false}],\"enabled\":true,\"credential_configured\":true,\"model_verifications\":{\"MiniMax-M3\":{\"verified_at\":\"2026-10-27T10:56:03.804332Z\",\"configuration_digest\":\"83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a\"},\"glm-5.3\":{\"verified_at\":\"2026-10-27T10:56:06.283069Z\",\"configuration_digest\":\"83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a\"},\"k3\":{\"verified_at\":\"2026-10-27T10:56:18.047146Z\",\"configuration_digest\":\"83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a\"},\"mimo-v2.5-pro\":{\"verified_at\":\"2026-10-27T10:56:15.477516Z\",\"configuration_digest\":\"83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a\"}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.default_provider",
+      "status": 200,
+      "response": "{\"id\":\"9cb10dbf-1bf2-4ec3-8112-9928435cecf1\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Default LLM Provider ID\",\"key\":\"llm.default_provider\",\"data\":\"liter\",\"saved\":\"liter\",\"effective\":\"liter\",\"revision\":\"2026-10-26T06:32:43.369363000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369363Z\",\"updated_at\":null,\"source\":\"Default\",\"is_drift\":false}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 21601
+  },
+  "original_provider": {
+    "id": "liter",
+    "display_name": "Configured Liter gateway",
+    "base_url": "http://127.0.0.1:4000/v1",
+    "protocol": "chat",
+    "default_model": "MiniMax-M3",
+    "models": [
+      {
+        "id": "MiniMax-M3",
+        "pricing_identity": {
+          "provider_id": "minimax",
+          "model_id": "MiniMax-M3"
+        },
+        "execution_profile": {
+          "profile": {
+            "id": "uar.openai-compatible-chat.settings-v1",
+            "revision": 1
+          },
+          "settingsRevision": 1,
+          "reasoning": {
+            "mode": "off"
+          }
+        },
+        "display_name": null,
+        "context_window": 1048576,
+        "supports_vision": false,
+        "supports_tools": true,
+        "supports_reasoning": false,
+        "supports_structured_output": false,
+        "supports_streaming": true,
+        "max_output_tokens": 64000,
+        "enabled": true
+      },
+      {
+        "id": "k3",
+        "pricing_identity": {
+          "provider_id": "kimi-code-plan-global",
+          "model_id": "k3"
+        },
+        "execution_profile": {
+          "profile": {
+            "id": "uar.openai-compatible-chat.settings-v1",
+            "revision": 1
+          },
+          "settingsRevision": 1,
+          "reasoning": {
+            "mode": "off"
+          }
+        },
+        "display_name": "Kimi K3 (Kimi Code plan)",
+        "context_window": 262144,
+        "supports_vision": false,
+        "supports_tools": true,
+        "supports_reasoning": true,
+        "supports_structured_output": false,
+        "supports_streaming": true,
+        "max_output_tokens": 32768,
+        "enabled": true
+      },
+      {
+        "id": "glm-5.3",
+        "pricing_identity": {
+          "provider_id": "zai-coding-plan",
+          "model_id": "glm-5.3"
+        },
+        "execution_profile": {
+          "profile": {
+            "id": "uar.openai-compatible-chat.settings-v1",
+            "revision": 1
+          },
+          "settingsRevision": 1,
+          "reasoning": {
+            "mode": "off"
+          }
+        },
+        "display_name": "GLM-5.3 (Z.ai Coding plan)",
+        "context_window": 200000,
+        "supports_vision": false,
+        "supports_tools": true,
+        "supports_reasoning": true,
+        "supports_structured_output": false,
+        "supports_streaming": true,
+        "max_output_tokens": 32768,
+        "enabled": true
+      },
+      {
+        "id": "mimo-v2.5-pro",
+        "pricing_identity": {
+          "provider_id": "openrouter",
+          "model_id": "xiaomi/mimo-v2.5-pro"
+        },
+        "execution_profile": {
+          "profile": {
+            "id": "uar.openai-compatible-chat.settings-v1",
+            "revision": 1
+          },
+          "settingsRevision": 1,
+          "reasoning": {
+            "mode": "off"
+          }
+        },
+        "display_name": "MiMo V2.5 Pro (OpenRouter)",
+        "context_window": 262144,
+        "supports_vision": false,
+        "supports_tools": true,
+        "supports_reasoning": true,
+        "supports_structured_output": false,
+        "supports_streaming": true,
+        "max_output_tokens": 32768,
+        "enabled": true
+      },
+      {
+        "id": "qwen3.8-max",
+        "pricing_identity": {
+          "provider_id": "alibaba",
+          "model_id": "qwen3.8-max"
+        },
+        "execution_profile": {
+          "profile": {
+            "id": "uar.openai-compatible-chat.settings-v1",
+            "revision": 1
+          },
+          "settingsRevision": 1,
+          "reasoning": {
+            "mode": "off"
+          }
+        },
+        "display_name": "Qwen3.8 Max (Model Studio Singapore)",
+        "context_window": 262144,
+        "supports_vision": false,
+        "supports_tools": true,
+        "supports_reasoning": true,
+        "supports_structured_output": false,
+        "supports_streaming": true,
+        "max_output_tokens": 32768,
+        "enabled": false
+      }
+    ],
+    "enabled": true
+  },
+  "originally_verified": [
+    "MiniMax-M3",
+    "glm-5.3",
+    "k3",
+    "mimo-v2.5-pro"
+  ],
+  "original_default_setting": {
+    "id": "9cb10dbf-1bf2-4ec3-8112-9928435cecf1",
+    "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+    "name": "Default LLM Provider ID",
+    "key": "llm.default_provider",
+    "data": "liter",
+    "saved": "liter",
+    "effective": "liter",
+    "revision": "2026-10-26T06:32:43.369363000Z",
+    "apply": "next_turn",
+    "application_status": "effective",
+    "parent_id": null,
+    "created_at": "2026-10-26T06:32:43.369363Z",
+    "updated_at": null,
+    "source": "Default",
+    "is_drift": false
+  },
+  "marker": "C33-77AAB6FB",
+  "default_session": "944ccfa5-f55b-41b6-90fd-7cd189b0d80e",
+  "override_session": "0c9f89c0-fd9c-4e44-99aa-d5256c5e4f60"
+}

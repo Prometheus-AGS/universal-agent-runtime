@@ -1,0 +1,146 @@
+{
+  "scenario": "C40-SKILL-RELOAD-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "reloads": {
+    "initial": {
+      "response_keys": [
+        "count",
+        "skills"
+      ],
+      "count": 422
+    },
+    "cleanup": {
+      "response_keys": [
+        "count",
+        "skills"
+      ],
+      "count": 420
+    }
+  },
+  "requests": {},
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-skill-reload-5c6a8ef4",
+        "metadata": {
+          "title": "Disposable reload assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer briefly. Follow any activated skill instructions exactly.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-skill-reload-5c6a8ef4\",\"metadata\":{\"title\":\"Disposable reload assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer briefly. Follow any activated skill instructions exactly.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:c55e317d6bf17f3f71722d54ac6ae7aef1a3f859b116ab457f1f1a2d1daef9e4\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-skill-reload-5c6a8ef4\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills/refresh",
+      "status": 200,
+      "response": "{\"count\":422,\"skills\":[{\"skill_id\":\"c40-beta-5c6a8ef4\",\"artifact_digest\":\"sha256:0e5a9e0a5286b55bb3f5b0943d044e2ecf66dda0858f6a79a09660222a99d1a9\",\"title\":\"c40-beta-5c6a8ef4\",\"description\":\"Nested decoy skill.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"filesystem-skills-0\",\"triggers\":{\"keywords\":[\"zz-unmatched-c40-beta-5c6a8ef4\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Nested decoy body.\",\"execution_config\":{}},{\"skill_id\":\"c40-alpha-5c6a8ef4\",\"artifact_digest\":\"sha256:d285f3df58860cc829aa0cfeb3605cd2b2bb953da8a5988e3bbbf0f9b6fcbfc4\",\"title\":\"c40-alpha-5c6a8ef4\",\"description\":\"Private crate tariff rule.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"filesystem-skills-0\",\"triggers\":{\"keywords\":[\"zz-unmatched-c40-alpha-5c6a8ef4\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Crate tariff rule (private): tariff = crates x 12. When asked for a crate tariff, reply with only the resulting number.\",\"execution_config\":{}},{\"skill_id\":\"pmpo-elicit\",\"artifact_digest\":\"sha256:4397fd3e1d03feac6d6a4380a36b3e52bd3571f56a203b05c4b28b0e7204475f\",\"title\":\"pmpo-elicit\",\"description\":\"Ask-or-research primitive that resolves a missing fact mid-lifecycle and records it with provenance instead of guessing. Use when a stage is blocked on unknown information, when the user says \\\"I don't know, find out\\\", or when a decision needs a fact nobody has supplied. Do NOT use to run an improvement loop (see iterative-evolver) or to define standing automation (see pmpo-outer-loop).\\n\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"filesystem-skills-1\",\"triggers\":{\"keywords\":[],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"# /pmpo-elicit\\n\\nResolve a missing piece of information the way the user prefers: answer it,\\npoint to where the answer lives, or have it researched — never silently\\nassumed.\\n\\n## When to use\\n\\nAny KBD/PMPO stage that hits an unknown it cannot responsibly default. Replaces\\ntwo bad habits: asking the user everything upfront, and silently marking an\\nunanswered question \\\"implicit.\\\" See `references/integration-contract.md` for the\\ncaller protocol and consumers.\\n\\n## The four option classes (always offered, in this order)\\n\\n1. **Direct answers** — 2–4 concrete options inferred from context (use\\n   `AskUserQuestion`; multi-select when the choices are not exclusive).\\n2. **\\\"Here's the source\\\"** — the user names a URL / file / document / person;\\n   this skill fetches and extracts the answer (firecrawl / Read), recording\\n   `provenance: source` and the `source_ref`.\\n3. **\\\"Research it for me\\\"** — ALWAYS present. Runs a bounded research loop seeded\\n   by the request `hints[]`, returns answer + confidence + evidence\\n   (`provenance: research`). Budget: `max_sources: 6`, `max_minutes: 10`; on a\\n   cap, return partial evidence at low confidence rather than spin.\\n4. **\\\"Decide for me (implicit)\\\"** — records the chosen default + rationale\\n   (`provenance: impli"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills",
+      "status": 409,
+      "response": "{\"error\":\"skill_selection_storage_missing; partial outcome possible; read to reconcile\",\"outcome\":\"partial_possible\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-skill-reload-5c6a8ef4",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills/refresh",
+      "status": 200,
+      "response": "{\"count\":420,\"skills\":[{\"skill_id\":\"pmpo-elicit\",\"artifact_digest\":\"sha256:4397fd3e1d03feac6d6a4380a36b3e52bd3571f56a203b05c4b28b0e7204475f\",\"title\":\"pmpo-elicit\",\"description\":\"Ask-or-research primitive that resolves a missing fact mid-lifecycle and records it with provenance instead of guessing. Use when a stage is blocked on unknown information, when the user says \\\"I don't know, find out\\\", or when a decision needs a fact nobody has supplied. Do NOT use to run an improvement loop (see iterative-evolver) or to define standing automation (see pmpo-outer-loop).\\n\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"filesystem-skills-1\",\"triggers\":{\"keywords\":[],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"# /pmpo-elicit\\n\\nResolve a missing piece of information the way the user prefers: answer it,\\npoint to where the answer lives, or have it researched — never silently\\nassumed.\\n\\n## When to use\\n\\nAny KBD/PMPO stage that hits an unknown it cannot responsibly default. Replaces\\ntwo bad habits: asking the user everything upfront, and silently marking an\\nunanswered question \\\"implicit.\\\" See `references/integration-contract.md` for the\\ncaller protocol and consumers.\\n\\n## The four option classes (always offered, in this order)\\n\\n1. **Direct answers** — 2–4 concrete options inferred from context (use\\n   `AskUserQuestion`; multi-select when the choices are not exclusive).\\n2. **\\\"Here's the source\\\"** — the user names a URL / file / document / person;\\n   this skill fetches and extracts the answer (firecrawl / Read), recording\\n   `provenance: source` and the `source_ref`.\\n3. **\\\"Research it for me\\\"** — ALWAYS present. Runs a bounded research loop seeded\\n   by the request `hints[]`, returns answer + confidence + evidence\\n   (`provenance: research`). Budget: `max_sources: 6`, `max_minutes: 10`; on a\\n   cap, return partial evidence at low confidence rather than spin.\\n4. **\\\"Decide for me (implicit)\\\"** — records the chosen default + rationale\\n   (`provenance: implicit`) so the implicit decision is explicit and audited.\\n\\n## Modes\\n\\n- **Inline-fallback** (current): option 3 runs in-session under the same budget.\\n- **Child-isolated** (arrives in the child-loops phase): option 3 spawns a\\n  read-only scoped child loop returning `result.json`. Callers see the identical\\n  contract; only isolation differs.\\n\\n## Platform Mode\\n\\nOn **Claude Code**, the `AskUserQuestion` built-in tool presents options synchronously —\\nno checkpoint file is needed. Result is available immediately.\\n\\nOn **all other platforms** (Codex, OpenCode, Kimi, Zed, Cursor, Windsurf), elicitation\\nuses the file-based async contract:\\n\\n1. The calling stage invokes `scripts/pmpo-elicit-checkpoint.sh <elicit-dir> \\\"<question>\\\" <criticality> <caller> [hints...]`.\\n2. The script writes `request.json`, `checkpoint.json`, and `request-prompt.txt` under\\n   `<elicit-dir>/`, then exits 2 (BLOCKED — loop must pause).\\n3. The operator reads `request-prompt."
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills",
+      "status": 200,
+      "response": "[{\"skill_id\":\"actor-model\",\"artifact_digest\":\"sha256:0965d46231f18f789c15a9bbd0d966325b54bc8b650a874c89e627dc64799acd\",\"title\":\"actor-model\",\"description\":\"Tokio-native actor model pattern for Prometheus AGS projects. Implements actors as tokio tasks communicating via mpsc channels with a typed message enum, enabling safe concurrent state management without shared locks. Used in UAR session management, pk-librarian event broadcasting, and parking-lot scheduler design. Use when a component needs to own state exclusively while serving concurrent callers.\\n\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"fs-skills\",\"triggers\":{\"keywords\":[],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"# Actor Model — Rust\\n\\n## Core Pattern\\n\\nAn actor is a tokio task that owns its state exclusively. External code communicates\\nwith the actor through typed messages over an `mpsc` channel. This eliminates the\\nneed for `Arc<Mutex<T>>` on complex stateful objects.\\n\\n```rust\\nuse tokio::sync::{mpsc, oneshot};\\n\\n// 1. Define the message enum — each variant carries its reply channel\\npub enum LibrarianMessage {\\n    Compile {\\n        raw: RawDoc,\\n        reply: oneshot::Sender<anyhow::Result<WikiEntry>>,\\n    },\\n    Lint {\\n        reply: oneshot::Sender<Vec<LintReport>>,\\n    },\\n    Focus {\\n        topic: String,\\n        reply: oneshot::Sender<String>,\\n    },\\n    Shutdown,\\n}\\n\\n// 2. Define the actor handle — the public API\\n#[derive(Clone)]\\npub struct LibrarianHandle {\\n    tx: mpsc::Sender<LibrarianMessage>,\\n}\\n\\nimpl LibrarianHandle {\\n    pub async fn compile(&self, raw: RawDoc) -> anyhow::Result<WikiEntry> {\\n        let (reply_tx, reply_rx) = oneshot::channel();\\n        self.tx\\n            .send(LibrarianMessage::Compile { raw, reply: reply_tx })\\n            .await\\n            .map_err(|_| anyhow::anyhow!(\\\"librarian actor shut down\\\"))?;\\n        reply_rx.await.map_err(|_| anyhow::anyhow!(\\\"librarian did not reply\\\"))?\\n    }\\n\\n    pub async fn shutdown(&self) {\\n        let _ = self.tx.send(LibrarianMessage::Shutdown).await;\\n    }\\n}\\n```\\n\\n## Actor Task\\n\\n```rust\\n// 3. Define the actor struct — owns its private state\\nstruct LibrarianActor {\\n    store: MarkdownStore,\\n    model_router: ModelRouter,\\n    event_tx: tokio::sync::broadcast::Sender<LibrarianEvent>,\\n}\\n\\nimpl LibrarianActor {\\n    async fn run(mut self, mut rx: mpsc::Receiver<LibrarianMessage>) {\\n        while let Some(msg) = rx.recv().await {\\n            match msg {\\n                LibrarianMessage::Compile { raw, reply } => {\\n                    let result = self.compile_inner(raw).await;\\n                    let _ = reply.send(result); // ignore if caller dropped\\n                }\\n                LibrarianMessage::Lint { reply } => {\\n                    let reports = self.lint_inner().await;\\n                    let _ = reply.send(reports);\\n                }\\n                LibrarianMessage::Focus { topic, reply } => {\\n                 "
+    }
+  ],
+  "pack_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/skills/c40-pack-5c6a8ef4",
+  "alpha_id": "c40-alpha-5c6a8ef4",
+  "beta_id": "c40-beta-5c6a8ef4",
+  "first_factor": 12,
+  "second_factor": 20,
+  "pack_ids_after_cleanup": [],
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 6516
+}

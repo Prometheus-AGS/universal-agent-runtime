@@ -1,0 +1,202 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "rest-model-configuration-is-effective-and-durable;a-saved-default-model,-output-limit-and-session-override-survive-a-uar-restart",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A saved default model, output limit and session override survive a UAR restart",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 113931462
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the original provider configuration and two verified model bindings are recorded",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:142"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3840909080
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I save model B as the default with a smaller output limit through the REST API",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:183"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 36281638
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I save model A as the model override for one fresh session",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:211"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 46596685
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "a stale default-provider revision and an invalid session model are refused without changing saved state",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:222"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13276860737
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "prompts without a requested model run on B for the default session and A for the override session",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:235"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26252944718
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "model B stops at its saved output limit although the request asks for more",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:239"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22779454897
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "UAR restarts with the existing store",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:244"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 41286231
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the saved default, output limit and session override are unchanged after restart",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:253"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11500570811
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "prompts without a requested model again run on B for the default session and A for the override session",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:263"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 27978756218
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "model B again stops at its saved output limit although the request asks for more",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-model-restart.steps.mjs:267"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18815915731
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9yZXN0LW1vZGVsLXJlc3RhcnQvMjQ2Yzc2NmMtYTU1OC00MDQ4LWExMTktNzFmNTIxYWNkY2MyLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          },
+          {
+            "name": "@models",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "rest-model-configuration-is-effective-and-durable",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "REST model configuration is effective and durable",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@settings",
+        "line": 1
+      },
+      {
+        "name": "@models",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/rest-model-restart.feature"
+  }
+]

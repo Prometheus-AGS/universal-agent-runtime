@@ -1,0 +1,14 @@
+{
+  "scenario": "C48",
+  "status": "BLOCKED",
+  "platform": "Mac",
+  "attempt": 1,
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/embedding-same-dimension.cucumber.mjs",
+  "observed_output": "1 scenario (1 failed); 6 steps (4 passed, 1 skipped, 1 failed): Regeneration deadline exceeded",
+  "evidence": ".prometheus/verification/embedding-same-dimension/381778eb-eef3-4007-9b5e-09ba7854263e.json",
+  "observed": "Same-width switch from fastembed/bge-small-en-v1.5 (384) to cohere/embed-english-light-v3.0 (384) went live; the old KB was refused with embedding_space_mismatch despite equal dimension (the first half of the contract). Regeneration stayed running with last_error 'embedding request failed … http://127.0.0.1:1/v1/embed'.",
+  "blocked_reason": "The owned runtime's boot config sets embedding.base_url to http://127.0.0.1:1/v1 (model 'not-exercised'), a deliberate blackhole for remote embedding backends; it is config-file only (no REST setting). No genuine second same-width embedding binding is provisioned outside the test (prerequisite E), and only bge-small-en-v1.5 is cached locally. Not changed by the test.",
+  "cleanup": "KB deleted; embedding settings restored to fastembed/bge-small-en-v1.5 (serving); cleanup_errors []",
+  "unblock": "Operator provisions a genuine second embedding binding (e.g. remove the blackhole for Cohere, or cache a second local 384-dim model), then rerun C48 once.",
+  "spend": "No Cohere request left the host (blackholed); no paid embedding spend."
+}

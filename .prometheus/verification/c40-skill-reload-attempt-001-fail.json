@@ -1,0 +1,17 @@
+{
+  "scenario": "C40",
+  "status": "FAIL",
+  "failure_class": "product defect (skill reload does not persist newly discovered filesystem skills)",
+  "platform": "Mac",
+  "attempt": 1,
+  "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/skill-reload.cucumber.mjs",
+  "exit_code": 1,
+  "observed_output": "1 scenario (1 failed); 7 steps (3 passed, 3 skipped, 1 failed)",
+  "evidence": ".prometheus/verification/skill-reload/5c6a8ef4-c766-4e52-8c0a-bf5217c1b743.json",
+  "failure": "Owned pack (top-level c40-alpha, nested group/c40-beta, notes/README.md, stray.md) under the owned runtime's relative skills root. POST /api/uar/skills/refresh returned 200 with 422 skills including the new ones. The next GET /api/uar/skills returned 409 'skill_selection_storage_missing; partial outcome possible; read to reconcile'. After removing the pack and refreshing (420 skills), GET returned 200 again.",
+  "root_cause_from_source": "SkillService::refresh (src/uar/runtime/skills/service.rs:542-563) re-registers provider results with SkillRegistry::register_all_loaded (src/uar/runtime/skills/registry.rs:275), which inserts in memory only. Startup persists changed skills through register_checked_batch_without_embeddings (service.rs:517 → registry.rs:114-126). SkillRegistry::reconcile_selection (registry.rs:130-153) then fails with StorageMissing whenever a registered skill has no durable record, so listing and every selection operation fail after a reload discovers a new skill.",
+  "user_impact": "Adding a skill to a skills directory and pressing reload makes the whole skill listing fail until the new skill is removed or UAR restarts.",
+  "cleanup": "pack removed, skills refreshed (listing 200 again), agent deleted; cleanup_errors []",
+  "next": "Stopped for operator approval of a product fix (persist newly discovered skills during refresh, as startup does), build, owned restart, rerun C40 once."
+}

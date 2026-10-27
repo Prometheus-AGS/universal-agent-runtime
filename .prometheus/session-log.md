@@ -6738,3 +6738,170 @@ Operator authorized accumulated source, BDD scripts, evidence and Karpathy logs 
 ## Publication completed — 2026-10-26T20:46:17.089499-05:00
 
 Committed and pushed source/evidence checkpoint881c0806 on codex/mac-manual-behavior-progress. Created UAR PR439: https://github.com/Prometheus-AGS/universal-agent-runtime/pull/439. Required Liter source preserved as0d74c5665, pushed with dependency PR8: https://github.com/GQAdonis/liter-llm/pull/8. Normal hooks passed Actions deployment-only policy and commitlint; frontend lint/typecheck correctly skipped with no matching stagedsource. Retained generated-artifact exclusions listed in publication-current-exclusions.json. No prior functional scenario rerun. Final list has33manualpasses/30journeys and all97legacycases mapped with24partialoverlaps/73uncovered. Stop for next manual instruction.
+
+## KB-DISABLE-01 — observed PASS, 2026-10-27 America/Chicago
+
+Ran only `node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-disable.cucumber.mjs`. Attempt002 passed: 1 scenario, all5reported steps,23.876seconds,exit0. Attempt001's real model marker-copy error remains retained; source and assertions unchanged between attempts. No production defect inferred from that response.
+
+Enabled positive control used the exact source-only seal with matching KB/document/snippet/citation. PATCH changed only enabled:false; references remained identical and effective selection was none. Fresh-session negative answer correctly computed 488 while returning null private seal/citation, zero runtime retrieval citations and no private seal anywhere in response/events. No visible numbered citation could hide outside JSON. Original KB/document snapshots remained identical and direct search still retrieved the source. Disposable agent and KB cleanup succeeded; UAR PID21601 remains running, no restart/build/globalconfig change, no oldscenario rerun, no hostedembedding spend, no credentials in test.
+
+Files: new kb-disable Cucumber config/feature/step definitions; narrow OpenSpec scenario and README; updated behavior-status.md, macos-behavior-ledger.md and manual-runtime.json. Receipt `.prometheus/verification/kb-disable-01-macos-pass.json`; raw `.prometheus/verification/kb-disable/e7f58cbb-bd69-4c30-85d7-68376f17a902.json`. Independent code/JS source review completed; reviewer escape-display false positives retracted after decoded byte inspection. New guard rejecting visible citation markers traces to the concrete source-review false-PASS example of a citation outside JSON. No unrelated changes.
+
+Method: establish a live positive control within the new transition case, mutate one switch, preserve references and source availability, and use a fresh conversation to distinguish retrieval disablement from history recall. Claim remains one Mac example; existing-history forgetting, alternative stores and other platforms unverified.34behaviors/31journeys. No canonicalKBDtransition or publication thisturn. Stop after logs/status.
+
+## KB-REENABLE-01 — observed PASS, 2026-10-27 America/Chicago
+
+Only `node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-reenable.cucumber.mjs` ran. First attempt:1scenario passed,4reported steps passed,9.239seconds,exit0. No failure, retry, production repair, build or restart.
+
+Original KB reference persisted through enabled→disabled→enabled. Action PATCH sent only enabled:true; effective policy returned from none to selected using the retained ID. One fresh-session genuine answer recovered the exact document-only seal with original KB/document/snippet/citation marker and correct arithmetic 780. Original KB/document snapshots identical; direct retrieval still found the same source. No relink,reupload,regeneration,historyreplay,testcredentials or prior scenario rerun. Disposable agent/KB cleanup succeeded; UAR PID21601 remains running; local FastEmbed,zero hostedembedding spend.
+
+Files: new kb-reenable Cucumber config,feature,steps; narrow OpenSpec delta and README; behavior-status.md,macos-behavior-ledger.md,manual-runtime.json and this log updated. Receipt `.prometheus/verification/kb-reenable-01-macos-pass.json`; raw `.prometheus/verification/kb-reenable/adc307be-17dc-4c84-a676-a26aad5369b9.json`. Existing bounded timeout/ownership/cleanup checks retain the same fixture trust boundary; no new production guards or unrelated functionality.
+
+Plan/delivery delta:none. Method lesson: setup the disabled persisted state through REST without replaying the old disablement inference test; prove restoration with one fresh inference and unchanged resource identity. Scope remains one Mac/localembedding reference; otherstores/platforms and toggles acrossrestart unverified.35verifiedbehaviors/32journeys. Stop after log/status; no canonicalKBDtransition or publication.
+
+## Coverage audit reconciliation — 2026-10-27
+
+Audited all35manual labels and their saved evidence. Counts remain35bounded behaviors/32manual outcomes, now explicitly31direct workflows +1composite B03 persistence/query outcome.31all-passed formal reports (30Cucumber +1Playwright BDD) plus1direct prompt receipt;32authored feature files include the original persisted-agent.feature retained failure. No uncatalogued successful report found; all linked evidence exists. No execution rerun.
+
+Original mapping corrected24partial/73uncredited →28partial/69uncredited: nativechat agui_speccustom, shippedUIcustom, Surreal retainedknowledge adapter and none-strategy contextrestart. Existing rosterlisting/teamcreation/member assertions now explicit insideB04/B09, no labelinflation. B21 proves finalbudget fitting, not structuraltruncate_middle (changed=false,source=prepared12869,final4830). U04singledeletepath and U07wire-onlyscope corrected; U14newB33–B35 credited. Immutable receipts unchanged. Audit/index: coverage-audit-2026-10-27.md/.json and behavior-status.md. These supersede historical11/86 and24/73 snapshots, not their original receipts.
+
+## Engineer the forward BDD catalog — 2026-10-27
+
+Operator request: derive the useful validation scenarios from the successful manual process so coverage has a finite denominator. Active phase remains uar-verification-simplification. This is source inspection and scenario design, not execution or a canonical phase transition.
+
+Created `.prometheus/verification/bdd-validation-catalog.md`: 102 concrete scenario definitions, 32 retained Mac outcomes and 70 planned. Common workflows are 54 definitions with 22 remaining; additional strategies/resilience 28 and remaining public client/mode contracts 20 stay visible. Retain the actual 31 passing formal BDD reports plus one standalone prompt, C03 composite persistence/query evidence and all 35 bounded B labels. No passing scenario or raw receipt was rerun/rewritten. All 97 old IDs have a proposed retained/deduplicated/deferred mapping; historical 28 partial / 69 uncredited statuses remain.
+
+Method: existing passes are credited, then missing user effects are named as Given/When/Then with fixtures, evidence, failure and ownership. The two chat URLs mount the same production handler, so alias/default/custom multiplication is not required to prove every serializer. Real language SDKs and distinct serializers retain their own cases. The finite list is a proposed scope, not proof all designed features or source cohorts are validated. Defaults-only GUI, all per-strategy cold-boundary permutations, durable-write fault injection and exhaustive load/race/security/deployment coverage remain explicitly outside this finite baseline. No old fixture/signature/registry engine is reinstated.
+
+Source-only reviewers supplied bounded capability/interface inventories. The independent catalog critic found retention/maintenance fixture vagueness, underspecified skill-policy ID sets, and unbounded threshold/recovery loops. Revised C52 to the actual run-retention worker triggered by production activity with one owned pre-aged session; revised E03 to a real allowed 7-day policy shortening an externally provisioned 8-day-old record, not a fictitious clock/short TTL. Fixed inherit/all/auto/selected/none eligibility oracles and added per-scenario dispatch/operation/data/deadline ceilings. A source finding remains visible: durable memory controls use Surreal, so a PostgreSQL primary runtime is not proof of PostgreSQL memory-control parity. No product repair is made in this task.
+
+Keep future work one selected simple Node/Cucumber scenario at a time, actual configured inference for positive completion, credentials outside tests, owned state, immutable evidence, source/platform/backend limits and stop at PASS. Independent $10 Cohere / $10 OpenAI caps and all prior usage history remain. Mac first, then Linux, then applicable embedded iOS; Windows execution missing and Android deferred. Current catalog defines behavior counts, not an inflated platform/store cross-product. Any later platform/backend claim requires actual matching receipts.
+
+Final catalog review: all three initial MEDIUM findings closed, no required corrections; revised proposed design approved by the artifact-only critic. Planning D1–D3 marked complete in the scoped documentation track, not in the old generated implementation ledger. Deliver 102 proposed definitions / 32 retained historical Mac credits / 70 pending (22 common, 48 additional); no test/runtime/build/provider operation or publication. Stop for the operator's next selected scenario.
+
+## Immediate Claude Desktop handoff — 2026-10-27
+
+Operator requested immediate transfer. Durable handoff `.prometheus/handoffs/2026-10-27-c33-claude-desktop.md` records C33 NOT RUN, files not authored, no model/service/credential changes or restart, correct Qwen Singapore dashscope-intl clarification, existing runtime, exact source/API pointers and remaining methodology edit. Downloaded original HTML/CSS/logo persisted under docs/validation with hashes; revised HTML is still an identical source copy, not a completed update. C33 author hit a usage limit before writing; methodology worker interrupted. No new test or inference result is claimed. Preserve 35 labels /32 outcomes and proposed102/32credit/70pending counts. Stop Codex execution work; successor finishes only authorized model expansion, C33 and methodology/log updates.
+
+## C33 REST-MODEL-RESTART-01 (B36) — 2026-10-27T06:05:58-05:00 — Claude Desktop session
+
+Executor: a Claude Desktop (Claude Code) session continuing `.prometheus/handoffs/2026-10-27-c33-claude-desktop.md`. This is a separate record from the Codex transcript capture; `target/capture-manual-bdd-conversation.py` does not cover this session.
+
+Model choices, before C33: Liter service config gained `glm-5.3` (Z.ai coding endpoint, ZAI_API_KEY), `mimo-v2.5-pro` (OpenRouter, OPENROUTER_API_KEY) and `qwen3.8-max` (operator-specified Singapore dashscope-intl host, QWEN_TOKEN_PLAN_API_KEY); existing `k3` reused. Key variable names (not values) were added to the 0600 service secrets file. Private backups were taken first, `liter-llm config-check` passed, and only `ai.prometheus.liter-llm-api` was kickstarted. Probes answered 42 for GLM-5.3, MiMo and K3. **Qwen3.8 Max returned 401 "Incorrect API key" on the specified host, both directly and through Liter; no other host was tried.** UAR `liter` provider gained k3/glm-5.3/mimo-v2.5-pro (enabled, verified by `/test`) and qwen3.8-max (enabled=false) by keyless PUT. MiniMax-M3 stays the default. First MiMo id `xiaomi/mimo-v2.5-pro` failed UAR `/test` (502, Liter not found: UAR forwarded `mimo-v2.5-pro`); renamed to the bare id in both places, then verified. Record: [model choices](verification/model-choices/2026-10-27-model-choices.json).
+
+C33 authored as three files (feature, explicit config retry 0, steps), reusing `restart-owned-uar.mjs`. Source review before running found the streamed `final_provider_request` receipt carries `reserved_output_tokens=null` without a destination budget contract. The patched value lives only in internal run context and is not exposed by run inspection. The handoff's planned receipt assertion was replaced with a behavioral oracle: request 4096, require provider-observed output within 64 of the 1024 limit, and require the 1..1500 listing to stop short.
+
+Result: **first attempt PASS**, 1 scenario / 11 steps, 2m 4.7s. Before restart: default session → liter/k3, `C33-77AAB6FB 10364`; override session → liter/MiniMax-M3, `C33-77AAB6FB 9736`; the limit probe returned exactly 1024 output tokens, stopping at 174. Restart PID 21601 → 69961 with the same binary/config/store, and the saved provider/default setting/override were byte-identical. After restart: k3 `9401`, MiniMax `7712`, limit probe 1024 again. Accounting settled under the pricing identities kimi-code-plan-global/k3 and minimax/MiniMax-M3. Stale revision 409, invalid model 400, unchanged state. 12 model dispatches, at the catalog bound. Cleanup restored the original provider config and re-verified the four routes; the disposable agent, override policy and sessions were deleted; saved agents remain. UAR is left running at PID 69961. [Receipt](verification/c33-rest-model-restart-macos-pass.json).
+
+Limits: one provider, two models; Mac only; does not certify GLM/MiMo/Qwen features, team execution with always-reasoning GLM, or full legacy U20. Counts now 36 labels / 33 outcomes / 32 BDD reports + 1 prompt; catalog 33 credited / 69 remaining (common 21). No earlier scenario rerun; no tests/builds beyond this single authorized C33 command. Stop for operator direction.
+
+## Qwen Coding Plan probe — 2026-10-27T06:09:59-05:00 — Claude Desktop session
+
+At operator request, one tiny probe sent QWEN_TOKEN_PLAN_API_KEY (sk-sp- shape) to the documented international Coding Plan endpoint https://coding-intl.dashscope.aliyuncs.com/v1 for qwen3.8-max: **HTTP 401 invalid_api_key, "invalid access token or token expired"**. Combined with the earlier 401 on the Singapore dashscope-intl host, the key is not accepted on either international host. No route switch; UAR qwen3.8-max stays disabled; no other host tried. Needs a currently valid key from the operator. Record: .prometheus/verification/model-choices/2026-10-27-qwen-coding-plan-probe.json.
+
+## Qwen3.8 Max enabled via Token Plan host — 2026-10-27T06:15:31-05:00 — Claude Desktop session
+
+The operator pointed to their logged-in Alibaba Model Studio console. Its Token Plan page (ap-southeast-1, Pro Plan active) lists qwen3.8-max and gives the plan-exclusive base URL https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1. The configured QWEN_TOKEN_PLAN_API_KEY matches the console's masked key, compared by prefix/suffix without printing it. **Correction: the key was valid; both earlier 401s used the wrong host.** The "expired key" inference in the previous entry is superseded. Token Plan is a separate product from Coding Plan, with its own host. One direct probe and one probe through Liter both returned 200 with the answer 42. The Liter route was repointed and reloaded. In UAR, qwen3.8-max is enabled with pricing identity alibaba-token-plan/qwen3.8-max, and all five models were re-verified via /test. MiniMax-M3 remains the default. Record: .prometheus/verification/model-choices/2026-10-27-qwen-token-plan-enabled.json. No scenario rerun.
+
+## C34 LIVE-ROSTER-ROUTING-01 attempt 1 — FAIL (test script) — 2026-10-27T06:30:19-05:00 — Claude Desktop session
+
+The operator asked to continue validation as specified, so C34 was selected next per the catalog. Source review found no explicit no-match path: the registered-agent router must return one eligible ID, or it errors with graph_routing_selection_invalid without falling back. The operator chose to bind the unmatched-intent oracle to the actual behavior: route only within the current eligible roster or be refused with that error, with the absent no-match path recorded as a product gap. Attempt 1 passed registration, live-roster inclusion, intent selection of the new specialist before its answer, and the private signature. It then failed in the step helper: the deleted agent's 404 had a plain-text body, which the helper parsed as JSON. Post-removal routing was not reached. Cleanup completed. The first failure is kept; the fix and rerun await the operator's decision. Receipt: .prometheus/verification/c34-live-roster-routing-attempt-001-fail.json.
+
+## C34 attempt 2 — Cucumber PASS overridden to FAIL by evidence review — 2026-10-27T06:32:37-05:00 — Claude Desktop session
+
+The operator approved one helper fix and one rerun. Cucumber reported 13/13, but inspecting the raw stream showed the specialist's text was a single unclosed `<think>` block, cut off mid-sentence, with the signature only inside the reasoning. The oracle stripped only closed reasoning, so it accepted reasoning as the answer, which the catalog forbids. The run still reported success. Attempt 1 had closed reasoning and a genuine signed answer. Lesson: read the raw evidence behind a green run; strip or reject unclosed reasoning before matching answer text. The fresh post-removal task was refused with graph_routing_selection_invalid; the unmatched intent went to default-agent. No catalog credit. Stopped for the operator. Receipt: .prometheus/verification/c34-live-roster-routing-attempt-002-fail.json.
+
+## C34 attempt 3 — FAIL, product router refusal — 2026-10-27T06:44:59-05:00 — Claude Desktop session
+
+With the specialist eligible, the router refused the matching request with graph_routing_selection_invalid (log line 1569). Two product defects are now suspected: (1) RouterNode exact-matches raw classifier text without removing reasoning; (2) a routed child turn can end inside reasoning, with no answer, yet report success (attempt 2). Attempt 2's post-removal "refusal" is now suspect evidence, and so is the no-match binding that accepted it. The operator chose a narrow KBD child phase, plan only, stopping before implementation. Receipt: .prometheus/verification/c34-live-roster-routing-attempt-003-fail.json.
+
+## Child phase orchestrator-routing-reasoning-repair opened; plan revision 2 drafted — 2026-10-27T07:11:22-05:00 — Claude Desktop session
+
+The operator chose a narrow KBD child phase as a sibling of uar-verification-simplification under the top phase. The kbd-new-child script would have split it (files as a sibling, runtime record nested), so the canonical `prometheus kbd phase create/activate/transition` commands were used directly; the runtime is at revision 685 with the active path on the new child. The OpenSpec refresh upgraded the CLI to 1.15.0 and regenerated tool integrations. A read-only source assessment confirmed the mechanisms: the router exact-matches raw MessageDelta text, which carries MiniMax-M3's inline `<think>`; a child gets a 1,000-token default cap; finish reasons are unrecorded; a reasoning-only child output passes as success. An artifact-only critic REJECTED plan revision 1. The proposed finish-reason custom event would break the summarizer and skill classifier on every Liter call. The proposed classifier allowance was clamped to the run cap, so it had no effect. R1's trigger in C34 is unobserved: a 3.5s failure fits a formatted ID as well as reasoning. Revision 2 removes T3 and D1(b), adds D0 (observe the classifier reply shape, 3 calls) and D4 (light formatting normalization, still exact match), pins T4's output and error semantics, makes the gate commands exact, and sets the exit criterion to C34 PASS only. Plan only; stopped for operator review. Artifacts: .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/orchestrator-routing-reasoning-repair/{assessment.md,plan.md}, openspec/changes/fix-orchestrator-routing-reasoning (valid).
+
+## Routing repair: D0 run, T1-T7 implemented, stopped at inventory — 2026-10-27T07:20:26-05:00 — Claude Desktop session
+
+The operator approved plan revision 2 with D0(b), D2(a), D3(a), D4(b). D0: three non-streaming MiniMax-M3 router-prompt probes each returned exactly the expected ID, so the failure was not reproduced. In the UAR log, failed product classifications streamed 17-26 events versus 3-4 for successful ones, and no skills were active. The nature of the extra text is still unknown; T2's content-free diagnostics will reveal it. Implemented without any build or test: inline-reasoning splitter; router answer-part exact match with one-layer formatting normalization, graph_routing_classifier_incomplete and shape-only warn logs; delegated contribution limited to answer text, failing with delegated_answer_missing: reasoning_only; three integration tests; stricter C34 oracle; gotcha. The D0 script was kept out of the repository (it reads the gateway key; a repo copy was denied). The verification gate is CLOSED pending operator approval of the exact commands. Inventory: .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/orchestrator-routing-reasoning-repair/implementation-inventory.md.
+
+## 2026-10-27 09:53 — orchestrator-routing-reasoning-repair gate
+Build passed (`2ca5c057…`). Gate steps 2–3 (filtered unit and mock-LLM tests) were removed by the operator as contrary to the real-path evidence rule; step 2 had passed 20/20 after a test-only repair of two stale initializers, not counted. OpenSpec validate passed; owned restart passed (PID 24733). C34 attempt 4 FAILED honestly: routing selected the eligible specialist, the specialist produced reasoning only, and the run ended `delegated_answer_missing: reasoning_only`. Phase stays open; operator decides the remedy (D2(b) or other). Nothing committed.
+
+## 2026-10-27 — D2(b) plan drafted (plan only)
+Plan `children/orchestrator-routing-reasoning-repair/d2b/plan.md` revision 2: raise the default output allowance for local child turns from 1,000 to a named 8,192 in `manager.rs` `bounded_output`. Source trace: kernel.rs:593 leaves the cap None → manager.rs:6507-6512 falls back to RESPONSE_RESERVE_TOKENS. artifact-critic: ACCEPT WITH AMENDMENTS; all applied. Notable: the accounting reservation does not depend on the request cap (supersedes the parent plan's wording). A single C34 pass cannot prove cause, so a gate step confirms the applied allowance. The run API does not expose the budget receipt, so B5 proposes one content-free log line. Decisions B1–B5 await the operator. Nothing implemented, built or run.
+
+## 2026-10-27 — D2(b) gate: C34 PASS (B37)
+T8–T10 implemented (manager.rs +28/−1: 8,192 delegated child default, small-window clamp, content-free allowance log line; OpenSpec `raise-delegated-child-output-allowance`). Operator-approved gate, serial: build PASS (`b4e68525…`); validate PASS; owned restart PASS (PID 340); C34 PASS 13/13 in 1m 4.9s with raw evidence reviewed; log confirms the specialist ran with 8,192 (`delegated_default`). Catalog: 34 credited / 68 planned, 20 common remaining; status: 37 behavior labels. Limits: one pass; it does not prove the old cap would have failed this time. Open: handoff-out.md and returning the waypoint to `uar-verification-simplification` (plan exit step), awaiting the operator. Nothing committed.
+
+## 2026-10-27 — Phase boundary: orchestrator-routing-reasoning-repair closed
+Operator-instructed close. Wrote `reflection.md` (delta-first) and `handoff-out.md` in the child directory. KBD: `phase transition --id orchestrator-routing-reasoning-repair --status complete` (rev 686, exit 0); `phase activate --id uar-verification-simplification --ancestor uar-post-lifecycle-verification-readiness` (rev 687, exit 0). The waypoint is back on the manual BDD track, awaiting operator selection of the next scenario (C35 onward). Owned UAR PID 340 (binary `b4e68525…`) stays running. Nothing committed.
+
+## 2026-10-27 — Autonomous BDD throughput (operator standing instruction)
+Passed on Mac, each run once with raw evidence reviewed. Prior failed attempts were test-script or fixture issues; their receipts are kept.
+- C37 (B38) native file_write approve/deny.
+- C38 (B39) owned loopback MCP peer granted per run.
+- C39 (B40) memory lifecycle across restarts, on local embeddings.
+- C50 (B41) run cancellation.
+- C51 (B42) mid-stream provider fault via owned proxy.
+
+Fixtures added:
+- `scripts/behaviors/support/record-mcp-peer.mjs`
+- `scripts/behaviors/support/provider-fault-proxy.mjs`
+
+Learned constraints (owned runtime):
+- Cedar policies there deny unlisted tools, so scenarios add and remove a single-agent permit.
+- `mcp_shared_transports_enabled=false`, so MCP needs a per-run loopback grant.
+- Settings DELETE needs If-Match.
+- A provider endpoint change bumps execution-profile revisions; restore must carry them.
+- MiMo verification needs a 512-token cap.
+- Memory recall comes through memory tools; no prompt injection was observed.
+
+Catalog: 39 credited / 63 planned, 15 common remaining. No product code changed; nothing committed.
+
+## 2026-10-27 — Autonomous BDD throughput, continued
+Passed on Mac:
+- C40 (B44), after two approved SkillService::refresh fixes.
+- C47 (B45) KB source replacement.
+- C44 (B46) truncate-middle and C45 (B47) sliding window, in one feature.
+- C46 (B48) typed context_overflow before dispatch.
+- C42 (B49) skill scope narrowing and durable conversation disable.
+
+UAR binary is now `52360269…`; a product change in `skills/service.rs` is uncommitted. Catalog: 46 credited / 56 planned. Common remaining: C35, C36, C43, C48, C49, C52, C53, C54.
+
+Reusable patterns:
+- Native run API with seeded `history` and `skill_attachments`.
+- Keyless loopback disposable provider (no spend) for budget cases.
+- `credit.py` in the session scratchpad updates catalog/status/ledger counts; a new session must recreate it.
+
+## 2026-10-27 — Embeddings unblocked; C48 and C49 passed; ingestion conflict fix
+- **Embeddings:** unblocked through the existing host fixture `scripts/manual-host/embedding-config.mjs`. It provisions the real OpenAI endpoint per scenario and restores the original owned config (sha 8726e43a) afterwards.
+- **Passes:** C48 (B50) same-width embedding switch; C49 (B51) interrupted regeneration resumes honestly.
+- **Product fix (approved):** in `ingestion_records/surreal.rs`, retryable Surreal commit conflicts are retried with exponential jittered backoff (12 tries, 500 ms cap), and Retryable documents report Pending.
+- **Binary:** now b80d673b…, built from both uncommitted fixes (skills reload, ingestion).
+
+**Revisit due (rerun rule):** the ingestion change touches code these earlier KB scenarios depend on:
+- kb-disable, kb-reenable, kb-relink, kb-unlink, kb-unlink-one
+- knowledge-document-delete, knowledge-restart, knowledge-regeneration
+- linked-kb-delete, math-knowledge, two-kb-answer
+- C46, C47, C48
+
+Not yet rerun; awaiting operator decision.
+
+Catalog: 48 credited / 54 planned. Common remaining: C35, C36, C43, C52, C53, C54.
+
+## 2026-10-27 — KB revisit green; C43 partially verified
+- **KB revisit:** after the ingestion fix, all 13 revisited KB scenarios pass on binary b80d673b. Three needed the approved oracle tolerance (`scripts/behaviors/support/answer-oracle.mjs`: fenced JSON and citation prefix; exact values kept).
+- **C43, three attempts:**
+  - Reattachment is verified: the latest skill is kept whole, the oversized one is truncated, and the total equals the allowance.
+  - Genuine compaction is not triggered: a summary call completes but is not applied with the 1M window. Undiagnosed.
+- **Fixture lesson:** settings DELETE removes the row until restart, so restore with PUT instead.
+- **Status:** catalog 48 credited / 54 planned. Common remaining: C35, C36, C43, C52, C53, C54.
+
+## 2026-10-27 — C43, C36, C54 passed
+- **C43 (B52):** passed after the approved summarizer fix (inline reasoning excluded).
+- **C36 (B53) and C54 (B54):** authored and run by subagents; the lead reviewed the evidence.
+- **Catalog:** 51 credited / 51 planned. Common remaining: C35, C52, C53.
+- **Findings for the operator:**
+  - Team turns offer team_delegate/team_send/team_wait while governance denies them, and a failed team_wait fails the task.
+  - A cancelled team attempt's accounting call stays pending (reserved-unknown) after restart.
+  - Team instances, bindings and packages have no delete route.
+- **Uncommitted:** three product fixes, plus all new scenarios and fixtures.

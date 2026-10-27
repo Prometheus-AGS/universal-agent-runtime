@@ -1,0 +1,27 @@
+{
+  "scenario": "C42",
+  "label": "B49",
+  "behavior": "Skill scope and lower-scope policy cannot widen access",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 3,
+  "prior_attempts": "1 FAIL test design (none check reused a history that revealed the rule); 2 FAIL test script (read scoped_config the skill view does not expose). Receipts c42-skill-scope-policy-attempt-00{1,2}-fail.json",
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/skill-scope-policy.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 10 steps (10 passed)",
+  "evidence": ".prometheus/verification/skill-scope-policy/355aab53-4609-4d5d-b64b-7991d8889405.json",
+  "files": ["scripts/behaviors/features/skill-scope-policy.feature", "scripts/behaviors/skill-scope-policy.cucumber.mjs", "scripts/behaviors/steps/skill-scope-policy.steps.mjs"],
+  "evidence_review": {
+    "narrowing": "parent selected[A,B] denied[B]; conversation selected[A,C] → effective selected[A] (source conversation); attachments B and C rejected 'ineligible'; only A activated; answer 196 = 7 x 28 (A)",
+    "none": "fresh conversation skills [] → effective selected []; A rejected 'ineligible'; nothing activated; answer UNKNOWN",
+    "scoped_disable": "POST /skills/{A}/toggle {enabled:false, scope:{kind:conversation,id}}; that conversation's A attachment rejected 'disabled'; answer UNKNOWN",
+    "enabled_context": "another conversation selecting A: A activated; answer 252 = 9 x 28",
+    "durable": "after owned restart (PID 33893) the disabled conversation still rejects A with 'disabled'; answer UNKNOWN"
+  },
+  "note": "GET /api/uar/skills/{id} (SkillResponse) does not expose scoped_config; the saved scope was read through behavior.",
+  "cleanup": {"skills_deleted": true, "agent_deleted": true, "sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

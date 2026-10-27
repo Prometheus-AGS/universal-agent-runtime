@@ -1,0 +1,14 @@
+{
+  "record": "QWEN-CODING-PLAN-PROBE-2026-10-27",
+  "recorded_at": "2026-10-27T06:09:59-05:00",
+  "operator_instruction": "Try QWEN_TOKEN_PLAN_API_KEY on the Model Studio international Coding/Token Plan endpoint with one tiny probe; switch Liter and enable in UAR only if it works.",
+  "endpoint": "https://coding-intl.dashscope.aliyuncs.com/v1 (OpenAI-compatible; Coding Plan international base URL per https://www.alibabacloud.com/help/en/model-studio/coding-plan and https://www.alibabacloud.com/help/en/model-studio/coding-plan-faq)",
+  "key_variable": "QWEN_TOKEN_PLAN_API_KEY (shape sk-sp-, length 115; value not recorded)",
+  "model": "qwen3.8-max",
+  "probes": 1,
+  "result": "HTTP 401 invalid_api_key: 'invalid access token or token expired'",
+  "earlier_result_singapore_host": "HTTP 401 'Incorrect API key provided' on https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+  "action": "No route switch; Liter qwen3.8-max route still points at the Singapore host; UAR qwen3.8-max remains enabled=false; no other host tried.",
+  "unknown": "Coding Plan docs list qwen3.7-plus/qwen3.6-plus/qwen3-max-2026-01-23; qwen3.8-max availability on the plan is unconfirmed because authentication failed first.",
+  "next_needed": "A currently valid Model Studio key from the operator (Coding Plan sk-sp- key for coding-intl, or a general sk- key for dashscope-intl)."
+}

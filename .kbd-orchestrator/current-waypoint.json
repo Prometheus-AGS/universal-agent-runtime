@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 682,
-  "derivedRevision": 682,
+  "sourceRevision": 687,
+  "derivedRevision": 687,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 570,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 575,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
@@ -34,9 +34,9 @@
   "implementationCompleted": 144,
   "implementationTotal": 170,
   "planRevision": 178,
-  "revision": 682,
-  "exactNextCommand": "MANUAL scenario list only. Returned from agent-team child at operator request. TEAM-01 run003 FAILED: concurrency/math passed; writer has no final outline; article skipped. Await operator direction; no automatic retry/repair, packet/review/signing/inventory/exit gates. Owned UAR last ready PID50663 stays running.",
+  "revision": 687,
+  "exactNextCommand": "MANUAL scenario list only. C34 PASSED (B37) on attempt 5 after child orchestrator-routing-reasoning-repair closed 2026-10-27 (see its handoff-out.md). Await operator selection of the next scenario (C35 onward), one ID at a time; no automatic retry. Owned UAR PID 340 (binary b4e68525) stays running.",
   "nextChange": "simplify-user-workflow-verification",
   "nextTask": "2.1",
-  "updatedAt": "2026-10-26T13:11:33.461203Z"
+  "updatedAt": "2026-10-27T15:30:48.839745Z"
 }

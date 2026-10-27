@@ -1,0 +1,108 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "disable-agent-knowledge-access-without-removing-saved-links;a-disabled-agent-cannot-use-its-still-linked-private-knowledge",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A disabled agent cannot use its still-linked private knowledge",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1082245975
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with enabled KB access and a saved private-fact link",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:59"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11338861205
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the enabled agent uses the private fact with a matching knowledge citation",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 70075237
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I disable KB access without changing the saved links",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:132"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11249658051
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the disabled agent answers without KB knowledge while its linked source remains searchable",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 103662553
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi1kaXNhYmxlL2U3ZjU4Y2JiLWJkNjktNGMzMC04NWQ3LTY4Mzc2ZjE3YTkwMi5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@kb-disable",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "disable-agent-knowledge-access-without-removing-saved-links",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Disable agent knowledge access without removing saved links",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@kb-disable",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-disable.feature"
+  }
+]

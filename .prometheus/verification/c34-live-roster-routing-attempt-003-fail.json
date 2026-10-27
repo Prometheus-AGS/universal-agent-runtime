@@ -1,0 +1,21 @@
+{
+  "scenario": "C34",
+  "status": "FAIL",
+  "failure_class": "product (router refusal while the matching specialist was eligible); root cause unconfirmed",
+  "platform": "Mac",
+  "recorded_at": "2026-10-27T06:44:59-05:00",
+  "attempt": 3,
+  "change_before_attempt": "Operator-approved answer-check fix: text from an unclosed <think> to the end is treated as reasoning; signature must be outside reasoning. All other assertions unchanged.",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 UAR_CUCUMBER_REPORT=.prometheus/verification/c34-live-roster-routing-20261027T114301Z.cucumber.json node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/live-roster-routing.cucumber.mjs",
+  "exit_code": 1,
+  "observed_output": "1 scenario (1 failed); 13 steps (5 passed, 7 skipped, 1 failed); 0m 3.551s",
+  "evidence": ".prometheus/verification/live-roster-routing/5195d683-3da5-423e-ae5e-255183f36fae.json",
+  "failure": "Eligible-specialist route (Boston fern question) with disposable-plant-clinic-5195d683 in the live roster: stream was RUN_STARTED then RUN_ERROR message graph_routing_selection_invalid; no selection, no approval interrupt. UAR log line 1569 (2026-10-27T11:43:05.729958Z) shows Graph node error node_id=router error=graph_routing_selection_invalid. The classifier's raw text is not logged.",
+  "hypothesis_unconfirmed": "RouterNode compares the whole trimmed classifier text to agent IDs exactly and does not remove inline <think> reasoning, which MiniMax-M3 emits in this deployment. The same refusal occurred for attempt 2's post-removal fresh task (log line 1514), so that disposition may also reflect this defect rather than roster logic.",
+  "cleanup": {
+    "disposable_agent_deleted": true,
+    "saved_agents_retained": true,
+    "cleanup_errors": []
+  },
+  "next": "Operator approved a narrow KBD child phase (plan only) for this router defect and the child-turn-ends-in-reasoning-reported-as-success defect from attempt 2. No C34 rerun until that phase delivers."
+}

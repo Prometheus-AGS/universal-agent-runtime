@@ -1,0 +1,142 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-user-can-cancel-an-active-run;cancel-a-live-run-and-keep-prompting-afterwards",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Cancel a live run and keep prompting afterwards",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 84106451
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved default agent is available",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:54"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2894169063
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I start a long genuine run and it begins streaming",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:68"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 24753076
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I cancel that run through the cancellation endpoint",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3535308339
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run ends cancelled with no later success",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:91"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12945810
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "its model calls are settled or explicitly uncertain",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:108"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3029793873
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "a fresh ordinary prompt still succeeds",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 66667782
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydW4tY2FuY2VsbGF0aW9uL2E2YWNhOTFjLTdkMzQtNDczNS05ZjczLTBiYTlhMWM1OTA0MC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@runs",
+            "line": 1
+          },
+          {
+            "name": "@cancellation",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-user-can-cancel-an-active-run",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A user can cancel an active run",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@runs",
+        "line": 1
+      },
+      {
+        "name": "@cancellation",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/run-cancellation.feature"
+  }
+]

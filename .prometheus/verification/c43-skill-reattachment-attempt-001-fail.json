@@ -1,0 +1,10 @@
+{
+  "scenario": "C43",
+  "status": "FAIL",
+  "failure_class": "test design (history too short to compact; oversized skill attached last; tools left eligible)",
+  "platform": "Mac",
+  "attempt": 1,
+  "evidence": ".prometheus/verification/skill-reattachment/066a76cb-03da-4607-915d-ee9d8c66f230.json",
+  "observed": "harness.skill_reattachment set to 120/150 via REST. Summarize made 3 completed genuine summary calls but kept the original 14-message input (changed false): summaries of very short turns do not shrink them. Reattachment receipt within budget (rendered 119 <= 150): the last-attached oversized skill was retained truncated (2068 → 89 body tokens) and the earlier small skill dropped — consistent with 'latest permitted body' priority. The model then reasoned from the truncated large rule, used tools, and produced no answer text.",
+  "next": "Long history turns, small skill attached last, tools none; rerun once."
+}

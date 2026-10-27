@@ -18,3 +18,8 @@
 
 ## Current operator disposition — 2026-10-26
 The earlier packet/signature/gate workflow above is retained as historical planning. The operator replaced it with one-at-a-time manual BDD verification and explicitly authorized fixing the existing team scenario until it passed. TEAM-01 is now PASS on Mac:1scenario,8steps,1m14.458s; see `.prometheus/verification/team-01-macos-pass.json`. Do not repeat that scenario in this manual sequence or infer completion of other platform/case obligations. Await the next operator-selected behavior.
+
+## Forward manual BDD design — 2026-10-27
+- [x] D1 Read the coverage audit, current production choices/interfaces and manual-process history without runtime checks
+- [x] D2 Author the finite proposed catalog, retain existing outcome credit, map all original IDs and name platform/backend limits
+- [x] D3 Resolve independent artifact-review findings and hand the proposed catalog to the operator; no execution or old registry/runner tasks implied

@@ -1,0 +1,27 @@
+{
+  "scenario": "C48",
+  "label": "B50",
+  "behavior": "Same-dimension embedding change requires regeneration",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 3,
+  "prior_attempts": "1 and 2 BLOCKED: remote embedding blackholed by the owned config (embedding.base_url http://127.0.0.1:1/v1). Receipts c48-embedding-same-dimension-attempt-00{1,2}-blocked.json",
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/embedding-same-dimension.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed)",
+  "evidence": ".prometheus/verification/embedding-same-dimension/6abada3c-d20c-4061-a766-ae9a80ec1265.json",
+  "files": ["scripts/behaviors/features/embedding-same-dimension.feature", "scripts/behaviors/embedding-same-dimension.cucumber.mjs", "scripts/behaviors/steps/embedding-same-dimension.steps.mjs"],
+  "host_fixture": "scripts/manual-host/embedding-config.mjs prepareEmbeddingHost/restoreEmbeddingHost: private owned config pointed at https://api.openai.com/v1 with the operator's configured key for the scenario (config sha 8726e43a → 6f0da8ef), then restored (back to 8726e43a, blackhole base_url restored) with owned restarts. Operator instruction 2026-10-27: 'we need to unblock the embeddings'.",
+  "evidence_review": {
+    "pair": "fastembed/bge-small-en-v1.5 (384) → openai/text-embedding-3-small (384, send_dimensions on): same declared width, different model fingerprint",
+    "refusal": "old index refused with embedding_space_mismatch naming both 384-dim spaces",
+    "regeneration": "POST /regeneration from the retained document completed (1 document) in the target space; no reupload",
+    "retrieval": "regenerated index returned the original private fact (coefficient 73 and seal) with score 0.834"
+  },
+  "spend": "OpenAI embeddings for two tiny ASCII inputs (<1000 bytes; ceiling well under $0.0001) against the separate $10 OpenAI cap; Cohere unused.",
+  "cleanup": {"kb_deleted": true, "embedding_settings_restored": "fastembed/bge-small-en-v1.5", "host_config_restored": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

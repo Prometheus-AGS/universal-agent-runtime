@@ -1,0 +1,12 @@
+{
+  "scenario": "C38",
+  "status": "FAIL",
+  "failure_class": "test script: answer text extraction (native message delta is data.delta.text)",
+  "platform": "Mac",
+  "attempt": 4,
+  "observed_output": "1 scenario (1 failed); 9 steps (6 passed, 2 skipped, 1 failed)",
+  "evidence": ".prometheus/verification/mcp-tool-approval/0a7ed545-455d-4f3b-afac-062e861629b0.json",
+  "observed_before_failure": "Run admitted the loopback peer; approvals for record_write then record_read were requested and approved; the peer log shows one write (revision 1) and one read returning the private value; paired tool results present; run status done. The script concatenated delta objects, so the answer check saw '[object Object]'.",
+  "cleanup": "cleanup_errors []",
+  "next": "Read data.delta.text; rerun once."
+}

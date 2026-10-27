@@ -45,6 +45,18 @@ use uuid::Uuid;
 
 const EVENT_HISTORY_LIMIT: usize = 512;
 
+/// Default output allowance for a captured (non-team) child turn with no
+/// explicit cap: routed specialists observed reasoning past the 1,000 reserve.
+const DELEGATED_CHILD_OUTPUT_TOKENS: u32 = 8_192;
+
+/// The delegated default, halved for small known windows but never below the
+/// ordinary response reserve a child turn received before.
+fn delegated_child_output_default(capacity: usize) -> u32 {
+    let reserve = crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS as u32;
+    let half_window = u32::try_from(capacity / 2).unwrap_or(u32::MAX);
+    DELEGATED_CHILD_OUTPUT_TOKENS.min(half_window.max(reserve))
+}
+
 #[cfg(test)]
 #[path = "presentation_history_tests.rs"]
 mod presentation_history_tests;
@@ -6498,6 +6510,14 @@ impl RunManager {
         // Native/team callers can omit an explicit output cap. Bind the same
         // finite response reserve already withheld from their known context;
         // never infer an output allowance from the legacy unknown-window estimate.
+        // Captured non-team child turns instead receive the delegated default.
+        let delegated_default = inherited.is_some() && !is_team_attempt;
+        let output_cap_source = match (output_token_cap, &destination_budget_contract) {
+            (Some(_), _) => "caller",
+            (None, Some(_)) => "contract",
+            (None, None) if delegated_default => "delegated_default",
+            (None, None) => "reserve",
+        };
         let bounded_output = (|| -> anyhow::Result<u32> {
             let capacity = model_context_window.ok_or_else(|| anyhow::anyhow!("output_capacity_unknown"))?;
             if is_team_attempt {
@@ -6508,6 +6528,7 @@ impl RunManager {
                 Some(cap) => cap,
                 None => match &destination_budget_contract {
                     Some(contract) => u32::try_from(contract.limits.output_tokens)?,
+                    None if delegated_default => delegated_child_output_default(capacity),
                     None => crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS as u32,
                 },
             };
@@ -6527,7 +6548,13 @@ impl RunManager {
             Ok(cap)
         })();
         let output_token_cap = match bounded_output {
-            Ok(cap) => Some(cap),
+            Ok(cap) => {
+                if inherited.is_some() {
+                    tracing::info!(run_id = %run_id, output_token_cap = cap, source = output_cap_source,
+                        "delegated output allowance bound");
+                }
+                Some(cap)
+            }
             Err(_) => {
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) { state.run.status = RunStatus::Error; }
                 activation_context.lock().await.record_outcomes(false);

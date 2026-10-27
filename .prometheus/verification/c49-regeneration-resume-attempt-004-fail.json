@@ -1,0 +1,14 @@
+{
+  "scenario": "C49",
+  "status": "FAIL",
+  "failure_class": "product defect, partially fixed (contention persists beyond the bounded commit retry)",
+  "platform": "Mac",
+  "attempt": 4,
+  "binary_sha256": "57513e9bdf8692a7bcd9e5b31729724fb251facf8a7674666b7bb4b723117654",
+  "observed_output": "1 scenario (1 failed); 7 steps (5 passed, 1 skipped, 1 failed); 6m 37s",
+  "evidence": ".prometheus/verification/regeneration-resume/508c5f81-6ccd-498e-b7ef-8a5ff2d7d949.json",
+  "observed": "Interrupt at 1/60; after restart same generation running 10/60, no false complete, sources retained, KB in previous space. Resume reached only 53/60 within 300 s with last_error again 'Cannot COMMIT: Transaction conflict … can be retried'. Attempt 3 on the same binary completed 60/60 in ~221 s with no error.",
+  "analysis": "Every ingestion transaction updates the KB row (updated_at) and recounts regeneration progress, so concurrent workers contend on one record for the whole transaction; 8 immediate retries (~15–30 ms x attempt) are sometimes exhausted, after which the job falls back to the 30 s x attempts backoff.",
+  "cleanup": "KB deleted; embedding restored to fastembed/bge-small-en-v1.5; host config restored (sha 8726e43a).",
+  "next": "Operator decision on a stronger fix: (a) larger bounded retry budget with exponential jittered backoff, or (b) remove the hot-row contention (serialize ingestion commits per KB, or stop touching the KB row in per-document transitions)."
+}

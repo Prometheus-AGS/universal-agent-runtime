@@ -1,0 +1,331 @@
+{
+  "scenario": "C47-KB-SOURCE-REPLACE-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "KB replacement BDD 4f0477fe-2275-4a9a-9edd-167058bfe3a6",
+        "description": "Disposable replacement source",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 10
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"name\":\"KB replacement BDD 4f0477fe-2275-4a9a-9edd-167058bfe3a6\",\"description\":\"Disposable replacement source\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":10,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-27T16:37:18.154894+00:00\",\"updated_at\":\"2026-10-27T16:37:18.154894+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents",
+      "request": {
+        "file": "harbor-ledger-old.txt"
+      },
+      "status": 202,
+      "response": "{\"id\":\"54bb1ec4-aa7b-48ba-933c-c234fcbd62e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-old.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.218881+00:00\",\"updated_at\":\"2026-10-27T16:37:18.218881+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents/54bb1ec4-aa7b-48ba-933c-c234fcbd62e7",
+      "status": 200,
+      "response": "{\"id\":\"54bb1ec4-aa7b-48ba-933c-c234fcbd62e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-old.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.218881+00:00\",\"updated_at\":\"2026-10-27T16:37:18.218881+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents/54bb1ec4-aa7b-48ba-933c-c234fcbd62e7",
+      "status": 200,
+      "response": "{\"id\":\"54bb1ec4-aa7b-48ba-933c-c234fcbd62e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-old.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.218881+00:00\",\"updated_at\":\"2026-10-27T16:37:18.394496+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-kb-replace-4f0477fe",
+        "metadata": {
+          "title": "Disposable harbor ledger agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer only from the retrieved knowledge base sources. Return only JSON with moorings (number), seal (string) and citation (the numbered citation such as [1]). If the sources do not contain it, return null values. Never guess.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": true,
+            "knowledge_bases": [
+              "b1910743-00d1-4938-bdfa-0cbbbd91eea2"
+            ],
+            "citation_required": true
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-replace-4f0477fe\",\"metadata\":{\"title\":\"Disposable harbor ledger agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer only from the retrieved knowledge base sources. Return only JSON with moorings (number), seal (string) and citation (the numbered citation such as [1]). If the sources do not contain it, return null values. Never guess.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:9662a1966fe85af11bee785a8de7f4bdd10d50decd561ea8f9557356d4d3856a\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-kb-replace-4f0477fe\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents/54bb1ec4-aa7b-48ba-933c-c234fcbd62e7",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents/54bb1ec4-aa7b-48ba-933c-c234fcbd62e7",
+      "status": 404,
+      "response": "Document '54bb1ec4-aa7b-48ba-933c-c234fcbd62e7' not found"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents",
+      "request": {
+        "file": "harbor-ledger-new.txt"
+      },
+      "status": 202,
+      "response": "{\"id\":\"7f1eaaff-59f5-404b-b986-68c9acf093e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-new.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.970583+00:00\",\"updated_at\":\"2026-10-27T16:37:18.970583+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents/7f1eaaff-59f5-404b-b986-68c9acf093e7",
+      "status": 200,
+      "response": "{\"id\":\"7f1eaaff-59f5-404b-b986-68c9acf093e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-new.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.970583+00:00\",\"updated_at\":\"2026-10-27T16:37:18.970583+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents/7f1eaaff-59f5-404b-b986-68c9acf093e7",
+      "status": 200,
+      "response": "{\"id\":\"7f1eaaff-59f5-404b-b986-68c9acf093e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-new.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.970583+00:00\",\"updated_at\":\"2026-10-27T16:37:19.115544+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/search",
+      "request": {
+        "query": "How many moorings does the Larkspur harbor ledger record, and what is its seal?",
+        "limit": 10,
+        "min_score": 0
+      },
+      "status": 200,
+      "response": "{\"results\":[{\"content\":\"The Larkspur harbor ledger records 724 moorings. Ledger seal NEW-8DC980A9.\\n\",\"score\":0.9132811,\"metadata\":{\"document_id\":\"7f1eaaff-59f5-404b-b986-68c9acf093e7\",\"embedding_space\":{\"backend\":\"fastembed\",\"dimension\":384,\"model\":\"bge-small-en-v1.5\"},\"extraction\":{\"authors\":null,\"keywords\":null,\"language\":null,\"pages\":null,\"subject\":null,\"title\":null},\"filename\":\"harbor-ledger-new.txt\",\"index\":0,\"ingestion_generation\":\"3ab45a54-159a-4215-b1df-04d4e0fa8ea3\",\"mime_type\":\"text/plain\",\"processor\":\"Kreuzberg\",\"source\":\"knowledge_upload\"},\"document_id\":\"7f1eaaff-59f5-404b-b986-68c9acf093e7\"}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2/documents",
+      "status": 200,
+      "response": "[{\"id\":\"7f1eaaff-59f5-404b-b986-68c9acf093e7\",\"kb_id\":\"b1910743-00d1-4938-bdfa-0cbbbd91eea2\",\"filename\":\"harbor-ledger-new.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T16:37:18.970583+00:00\",\"updated_at\":\"2026-10-27T16:37:19.115544+00:00\"}]"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-kb-replace-4f0477fe",
+        "model": "liter/MiniMax-M3",
+        "session_id": "75fad918-314a-4d69-b9be-2b11e453b734",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "How many moorings does the Larkspur harbor ledger record, and what is its seal?"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-964abed1-241b-41e6-b70e-fff59517a9bb\",\"object\":\"chat.completion\",\"created\":1793119041,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The retrieved knowledge contains the answer: 724 moorings, seal NEW-8DC980A9, citation [1]. Return only JSON with moorings (number), seal (string), and citation.\\n\\nAlso there's a skill catalog; there's \\\"learn-kb\\\" skill for knowledge base management. But the retrieved content already answers. Let me just answer.\\n\\nThe question: \\\"How many moorings does the Larkspur harbor ledger record, and what is its seal?\\\" Answer JSON.\\n\\nShould I consider whether there's a \\\"harbor-ledger\\\" skill that requires a procedure? The policy says answer only from retrieved KB sources. Just outputJSON.</think>\\n\\n```json\\n{\\n  \\\"moorings\\\": 724,\\n  \\\"seal\\\": \\\"NEW-8DC980A9\\\",\\n  \\\"citation\\\": \\\"[1]\\\"\\n}\\n```\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":31290,\"completion_tokens\":201,\"total_tokens\":31491},\"session_id\":\"75fad918-314a-4d69-b9be-2b11e453b734\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/964abed1-241b-41e6-b70e-fff59517a9bb/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"964abed1-241b-41e6-b70e-fff59517a9bb\",\"after\":0,\"cursor\":62,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"964abed1-241b-41e6-b70e-fff59517a9bb\",\"artifact_id\":\"run-policy-964abed1-241b-41e6-b70e-fff59517a9bb\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-964abed1-241b-41e6-b70e-fff59517a9bb\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-964abed1-241b-41e6-b70e-fff59517a9bb\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-co"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/75fad918-314a-4d69-b9be-2b11e453b734",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-kb-replace-4f0477fe",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/b1910743-00d1-4938-bdfa-0cbbbd91eea2",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 85029
+  },
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "knowledge_base_id": "b1910743-00d1-4938-bdfa-0cbbbd91eea2",
+  "old_document": {
+    "id": "54bb1ec4-aa7b-48ba-933c-c234fcbd62e7",
+    "kb_id": "b1910743-00d1-4938-bdfa-0cbbbd91eea2",
+    "filename": "harbor-ledger-old.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T16:37:18.218881+00:00",
+    "updated_at": "2026-10-27T16:37:18.394496+00:00",
+    "sha256": "f09c39f80e16317dcfe4a42667f7851aa3de342e39622cdac3cfbba23c2bdda1"
+  },
+  "old_value": 283,
+  "new_value": 724,
+  "replacement_document": {
+    "id": "7f1eaaff-59f5-404b-b986-68c9acf093e7",
+    "kb_id": "b1910743-00d1-4938-bdfa-0cbbbd91eea2",
+    "filename": "harbor-ledger-new.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T16:37:18.970583+00:00",
+    "updated_at": "2026-10-27T16:37:19.115544+00:00",
+    "sha256": "ea093c7b7017dbdbe452f9907430767fe414d108ec01f7cfdc468706d95530c1"
+  },
+  "retrieval": {
+    "results": [
+      {
+        "content": "The Larkspur harbor ledger records 724 moorings. Ledger seal NEW-8DC980A9.\n",
+        "score": 0.9132811,
+        "metadata": {
+          "document_id": "7f1eaaff-59f5-404b-b986-68c9acf093e7",
+          "embedding_space": {
+            "backend": "fastembed",
+            "dimension": 384,
+            "model": "bge-small-en-v1.5"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "harbor-ledger-new.txt",
+          "index": 0,
+          "ingestion_generation": "3ab45a54-159a-4215-b1df-04d4e0fa8ea3",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "7f1eaaff-59f5-404b-b986-68c9acf093e7"
+      }
+    ]
+  },
+  "run_id": "964abed1-241b-41e6-b70e-fff59517a9bb",
+  "answer": {
+    "moorings": 724,
+    "seal": "NEW-8DC980A9",
+    "citation": "[1]"
+  },
+  "citations": [
+    {
+      "marker": 1,
+      "chunk_id": "6696c4b5-f07a-a82b-1c3a-e2d4e2af755a",
+      "document_id": "7f1eaaff-59f5-404b-b986-68c9acf093e7",
+      "knowledge_base_id": "b1910743-00d1-4938-bdfa-0cbbbd91eea2",
+      "document_name": "harbor-ledger-new.txt",
+      "relevance_score": 0.9132810831069946,
+      "snippet": "The Larkspur harbor ledger records 724 moorings. Ledger seal NEW-8DC980A9.\n"
+    }
+  ],
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 9879
+}

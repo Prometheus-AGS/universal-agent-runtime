@@ -1,0 +1,23 @@
+{
+ "scenario": "C34",
+ "status": "FAIL",
+ "failure_class": "product, expected under D2(a): routed specialist produced reasoning only; now reported honestly as a failure",
+ "platform": "Mac",
+ "recorded_at": "2026-10-27T09:53:33-05:00",
+ "attempt": 4,
+ "change_before_attempt": "Child phase orchestrator-routing-reasoning-repair T1/T2/T4/T6 (router strips inline reasoning before exact-ID match; delegated contribution is answer text only; reasoning-only child fails with delegated_answer_missing: reasoning_only; C34 oracle reports selected_then_failed). UAR restarted onto binary 2ca5c057817b1c5cf07b01b9617c8fb748ae327199e8db1e8b299b3eef28e817 (PID 69961 -> 24733, same config and store).",
+ "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/live-roster-routing.cucumber.mjs",
+ "exit_code": 1,
+ "observed_output": "1 scenario (1 failed); 13 steps (5 passed, 7 skipped, 1 failed); 0m 32.250s",
+ "evidence": ".prometheus/verification/live-roster-routing/135d7107-dd06-427b-884c-1b4ffea3224f.json",
+ "failure": "Eligible-specialist route (Boston fern question). The router selected disposable-plant-clinic-135d7107 by intent (uar.agent.selected, selection_count 1, roster revision 0f708f50...), the spawn approval was granted, then the resumed run streamed RUN_STARTED, CUSTOM uar.agent.selected, RUN_ERROR message delegated_answer_missing: reasoning_only. No TEXT_MESSAGE_CONTENT; no <think> reached the client. UAR log line 1414 (14:53:32.756Z) Graph node error node_id=selected-agent error=delegated_answer_missing: reasoning_only. Child stream: 252 events (log line 1413); classifier stream: 4 events (line 1397).",
+ "what_this_shows": "Defect 1 (router refusal) did not recur on this attempt: the eligible specialist was selected. Defect 2 (reasoning-only child reported as success) is fixed: the run now fails with the named code and leaks no reasoning. The child still spends its turn reasoning without an answer.",
+ "unverified": "Whether the child hit its 1,000-token output allowance. The accounting API returned [] for child run 683b9e0e-9c7d-4a43-a266-766b1f70a1a4, and finish reason is not recorded (named residual). The router's T2 rejection diagnostics were not exercised because no refusal occurred. One attempt is not evidence that the router refusal cannot recur.",
+ "steps_not_reached": "post-deletion refusal and unrelated-request routing (7 steps skipped)",
+ "cleanup": {
+  "disposable_agent_deleted": true,
+  "saved_agents_retained": true,
+  "cleanup_errors": []
+ },
+ "next": "Phase stays open per exit criteria. Operator backlog choice: D2(b) raise the routed child's output allowance (budget-governance change in manager.rs, needs its own approved change) or another remedy."
+}

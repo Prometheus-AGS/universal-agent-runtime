@@ -1,0 +1,31 @@
+{
+  "scenario": "C44",
+  "label": "B46",
+  "behavior": "Truncate-middle actually removes the middle",
+  "status": "PASS",
+  "attempt": 1,
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/context-structural.cucumber.mjs",
+  "exit_code": 1,
+  "observed_output": "Combined feature run: truncate-middle scenario passed (5/5 steps); the sliding-window scenario in the same run failed on a script key check (recorded separately).",
+  "evidence": ".prometheus/verification/context-structural/ad3fdfce-4789-40ce-8add-f612b1e5bfae.json",
+  "evidence_review": {
+    "receipt": "truncate_middle keep_first 2 keep_last 2: source 12 \u2192 prepared 5, changed true",
+    "answer": "{A: first code (correct), C: UNKNOWN, E: latest code (correct)} \u2014 first and latest groups retained and used; middle group absent from provider input"
+  },
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "files": [
+    "scripts/behaviors/features/context-structural.feature",
+    "scripts/behaviors/context-structural.cucumber.mjs",
+    "scripts/behaviors/steps/context-structural.steps.mjs"
+  ],
+  "fixture": "Native run with 10 seeded history messages (5 user/assistant groups, one private depot code each) via the run API history field; disposable agent with the strategy in uar.run_policy.context_strategy, memory and KB disabled.",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "cleanup": {
+    "agent_deleted": true,
+    "sessions_deleted": true,
+    "cleanup_errors": []
+  }
+}

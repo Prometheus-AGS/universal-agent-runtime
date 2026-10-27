@@ -1,0 +1,22 @@
+{
+  "scenario": "C35",
+  "status": "FAIL",
+  "attempt": 4,
+  "build": "send-time persistence (use-chat-runtime.ts onNew), user-only title request (chat-titles-api.ts), persistedUserMessageId de-duplication (chat-stream-store.ts + use-chat-runtime.ts); pnpm build; static/ copied into target/manual-a2ui-browser-ui (served index-BDuH6ymg.js)",
+  "config": "scripts/behaviors/browser-history-reload.config.mjs, video off; tier3.allow created for this run and removed after (operator-approved 2026-10-27)",
+  "evidence": "browser-history-reload/ (latest run JSON, thread 41dddbf6-4941-435e-b3ab-0bb635f6e012); browser-history-reload/c35-attempt-004-artifacts/",
+  "observed": {
+    "fact_turn": "READY; one completion POST",
+    "before_reload": "1 user and 1 assistant message: the duplicate user message is gone",
+    "title": "/api/generate-title 200; title 'Remember for this conversation: reference CASE-ce65c46d-9901-4ef' set before reload",
+    "after_reload": "thread present in the list with that title; reopened; agent-config 200; the user message is shown, but no assistant message",
+    "failed_assertion": "assistant message roots expected 1, received 0 (scripts/behaviors/browser/browser-history-reload.steps.mjs:209)",
+    "follow_up": "not reached"
+  },
+  "classification": "product: the completed assistant message is saved to PGlite fire-and-forget when the stream finishes (chat-message-store.ts finishStream, void insertMessage); a reload about a second later loses it, the same IndexedDB flush lag that lost the thread in attempt 2. The server session still holds the full history.",
+  "fixes_confirmed_by_this_run": [
+    "thread survives a quick reload with its title (send-time persistence + title request)",
+    "user message rendered once (persistedUserMessageId)"
+  ],
+  "next": "Operator decision on the assistant-message durability fix. A rerun needs the tier-3 guard opened again."
+}

@@ -1,0 +1,127 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-browser-conversation-reloads-from-saved-history;reopen-a-saved-conversation-after-reload-and-continue-from-its-earlier-fact",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Reopen a saved conversation after reload and continue from its earlier fact",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 1476000000,
+              "error_message": "Error: browserContext.newPage: Executable doesn't exist at /Users/gqadonis/Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac\n╔═════════════════════════════════════════════════════════════════╗\n║ Video rendering requires ffmpeg binary.                         ║\n║ Downloading it will not affect any of the system-wide settings. ║\n║ Please run the following command:                               ║\n║                                                                 ║\n║     npx playwright install ffmpeg                               ║\n║                                                                 ║\n║ <3 Playwright Team                                              ║\n╚═════════════════════════════════════════════════════════════════╝"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable custom agent is selected in a fresh browser conversation",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give the agent a fresh fact in the browser",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I reload the page and reopen that conversation from the thread list",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the reopened conversation shows the saved turns without a new run",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send a follow-up that contains none of the earlier facts",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the follow-up answer uses the earlier fact from the saved server history",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 131000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@conversation",
+            "line": 1
+          },
+          {
+            "name": "@reload",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-browser-conversation-reloads-from-saved-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A browser conversation reloads from saved history",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@conversation",
+        "line": 1
+      },
+      {
+        "name": "@reload",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-history-reload.feature"
+  }
+]

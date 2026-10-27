@@ -1,0 +1,119 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-browser-conversation-reloads-from-saved-history;reopen-a-saved-conversation-after-reload-and-continue-from-its-earlier-fact",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Reopen a saved conversation after reload and continue from its earlier fact",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable custom agent is selected in a fresh browser conversation",
+            "result": {
+              "status": "passed",
+              "duration": 2609000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give the agent a fresh fact in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 5193000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I reload the page and reopen that conversation from the thread list",
+            "result": {
+              "status": "failed",
+              "duration": 121765000000,
+              "error_message": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('[aria-label=\"Thread list\"]').getByRole('button').filter({ has: getByText('Remember for this conversation: reference CASE-23d965df-47a4-424', { exact: true }) })\nExpected: 1\nReceived: 0\nTimeout:  120000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 120000ms\n  - waiting for locator('[aria-label=\"Thread list\"]').getByRole('button').filter({ has: getByText('Remember for this conversation: reference CASE-23d965df-47a4-424', { exact: true }) })\n    243 × locator resolved to 0 elements\n        - unexpected value \"0\"\n\n   at ../../scripts/behaviors/browser/browser-history-reload.steps.mjs:198\n\n  196 |   await expect(threadList(page)).toHaveAttribute('aria-busy', 'false');\n  197 |   const entry = threadList(page).getByRole('button').filter({ has: page.getByText(s.threadTitle, { exact: true }) });\n> 198 |   await expect(entry).toHaveCount(1);\n      |                       ^\n  199 |   s.evidence.thread_list_after_reload = await threadList(page).innerText();\n  200 |   const configLoad = observeResponse(page, r => r.request().method() === 'GET' && new URL(r.url()).pathname === `/api/uar/sessions/${s.threadId}/agent-config`, 30_000);\n  201 |   await entry.click();\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-history-reload.steps.mjs:198:23)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated/features/browser-history-reload.feature.spec.js:9:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the reopened conversation shows the saved turns without a new run",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send a follow-up that contains none of the earlier facts",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the follow-up answer uses the earlier fact from the saved server history",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1305000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@conversation",
+            "line": 1
+          },
+          {
+            "name": "@reload",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-browser-conversation-reloads-from-saved-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A browser conversation reloads from saved history",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@conversation",
+        "line": 1
+      },
+      {
+        "name": "@reload",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-history-reload.feature"
+  }
+]

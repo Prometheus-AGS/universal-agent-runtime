@@ -1,0 +1,519 @@
+{
+  "scenario": "C49-REGENERATION-RESUME-01",
+  "platform": "darwin",
+  "target": {
+    "backend": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 384
+  },
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "polls": [],
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.backend",
+      "status": 200,
+      "response": "{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"fastembed\",\"saved\":\"fastembed\",\"effective\":\"fastembed\",\"revision\":\"2026-10-27T16:58:15.191404000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:15.191404Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.model",
+      "status": 200,
+      "response": "{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"bge-small-en-v1.5\",\"saved\":\"bge-small-en-v1.5\",\"effective\":\"bge-small-en-v1.5\",\"revision\":\"2026-10-27T16:58:15.145091000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:58:15.145091Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.vector_dimension",
+      "status": 200,
+      "response": "{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:58:15.107163000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:58:15.107163Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "Regeneration resume BDD f6804859-cd09-4d28-bc22-3cfebc8ebaad",
+        "description": "Disposable multi-chunk corpus",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 128,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"name\":\"Regeneration resume BDD f6804859-cd09-4d28-bc22-3cfebc8ebaad\",\"description\":\"Disposable multi-chunk corpus\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 128 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-27T17:00:35.395685+00:00\",\"updated_at\":\"2026-10-27T17:00:35.395685+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"c68ca996-6916-4b0e-863d-16ad588520e9\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-1.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.475767+00:00\",\"updated_at\":\"2026-10-27T17:00:35.475767+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"18579cfe-e6b0-48ae-8973-f24100dc1473\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-2.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.561457+00:00\",\"updated_at\":\"2026-10-27T17:00:35.561457+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"a1e49980-463d-486e-a1cc-b3f7e7d9e7ca\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-3.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.601386+00:00\",\"updated_at\":\"2026-10-27T17:00:35.601386+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"76445fdb-02f4-46a8-8694-060e7ae32c4f\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-4.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.649436+00:00\",\"updated_at\":\"2026-10-27T17:00:35.649436+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"34bfb86c-d15f-4447-94f5-f3547f055e23\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-5.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.699087+00:00\",\"updated_at\":\"2026-10-27T17:00:35.699087+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"33c7dde6-19ad-4693-85d3-8e7c23168fb1\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-6.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.780847+00:00\",\"updated_at\":\"2026-10-27T17:00:35.780847+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"f9538a57-0679-4a81-8f4b-77dae15635e0\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-7.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.820775+00:00\",\"updated_at\":\"2026-10-27T17:00:35.820775+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"99842afe-fa1e-48b9-94ca-c452e1ae012e\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-8.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.898062+00:00\",\"updated_at\":\"2026-10-27T17:00:35.898062+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"627c5377-4387-42cf-bd28-bdec8be8ecaf\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-9.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:35.944043+00:00\",\"updated_at\":\"2026-10-27T17:00:35.944043+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"a9a6d912-ccd5-4e00-ab8e-31bf1be8e89c\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-10.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.000536+00:00\",\"updated_at\":\"2026-10-27T17:00:36.000536+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"ef7ee93a-e739-4c8f-b036-19e6fb5654c6\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-11.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.074044+00:00\",\"updated_at\":\"2026-10-27T17:00:36.074044+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"81967696-bbdd-4993-bd7a-a78492ccf919\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-12.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.113355+00:00\",\"updated_at\":\"2026-10-27T17:00:36.113355+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"741407cd-4be0-484c-ab40-d00eec2d5c3b\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-13.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.187756+00:00\",\"updated_at\":\"2026-10-27T17:00:36.187756+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"2936dd95-b497-4e62-a8d8-a7d42f52e1a3\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-14.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.228923+00:00\",\"updated_at\":\"2026-10-27T17:00:36.228923+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"d6b39c8c-4c2d-421f-b54a-2c762f899511\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-15.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.284997+00:00\",\"updated_at\":\"2026-10-27T17:00:36.284997+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"1157bfa5-f485-4f2d-9465-86fe40bf42cd\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-16.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.379145+00:00\",\"updated_at\":\"2026-10-27T17:00:36.379145+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"424b0184-4bba-47bf-8a93-574930fd7290\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-17.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.416573+00:00\",\"updated_at\":\"2026-10-27T17:00:36.416573+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"4bbd092e-03f2-4458-b361-ce76dbd70807\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-18.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.453887+00:00\",\"updated_at\":\"2026-10-27T17:00:36.453887+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"46052ca7-b4bb-44be-8bb7-07dc3cd2caea\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-19.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.500402+00:00\",\"updated_at\":\"2026-10-27T17:00:36.500402+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"ad51fa3d-8311-485f-b6db-3350ea257968\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-20.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.594765+00:00\",\"updated_at\":\"2026-10-27T17:00:36.594765+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"7014a150-725f-4182-bccc-e6fed8c764cb\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-21.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.651626+00:00\",\"updated_at\":\"2026-10-27T17:00:36.651626+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"f5aee080-673a-42de-a01a-1bc3d1466938\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-22.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.689841+00:00\",\"updated_at\":\"2026-10-27T17:00:36.689841+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"235939ce-dd12-417e-bd74-af95ebd9b2ba\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-23.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.734051+00:00\",\"updated_at\":\"2026-10-27T17:00:36.734051+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"0e6526a4-d4db-4b84-b614-2e2bab26b085\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-24.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.789218+00:00\",\"updated_at\":\"2026-10-27T17:00:36.789218+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"66f5781c-4a53-4a8e-b2de-5c66cea9053c\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-25.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.829255+00:00\",\"updated_at\":\"2026-10-27T17:00:36.829255+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"aab1e8d8-6180-4fc2-9ca0-af94140bc23e\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-26.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.878632+00:00\",\"updated_at\":\"2026-10-27T17:00:36.878632+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"710e9955-268b-4c0f-b964-54bf2ffac9c2\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-27.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:36.934426+00:00\",\"updated_at\":\"2026-10-27T17:00:36.934426+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"363041bc-b308-4eb6-aceb-ba7a6628be42\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-28.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.034977+00:00\",\"updated_at\":\"2026-10-27T17:00:37.034977+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"03e96e20-ed63-44bc-a7fa-0f7e383ab589\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-29.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.071582+00:00\",\"updated_at\":\"2026-10-27T17:00:37.071582+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"0d35c6ea-a30c-4e58-853a-a12f95d3d04e\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-30.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.112067+00:00\",\"updated_at\":\"2026-10-27T17:00:37.112067+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"5de4f227-6ad9-4018-a424-198b1b6041d2\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-31.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.148378+00:00\",\"updated_at\":\"2026-10-27T17:00:37.148378+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"6bf57521-5ae5-4c90-9fc8-86de80b5ba49\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-32.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.184151+00:00\",\"updated_at\":\"2026-10-27T17:00:37.184151+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"07edcdf5-0730-4910-b8b9-63a0507e3fc4\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-33.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.222476+00:00\",\"updated_at\":\"2026-10-27T17:00:37.222476+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"e194951a-2218-4596-b647-960fccbd5a75\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-34.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.258148+00:00\",\"updated_at\":\"2026-10-27T17:00:37.258148+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"39ad9ce5-ef4f-44f1-b61b-c32efb2a2dc8\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-35.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.295322+00:00\",\"updated_at\":\"2026-10-27T17:00:37.295322+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"6d09549a-3419-4ea7-95db-f4fa04ebe404\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-36.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.332551+00:00\",\"updated_at\":\"2026-10-27T17:00:37.332551+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"42380b97-39bf-40e4-af11-177a26a1dda2\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-37.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.411247+00:00\",\"updated_at\":\"2026-10-27T17:00:37.411247+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"1af9dc60-89b1-4011-8745-1534865efd30\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-38.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.466412+00:00\",\"updated_at\":\"2026-10-27T17:00:37.466412+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"eab7bdca-e40d-49c4-9fbc-03b0292a4f1b\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-39.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.515684+00:00\",\"updated_at\":\"2026-10-27T17:00:37.515684+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"84fe3d81-0d01-4674-a9a8-8b7783150bab\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-40.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.553668+00:00\",\"updated_at\":\"2026-10-27T17:00:37.553668+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"4d0aee13-1adc-4214-91bf-a9f34a9427ec\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-41.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.595492+00:00\",\"updated_at\":\"2026-10-27T17:00:37.595492+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"2af49192-2496-4576-801a-44e13ddfbc0e\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-42.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.633417+00:00\",\"updated_at\":\"2026-10-27T17:00:37.633417+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"a2487400-5fd5-4bfb-8f2e-c6305b8ecb60\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-43.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.670493+00:00\",\"updated_at\":\"2026-10-27T17:00:37.670493+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"92ccdb2b-d942-4ea6-92f3-78053793a80c\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-44.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.708488+00:00\",\"updated_at\":\"2026-10-27T17:00:37.708488+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"13514484-8e24-4b7f-953e-8d6161b0b1b4\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-45.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.755418+00:00\",\"updated_at\":\"2026-10-27T17:00:37.755418+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"dbd68673-d588-4d0c-85a7-329c21cf41ed\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-46.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.792916+00:00\",\"updated_at\":\"2026-10-27T17:00:37.792916+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"8f6eea06-a440-4987-952f-6f2f945f1a9b\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-47.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.832329+00:00\",\"updated_at\":\"2026-10-27T17:00:37.832329+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"2d2c9fab-c09e-48cc-b63d-d3438554a33f\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-48.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.869376+00:00\",\"updated_at\":\"2026-10-27T17:00:37.869376+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"847ad3fc-1063-449c-9ab3-85fc5b43be9a\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-49.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.919881+00:00\",\"updated_at\":\"2026-10-27T17:00:37.919881+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"64c1777e-904a-4f82-8fa9-bfb247cadb69\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-50.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.959473+00:00\",\"updated_at\":\"2026-10-27T17:00:37.959473+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"e1d59c9d-64bf-46d3-b029-542fb3232f5c\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-51.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:37.997015+00:00\",\"updated_at\":\"2026-10-27T17:00:37.997015+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"43931eba-303a-4c5c-a736-7ffd85de3d35\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-52.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.046570+00:00\",\"updated_at\":\"2026-10-27T17:00:38.046570+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"53adb7ec-c8ab-49e6-82cf-7e2ae236bfa4\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-53.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.084535+00:00\",\"updated_at\":\"2026-10-27T17:00:38.084535+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"ae6b3e8a-103f-49bb-9e84-29cdebc7a6dd\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-54.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.122822+00:00\",\"updated_at\":\"2026-10-27T17:00:38.122822+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"66d57064-8551-46c5-b29a-2593505b2c73\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-55.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.223766+00:00\",\"updated_at\":\"2026-10-27T17:00:38.223766+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"0986f195-946e-46f4-82ca-b060a1c66242\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-56.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.273880+00:00\",\"updated_at\":\"2026-10-27T17:00:38.273880+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"1d18c6f2-fffb-4a92-beb2-17368ed46183\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-57.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.312252+00:00\",\"updated_at\":\"2026-10-27T17:00:38.312252+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"f3b04a91-3608-4bef-bc1c-d4c9b490708e\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-58.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.349939+00:00\",\"updated_at\":\"2026-10-27T17:00:38.349939+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"51a86893-0233-4d89-b195-28c5d0663e3e\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-59.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.427471+00:00\",\"updated_at\":\"2026-10-27T17:00:38.427471+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "request": "<file>",
+      "status": 202,
+      "response": "{\"id\":\"13495564-e91a-4ca6-88f1-d3376cc3030b\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-60.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:00:38.485610+00:00\",\"updated_at\":\"2026-10-27T17:00:38.485610+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74/documents",
+      "status": 200,
+      "response": "[{\"id\":\"c68ca996-6916-4b0e-863d-16ad588520e9\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-1.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"failed\",\"error_message\":\"executor error: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried\",\"created_at\":\"2026-10-27T17:00:35.475767+00:00\",\"updated_at\":\"2026-10-27T17:00:37.696667+00:00\"},{\"id\":\"18579cfe-e6b0-48ae-8973-f24100dc1473\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-2.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"failed\",\"error_message\":\"executor error: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried\",\"created_at\":\"2026-10-27T17:00:35.561457+00:00\",\"updated_at\":\"2026-10-27T17:00:37.532885+00:00\"},{\"id\":\"a1e49980-463d-486e-a1cc-b3f7e7d9e7ca\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-3.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"failed\",\"error_message\":\"executor error: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried\",\"created_at\":\"2026-10-27T17:00:35.601386+00:00\",\"updated_at\":\"2026-10-27T17:00:38.171866+00:00\"},{\"id\":\"76445fdb-02f4-46a8-8694-060e7ae32c4f\",\"kb_id\":\"1f17d606-9b58-4774-a24f-371120f26a74\",\"filename\":\"archive-4.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"failed\",\"error_message\":\"executor error: Ca"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74",
+      "status": 500,
+      "response": "Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    }
+  ],
+  "hosting": {
+    "embedding_caps_usd": {
+      "openai": 10,
+      "cohere": 10
+    },
+    "openai_used": true,
+    "cohere_used": false,
+    "openai_rate_usd_per_million_tokens": 0.02,
+    "corpus_bytes": 40029,
+    "estimated_cost_ceiling_usd": 0.0008005800000000001
+  },
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 5671
+  },
+  "restored_embedding": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "cleanup_errors": [
+    "DELETE /api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74: 500: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried"
+  ],
+  "status": "FAILED",
+  "duration_ms": 5466
+}

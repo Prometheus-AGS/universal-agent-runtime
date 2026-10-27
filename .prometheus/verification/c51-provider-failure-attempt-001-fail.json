@@ -1,0 +1,13 @@
+{
+  "scenario": "C51",
+  "status": "FAIL",
+  "failure_class": "test cleanup defect (provider restore omitted the bumped execution-profile revision); all product assertions passed",
+  "platform": "Mac",
+  "attempt": 1,
+  "observed_output": "1 scenario (1 failed); 7 steps (6 passed, 1 failed in After); 0m 8.773s",
+  "evidence": ".prometheus/verification/provider-failure/9f753121-1462-48a4-aa27-de90defdf876.json",
+  "observed_before_failure": "Faulted run: proxy cut the provider stream after 471 bytes; run status error with provider_transport_failed 'network error: error sending request'; no text; accounting call pending with accounting_unresolved diagnostic; effective model liter/MiniMax-M3. Fresh run after clearing the fault: done, answer 42, settled call, same model.",
+  "failure": "Restore PUT of the original provider returned 409 TEAM_REVISION_CONFLICT because the endpoint change had bumped each model's execution_profile settings_revision.",
+  "recovery": "Provider restored manually with current execution_profile revisions (base_url http://127.0.0.1:4000/v1, all fields equal to the original); all five models re-verified via /test (mimo-v2.5-pro needed a 512-token cap).",
+  "next": "Restore carries current profile revisions and verifies at 512 tokens; rerun once."
+}

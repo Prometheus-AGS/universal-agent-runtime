@@ -1,0 +1,37 @@
+{
+  "scenario": "C52",
+  "status": "PASS",
+  "platform": "darwin",
+  "attempt": 5,
+  "date": "2026-10-27",
+  "command": "UAR_MODEL=liter/MiniMax-M3 node_modules/.bin/cucumber-js --config scripts/behaviors/startup-retention.cucumber.mjs (operator-approved)",
+  "result": "1 scenario passed, 11/11 steps, 59.5 s",
+  "evidence": "startup-retention/40922426-0262-4615-9035-c28aa76c72a4.json",
+  "fixture": {
+    "host_fixture": "scripts/manual-host/c52-disposable-instance.mjs",
+    "surreal_server": "3.3.0 (~/.prometheus/bin/surreal, matches versions.toml surrealdb_server)",
+    "uar_binary_sha256_prefix": "a0f769d2790d39fe (same binary as the owned UAR)",
+    "store": "fresh loopback ws:// Surreal server, disposable root password held in memory and the fixture's private config only",
+    "sessions.persisted_ttl_secs": 3600,
+    "owner": "second uar-jwt-proxy with the owned proxy's PROXY_JWT_* environment; the test sent no credentials",
+    "teardown": "proxy, UAR and Surreal stopped; fixture directory removed; no processes left",
+    "owned_runtime": "untouched; PID 78140 healthy before and after"
+  },
+  "observed": {
+    "empty_store": "before startup only Surreal's default namespace 'main' existed; the store namespace 'prompt' did not",
+    "initial_startup": "PID 72483; 5 'Built-in agent seeded' lines (default-agent, orchestrator-agent, general-purpose, rust-reviewer, compiler-agent)",
+    "override": "harness.skill_reattachment seeded ConfigFile {5000, 25000}; saved via REST as Api {4321, 12345}, revision 2026-10-27T22:09:30.129258000Z",
+    "repeat_startup": "PID 72933 replaced 72483; 0 seed lines; all five built-in definitions identical; override still Api {4321, 12345} with the same revision",
+    "model_verification": "POST /api/uar/providers/liter/test model MiniMax-M3 ok=true",
+    "sessions": "terminal 21bbadae-1150-4ea7-89ff-4690b84a8f54 and control 106905f1-6c6a-48a1-9598-bd45675e3ec6 each answered READY",
+    "host_aging": "one row updated: terminal last_activity 22:09:38.445834 -> 20:09:41.207 (2 h, past the 1 h TTL); control unchanged at 22:09:41.167256; no clock changed",
+    "first_signal": "a turn in trigger session b9be013f-abd2-49b0-9bda-c4c4b9e0e26c; the run-retention worker logged one 'persisted session purged by TTL sweep' for 21bbadae at 22:09:42.616; GET terminal 404, control 200, trigger 200",
+    "second_signal": "another turn in the trigger session answered AGAIN; after 10 s still one purge line; control and trigger 200; built-ins identical; override unchanged"
+  },
+  "attempts": "1 BLOCKED (no fixture), 2 FAIL (Surreal 3.2.0 server), 3 FAIL (empty-store check), 4 FAIL (unverified model on the fresh store), 5 PASS",
+  "not_covered": [
+    "PostgreSQL persistence (catalog says same contract later)",
+    "a store already holding operator data at first start of a new version",
+    "retention of run replay state (only persisted sessions were exercised)"
+  ]
+}

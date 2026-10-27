@@ -1,0 +1,12 @@
+{
+  "scenario": "C39",
+  "status": "FAIL",
+  "failure_class": "test oracle too narrow (accepted only prompt-injected memory context as provenance)",
+  "platform": "Mac",
+  "attempt": 1,
+  "observed_output": "1 scenario (1 failed); 10 steps (4 passed, 5 skipped, 1 failed); 1m 7.181s",
+  "evidence": ".prometheus/verification/memory-lifecycle/06e34546-ddee-4b41-8ed1-67c8ea4f34a7.json",
+  "observed_before_failure": "Memory enabled (auto_capture off) after owned restart; record saved (memory:fdea6c3f-…); in a fresh conversation the agent called a memory tool and answered with the saved code LOCKER-88DCF3. No agui.memory.context event was emitted, so the injection-only check failed. Tool events were not captured.",
+  "cleanup": "memory record deleted, agent and sessions deleted, settings restored (source ConfigFile), owned restart; cleanup_errors []",
+  "next": "Accept actual memory provenance as injected context OR a memory tool result carrying the value; capture tool calls/results; rerun once."
+}

@@ -1,0 +1,129 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "whole-request-overflow-refuses-before-an-over-budget-dispatch;non-removable-content-larger-than-a-small-real-allowance-is-refused",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Non-removable content larger than a small real allowance is refused",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 95944588
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable provider route whose model has a small context window",
+            "match": {
+              "location": "scripts/behaviors/steps/request-overflow.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 630621346
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a disposable agent with long required instructions, tools and a tiny linked knowledge base",
+            "match": {
+              "location": "scripts/behaviors/steps/request-overflow.steps.mjs:55"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1145046243
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send a request whose required content exceeds that window",
+            "match": {
+              "location": "scripts/behaviors/steps/request-overflow.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 767060
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "a typed budget refusal is reported before any provider dispatch",
+            "match": {
+              "location": "scripts/behaviors/steps/request-overflow.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 201917
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "no required content was silently dropped to make it fit",
+            "match": {
+              "location": "scripts/behaviors/steps/request-overflow.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 199821291
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9yZXF1ZXN0LW92ZXJmbG93L2NjYzU2NTA3LTFhZjMtNGFkNi04Yzc4LTgxN2ZlZDE4YjAyNC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@budget",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "whole-request-overflow-refuses-before-an-over-budget-dispatch",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Whole-request overflow refuses before an over-budget dispatch",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@budget",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/request-overflow.feature"
+  }
+]

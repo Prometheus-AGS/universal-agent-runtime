@@ -19,7 +19,7 @@ function alive(pid) {
 
 // Native NUL-delimited layout used by Apple's ps: adv_cmds/ps/print.c getproclline.
 // Values stay in memory; never expose the captured buffer in an error or receipt.
-function processEnvironment(pid) {
+export function processEnvironment(pid, expectedArgc = 3) {
   let raw;
   try {
     raw = execFileSync('python3', ['-c', `
@@ -37,7 +37,7 @@ sys.stdout.buffer.write(buf.raw[:size.value])
   } catch { throw new Error('Cannot capture the owned process environment; runtime left untouched'); }
   assert.ok(raw.length > 4, 'Missing process argument bytes');
   const argc = raw.readInt32LE(0);
-  assert.equal(argc, 3, 'Expected binary, --config and config path');
+  assert.equal(argc, expectedArgc, 'Unexpected owned process argument count');
   let cursor = 4;
   const next = () => {
     const end = raw.indexOf(0, cursor);
