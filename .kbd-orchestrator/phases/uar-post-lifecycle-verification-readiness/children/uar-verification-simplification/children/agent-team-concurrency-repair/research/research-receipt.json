@@ -1,0 +1,109 @@
+{
+  "started_at": "2026-10-26T09:20:10Z",
+  "cutoff_at": "2026-10-26T09:39:20Z",
+  "max_minutes": 20,
+  "max_queries_per_tier": 8,
+  "queries_used": {
+    "tier_1": 2,
+    "tier_2": 2,
+    "tier_3": 0,
+    "tier_4": 1
+  },
+  "queries": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "tool call error: tool call failed for `github/search_code`\n\nCaused by:\n    Mcp error: -32603: Authentication Failed: Requires authentication"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "tool call error: tool call failed for `github/search_code`\n\nCaused by:\n    Mcp error: -32603: Authentication Failed: Requires authentication"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Available Libraries:\n\n- Title: SurrealDB\n- Context7-compatible library ID: /surrealdb/surrealdb\n- Description: SurrealDB is a multi-model database built in Rust designed to unify multiple data models into a single engine, combining document, graph, relational, time-series, geospatial and key-value data types with powerful search and retrieval functionalities (full-text, vector, hybrid) and real-time, event-driven capabilities, enabling developers to build powerful applications faster and more efficiently. SurrealDB can run in-memory, embedded or as highly scalable cloud or self-hosted clusters.\n- Code Snippets: 863\n- Source Reputation: High\n- Benchmark Score: 62.82\n----------\n- Title: SurrealDB Migrations\n- Context7-compatible library ID: /odonno/surrealdb-migrations\n- Description: SurrealDB Migrations is a user-friendly migration tool that provides a CLI and versatile Rust library for managing database schema, events, and data changes with support for branching and rollback capabilities.\n- Code Snippets: 335\n- Source Reputation: High\n- Benchmark Score: 88\n----------\n- Title: SurrealDB\n- Context7-compatible library ID: /surrealdb/docs.surrealdb.com\n- Description: SurrealDB is the ultimate cloud database for tomorrow's applications, built using Astro, enabling easier development, faster building, and quicker scaling.\n- Code Snippets: 21358\n- Source Reputation: High\n- Benchmark Score: 75.88\n----------\n- Title: SurrealDB\n- Context7-compatible library ID: /websites/surrealdb\n- Description: SurrealDB is a multi-model database built in Rust that unifies document, graph, time-series, relational, geospatial, and key-value data models with powerful search, real-time, and event-driven capabilities.\n- Code Snippets: 14169\n- Source Reputation: High\n- Benchmark Score: 76.33\n----------\n- Title: SurrealDB (DeepWiki)\n- Context7-compatible library ID: /websites/deepwiki_surrealdb_docs_surrealdb_com\n- Description: SurrealDB is a multi-model database engine that unifies document, graph, relational, time-series, and key-value data models into a single scalable platform.\n- Code Snippets: 723\n- Source Reputation: High"
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "## [issue:surrealdb/surrealdb#7472] (issue) Transaction::commit() on local engines discards QueryError::TransactionConflict, so conflict-retry never fires#7472\nhttps://github.com/surrealdb/surrealdb/issues/7472\n# Transaction::commit() on local engines discards QueryError::TransactionConflict, so conflict-retry never fires#7472\n## Description\n### What component does this affect?\nRust SDK\n\n### Describe the bug\n**The asymmetry:** the _query_ path in the same file does not flatten. `Command::Query` / the 3.3 `query` arm return `execute_with_transaction`'s results directly, so a conflict raised **while a statement executes** keeps its kind. Only `commit` (and `rollback`, harmless \u2014 nothing classifies a rollback failure) flattens.\n\nNote this is the path most embedded application code and most examples use.\n\n### Steps to reproduce\n\n### SurrealDB version\nAlso verified present in **3.3.0-beta.1**, where the code moved to the new `surrealdb-engine-local` crate \u2014 the surrounding logic there was reworked (abandoned-transaction handling, claim-by-removal), but the error flattening is unchanged.\n\ntsondru\n\n## Harness\n\n## Distinct errors observed\n| path | `query_details()` | n | `to_string()` |\n|-|-|-|-|\n| `tx.commit()`, Mem | **`None`** | 952 | `Transaction conflict: Write conflict, retry the transaction. This transaction can be retried` |\n\n## Source (unchanged from the original report, re-verified at `3.3.0-beta.1`)\nDhghomon\n\nHi @tsondru,\n\nThis has been fixed so that it returns `QueryError::TransactionConflict` from `commit()` instead of an internal error that carries only the message, so a retry on conflict can match on the error kind.\n\n## [issue:surrealdb/surrealdb#7428] (issue) Expose retryable transaction write-conflict as a public typed error / is_retryable()#7428\nhttps://github.com/surrealdb/surrealdb/issues/7428\n# Expose retryable transaction write-conflict as a public typed error / is_retryable()#7428\n#7429\n\nImprovement\n\n#7429\n\n## Summary\nWhen two transactions concurrently write the same record on the embedded engine (SurrealKV), the losing transaction fails with a write conflict that is meant to be retried. On the public Rust SDK there is currently no _typed_ / stable way to detect \"this failure is a retryable write-conflict\" \u2014 it can only be recognized by string-matching the error message, which is fragile across releases.\n\n## Observed behaviour (SurrealDB `3.1.5`, surrealkv `0.21.2`)\nThe conflict is only visible via `Response::take_errors()`, where the COMMIT statement carries:\n\n## Minimal repro (public API only)\n\nUnder a multi-threaded runtime this produces many `take_errors()` entries containing the conflict message; there is no non-string way to classify them as retryable.\n\nActually it looks like that issue was fixed in 3.2.2 [https://surrealdb.com/releases/3.2](https://surrealdb.com/releases/3.2), I'm now getting the expected TransactionConflict error details\n\nHi @jleni,\n\nThis is now resolved since 3.2.2 with its own typed error and the ability to retry. This page has more details: [https://surrealdb.com/docs/reference/rest-api/errors#error-details](https://surrealdb.com/docs/reference/rest-api/errors#error-details)\n\n## [doc:https://github.com/surrealdb/surrealdb.js/blob/1e1f5b91affa09e29ed9c17d34fb280b9563c9bf/packages/sdk/README.md] (doc) README\n## Getting started\n### Sending queries\n#### Atomic transactions\n\nIt resolves to the result of each statement, in order, or rejects with the error which made the That is the error of the statement which actually failed, not one of the \"not executed\" errors the server reports for the statements it rolled back.\n\nin SurrealQL: the statements after it would be skipped, and the transaction would still commit. detected, so take care with those.\n\nthe `retry` option, which defaults to the `retry` configured when connecting:\n\nAs with any retry, a conflict is only recognized by default when the server reports it as a structured `TransactionConflict`, which SurrealDB 3.1.0 and later do. predicate in the `retry` option, which is passed the error which made the transaction fail.\n\n### Cancelling queries and setting timeouts\n#### Lists of queries and atomic transactions\nA list of queries given to `query()` is a query like any other, so it takes `.signal()` and `.requestTimeout()`. `transaction()` takes the same as options, next to `retry`:\n\n## [doc:https://github.com/surrealdb/docs.surrealdb.com/blob/cdf782611d3404fe9acbd039607de2d763f91ff7/src/content/reference/javascript/concepts/executing-queries.mdx] (doc) Executing queries\n# Executing queries\n## Running raw SurrealQL\n\n## Retrying on write conflict\nUnder concurrent write load, a query can fail with a read/write conflict when another transaction touched the same data. Chain `.retry()` onto `.query()` or any query builder method to replay the operation automatically with exponential backoff.\n\nRetry is off by default, and only applies to `.collect()` (or awaiting the query directly) - not `.responses()` or `.stream()`. For raw queries with multiple statements, only enable it when the statements are safe to apply more than once, since a retried query re-sends the whole thing."
+          }
+        ],
+        "structuredContent": {
+          "results": [
+            {
+              "id": "issue:surrealdb/surrealdb#7472",
+              "url": "https://github.com/surrealdb/surrealdb/issues/7472",
+              "title": "Transaction::commit() on local engines discards QueryError::TransactionConflict, so conflict-retry never fires#7472",
+              "passages": [
+                {
+                  "text": "# Transaction::commit() on local engines discards QueryError::TransactionConflict, so conflict-retry never fires#7472\n## Description\n### What component does this affect?\nRust SDK\n\n### Describe the bug\n**The asymmetry:** the _query_ path in the same file does not flatten. `Command::Query` / the 3.3 `query` arm return `execute_with_transaction`'s results directly, so a conflict raised **while a statement executes** keeps its kind. Only `commit` (and `rollback`, harmless \u2014 nothing classifies a rollback failure) flattens.\n\nNote this is the path most embedded application code and most examples use.\n\n### Steps to reproduce\n\n### SurrealDB version\nAlso verified present in **3.3.0-beta.1**, where the code moved to the new `surrealdb-engine-local` crate \u2014 the surrounding logic there was reworked (abandoned-transaction handling, claim-by-removal), but the error flattening is unchanged.\n\ntsondru\n\n## Harness\n\n## Distinct errors observed\n| path | `query_details()` | n | `to_string()` |\n|-|-|-|-|\n| `tx.commit()`, Mem | **`None`** | 952 | `Transaction conflict: Write conflict, retry the transaction. This transaction can be retried` |\n\n## Source (unchanged from the original report, re-verified at `3.3.0-beta.1`)\nDhghomon\n\nHi @tsondru,\n\nThis has been fixed so that it returns `QueryError::TransactionConflict` from `commit()` instead of an internal error that carries only the message, so a retry on conflict can match on the error kind."
+                }
+              ],
+              "license": "NOASSERTION"
+            },
+            {
+              "id": "issue:surrealdb/surrealdb#7428",
+              "url": "https://github.com/surrealdb/surrealdb/issues/7428",
+              "title": "Expose retryable transaction write-conflict as a public typed error / is_retryable()#7428",
+              "passages": [
+                {
+                  "text": "# Expose retryable transaction write-conflict as a public typed error / is_retryable()#7428\n#7429\n\nImprovement\n\n#7429\n\n## Summary\nWhen two transactions concurrently write the same record on the embedded engine (SurrealKV), the losing transaction fails with a write conflict that is meant to be retried. On the public Rust SDK there is currently no _typed_ / stable way to detect \"this failure is a retryable write-conflict\" \u2014 it can only be recognized by string-matching the error message, which is fragile across releases.\n\n## Observed behaviour (SurrealDB `3.1.5`, surrealkv `0.21.2`)\nThe conflict is only visible via `Response::take_errors()`, where the COMMIT statement carries:\n\n## Minimal repro (public API only)\n\nUnder a multi-threaded runtime this produces many `take_errors()` entries containing the conflict message; there is no non-string way to classify them as retryable.\n\nActually it looks like that issue was fixed in 3.2.2 [https://surrealdb.com/releases/3.2](https://surrealdb.com/releases/3.2), I'm now getting the expected TransactionConflict error details\n\nHi @jleni,\n\nThis is now resolved since 3.2.2 with its own typed error and the ability to retry. This page has more details: [https://surrealdb.com/docs/reference/rest-api/errors#error-details](https://surrealdb.com/docs/reference/rest-api/errors#error-details)"
+                }
+              ],
+              "license": "NOASSERTION"
+            },
+            {
+              "id": "doc:https://github.com/surrealdb/surrealdb.js/blob/1e1f5b91affa09e29ed9c17d34fb280b9563c9bf/packages/sdk/README.md",
+              "url": "https://github.com/surrealdb/surrealdb.js/blob/1e1f5b91affa09e29ed9c17d34fb280b9563c9bf/packages/sdk/README.md",
+              "title": "README",
+              "passages": [
+                {
+                  "text": "## Getting started\n### Sending queries\n#### Atomic transactions\n\nIt resolves to the result of each statement, in order, or rejects with the error which made the That is the error of the statement which actually failed, not one of the \"not executed\" errors the server reports for the statements it rolled back.\n\nin SurrealQL: the statements after it would be skipped, and the transaction would still commit. detected, so take care with those.\n\nthe `retry` option, which defaults to the `retry` configured when connecting:\n\nAs with any retry, a conflict is only recognized by default when the server reports it as a structured `TransactionConflict`, which SurrealDB 3.1.0 and later do. predicate in the `retry` option, which is passed the error which made the transaction fail.\n\n### Cancelling queries and setting timeouts\n#### Lists of queries and atomic transactions\nA list of queries given to `query()` is a query like any other, so it takes `.signal()` and `.requestTimeout()`. `transaction()` takes the same as options, next to `retry`:"
+                }
+              ],
+              "license": "Apache-2.0"
+            },
+            {
+              "id": "doc:https://github.com/surrealdb/docs.surrealdb.com/blob/cdf782611d3404fe9acbd039607de2d763f91ff7/src/content/reference/javascript/concepts/executing-queries.mdx",
+              "url": "https://github.com/surrealdb/docs.surrealdb.com/blob/cdf782611d3404fe9acbd039607de2d763f91ff7/src/content/reference/javascript/concepts/executing-queries.mdx",
+              "title": "Executing queries",
+              "passages": [
+                {
+                  "text": "# Executing queries\n## Running raw SurrealQL\n\n## Retrying on write conflict\nUnder concurrent write load, a query can fail with a read/write conflict when another transaction touched the same data. Chain `.retry()` onto `.query()` or any query builder method to replay the operation automatically with exponential backoff.\n\nRetry is off by default, and only applies to `.collect()` (or awaiting the query directly) - not `.responses()` or `.stream()`. For raw queries with multiple statements, only enable it when the statements are safe to apply more than once, since a retried query re-sends the whole thing."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "context7_docs_summary": "query_docs /surrealdb/surrealdb returned main-branch Response::take_errors examples; checked against pinned local query.rs, no version-equivalence claim.",
+  "note": "External queries stopped earlier; all research ended before20-minute09:40:10Z deadline. No latest-version/registry-health claims or dependency changes."
+}

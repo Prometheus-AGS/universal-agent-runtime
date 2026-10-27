@@ -1,0 +1,14 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 147,
+  "task": {
+    "action": "complete",
+    "id": "issue-426-lead",
+    "owner": "uar-lead",
+    "expectedTaskRevision": 1,
+    "evidence": [
+      ".agent-team/uar-core/handoffs/issue-426-lead.md"
+    ],
+    "remaining": []
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "source": "Direct user answer to exact A3/F3/V3 question in this task",
+  "answer": "Approve A3 and F3/V3; sign, adopt, run serially",
+  "recordedAt": "2026-10-24T16:31:01.584321+00:00",
+  "inventorySha256": "1aa17473c08d241abc4afc9b5d7677d325ea35b0d847c700e82553b5b9d34025",
+  "contractDigest": "5bc85ab9074eb0d950fb88d72dede1bde6d8b03c0a62c634a57c7b693e48513a",
+  "scope": "Exact named A3 SSH-agent signing/adoption and F3/V3 packet003 including fixture assertions/effects, authority sealing, serial gates and conditional actual accepted completion; first failure/exhaustion stops, owned cleanup only afterward. No further repair, retry, publication or extra preflight."
+}

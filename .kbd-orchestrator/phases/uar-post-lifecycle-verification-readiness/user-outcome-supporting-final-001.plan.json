@@ -1,0 +1,1100 @@
+{
+  "schema_version": "uar.supporting-final-plan.v1",
+  "status": "SOURCE_ONLY_NOT_EXECUTABLE",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "stage": "user-outcome-implementation",
+  "gate": "CLOSED",
+  "execution_authorized": false,
+  "classification": "authorized documentation writing after source inspection; no verification performed",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-010.json",
+  "authority": {
+    "current": "A12/binding14, subject to parent exact final adoption",
+    "legacy006": "recipe/oracle evidence only; A6 signature, approvals, contract digest, boundInputs and retained store are not current authority",
+    "epoch": "uar-user-outcomes-original-20261024",
+    "global_calls_cap": 4000,
+    "active_minutes_cap": 2400,
+    "repair_limit": 9,
+    "repairs_consumed": 9,
+    "repair_remaining": 0,
+    "cohere_usd": 10,
+    "openai_embeddings_usd": 10,
+    "preserve_all_consumption_unknowns_floors": true,
+    "reset_or_transfer": false,
+    "automatic_retry_or_repair": false
+  },
+  "entry_condition": "All97 genuine user cases/582 backend repetition rows pass first; current whole-phase implementation inventory reconciled to waypoint and full ledger; operator explicitly approves exact final commands, environment, fixture effects, bytes and cleanup. Supporting controlled traffic never substitutes for genuine user completion.",
+  "paths": {
+    "root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting",
+    "manifest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/boundary-manifest.json",
+    "configuration": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-main.yaml",
+    "compose": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+    "documents": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/documents",
+    "environment": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+    "inputs_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/inputs-receipt.json",
+    "store": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/store",
+    "home": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/home",
+    "tmp": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/tmp",
+    "ingest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/ingest",
+    "main_evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/evidence/main",
+    "issue426_evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/evidence/issue426",
+    "profile_evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/evidence/profiles",
+    "review_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews",
+    "disposition_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/evidence/legacy-obligation-disposition.json"
+  },
+  "paths_not_relocatable_without_source_change": {
+    "cargo_target": "target/uar-post-lifecycle-main",
+    "build_output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+    "reason": "main_boundary.py enforces exact Cargo output and sets target internally; separate serial owner after user gate. Snapshot native006 is not substituted for retained main BUILD."
+  },
+  "p1_materialization": [
+    {
+      "step": 1,
+      "kind": "metadata fixture authorship",
+      "recipe": "Exclusively create mode0700 supporting tree and mode0600 configuration/manifest/environment/receipt files only under explicitly approved P1. No services or runner invocation. Existing destination blocks, never overwrite or purge."
+    },
+    {
+      "step": 2,
+      "kind": "fresh scoped topology",
+      "recipe": "Clone retained006 manifest structure and completed scenario recipes by value, preserving exact ten scenario IDs/order, all steps, requiredControls, assertions, historicalB3 attribution and cleanup. Rewrite every old fixture/evidence/config/store/document identity to new007/supporting; rebuild boundInputs from current source010 and current derived inputs, not old006 source list. Replace all authority slots with actual current signed/adopted references only after permission."
+    },
+    {
+      "step": 3,
+      "kind": "owned store and ports",
+      "recipe": "Preserve loopback ports49310(main),49311(peer),49312(store),49313(grpc), disjoint from private user494xx; this is selection, not observed availability. Fresh compose project/container uar-user-outcomes-007-supporting, absolute bind mount supporting/store:/data, same digest-pinned Surreal3.3.0 image. Fresh namespace/database uar_post_lifecycle_user_outcomes_007_supporting. No retained001/006 store reuse. Bind exact config and compose bytes."
+    },
+    {
+      "step": 4,
+      "kind": "selected supporting-only JWT recipe; approval pending",
+      "recipe": "Under explicit combined A13/P1 approval only, parent reads newly generated private env.json in memory for fixture HS256/admin/store values and inputs.json for original primary claims. Mint exactly3 additional supporting-only JWTs; preserve original2 product user tokens/roles/workspace and private input files unchanged. No helper import or production change. Write separate exclusive mode0600 supporting.env.json and private mode0600 local-main.yaml/compose; no upstream keys. Details in supporting_jwt_recipe."
+    },
+    {
+      "step": 5,
+      "kind": "fixture bytes",
+      "recipe": "Copy A-E document bytes to supporting/documents and bind actual SHA256 values; retain UAR_HOLD:kb-race: in D/E. Select fresh fixtureId/accountingRun/accountingScope/terminal reference and A/B/C marker identities consistently in payloads/observations/cleanup. Keep provider fixture, model gpt-4o-mini, loopback384-dimensional embedding peer. No real upstream request or extra provider selection."
+    },
+    {
+      "step": 6,
+      "kind": "source/executable binding",
+      "recipe": "Bind current runner, controlled_peer.py, post_lifecycle_main.rs, post_lifecycle_count.rs, post_lifecycle_store.rs, current source inventory, configuration/compose/documents and exact installed Python/toolchain references. Select Python from sealed P0.006 installed snapshot only after runtime closure/path metadata are explicitly accepted; old pyenv path is recipe provenance, not current executable authority. Frozen candidate is supporting/evidence/main/artifacts/universal-agent-runtime. Keep main3starts, peer1start; dimensions384/hold20seconds; COUNT owns extra in-process ephemeral peer."
+    },
+    {
+      "step": 7,
+      "kind": "manifest activation deferred",
+      "recipe": "Manifest remains implementationComplete=false, readyToRun=false, cleanupAuthorized=false with no fake verificationApprovalRef/storeFixtureApprovalRef until actual whole-phase inventory, current authority and exact V permission. Runner requires actual nonempty references and implementationComplete=true. Derived manifest/environment/fixture hashes belong to final inventory; no circular signature preimage or presumed P1 permission."
+    },
+    {
+      "step": 8,
+      "kind": "final receipt/envelope",
+      "recipe": "Record exact actual generated-input references, chosen identity recipe, environment-name allowlist, config/compose/manifest/doc hashes, current source and A12/binding14 references in inputs-receipt. Final lead supplies one sealed environment-loading envelope and exact byte identity before V; no login/profile sourcing, ambient provider keys, credentials in argv/logs, standalone preflight or helper import. Mark every unfilled field unresolved."
+    }
+  ],
+  "commands_in_order": [
+    {
+      "id": "S0",
+      "argv": [
+        "docker",
+        "compose",
+        "--project-name",
+        "uar-user-outcomes-007-supporting",
+        "--file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+        "up",
+        "--detach",
+        "--no-deps",
+        "store"
+      ],
+      "effects": "Create only explicitly owned disk-backed supporting store; no healthcheck/restart policy or shared service change. Requires exact fixture permission."
+    },
+    {
+      "id": "S1",
+      "argv": [
+        "APPROVED_FROZEN_PYTHON",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/post_lifecycle/main_boundary.py",
+        "--manifest",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/boundary-manifest.json",
+        "--evidence-root",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/evidence/main"
+      ],
+      "argv_unresolved": [
+        "APPROVED_FROZEN_PYTHON",
+        "sealed environment-loading envelope"
+      ],
+      "nested_argv": [
+        [
+          "cargo",
+          "build",
+          "--locked",
+          "--no-default-features",
+          "--features",
+          "server-full",
+          "--bin",
+          "universal-agent-runtime"
+        ],
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--no-default-features",
+          "--features",
+          "server-full",
+          "--test",
+          "post_lifecycle_main",
+          "--",
+          "--test-threads=1"
+        ]
+      ],
+      "effects": "Input hash checks, exclusive evidence, BUILD, exclusive frozen candidate copy+hash before TEST, real main/peer HTTP/store effects and awaited teardown. Timeout1800seconds each Cargo child; timeout may leave descendants PENDING, not hard-containment proof."
+    },
+    {
+      "id": "S2",
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "server-full,test-probes",
+        "--test",
+        "ingestion_admission",
+        "--test",
+        "durable_ingestion",
+        "--test",
+        "lifecycle_owned_resources",
+        "--test",
+        "run_retention",
+        "--",
+        "--test-threads=1"
+      ],
+      "effects": "All four nonzero required targets. Embedded SurrealKV/tempdirs plus shared dedicated Surreal fixture; durable target self-exec current test binary with --nocapture --test-threads=1 for remote unattested and each accept/claim/publish stage; random api_key_<uuid> namespace, keys database. Source helper may own real runtime/sidecar child processes and temporary config. No postgres-backend feature here, no Postgres functional claim."
+    },
+    {
+      "id": "S3",
+      "argv": [
+        "docker",
+        "compose",
+        "--project-name",
+        "uar-user-outcomes-007-supporting",
+        "--file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+        "stop",
+        "--timeout",
+        "30",
+        "store"
+      ]
+    },
+    {
+      "id": "S4",
+      "argv": [
+        "docker",
+        "compose",
+        "--project-name",
+        "uar-user-outcomes-007-supporting",
+        "--file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+        "down",
+        "--timeout",
+        "30"
+      ]
+    },
+    {
+      "id": "S5",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "minimal",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S6",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "server-full",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S7",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S8",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-apple-ios"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S9",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-linux-android"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S10",
+      "argv": [
+        "docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--tag",
+        "uar-issue-426:1.3.0",
+        "."
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S11",
+      "operation": "fresh isolated artifact-only Rust review then fresh isolated React/TypeScript/Python/security code review",
+      "inputs": "final artifacts/diff/requirements/current source and actual user/main/Issue426/profile receipts; no generation history",
+      "outputs": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-rust-review.md",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-code-review.md"
+      ],
+      "constraint": "Explicit V review approval only; no reviewer may run additional commands. Required findings block, no repair remaining; at most one report clarification on unchanged source; disclose same-family fallback."
+    },
+    {
+      "id": "S12",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-rust-review.md",
+        "--strictness",
+        "standard"
+      ]
+    },
+    {
+      "id": "S13",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-code-review.md",
+        "--strictness",
+        "standard"
+      ]
+    },
+    {
+      "id": "S14",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-budget-reconciliation"
+      ]
+    },
+    {
+      "id": "S15",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-compatible-budget-errors"
+      ]
+    },
+    {
+      "id": "S16",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-destination-budget-contract"
+      ]
+    },
+    {
+      "id": "S17",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-persistence-discriminators"
+      ]
+    },
+    {
+      "id": "S18",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-boundary-evidence"
+      ]
+    },
+    {
+      "id": "S19",
+      "argv": [
+        "openspec",
+        "validate",
+        "openai-client-tools"
+      ]
+    },
+    {
+      "id": "S20",
+      "argv": [
+        "openspec",
+        "validate",
+        "update-parking-lot-admission"
+      ]
+    },
+    {
+      "id": "S21",
+      "argv": [
+        "openspec",
+        "validate",
+        "reengineer-user-outcome-verification"
+      ]
+    }
+  ],
+  "environment_contract": {
+    "baseline": [
+      "PATH",
+      "LANG",
+      "LC_ALL"
+    ],
+    "toolchain": [
+      "CARGO_HOME",
+      "RUSTUP_HOME"
+    ],
+    "isolated": {
+      "HOME": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/home",
+      "TMPDIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/tmp",
+      "UAR_LOCAL_ONLY": "true",
+      "CARGO_TARGET_DIR": "target/uar-post-lifecycle-main"
+    },
+    "main": [
+      "RUST_LOG=info",
+      "UAR_BOUNDARY_STORE_USER",
+      "UAR_BOUNDARY_STORE_PASSWORD",
+      "UAR_BOUNDARY_EXISTING_WORKSPACE",
+      "UAR_BOUNDARY_SETTINGS_ADMIN_KEY",
+      "UAR_BOUNDARY_OWNER_AUTHORIZATION",
+      "UAR_BOUNDARY_OTHER_OWNER_AUTHORIZATION",
+      "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION",
+      "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1"
+    ],
+    "main_runner_sets": [
+      "UAR_MAIN_CANDIDATE",
+      "UAR_BOUNDARY_MANIFEST",
+      "UAR_BOUNDARY_EVIDENCE",
+      "UAR_BOUNDARY_BUILT_SHA256"
+    ],
+    "issue426": {
+      "UAR_API_KEY_TEST_SURREAL_URL": "ws://127.0.0.1:49312",
+      "UAR_API_KEY_TEST_SURREAL_USER": "approved supporting generated username",
+      "UAR_API_KEY_TEST_SURREAL_PASS": "approved supporting generated password"
+    },
+    "secret_policy": "Values resolved privately only after explicit approval; public metadata contains aliases and digests only. Do not inherit COHERE/LITER/OpenAI keys into controlled supporting stages."
+  },
+  "docker_nested_effects": [
+    "Ubuntu/toolchain apt/curl/install network and version commands as authored in Dockerfile; no extra host preflight",
+    "git submodule update --init --recursive --depth1 (source includes || true)",
+    "frontend pnpm install --frozen-lockfile; nested entity management pnpm install; three entity package builds; frontend pnpm build",
+    "cargo +RUST_TOOLCHAIN build --release --locked --features server-full,postgres-backend --bin universal-agent-runtime",
+    "Optional skill.wasm wasmtime compile loop and artifact/static/policy/model staging",
+    "Exact retained docker argv supplies no github_token secret, push or runtime command; missing private dependency access blocks rather than reading keyfiles. Nested scripts/builds must be included in exact V approval; toolchain/network availability remains unverified."
+  ],
+  "cleanup_policy": {
+    "on_failure": "First failed/blocked gate stops all later gates; only already explicitly approved exact-owned teardown remains. No rerun, automatic repair, new spend, service probe or widened command.",
+    "main": "Exact supported KB/agent API deletions; only captured real run IDs with exact owner, accounting/CAS row snapshot/table/key/ownership fencing after awaited main exit; remove exact owned synchronous event. Retain changed/unknown rows and record BLOCKED. Signal only owned PID via /bin/kill -TERM {ownedPid}, await exits; expected3main/1peer.",
+    "cas": "100ms synchronous event hold, at most12 competitor writes to distinct exact owned contention row; observe both actual winner directions/readbacks; no scheduler retry.",
+    "store": "S3 then S4 are explicitly requested failure cleanup too. Keep owned disk/evidence; no rm/down -v, namespace/table/database deletion, prefix purge, shared-service restart or legacy store manipulation. Issue426 generated namespaces remain in retained fresh store disk; do not invent broad cleanup."
+  },
+  "legacy_14_oracles": [
+    {
+      "id": "LIAB-01",
+      "name": "Confirmed terminal settlement exactly once",
+      "oracle": "Confirmed authoritative terminal usage replaces reserved liability with actual usage exactly once; next finite admission uses actuals.",
+      "negative_control": "Replay identical terminal evidence twice and conflicting evidence once; no double charge or silent refund."
+    },
+    {
+      "id": "LIAB-02",
+      "name": "Unknown effects remain held across restart",
+      "oracle": "Cancellation, missing response, unpriced outcome or failed settlement retains Pending/unresolved liability until authoritative reconciliation; finite admission refuses before effect.",
+      "negative_control": "Positive confirmed-terminal control admits next work; lost-response/unknown upstream control never becomes free by age or restart."
+    },
+    {
+      "id": "ERROR-01",
+      "name": "Admission classes survive tool root and child limits",
+      "oracle": "Root/tool/child limits return the exact reviewed closed error class before provider/tool effect; below-limit work executes once.",
+      "negative_control": "Disconnected transport and provider failure are not relabeled as budget refusal; downstream counters remain zero on denial."
+    },
+    {
+      "id": "ERROR-02",
+      "name": "Compatible OpenAI stream terminal error",
+      "oracle": "Selected existing client parser observes the reviewed terminal error code, message and termination sequence exactly once; successful chunk stream remains compatible.",
+      "negative_control": "Real ordinary success, client disconnect and unrelated provider failure preserve their distinct behavior; no citation extension is emitted."
+    },
+    {
+      "id": "COUNT-01",
+      "name": "Reviewed destination contract boundary",
+      "oracle": "Existing trusted Rust builder and production final-wire driver: at-limit sends once, one-over refuses before dispatch, protected tool/history/output reserve survives trim; evidenceScope=trusted_rust_builder; standaloneMainExactFit=UNSUPPORTED. No real-provider exactness claim.",
+      "negative_control": "Approximate/unsupported counters and unverified gateway capacity do not receive an exact-fit PASS; tool-call payload included; unchanged-provider control retained."
+    },
+    {
+      "id": "HISTORY-01",
+      "name": "Main GET/list restart discriminator",
+      "oracle": "Record two known runs, main/store eligibility and clean restart; compare GET and list for exact owner and retain raw outcomes. A confirmed missing-list defect is FAIL and requests scoped plan amendment, not an automatic repair.",
+      "negative_control": "Different owner and anonymous/bound mismatch reveal no records; positive pre-restart retrieval sentinel; unsupported store classified BLOCKED for durability claims."
+    },
+    {
+      "id": "KB-01",
+      "name": "Two-document KB deletion and conflict discriminator",
+      "oracle": "A and B each retrieve before deletion; after A deletion its IDs disappear while B and separate KB control persist. Concurrent upload records typed failure and exact competing writes; confirmed defect is FAIL with bounded amendment.",
+      "negative_control": "Zero hits before and after cannot pass; unrelated-owner/unrelated-KB records stay isolated; unattributed chunks are never treated as A without evidence."
+    },
+    {
+      "id": "CAS-01",
+      "name": "Exact-row losing transition and unrelated conflict",
+      "oracle": "Both actual winner directions must be observed across the two existing concurrent attempts, with exactly one success/miss pair and exact winner revision/readback in each. Launch order is diagnostic, not forced commit order. Unchanged-target unrelated transaction conflicts remain errors; repeated winners or unexplained results block. Later exact-key predicate mismatch permits CAS-miss disposition without causal attribution.",
+      "negative_control": "Unrelated transaction conflict must remain an error; wrong owner/context cannot observe or mutate the winning row."
+    },
+    {
+      "id": "BTHREE-01",
+      "name": "Finite historical B3 evidence disposition",
+      "oracle": "PASS means only that the original finite historical search/disposition obligation is honestly completed and attributed: retain the specific missing original c9/B3 archive, searched sources, historical source identity and evidence limits. The separately recorded underlying runtimeOutcome remains NOT_EXERCISED, never product PASS. This A-approved policy still needs the actual fresh signed operator amendment and adoption; no runner or historical/current result is rewritten.",
+      "negative_control": "Missing original runtime archive must not be called runtime PASS; older c7/sidecar grades and watcher source repairs cannot become c9 causal proof. An unrecorded or misleading finite disposition fails this obligation. No renewed broad certification campaign."
+    },
+    {
+      "id": "IDENTITY-01",
+      "name": "Candidate-bound setup body and teardown",
+      "oracle": "Approved source inventory, built main SHA, booted SHA, manifest/config/fixture hashes and independent setup/body/teardown exits agree; receipt is append-only and names exact scenario counts.",
+      "negative_control": "Wrong boot binary, source/fixture change, missing summary, failed setup or passing body/failing teardown cannot pass; each owned child has actual awaited exit or retained BLOCKED outcome."
+    },
+    {
+      "id": "INGEST-01",
+      "name": "Issue426 owned ingestion and retention",
+      "oracle": "All four named targets execute nonzero cases and pass: queue/FIFO/oversized/permit wake, held-worker settlement, durable publication, observer/owner lifetime and run retention.",
+      "negative_control": "Zero-test, ignored required case, stranded worker, premature publication or leaked owner never pass."
+    },
+    {
+      "id": "BUILD-01",
+      "name": "All six supported artifact profiles",
+      "oracle": "Every one of the six exact packet C commands succeeds; retain artifact identity before later profile overwrites paths.",
+      "negative_control": "Missing SDK/toolchain/Docker or blocked build is BLOCKED; host compilation cannot prove mobile runtime, PostgreSQL functionality, ARM container or WASM."
+    },
+    {
+      "id": "REVIEW-01",
+      "name": "Independent Rust and code artifact review",
+      "oracle": "Independent reviewers receive frozen artifact/diff, requirements, exact source identity and actual A-C receipts, without generator history; all required findings disposed. At most one corrective review pass.",
+      "negative_control": "Same-family native fallback and unavailable screening are disclosed; model opinion never replaces runtime evidence; unresolved required findings block."
+    },
+    {
+      "id": "SPEC-01",
+      "name": "Seven phase OpenSpec validations",
+      "oracle": "All seven exact packet D local validations pass for final source; actual receipts bind each change.",
+      "negative_control": "Missing delta or historical metadata omission is reported; no source scope weakened to obtain green output."
+    }
+  ],
+  "disposition_rules": [
+    "COUNT trusted_rust_builder only; standaloneMainExactFit=UNSUPPORTED; preserve no real-provider exactness claim.",
+    "BTHREE runtime remains NOT_EXERCISED, historical absent archive retained. Separate current-contract obligation PASS only for accurate attributed finite disposition if actual current adopted authority permits it; oldA6 policy is not automatically adopted.",
+    "INGEST requires4targets; BUILD requires6profiles; REVIEW requires independent reports plus actual screens and critical disposition; SPEC requires original7 plus reengineer-user-outcome-verification.",
+    "No archive/closure/reflection/publication is authorized by this plan."
+  ],
+  "unresolved": [
+    "Actual explicit A13 combined P1 approval for selected3JWT recipe and private env read; recipe chosen, not executed.",
+    "Actual private generated references and selected fixed Python/toolchain bindings; no helper/import/executable readiness was checked.",
+    "Actual current signed supporting contract/oracle adoption and verification/store fixture approval references.",
+    "Actual fresh manifest/config/compose/environment/document bytes and digests; boundInputs current denominator.",
+    "Exact sealed environment-loading outer launcher bytes and explicit authority; parent P1 must materialize it before V approval. Final runtime command arrays below are not authorization.",
+    "Whole-phase implementation completion and exact final V command instruction, remaining budget availability and token/epoch deadline.",
+    "New inert3drafts are authored; all null field overlays and actual private output bytes still pending P1. No file validation or runtime compatibility claimed."
+  ],
+  "verification_performed": false,
+  "production_edits": false,
+  "credential_values_read": false,
+  "service_or_provider_calls": false,
+  "signature_or_adoption": false,
+  "supporting_jwt_recipe": {
+    "status": "SELECTED_RECIPE_NOT_MINTED_NOT_AUTHORIZED",
+    "read_scope": "Only actual newly prepared env.json and inputs.json; no source keyfiles or old006 env. Exact path/digest sealed by parent P1 receipt.",
+    "secret_source": "env.json UAR_FIXTURE_JWT_SECRET; never print or publicly copy",
+    "claims_base": "inputs.json claims.primary: copy iss,aud,tenant_id,iat,nbf,exp exactly; name=null; no validity extension",
+    "subjects": {
+      "owner": "uar-supporting-owner-007",
+      "other": "uar-supporting-other-007",
+      "host": "uar-supporting-host-007"
+    },
+    "roles": {
+      "owner": [
+        "admin"
+      ],
+      "other": [
+        "user"
+      ],
+      "host": [
+        "admin"
+      ]
+    },
+    "workspace_id": "uar-user-outcomes-007-supporting-workspace",
+    "host_id": "uar-user-outcomes-007-supporting-host",
+    "encoding": "As read in prepare_private_inputs.py: compact sorted UTF8 JSON header {alg:HS256,typ:JWT} and claims, base64url without padding, HMAC-SHA256 over header.payload with generated secret UTF8, base64url signature without padding; prefix Bearer . Inline stdlib metadata operation only after named approval; no importing preparer/release helpers.",
+    "security_patch": {
+      "deployment_profile": "trusted_local (retain supporting fixture setting)",
+      "jwt_required": true,
+      "jwt_algorithm": "HS256",
+      "jwt_secret": "actual generated secret privately materialized in config; no assumed @env substitution",
+      "jwt_issuer": "claims.primary.iss",
+      "jwt_audience": "claims.primary.aud",
+      "jwt_validate_nbf": true,
+      "settings_mutation_auth_required": true,
+      "settings_admin_key": "actual generated UAR_FIXTURE_ADMIN_KEY privately materialized",
+      "trusted_host_principals": [
+        {
+          "issuer": "claims.primary.iss",
+          "subject": "uar-supporting-host-007",
+          "tenant_id": "claims.primary.tenant_id",
+          "host_id": "uar-user-outcomes-007-supporting-host"
+        }
+      ],
+      "workspace_authorities": [
+        {
+          "issuer": "claims.primary.iss",
+          "subject": "uar-supporting-owner-007",
+          "tenant_id": "claims.primary.tenant_id",
+          "workspace_id": "uar-user-outcomes-007-supporting-workspace"
+        },
+        {
+          "issuer": "claims.primary.iss",
+          "subject": "uar-supporting-other-007",
+          "tenant_id": "claims.primary.tenant_id",
+          "workspace_id": "uar-user-outcomes-007-supporting-workspace"
+        },
+        {
+          "issuer": "claims.primary.iss",
+          "subject": "uar-supporting-host-007",
+          "tenant_id": "claims.primary.tenant_id",
+          "workspace_id": "uar-user-outcomes-007-supporting-workspace"
+        }
+      ]
+    },
+    "private_environment_mapping": {
+      "UAR_BOUNDARY_OWNER_AUTHORIZATION": "new owner Bearer JWT",
+      "UAR_BOUNDARY_OTHER_OWNER_AUTHORIZATION": "new other Bearer JWT",
+      "UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION": "new host Bearer JWT",
+      "UAR_BOUNDARY_EXISTING_WORKSPACE": "uar-user-outcomes-007-supporting-workspace",
+      "UAR_BOUNDARY_SETTINGS_ADMIN_KEY": "newly prepared UAR_FIXTURE_ADMIN_KEY",
+      "UAR_BOUNDARY_STORE_USER": "newly prepared UAR_FIXTURE_SURREAL_USERNAME",
+      "UAR_BOUNDARY_STORE_PASSWORD": "newly prepared UAR_FIXTURE_SURREAL_PASSWORD",
+      "UAR_API_KEY_TEST_SURREAL_USER": "same prepared Surreal username",
+      "UAR_API_KEY_TEST_SURREAL_PASS": "same prepared Surreal password"
+    },
+    "owner_keys": {
+      "ownerStorageKey": "v1:k:issuer:i:{UTF8byteLength(issuer)}:{issuer}:t:{UTF8byteLength(tenant)}:{tenant}:s:{UTF8byteLength(ownerSubject)}:{ownerSubject}",
+      "ownerStorageKeyUrlEncoded": "percent encode complete ownerStorageKey with safe empty",
+      "historyOwnerKey": "v1:t:{UTF8byteLength(tenant)}:{tenant}:s:{UTF8byteLength(ownerSubject)}:{ownerSubject}"
+    },
+    "configuration_secrets": "Actual generated JWT/admin/store credentials only in private configuration/compose/env with0600. Configuration is complete JSON encoded in .yaml if using stdlib; YAML accepts JSON. Do not assume direct runtime resolves composer @env markers. Keep peer API key local-fixture-only; no upstream credential.",
+    "outputs": "Separate supporting inputs-receipt with nonsecret claims, issuer/audience/tenant/validity/subject/roles, source-derived keys, exact config/env/compose/manifest/file digests; no token/signing-secret/password contents. Claims are predicted, not runtime auth receipts.",
+    "static_values": [
+      "3subjects",
+      "roles",
+      "supporting workspace/host",
+      "4931xports",
+      "fresh namespace/database",
+      "topology and oracle recipes"
+    ],
+    "dynamic_values": [
+      "generated secret/admin/store values",
+      "actual iss/aud/tenant/iat/nbf/exp",
+      "new3JWT strings",
+      "owner/history computed keys and encoding",
+      "prepared private file references",
+      "all new byte identities and actual operator/signature/approval references"
+    ]
+  },
+  "inert_drafts": {
+    "manifest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+    "config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+    "store": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-store-001.draft.json"
+  },
+  "field_level_overlays": [
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/verificationApprovalRef",
+      "value_type": "nonempty string",
+      "source": "actual exact final V operator approval reference",
+      "activation": "final V actual reference/activation only"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/storeFixtureApprovalRef",
+      "value_type": "nonempty string",
+      "source": "actual supporting store/row/schema/process fixture effects approval reference",
+      "activation": "final V actual reference/activation only"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/contractDigest",
+      "value_type": "64lowerhex SHA256",
+      "source": "actual current adopted supporting contract preimage digest, not legacyA6",
+      "activation": "P1 named metadata sealing; current authority refs require actual adoption"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/boundInputs",
+      "value_type": "array of exact {path:absolute,sha256:64lowerhex}",
+      "source": "fresh final source010 files+current source inventory+lock/toolchain+runner/helpers+private config/store/docs/current authority inputs. Author all rows; no stale006source list",
+      "activation": "P1 named metadata sealing; current authority refs require actual adoption"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/processes/peer/argv/0",
+      "value_type": "absolute executable path",
+      "source": "actual explicitly selected frozen P0.006 installed Python closure path",
+      "activation": "P1 named metadata sealing; current authority refs require actual adoption"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/ownerStorageKey",
+      "value_type": "string",
+      "source": "computed issuer/tenant/owner subject UTF8-length credential key",
+      "activation": "P1 named metadata sealing; current authority refs require actual adoption"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/ownerStorageKeyUrlEncoded",
+      "value_type": "string",
+      "source": "percent encode full credential owner key safe empty",
+      "activation": "P1 named metadata sealing; current authority refs require actual adoption"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/historyOwnerKey",
+      "value_type": "string",
+      "source": "computed tenant/owner subject presentation key",
+      "activation": "P1 named metadata sealing; current authority refs require actual adoption"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/document_a_sha256",
+      "value_type": "64lowerhex SHA256",
+      "source": "actual newly written supporting/documents/a.txt bytes; path already fixed in matching document_a_path",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/document_b_sha256",
+      "value_type": "64lowerhex SHA256",
+      "source": "actual newly written supporting/documents/b.txt bytes; path already fixed in matching document_b_path",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/document_c_sha256",
+      "value_type": "64lowerhex SHA256",
+      "source": "actual newly written supporting/documents/c.txt bytes; path already fixed in matching document_c_path",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/document_d_sha256",
+      "value_type": "64lowerhex SHA256",
+      "source": "actual newly written supporting/documents/d.txt bytes; path already fixed in matching document_d_path",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/fixtureVariables/document_e_sha256",
+      "value_type": "64lowerhex SHA256",
+      "source": "actual newly written supporting/documents/e.txt bytes; path already fixed in matching document_e_path",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/jwt_secret",
+      "value_type": "secret string",
+      "source": "newly prepared env.json UAR_FIXTURE_JWT_SECRET, private memory/file only",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/jwt_issuer",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/iss",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/jwt_audience",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/aud",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/settings_admin_key",
+      "value_type": "secret string",
+      "source": "newly prepared env.json UAR_FIXTURE_ADMIN_KEY",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/persistence/surreal_user",
+      "value_type": "secret string",
+      "source": "newly prepared env.json UAR_FIXTURE_SURREAL_USERNAME",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/persistence/surreal_pass",
+      "value_type": "secret string",
+      "source": "newly prepared env.json UAR_FIXTURE_SURREAL_PASSWORD",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/trusted_host_principals/0/issuer",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/iss",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/workspace_authorities/0/issuer",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/iss",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/workspace_authorities/1/issuer",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/iss",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/workspace_authorities/2/issuer",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/iss",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/trusted_host_principals/0/tenant_id",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/tenant_id",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/workspace_authorities/0/tenant_id",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/tenant_id",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/workspace_authorities/1/tenant_id",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/tenant_id",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "pointer": "/security/workspace_authorities/2/tenant_id",
+      "value_type": "string",
+      "source": "newly prepared inputs.json /claims/primary/tenant_id",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-store-001.draft.json",
+      "pointer": "/services/store/command/2",
+      "value_type": "private string --user=<actual>",
+      "source": "newly prepared env.json UAR_FIXTURE_SURREAL_USERNAME",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-store-001.draft.json",
+      "pointer": "/services/store/command/3",
+      "value_type": "private string --pass=<actual>",
+      "source": "newly prepared env.json UAR_FIXTURE_SURREAL_PASSWORD",
+      "activation": "P1 actual output materialization only after explicit permission"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/executable",
+      "value_type": "boolean true",
+      "source": "actual reconciled whole-phase inventory/current authority and exact V approval",
+      "activation": "P1 may NOT set true; final operator V instruction required"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/readyToRun",
+      "value_type": "boolean true",
+      "source": "actual reconciled whole-phase inventory/current authority and exact V approval",
+      "activation": "P1 may NOT set true; final operator V instruction required"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/implementationComplete",
+      "value_type": "boolean true",
+      "source": "actual reconciled whole-phase inventory/current authority and exact V approval",
+      "activation": "P1 may NOT set true; final operator V instruction required"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/cleanupAuthorized",
+      "value_type": "boolean true",
+      "source": "actual reconciled whole-phase inventory/current authority and exact V approval",
+      "activation": "P1 may NOT set true; final operator V instruction required"
+    },
+    {
+      "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "pointer": "/status",
+      "value_type": "nonempty actual status",
+      "source": "real current final approval; no fabricated PASS",
+      "activation": "P1 materialized still inert until final V"
+    }
+  ],
+  "document_materialization": [
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/a.txt",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/documents/a.txt",
+      "marker_rule": "substitute old A/B/C owned marker with /fixtureVariables/document_a_marker",
+      "manifest_path_pointer": "/fixtureVariables/document_a_path",
+      "manifest_digest_pointer": "/fixtureVariables/document_a_sha256",
+      "runtime_upload_pointer": "/scenarios/KB-01/steps/2/upload",
+      "permission": "future explicit P1 metadata write/hash only; no runtime",
+      "exact_marker_replacement": {
+        "from": "uar_v130_document_a_owned_marker_001",
+        "to": "uar_user_outcomes_007_supporting_document_a_owned_marker"
+      }
+    },
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/b.txt",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/documents/b.txt",
+      "marker_rule": "substitute old A/B/C owned marker with /fixtureVariables/document_b_marker",
+      "manifest_path_pointer": "/fixtureVariables/document_b_path",
+      "manifest_digest_pointer": "/fixtureVariables/document_b_sha256",
+      "runtime_upload_pointer": "/scenarios/KB-01/steps/5/upload",
+      "permission": "future explicit P1 metadata write/hash only; no runtime",
+      "exact_marker_replacement": {
+        "from": "uar_v130_document_b_owned_marker_001",
+        "to": "uar_user_outcomes_007_supporting_document_b_owned_marker"
+      }
+    },
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/c.txt",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/documents/c.txt",
+      "marker_rule": "substitute old A/B/C owned marker with /fixtureVariables/document_c_marker",
+      "manifest_path_pointer": "/fixtureVariables/document_c_path",
+      "manifest_digest_pointer": "/fixtureVariables/document_c_sha256",
+      "runtime_upload_pointer": "/scenarios/KB-01/steps/8/upload",
+      "permission": "future explicit P1 metadata write/hash only; no runtime",
+      "exact_marker_replacement": {
+        "from": "uar_v130_document_c_owned_marker_001",
+        "to": "uar_user_outcomes_007_supporting_document_c_owned_marker"
+      }
+    },
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/d.txt",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/documents/d.txt",
+      "marker_rule": "preserve existing UAR_HOLD:kb-race: literal",
+      "manifest_path_pointer": "/fixtureVariables/document_d_path",
+      "manifest_digest_pointer": "/fixtureVariables/document_d_sha256",
+      "runtime_upload_pointer": "/scenarios/KB-01/steps/18/requests/0/upload",
+      "permission": "future explicit P1 metadata write/hash only; no runtime"
+    },
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/e.txt",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/documents/e.txt",
+      "marker_rule": "preserve existing UAR_HOLD:kb-race: literal",
+      "manifest_path_pointer": "/fixtureVariables/document_e_path",
+      "manifest_digest_pointer": "/fixtureVariables/document_e_sha256",
+      "runtime_upload_pointer": "/scenarios/KB-01/steps/18/requests/1/upload",
+      "permission": "future explicit P1 metadata write/hash only; no runtime"
+    }
+  ],
+  "template_materialization_routes": [
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/boundary-manifest.json",
+      "rule": "deep copy known values; apply only listed field overlays. Keep executable/ready/complete/cleanup false and approval null through P1; fill Vrefs only after exact V instruction."
+    },
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-main.yaml",
+      "rule": "complete JSON serialization is YAML; substitute all listed private fields; exclusive0600; no @env substitution assumption."
+    },
+    {
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-store-001.draft.json",
+      "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+      "rule": "complete JSON serialization is Compose YAML; substitute user/pass args; remove only /x-uar-draft when actual V activation explicitly instructed; no startup during P1."
+    }
+  ],
+  "supporting_finite_budget_semantics": {
+    "global": "Never modify original4000calls/2400active minutes/9allconsumed/globalreservations/spend pools. Supporting activities consume remaining original allowance; local fixture dollars are simulated liability rows, not provider spend grants.",
+    "local_examples": {
+      "/scenarios/LIAB-01/steps/0/reserve": 1.5,
+      "/scenarios/LIAB-01/steps/2/json/cost_usd": 0.5,
+      "/scenarios/LIAB-01/steps/5/reserve": 1.0,
+      "/scenarios/ERROR-02/steps/1/budgets/max_tokens_per_turn": 0,
+      "/scenarios/ERROR-01/steps/6/budgets/max_tool_calls_per_turn": 1
+    },
+    "process_limits": "three main/one peer starts, command1800seconds, poll30 attempts, CAS100ms/max12writes remain scoped finite controls; no global counter reset."
+  },
+  "private_environment_field_overlays": [
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_OWNER_AUTHORIZATION",
+      "value_type": "private string",
+      "source": "new owner Bearer JWT"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_OTHER_OWNER_AUTHORIZATION",
+      "value_type": "private string",
+      "source": "new other Bearer JWT"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_EXISTING_HOST_AUTHORIZATION",
+      "value_type": "private string",
+      "source": "new host Bearer JWT"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_EXISTING_WORKSPACE",
+      "value_type": "private string",
+      "source": "uar-user-outcomes-007-supporting-workspace"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_SETTINGS_ADMIN_KEY",
+      "value_type": "private string",
+      "source": "newly prepared UAR_FIXTURE_ADMIN_KEY"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_STORE_USER",
+      "value_type": "private string",
+      "source": "newly prepared UAR_FIXTURE_SURREAL_USERNAME"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_BOUNDARY_STORE_PASSWORD",
+      "value_type": "private string",
+      "source": "newly prepared UAR_FIXTURE_SURREAL_PASSWORD"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_API_KEY_TEST_SURREAL_USER",
+      "value_type": "private string",
+      "source": "same prepared Surreal username"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_API_KEY_TEST_SURREAL_PASS",
+      "value_type": "private string",
+      "source": "same prepared Surreal password"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/RUST_LOG",
+      "value_type": "string",
+      "source": "info"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_LOCAL_ONLY",
+      "value_type": "string",
+      "source": "true"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_REMOTE_SURREAL_DURABILITY_ATTESTED",
+      "value_type": "string",
+      "source": "1"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/UAR_API_KEY_TEST_SURREAL_URL",
+      "value_type": "string",
+      "source": "ws://127.0.0.1:49312"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/HOME",
+      "value_type": "string",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/home"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/TMPDIR",
+      "value_type": "string",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/tmp"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/CARGO_TARGET_DIR",
+      "value_type": "string",
+      "source": "target/uar-post-lifecycle-main"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/PATH",
+      "value_type": "approved path/string",
+      "source": "explicit final toolchain baseline value; never login/profile source"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/LANG",
+      "value_type": "approved path/string",
+      "source": "explicit final toolchain baseline value; never login/profile source"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/LC_ALL",
+      "value_type": "approved path/string",
+      "source": "explicit final toolchain baseline value; never login/profile source"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/CARGO_HOME",
+      "value_type": "approved path/string",
+      "source": "explicit final toolchain baseline value; never login/profile source"
+    },
+    {
+      "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/supporting.env.json",
+      "pointer": "/RUSTUP_HOME",
+      "value_type": "approved path/string",
+      "source": "explicit final toolchain baseline value; never login/profile source"
+    }
+  ],
+  "private_environment_policy": "Only entries named in private_environment_field_overlays, omitting unavailable optional LANG/LC_ALL. No product twoJWTs, provider keys, PG secrets, or arbitrary generated env entries. Signing secret need not remain in supporting.env once privately embedded in config; never leak publicly. Exact outer command envelope is still lead-owned and must be sealed."
+}

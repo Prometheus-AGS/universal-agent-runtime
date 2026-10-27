@@ -1,0 +1,50 @@
+{
+  "scenario": "TEAM-01",
+  "platform": "Mac",
+  "status": "FAIL",
+  "at": "2026-10-26T13:11:31.394543+00:00",
+  "command": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs",
+  "report": ".prometheus/verification/team-repair-003-macos.cucumber.json",
+  "run_seconds": 21.988,
+  "steps": {
+    "passed": 5,
+    "failed": 1,
+    "skipped": 2
+  },
+  "passed_observations": [
+    "Real member run overlap",
+    "Math marker and independent arithmetic assertions"
+  ],
+  "failure": "Writer finalText assertion: Expected a completed answer outside reasoning blocks",
+  "not_exercised": [
+    "Dependent article dispatch",
+    "Final article/context merge",
+    "Remaining accounting assertions after writer output assertion"
+  ],
+  "team_id": "d310d6b3-c1f2-4bff-b3d5-be3f4a5dcd9c",
+  "attempts": [
+    {
+      "task_id": "calculation",
+      "run_id": "41d81dd8-2022-4ce8-96e4-60e22cb97812",
+      "status": "succeeded",
+      "usage": {
+        "tokens": 2736,
+        "costMicrounits": 888,
+        "elapsedSeconds": 14
+      }
+    },
+    {
+      "task_id": "outline",
+      "run_id": "e7cb3626-9f40-45d2-97aa-945164e5528e",
+      "status": "succeeded",
+      "usage": {
+        "tokens": 3091,
+        "costMicrounits": 1358,
+        "elapsedSeconds": 15
+      }
+    }
+  ],
+  "exit_disposition": "Returned to parent at explicit operator request; child acceptance unmet, not certified or successfully archived",
+  "service": "Owned UAR left running, last ready PID50663",
+  "retry": false
+}

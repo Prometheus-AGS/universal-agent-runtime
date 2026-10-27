@@ -1,0 +1,36 @@
+{
+  "status": "STOPPED_FIRST_METADATA_FAILURE_NO_RETRY",
+  "recorded_at": "2026-10-25T15:13:24.229592+00:00",
+  "first_failure": "M1.supporting.exclusive-directory-creation",
+  "error": "FileExistsError: target/uar-user-outcomes-007/supporting",
+  "cause": "Lead M0 created supporting parent; supporting worker attempted duplicate exclusive mkdir. Coordination defect, not observed product defect.",
+  "completed_commands": [
+    "A13 sign",
+    "A13 adopt",
+    "P1.1 private inputs",
+    "P1.2 resource sign",
+    "P1.3 resource signature verify",
+    "P1.4 resource decision record"
+  ],
+  "not_run": [
+    "P1.5 compose",
+    "M3 completion",
+    "all product V"
+  ],
+  "partial_metadata": "Resource docs/disposition, seed and working bindings retained. Supporting files were not written; three supporting JWTs minted only in abandoned worker memory.",
+  "order_deviation": "Lead advanced P1.2-P1.4 before supporting portion of M1 completed. Required packet order was not fully honored; no full P1 PASS inferred.",
+  "elapsed_seconds_including_setup": 354.230021238327,
+  "remaining_original_preparation_seconds_upper_bound": 9592,
+  "active_calls_time_continue_accruing": true,
+  "repairs_consumed": 9,
+  "new_repair_authorized": false,
+  "retry": false,
+  "provider_calls": 0,
+  "service_starts": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "gate": "CLOSED",
+  "next": "Discuss immediate bounded fixture preparation repair versus backlog before any corrective action or retry."
+}

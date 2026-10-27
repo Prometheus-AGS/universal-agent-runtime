@@ -1,0 +1,25 @@
+{
+  "scope": "Existing math/writing team BDD only",
+  "acceptance": [
+    "TEAM-01"
+  ],
+  "retained_launch_metadata": "target/prompt-macos-launch.json",
+  "agents": [
+    "math-specialist-db64c2a8",
+    "writing-specialist"
+  ],
+  "provider_model": "liter/MiniMax-M3",
+  "requirements": [
+    "Preserve existing durable store, KBs, agents and failed receipts",
+    "Bind repaired source/binary and actual configuration/valid authority before the approved run",
+    "No separate admission, replay or unknown-usage fixture campaign"
+  ],
+  "status": "Prepared; no service restart or product verification performed",
+  "source_manifest_sha256": "72030618fe645a0f5327c9e4904be4f71acaa3ed64c924888fbc77e5d67385a7",
+  "execution_packet": "verification-packet.md",
+  "native_candidate": "target/uar-team-concurrency-repair/debug/universal-agent-runtime",
+  "model_settings_capture": "Native admission captures live registry settings in attempt.effectiveModels; the existing BDD retains these exact receipts.",
+  "private_authority_reference": "target/uar-user-outcomes-007/supporting/supporting.env.json",
+  "jwt_expiry_utc": "2026-10-26T14:26:32Z",
+  "embedding_calls": 0
+}

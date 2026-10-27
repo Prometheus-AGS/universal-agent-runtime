@@ -1,0 +1,116 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "detect-skills-by-meaning-rather-than-exact-keywords;a-paraphrased-delivery-request-selects-and-uses-the-matching-skill",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A paraphrased delivery request selects and uses the matching skill",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 221002646
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with delivery and gardening skills under semantic matching",
+            "match": {
+              "location": "scripts/behaviors/steps/semantic-skill.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16871689803
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I describe a delivery task without any exact skill keywords",
+            "match": {
+              "location": "scripts/behaviors/steps/semantic-skill.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5661958
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "semantic matching selects and activates the delivery skill instead of gardening",
+            "match": {
+              "location": "scripts/behaviors/steps/semantic-skill.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 369776
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the answer follows the privately stored delivery recipe",
+            "match": {
+              "location": "scripts/behaviors/steps/semantic-skill.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 255572080
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9zZW1hbnRpYy1za2lsbC8xNzQwZjUyZS1hMjI5LTQxNmMtYTNmNC05ZjcyNDNmMjU5ZTEuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@semantic",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "detect-skills-by-meaning-rather-than-exact-keywords",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Detect skills by meaning rather than exact keywords",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@semantic",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/semantic-skill.feature"
+  }
+]

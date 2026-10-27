@@ -1,0 +1,13 @@
+{
+  "status": "MATERIALIZED_PENDING_SUPPORTING_HANDOFF",
+  "resource": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json",
+    "sha256": "sha256:367f60a03cf6e55b23ab17c571e9d95c52c6b0eb5286c68ea226542fdffd40d5"
+  },
+  "documents": 10,
+  "private_disposition": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/seed-disposition.json",
+    "sha256": "sha256:3fda259aeec755b6f53323c9f7c016ec27d6d136b12896a77652d7f93b9df89b"
+  },
+  "no_service_or_provider_calls": true
+}

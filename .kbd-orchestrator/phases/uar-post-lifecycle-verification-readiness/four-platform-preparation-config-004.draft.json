@@ -1,0 +1,252 @@
+{
+  "schema_version": "uar.platform-input-preparation.v1",
+  "executable": false,
+  "approval": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platform-preparation.approval.json",
+    "sha256": null
+  },
+  "output_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms",
+  "source_inventory": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-006.json",
+    "sha256": "sha256:273383575875b064be86c8e414f65271354ccd99a233c8175c77b60b64b2c97f"
+  },
+  "source_identity": "sha256:c2d37cfee61c535fd569c89b8a515f685c05092bb4cf0a4a3f7987f10d8c8888",
+  "remaining_global_seconds": 47963,
+  "limits": {
+    "total_seconds": 14400,
+    "output_bytes": 67108864
+  },
+  "build_owner_lock": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/build-owner.lock",
+  "artifact_config": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/artifact-preparation.config.json",
+    "sha256": null
+  },
+  "tools": {
+    "python": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+      "sha256": "sha256:8c53e44bd5619ea4c7f1f44607c491261951a1e4946ec247c8de653fe4a9e912"
+    },
+    "docker": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/docker",
+      "sha256": "sha256:2fec73189b4384bf8bb51c36b7983fed5ed4b2e9cb311a187ce38c2c6f52698b"
+    },
+    "rustup": {
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "sha256:33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7"
+    },
+    "cargo": {
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "sha256:33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7"
+    },
+    "git": {
+      "path": "/usr/bin/git",
+      "sha256": "sha256:5b1ddb7e9c11b87a034fc88b212e8ac243cfe2b4db696d767aa44c79595fc09a"
+    },
+    "xcrun": {
+      "path": "/usr/bin/xcrun",
+      "sha256": "sha256:c4159434cb2d59ae563fb2a8c7a8594b24445e8790df278e03b2e1860141497b"
+    },
+    "xcodebuild": {
+      "path": "/usr/bin/xcodebuild",
+      "sha256": "sha256:7071590b8be7f00380f878c989ab65a0a3ef0d11fe35277d5a0bccb54680dc0f"
+    },
+    "xcode_select": {
+      "path": "/usr/bin/xcode-select",
+      "sha256": "sha256:eeb175d971cba875054738d55f869efc8439b236345e01ed0b964f1c86c77f8a"
+    }
+  },
+  "inputs": [],
+  "ios_udid": "141449FC-5F0C-4317-A6A8-BF749F646E69",
+  "linux": {
+    "architecture": "amd64",
+    "container_binary": "/usr/local/bin/universal-agent-runtime",
+    "container_python": "/usr/local/bin/python3",
+    "extraction_container_name": "uar-acceptance-linux-extract-580f7196999aa00b78e211a9894424b0",
+    "command_seconds": 120,
+    "output_bytes": 2097152
+  },
+  "commands": {
+    "artifacts": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/artifact-preparation.config.json"
+      ],
+      "timeout_seconds": 7200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true",
+        "UAR_PREP_BASE_HOME": "/Users/gqadonis",
+        "UAR_PREP_BASE_LANG": "en_US.UTF-8",
+        "UAR_PREP_BASE_LC_ALL": "en_US.UTF-8",
+        "UAR_PREP_BASE_PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "UAR_PREP_BASE_TMPDIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/tmp"
+      }
+    },
+    "docker_build": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--iidfile",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/image.iid",
+        "--tag",
+        "uar-issue-426:1.3.0-four-platform-008",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime"
+      ],
+      "timeout_seconds": 7200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "linux_prepare": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/linux_runtime.py",
+        "--prepare",
+        "--config",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/linux-config.json",
+        "--approval",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/linux-approval.json"
+      ],
+      "timeout_seconds": 1200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "ios_prepare": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+        "prepare",
+        "--selection",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/ios-selection.json",
+        "--timeout-seconds",
+        "120",
+        "--udid",
+        "141449FC-5F0C-4317-A6A8-BF749F646E69"
+      ],
+      "timeout_seconds": 120,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "ios_target": {
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/rustup",
+        "target",
+        "add",
+        "@selected-target@",
+        "--toolchain",
+        "nightly-2026-07-18-x86_64-apple-darwin"
+      ],
+      "timeout_seconds": 600,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "ios_build": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+        "build",
+        "--selection",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/ios-selection.json",
+        "--timeout-seconds",
+        "7200",
+        "--output",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/ios-artifact",
+        "--source-inventory",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-006.json"
+      ],
+      "timeout_seconds": 7200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    }
+  }
+}

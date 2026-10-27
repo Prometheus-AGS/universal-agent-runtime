@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-25T09:53:36.616113+00:00",
+  "authority": "Direct operator reply to call_0655959402e14849a70aed946cacb9c4",
+  "operator_answer": "Approve A7 and P0 preparation",
+  "contract_digest": "2ebb1c04e60d9031e8076575b15cfcd277d1d4cd1c8b688574a890b6deb76ccb",
+  "source_identity": "sha256:7e2655915ee4ab9e40f4b566e9615988659ab2a930337bb6ff0cfda93fb81610",
+  "scope": "Named SSH-agent signing/adoption and exact P0 preparation only; serial, first failure stop; no product verification/service/provider/publication",
+  "cumulative_caps": {
+    "host_calls": 4000,
+    "active_minutes": 2400,
+    "repairs_consumed": 5,
+    "additional_repairs": 0,
+    "no_progress": 3
+  },
+  "embedding_caps_usd": {
+    "cohere": 10,
+    "openai_embeddings": 10,
+    "transferable": false
+  },
+  "product_gate": "CLOSED"
+}

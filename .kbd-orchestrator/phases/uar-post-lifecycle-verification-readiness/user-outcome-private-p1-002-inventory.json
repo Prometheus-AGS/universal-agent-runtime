@@ -1,0 +1,190 @@
+{
+  "classification": "PARTIAL_PREPARATION_INVENTORY_NO_PRODUCT_ACCEPTANCE",
+  "created_at": "2026-10-25T15:18:04.234146+00:00",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "production_edits": 0,
+  "gate": "CLOSED",
+  "full_phase_boundary_reached": false,
+  "retained_files": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/charge-cohere-embeddings.json",
+      "sha256": "sha256:769c259aa07207d399e6a3414da8aa13241847b8c3322ee0c9f2382ba94c0be2",
+      "mode": "0o600",
+      "bytes": 958
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/charge-liter-alternate.json",
+      "sha256": "sha256:fcac48e25b725e9e591a0aff8515cf0fbe8e45c01a784023be7e6f19ff34e6b7",
+      "mode": "0o600",
+      "bytes": 801
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/charge-liter-primary.json",
+      "sha256": "sha256:20faa167e82d790d53fe6badb67e1e1f05de34da712369c36918eaec9baf0cb8",
+      "mode": "0o600",
+      "bytes": 804
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/charge-liter-structured.json",
+      "sha256": "sha256:d569b3c72643de2d13f3f6d22d8c3200561e741ce0f688ec92aa9c2d3575e320",
+      "mode": "0o600",
+      "bytes": 807
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/document-refs.json",
+      "sha256": "sha256:95b0b89c85e5529dfc8345ec81aa8cd478bf767e772ea3a4da21f459400dac8d",
+      "mode": "0o600",
+      "bytes": 2641
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/embedding-source-1.json",
+      "sha256": "sha256:987ec00330e7c50a1480b4d9620921d157c0d3a359cf0c362d7a7dc384860e2e",
+      "mode": "0o600",
+      "bytes": 497
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/embedding-source-2.json",
+      "sha256": "sha256:9b714a6e9ae258cedd50c1ae8c6671256ebf710dd7ac400d7be2d8bf1cfa2eef",
+      "mode": "0o600",
+      "bytes": 492
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/embedding-source-3.json",
+      "sha256": "sha256:9eb15534e90d988fcbb43db9af6405c8fdfef0285581dad971837eb2ca25c193",
+      "mode": "0o600",
+      "bytes": 497
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json",
+      "sha256": "sha256:367f60a03cf6e55b23ab17c571e9d95c52c6b0eb5286c68ea226542fdffd40d5",
+      "mode": "0o600",
+      "bytes": 12497
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json.sig",
+      "sha256": "sha256:d0060fafd11d7d767b9e02354480ade47e84710ee02c36cbc84440875821992c",
+      "mode": "0o600",
+      "bytes": 330
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/upstream-liter-alternate.json",
+      "sha256": "sha256:3349ad260bc6a70df188c208d8888d12ca0275b8a261cac53279fccebee456cd",
+      "mode": "0o600",
+      "bytes": 939
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/upstream-liter-primary.json",
+      "sha256": "sha256:1da2dd7a4086e1bfc54d014e534a2ef4028d09211b22daf89025187aff83e9b4",
+      "mode": "0o600",
+      "bytes": 937
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/upstream-liter-structured.json",
+      "sha256": "sha256:157e3587a61be8581257a50d933b6f32ec6224b81a3be3a9a142fd53fd86e2e2",
+      "mode": "0o600",
+      "bytes": 940
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/bindings.materializing.json",
+      "sha256": "sha256:764611c8f8930e3876fa045971b9946f3b534904843d9425d5963b8854d4a3a4",
+      "mode": "0o600",
+      "bytes": 8623529
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/environment.nonsecret.json",
+      "sha256": "sha256:e481a75a7f883a512ef875362e3d262fff8038ccc49090856d3ccdaae180598a",
+      "mode": "0o600",
+      "bytes": 296
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/inputs.json",
+      "sha256": "sha256:027843bea8f345e2381e19e49c5582c2641bab4310f904977683f4ba9ab53ca8",
+      "mode": "0o600",
+      "bytes": 6040
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/receipt.json",
+      "sha256": "sha256:3a5ebc5f8b882e1bba8e4fa171a600c94779fbd39199039897f71141b5ffaa88",
+      "mode": "0o600",
+      "bytes": 3495
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private-preparation.approval.json",
+      "sha256": "sha256:112c67d2541f3ba5771271c19254777209084f212e3a8374a7f321a14353fe54",
+      "mode": "0o600",
+      "bytes": 738
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private-preparation.config.json",
+      "sha256": "sha256:2fa482d12d5533bae81381b8b875dc9e41d818c547ff38fb049998ff1a77184d",
+      "mode": "0o600",
+      "bytes": 2899
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/budget-seed.json",
+      "sha256": "sha256:4ab2c0c33086d2f20324a990abe0f180e14ff29852c225668a1c80f4b413dc28",
+      "mode": "0o600",
+      "bytes": 3175
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/seed-disposition.json",
+      "sha256": "sha256:3fda259aeec755b6f53323c9f7c016ec27d6d136b12896a77652d7f93b9df89b",
+      "mode": "0o600",
+      "bytes": 9561
+    }
+  ],
+  "supporting_parent": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting",
+    "exists": true,
+    "is_symlink": false,
+    "uid": 501,
+    "mode": "0o700",
+    "entries": [],
+    "creator": "lead M0; no supporting outputs written"
+  },
+  "secret_inputs": "Existing private env retained untouched/excluded; no values read or copied in this continuation",
+  "stop_receipt": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/stop.json",
+    "sha256": "sha256:b4648cfe5e2feee4f9f772ece95b2aa8f029bb64cfa14cd83239dbe1e39ae8ab"
+  },
+  "successful_receipts": {
+    "a13-sign": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/a13-sign.json",
+      "sha256": "sha256:3a0e83217987d587bb6d46765749d9af7dfebbdb5fd5df554bb4dd7b7316bc4a"
+    },
+    "a13-adopt": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/a13-adopt.json",
+      "sha256": "sha256:5f5390414813a8a819ff5989a2190cc57a5031a0fa01080d8b66153d0b83ee09"
+    },
+    "P1.1": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/P1.1.json",
+      "sha256": "sha256:5e7f99a7cae097bb4384d64b30e8a9429ea9b472c33232f41edbd1c6c24c9882"
+    },
+    "P1.2": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/P1.2.json",
+      "sha256": "sha256:f4bd08c7a683e7ca7880de529476514974f19c7f9c25102c29b9126f5694bc1e"
+    },
+    "P1.3": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/P1.3.json",
+      "sha256": "sha256:16c07c9b73c5805ab493072ac6b1cca07ccb999b928b9932ed31ed7314643efb"
+    },
+    "P1.4": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/P1.4.json",
+      "sha256": "sha256:057c1c13fd2a26f5ecca2978bb8630ecd2c796bbf108f329600bcb1253e8fb16"
+    }
+  },
+  "pending": [
+    "supporting fixture materialization",
+    "fresh authority after correction",
+    "final additive inventory",
+    "composition",
+    "whole-phase final V approval and acceptance"
+  ],
+  "jwt_disposition": {
+    "product_tokens_retained": 2,
+    "supporting_minted_discarded_in_memory": 3,
+    "persisted_supporting_tokens": 0,
+    "replacement_count_requires_new_approval": 3
+  },
+  "limits": "All prior limits/consumption retained; repair10 proposed only, not executed or adopted"
+}

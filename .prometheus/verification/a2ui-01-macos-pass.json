@@ -1,0 +1,36 @@
+{
+  "scenario": "A2UI-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T22:03:54.157007+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/a2ui.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 4 steps (4 passed); 0m 6.824s",
+  "attempt": 2,
+  "agent_id": "disposable-a2ui-574fb622-a5d8-447e-831a-254a18835dbe",
+  "configured_model": "liter/MiniMax-M3",
+  "greeting": "Welcome, visitor ee4cdb66!",
+  "surface_id": "greeting-e9fb0767-4e48-4b99-88aa-168fc284eb82",
+  "artifact_id": "a2ui:4e21d2f4-97e4-42b6-adb5-261644f9ef99",
+  "run_id": "0efe6b68-0bba-43b0-b92a-1e5a7acbfafb",
+  "evidence": ".prometheus/verification/a2ui/disposable-a2ui-574fb622-a5d8-447e-831a-254a18835dbe.json",
+  "cucumber_report": ".prometheus/verification/a2ui-002-macos.cucumber.json",
+  "prior_failure": ".prometheus/verification/a2ui-001-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "all_disposable_agents_deleted": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/a2ui.cucumber.mjs": "3d1c9d62839629e8ff9dd7d11fe0b02e4a68e9a9ff673e58463d1157d6682247",
+    "scripts/behaviors/features/a2ui-response.feature": "ec8b6bacef1cab08ad527b38eea2e2167540cbdd63a2c764ee54c6bcd822fb64",
+    "scripts/behaviors/steps/a2ui-response.steps.mjs": "93130820ad528fb501cb44043982e1bb8271c94c1539c09efe921cf5ac46890e"
+  },
+  "scope": "Real model/native a2ui_render publication through /v1/chat/completions stream_mode agui_spec; no dedicated AG-UI agent route, browser rendering, interaction, reconnect or full conformance claim",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

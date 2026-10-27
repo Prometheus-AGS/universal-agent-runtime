@@ -1,0 +1,18 @@
+{
+  "repair_ordinal": 13,
+  "item": "S9",
+  "root_cause": "NDK installed outside retained toolchain PATH; no bare Android C driver",
+  "correction": "bind existing NDK24 API21 C/C++ compiler,archiver/linker for only the S9rerun",
+  "ndk": "/Users/gqadonis/Library/Android/sdk/ndk/24.0.8215888",
+  "source_properties": "Pkg.Desc = Android NDK\nPkg.Revision = 24.0.8215888\n",
+  "repository_source_edit": false,
+  "system_install": false,
+  "environment_overlays": {
+    "CC_aarch64_linux_android": "/Users/gqadonis/Library/Android/sdk/ndk/24.0.8215888/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang",
+    "CXX_aarch64_linux_android": "/Users/gqadonis/Library/Android/sdk/ndk/24.0.8215888/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang++",
+    "AR_aarch64_linux_android": "/Users/gqadonis/Library/Android/sdk/ndk/24.0.8215888/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar",
+    "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER": "/Users/gqadonis/Library/Android/sdk/ndk/24.0.8215888/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang"
+  },
+  "PATH_prefix": "/Users/gqadonis/Library/Android/sdk/ndk/24.0.8215888/toolchains/llvm/prebuilt/darwin-x86_64/bin",
+  "second_correction_allowed": false
+}

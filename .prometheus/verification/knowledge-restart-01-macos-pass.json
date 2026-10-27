@@ -1,0 +1,85 @@
+{
+  "scenario": "KNOWLEDGE-RESTART-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-27T00:18:28.588039+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/knowledge-restart.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 22.95s",
+  "gherkin_steps": 4,
+  "evidence_hooks": 1,
+  "attempt": 1,
+  "agent_id": "math-specialist-db64c2a8",
+  "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+  "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+  "session_id": "5f4777cc-f0fe-48c7-a762-1644de605d17",
+  "run_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+  "model": "liter/MiniMax-M3",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "profile": "wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464",
+    "rim_vertices": 11,
+    "lucas_number": 199,
+    "sandpile_group_order": 39601,
+    "retrieval_seal": "1a60323f-e62d-4cfb-8a97-591440ca2fdc",
+    "citation": "[1]"
+  },
+  "matched_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "3658b944-0256-b9c6-f416-291ec981bf54",
+      "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+      "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "document_name": "wheel-graphs.txt",
+      "relevance_score": 0.8990804553031921,
+      "snippet": "Local research profile wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=1a60323f-e62d-4cfb-8a97-591440ca2fdc. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+    }
+  ],
+  "restart": {
+    "previous_pid": 62351,
+    "binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-0ca90e0b-a3d9-4642-89d4-89ac0f6bb2cd.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 73870,
+    "new_process_ready": true
+  },
+  "embedding_space": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "embedding_asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3",
+  "agent_kb_document_unchanged": true,
+  "evidence": ".prometheus/verification/knowledge-restart/5f4777cc-f0fe-48c7-a762-1644de605d17.json",
+  "cucumber_report": ".prometheus/verification/knowledge-restart-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "history_replayed": false,
+  "knowledge_mutations": false,
+  "production_changes": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "hosted_embedding_spend_usd": {
+    "cohere": 0,
+    "openai": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/knowledge-restart.cucumber.mjs": "21d4dec9af7879a90739a243e553408c3c674ef54065af4a1e43b52f52c66d58",
+    "scripts/behaviors/features/knowledge-restart.feature": "6a83a7d1c42b801e96842bcab6f4972d23505e967b9e04c261df06f3afeb7840",
+    "scripts/behaviors/steps/knowledge-restart.steps.mjs": "9b4b364d0303b9cc942776df11e63bfad0016430de60654f4ac7d3d66e5a84ad",
+    "scripts/behaviors/support/restart-owned-uar.mjs": "c9490b4c41ff3fdaa5574a499227f2ce8734e2c1d68c7b56fc9a1ee97e7cdcba"
+  },
+  "source_review": "Code and JavaScript source reviewers found no concrete blockers; source inspection only.",
+  "scope": "Retained math-agent binding and existing indexed document remain usable after graceful Mac restart with the same embedding space. Not embedding regeneration, other backends/platforms or arbitrary-query quality.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

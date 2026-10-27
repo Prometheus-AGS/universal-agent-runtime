@@ -1,0 +1,23 @@
+{
+  "recorded_at": "2026-10-26T20:46:17.089499-05:00",
+  "source_commit": "881c08062bc6e072e3ee2d036ffcfd70de6b37a4",
+  "branch": "codex/mac-manual-behavior-progress",
+  "push": "succeeded",
+  "pull_request": "https://github.com/Prometheus-AGS/universal-agent-runtime/pull/439",
+  "dependency_commit": "0d74c5665",
+  "dependency_pull_request": "https://github.com/GQAdonis/liter-llm/pull/8",
+  "hooks": {
+    "github_actions_policy": "PASS deployment workflows only",
+    "commitlint": "PASS",
+    "frontend_lint": "SKIP no matching staged files",
+    "frontend_typecheck": "SKIP no matching staged files"
+  },
+  "verified_behaviors": 33,
+  "completed_journeys": 30,
+  "original_catalog_entries": 97,
+  "original_entries_with_partial_manual_evidence": 24,
+  "original_entries_without_matching_manual_evidence": 73,
+  "functional_testing_stopped_after_pass": true,
+  "generated_local_exclusions": ".prometheus/verification/publication-current-exclusions.json",
+  "audit": ".prometheus/verification/publication-current-audit.json"
+}

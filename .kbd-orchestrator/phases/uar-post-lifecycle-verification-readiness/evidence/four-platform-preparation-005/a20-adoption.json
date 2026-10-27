@@ -1,0 +1,20 @@
+{
+  "step": "A20_ADOPTION",
+  "classification": "EXPLICITLY_APPROVED_ADOPTION",
+  "argv": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-contract-adopt.sh",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-005.proposed.json",
+    "--supersedes",
+    "contract-adoption-uar-post-lifecycle-verification-readiness-8a72a9cf",
+    "--amendment",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-005.amendment.json",
+    "--signature",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-005.amendment.json.sig"
+  ],
+  "started_at_utc": "2026-10-25T22:15:56.932266+00:00",
+  "finished_at_utc": "2026-10-25T22:16:06.419985+00:00",
+  "exit_code": 0,
+  "stdout": "ADOPTED path=.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-005.proposed.json sha256=226c146c49d33504282c91d5bb7bd37c10238e00cc9e65b9b5da21ee89c79049 planRevision=155 decision=contract-adoption-uar-post-lifecycle-verification-readiness-226c146c bound=revision-21 supersedes=contract-adoption-uar-post-lifecycle-verification-readiness-8a72a9cf\n",
+  "stderr": ""
+}

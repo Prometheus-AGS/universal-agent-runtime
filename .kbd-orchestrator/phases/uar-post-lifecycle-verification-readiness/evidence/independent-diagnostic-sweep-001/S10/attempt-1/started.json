@@ -1,0 +1,1 @@
+{"argv": ["docker", "build", "--platform", "linux/amd64", "--tag", "uar-issue-426:1.3.0", "."], "started_unix": 1792947189.059307, "timeout_seconds": 1800, "source_identity": "sha256:c6963d648f9961315d62c8a975da6501f64c2dd5f60f69b21aac3612a701c500", "publication": false, "provider_calls": false}

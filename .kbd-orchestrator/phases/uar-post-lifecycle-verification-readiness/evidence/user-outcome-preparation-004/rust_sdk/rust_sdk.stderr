@@ -1,0 +1,7 @@
+warning: patch `surrealdb-kvs-rocksdb v3.3.0 (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+error: cannot update the lock file /Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.lock because --locked was passed to prevent this
+help: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.

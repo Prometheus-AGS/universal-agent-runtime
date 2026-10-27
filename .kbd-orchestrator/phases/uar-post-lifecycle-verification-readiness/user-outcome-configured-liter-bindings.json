@@ -1,0 +1,127 @@
+{
+  "status": "SOURCE_INSPECTED_NOT_RUNTIME_VERIFIED",
+  "verification_gate": "CLOSED",
+  "operator_instruction": "Reuse models and embeddings configured by the Liter launch-agent service",
+  "launch_agent": "/Users/gqadonis/Library/LaunchAgents/ai.prometheus.liter-llm-api.plist",
+  "launcher": "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/liter-llm-api-launch.sh",
+  "selected_configuration": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
+  "credential_source": "/Users/gqadonis/.prometheus/kbd/secrets.env",
+  "gateway_origin": "http://127.0.0.1:4000",
+  "origin_basis": "Selected launcher has no port override; inspected CLI source ApiArgs.port defaults to4000. No live listener check.",
+  "gateway_credential_env": "LITER_LLM_MASTER_KEY",
+  "configured_models": [
+    {
+      "alias": "gpt-5.4",
+      "provider_model": "openai/gpt-5.4",
+      "configured_upstream": "http://localhost:8181/v1",
+      "credential": "Existing gateway configuration; no value copied"
+    },
+    {
+      "alias": "k3",
+      "provider_model": "moonshot/k3",
+      "configured_upstream": "https://api.kimi.com/coding/v1",
+      "credential_env": "KIMI_CODING_KEY"
+    },
+    {
+      "alias": "MiniMax-M3",
+      "provider_model": "minimax/MiniMax-M3",
+      "configured_upstream": "https://api.minimax.io/v1",
+      "credential_env": "MINIMAX_KEY"
+    }
+  ],
+  "configured_alias_patterns": [
+    "openai/*"
+  ],
+  "configured_gateway_retry_limit": 3,
+  "configured_gateway_cost_tracking": false,
+  "embedding_bindings": {
+    "status": "SOURCE_INSPECTED_NOT_RUNTIME_VERIFIED",
+    "credential_source": "/Users/gqadonis/.bash_profile",
+    "credential_env": "COHERE_API_KEY",
+    "model_env": "COHERE_EMBEDDING_MODEL",
+    "endpoint_env": "COHERE_EMBEDDING_URL",
+    "configured_model": "embed-multilingual-v3.0",
+    "configured_endpoint": "https://api.cohere.ai/compatibility/v1",
+    "selected_runtime_backend": "openai",
+    "upstream_base_url": "https://api.cohere.ai/compatibility/v1",
+    "endpoint_reason": "Operator explicitly requested correcting Bash profile to official OpenAI compatibility base; root changed only URL assignment at line207. Previous native adapter selection is superseded. Cohere compatibility does not support dimensions; explicit omission retains returned-vector dimensional validation.",
+    "proposed_regeneration_spaces": [
+      {
+        "role": "A configured baseline",
+        "model": "embed-multilingual-v3.0",
+        "dimension": 1024
+      },
+      {
+        "role": "B same-dimension model change",
+        "model": "embed-english-v3.0",
+        "dimension": 1024
+      },
+      {
+        "role": "C dimension change",
+        "model": "embed-english-light-v3.0",
+        "dimension": 384
+      }
+    ],
+    "references": [
+      "https://docs.cohere.com/v2/docs/cohere-embed",
+      "https://docs.cohere.com/v1/reference/embed",
+      "https://docs.cohere.com/v2/docs/compatibility-api"
+    ],
+    "retrieval_limitation": "Installed firecrawl CLI rejected documented developer subcommand as unknown; official primary documentation loaded with web fallback.",
+    "availability": "No provider request; access to all proposed models remains unverified and must be named in exact future fixture approval.",
+    "historical_profile_endpoint": "https://api.cohere.com/v1/embed",
+    "send_dimensions": false,
+    "profile_edit": {
+      "path": "/Users/gqadonis/.bash_profile",
+      "line": 207,
+      "key_and_model_preserved": true,
+      "provider_requests": 0,
+      "explicit_reload": false,
+      "shell_initialization_note": "No explicit source command. exec_command defaults to login shell and may read startup files; subsequent source-only tools select login=false."
+    },
+    "billing": {
+      "basis": "direct operator response",
+      "statement": "Production/pay-as-you-go",
+      "execution_approval": false,
+      "tariff_verified": false,
+      "approved_spend_usd": 10,
+      "approval_scope": "Provider ceiling for replacement packet; signing/adoption and exact execution instruction remain pending"
+    }
+  },
+  "service_actions": "NONE: no launchctl/status/HTTP/inference/embedding request. The separately authorized Bash profile URL correction is recorded above.",
+  "secrets": "Values never emitted or copied. Environment-reference names only.",
+  "remaining": [
+    "Actual model capabilities and service availability remain unverified",
+    "No zero-charge or tariff assumptions inferred from a configured subscription proxy",
+    "Existing gateway retries are outside one UAR-to-gateway forwarding attempt; upstream-provider physical-attempt accounting requires explicit disposition",
+    "Exact existing-service loopback approval and frozen provenance must be bound in later signed packet"
+  ],
+  "gateway_billing": {
+    "basis": "direct operator response",
+    "statement": "Subscriptions; no incremental charge",
+    "scope": "existing Liter gateway model bindings only",
+    "execution_approval": false,
+    "cohere_billing": "separate; no zero-charge assumption"
+  },
+  "embedding_spend_authority": {
+    "basis": "direct operator instruction: we only need to use $10 of each",
+    "currency": "USD",
+    "cohere_ceiling": 10,
+    "openai_ceiling": 10,
+    "combined_ceiling": 20,
+    "transfer_between_providers": false,
+    "spend_target": false,
+    "provider_request_execution_approved": false,
+    "verification_gate": "CLOSED",
+    "prior_consumption": "retained; these ceilings do not reset historical accounting"
+  },
+  "openai_embedding_alternative": {
+    "credential_env": "OPENAI_API_KEY",
+    "credential_source": "/Users/gqadonis/.bash_profile",
+    "source": "direct operator instruction; secret not read or copied",
+    "spend_ceiling_usd": 10,
+    "model_selection": "pending exact fixture selection",
+    "availability_verified": false,
+    "execution_approval": false
+  }
+}

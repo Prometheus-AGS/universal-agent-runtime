@@ -1,0 +1,34 @@
+{
+  "status": "STOPPED_FIRST_REQUIRED_REVIEW_BLOCKER_NO_RETRY",
+  "recorded_at_utc": "2026-10-25T22:01:29.234311+00:00",
+  "failed_step": "A19_CODE_SOURCE_REVIEW",
+  "review_verdict": "BLOCKED_SOURCE_ONLY",
+  "finding": "iOS settled_ledger rejects known failed HTTP terminal reservations as unknown accounting, preventing the intended per-item failure handling and independent continuation.",
+  "report": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-004/code-source-review.md",
+    "sha256": "sha256:c185fa28dd660a70c6ed0620cde4052f228a5d909cd7cc133a60af12d7ceff20"
+  },
+  "contract_digest": "8a72a9cfe68d1c3c565912df5663cce079e4dc88879871a1f96fab1ca480fbf6",
+  "binding_revision": 20,
+  "source_identity": "sha256:c2d37cfee61c535fd569c89b8a515f685c05092bb4cf0a4a3f7987f10d8c8888",
+  "signature": "SUCCEEDED",
+  "adoption": "SUCCEEDED_BINDING20",
+  "rust_review": "NOT_RUN",
+  "swift_review": "NOT_RUN",
+  "preparation_controller": "NOT_RUN",
+  "fixture18_charged": false,
+  "repair_floor": 17,
+  "target_install": "NOT_RUN",
+  "supporting_metadata": "NOT_RUN",
+  "resource_signing": "NOT_RUN",
+  "composition": "NOT_RUN",
+  "product_verification": "CLOSED",
+  "provider_calls_this_attempt": 0,
+  "embedding_spend_this_attempt_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "all_prior_consumption_and_limits_retained": true,
+  "automatic_repair_or_retry": false,
+  "next": "Discuss immediate bounded iOS known-failed HTTP settlement correction and refreshed authority versus backlog; no repair or retry before instruction."
+}

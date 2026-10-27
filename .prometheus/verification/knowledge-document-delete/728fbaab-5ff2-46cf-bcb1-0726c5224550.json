@@ -1,0 +1,328 @@
+{
+  "scenario": "KNOWLEDGE-DOCUMENT-DELETE-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "configuration_changes": false,
+  "restart": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "Document deletion BDD 728fbaab-5ff2-46cf-bcb1-0726c5224550",
+        "description": "Disposable target and retained control documents",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 10
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"name\":\"Document deletion BDD 728fbaab-5ff2-46cf-bcb1-0726c5224550\",\"description\":\"Disposable target and retained control documents\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":10,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-27T00:43:58.938219+00:00\",\"updated_at\":\"2026-10-27T00:43:58.938219+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents",
+      "request": {
+        "file": "The amber lattice laboratory note records coefficient 73. Its private seal is DELETE-8f26c8ad-e1b0-414b-bde9-912698fbe67d."
+      },
+      "status": 202,
+      "response": "{\"id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"amber-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T00:43:58.998607+00:00\",\"updated_at\":\"2026-10-27T00:43:58.998607+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+      "status": 200,
+      "response": "{\"id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"amber-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T00:43:58.998607+00:00\",\"updated_at\":\"2026-10-27T00:43:58.998607+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+      "status": 200,
+      "response": "{\"id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"amber-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"processing\",\"error_message\":null,\"created_at\":\"2026-10-27T00:43:58.998607+00:00\",\"updated_at\":\"2026-10-27T00:43:59.083662+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+      "status": 200,
+      "response": "{\"id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"amber-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"processing\",\"error_message\":null,\"created_at\":\"2026-10-27T00:43:58.998607+00:00\",\"updated_at\":\"2026-10-27T00:43:59.083662+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+      "status": 200,
+      "response": "{\"id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"amber-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T00:43:58.998607+00:00\",\"updated_at\":\"2026-10-27T00:44:00.535192+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents",
+      "request": {
+        "file": "The cobalt lattice laboratory note records coefficient 91. Its private seal is RETAIN-71790c1c-2948-4fef-9fb9-9b5e5aadc805."
+      },
+      "status": 202,
+      "response": "{\"id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"cobalt-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T00:44:00.608330+00:00\",\"updated_at\":\"2026-10-27T00:44:00.608330+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+      "status": 200,
+      "response": "{\"id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"cobalt-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T00:44:00.608330+00:00\",\"updated_at\":\"2026-10-27T00:44:00.608330+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+      "status": 200,
+      "response": "{\"id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"cobalt-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T00:44:00.608330+00:00\",\"updated_at\":\"2026-10-27T00:44:00.757263+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132",
+      "status": 200,
+      "response": "{\"id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"name\":\"Document deletion BDD 728fbaab-5ff2-46cf-bcb1-0726c5224550\",\"description\":\"Disposable target and retained control documents\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":10,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-27T00:43:58.938219+00:00\",\"updated_at\":\"2026-10-27T00:44:00.757263+00:00\",\"document_count\":2}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/search",
+      "request": {
+        "query": "What coefficients and seals are recorded in the amber and cobalt lattice laboratory notes?",
+        "limit": 10,
+        "min_score": 0
+      },
+      "status": 200,
+      "response": "{\"results\":[{\"content\":\"The cobalt lattice laboratory note records coefficient 91. Its private seal is RETAIN-71790c1c-2948-4fef-9fb9-9b5e5aadc805.\\n\",\"score\":0.8525692,\"metadata\":{\"document_id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"embedding_space\":{\"backend\":\"fastembed\",\"dimension\":384,\"model\":\"bge-small-en-v1.5\"},\"extraction\":{\"authors\":null,\"keywords\":null,\"language\":null,\"pages\":null,\"subject\":null,\"title\":null},\"filename\":\"cobalt-lattice.txt\",\"index\":0,\"ingestion_generation\":\"34d29fb1-cc90-4206-aa52-19ad61089b54\",\"mime_type\":\"text/plain\",\"processor\":\"Kreuzberg\",\"source\":\"knowledge_upload\"},\"document_id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\"},{\"content\":\"The amber lattice laboratory note records coefficient 73. Its private seal is DELETE-8f26c8ad-e1b0-414b-bde9-912698fbe67d.\\n\",\"score\":0.8301109,\"metadata\":{\"document_id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\",\"embedding_space\":{\"backend\":\"fastembed\",\"dimension\":384,\"model\":\"bge-small-en-v1.5\"},\"extraction\":{\"authors\":null,\"keywords\":null,\"language\":null,\"pages\":null,\"subject\":null,\"title\":null},\"filename\":\"amber-lattice.txt\",\"index\":0,\"ingestion_generation\":\"938825d4-4c68-447b-9c52-815487fab9bd\",\"mime_type\":\"text/plain\",\"processor\":\"Kreuzberg\",\"source\":\"knowledge_upload\"},\"document_id\":\"146987d2-fa40-4474-a9e8-8c7b630dbfe1\"}]}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/search",
+      "request": {
+        "query": "What coefficients and seals are recorded in the amber and cobalt lattice laboratory notes?",
+        "limit": 10,
+        "min_score": 0
+      },
+      "status": 200,
+      "response": "{\"results\":[{\"content\":\"The cobalt lattice laboratory note records coefficient 91. Its private seal is RETAIN-71790c1c-2948-4fef-9fb9-9b5e5aadc805.\\n\",\"score\":0.8525692,\"metadata\":{\"document_id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"embedding_space\":{\"backend\":\"fastembed\",\"dimension\":384,\"model\":\"bge-small-en-v1.5\"},\"extraction\":{\"authors\":null,\"keywords\":null,\"language\":null,\"pages\":null,\"subject\":null,\"title\":null},\"filename\":\"cobalt-lattice.txt\",\"index\":0,\"ingestion_generation\":\"34d29fb1-cc90-4206-aa52-19ad61089b54\",\"mime_type\":\"text/plain\",\"processor\":\"Kreuzberg\",\"source\":\"knowledge_upload\"},\"document_id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\"}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+      "status": 404,
+      "response": "Document '146987d2-fa40-4474-a9e8-8c7b630dbfe1' not found"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents",
+      "status": 200,
+      "response": "[{\"id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"cobalt-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T00:44:00.608330+00:00\",\"updated_at\":\"2026-10-27T00:44:00.757263+00:00\"}]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132/documents/c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+      "status": 200,
+      "response": "{\"id\":\"c719ea86-d7c6-4b48-a278-770a8e8f1df6\",\"kb_id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"filename\":\"cobalt-lattice.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T00:44:00.608330+00:00\",\"updated_at\":\"2026-10-27T00:44:00.757263+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132",
+      "status": 200,
+      "response": "{\"id\":\"6d5c3338-7d5c-4884-a597-a3e95dccd132\",\"name\":\"Document deletion BDD 728fbaab-5ff2-46cf-bcb1-0726c5224550\",\"description\":\"Disposable target and retained control documents\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":10,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-27T00:43:58.938219+00:00\",\"updated_at\":\"2026-10-27T00:44:01.246992Z\",\"document_count\":1}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/6d5c3338-7d5c-4884-a597-a3e95dccd132",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 97354
+  },
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "knowledge_base_id": "6d5c3338-7d5c-4884-a597-a3e95dccd132",
+  "deleted_seal": "DELETE-8f26c8ad-e1b0-414b-bde9-912698fbe67d",
+  "retained_seal": "RETAIN-71790c1c-2948-4fef-9fb9-9b5e5aadc805",
+  "target_document": {
+    "id": "146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+    "kb_id": "6d5c3338-7d5c-4884-a597-a3e95dccd132",
+    "filename": "amber-lattice.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T00:43:58.998607+00:00",
+    "updated_at": "2026-10-27T00:44:00.535192+00:00"
+  },
+  "retained_document": {
+    "id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+    "kb_id": "6d5c3338-7d5c-4884-a597-a3e95dccd132",
+    "filename": "cobalt-lattice.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T00:44:00.608330+00:00",
+    "updated_at": "2026-10-27T00:44:00.757263+00:00"
+  },
+  "before_retrieval": {
+    "results": [
+      {
+        "content": "The cobalt lattice laboratory note records coefficient 91. Its private seal is RETAIN-71790c1c-2948-4fef-9fb9-9b5e5aadc805.\n",
+        "score": 0.8525692,
+        "metadata": {
+          "document_id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+          "embedding_space": {
+            "backend": "fastembed",
+            "dimension": 384,
+            "model": "bge-small-en-v1.5"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "cobalt-lattice.txt",
+          "index": 0,
+          "ingestion_generation": "34d29fb1-cc90-4206-aa52-19ad61089b54",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6"
+      },
+      {
+        "content": "The amber lattice laboratory note records coefficient 73. Its private seal is DELETE-8f26c8ad-e1b0-414b-bde9-912698fbe67d.\n",
+        "score": 0.8301109,
+        "metadata": {
+          "document_id": "146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+          "embedding_space": {
+            "backend": "fastembed",
+            "dimension": 384,
+            "model": "bge-small-en-v1.5"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "amber-lattice.txt",
+          "index": 0,
+          "ingestion_generation": "938825d4-4c68-447b-9c52-815487fab9bd",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "146987d2-fa40-4474-a9e8-8c7b630dbfe1"
+      }
+    ]
+  },
+  "document_delete_accepted": true,
+  "after_retrieval": {
+    "results": [
+      {
+        "content": "The cobalt lattice laboratory note records coefficient 91. Its private seal is RETAIN-71790c1c-2948-4fef-9fb9-9b5e5aadc805.\n",
+        "score": 0.8525692,
+        "metadata": {
+          "document_id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+          "embedding_space": {
+            "backend": "fastembed",
+            "dimension": 384,
+            "model": "bge-small-en-v1.5"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "cobalt-lattice.txt",
+          "index": 0,
+          "ingestion_generation": "34d29fb1-cc90-4206-aa52-19ad61089b54",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6"
+      }
+    ]
+  },
+  "remaining_documents": [
+    {
+      "id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+      "kb_id": "6d5c3338-7d5c-4884-a597-a3e95dccd132",
+      "filename": "cobalt-lattice.txt",
+      "file_path": null,
+      "mime_type": "text/plain",
+      "chunk_count": 1,
+      "status": "indexed",
+      "error_message": null,
+      "created_at": "2026-10-27T00:44:00.608330+00:00",
+      "updated_at": "2026-10-27T00:44:00.757263+00:00"
+    }
+  ],
+  "surviving_kb": {
+    "id": "6d5c3338-7d5c-4884-a597-a3e95dccd132",
+    "name": "Document deletion BDD 728fbaab-5ff2-46cf-bcb1-0726c5224550",
+    "description": "Disposable target and retained control documents",
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "vector_dimensions": null,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 512 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 10,
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "regeneration": null
+    },
+    "created_at": "2026-10-27T00:43:58.938219+00:00",
+    "updated_at": "2026-10-27T00:44:01.246992Z",
+    "document_count": 1
+  },
+  "disposable_kb_deleted": true,
+  "status": "PASSED",
+  "result": "VERIFIED",
+  "duration_ms": 2915
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "status": "CURRENT_SOURCE_SNAPSHOT_NOT_INTEGRATION_ACCEPTANCE",
+  "parking_lot_version": "0.4.0",
+  "upstream_commit": "53682521cb2a7a49c06e046c826890d9e11b6bfe",
+  "source_inventory": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-004.json",
+    "sha256": "sha256:768427ad0347fd42dd548a9177288209c27e5ad08db3d7e5567defc4dc2a9d1b"
+  },
+  "source_identity": "sha256:580f7196999aa00b78e211a9894424b0d8c4074acf07fbafb483d00592e8673f",
+  "historical_inventories_preserved": [
+    "issue-426-inventory.md",
+    "issue-426-source-manifest.json"
+  ],
+  "source_bindings": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/Cargo.lock",
+      "sha256": "sha256:3ceb87fc20329a0ec07a895b1a19d41a3eea087b44c03eed0dd63d52727fd721"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/Cargo.toml",
+      "sha256": "sha256:32c6e750d21ab755a8e7ce43f7349c0b6ab1530f81b40e1e41c8b8964ab0f032"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.lock",
+      "sha256": "sha256:bc554980937a8ec8689fa45fbdd6355fd647913c9e4fbec78e3760a2bc2a4acf"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+      "sha256": "sha256:d97ee808095d99ef223e722cd131426dd035d309bef4a0aaa17d31667f5bead7"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/README.md",
+      "sha256": "sha256:05777a8c078db561078089d74a8a4748339cea4980ae1e6677977452c2dbe466"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/Cargo.toml",
+      "sha256": "sha256:0c991faf2f07ce117fed3a02443ba1f1e7f4b1bebae4953926b1e5abe8cd06bc"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core/Cargo.toml",
+      "sha256": "sha256:12221c0f627bef2d7f362528fd32fb790cb83f9108da6c0f01e06590944e289d"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/versions.toml",
+      "sha256": "sha256:e18ef32b63846afc49182c65e8dff609a22b4ef6619e9762a2fbbe6bb2020375"
+    }
+  ],
+  "integration_result": "NOT_RUN",
+  "platform_scope": {
+    "macos": "PLANNED",
+    "linux": "PLANNED",
+    "ios": "SIMULATOR_PLANNED",
+    "windows": "BLOCKED_NO_EXECUTION_HOST",
+    "android": "DEFERRED"
+  },
+  "upstream_tag": "v0.4.0",
+  "official_source_evidence": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/parking-lot-040-release-source-inspection.json",
+    "sha256": "sha256:36f11debcd1cff05646ea690c224efd89b324f5ac3a97ee6834f446b2570399c"
+  }
+}

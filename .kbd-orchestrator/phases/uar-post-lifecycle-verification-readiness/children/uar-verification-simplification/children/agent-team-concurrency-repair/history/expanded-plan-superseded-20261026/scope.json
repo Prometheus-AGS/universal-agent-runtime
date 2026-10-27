@@ -1,0 +1,11 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/uar-verification-simplification/children/agent-team-concurrency-repair/**",
+    "openspec/changes/repair-agent-team-concurrent-operation/**",
+    ".prometheus/session-log.md",
+    ".prometheus/decisions.md"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Current /kbd-spec authority permits these specification/append-only memory paths only. Plan must name production file owners before implementation; no current product write/test authority."
+}

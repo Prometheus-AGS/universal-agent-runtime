@@ -1,0 +1,15 @@
+{
+  "purpose": "Spec input identities only; not a live/source verification receipt",
+  "records_sha256": {
+    ".prometheus/verification/teams/72860111-231c-49ec-a973-e0a4e53f2a63.json": "14b1e49b15fdb51baaf70eda18a3de5a7dc84c0002a2174a20bbade842bcc164",
+    ".prometheus/verification/teams/72860111-231c-49ec-a973-e0a4e53f2a63.diagnostic.json": "67572bbc5d841e7a0a2d171e86735761618c15fda190230d3ea8f5e718e07fe4",
+    ".prometheus/verification/agents/math-specialist-db64c2a8.knowledge.json": "0f42fbdd81c3ded9a0d4442bd55ca4ca39a8f93fc941a916a6f67185a24b2506",
+    ".prometheus/verification/agents/writing-specialist.json": "c4f4e225079d128fbd91e436d950f3f3e327951b92c779902b808ce49f9f2517"
+  },
+  "future_prerequisites": {
+    "FIXTURE-ADMIT-BOUND": "NOT_EXERCISED",
+    "FIXTURE-SETTLE-BOUND": "NOT_EXERCISED",
+    "FIXTURE-TEAM-BOUND": "NOT_EXERCISED"
+  },
+  "requirements": "Plan must bind source/artifact, store/config, valid auth refs, owned mutation roots, exact startup/readiness/cleanup commands and process owner. Never infer current source or live record state from these input hashes. FIXTURE-SETTLE-BOUND must contain conclusively terminal known-usage and genuine confirmed-terminal/unknown-usage evidence; current historical snapshots alone do not establish this. Missing evidence blocks SETTLE-01."
+}

@@ -1,0 +1,14 @@
+{
+  "item": "RUST",
+  "repair_ordinal": 14,
+  "status": "IN_PROGRESS",
+  "scope": [
+    "src/uar/runtime/matching/intent/mod.rs",
+    "src/uar/runtime/context/summarizer.rs"
+  ],
+  "root_cause": "auxiliary plaintext consumers refuse normal trusted driver metadata beforegeneratedtext",
+  "correction": "ignore only exact uar.request/budget_receipt metadata variant in bothconsumers; retainallotherfailures/budgets",
+  "started_at": "2026-10-25T17:33:54.601126+00:00",
+  "additional_compile_gate": false,
+  "next": "freshsourceinventory andonecorrectiveRUSTreview"
+}

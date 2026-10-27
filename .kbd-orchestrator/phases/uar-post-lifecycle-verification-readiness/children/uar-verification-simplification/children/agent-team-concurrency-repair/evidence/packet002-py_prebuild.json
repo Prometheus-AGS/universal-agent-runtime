@@ -1,0 +1,7 @@
+{
+  "command": "python3 - <<'PY_PREBUILD'\nimport hashlib, json\nfrom pathlib import Path\np = Path('.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/uar-verification-simplification/children/agent-team-concurrency-repair')\nlaunch = json.loads(Path('target/prompt-macos-launch.json').read_text())\nassert hashlib.sha256(Path(launch['binary']).read_bytes()).hexdigest() == launch['binary_sha256']\nwith (p / 'evidence/prebuild-server-identity-002.json').open('x') as receipt:\n    json.dump(launch, receipt, indent=2)\nprint('Previous server artifact identity recorded before rebuilding')\nPY_PREBUILD\n",
+  "exit_code": 0,
+  "stdout": "Previous server artifact identity recorded before rebuilding\n",
+  "stderr": "",
+  "at": "2026-10-26T12:18:43.642340+00:00"
+}

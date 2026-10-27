@@ -1,0 +1,108 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "continue-using-an-agent-after-deleting-its-linked-knowledge-base;a-linked-agent-answers-without-deleted-knowledge-in-a-fresh-conversation",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A linked agent answers without deleted knowledge in a fresh conversation",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1066979376
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent linked to a knowledge base containing a private fact",
+            "match": {
+              "location": "scripts/behaviors/steps/linked-kb-delete.steps.mjs:53"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5423731796
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the agent answers using that fact with a matching knowledge citation",
+            "match": {
+              "location": "scripts/behaviors/steps/linked-kb-delete.steps.mjs:115"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 82858465
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I delete its knowledge base without editing the agent",
+            "match": {
+              "location": "scripts/behaviors/steps/linked-kb-delete.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7470777691
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the same agent answers a fresh conversation without the deleted fact or citations",
+            "match": {
+              "location": "scripts/behaviors/steps/linked-kb-delete.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 62641384
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9saW5rZWQta2ItZGVsZXRlLzBiN2I4Yzg4LTg5YTctNDg3Ni1hMDUzLTgwMmFlMWRkYjU3Yi5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@linked-kb-delete",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "continue-using-an-agent-after-deleting-its-linked-knowledge-base",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Continue using an agent after deleting its linked knowledge base",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@linked-kb-delete",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/linked-kb-delete.feature"
+  }
+]

@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "interact-with-a-real-a2ui-response-in-the-browser;a-rendered-calculator-sends-fresh-input-back-to-its-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A rendered calculator sends fresh input back to its agent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable A2UI calculator agent is selected in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 3734000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask the agent to render its calculator",
+            "result": {
+              "status": "passed",
+              "duration": 8481000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the browser displays the generated input and action button",
+            "result": {
+              "status": "failed",
+              "duration": 120029000000,
+              "error_message": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\nExpected: visible\nTimeout: 120000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 120000ms\n  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\n\n   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:131\n\n  129 | Then('the browser displays the generated input and action button', async ({ page, scenario: s }) => {\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n> 131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n      |                                                                        ^\n  132 |   await expect(s.surface).toContainText('Parcel calculator');\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:131:72)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:58:48\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:22)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:57:19\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I enter a fresh number and press the rendered calculate button",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the agent answers using that browser input and its saved instructions",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2011000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1889000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@a2ui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "interact-with-a-real-a2ui-response-in-the-browser",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Interact with a real A2UI response in the browser",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@a2ui",
+        "line": 1
+      }
+    ],
+    "uri": "features/a2ui-browser.feature"
+  }
+]

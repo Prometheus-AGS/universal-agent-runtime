@@ -1,0 +1,55 @@
+{
+  "scenario": "A2A-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "A2A v1 JSON-RPC SendMessage",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/v1/agents/math-specialist-db64c2a8",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "f5c001b0-9d15-4548-af63-345f8211f98b",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "messageId": "cca502f0-310d-4ca6-adb9-1f1c76d5c07b",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "What is (56 multiplied by 14) plus 114? Follow your saved specialist/answer JSON instructions."
+              }
+            ]
+          },
+          "configuration": {
+            "returnImmediately": false
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"f5c001b0-9d15-4548-af63-345f8211f98b\",\"result\":{\"task\":{\"id\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"contextId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"status\":{\"state\":\"TASK_STATE_COMPLETED\",\"timestamp\":\"2026-10-26T21:33:38.754Z\",\"message\":{\"messageId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316:status\",\"taskId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"contextId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"role\":\"ROLE_AGENT\",\"parts\":[{\"text\":\"<think>The question is ordinary arithmetic: (56 × 14) + 114 = 784 + 114 = 898.\\n\\nReturn JSON with specialist and answer.\\n\\nShould I use any tools? The identity fragment says return only JSON. No tools needed.\\n\\n56 × 14 = 784. 784 + 114 = 898.\\n\\nReturn only JSON.</think>\\n\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 898\\n}\"}],\"metadata\":{}}},\"history\":[{\"messageId\":\"cca502f0-310d-4ca6-adb9-1f1c76d5c07b\",\"taskId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"contextId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"role\":\"ROLE_USER\",\"parts\":[{\"text\":\"What is (56 multiplied by 14) plus 114? Follow your saved specialist/answer JSON instructions.\"}],\"metadata\":{}},{\"messageId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316:1\",\"taskId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"contextId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316\",\"role\":\"ROLE_AGENT\",\"parts\":[{\"text\":\"<think>The question is ordinary arithmetic: (56 × 14) + 114 = 784 + 114 = 898.\\n\\nReturn JSON with specialist and answer.\\n\\nShould I use any tools? The identity fragment says return only JSON. No tools needed.\\n\\n56 × 14 = 784. 784 + 114 = 898.\\n\\nReturn only JSON.</think>\\n\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 898\\n}\"}],\"metadata\":{}}],\"artifacts\":[{\"artifactId\":\"a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316:output\",\"parts\":[{\"text\":\"<think>The question is ordinary arithmetic: (56 × 14) + 114 = 784 + 114 = 898.\\n\\nReturn JSON with specialist and answer.\\n\\nShould I use any tools? The identity fragment says return only JSON. No tools needed.\\n\\n56 × 14 = 784. 784 + 114 = 898.\\n\\nReturn only JSON.</think>\\n\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 898\\n}\"}]}],\"metadata\":{\"run_id\":\"7e6a7ca4-3f94-48ef-9323-cbf0cc799fe7\",\"thread_id\":\"90af90d2-04d3-4905-a381-1119968dc55d\",\"uar.approvals\":[],\"agent_id\":\"math-specialist-db64c2a8\",\"root_run_id\":\"7e6a7ca4-3f94-48ef-9323-cbf0cc799fe7\",\"canonical_path\":\"/root\"}}}}"
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 898
+  },
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 898
+  },
+  "task_id": "a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316",
+  "context_id": "a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316",
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 4504
+}

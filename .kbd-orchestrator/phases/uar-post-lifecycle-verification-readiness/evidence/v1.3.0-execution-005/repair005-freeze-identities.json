@@ -1,0 +1,12 @@
+{
+  "contractDigest": "8b2557856e30e257dd91e82c6fcb6fa659c663c0e603a8754e36140c7231552d",
+  "inventoryDigest": "9ef107844e009bf977cedd6ebf411cfa3751e815247cf836b8f0288529786b11",
+  "sourcePatchSha256": "28cbb3efd5275230696045a1abb495fedfeb53f1445fc5da92345c607408f1e1",
+  "projectInputCount": 32089,
+  "externalInputCount": 6,
+  "boundInputCount": 32095,
+  "missing": [],
+  "canonicalRevision": 386,
+  "planRevision": 114,
+  "manifestAuthority": "CLOSED"
+}

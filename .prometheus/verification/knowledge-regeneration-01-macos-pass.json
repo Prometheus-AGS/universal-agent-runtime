@@ -1,0 +1,98 @@
+{
+  "scenario": "KNOWLEDGE-REGENERATION-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T19:40:34.981660-05:00",
+  "attempt": 1,
+  "host_command": [
+    "node",
+    "scripts/manual-host/knowledge-regeneration-macos.mjs"
+  ],
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/knowledge-regeneration.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 7.328s",
+  "gherkin_steps": 5,
+  "evidence_hooks": 1,
+  "evidence": ".prometheus/verification/knowledge-regeneration/5f74c032-2e6b-49d3-9806-77043017477d.json",
+  "host_evidence": ".prometheus/verification/knowledge-regeneration-host/eb91aa0c-a89f-4718-b140-74aca939646f/host.json",
+  "cucumber_report": ".prometheus/verification/knowledge-regeneration-host/eb91aa0c-a89f-4718-b140-74aca939646f/cucumber.json",
+  "knowledge_base_id": "4df3c655-7600-46bf-92ae-745b631460a9",
+  "document_id": "7ae5a57a-a332-47b7-a6b3-8e56b4b418e2",
+  "previous_embedding": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "target_embedding": {
+    "backend": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 1536
+  },
+  "old_index_http_status": 409,
+  "old_index_error": "embedding_space_mismatch",
+  "regeneration": {
+    "generation": "d3a7dbaf-8ca9-4af7-acd2-9b13431f0210",
+    "previous": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "target": {
+      "backend": "openai",
+      "model": "text-embedding-3-small",
+      "dimension": 1536
+    },
+    "document_ids": [
+      "7ae5a57a-a332-47b7-a6b3-8e56b4b418e2"
+    ],
+    "state": "complete",
+    "completed_documents": 1,
+    "last_error": null,
+    "started_at": "2026-10-27T00:38:49.606129+00:00",
+    "updated_at": "2026-10-27T00:38:50.984933+00:00"
+  },
+  "retrieval_score": 0.8107894,
+  "same_retained_document": true,
+  "matching_private_seal": true,
+  "document_reuploaded_for_regeneration": false,
+  "disposable_deleted": true,
+  "original_settings_restored": true,
+  "original_host_config_restored": true,
+  "binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+  "runtime_pid": 97354,
+  "service_kept_running": true,
+  "authentication_supplied_by_test": false,
+  "credentials_outside_test": true,
+  "child_credential_variables": [],
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "rebuild": false,
+  "embedding_budget": {
+    "embedding_caps_usd": {
+      "openai": 10,
+      "cohere": 10
+    },
+    "cohere_used": false,
+    "openai_rate_usd_per_million_tokens": 0.02,
+    "actual_billing_usage": "not exposed by UAR",
+    "estimated_two_input_cost_ceiling_usd": 6.66e-06
+  },
+  "source_sha256": {
+    "scripts/behaviors/knowledge-regeneration.cucumber.mjs": "261c0bf6d73745a6a3bd565ce9d359c2023cedc108da217396b981e5d87f9691",
+    "scripts/behaviors/features/knowledge-regeneration.feature": "10cd60d97c6cf51f20916aca5f08575c76a4e48ec7de8003df0f09f1d86100cc",
+    "scripts/behaviors/steps/knowledge-regeneration.steps.mjs": "d3288e17b39ab61fbd7674f67ad42f7d9e6f70ce1ac9166f647caf0187e8bb50",
+    "scripts/behaviors/support/restart-owned-uar.mjs": "990154b3fd66d84dd9e0bddb8e7655251653d80cf2ba80af73272d06ef912f24",
+    "scripts/manual-host/embedding-config.mjs": "be2ac0ba1cd05ab89c4298b1ac12ebd4dbb5078e8d7d45098ec4d8d835281a45",
+    "scripts/manual-host/knowledge-regeneration-macos.mjs": "222c240e53eecf79d0e83071f2b0534774c261ccdb1b3000385809e49595c0f2"
+  },
+  "source_reviews": "Code and JavaScript reviewers found no blockers after authoring corrections; source inspection only.",
+  "scope": "One retained-document model/dimension migration and retrieval. Not bulk migration, crash recovery, other storage backends or platforms.",
+  "recovery_path_not_exercised": "Temporary startup succeeded; opt-in failed-start recovery was source-reviewed only.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

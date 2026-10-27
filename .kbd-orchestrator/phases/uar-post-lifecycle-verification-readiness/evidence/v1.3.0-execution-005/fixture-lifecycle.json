@@ -1,0 +1,41 @@
+{
+  "classification": "Approved exact-owned fixture lifecycle and cleanup",
+  "mkdir": {
+    "chunk_id": "21060d",
+    "wall_time_seconds": 0.000013751,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  },
+  "start": {
+    "cmd": "docker compose --project-name uar-post-lifecycle-v130-001 --file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/local-store.yaml up --detach --no-deps store",
+    "result": {
+      "chunk_id": "4d3fca",
+      "wall_time_seconds": 1.066300483,
+      "exit_code": 0,
+      "original_token_count": 109,
+      "output": " Network uar-post-lifecycle-v130-001_default Creating \n Network uar-post-lifecycle-v130-001_default Creating \n Network uar-post-lifecycle-v130-001_default Created \n Network uar-post-lifecycle-v130-001_default Created \n Container uar-post-lifecycle-v130-001-store Creating \n Container uar-post-lifecycle-v130-001-store Created \n Container uar-post-lifecycle-v130-001-store Starting \n Container uar-post-lifecycle-v130-001-store Started \n"
+    }
+  },
+  "stop": {
+    "cmd": "docker compose --project-name uar-post-lifecycle-v130-001 --file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/local-store.yaml stop --timeout 30 store",
+    "result": {
+      "chunk_id": "6e6492",
+      "wall_time_seconds": 0.594323402,
+      "exit_code": 0,
+      "original_token_count": 28,
+      "output": " Container uar-post-lifecycle-v130-001-store Stopping \n Container uar-post-lifecycle-v130-001-store Stopped \n"
+    }
+  },
+  "down": {
+    "cmd": "docker compose --project-name uar-post-lifecycle-v130-001 --file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/local-store.yaml down --timeout 30",
+    "result": {
+      "chunk_id": "b64ebe",
+      "wall_time_seconds": 0.235361369,
+      "exit_code": 0,
+      "original_token_count": 82,
+      "output": " Container uar-post-lifecycle-v130-001-store Stopping \n Container uar-post-lifecycle-v130-001-store Stopped \n Container uar-post-lifecycle-v130-001-store Removing \n Container uar-post-lifecycle-v130-001-store Removed \n Network uar-post-lifecycle-v130-001_default Removing \n Network uar-post-lifecycle-v130-001_default Removed \n"
+    }
+  },
+  "diskAndEvidenceRetained": true
+}

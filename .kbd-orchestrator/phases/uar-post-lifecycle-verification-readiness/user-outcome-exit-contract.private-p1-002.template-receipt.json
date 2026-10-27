@@ -1,0 +1,18 @@
+{
+  "classification": "unsigned amendment documentation generation only",
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.private-p1-002.proposed.json",
+    "--reason",
+    "A14 proposes one bounded fixture preparation repair10 after duplicate supporting mkdir and recorded order deviation; keep all prior consumption and other limits, explicit3replacementJWTs, sole lead writer, serial P1.002 only after approval; product V CLOSED.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n"
+}

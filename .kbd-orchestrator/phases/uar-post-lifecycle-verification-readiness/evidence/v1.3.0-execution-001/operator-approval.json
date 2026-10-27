@@ -1,0 +1,8 @@
+{
+  "recordedAt": "2026-10-24T13:38:17.685447+00:00",
+  "source": "Direct user instruction in this task",
+  "instruction": "I approve the prepared F/V packet. Help me sign the amendment, then run UAR 1.3.0 verification serially under the exit contract and stop at the first failure.",
+  "scope": "Prepared F/V packet, including isolated fixture and conditional cleanup; no automatic retry",
+  "signing": "Latest instruction authorizes scoped SSH-agent signing; public key path used, private key not read by agent",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-d00c3c5b"
+}

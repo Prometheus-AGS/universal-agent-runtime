@@ -1,0 +1,42 @@
+{
+  "scenario": "SKILL-DETECTION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills/",
+      "request": {
+        "name": "parcel-pricing-94e2c9c1-aa0c-42a6-acf9-6cc274aae884",
+        "description": "Calculate an opal parcel shipping quote.",
+        "triggers": {
+          "keywords": [
+            "opal parcel"
+          ]
+        },
+        "prompt_overlay": "For opal parcel quotes, multiply the parcel count by 18 and add 67. Return only JSON with marker \"PARCEL-3ab093a3-4c39-4ba4-9cbe-a3c8126aa5ba\" and numeric quote. This is the private pricing recipe; do not substitute general shipping rates."
+      },
+      "status": 404,
+      "response": "{\"error\":{\"message\":\"API route not found\",\"type\":\"invalid_request_error\",\"code\":\"api_route_not_found\"}}"
+    }
+  ],
+  "matching_config": {
+    "engine": "service",
+    "algorithm": "keyword",
+    "threshold": 0.5,
+    "margin_threshold": 0.05,
+    "top_k": 3,
+    "model_name": null
+  },
+  "cleanup_errors": [],
+  "disposable_resources_deleted": true,
+  "status": "FAILED",
+  "duration_ms": 42
+}

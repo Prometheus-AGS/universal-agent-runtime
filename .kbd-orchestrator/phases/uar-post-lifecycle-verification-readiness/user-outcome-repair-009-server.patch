@@ -1,0 +1,10 @@
+--- a/src/server.rs
++++ b/src/server.rs
+@@ -1532,6 +1532,7 @@
+         startup_checkpoint!("memory lifecycle readiness");
+     }
+ 
++    #[cfg(feature = "surreal-backend")]
+     if let Some(memory) = memory_service.as_ref() {
+         let bus = Arc::new(uar::realtime::surreal_bus::LiveQueryBus::start_memory(memory.subscription_client()?));
+         let owner = Arc::clone(&bus);

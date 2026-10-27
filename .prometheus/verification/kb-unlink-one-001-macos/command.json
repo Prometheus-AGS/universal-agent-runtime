@@ -1,0 +1,11 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/kb-unlink-one.cucumber.mjs"
+  ],
+  "exit_code": 1,
+  "duration_seconds": 24.042419485049322,
+  "child_credential_variables": []
+}

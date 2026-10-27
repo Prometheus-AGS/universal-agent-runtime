@@ -1,0 +1,32 @@
+{
+  "scenario": "CONTINUITY-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:39:55.099791+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/continuity.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 11.440s",
+  "agent_id": "math-specialist-db64c2a8",
+  "session_id": "72f50cb7-16c5-499b-94e1-f50e512a7e55",
+  "model": "liter/MiniMax-M3",
+  "evidence": ".prometheus/verification/conversations/72f50cb7-16c5-499b-94e1-f50e512a7e55.json",
+  "cucumber_report": ".prometheus/verification/continuity-002-macos.cucumber.json",
+  "expected_first": 8296,
+  "expected_follow_up": 59785,
+  "client_replays_history": false,
+  "authentication_supplied_by_test": false,
+  "scope": "Warm two-turn continuity for the saved mathematics agent; no restart or cross-session memory claim",
+  "manual_sequence_status": "COMPLETE; stop for operator direction",
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/features/conversation-continuity.feature": "da5f5908697485f69ebfdb096eff053da0f7b270861cc41e57a72e78998eafc6",
+    "scripts/behaviors/steps/conversation-continuity.steps.mjs": "36a935f6f5dafa15da569d9ace9f87a724347f0219295216243f45e351ac9e5a",
+    "scripts/behaviors/continuity.cucumber.mjs": "9aec46e03068eb9c1220c7ea045f8e24b1d34f564c9cb22da2d0ec64caaa1412"
+  },
+  "prior_failure": "continuity-001-macos.cucumber.json: model_not_verified before inference; existing model verification refreshed without configuration/model changes"
+}

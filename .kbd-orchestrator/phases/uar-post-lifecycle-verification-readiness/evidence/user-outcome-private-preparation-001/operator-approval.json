@@ -1,0 +1,9 @@
+{
+  "approved": "A13 and combined P1",
+  "contract": "76c1332c92d13952193693e8ec0b62d8e33e744bf56aee7bfe9b1de1533dc716",
+  "scope": "exact approved packet",
+  "started_unix": 1792940892.6340601,
+  "preparation_setup_started_unix": 1792940850,
+  "limits_preserved": true,
+  "product_gate": "CLOSED"
+}

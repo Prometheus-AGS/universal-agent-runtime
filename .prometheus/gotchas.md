@@ -2135,3 +2135,51 @@ The active UAR already has jwt_required=false; team APIs nevertheless require a 
 
 ## 2026-10-26 — Team model accounting uses catalog identity
 A selected gateway route such as liter/MiniMax-M3 is distinct from its admitted pricing identity minimax/MiniMax-M3. Assert the requested route separately and compare accounting against the captured pricingIdentity; do not weaken settlement/usage assertions or substitute a different model. Repeated model calls must shrink actual output reservations against remaining durable tokens rather than reserve the initial full envelope again. TEAM-01 passed after these corrections; evidence team-01-macos-pass.json.
+
+
+## A2UI-01 — 2026-10-26T22:03:54.157007+00:00
+The chat endpoint agui_spec stream multiplexes runtime.* side-channel metadata, including runtime.run after RUN_FINISHED. Preserve it separately and validate the trailing completed run identity; do not mistake it for a second AG-UI terminal or weaken surface-publication assertions. Separately, src/uar/api/agui.rs Projector currently omits StatePatch/ArtifactDisplay; the dedicated AG-UI agent route remains an A2UI projection gap (source evidence only), while chat/completions agui_spec publication has now passed. No production repair undertaken in this response-only scenario.
+
+
+## A2UI-BROWSER-01 — 2026-10-26T22:53:58.936068+00:00
+A2UI browser render requires urn:uar:a2ui:catalog:1. Backend parser accepted it but a2ui_render tool schema only advertised the basic URL, which the browser rejected. Native schema now allows both; fixture selects the UAR catalog. Existing basic example does not establish frontend support. The owned UAR may serve an older global static bundle; use an explicit UAR_STATIC_DIR pointing to the current frontend build without modifying global static. Use exact native JSON component arrays; retain model tool-format failures.
+
+
+## SKILL-DETECTION-01 — 2026-10-26T22:59:32.061584+00:00
+Skill CRUD collection endpoint is /api/uar/skills without a trailing slash on the mounted runtime. /api/uar/skills/ returned404 in first SKILL-DETECTION-01 attempt. Corrected fixture path; no product defect or production repair. Retain that failed setup receipt.
+
+
+## SEMANTIC-SKILL-01 — 2026-10-26T23:06:34.193261+00:00
+Do not assume keyword threshold0.5 transfers to local cosine similarity. SEMANTIC-SKILL-01 observed delivery0.7421 and irrelevant gardening0.5238, both accepted at0.5. An explicitly configured0.65 threshold passed the same scenario. This is one calibrated example, not general threshold validation; keep the failed receipt. Service embedding top-k precedes agent-policy filtering, so unrelated catalog entries can affect candidates. Service config engine and runtime admission engine are distinct settings; require actual run method evidence.
+
+
+## CONTEXT-BUDGET-01 — 2026-10-26T23:28:14.185251+00:00
+Normal chat admission extracts the last user message, so a single request containing several user appendices does not populate server-held history with all appendices. Use separate acknowledged turns for context-pressure BDD. CONTEXT-BUDGET-01 preserves the failed bundled attempt and passing separate-turn attempt. Provider configuration changes invalidate model-operation receipts; changing/restoring a temporary context_window requires refreshing that receipt while preserving all credential fields by omission.
+
+
+## CONVERSATION-SUMMARY-01 — 2026-10-26T23:33:52.413377+00:00
+Summarization run receipts resolve strategy.model:null to the actual route. Their input_sha256 hashes raw serialized request messages with role/content insertion order in this build, not sorted-key canonical JSON. Match that source-backed representation; do not discard the exact fact-source binding to make a test pass. CONVERSATION-SUMMARY-01 preserved the first fixture failure and passed after correcting those expectations.
+
+
+## CONVERSATION-RESTART-01 — 2026-10-26T23:52:44.642458+00:00
+CONVERSATION-RESTART-01 exposed two normal-chat gaps: cold lookup ignored durable session history and successful text-only completion did not save it. Warm continuity alone cannot detect this. The repaired scenario passes with genuine process replacement and no client replay. Source review separately flagged whole-session write ordering and non-atomic cold cache creation for concurrent same-session calls; not exercised/fixed by this sequential pass.
+
+
+## CONCURRENT-CONVERSATION-RESTART-01 — 2026-10-27T00:01:47.877656+00:00
+Concurrent BDD authoring initially used client SSE receipt overlap; source review caught that buffering can fake server concurrency. Corrected before execution to three ordered live run snapshots. CONCURRENT-CONVERSATION-RESTART-01 passed first live attempt. Both requests must settle before failure cleanup; use allSettled rather than early rejection. Preserve possible whole-session write-ordering risk separately from the one observed successful interleaving.
+
+
+## REST-SETTING-RESTART-01 — 2026-10-27T00:07:31.794289+00:00
+For user-settings REST restoration, omitted prompt_caching_enabled preserves current state whereas explicit null clears the override. Restoring the preference legitimately changes updated_at; compare the original semantic preference fields during cleanup, but require exact saved-record equality during post-restart persistence assertion.
+
+
+## KNOWLEDGE-RESTART-01 — 2026-10-27T00:18:28.588039+00:00
+For saved-KB restart tests, reuse retained KB/document IDs from historical evidence instead of recreating/uploading/rebinding. A fresh session and no seal in instructions/request avoid replay as an answer source; match runtime citation KB/document/snippet/marker to the answer. KNOWLEDGE-RESTART-01 passed with local FastEmbed index unchanged; this is not a regeneration test.
+
+## Embedding model regeneration — 2026-10-26T19:40:34.981660-05:00
+
+Per-KB descriptive fields alone do not change the active embedder. Change the global backend/model/dimension, require incompatible old-index409, then call regeneration against retained source and confirm the new indexed fingerprint and same-document retrieval. KNOWLEDGE-REGENERATION-01 passed FastEmbed384→OpenAI1536 on Mac. Keep provider credentials outside BDD imports and environment. A live-PID-only restart cannot recover a failed temporary startup; opt-in recovery now requires same-invocation validated ownership context, but that failure path remains unexercised.
+
+## Empty KB list is not implicit unlink intent — 2026-10-26T20:07:08.758403-05:00
+
+KB-UNLINK-01 first run revealed enabled+emptylist resolvedAuto and retrievedunlinked/unrelatedKBs. Explicit link/enabled PATCH now persists selected/none under uar.run_policy. Do not globally change legacyempty mapping: builtindefaults dependonit. The passingtest keepsKBenabled and verifies retainedKBdirectretrieval. Modelresponses may includeprogress/explanation around exactlyoneJSONblock; parseoutsidecompletedreasoning and avoid unrequested JSON-only framing assertions.

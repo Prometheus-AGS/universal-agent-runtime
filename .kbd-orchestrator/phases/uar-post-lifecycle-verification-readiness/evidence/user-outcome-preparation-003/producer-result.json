@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/Users/gqadonis/miniconda3/bin/python3",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-003/artifact-preparation.config.json"
+  ],
+  "exit_code": 2,
+  "elapsed_seconds": 651.7605744110188,
+  "finished": "2026-10-25T11:37:20.216081+00:00",
+  "no_retry": true
+}

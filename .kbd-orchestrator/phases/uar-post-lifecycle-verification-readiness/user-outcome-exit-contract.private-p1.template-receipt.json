@@ -1,0 +1,18 @@
+{
+  "classification": "UNSIGNED_AUTHORITY_TEMPLATE_AUTHORING_NOT_VERIFICATION",
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.private-p1.proposed.json",
+    "--reason",
+    "Authorize combined P1 private fixture preparation only using unchanged source010 and sealed P0.006 artifacts. Preserve original epoch/all prior consumption/all ceilings/9repairs consumed/USD10 per provider, no new repair. Permit named private credential copy/generation,3supporting-only JWTs, explicit first-use owned genuine counters0 with legacy history retained, metadata sealing, resource signature/verification/adoption and deterministic composition. Serial first failure stop; no service/provider/V/build/publication or automatic retry. Final V requires separate actual-derived approval.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n"
+}

@@ -1,0 +1,37 @@
+{
+  "purpose": "Readiness scenario-to-task ID index derived from canonical registration; not an editable status ledger. Current statuses remain in canonical KBD state.",
+  "phaseId": "uar-verification-simplification::agent-team-concurrency-repair",
+  "sourceRevision": 645,
+  "tasks": [
+    {
+      "id": "1.1",
+      "changeId": "repair-agent-team-concurrent-operation",
+      "title": "Fix skill admission blocking the existing math and writing team members while preserving existing scoped settings and safe errors."
+    },
+    {
+      "id": "1.2",
+      "changeId": "repair-agent-team-concurrent-operation",
+      "title": "Fix the observed catalog terminal-settlement path needed by this same workflow without duplicate execution or false accounting."
+    },
+    {
+      "id": "1.3",
+      "changeId": "repair-agent-team-concurrent-operation",
+      "title": "Integrate the repair and existing BDD, finish required documentation, and record the complete source inventory and exact final build/restart/run packet."
+    },
+    {
+      "id": "1.4",
+      "changeId": "repair-agent-team-concurrent-operation",
+      "title": "After explicit final authority, review/build/run the existing math-writing BDD and record the actual Mac result and parent handoff."
+    },
+    {
+      "id": "1.5",
+      "changeId": "repair-agent-team-concurrent-operation",
+      "title": "Fix observed token-reservation mismatch with maximum64000 response tokens; integrate existing BDD and refresh inventory/packet."
+    },
+    {
+      "id": "1.6",
+      "changeId": "repair-agent-team-concurrent-operation",
+      "title": "Fix observed specialist result handling within existing TEAM-01; refresh inventory and packet."
+    }
+  ]
+}

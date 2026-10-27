@@ -1,0 +1,91 @@
+{
+  "phase": "uar-verification-simplification::agent-team-concurrency-repair",
+  "change": "repair-agent-team-concurrent-operation",
+  "production_implementation_complete": true,
+  "verification_gate": "CLOSED; new source requires exact instruction for packet002",
+  "source_manifest": "source-manifest-002.json",
+  "source_manifest_sha256": "45371cdc1495244d02eff575a37825b351188d1b70c9e368ab555a2156ae9b1a",
+  "source_file_count": 7465,
+  "contract_sha256": "fd4bfb892b805f980295aafa26259b427ee5cee30af2b6891e4ec7ea37263d76",
+  "exit_criterion": "TEAM-01 only; no new scenarios",
+  "implementation_tasks": {
+    "1.1": "complete",
+    "1.2": "complete",
+    "1.3": "historical complete; refreshed inventory/doc integration included in1.5",
+    "1.5": "source/integration/docs complete"
+  },
+  "remaining_tasks": {
+    "1.4": "blocked awaiting packet002 approval; new source not reviewed/built/run"
+  },
+  "token_policy": {
+    "maximum_output": 64000,
+    "input_allowance": 64000,
+    "per_attempt_total": 128000,
+    "team_three_attempt_total": 384000,
+    "smaller_grants": "output=min(64000,total/2), input=total-output",
+    "input_counting": "estimated, not exact or a guaranteed-fit claim",
+    "cost_limits_usd": {
+      "attempt": 1,
+      "team": 3
+    },
+    "time_limits_seconds": {
+      "attempt": 120,
+      "team": 360
+    }
+  },
+  "changed_files": [
+    {
+      "path": "src/uar/runtime/skills/service.rs",
+      "sha256": "e7326e4759f8ab7aca3316023839b4dfe6428892ef0edf7e3446a75efaed5d76",
+      "change": "Prior source-complete skill reconciliation repair retained."
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "c6379dd5ec970e349cbad27e0b0c5e1b966b35d0d0be2bd5e013a3512c5addb6",
+      "change": "Prior diagnostic retained; constrain estimated team input sizing to host allowance and model capacity minus capped output."
+    },
+    {
+      "path": "src/uar/compiler/collaboration/storage.rs",
+      "sha256": "ca17c19f2c0b75f890f790d41b8083a27c470ca1aee2515ba3eb2348ae9481ac",
+      "change": "Prior typed CAS conflict repair retained."
+    },
+    {
+      "path": "src/uar/compiler/collaboration/service.rs",
+      "sha256": "e8ddded1f4cc207824b7bf0a666ba09c882bebfb93496c8a43117901c26f37fb",
+      "change": "Prior safe storage error categories retained."
+    },
+    {
+      "path": "src/uar/runtime/cost_budget.rs",
+      "sha256": "6a184b89e9135aaad3f7b790a43f2fadffad292cfd096b3e4e969b0e8da2ee83",
+      "change": "Shared finite team allocation; reserve explicit input allowance plus enforced output cap on trusted no-contract team path. Exact contract remains first."
+    },
+    {
+      "path": "src/uar/runtime/team_execution/execution.rs",
+      "sha256": "35cd5956f785558c7ca4fb905db58f5f89831465e1b5d2d6034ec317a894ffc2",
+      "change": "Apply actual typed outbound response cap <=64000; smaller grants split input/output instead of failing the64000minimum."
+    },
+    {
+      "path": "scripts/behaviors/steps/math-writing-team.steps.mjs",
+      "sha256": "c0154b86011db8e33d725fc48d702e38dce3e553b72bcbf73e4370dadd66e3c5",
+      "change": "Use128000token attempts/384000team; preserve original overlap/results/merge/accounting assertions and check reservations do not exceed allocation."
+    }
+  ],
+  "packet": "verification-packet-002.md",
+  "packet_sha256": "6f7f2f222902accf4ee1ec1ffaac62e2c657c7c13391c5eb357ff65e92551a0a",
+  "repair_charge": {
+    "prior": 21,
+    "current": 22,
+    "ceiling": 28
+  },
+  "limits": "4800 cumulative calls/3000 active minutes; no reset; independent USD10 embedding caps",
+  "verification": "No new-source check/review/build/service/API/model operation. Previous source build/startup passed; previous TEAM-01 failed. Retain those receipts as history only.",
+  "uncomfortable_limit": "Estimated input allowance does not prove exact upstream tokenization. Actual usage and unknown liabilities remain authoritative.",
+  "resource_cutoff": {
+    "cutoff": "2026-10-26T12:08:53.752717+00:00",
+    "unique_emitted_host_dispatches": 4635,
+    "active_minutes_conservative_upper_bound": 2608.9430545,
+    "parse_error_files": [],
+    "repairs": 22,
+    "later_activity_accrues": true
+  }
+}

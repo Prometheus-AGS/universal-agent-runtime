@@ -1,0 +1,185 @@
+diff --git a/src/uar/runtime/skills/service.rs b/src/uar/runtime/skills/service.rs
+--- a/src/uar/runtime/skills/service.rs
++++ b/src/uar/runtime/skills/service.rs
+@@ -90,6 +90,15 @@ fn default_top_k() -> usize {
+ fn default_margin_threshold() -> f32 {
+     0.05
+ }
+ 
++fn is_configured_filesystem_provider(provider: &dyn SkillStorageProvider) -> bool {
++    provider.kind() == StorageProviderKind::Filesystem
++        && is_configured_filesystem_provider_id(provider.id())
++}
++
++fn is_configured_filesystem_provider_id(provider_id: &str) -> bool {
++    provider_id == "fs-skills" || provider_id.starts_with("filesystem-skills-")
++}
++
+ impl Default for SkillMatchingConfig {
+     fn default() -> Self {
+         Self {
+@@ -335,18 +344,31 @@ impl SkillService {
+     /// API-created files beneath the reserved `dynamic/` directory reload with
+     /// `provider_id = "api"` and are therefore outside this operation.
+     pub(crate) async fn reconcile_config_skills(&self) -> anyhow::Result<()> {
+-        let Some(config_provider) = self
++        let config_providers = self
+             .providers
+             .iter()
+-            .find(|provider| provider.id() == "fs-skills")
+-        else {
++            .filter(|provider| is_configured_filesystem_provider(provider.as_ref()))
++            .collect::<Vec<_>>();
++        if config_providers.is_empty() {
+             return Ok(());
+-        };
+-        let config_skills = config_provider
+-            .list_skills()
+-            .await?
+-            .into_iter()
+-            .filter(|skill| skill.provider_id == "fs-skills")
+-            .collect::<Vec<_>>();
++        }
++
++        // Startup assigns every configured root a concrete provider id so its
++        // source is observable. Durable configuration ownership remains the
++        // stable `fs-skills` identity, however; otherwise the initial loaded
++        // registry has no matching durable rows when selection is captured.
++        // Later roots retain the same overwrite precedence as initialization.
++        let mut configured_by_id = HashMap::new();
++        for provider in config_providers {
++            let provider_id = provider.id();
++            for mut skill in provider.list_skills().await? {
++                if skill.provider_id != provider_id {
++                    continue;
++                }
++                skill.provider_id = "fs-skills".to_string();
++                configured_by_id.insert(skill.skill_id.clone(), skill);
++            }
++        }
++        let config_skills = configured_by_id.into_values().collect::<Vec<_>>();
+         let stored_skills = self.registry.read().await.list_persisted().await?;
+         let stored_by_id = stored_skills
+             .iter()
+@@ -367,4 +380,4 @@ impl SkillService {
+         let stored_config_skill_count = stored_skills
+             .iter()
+-            .filter(|skill| skill.provider_id == "fs-skills")
++            .filter(|skill| is_configured_filesystem_provider_id(&skill.provider_id))
+             .count();
+@@ -384,4 +397,4 @@ impl SkillService {
+         for mut configured in config_skills {
+             if let Some(existing) = stored_by_id.get(&configured.skill_id) {
+-                if existing.provider_id != "fs-skills" {
++                if !is_configured_filesystem_provider_id(&existing.provider_id) {
+                     warn!(
+                         skill_id = %configured.skill_id,
+@@ -414,4 +427,4 @@ impl SkillService {
+         for stored in stored_skills
+             .iter()
+-            .filter(|skill| skill.provider_id == "fs-skills")
++            .filter(|skill| is_configured_filesystem_provider_id(&skill.provider_id))
+         {
+             if configured_ids.contains(&stored.skill_id) || stored.tombstoned {
+                 continue;
+diff --git a/src/uar/runtime/manager.rs b/src/uar/runtime/manager.rs
+--- a/src/uar/runtime/manager.rs
++++ b/src/uar/runtime/manager.rs
+@@ -5154,6 +5154,11 @@ impl RunManager {
+             .await
+             {
+                 Ok(bindings) => Arc::new(bindings),
+-                Err(_) => {
++                Err(error) => {
++                    tracing::warn!(
++                        run_id = %run_id,
++                        error = %error,
++                        "skill selection snapshot is unavailable"
++                    );
+                     if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                         state.run.status = RunStatus::Error;
+                     }
+diff --git a/src/uar/compiler/collaboration/storage.rs b/src/uar/compiler/collaboration/storage.rs
+--- a/src/uar/compiler/collaboration/storage.rs
++++ b/src/uar/compiler/collaboration/storage.rs
+@@ -135,13 +135,31 @@ impl CollaborationStorage for SurrealCollaborationStorage {
+-        let mut response = self
++        let response = self
+             .db
+             .query(
+                 "UPDATE type::record('uar_collaboration_state', 'catalog') \\
+                  CONTENT $state WHERE generation = $expected RETURN AFTER",
+            )
+            .bind(("state", content))
+             .bind(("expected", expected_generation))
+             .await
+             .context("failed to compare-and-swap collaboration catalog state")?;
++        let mut response = match response.check() {
++            Ok(response) => response,
++            Err(error)
++                if matches!(
++                    error.query_details(),
++                    Some(surrealdb::types::QueryError::TransactionConflict)
++                ) => {
++                    // A transaction conflict can be unrelated to this record.
++                    // Treat it as a CAS miss only after the exact generation
++                    // predicate has been observed to change; an unchanged or
++                    // unreadable row retains the original typed failure.
++                    match self.load_state().await {
++                        Ok(current) if current.generation != expected_generation => return Ok(false),
++                        _ => return Err(error.into()),
++                    }
++                }
++            Err(error) => return Err(error.into()),
++        };
+         let updated: Vec<serde_json::Value> = response
+             .take(0)
+             .context("failed to read collaboration catalog CAS result")?;
+diff --git a/src/uar/compiler/collaboration/service.rs b/src/uar/compiler/collaboration/service.rs
+--- a/src/uar/compiler/collaboration/service.rs
++++ b/src/uar/compiler/collaboration/service.rs
+@@ -45,8 +45,24 @@ impl From<serde_json::Error> for CollaborationError {
+     fn from(error: serde_json::Error) -> Self {
+         Self::Invalid(error.to_string())
+     }
+ }
+ 
++fn storage_error(error: anyhow::Error) -> CollaborationError {
++    #[cfg(feature = "surreal-backend")]
++    if error.chain().any(|cause| {
++        cause.downcast_ref::<surrealdb::Error>().is_some_and(|storage| {
++            matches!(
++                storage.query_details(),
++                Some(surrealdb::types::QueryError::TransactionConflict)
++            )
++        })
++    }) {
++        return CollaborationError::Storage("transaction_conflict".to_owned());
++    }
++
++    let _ = error;
++    CollaborationError::Storage("storage_operation_failed".to_owned())
++}
++
+ #[derive(Debug, Clone)]
+ pub struct CollaborationCatalogService {
+     pub(super) storage: Arc<dyn CollaborationStorage>,
+     /// Retained local notification for a catalog generation that committed
+@@ -413,6 +429,6 @@ impl CollaborationCatalogService {
+     pub(super) async fn load_state(&self) -> Result<CollaborationCatalogState, CollaborationError> {
+         self.storage
+             .load_state()
+             .await
+-            .map_err(|error| CollaborationError::Storage(error.to_string()))
++            .map_err(storage_error)
+     }
+ 
+@@ -425,5 +441,5 @@ impl CollaborationCatalogService {
+         let committed = self.storage
+             .compare_and_swap(generation, next)
+             .await
+-            .map_err(|error| CollaborationError::Storage(error.to_string()))?;
++            .map_err(storage_error)?;
+         if committed {
+             self.catalog_generation.send_replace(next.generation);
+         }

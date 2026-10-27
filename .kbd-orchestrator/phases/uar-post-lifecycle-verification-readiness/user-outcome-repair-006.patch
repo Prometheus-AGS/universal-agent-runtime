@@ -1,0 +1,31 @@
+--- a/src/uar/persistence/scoped.rs
++++ b/src/uar/persistence/scoped.rs
+@@ -902,7 +902,7 @@
+ 
+     async fn begin_knowledge_regeneration(
+         &self, owner: &str, kb: &str,
+-        target: &crate::uar::rag::embeddings::EmbeddingFingerprint,
++        target: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+     ) -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+         let owner = owner.to_owned();
+         let kb = kb.to_owned();
+@@ -915,7 +915,7 @@
+     async fn search_knowledge_scoped_in_space(
+         &self, owner_id: &str, kb_ids: &[&str], query_vec: &[f32],
+         limit: usize, min_score: f32,
+-        space: &crate::uar::rag::embeddings::EmbeddingFingerprint,
++        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+     ) -> Result<Vec<KnowledgeMatch>> {
+         let owner_id = owner_id.to_owned();
+         let kb_ids = kb_ids.iter().map(|id| (*id).to_owned()).collect::<Vec<_>>();
+--- a/src/llm/liter_driver.rs
++++ b/src/llm/liter_driver.rs
+@@ -724,7 +724,7 @@
+                 "destination_model":self.model,
+                 "serialized_request":true, "count_quality":quality, "counting_revision":count.revision,
+                 "counted_input_tokens":count.tokens, "serialized_bytes":wire.len(),
+-                "serialized_sha256":format!("{:x}", Sha256::digest(&wire)),
++                "serialized_sha256":Sha256::digest(&wire).iter().map(|byte| format!("{byte:02x}")).collect::<String>(),
+                 "tools_included":true, "instructions_included":true,
+                 "fit_guarantee":req.budget_contract.is_some(),
+                 "reserved_output_tokens":req.budget_contract.as_ref().map(|contract| contract.limits.output_tokens),

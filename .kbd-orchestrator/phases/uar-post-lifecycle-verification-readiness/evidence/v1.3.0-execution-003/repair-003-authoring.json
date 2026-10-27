@@ -1,0 +1,17 @@
+{
+  "status": "DIRECT_OPERATOR_AUTHORIZED_REPAIR003_AUTHORED_NOT_VERIFIED",
+  "repairsApplied": 3,
+  "priorSignedRepairLimit": 2,
+  "proposedRepairLimit": 3,
+  "remainingAfterAdoption": 0,
+  "cumulativeSourcePatch": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-003/repair-003.cumulative-source.patch",
+  "cumulativeSourcePatchSha256": "c1aa5b8880930f63e9d214bf8b97b81c347f89e074de06d3a2a5130363f2169a",
+  "sourceFiles": {
+    "scripts/post_lifecycle/main_boundary.py": "cd467d5a54b211106b525378da71436972af38709876550af8eb368ad773ec25",
+    "tests/post_lifecycle_main.rs": "f388b145501c816ab9baea45c779e5f495b93f1f7e68ea9e92a4d05023ab8e23",
+    "tests/support/post_lifecycle_store.rs": "3d304c9f16898e4f018580bddde88d84065d0f23802fa8f346e843962d2ec119",
+    "tools/seed-minimax-verification/main.rs": "6957deca33ec83db7a0667c24edf31b09aa41664a82ff6e4f72441b5ed7efb86"
+  },
+  "handoff": ".agent-team/uar-core/handoffs/v130-verification-repair-003.md",
+  "authority": "Direct user source-authoring request only; signature/adoption/execution pending. Proposed repair cap changes2to3 exactly. Original time/call consumption and limits retained."
+}

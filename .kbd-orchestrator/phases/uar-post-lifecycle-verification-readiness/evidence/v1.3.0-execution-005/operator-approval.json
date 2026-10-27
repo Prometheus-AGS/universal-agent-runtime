@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-10-24T18:19:18.865226+00:00",
+  "operatorStatement": "Approve A5 signing/adoption and F5/V5 packet005. Sign, adopt, and run verification serially under the amended contract. Keep all prior consumption and limits; stop at the first failure. No further repair or automatic retry.",
+  "contractDigest": "066971af1115e9408c77070f7b8ffcf7bc0dde1a5cdc5937d41e007adb1a1640",
+  "sourceInventoryDigest": "b67b8e246c47e63df711e3c0292b77dd87f1e0df1744d35c832dea75c2c8fe8c",
+  "scope": "Exact A5/F5/V5 packet005, existing fixture effects and authority sealing; all prior consumption retained; no repair/retry/publication/extra preflight"
+}

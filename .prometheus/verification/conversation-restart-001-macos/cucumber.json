@@ -1,0 +1,130 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "conversation-survives-a-uar-restart;recall-earlier-facts-from-the-durable-conversation-after-restart",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Recall earlier facts from the durable conversation after restart",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 483709190
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and a fresh durable conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-restart.steps.mjs:57"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2570733565
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give it fresh facts before the restart",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-restart.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13367297239
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "the owned UAR restarts with its existing store",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-restart.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9803546998
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "I ask about those facts in the same conversation without replaying them",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-restart.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 6953036,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   reference: null,\n+   total: null\n-   reference: 'CASE-4a851b93-0e78-4587-a1b2-7d902344b53e',\n-   total: 1003\n  }\n\n    + expected - actual\n\n     {\n    -  \"reference\": [null]\n    -  \"total\": [null]\n    +  \"reference\": \"CASE-4a851b93-0e78-4587-a1b2-7d902344b53e\"\n    +  \"total\": 1003\n     }\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/conversation-restart.steps.mjs:134:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the restarted UAR answers from the persisted earlier conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-restart.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 66155803
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb252ZXJzYXRpb24tcmVzdGFydC9lZjlkZDExYS0zNzllLTRjMzEtYjI4OC05ZTQxOGVlMjQ2ZmEuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@conversation",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "conversation-survives-a-uar-restart",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Conversation survives a UAR restart",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@conversation",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/conversation-restart.feature"
+  }
+]

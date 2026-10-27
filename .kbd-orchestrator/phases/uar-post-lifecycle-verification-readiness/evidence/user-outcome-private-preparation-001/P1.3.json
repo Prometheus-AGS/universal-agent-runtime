@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "ssh-keygen",
+    "-Y",
+    "verify",
+    "-f",
+    "/Users/gqadonis/.config/prometheus/kbd-scope-allowed-signers",
+    "-I",
+    "travis@tribehealthsolutions.com",
+    "-n",
+    "prometheus-kbd-scope-amendment",
+    "-s",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json.sig"
+  ],
+  "exit_code": 0,
+  "stdout": "Good \"prometheus-kbd-scope-amendment\" signature for travis@tribehealthsolutions.com with ED25519 key SHA256:TRubhhzq1JNXqLHymdzD8y5gjreUp2wplply9PQ11H4\n",
+  "stderr": "",
+  "elapsed_seconds": 0.01594996452331543
+}

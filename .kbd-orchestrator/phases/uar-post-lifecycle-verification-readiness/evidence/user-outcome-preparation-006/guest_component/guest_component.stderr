@@ -1,0 +1,12 @@
+  Generating bindings for uar-intent-classifier-fixture (target/uar-user-outcomes-002/classifier-guest/src/bindings.rs)
+ Downloading crates ...
+  Downloaded wit-bindgen-rt v0.41.0
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling wit-bindgen-rt v0.41.0
+   Compiling serde_json v1.0.154
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling uar-intent-classifier-fixture v0.1.0 (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest)
+    Finished `release` profile [optimized] target(s) in 8.26s
+    Creating component target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm

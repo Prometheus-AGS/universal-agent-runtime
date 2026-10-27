@@ -1,0 +1,5 @@
+Run: uar-outstanding-issues-v1-1-1-20261021T115743Z  revision 382
+Lifecycle: Ready  plan revision 114
+Position: uar-post-lifecycle-verification-readiness › execute › update-parking-lot-admission › 5.1
+Next work: change update-parking-lot-admission, task 5.1
+Operator note: Finish repair005 complete source inventory and unsigned A6/F6/V6 packet006; present exact signed limits/source/fixture approval before verification. No automatic gate retry or sixth repair.

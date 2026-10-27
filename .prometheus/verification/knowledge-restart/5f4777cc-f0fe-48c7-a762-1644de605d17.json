@@ -1,0 +1,2361 @@
+{
+  "scenario": "KNOWLEDGE-RESTART-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "knowledge_mutations": false,
+  "history_replayed": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "status": 200,
+      "response": "{\"id\":\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"name\":\"wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464\",\"description\":\"Sourced wheel-graph critical group mathematics with a private retrieval profile\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"bge-small-en-v1.5\",\"vector_dimensions\":384,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 2048 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":3,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-26T08:20:39.918434+00:00\",\"updated_at\":\"2026-10-26T08:20:40.117087+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/58c0e39f-43e0-47a9-b699-7dea5d82417f/documents/35f6bbe7-5804-4253-b0d1-c77642365757",
+      "status": 200,
+      "response": "{\"id\":\"35f6bbe7-5804-4253-b0d1-c77642365757\",\"kb_id\":\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"filename\":\"wheel-graphs.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-26T08:20:39.949885+00:00\",\"updated_at\":\"2026-10-26T08:20:40.117087+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "status": 200,
+      "response": "{\"id\":\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"name\":\"wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464\",\"description\":\"Sourced wheel-graph critical group mathematics with a private retrieval profile\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"bge-small-en-v1.5\",\"vector_dimensions\":384,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 2048 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":3,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-26T08:20:39.918434+00:00\",\"updated_at\":\"2026-10-26T08:20:40.117087+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/58c0e39f-43e0-47a9-b699-7dea5d82417f/documents/35f6bbe7-5804-4253-b0d1-c77642365757",
+      "status": 200,
+      "response": "{\"id\":\"35f6bbe7-5804-4253-b0d1-c77642365757\",\"kb_id\":\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"filename\":\"wheel-graphs.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-26T08:20:39.949885+00:00\",\"updated_at\":\"2026-10-26T08:20:40.117087+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "model": "liter/MiniMax-M3",
+        "agent_id": "math-specialist-db64c2a8",
+        "session_id": "5f4777cc-f0fe-48c7-a762-1644de605d17",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "For research profile wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464, what are its rim_vertices, lucas_number and sandpile_group_order? Include its exact retrieval_seal and a numbered citation to the source. Return the research-profile JSON."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-32f43d2f-6531-4041-94f1-fec7271329de\",\"object\":\"chat.completion\",\"created\":1793060230,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"profile\\\": \\\"wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464\\\",\\n  \\\"rim_vertices\\\": 11,\\n  \\\"lucas_number\\\": 199,\\n  \\\"sandpile_group_order\\\": 39601,\\n  \\\"retrieval_seal\\\": \\\"1a60323f-e62d-4cfb-8a97-591440ca2fdc\\\",\\n  \\\"citation\\\": \\\"[1]\\\"\\n}\\n```\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":20709,\"completion_tokens\":136,\"total_tokens\":20845},\"session_id\":\"5f4777cc-f0fe-48c7-a762-1644de605d17\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/32f43d2f-6531-4041-94f1-fec7271329de",
+      "status": 200,
+      "response": "{\"run_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"agent_id\":\"math-specialist-db64c2a8\",\"conversation_id\":\"5f4777cc-f0fe-48c7-a762-1644de605d17\",\"status\":\"done\",\"agent_revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"math-specialist-db64c2a8\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui-ux\",\"pyo3-bridge\",\"quality-nonconformance\",\"react-vite-stack\",\"redesign-existing-projects\",\"returns-reverse-logistics\",\"security-bounty-hunter\",\"stage-01-planner\",\"stage-02-search\",\"stage-03-retrieve\",\"stage-04-collect\",\"stage-05-verify\",\"stage-06-resolve\",\"stage-07-graph\",\"stage-08-cite\",\"stage-09-report\",\"stage-10-export\",\"start-business-build\",\"stitch-design-taste\",\"tauri-react-vite\",\"typescript-base-patterns\",\"ui-surface\",\"ui-ux-pro-max\",\"upload-to-bossfang\",\"validate-idea\",\"validate-skill\",\"variant\",\"workspace-structure\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"selected\",\"ids\":[\"a2ui_render\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"selected\",\"ids\":[\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\"],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"deep-research\",\"score\":1.0,\"accepted\":true},{\"skill_id\":\"actor-model\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"adversarial-review\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"android-compose-adaptive\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"android-edge-to-edge\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"api-connector-builder\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"argocd-multicloud\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"async-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"atproto-lexicon\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"atproto-oauth\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"atproto-publish-lexicon\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"axum-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-cucumber-js\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-cucumber-rs\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-lifecycle-loop\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-testing\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-video-proof\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-accessibility\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-colors\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-interface\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-layout\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-typography\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-writing\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"break\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"carrier-relationship-management\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ck\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"clean-architecture\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"clone-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"continuous-learning-v2\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"cowork-management\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"create-native-agent\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"create-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"customs-trade-compliance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"dashboard-builder\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"defi-amm-security\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"delivery-gate\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"design-taste-frontend\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"design-taste-frontend-v1\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"disk-space-guardian\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ecc-recipes\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"energy-procurement\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-audit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-form\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-page\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-relations\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-table\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gc\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gql-hooks\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gql-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gql-subscription\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-crud\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-detect\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-graphql\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-init\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-migrate\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-optimize\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-prisma\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-realtime\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-perf\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-api\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-generator\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-migrate\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-channel\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-local-first\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-surreal-live\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"error-handling\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evm-token-decimals\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-analyze\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-assess\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-execute\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-plan\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-report\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-status\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"explain-interface\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-animation\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-design-system\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-native-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-router\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"extend-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"fabric-integration\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"feynman-loop\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-csharp\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-dart\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-go\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-kotlin\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-swift\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-ts\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-build-responsive-layout\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-fix-layout-issues\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-rust-ffi\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-setup-declarative-routing\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-setup-localization\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"full-output-enforcement\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"gitops-bootstrap\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"gitops-transform\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"go-base-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"gpt-taste\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"growth-log\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-cdss-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-emr-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-eval-harness\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-phi-compliance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"high-end-visual-design\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"hipaa-compliance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"htmx-alpine-lit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ideation-mindmap\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"impeccable\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"industrial-brutalist-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"interface-review\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"inventory-demand-planning\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"iterative-evolver\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"karpathy-progress-memory\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"karpathy-tokenizer\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-analyze\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-apply\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-assess\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-audit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-bottleneck-detector\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-cancel\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-child-exit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-doctor\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-evolve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-execute\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-goal\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-goal-check\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-handoff\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-init\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-inject-agent-rules\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-memory-recall\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-new-child\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-new-phase\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-next-child\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-next-phase\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-pause\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-plan\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-process-orchestrator\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-reflect\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-resume\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-spec\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-status\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kreuzberg\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kustomize-overlay\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-about-system\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-certify\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-goal\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-grade\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-harness\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-kb\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-plan\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-practice\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-retain\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-survey\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"librefang-wasm-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"liter-llm-bridge\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"llm-trading-agent-security\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"llm-wiki\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"logistics-exception-management\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"mcp-server\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"minimalist-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"motion-advanced\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"motion-foundations\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"motion-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"native-agent\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"nodejs-keccak256\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"performance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"plan-canvas\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-elicit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-evolver\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-outer-loop\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-skill-creator\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"production-scheduling\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-context-bootstrap\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-entity-skills\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-impeccable-core\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-rust-auditor\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-ui-review\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-ui-ux\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pyo3-bridge\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"quality-nonconformance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"react-vite-stack\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"redesign-existing-projects\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"returns-reverse-logistics\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"security-bounty-hunter\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-01-planner\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-02-search\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-03-retrieve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-04-collect\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-05-verify\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-06-resolve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-07-graph\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-08-cite\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-09-report\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-10-export\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"start-business-build\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stitch-design-taste\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"tauri-react-vite\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"typescript-base-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ui-surface\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ui-ux-pro-max\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"upload-to-bossfang\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"validate-idea\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"validate-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"variant\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"workspace-structure\",\"score\":0.0,\"accepted\":false}]},\"activated_skills\":[\"deep-research\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:499cb8aeff58ac5893276a06821a2a15b2c8fe35dabe6e4ad8fe688dcd10e961\",\"prepared_sha256\":\"sha256:499cb8aeff58ac5893276a06821a2a15b2c8fe35dabe6e4ad8fe688dcd10e961\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":11864,\"prepared_tokens\":11864,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:499cb8aeff58ac5893276a06821a2a15b2c8fe35dabe6e4ad8fe688dcd10e961\",\"final_messages\":2,\"final_tokens\":11864,\"input_allowance\":1041195,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1046695,\"reserve_tokens\":1000,\"request_input_limit\":1045695,\"history_tokens\":13265,\"request_tokens\":18268,\"rendered_tokens\":5000,\"rendered_sha256\":\"sha256:7954f5280c37f2c9506f77c7f2bbd9532a1cd44697c7090a4e6924dce25c9275\",\"fragments\":[{\"fragment_id\":\"skill.deep-research\",\"skill_id\":\"deep-research\",\"original_body_tokens\":5143,\"retained_body_tokens\":4876,\"original_body_sha256\":\"sha256:f23e5418f58684a65496fd6fc6ea275ad11db140a08e371186164bfd16194a9e\",\"retained_body_sha256\":\"sha256:f049a5111f33d580fde3f6fc43b932f3c5e3c771693c57e32a1d7284a71e1a0e\",\"original_rendered_tokens\":5273,\"retained_rendered_tokens\":5000,\"original_rendered_sha256\":\"sha256:40ba72758e0ba52868342643d6cb4c521f540377f8dd4e4707d27f8df781a064\",\"retained_rendered_sha256\":\"sha256:7954f5280c37f2c9506f77c7f2bbd9532a1cd44697c7090a4e6924dce25c9275\",\"retained\":true,\"truncated\":true}]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/32f43d2f-6531-4041-94f1-fec7271329de/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"after\":0,\"cursor\":36,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_id\":\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · math-specialist-db64c2a8\\\",\\\"skills\\\":\\\"Skills · auto · 210 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selected · 14 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · selected · 2 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]}}},{\"eventId\":2,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":3,\"eventName\":\"agui.rag_citations\",\"data\":{\"kind\":\"rag_citations\",\"phase\":\"added\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"citations\":[{\"marker\":1,\"chunk_id\":\"3658b944-0256-b9c6-f416-291ec981bf54\",\"document_id\":\"35f6bbe7-5804-4253-b0d1-c77642365757\",\"knowledge_base_id\":\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"document_name\":\"wheel-graphs.txt\",\"relevance_score\":0.8990804553031921,\"snippet\":\"Local research profile wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=1a60323f-e62d-4cfb-8a97-591440ca2fdc. \\\\# Wheel graphs: sandpile group order\\n\\nSource: Kr\"},{\"marker\":2,\"chunk_id\":\"3f5ca9df-3b93-9c2e-ec6d-cae3f5453231\",\"document_id\":\"20303298-71bd-44b1-b1e2-d4b4b97b5110\",\"knowledge_base_id\":\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"document_name\":\"wheel-graphs.txt\",\"relevance_score\":0.8949963450431824,\"snippet\":\"Local research profile wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=e0f8c635-cdf0-4f1f-93c7-a30244feed25. \\\\# Wheel graphs: sandpile group order\\n\\nSource: Kr\"}]}},{\"eventId\":4,\"eventName\":\"agui.skill.activated\",\"data\":{\"kind\":\"skill\",\"phase\":\"activated\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"skill\":{\"id\":\"deep-research\",\"title\":\"deep-research\"},\"selection_method\":\"implicit\"}},{\"eventId\":5,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_id\":\"turn-manifest-32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_type\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"6dd299f6f822cecd22134a417f9a51c305dac519d2f6940cecf2f0ffe989bcf1\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:math-specialist-db64c2a8\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"f285e785517b3b47bd0e9c648ff0c3d7af25c3f1efb41873ce0e1268d2792e9f\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"94ef277cc90fe53f24ecdf3caaa09d31fd4e4dd04e16d77618e07fc5280292a1\\\"},{\\\"id\\\":\\\"skill.deep-research\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:deep-research\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"e98352d4d0d2c4d28a23925492994fe4eabdc8c48ea61135d4f44a45ae3877ab\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f2e9f3fc70a9fe75b20ffc2832d451b3853a78378ae4a9001fed284d77424e71\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"49489b3190c37fdd3fe552431a88b9224d0d1f1c4e8f28671ad2f90fb812df0e\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"},{\\\"id\\\":\\\"retrieved.rag\\\",\\\"section\\\":\\\"memory_and_retrieval\\\",\\\"source\\\":\\\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\\\",\\\"authority\\\":\\\"retrieved\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2226c16d77ee4f091c359d3220f818a3128e472be52a3474271c82f1629c95ff\\\"}],\\\"counts\\\":{\\\"total\\\":9,\\\"by_section\\\":{\\\"active_skills\\\":1,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"memory_and_retrieval\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"retrieved\\\":1,\\\"skill\\\":2,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":75671,\\\"rendered_characters\\\":75041,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[\\\"deep-research\\\"],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"6dd299f6f822cecd22134a417f9a51c305dac519d2f6940cecf2f0ffe989bcf1\",\"fragment_count\":9}}},{\"eventId\":6,\"eventName\":\"agui.stream.start\",\"data\":{\"kind\":\"stream\",\"phase\":\"start\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"agent_id\":\"math-specialist-db64c2a8\"}},{\"eventId\":7,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"conversation_id\":\"5f4777cc-f0fe-48c7-a762-1644de605d17\",\"status\":\"running\"}}]}},{\"eventId\":9,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"483c617d555bd27e2ebef8d30ba616071961cb90bf5eb4ed731dcc8bfa811ffe\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:math-specialist-db64c2a8\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"f285e785517b3b47bd0e9c648ff0c3d7af25c3f1efb41873ce0e1268d2792e9f\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"94ef277cc90fe53f24ecdf3caaa09d31fd4e4dd04e16d77618e07fc5280292a1\\\"},{\\\"id\\\":\\\"skill.deep-research\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:deep-research\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"e98352d4d0d2c4d28a23925492994fe4eabdc8c48ea61135d4f44a45ae3877ab\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f2e9f3fc70a9fe75b20ffc2832d451b3853a78378ae4a9001fed284d77424e71\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"49489b3190c37fdd3fe552431a88b9224d0d1f1c4e8f28671ad2f90fb812df0e\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"},{\\\"id\\\":\\\"retrieved.rag\\\",\\\"section\\\":\\\"memory_and_retrieval\\\",\\\"source\\\":\\\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\\\",\\\"authority\\\":\\\"retrieved\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2226c16d77ee4f091c359d3220f818a3128e472be52a3474271c82f1629c95ff\\\"}],\\\"counts\\\":{\\\"total\\\":9,\\\"by_section\\\":{\\\"active_skills\\\":1,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"memory_and_retrieval\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"retrieved\\\":1,\\\"skill\\\":2,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":75636,\\\"rendered_characters\\\":75006,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[\\\"deep-research\\\"],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":10,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_id\":\"attempt-manifest-32f43d2f-6531-4041-94f1-fec7271329de-MiniMax-M3\",\"artifact_type\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"}}},{\"eventId\":11,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"artifact_id\":\"uar.request:budget_receipt\",\"artifact_type\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":20755,\\\"serialized_bytes\\\":87167,\\\"serialized_sha256\\\":\\\"945970f8fb22b3c8b8908e97d90f2a28ed77b767094236800b0cfba29f04d76e\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":12,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"```\"}}},{\"eventId\":13,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"json\\n{\\n  \\\"specialist\"}}},{\"eventId\":14,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"\\\": \\\"MATH-ce9324e\"}}},{\"eventId\":15,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"e-0d63\"}}},{\"eventId\":16,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"-4714\"}}},{\"eventId\":17,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"-982f-f099\"}}},{\"eventId\":18,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"e8\"}}},{\"eventId\":19,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"c8f378\"}}},{\"eventId\":20,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"\\\",\\n  \\\"profile\\\": \\\"wheel-profil\"}}},{\"eventId\":21,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"e-aae19b22-4654\"}}},{\"eventId\":22,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"-493f-b34e-d487\"}}},{\"eventId\":23,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"a21c3464\\\",\\n  \\\"\"}}},{\"eventId\":24,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"rim_vertices\\\": 11,\\n  \\\"\"}}},{\"eventId\":25,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"lucas_number\\\": 199,\\n \"}}},{\"eventId\":26,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\" \\\"sandpile_group_order\\\": 396\"}}},{\"eventId\":27,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"01,\\n  \\\"retrieval_s\"}}},{\"eventId\":28,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"eal\\\": \\\"1a60323\"}}},{\"eventId\":29,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"f-e62\"}}},{\"eventId\":30,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"d-4cfb\"}}},{\"eventId\":31,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"-8a97\"}}},{\"eventId\":32,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"-591440\"}}},{\"eventId\":33,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"ca2fdc\\\",\\n  \\\"citation\"}}},{\"eventId\":34,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"delta\":{\"text\":\"\\\": \\\"[1]\\\"\\n}\\n```\"}}},{\"eventId\":35,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":36,\"eventName\":\"agui.done\",\"data\":{\"kind\":\"done\",\"request_id\":\"32f43d2f-6531-4041-94f1-fec7271329de\",\"usage\":{\"input_tokens\":20709,\"output_tokens\":136,\"total_tokens\":20845,\"cost_usd_estimate\":null,\"model\":\"MiniMax-M3\"}}}]}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 62351
+  },
+  "agent_id": "math-specialist-db64c2a8",
+  "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+  "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+  "profile": "wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464",
+  "expected_seal": "1a60323f-e62d-4cfb-8a97-591440ca2fdc",
+  "session_id": "5f4777cc-f0fe-48c7-a762-1644de605d17",
+  "model": "liter/MiniMax-M3",
+  "before": {
+    "agent": {
+      "version": "1.0.0",
+      "kind": "agent",
+      "id": "math-specialist-db64c2a8",
+      "metadata": {
+        "title": "Mathematics Specialist",
+        "description": "Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.",
+        "tags": [
+          "mathematics",
+          "arithmetic",
+          "calculations"
+        ],
+        "author": "System",
+        "icon": null
+      },
+      "runtime": {
+        "entry": "default",
+        "protocols": {}
+      },
+      "policy": {
+        "provider": {
+          "default": {
+            "provider": "liter",
+            "model": "MiniMax-M3"
+          },
+          "fallbacks": []
+        },
+        "tools": {
+          "allow": [],
+          "deny": [],
+          "max_concurrent": 1,
+          "execution_mode": "direct"
+        },
+        "skills": {
+          "prefer": [],
+          "max_active": 3
+        }
+      },
+      "schemas": {
+        "inputs": null,
+        "outputs": null,
+        "state": null
+      },
+      "prompt": {
+        "system": "You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.",
+        "instructions": []
+      },
+      "memory": {
+        "conversation": {
+          "enabled": true
+        },
+        "kb": {
+          "enabled": true,
+          "knowledge_bases": [
+            "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+            "58c0e39f-43e0-47a9-b699-7dea5d82417f"
+          ],
+          "citation_required": true
+        }
+      },
+      "tools": {
+        "bundles": []
+      },
+      "ui": {
+        "forms": {
+          "enabled": false
+        },
+        "artifacts": {
+          "enabled": false,
+          "preferred_types": []
+        }
+      },
+      "extensions": {
+        "uar.catalog": {
+          "schema_version": 1,
+          "revision": "sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38",
+          "source": {
+            "kind": "builtin",
+            "id": "default-agent",
+            "revision": "1.0.0"
+          }
+        }
+      }
+    },
+    "kb": {
+      "id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "name": "wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464",
+      "description": "Sourced wheel-graph critical group mathematics with a private retrieval profile",
+      "config": {
+        "embedding_provider": "fastembed",
+        "embedding_model": "bge-small-en-v1.5",
+        "vector_dimensions": 384,
+        "file_processor": "kreuzberg",
+        "chunk_strategy": "FixedSize { size: 2048 }",
+        "retrieval_min_score": 0,
+        "retrieval_top_k": 3,
+        "indexed_embedding": {
+          "backend": "fastembed",
+          "model": "bge-small-en-v1.5",
+          "dimension": 384
+        },
+        "regeneration": null
+      },
+      "created_at": "2026-10-26T08:20:39.918434+00:00",
+      "updated_at": "2026-10-26T08:20:40.117087+00:00",
+      "document_count": 1
+    },
+    "document": {
+      "id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+      "kb_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "filename": "wheel-graphs.txt",
+      "file_path": null,
+      "mime_type": "text/plain",
+      "chunk_count": 1,
+      "status": "indexed",
+      "error_message": null,
+      "created_at": "2026-10-26T08:20:39.949885+00:00",
+      "updated_at": "2026-10-26T08:20:40.117087+00:00"
+    },
+    "embedding": {
+      "status": "serving",
+      "space": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "endpoint": null,
+      "provenance": {
+        "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+        "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+      },
+      "failover": null
+    }
+  },
+  "prior_record": ".prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json",
+  "restart": {
+    "previous_pid": 62351,
+    "binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-0ca90e0b-a3d9-4642-89d4-89ac0f6bb2cd.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 73870,
+    "new_process_ready": true
+  },
+  "after_endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 73870
+  },
+  "after": {
+    "agent": {
+      "version": "1.0.0",
+      "kind": "agent",
+      "id": "math-specialist-db64c2a8",
+      "metadata": {
+        "title": "Mathematics Specialist",
+        "description": "Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.",
+        "tags": [
+          "mathematics",
+          "arithmetic",
+          "calculations"
+        ],
+        "author": "System",
+        "icon": null
+      },
+      "runtime": {
+        "entry": "default",
+        "protocols": {}
+      },
+      "policy": {
+        "provider": {
+          "default": {
+            "provider": "liter",
+            "model": "MiniMax-M3"
+          },
+          "fallbacks": []
+        },
+        "tools": {
+          "allow": [],
+          "deny": [],
+          "max_concurrent": 1,
+          "execution_mode": "direct"
+        },
+        "skills": {
+          "prefer": [],
+          "max_active": 3
+        }
+      },
+      "schemas": {
+        "inputs": null,
+        "outputs": null,
+        "state": null
+      },
+      "prompt": {
+        "system": "You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.",
+        "instructions": []
+      },
+      "memory": {
+        "conversation": {
+          "enabled": true
+        },
+        "kb": {
+          "enabled": true,
+          "knowledge_bases": [
+            "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+            "58c0e39f-43e0-47a9-b699-7dea5d82417f"
+          ],
+          "citation_required": true
+        }
+      },
+      "tools": {
+        "bundles": []
+      },
+      "ui": {
+        "forms": {
+          "enabled": false
+        },
+        "artifacts": {
+          "enabled": false,
+          "preferred_types": []
+        }
+      },
+      "extensions": {
+        "uar.catalog": {
+          "schema_version": 1,
+          "revision": "sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38",
+          "source": {
+            "kind": "builtin",
+            "id": "default-agent",
+            "revision": "1.0.0"
+          }
+        }
+      }
+    },
+    "kb": {
+      "id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "name": "wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464",
+      "description": "Sourced wheel-graph critical group mathematics with a private retrieval profile",
+      "config": {
+        "embedding_provider": "fastembed",
+        "embedding_model": "bge-small-en-v1.5",
+        "vector_dimensions": 384,
+        "file_processor": "kreuzberg",
+        "chunk_strategy": "FixedSize { size: 2048 }",
+        "retrieval_min_score": 0,
+        "retrieval_top_k": 3,
+        "indexed_embedding": {
+          "backend": "fastembed",
+          "model": "bge-small-en-v1.5",
+          "dimension": 384
+        },
+        "regeneration": null
+      },
+      "created_at": "2026-10-26T08:20:39.918434+00:00",
+      "updated_at": "2026-10-26T08:20:40.117087+00:00",
+      "document_count": 1
+    },
+    "document": {
+      "id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+      "kb_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "filename": "wheel-graphs.txt",
+      "file_path": null,
+      "mime_type": "text/plain",
+      "chunk_count": 1,
+      "status": "indexed",
+      "error_message": null,
+      "created_at": "2026-10-26T08:20:39.949885+00:00",
+      "updated_at": "2026-10-26T08:20:40.117087+00:00"
+    },
+    "embedding": {
+      "status": "serving",
+      "space": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "endpoint": null,
+      "provenance": {
+        "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+        "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+      },
+      "failover": null
+    }
+  },
+  "run": {
+    "run_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+    "agent_id": "math-specialist-db64c2a8",
+    "conversation_id": "5f4777cc-f0fe-48c7-a762-1644de605d17",
+    "status": "done",
+    "agent_revision": "sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "math-specialist-db64c2a8",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "auto",
+        "ids": [
+          "actor-model",
+          "adversarial-review",
+          "android-compose-adaptive",
+          "android-edge-to-edge",
+          "api-connector-builder",
+          "argocd-multicloud",
+          "async-patterns",
+          "atproto-lexicon",
+          "atproto-oauth",
+          "atproto-publish-lexicon",
+          "axum-patterns",
+          "bdd-cucumber-js",
+          "bdd-cucumber-rs",
+          "bdd-lifecycle-loop",
+          "bdd-testing",
+          "bdd-video-proof",
+          "better-accessibility",
+          "better-colors",
+          "better-interface",
+          "better-layout",
+          "better-typography",
+          "better-ui",
+          "better-writing",
+          "break",
+          "carrier-relationship-management",
+          "ck",
+          "clean-architecture",
+          "clone-skill",
+          "continuous-learning-v2",
+          "cowork-management",
+          "create-native-agent",
+          "create-skill",
+          "customs-trade-compliance",
+          "dashboard-builder",
+          "deep-research",
+          "defi-amm-security",
+          "delivery-gate",
+          "design-taste-frontend",
+          "design-taste-frontend-v1",
+          "disk-space-guardian",
+          "ecc-recipes",
+          "energy-procurement",
+          "entity-audit",
+          "entity-crud-form",
+          "entity-crud-page",
+          "entity-crud-relations",
+          "entity-crud-table",
+          "entity-gc",
+          "entity-gql-hooks",
+          "entity-gql-setup",
+          "entity-gql-subscription",
+          "entity-graph-crud",
+          "entity-graph-detect",
+          "entity-graph-graphql",
+          "entity-graph-init",
+          "entity-graph-migrate",
+          "entity-graph-optimize",
+          "entity-graph-prisma",
+          "entity-graph-realtime",
+          "entity-graph-setup",
+          "entity-perf",
+          "entity-prisma-api",
+          "entity-prisma-generator",
+          "entity-prisma-migrate",
+          "entity-prisma-setup",
+          "entity-realtime-channel",
+          "entity-realtime-local-first",
+          "entity-realtime-setup",
+          "entity-realtime-surreal-live",
+          "error-handling",
+          "evm-token-decimals",
+          "evolve",
+          "evolve-analyze",
+          "evolve-assess",
+          "evolve-execute",
+          "evolve-plan",
+          "evolve-report",
+          "evolve-status",
+          "explain-interface",
+          "expo-animation",
+          "expo-design-system",
+          "expo-native-ui",
+          "expo-router",
+          "expo-ui",
+          "extend-skill",
+          "fabric-integration",
+          "feynman-loop",
+          "flint-sdk-csharp",
+          "flint-sdk-dart",
+          "flint-sdk-go",
+          "flint-sdk-kotlin",
+          "flint-sdk-swift",
+          "flint-sdk-ts",
+          "flutter-build-responsive-layout",
+          "flutter-fix-layout-issues",
+          "flutter-rust-ffi",
+          "flutter-setup-declarative-routing",
+          "flutter-setup-localization",
+          "full-output-enforcement",
+          "gitops-bootstrap",
+          "gitops-transform",
+          "go-base-patterns",
+          "gpt-taste",
+          "growth-log",
+          "healthcare-cdss-patterns",
+          "healthcare-emr-patterns",
+          "healthcare-eval-harness",
+          "healthcare-phi-compliance",
+          "high-end-visual-design",
+          "hipaa-compliance",
+          "htmx-alpine-lit",
+          "ideation-mindmap",
+          "impeccable",
+          "industrial-brutalist-ui",
+          "interface-review",
+          "inventory-demand-planning",
+          "iterative-evolver",
+          "karpathy-progress-memory",
+          "karpathy-tokenizer",
+          "kbd-analyze",
+          "kbd-apply",
+          "kbd-assess",
+          "kbd-audit",
+          "kbd-bottleneck-detector",
+          "kbd-cancel",
+          "kbd-child-exit",
+          "kbd-doctor",
+          "kbd-evolve",
+          "kbd-execute",
+          "kbd-goal",
+          "kbd-goal-check",
+          "kbd-handoff",
+          "kbd-init",
+          "kbd-inject-agent-rules",
+          "kbd-memory-recall",
+          "kbd-new-child",
+          "kbd-new-phase",
+          "kbd-next-child",
+          "kbd-next-phase",
+          "kbd-pause",
+          "kbd-plan",
+          "kbd-process-orchestrator",
+          "kbd-reflect",
+          "kbd-resume",
+          "kbd-spec",
+          "kbd-status",
+          "kreuzberg",
+          "kustomize-overlay",
+          "learn-about-system",
+          "learn-certify",
+          "learn-goal",
+          "learn-grade",
+          "learn-harness",
+          "learn-kb",
+          "learn-plan",
+          "learn-practice",
+          "learn-retain",
+          "learn-survey",
+          "librefang-wasm-skill",
+          "liter-llm-bridge",
+          "llm-trading-agent-security",
+          "llm-wiki",
+          "logistics-exception-management",
+          "mcp-server",
+          "minimalist-ui",
+          "motion-advanced",
+          "motion-foundations",
+          "motion-patterns",
+          "native-agent",
+          "nodejs-keccak256",
+          "performance",
+          "plan-canvas",
+          "pmpo-elicit",
+          "pmpo-evolver",
+          "pmpo-outer-loop",
+          "pmpo-skill-creator",
+          "production-scheduling",
+          "prometheus-context-bootstrap",
+          "prometheus-entity-skills",
+          "prometheus-impeccable-core",
+          "prometheus-rust-auditor",
+          "prometheus-ui-review",
+          "prometheus-ui-ux",
+          "pyo3-bridge",
+          "quality-nonconformance",
+          "react-vite-stack",
+          "redesign-existing-projects",
+          "returns-reverse-logistics",
+          "security-bounty-hunter",
+          "stage-01-planner",
+          "stage-02-search",
+          "stage-03-retrieve",
+          "stage-04-collect",
+          "stage-05-verify",
+          "stage-06-resolve",
+          "stage-07-graph",
+          "stage-08-cite",
+          "stage-09-report",
+          "stage-10-export",
+          "start-business-build",
+          "stitch-design-taste",
+          "tauri-react-vite",
+          "typescript-base-patterns",
+          "ui-surface",
+          "ui-ux-pro-max",
+          "upload-to-bossfang",
+          "validate-idea",
+          "validate-skill",
+          "variant",
+          "workspace-structure"
+        ],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "selected",
+        "ids": [
+          "a2ui_render",
+          "native__memory_capture_policy",
+          "native__memory_delete_by_id",
+          "native__memory_history",
+          "native__memory_list",
+          "native__memory_recall",
+          "native__memory_save",
+          "native__memory_update_by_id",
+          "native_echo",
+          "native_system_info",
+          "uar_compile",
+          "uar_session_check_completeness",
+          "uar_session_compile",
+          "uar_session_update_section"
+        ],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "auto",
+        "ids": [],
+        "source": "legacy"
+      },
+      "knowledge_bases": {
+        "mode": "selected",
+        "ids": [
+          "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+          "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e"
+        ],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "legacy"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "legacy",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": [
+        {
+          "skill_id": "deep-research",
+          "score": 1,
+          "accepted": true
+        },
+        {
+          "skill_id": "actor-model",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "adversarial-review",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "android-compose-adaptive",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "android-edge-to-edge",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "api-connector-builder",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "argocd-multicloud",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "async-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "atproto-lexicon",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "atproto-oauth",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "atproto-publish-lexicon",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "axum-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-cucumber-js",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-cucumber-rs",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-lifecycle-loop",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-testing",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "bdd-video-proof",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-accessibility",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-colors",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-interface",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-layout",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-typography",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "better-writing",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "break",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "carrier-relationship-management",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ck",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "clean-architecture",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "clone-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "continuous-learning-v2",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "cowork-management",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "create-native-agent",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "create-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "customs-trade-compliance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "dashboard-builder",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "defi-amm-security",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "delivery-gate",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "design-taste-frontend",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "design-taste-frontend-v1",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "disk-space-guardian",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ecc-recipes",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "energy-procurement",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-audit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-form",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-page",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-relations",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-crud-table",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gc",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gql-hooks",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gql-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-gql-subscription",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-crud",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-detect",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-graphql",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-init",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-migrate",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-optimize",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-prisma",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-realtime",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-graph-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-perf",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-api",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-generator",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-migrate",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-prisma-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-channel",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-local-first",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-setup",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "entity-realtime-surreal-live",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "error-handling",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evm-token-decimals",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-analyze",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-assess",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-execute",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-plan",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-report",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "evolve-status",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "explain-interface",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-animation",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-design-system",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-native-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-router",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "expo-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "extend-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "fabric-integration",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "feynman-loop",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-csharp",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-dart",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-go",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-kotlin",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-swift",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flint-sdk-ts",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-build-responsive-layout",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-fix-layout-issues",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-rust-ffi",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-setup-declarative-routing",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "flutter-setup-localization",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "full-output-enforcement",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "gitops-bootstrap",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "gitops-transform",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "go-base-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "gpt-taste",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "growth-log",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-cdss-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-emr-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-eval-harness",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "healthcare-phi-compliance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "high-end-visual-design",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "hipaa-compliance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "htmx-alpine-lit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ideation-mindmap",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "impeccable",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "industrial-brutalist-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "interface-review",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "inventory-demand-planning",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "iterative-evolver",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "karpathy-progress-memory",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "karpathy-tokenizer",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-analyze",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-apply",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-assess",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-audit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-bottleneck-detector",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-cancel",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-child-exit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-doctor",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-evolve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-execute",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-goal",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-goal-check",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-handoff",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-init",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-inject-agent-rules",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-memory-recall",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-new-child",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-new-phase",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-next-child",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-next-phase",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-pause",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-plan",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-process-orchestrator",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-reflect",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-resume",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-spec",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kbd-status",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kreuzberg",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "kustomize-overlay",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-about-system",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-certify",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-goal",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-grade",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-harness",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-kb",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-plan",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-practice",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-retain",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "learn-survey",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "librefang-wasm-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "liter-llm-bridge",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "llm-trading-agent-security",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "llm-wiki",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "logistics-exception-management",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "mcp-server",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "minimalist-ui",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "motion-advanced",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "motion-foundations",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "motion-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "native-agent",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "nodejs-keccak256",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "performance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "plan-canvas",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-elicit",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-evolver",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-outer-loop",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pmpo-skill-creator",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "production-scheduling",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-context-bootstrap",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-entity-skills",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-impeccable-core",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-rust-auditor",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-ui-review",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "prometheus-ui-ux",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "pyo3-bridge",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "quality-nonconformance",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "react-vite-stack",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "redesign-existing-projects",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "returns-reverse-logistics",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "security-bounty-hunter",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-01-planner",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-02-search",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-03-retrieve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-04-collect",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-05-verify",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-06-resolve",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-07-graph",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-08-cite",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-09-report",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stage-10-export",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "start-business-build",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "stitch-design-taste",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "tauri-react-vite",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "typescript-base-patterns",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ui-surface",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "ui-ux-pro-max",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "upload-to-bossfang",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "validate-idea",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "validate-skill",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "variant",
+          "score": 0,
+          "accepted": false
+        },
+        {
+          "skill_id": "workspace-structure",
+          "score": 0,
+          "accepted": false
+        }
+      ]
+    },
+    "activated_skills": [
+      "deep-research"
+    ],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "source_sha256": "sha256:499cb8aeff58ac5893276a06821a2a15b2c8fe35dabe6e4ad8fe688dcd10e961",
+      "prepared_sha256": "sha256:499cb8aeff58ac5893276a06821a2a15b2c8fe35dabe6e4ad8fe688dcd10e961",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 11864,
+      "prepared_tokens": 11864,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:499cb8aeff58ac5893276a06821a2a15b2c8fe35dabe6e4ad8fe688dcd10e961",
+      "final_messages": 2,
+      "final_tokens": 11864,
+      "input_allowance": 1041195,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1046695,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1045695,
+        "history_tokens": 13265,
+        "request_tokens": 18268,
+        "rendered_tokens": 5000,
+        "rendered_sha256": "sha256:7954f5280c37f2c9506f77c7f2bbd9532a1cd44697c7090a4e6924dce25c9275",
+        "fragments": [
+          {
+            "fragment_id": "skill.deep-research",
+            "skill_id": "deep-research",
+            "original_body_tokens": 5143,
+            "retained_body_tokens": 4876,
+            "original_body_sha256": "sha256:f23e5418f58684a65496fd6fc6ea275ad11db140a08e371186164bfd16194a9e",
+            "retained_body_sha256": "sha256:f049a5111f33d580fde3f6fc43b932f3c5e3c771693c57e32a1d7284a71e1a0e",
+            "original_rendered_tokens": 5273,
+            "retained_rendered_tokens": 5000,
+            "original_rendered_sha256": "sha256:40ba72758e0ba52868342643d6cb4c521f540377f8dd4e4707d27f8df781a064",
+            "retained_rendered_sha256": "sha256:7954f5280c37f2c9506f77c7f2bbd9532a1cd44697c7090a4e6924dce25c9275",
+            "retained": true,
+            "truncated": true
+          }
+        ]
+      }
+    }
+  },
+  "events": {
+    "version": 1,
+    "runId": "32f43d2f-6531-4041-94f1-fec7271329de",
+    "after": 0,
+    "cursor": 36,
+    "retention": "process-local-bounded",
+    "firstAvailableEventId": 1,
+    "gapReason": null,
+    "events": [
+      {
+        "eventId": 1,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_id": "run-policy-32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_type": "effective_run_policy",
+          "title": "Effective run policy",
+          "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-32f43d2f-6531-4041-94f1-fec7271329de\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · math-specialist-db64c2a8\",\"skills\":\"Skills · auto · 210 available · agent scope\",\"tools\":\"Tools · selected · 14 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · selected · 2 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+          "language": "a2ui",
+          "metadata": {
+            "profile": "uar.a2ui/1",
+            "protocol_version": "v0.9.1",
+            "catalog_id": "urn:uar:a2ui:catalog:1",
+            "version": 1,
+            "warnings": []
+          }
+        }
+      },
+      {
+        "eventId": 2,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "patch": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 3,
+        "eventName": "agui.rag_citations",
+        "data": {
+          "kind": "rag_citations",
+          "phase": "added",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "citations": [
+            {
+              "marker": 1,
+              "chunk_id": "3658b944-0256-b9c6-f416-291ec981bf54",
+              "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+              "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+              "document_name": "wheel-graphs.txt",
+              "relevance_score": 0.8990804553031921,
+              "snippet": "Local research profile wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=1a60323f-e62d-4cfb-8a97-591440ca2fdc. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+            },
+            {
+              "marker": 2,
+              "chunk_id": "3f5ca9df-3b93-9c2e-ec6d-cae3f5453231",
+              "document_id": "20303298-71bd-44b1-b1e2-d4b4b97b5110",
+              "knowledge_base_id": "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+              "document_name": "wheel-graphs.txt",
+              "relevance_score": 0.8949963450431824,
+              "snippet": "Local research profile wheel-profile-e4f9606f-d819-4752-bad5-55b4b8006bff: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=e0f8c635-cdf0-4f1f-93c7-a30244feed25. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 4,
+        "eventName": "agui.skill.activated",
+        "data": {
+          "kind": "skill",
+          "phase": "activated",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "skill": {
+            "id": "deep-research",
+            "title": "deep-research"
+          },
+          "selection_method": "implicit"
+        }
+      },
+      {
+        "eventId": 5,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_id": "turn-manifest-32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_type": "turn_manifest",
+          "title": "Turn manifest",
+          "content": "{\"schema_version\":1,\"manifest_hash\":\"6dd299f6f822cecd22134a417f9a51c305dac519d2f6940cecf2f0ffe989bcf1\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"f285e785517b3b47bd0e9c648ff0c3d7af25c3f1efb41873ce0e1268d2792e9f\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94ef277cc90fe53f24ecdf3caaa09d31fd4e4dd04e16d77618e07fc5280292a1\"},{\"id\":\"skill.deep-research\",\"section\":\"active_skills\",\"source\":\"skill:deep-research\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"e98352d4d0d2c4d28a23925492994fe4eabdc8c48ea61135d4f44a45ae3877ab\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f2e9f3fc70a9fe75b20ffc2832d451b3853a78378ae4a9001fed284d77424e71\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"49489b3190c37fdd3fe552431a88b9224d0d1f1c4e8f28671ad2f90fb812df0e\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2226c16d77ee4f091c359d3220f818a3128e472be52a3474271c82f1629c95ff\"}],\"counts\":{\"total\":9,\"by_section\":{\"active_skills\":1,\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":2,\"system\":1}},\"budgets\":{\"rendered_bytes\":75671,\"rendered_characters\":75041,\"context_window_tokens\":1048576},\"selected_skills\":[\"deep-research\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}",
+          "language": "json",
+          "metadata": {
+            "schema_version": 1,
+            "manifest_hash": "6dd299f6f822cecd22134a417f9a51c305dac519d2f6940cecf2f0ffe989bcf1",
+            "fragment_count": 9
+          }
+        }
+      },
+      {
+        "eventId": 6,
+        "eventName": "agui.stream.start",
+        "data": {
+          "kind": "stream",
+          "phase": "start",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "agent_id": "math-specialist-db64c2a8"
+        }
+      },
+      {
+        "eventId": 7,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+                "conversation_id": "5f4777cc-f0fe-48c7-a762-1644de605d17",
+                "status": "running"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 9,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_id": "uar.turn:resolved_step",
+          "artifact_type": "provider_event",
+          "title": "resolved_step",
+          "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"483c617d555bd27e2ebef8d30ba616071961cb90bf5eb4ed731dcc8bfa811ffe\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"f285e785517b3b47bd0e9c648ff0c3d7af25c3f1efb41873ce0e1268d2792e9f\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94ef277cc90fe53f24ecdf3caaa09d31fd4e4dd04e16d77618e07fc5280292a1\"},{\"id\":\"skill.deep-research\",\"section\":\"active_skills\",\"source\":\"skill:deep-research\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"e98352d4d0d2c4d28a23925492994fe4eabdc8c48ea61135d4f44a45ae3877ab\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f2e9f3fc70a9fe75b20ffc2832d451b3853a78378ae4a9001fed284d77424e71\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"49489b3190c37fdd3fe552431a88b9224d0d1f1c4e8f28671ad2f90fb812df0e\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2226c16d77ee4f091c359d3220f818a3128e472be52a3474271c82f1629c95ff\"}],\"counts\":{\"total\":9,\"by_section\":{\"active_skills\":1,\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":2,\"system\":1}},\"budgets\":{\"rendered_bytes\":75636,\"rendered_characters\":75006,\"context_window_tokens\":1045480},\"selected_skills\":[\"deep-research\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      },
+      {
+        "eventId": 10,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_id": "attempt-manifest-32f43d2f-6531-4041-94f1-fec7271329de-MiniMax-M3",
+          "artifact_type": "attempt_manifest",
+          "title": "Provider attempt manifest",
+          "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+          "language": "json",
+          "metadata": {
+            "source": "uar.request",
+            "budgeting_label": "legacy_unbudgeted"
+          }
+        }
+      },
+      {
+        "eventId": 11,
+        "eventName": "agui.artifact",
+        "data": {
+          "kind": "artifact",
+          "phase": "complete",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "artifact_id": "uar.request:budget_receipt",
+          "artifact_type": "provider_event",
+          "title": "budget_receipt",
+          "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":20755,\"serialized_bytes\":87167,\"serialized_sha256\":\"945970f8fb22b3c8b8908e97d90f2a28ed77b767094236800b0cfba29f04d76e\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      },
+      {
+        "eventId": 12,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "```"
+          }
+        }
+      },
+      {
+        "eventId": 13,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "json\n{\n  \"specialist"
+          }
+        }
+      },
+      {
+        "eventId": 14,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "\": \"MATH-ce9324e"
+          }
+        }
+      },
+      {
+        "eventId": 15,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "e-0d63"
+          }
+        }
+      },
+      {
+        "eventId": 16,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "-4714"
+          }
+        }
+      },
+      {
+        "eventId": 17,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "-982f-f099"
+          }
+        }
+      },
+      {
+        "eventId": 18,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "e8"
+          }
+        }
+      },
+      {
+        "eventId": 19,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "c8f378"
+          }
+        }
+      },
+      {
+        "eventId": 20,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "\",\n  \"profile\": \"wheel-profil"
+          }
+        }
+      },
+      {
+        "eventId": 21,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "e-aae19b22-4654"
+          }
+        }
+      },
+      {
+        "eventId": 22,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "-493f-b34e-d487"
+          }
+        }
+      },
+      {
+        "eventId": 23,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "a21c3464\",\n  \""
+          }
+        }
+      },
+      {
+        "eventId": 24,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "rim_vertices\": 11,\n  \""
+          }
+        }
+      },
+      {
+        "eventId": 25,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "lucas_number\": 199,\n "
+          }
+        }
+      },
+      {
+        "eventId": 26,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": " \"sandpile_group_order\": 396"
+          }
+        }
+      },
+      {
+        "eventId": 27,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "01,\n  \"retrieval_s"
+          }
+        }
+      },
+      {
+        "eventId": 28,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "eal\": \"1a60323"
+          }
+        }
+      },
+      {
+        "eventId": 29,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "f-e62"
+          }
+        }
+      },
+      {
+        "eventId": 30,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "d-4cfb"
+          }
+        }
+      },
+      {
+        "eventId": 31,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "-8a97"
+          }
+        }
+      },
+      {
+        "eventId": 32,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "-591440"
+          }
+        }
+      },
+      {
+        "eventId": 33,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "ca2fdc\",\n  \"citation"
+          }
+        }
+      },
+      {
+        "eventId": 34,
+        "eventName": "agui.message.delta",
+        "data": {
+          "kind": "message",
+          "phase": "delta",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "delta": {
+            "text": "\": \"[1]\"\n}\n```"
+          }
+        }
+      },
+      {
+        "eventId": 35,
+        "eventName": "agui.state.patch",
+        "data": {
+          "kind": "state",
+          "phase": "patch",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "patch": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "eventId": 36,
+        "eventName": "agui.done",
+        "data": {
+          "kind": "done",
+          "request_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+          "usage": {
+            "input_tokens": 20709,
+            "output_tokens": 136,
+            "total_tokens": 20845,
+            "cost_usd_estimate": null,
+            "model": "MiniMax-M3"
+          }
+        }
+      }
+    ]
+  },
+  "matched_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "3658b944-0256-b9c6-f416-291ec981bf54",
+      "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+      "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+      "document_name": "wheel-graphs.txt",
+      "relevance_score": 0.8990804553031921,
+      "snippet": "Local research profile wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464: rim_vertices=11; lucas_number=199; sandpile_group_order=39601; retrieval_seal=1a60323f-e62d-4cfb-8a97-591440ca2fdc. \\# Wheel graphs: sandpile group order\n\nSource: Kr"
+    }
+  ],
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "profile": "wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464",
+    "rim_vertices": 11,
+    "lucas_number": 199,
+    "sandpile_group_order": 39601,
+    "retrieval_seal": "1a60323f-e62d-4cfb-8a97-591440ca2fdc",
+    "citation": "[1]"
+  },
+  "run_id": "32f43d2f-6531-4041-94f1-fec7271329de",
+  "result": "VERIFIED",
+  "status": "PASSED",
+  "duration_ms": 22065
+}

@@ -1,0 +1,1121 @@
+{
+  "scenario": "CONVERSATION-SUMMARY-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "client_replays_history": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+        "metadata": {
+          "title": "Disposable booking assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "*"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Remember the factual booking details the user supplies. When asked for acknowledgment, respond only READY without repeating any facts. Answer later booking questions from the conversation using exactly the requested JSON format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "context_strategy": {
+              "type": "summarize",
+              "threshold": 2,
+              "summary_max_tokens": 2048,
+              "model": null
+            },
+            "memory_enabled": false,
+            "skills": {
+              "mode": "none"
+            },
+            "tools": {
+              "mode": "none"
+            },
+            "mcp_servers": {
+              "mode": "none"
+            },
+            "knowledge_bases": {
+              "mode": "none"
+            },
+            "presentations": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"metadata\":{\"title\":\"Disposable booking assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Remember the factual booking details the user supplies. When asked for acknowledgment, respond only READY without repeating any facts. Answer later booking questions from the conversation using exactly the requested JSON format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:d1cfdddcb3173b9a887e2649b4349d8fd757367f4706b4337c72c8fd2e4ce99a\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"context_strategy\":{\"type\":\"summarize\",\"threshold\":2,\"summary_max_tokens\":2048,\"model\":null},\"memory_enabled\":false,\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"presentations\":{\"mode\":\"none\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+        "model": "liter/MiniMax-M3",
+        "session_id": "234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Confirmed booking: reference BOOK-fba5bffd-2aad-471a-b05e-a3f027d4f52d; 25 adults and 4 children. Deliver only through Gate L, never the main entrance. These are the key facts needed later.\nThe planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. The planning group discussed ordinary room layouts, reviewed blank schedules, compared stationery colors, and archived duplicate meeting notes. None of those background discussions changed the booking details. \nAcknowledge only READY without repeating the booking facts."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · summarize\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\"},\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2587,\\\"rendered_characters\\\":2587,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad\",\"fragment_count\":6},\"sourceRunId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\"},\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"input\":{\"agentId\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"run_id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"agent_id\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"status\":\"running\",\"started_at\":\"2026-10-26T23:31:40.598243+00:00\",\"updated_at\":\"2026-10-26T23:31:40.598250+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"conversation_id\":\"234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"status\":\"running\"}}],\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6-1\",\"run_id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-26T23:31:40.643393+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"5d88c4fca0912ad2f2347b2901be31ae414ca0057d9acde0c198aee708db1997\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":23558,\\\"rendered_characters\\\":23558,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\"},\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\"},\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":4049,\\\"serialized_bytes\\\":24097,\\\"serialized_sha256\\\":\\\"1898a5122f73cfc9da304ad681dadd8b011b0de77110d05fb4319c97b2312eb4\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\"},\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6:assistant\",\"role\":\"assistant\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6:assistant\",\"delta\":\"READY\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6:assistant\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"12:0\",\"sequence\":192}\nid: 12:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"runId\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"result\":{\"usage\":{\"inputTokens\":4175,\"outputTokens\":3,\"totalTokens\":4178,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"run_id\":\"66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"status\":\"completed\",\"input_tokens\":4175,\"output_tokens\":3,\"total_tokens\":4178,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-26T23:31:41.610200+00:00\"}\nid: 12:2:3\n\n",
+      "status": 200,
+      "events": [
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+            "artifactType": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"skills\":\"Skills · none · 0 available · agent scope\",\"tools\":\"Tools · none · 0 available · agent scope\",\"mcpServers\":\"MCP servers · none · 0 available · agent scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · summarize\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            },
+            "sourceRunId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6"
+          },
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "1:8",
+          "sequence": 16
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "2:8",
+          "sequence": 32
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "turn-manifest-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+            "artifactType": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":2587,\"rendered_characters\":2587,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad",
+              "fragment_count": 6
+            },
+            "sourceRunId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6"
+          },
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "3:8",
+          "sequence": 48
+        },
+        {
+          "type": "RUN_STARTED",
+          "profile": "uar.agui/1",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "input": {
+            "agentId": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7"
+          },
+          "eventId": "4:8",
+          "sequence": 64
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+                "conversation_id": "234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+                "status": "running"
+              }
+            }
+          ],
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "5:8",
+          "sequence": 80
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "6:8",
+          "sequence": 96
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"5d88c4fca0912ad2f2347b2901be31ae414ca0057d9acde0c198aee708db1997\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":23558,\"rendered_characters\":23558,\"context_window_tokens\":1045480},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6"
+          },
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "7:8",
+          "sequence": 112
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6"
+          },
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "8:8",
+          "sequence": 128
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":4049,\"serialized_bytes\":24097,\"serialized_sha256\":\"1898a5122f73cfc9da304ad681dadd8b011b0de77110d05fb4319c97b2312eb4\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6"
+          },
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "9:8",
+          "sequence": 144
+        },
+        {
+          "messageId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6:assistant",
+          "role": "assistant",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "type": "TEXT_MESSAGE_START",
+          "profile": "uar.agui/1",
+          "eventId": "10:0",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6:assistant",
+          "delta": "READY",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "10:8",
+          "sequence": 160
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "eventId": "11:8",
+          "sequence": 176
+        },
+        {
+          "messageId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6:assistant",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "type": "TEXT_MESSAGE_END",
+          "profile": "uar.agui/1",
+          "eventId": "12:0",
+          "sequence": 192
+        },
+        {
+          "type": "RUN_FINISHED",
+          "profile": "uar.agui/1",
+          "threadId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "runId": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+          "result": {
+            "usage": {
+              "inputTokens": 4175,
+              "outputTokens": 3,
+              "totalTokens": 4178,
+              "costUsdEstimate": null,
+              "model": "MiniMax-M3"
+            }
+          },
+          "eventId": "12:8",
+          "sequence": 192
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+        "model": "liter/MiniMax-M3",
+        "session_id": "234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "From the booking I gave you earlier, return only JSON with reference, attendees as the combined headcount, and entrance as the required delivery gate."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · summarize\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\"},\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.context.updated\",\"value\":{\"strategy\":\"progressive_summarization\",\"messagesRemoved\":0,\"tokensSaved\":2952,\"wasApplied\":true,\"summaryGenerated\":true},\"runId\":null,\"threadId\":null,\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2587,\\\"rendered_characters\\\":2587,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad\",\"fragment_count\":6},\"sourceRunId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\"},\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"input\":{\"agentId\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\"},\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"run_id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"agent_id\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"status\":\"running\",\"started_at\":\"2026-10-26T23:31:44.474654+00:00\",\"updated_at\":\"2026-10-26T23:31:44.474661+00:00\"}\nid: 5:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"conversation_id\":\"234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"status\":\"running\"}}],\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce-1\",\"run_id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-26T23:31:44.504471+00:00\"}\nid: 7:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"e48685b1aca137f335e1060e01b5d8921650afa8a93ebabf9c3bba52ce9d97cc\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":5585,\\\"rendered_characters\\\":5585,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\"},\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-2cf0bdd9-6a08-40c2-a574-12dc04be5dce-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\"},\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":1461,\\\"serialized_bytes\\\":6413,\\\"serialized_sha256\\\":\\\"d5ea1bc502db3c08235d979f628a58a9c594737338515e60acd53b0c5fb70263\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\"},\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"role\":\"assistant\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"11:0\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"<think>We need answer only \",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"JSON with referenc\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"e, attendees \",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"combined head\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"count 25+4=29, \",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"entrance required\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\" delivery gate Gat\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"e L. Need exact k\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"ey names likely\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\" \\\"reference\\\",\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\" \\\"attendees\\\",\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\" \\\"entrance\\\".\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\" No prose. JSON {\\\"\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"reference\\\":\\\"\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"BOOK-fba5bffd\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"-2aad-471a-b05e-a3\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"f027d4f52d\\\",\\\"\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"attendees\\\":29\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\",\\\"entrance\\\":\\\"\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"29:8\",\"sequence\":464}\nid: 29:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"Gate L\\\"}. Ensu\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"30:8\",\"sequence\":480}\nid: 30:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"re only JSON.\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"31:8\",\"sequence\":496}\nid: 31:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"</think>\\n\\n{\\\"reference\\\":\\\"\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"32:8\",\"sequence\":512}\nid: 32:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"BOOK-fba5bffd-2\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"33:8\",\"sequence\":528}\nid: 33:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"aad-471a-b05\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"34:8\",\"sequence\":544}\nid: 34:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"e-a3f027d4f52d\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"35:8\",\"sequence\":560}\nid: 35:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"\\\",\\\"attendee\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"36:8\",\"sequence\":576}\nid: 36:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"s\\\":29,\\\"entrance\\\":\\\"Gate L\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"37:8\",\"sequence\":592}\nid: 37:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"delta\":\"\\\"}\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"38:8\",\"sequence\":608}\nid: 38:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"eventId\":\"39:8\",\"sequence\":624}\nid: 39:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"40:0\",\"sequence\":640}\nid: 40:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"runId\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"result\":{\"usage\":{\"inputTokens\":1566,\"outputTokens\":133,\"totalTokens\":1699,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"40:8\",\"sequence\":640}\nid: 40:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"run_id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"status\":\"completed\",\"input_tokens\":1566,\"output_tokens\":133,\"total_tokens\":1699,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-26T23:31:47.908924+00:00\"}\nid: 40:2:3\n\n",
+      "status": 200,
+      "events": [
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+            "artifactType": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"skills\":\"Skills · none · 0 available · agent scope\",\"tools\":\"Tools · none · 0 available · agent scope\",\"mcpServers\":\"MCP servers · none · 0 available · agent scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · summarize\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            },
+            "sourceRunId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce"
+          },
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "1:8",
+          "sequence": 16
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "2:8",
+          "sequence": 32
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.context.updated",
+          "value": {
+            "strategy": "progressive_summarization",
+            "messagesRemoved": 0,
+            "tokensSaved": 2952,
+            "wasApplied": true,
+            "summaryGenerated": true
+          },
+          "runId": null,
+          "threadId": null,
+          "eventId": "3:8",
+          "sequence": 48
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "turn-manifest-2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+            "artifactType": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":2587,\"rendered_characters\":2587,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "96f50a8a5366bd42a0b7f3368d786c8b0fd2f34da2d7bfef3f810dabdf5878ad",
+              "fragment_count": 6
+            },
+            "sourceRunId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce"
+          },
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "4:8",
+          "sequence": 64
+        },
+        {
+          "type": "RUN_STARTED",
+          "profile": "uar.agui/1",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "input": {
+            "agentId": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7"
+          },
+          "eventId": "5:8",
+          "sequence": 80
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+                "conversation_id": "234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+                "status": "running"
+              }
+            }
+          ],
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "6:8",
+          "sequence": 96
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "7:8",
+          "sequence": 112
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"e48685b1aca137f335e1060e01b5d8921650afa8a93ebabf9c3bba52ce9d97cc\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"cad965fa2b66ab5766b7435de2efe0dc12f95c84758b7fd8e46e403762e6df58\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"94cdbb56946d398fedbfc1e1f69c272a755a960e6d947a85dc9a09982e25a60e\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2f1713d8b3715fc79db649b0ebbdf27bf17c9d0cd3b92254d08ff58a0fd0ddad\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":5585,\"rendered_characters\":5585,\"context_window_tokens\":1045480},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce"
+          },
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "8:8",
+          "sequence": 128
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-2cf0bdd9-6a08-40c2-a574-12dc04be5dce-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce"
+          },
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "9:8",
+          "sequence": 144
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":1461,\"serialized_bytes\":6413,\"serialized_sha256\":\"d5ea1bc502db3c08235d979f628a58a9c594737338515e60acd53b0c5fb70263\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce"
+          },
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "10:8",
+          "sequence": 160
+        },
+        {
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "role": "assistant",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "type": "TEXT_MESSAGE_START",
+          "profile": "uar.agui/1",
+          "eventId": "11:0",
+          "sequence": 176
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "<think>We need answer only ",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "11:8",
+          "sequence": 176
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "JSON with referenc",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "12:8",
+          "sequence": 192
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "e, attendees ",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "13:8",
+          "sequence": 208
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "combined head",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "14:8",
+          "sequence": 224
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "count 25+4=29, ",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "15:8",
+          "sequence": 240
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "entrance required",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "16:8",
+          "sequence": 256
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": " delivery gate Gat",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "17:8",
+          "sequence": 272
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "e L. Need exact k",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "18:8",
+          "sequence": 288
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "ey names likely",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "19:8",
+          "sequence": 304
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": " \"reference\",",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "20:8",
+          "sequence": 320
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": " \"attendees\",",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "21:8",
+          "sequence": 336
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": " \"entrance\".",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "22:8",
+          "sequence": 352
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": " No prose. JSON {\"",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "23:8",
+          "sequence": 368
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "reference\":\"",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "24:8",
+          "sequence": 384
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "BOOK-fba5bffd",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "25:8",
+          "sequence": 400
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "-2aad-471a-b05e-a3",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "26:8",
+          "sequence": 416
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "f027d4f52d\",\"",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "27:8",
+          "sequence": 432
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "attendees\":29",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "28:8",
+          "sequence": 448
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": ",\"entrance\":\"",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "29:8",
+          "sequence": 464
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "Gate L\"}. Ensu",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "30:8",
+          "sequence": 480
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "re only JSON.",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "31:8",
+          "sequence": 496
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "</think>\n\n{\"reference\":\"",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "32:8",
+          "sequence": 512
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "BOOK-fba5bffd-2",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "33:8",
+          "sequence": 528
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "aad-471a-b05",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "34:8",
+          "sequence": 544
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "e-a3f027d4f52d",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "35:8",
+          "sequence": 560
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "\",\"attendee",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "36:8",
+          "sequence": 576
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "s\":29,\"entrance\":\"Gate L",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "37:8",
+          "sequence": 592
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "delta": "\"}",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "38:8",
+          "sequence": 608
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "eventId": "39:8",
+          "sequence": 624
+        },
+        {
+          "messageId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce:assistant",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "type": "TEXT_MESSAGE_END",
+          "profile": "uar.agui/1",
+          "eventId": "40:0",
+          "sequence": 640
+        },
+        {
+          "type": "RUN_FINISHED",
+          "profile": "uar.agui/1",
+          "threadId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "runId": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+          "result": {
+            "usage": {
+              "inputTokens": 1566,
+              "outputTokens": 133,
+              "totalTokens": 1699,
+              "costUsdEstimate": null,
+              "model": "MiniMax-M3"
+            }
+          },
+          "eventId": "40:8",
+          "sequence": 640
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+      "status": 200,
+      "response": "{\"run_id\":\"2cf0bdd9-6a08-40c2-a574-12dc04be5dce\",\"agent_id\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"conversation_id\":\"234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"status\":\"done\",\"agent_revision\":\"sha256:d1cfdddcb3173b9a887e2649b4349d8fd757367f4706b4337c72c8fd2e4ce99a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"summarize\",\"threshold\":2,\"summary_max_tokens\":2048,\"model\":null},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"summarize\",\"threshold\":2,\"summary_max_tokens\":2048,\"model\":\"liter/MiniMax-M3\"},\"source_sha256\":\"sha256:fc3bdfb8c3f5cbf3b0c6c9c5dbbeaa62e8fa7b7c8f446c90119c7949583e6a87\",\"prepared_sha256\":\"sha256:2d6235cd7c9ace4c373ea9d21fc8f4535a4bc6e3d116afc0c29393e3c3d67e3c\",\"source_messages\":8,\"prepared_messages\":8,\"source_tokens\":3964,\"prepared_tokens\":1012,\"eligible_spans\":3,\"changed\":true,\"summary_generated\":true,\"tier_calls\":[{\"tier\":\"summary\",\"model\":\"liter/MiniMax-M3\",\"completed\":true,\"input_tokens\":3416,\"count_quality\":\"approximate\",\"counting_revision\":\"host-plaintext-estimate-v1\",\"output_tokens\":415,\"input_sha256\":\"sha256:937d24c1f23ce0e8c04e3c443c25dfa992b4e24db9ca4c1b36c2bea2e22bbdae\",\"output_sha256\":\"sha256:5a32a63ea438fe7197bac7a012f144a5d63a8472ecae47e24077a5159c0c2b61\"}],\"final_sha256\":\"sha256:2d6235cd7c9ace4c373ea9d21fc8f4535a4bc6e3d116afc0c29393e3c3d67e3c\",\"final_messages\":8,\"final_tokens\":1012,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":1274,\"request_tokens\":1274,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "agent_id": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+  "session_id": "234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+  "model": "liter/MiniMax-M3",
+  "expected": {
+    "reference": "BOOK-fba5bffd-2aad-471a-b05e-a3f027d4f52d",
+    "attendees": 29,
+    "entrance": "Gate L"
+  },
+  "initial_run_id": "66346a7e-e359-4ae0-9fe4-4dfd1fc94ad6",
+  "follow_up_run_id": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+  "run_inspection": {
+    "run_id": "2cf0bdd9-6a08-40c2-a574-12dc04be5dce",
+    "agent_id": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+    "conversation_id": "234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+    "status": "done",
+    "agent_revision": "sha256:d1cfdddcb3173b9a887e2649b4349d8fd757367f4706b4337c72c8fd2e4ce99a",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-conversation-summary-234fa821-fe4b-48bf-a8e6-5008e750fcb7",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "summarize",
+        "threshold": 2,
+        "summary_max_tokens": 2048,
+        "model": null
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "agent",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "summarize",
+        "threshold": 2,
+        "summary_max_tokens": 2048,
+        "model": "liter/MiniMax-M3"
+      },
+      "source_sha256": "sha256:fc3bdfb8c3f5cbf3b0c6c9c5dbbeaa62e8fa7b7c8f446c90119c7949583e6a87",
+      "prepared_sha256": "sha256:2d6235cd7c9ace4c373ea9d21fc8f4535a4bc6e3d116afc0c29393e3c3d67e3c",
+      "source_messages": 8,
+      "prepared_messages": 8,
+      "source_tokens": 3964,
+      "prepared_tokens": 1012,
+      "eligible_spans": 3,
+      "changed": true,
+      "summary_generated": true,
+      "tier_calls": [
+        {
+          "tier": "summary",
+          "model": "liter/MiniMax-M3",
+          "completed": true,
+          "input_tokens": 3416,
+          "count_quality": "approximate",
+          "counting_revision": "host-plaintext-estimate-v1",
+          "output_tokens": 415,
+          "input_sha256": "sha256:937d24c1f23ce0e8c04e3c443c25dfa992b4e24db9ca4c1b36c2bea2e22bbdae",
+          "output_sha256": "sha256:5a32a63ea438fe7197bac7a012f144a5d63a8472ecae47e24077a5159c0c2b61"
+        }
+      ],
+      "final_sha256": "sha256:2d6235cd7c9ace4c373ea9d21fc8f4535a4bc6e3d116afc0c29393e3c3d67e3c",
+      "final_messages": 8,
+      "final_tokens": 1012,
+      "input_allowance": 1044215,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1048576,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1047576,
+        "history_tokens": 1274,
+        "request_tokens": 1274,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "disposable_agent_deleted": true,
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 8174
+}

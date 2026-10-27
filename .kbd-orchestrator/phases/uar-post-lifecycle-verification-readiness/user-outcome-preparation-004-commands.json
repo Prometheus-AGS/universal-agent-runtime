@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "status": "REPAIR_007_P0_004_PROPOSED_NOT_EXECUTED",
+  "executable": false,
+  "verification_gate": "CLOSED",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "policy": {
+    "serial": true,
+    "first_failure_stop": true,
+    "automatic_retry": false,
+    "source_fixes": false,
+    "lockfile_changes": false,
+    "service_start": false,
+    "image_pull": false,
+    "test_execution": false,
+    "model_request": false
+  },
+  "baseline_environment": "Explicit reviewed toolchain-only environment references in final config; no login/profile sourcing or implicit provider credential inheritance. Per-command environment_env below adds exact supplied references.",
+  "environment_reference_values": {
+    "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+    "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+    "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+    "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+    "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+    "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+    "UAR_PREP_NONINTERACTIVE": "true"
+  },
+  "shared_build_owner_lock": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/build-owner.lock",
+  "artifact_output_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-004/artifacts",
+  "commands": [
+    {
+      "id": "P0.7",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_NATIVE_TARGET"
+      },
+      "effects": [
+        "native build and build scripts; Cargo dependency/cache network if required",
+        "Cargo JSON selects actual server bin; native target isolated from later Cargo commands",
+        "Explicit cached native rebuild exception after a previous PASS: bind current whole-source identity to native receipt required by unchanged artifact producer. No broader gate or frontend rebuild."
+      ]
+    },
+    {
+      "id": "P0.9",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/node",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/typescript/lib/tsc.js",
+        "--project",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/tsconfig.examples.json",
+        "--noEmit",
+        "false",
+        "--outDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/.acceptance-artifacts",
+        "--rootDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript",
+      "environment_env": {},
+      "effects": [
+        "explicit compiler/emit exception; emits example and src JavaScript/declarations",
+        "Node entry .acceptance-artifacts/examples/user-outcome-acceptance.js; preserve SDK type:module package.json and node_modules"
+      ]
+    },
+    {
+      "id": "P0.10",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_RUST_SDK_TARGET"
+      },
+      "effects": [
+        "compile SDK example and build dependencies; do not run it",
+        "Cargo JSON selects example executable; independent SDK lock"
+      ]
+    },
+    {
+      "id": "P0.11",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "test",
+        "--locked",
+        "--features",
+        "server-full,postgres-backend",
+        "--test",
+        "user_outcome_grpc",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_GRPC_TARGET"
+      },
+      "effects": [
+        "explicit no-run test-harness compiler exception and build scripts",
+        "Cargo JSON selects user_outcome_grpc executable; no test execution"
+      ]
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "generate-lockfile",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/Cargo.toml"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "Resolve exact-direct-pinned guest dependencies into only the new private generated Cargo.lock; no repository source or product lock mutation",
+        "Private Cargo.toml/src/WIT copied from frozen guest templates before this stage"
+      ]
+    },
+    {
+      "id": "P0.13-build-guest",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo-component",
+        "component",
+        "build",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/Cargo.toml",
+        "--locked",
+        "--release",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--target-dir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO": "UAR_PREP_CARGO"
+      },
+      "environment_absent": [
+        "RUSTUP_TOOLCHAIN"
+      ],
+      "effects": [
+        "Compile/componentize current eligible-skill keyword classifier; emit private generated bindings and component",
+        "Explicit internal rustc --print sysroot and installed wasm32-wasip1 prerequisite inspection; missing target fails, no automatic rustup install",
+        "bindings.format=false prevents implicit rustfmt; no component instantiation or UAR strategy test"
+      ],
+      "expected_output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm"
+    }
+  ],
+  "postinstall_metadata_assembly": {
+    "effects": [
+      "Create exclusive004 parent/evidence mode0700; preserve001/002/003 receipts, logs, failed scopes and original static backup.",
+      "Reuse exact002 installed Python/SDK/browser/host tools, package trees, local models, native dependency cache, unrun SDK/grpc targets and unrun private guest root under SAME002 build-owner.lock. No reinstall, image pull/inspect, service/browser/import/version probe.",
+      "Carry previous003 frontend PASS and current exact static tree hash from user-outcome-retained-frontend-004.json; snapshot as existing resource, no frontend build or static rewrite.",
+      "Activate private004 artifact config only after actual A10 approval/signature/adoption; source008, retained exact tool/resource bytes and six declared commands. Admission/projection fields and downward-clamped limits only; no other config/source change.",
+      "Invoke producer once: native source-identity rebind build, corrected TS emit, Rust SDK build, gRPC no-run compile, private guest resolve/component build. First failure stops with only exact-owned process cleanup; no automatic retry or repair.",
+      "Generate private logs/status/selected-tree snapshot with unchanged finite output/file/tree caps and excluded OS baseline. Actual fixture/private-key preparation, services/provider calls and final V require their separately named authority."
+    ],
+    "product_tests": false,
+    "execution_status": "NOT_EXECUTED; operator approval pending"
+  },
+  "artifact_program_future_invocation": {
+    "argv": [
+      "/Users/gqadonis/miniconda3/bin/python3",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-004/artifact-preparation.config.json"
+    ],
+    "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+    "config_ready": false,
+    "config_sha256": null,
+    "runnable_claim": false,
+    "expected_fragment": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-004/artifacts/snapshot/preparation.json",
+    "execution": "Final config must contain approved build/guest-resolution stages so each listed build executes once, inside producer; no separate build then implicit rerun. Producer config must use isolated native/grpc/SDK targets."
+  },
+  "pending": [
+    "Actual A10 signature/adoption and exact P0.004 instruction",
+    "Successful6stage producer and complete selected artifact closure",
+    "Actual derived fixture/private input authority and separate exact final V approval"
+  ],
+  "preparation_bounds": {
+    "total_seconds": 12115,
+    "stage_seconds": 6017,
+    "output_bytes": 67108864,
+    "file_count": 1000000,
+    "file_bytes": 17179869184,
+    "tree_bytes": 137438953472
+  },
+  "preparation_metadata_effects": [
+    "Create exclusive004 parent/evidence mode0700; preserve001/002/003 receipts, logs, failed scopes and original static backup.",
+    "Reuse exact002 installed Python/SDK/browser/host tools, package trees, local models, native dependency cache, unrun SDK/grpc targets and unrun private guest root under SAME002 build-owner.lock. No reinstall, image pull/inspect, service/browser/import/version probe.",
+    "Carry previous003 frontend PASS and current exact static tree hash from user-outcome-retained-frontend-004.json; snapshot as existing resource, no frontend build or static rewrite.",
+    "Activate private004 artifact config only after actual A10 approval/signature/adoption; source008, retained exact tool/resource bytes and six declared commands. Admission/projection fields and downward-clamped limits only; no other config/source change.",
+    "Invoke producer once: native source-identity rebind build, corrected TS emit, Rust SDK build, gRPC no-run compile, private guest resolve/component build. First failure stops with only exact-owned process cleanup; no automatic retry or repair.",
+    "Generate private logs/status/selected-tree snapshot with unchanged finite output/file/tree caps and excluded OS baseline. Actual fixture/private-key preparation, services/provider calls and final V require their separately named authority."
+  ],
+  "local_embedding_assets": {
+    "source_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models",
+    "runtime_binding": "models.models_dir points to actual frozen copied model tree; hosted RAG stays independently configured",
+    "download": false
+  },
+  "supersedes_preparation_attempt": "user-outcome-preparation-003",
+  "correction": {
+    "observed_failure": "examples/user-outcome-acceptance.ts(33,13): error TS18048: 'authorization' is possibly 'undefined'.",
+    "original_stop": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/stop.json",
+    "repair_provenance": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-repair-007-provenance.json",
+    "patch_sha256": "sha256:98a932ccb40370d90588aef6f41ecad85add4549325d7e9c1b314028e2274f96",
+    "repair_cap_delta": "6 to7; all7 consumed; no eighth",
+    "scope": "One-line explicit string narrowing; no new validation policy, dependency, non-null assertion, cast or fallback.",
+    "native_rebind_exception": "The unchanged producer requires a successful native-stage receipt for its current complete source denominator; source008 includes the corrected SDK example. Explicitly approve one cached native build despite prior source007 PASS, followed by failed TypeScript emit and4unrun stages. Frontend PASS is carried as existing hashed static input."
+  },
+  "consumption_carry_forward": {
+    "original_epoch": "2026-10-24T13:38:17.685447+00:00",
+    "accounting_ref": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-006.json",
+    "cutoff": "2026-10-25T11:46:56.710109+00:00",
+    "host_call_floor": 2433,
+    "active_minutes_upper_bound": 1146.9923443666667,
+    "repair_floor": 7,
+    "later_activity_accrues": true,
+    "prior_P0_001_seconds": 1.350480196007993,
+    "prior_P0_002_wall_seconds": 1584.103835,
+    "prior_P0_003_wall_seconds": 697.491363,
+    "original_P0_total_seconds": 14400,
+    "remaining_tightened_P0_seconds": 12115,
+    "prior_native_attempt_seconds": [
+      592.8044838905334,
+      589.4963667392731
+    ],
+    "effective_stage_seconds": 6017,
+    "prior_typescript_emit_seconds": 2.132319927215576,
+    "enforcement": "Deduct all004 setup wall time from12115 before producer; tighten further to remaining global caps. Shared6017 stage cap retains both previous native attempts under original cumulative7200 maximum. No original time/call/repair/provider consumption reset."
+  },
+  "source_inventory": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-008.json",
+    "source_identity": "sha256:d8d714afb4024d4b4d838acbbdce4eba15001626fea1517fb9879f613c5525a4",
+    "regular_files": 29002,
+    "product_gate": "CLOSED"
+  },
+  "carry_forward_passed_stages": [
+    {
+      "id": "P0.1",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.1/result.json"
+    },
+    {
+      "id": "P0.2",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.2/result.json"
+    },
+    {
+      "id": "P0.3",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.3/result.json"
+    },
+    {
+      "id": "P0.4",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.4/result.json"
+    },
+    {
+      "id": "P0.5-pull",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.5-pull/result.json"
+    },
+    {
+      "id": "P0.5",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.5/result.json"
+    },
+    {
+      "id": "P0.python-dependencies",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.python-dependencies/result.json"
+    },
+    {
+      "id": "P0.python-sdk",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.python-sdk/result.json"
+    },
+    {
+      "id": "P0.6-pull",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.6-pull/result.json"
+    },
+    {
+      "id": "P0.6",
+      "status": "PASS",
+      "exit_code": 0,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.6/result.json"
+    },
+    {
+      "id": "P0.8",
+      "stage": "frontend",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "-C",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend",
+        "build"
+      ],
+      "elapsed_seconds": 40.2241792678833,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/frontend/frontend-build.json",
+      "tree_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-retained-frontend-004.json"
+    }
+  ],
+  "prior_native_pass_retained": {
+    "id": "P0.7",
+    "stage": "native",
+    "exit_code": 0,
+    "status": "PASS",
+    "command": [
+      "/Users/gqadonis/.cargo/bin/cargo",
+      "build",
+      "--locked",
+      "--bin",
+      "universal-agent-runtime",
+      "--features",
+      "server-full,postgres-backend",
+      "--message-format=json-render-diagnostics"
+    ],
+    "elapsed_seconds": 589.4963667392731,
+    "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/native/native-build.json"
+  }
+}

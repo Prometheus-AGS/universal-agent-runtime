@@ -1,0 +1,377 @@
+diff --git a/scripts/post_lifecycle/main_boundary.py b/scripts/post_lifecycle/main_boundary.py
+index dea366c6..edcafe22 100644
+--- a/scripts/post_lifecycle/main_boundary.py
++++ b/scripts/post_lifecycle/main_boundary.py
+@@ -11,6 +11,7 @@ import hashlib
+ import json
+ import os
+ from pathlib import Path
++import shutil
+ import subprocess
+ import sys
+ import time
+@@ -81,8 +82,12 @@ def main():
+     require(manifest.get("externalSpendAllowed") is False, "external spend is excluded")
+     root = Path(manifest["projectRoot"]).resolve()
+     require(root == Path.cwd().resolve(), "wrong project cwd")
+-    candidate = (root / "target/uar-post-lifecycle-main/debug/universal-agent-runtime").resolve()
+-    require(Path(manifest["candidatePath"]).resolve() == candidate, "wrong main candidate path")
++    build_output = (root / "target/uar-post-lifecycle-main/debug/universal-agent-runtime").resolve()
++    evidence = args.evidence_root.resolve()
++    candidate = evidence / "artifacts/universal-agent-runtime"
++    require(Path(manifest["buildOutputPath"]) == build_output, "wrong main build output path")
++    require(Path(manifest["candidatePath"]) == candidate, "wrong frozen main candidate path")
++    require(manifest["processes"]["main"]["argv"][0] == str(candidate), "wrong main executable argv")
+     require(manifest.get("sourceInventoryDigest") and manifest.get("contractDigest"), "identity missing")
+     inputs = manifest.get("boundInputs", [])
+     require(inputs, "no source/config/fixture bindings")
+@@ -113,10 +118,21 @@ def main():
+         write_new(evidence / "body.json", {"outcome": build["outcome"], "testStarted": False})
+         write_new(evidence / "teardown.json", {"outcome": "PASS", "fixtureChildrenStarted": False})
+         return 1
+-    built_hash = digest(candidate)
++    built_hash = digest(build_output)
++    artifacts = evidence / "artifacts"
++    artifacts.mkdir(mode=0o700)
++    with build_output.open("rb") as source, candidate.open("xb") as frozen:
++        shutil.copyfileobj(source, frozen)
++    os.chmod(candidate, 0o700)
++    frozen_hash = digest(candidate)
+     write_new(evidence / "source-build-boot.json", {
+         "sourceInventoryDigest": manifest["sourceInventoryDigest"],
+-        "builtMainSha256": built_hash, "bootEvidence": "see process receipts; not inferred from build"})
++        "buildOutputPath": str(build_output), "buildOutputSha256": built_hash,
++        "candidatePath": str(candidate), "frozenMainSha256": frozen_hash,
++        "builtMainSha256": built_hash,
++        "freezeOutcome": "PASS" if frozen_hash == built_hash else "BLOCKED",
++        "bootEvidence": "see process receipts; not inferred from build"})
++    require(frozen_hash == built_hash, "frozen main differs from pre-copy build identity")
+     env["UAR_BOUNDARY_BUILT_SHA256"] = built_hash
+     test_dir = evidence / "raw/test"
+     test_dir.mkdir(parents=True)
+diff --git a/src/uar/persistence/providers/agui_runs/surreal.rs b/src/uar/persistence/providers/agui_runs/surreal.rs
+index 61e8aacb..842de4ab 100644
+--- a/src/uar/persistence/providers/agui_runs/surreal.rs
++++ b/src/uar/persistence/providers/agui_runs/surreal.rs
+@@ -38,17 +38,27 @@ pub(super) async fn list(store: &SurrealDbProvider, owner: &str, agent: &str, th
+ pub(super) async fn transition(store: &SurrealDbProvider, before: &AguiRunBinding, after: &AguiRunBinding) -> anyhow::Result<bool> {
+     anyhow::ensure!(store.durable_instances, "durable_agui_unsupported");
+     before.validate_transition(after)?;
++    let before_data = serde_json::to_string(before)?;
+     let response = store.db.query("UPDATE type::record('agui_runs',$key) SET data=$after WHERE data=$before RETURN VALUE data")
+-        .bind(("key",before.storage_key())).bind(("before",serde_json::to_string(before)?)).bind(("after",serde_json::to_string(after)?)).await?;
+-    // A concurrent writer that commits the same row first makes this implicit transaction fail at COMMIT with the
+-    // typed `QueryError::TransactionConflict` (surrealdb-types 3.3.0 error.rs:924; surrealkv `TransactionWriteConflict`
+-    // -> kvs `TransactionConflict`, surrealdb-kvs-surrealkv 3.3.0 lib.rs:37; executor.rs:1469/1944 keep the kind).
+-    // That is a lost compare-and-swap, not a failure: report `false` so the caller reloads. Any other error stays fatal.
++        .bind(("key",before.storage_key())).bind(("before",before_data.clone())).bind(("after",serde_json::to_string(after)?)).await?;
+     let mut response = match response.check() {
+         Ok(response) => response,
+         Err(error) if matches!(error.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)) => {
+-            tracing::debug!(kind = "TransactionConflict", "AG-UI run transition lost a write race; reporting compare-and-swap miss");
+-            return Ok(false);
++            // A transaction conflict can concern another row touched by a schema event.
++            // Only an observed mismatch of this UPDATE's exact predicate is a CAS miss.
++            // This later read does not identify the cause of the original conflict.
++            let current = async {
++                let mut response = store.db.query("SELECT VALUE data FROM type::record('agui_runs',$key)")
++                    .bind(("key",before.storage_key())).await?.check()?;
++                let rows: Vec<String> = response.take(0)?;
++                Ok::<_, anyhow::Error>(rows)
++            }.await;
++            if matches!(current, Ok(ref rows) if rows.is_empty() || (rows.len() == 1 && rows[0] != before_data)) {
++                tracing::debug!(kind = "TransactionConflict", "AG-UI run predicate no longer matches; reporting compare-and-swap miss");
++                return Ok(false);
++            }
++            // An unchanged target or an inconclusive read retains the original typed error.
++            return Err(error.into());
+         }
+         Err(error) => return Err(error.into()),
+     };
+diff --git a/tests/post_lifecycle_main.rs b/tests/post_lifecycle_main.rs
+index 9bc38cff..8a17351c 100644
+--- a/tests/post_lifecycle_main.rs
++++ b/tests/post_lifecycle_main.rs
+@@ -18,7 +18,7 @@ use futures::StreamExt;
+ #[path = "support/post_lifecycle_store.rs"]
+ mod post_lifecycle_store;
+ #[cfg(feature = "surreal-backend")]
+-use universal_agent_runtime::uar::persistence::{PersistenceLayer,
++use universal_agent_runtime::uar::persistence::{DurableStoreEligibility, PersistenceLayer,
+     providers::surreal::SurrealDbProvider,
+     accounting::{CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity, ScopeLimits}};
+ 
+@@ -112,6 +112,13 @@ impl Boundary {
+         if name == "main" {
+             let built = std::env::var("UAR_BOUNDARY_BUILT_SHA256").map_err(|_| "built_hash_missing")?;
+             let candidate = std::env::var("UAR_MAIN_CANDIDATE").map_err(|_| "candidate_path_missing")?;
++            save(&self.evidence.join(format!("main-build-boot-identity-{launch}.json")), &json!({
++                "process":name, "launch":launch,
++                "expectedCandidatePath":candidate, "observedArgv0":argv[0],
++                "expectedBuiltSha256":built, "observedBootSha256":actual_hash,
++                "pathMatches":argv[0] == candidate, "sha256Matches":actual_hash == built,
++                "outcome":if argv[0] == candidate && actual_hash == built { "PASS" } else { "BLOCKED" }
++            }))?;
+             if argv[0] != candidate || actual_hash != built { return Err("main_build_boot_identity_mismatch".into()); }
+         } else if spec["sha256"].as_str() != Some(actual_hash.as_str()) {
+             return Err("peer_identity_mismatch".into());
+@@ -157,15 +164,19 @@ impl Boundary {
+             match process.child.try_wait() {
+                 Ok(Some(status)) => {
+                     self.events.push(json!({"kind":"exit","process":name,"launch":process.launch,
+-                        "signalExit":signal_status.code(),"exitCode":status.code(),"success":status.success()}));
++                        "pid":pid,"signalExit":signal_status.code(),"signalSuccess":signal_status.success(),
++                        "exitCode":status.code(),"exitStatus":status.to_string(),"success":status.success()}));
+                     return if status.success() { Ok(()) } else { Err("process_nonzero_teardown".into()) };
+                 }
+                 Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(25)),
+                 _ => {
+                     let _ = process.child.kill();
+-                    let exit = process.child.wait().ok().and_then(|status| status.code());
++                    let exit = process.child.wait().ok();
+                     self.events.push(json!({"kind":"exit","process":name,"launch":process.launch,
+-                        "exitCode":exit,"outcome":"BLOCKED","reason":"graceful_exit_unconfirmed"}));
++                        "pid":pid,"signalExit":signal_status.code(),"signalSuccess":signal_status.success(),
++                        "exitCode":exit.as_ref().and_then(|status|status.code()),
++                        "exitStatus":exit.as_ref().map(ToString::to_string),
++                        "outcome":"BLOCKED","reason":"graceful_exit_unconfirmed"}));
+                     return Err("graceful_exit_unconfirmed".into());
+                 }
+             }
+@@ -254,7 +265,8 @@ impl Boundary {
+         let password = std::env::var(field(spec, "passwordEnv")?).map_err(|_| "existing_store_password_unavailable")?;
+         let provider = SurrealDbProvider::new(endpoint, Some(&user), Some(&password), Some(namespace), Some(database))
+             .await.map_err(|_| "store_connect_failed")?;
+-        if !provider.durable_store_eligibility().permits_durable_work() {
++        if !matches!(provider.durable_store_eligibility(),
++            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested) {
+             let report = provider.close_scope().await;
+             self.events.push(json!({"kind":"store_close","scopeReleased":report.scope_released}));
+             return Err("store_durability_unproven_no_mode_substitution".into());
+@@ -346,7 +358,25 @@ impl Boundary {
+         Ok(())
+     }
+ 
+-    async fn step(&mut self, step: &Value) -> Result<()> {
++    fn startup_process_running(&mut self, name: &str) -> Result<()> {
++        let process = self.processes.get_mut(name).ok_or("startup_process_not_owned")?;
++        match process.child.try_wait() {
++            Ok(None) => Ok(()),
++            Ok(Some(status)) => {
++                self.events.push(json!({"kind":"startup_process_exit","process":name,
++                    "launch":process.launch,"pid":process.child.id(),"exitCode":status.code(),
++                    "exitStatus":status.to_string(),"success":status.success()}));
++                Err("startup_process_exited".into())
++            }
++            Err(error) => {
++                self.events.push(json!({"kind":"startup_process_wait_error","process":name,
++                    "launch":process.launch,"pid":process.child.id(),"error":error.to_string()}));
++                Err("startup_process_wait_failed".into())
++            }
++        }
++    }
++
++    async fn step(&mut self, step: &Value, setup: bool) -> Result<()> {
+         let action = field(step, "action")?;
+         match action {
+             #[cfg(feature = "surreal-backend")]
+@@ -397,9 +427,41 @@ impl Boundary {
+                 if attempts == 0 || attempts > 30 { return Err("poll_attempts_exceed_bound".into()); }
+                 let expected=expand(&step["value"],&self.variables)?;
+                 let pointer=expand(&step["pointer"],&self.variables)?;
++                let startup_retry = step["startupTransportRetry"].as_bool() == Some(true);
++                let startup_request = if startup_retry { expand(&step["request"], &self.variables)? } else { Value::Null };
++                let startup_target = if startup_request["target"].as_str() == Some("peer") { "peer" } else { "main" };
++                if startup_retry {
++                    // A scenario restart has the same connection-refused window
++                    // as setup. Keep retry limited to its owned main health GET.
++                    let restarted_main_health = startup_target == "main"
++                        && startup_request["path"].as_str() == Some("/health")
++                        && self.launches.get("main").copied().unwrap_or(0) > 1;
++                    if startup_request["method"].as_str() != Some("GET")
++                        || (!setup && !restarted_main_health) {
++                        return Err("startup_transport_retry_requires_setup_or_restart_health_get".into());
++                    }
++                    if !self.processes.contains_key(startup_target) { return Err("startup_process_not_owned".into()); }
++                }
+                 let mut last = "poll_condition_unobserved".to_owned();
+-                for _ in 0..attempts {
+-                    let (status, _, value) = self.request(&step["request"]).await?;
++                for attempt in 1..=attempts {
++                    if startup_retry { self.startup_process_running(startup_target)?; }
++                    let response = self.request(&step["request"]).await;
++                    if startup_retry {
++                        if let Err(error) = &response {
++                            self.events.push(json!({"kind":"startup_poll_error","process":startup_target,
++                                "attempt":attempt,"attempts":attempts,"control":step["control"],"reason":error}));
++                        }
++                        self.startup_process_running(startup_target)?;
++                    }
++                    let (status, _, value) = match response {
++                        Ok(response) => response,
++                        Err(error) if startup_retry && error == "request_transport_failed" => {
++                            last = error;
++                            tokio::time::sleep(Duration::from_millis(1000)).await;
++                            continue;
++                        }
++                        Err(error) => return Err(error),
++                    };
+                     self.events.push(json!({"kind":"poll","status":status,"control":step["control"],
+                         "observedState":value["status"],"errorMessageSha256":value["error_message"].as_str().map(|text|hash(text.as_bytes()))}));
+                     if value["status"]=="failed" { return Err("assertion_mismatch:typed_ingestion_failure_see_poll_receipt".into()); }
+@@ -458,7 +520,7 @@ async fn post_lifecycle_main_boundary() {
+     let setup_steps = boundary.manifest["setupSteps"].as_array().cloned().unwrap_or_default();
+     let mut setup_error = None;
+     for step in &setup_steps {
+-        if let Err(error) = boundary.step(step).await { setup_error = Some(error); break; }
++        if let Err(error) = boundary.step(step, true).await { setup_error = Some(error); break; }
+     }
+     for id in IDS {
+         if let Some(error) = &setup_error {
+@@ -502,7 +564,7 @@ async fn post_lifecycle_main_boundary() {
+         } else {
+             let mut observed = Vec::new();
+             for step in steps.into_iter().flatten() {
+-                if let Err(error) = boundary.step(step).await {
++                if let Err(error) = boundary.step(step, false).await {
+                     outcome = if error.contains("mismatch") { "FAIL" } else { "BLOCKED" };
+                     reason = error;
+                     break;
+@@ -517,8 +579,20 @@ async fn post_lifecycle_main_boundary() {
+     }
+     let cleanup_steps=boundary.manifest["cleanupSteps"].as_array().cloned().unwrap_or_default();
+     let mut cleanup_failures=Vec::new();
+-    for step in &cleanup_steps { if let Err(error)=boundary.step(step).await { cleanup_failures.push(json!(error)); } }
++    for step in &cleanup_steps {
++        // A failed peer setup cannot have created any main-owned HTTP resources.
++        // Launch history keeps cleanup mandatory after even a failed main boot.
++        if boundary.launches.get("main").copied().unwrap_or(0) == 0
++            && step["action"].as_str() == Some("request")
++            && step["target"].as_str() != Some("peer") {
++            boundary.events.push(json!({"kind":"cleanup_step","outcome":"NOT_APPLICABLE",
++                "reason":"main_never_launched","method":step["method"],"path":step["path"],"target":"main"}));
++            continue;
++        }
++        if let Err(error)=boundary.step(step, false).await { cleanup_failures.push(json!(error)); }
++    }
+     let mut teardown = boundary.cleanup();
++    if let Some(error) = &setup_error { teardown["setupFailure"]=json!(error); }
+     #[cfg(feature = "surreal-backend")]
+     if let Some(store)=boundary.store.take() {
+         for identity in &boundary.accounting_calls {
+diff --git a/tests/support/post_lifecycle_count.rs b/tests/support/post_lifecycle_count.rs
+index 473434f0..dc905bba 100644
+--- a/tests/support/post_lifecycle_count.rs
++++ b/tests/support/post_lifecycle_count.rs
+@@ -141,8 +141,10 @@ async fn cases(base: &str, captures: &Captures) -> Result<Value> {
+     // key or read/copy an existing provider credential to make this case pass.
+     let config = liter_llm::ClientConfigBuilder::new("")
+         .base_url(base.to_owned()).max_retries(0).build();
+-    let driver = Arc::new(LiterLlmDriver::new(config, SYNTHETIC_EXACT_MODEL.into(), Some(false))?
+-        .with_endpoint_profile(endpoint(base))?);
++    // Use the exact-profile constructor: the generic model-hint constructor
++    // strips its own provider prefix, changing the body counted by this profile.
++    let driver = Arc::new(LiterLlmDriver::from_endpoint_profile(
++        config, Some(false), endpoint(base))?);
+     let arguments = "{\"path\":\"owned-fixture\",\"text\":\"λ\\r\\nkeep\"}";
+     let result = "{\"owned\":true,\"bytes\":[0,13,10,255]}";
+     let tools = vec![json!({"type":"function","function":{"name":"count_fixture_tool",
+diff --git a/tests/support/post_lifecycle_store.rs b/tests/support/post_lifecycle_store.rs
+index 7a716b3d..6d64e614 100644
+--- a/tests/support/post_lifecycle_store.rs
++++ b/tests/support/post_lifecycle_store.rs
+@@ -4,10 +4,9 @@
+ 
+ use std::{fs::OpenOptions, io::Write, path::Path, sync::Arc, time::Duration};
+ use serde_json::{Value, json};
+-use sha2::{Digest, Sha256};
+ use surrealdb::{Surreal, engine::any::{self, Any}, opt::auth::Root};
+ use tokio::sync::Barrier;
+-use universal_agent_runtime::uar::persistence::{PersistenceLayer,
++use universal_agent_runtime::uar::persistence::{DurableStoreEligibility, PersistenceLayer,
+     providers::surreal::SurrealDbProvider, agui_runs::{AguiRunBinding, AguiTerminal}};
+ 
+ type Result<T> = std::result::Result<T, String>;
+@@ -90,7 +89,7 @@ async fn unrelated_conflict_schedule(provider: &SurrealDbProvider, db: &Surreal<
+     owned.push(json!({"table":"agui_runs","key":before.storage_key(),"match":{
+         "owner_key":before.owner,"agent_id":before.agent_id,"thread_id":before.thread_id}}));
+     owned.push(json!({"table":"agui_contexts","key":before.context_key(),"match":{"run_key":before.storage_key()}}));
+-    let suffix = format!("{:x}",Sha256::digest(before.storage_key().as_bytes()));
++    let suffix = super::hash(before.storage_key().as_bytes());
+     let contention = format!("uar_post_lifecycle_contention_{suffix}");
+     let event_name = format!("uar_post_lifecycle_{}",&suffix[..16]);
+     db.query("CREATE type::record('agui_contexts',$key) SET run_key='fixture-initial'")
+@@ -185,7 +184,8 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
+     let mut events = Vec::new();
+     let mut owned = Vec::new();
+     let body = async {
+-        if !provider.durable_store_eligibility().permits_durable_work() {
++        if !matches!(provider.durable_store_eligibility(),
++            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested) {
+             return Err("store_durability_unproven_no_substitution".into());
+         }
+         let db = raw_client(manifest).await?;
+@@ -194,7 +194,7 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
+                 let before = AguiRunBinding { owner:owner.into(),agent_id:format!("{prefix}-agent"),
+                     thread_id:format!("{prefix}-{ordering}"),wire_run_id:format!("{prefix}-run"),
+                     native_run_id:format!("{prefix}-native"),session_id:format!("{prefix}-session"),
+-                    workspace_id:None,input_digest:format!("{:x}",Sha256::digest(prefix.as_bytes())),
++                    workspace_id:None,input_digest:super::hash(prefix.as_bytes()),
+                     ordinal:1,revision:1,start_cursor:0,previous_wire_run_id:None,resumed_tool_ids:Vec::new(),terminal:None };
+                 if !provider.create_agui_run(&before,None).await.map_err(|_| "cas_seed_failed")? {
+                     return Err("cas_seed_not_fresh".into());
+@@ -221,6 +221,7 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
+                 events.push(json!({"kind":"concurrent_cas","launchOrdering":ordering,"a":a_result,"b":b_result,
+                     "exactReadbackMatched":matched_winner,"rowKey":before.storage_key(),
+                     "expectedOrderingObserved":if ordering=="a-first" {matches!(a,Ok(true))} else {matches!(b,Ok(true))},
++                    "observedWinner":if matches!(a,Ok(true)) {Some("a")} else if matches!(b,Ok(true)) {Some("b")} else {None},
+                     "winnerRevision":row.as_ref().map(|row|row.revision),"internalInterleavingGuaranteed":false}));
+                 if !matched_winner { return Err("concurrent_cas_outcome_unresolved".into()); }
+                 if provider.load_agui_run("different-owner",&before.agent_id,&before.thread_id,&before.wire_run_id)
+@@ -250,7 +251,7 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
+                 let before = AguiRunBinding { owner:owner.into(),agent_id:format!("{prefix}-agent"),
+                     thread_id:format!("{prefix}-schedule"),wire_run_id:format!("{prefix}-run"),
+                     native_run_id:format!("{prefix}-native"),session_id:format!("{prefix}-session"),
+-                    workspace_id:None,input_digest:format!("{:x}",Sha256::digest(prefix.as_bytes())),
++                    workspace_id:None,input_digest:super::hash(prefix.as_bytes()),
+                     ordinal:1,revision:1,start_cursor:0,previous_wire_run_id:None,resumed_tool_ids:Vec::new(),terminal:None };
+                 unrelated_conflict_schedule(&provider,&db,&before,&mut events,&mut owned).await?;
+             }
+@@ -270,8 +271,14 @@ pub async fn cas_discriminator(manifest: &Value, evidence: &Path) -> Result<Valu
+         .filter(|intent| !events.iter().any(|event| event["kind"]=="fixture_schema_event_remove"
+             && event["event"]==intent["event"] && event["removed"]==true))
+         .map(|event| json!({"table":"agui_runs","name":event["event"],"outcome":"retained_or_uncertain"})).collect();
++    // Launch order does not establish commit order. Require both actual winner
++    // directions, each with the exact success/miss pair and matching stored row.
++    // A repeated winner remains BLOCKED; no winner or conflict assertion is skipped.
+     let exact_orderings = events.iter().filter(|event| event["kind"]=="concurrent_cas"
+-        && event["exactReadbackMatched"]==true && event["expectedOrderingObserved"]==true).count()==2;
++        && event["exactReadbackMatched"]==true).count()==2
++        && ["a","b"].iter().all(|winner| events.iter().any(|event|
++            event["kind"]=="concurrent_cas" && event["exactReadbackMatched"]==true
++                && event["observedWinner"].as_str()==Some(*winner)));
+     let unrelated_preserved = events.iter().any(|event|
+         event["classification"]=="PASS_UNRELATED_TRANSACTION_CONFLICT_RETAINED");
+     let raw_closed = events.iter().any(|event| event["kind"]=="raw_client_close" && event["scopeReleased"]==true);
+diff --git a/tools/seed-minimax-verification/main.rs b/tools/seed-minimax-verification/main.rs
+index 1bda194b..5a128e78 100644
+--- a/tools/seed-minimax-verification/main.rs
++++ b/tools/seed-minimax-verification/main.rs
+@@ -209,7 +209,7 @@ async fn run() -> Result<()> {
+         "updated_at": verified_at,
+     });
+     db.query("UPSERT type::record('settings', $rid) CONTENT $data")
+-        .bind(("rid", record_id))
++        .bind(("rid", record_id.clone()))
+         .bind(("data", setting_payload))
+         .await
+         .with_context(|| format!("upserting setting '{proof_key}'"))?
+@@ -229,7 +229,7 @@ async fn run() -> Result<()> {
+     // (`src/uar/persistence/providers/surreal.rs:get_setting`).
+     let mut resp = db
+         .query("SELECT * FROM type::record('settings', $rid)")
+-        .bind(("rid", record_id))
++        .bind(("rid", record_id.clone()))
+         .await
+         .context("readback get_setting")?;
+     let rows: Vec<surrealdb::types::Value> = resp

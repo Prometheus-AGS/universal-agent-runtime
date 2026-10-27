@@ -1,0 +1,126 @@
+{
+  "timestamp": "2026-10-25T12:47:33.073094+00:00",
+  "status": "STOPPED_FIRST_FAILURE",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-dc575f8e",
+  "binding_revision": 12,
+  "contract_digest": "dc575f8ec79e2cbfea88276d46646f63294744eeae4f2889aa50479550f74b24",
+  "source_identity": "sha256:d8d714afb4024d4b4d838acbbdce4eba15001626fea1517fb9879f613c5525a4",
+  "failed_stage": "P0.10",
+  "diagnostic": "warning: patch `surrealdb-kvs-rocksdb v3.3.0 (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0)` was not used in the crate graph\nhelp: Check that the patched package version and available features are compatible\n      with the dependency requirements. If the patch has a different version from\n      what is locked in the Cargo.lock file, run `cargo update` to use the new\n      version. This may also occur with an optional dependency that is not enabled.\nerror: cannot update the lock file /Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.lock because --locked was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n",
+  "rust_sdk_exit_code": 101,
+  "artifact_producer_exit_code": 2,
+  "attempt_stages": [
+    {
+      "id": "P0.7",
+      "stage": "native",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 4.493167161941528,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/native/native-build.json"
+    },
+    {
+      "id": "P0.9",
+      "stage": "typescript_sdk",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.volta/bin/node",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/typescript/lib/tsc.js",
+        "--project",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/tsconfig.examples.json",
+        "--noEmit",
+        "false",
+        "--outDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/.acceptance-artifacts",
+        "--rootDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript"
+      ],
+      "elapsed_seconds": 1.764087200164795,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/typescript_sdk/typescript_sdk-build.json"
+    },
+    {
+      "id": "P0.10",
+      "stage": "rust_sdk",
+      "exit_code": 101,
+      "status": "FAIL",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 0.7060699462890625,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/rust_sdk/rust_sdk-build.json"
+    }
+  ],
+  "later_stages": [
+    {
+      "id": "P0.11",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.13-build-guest",
+      "status": "NOT_RUN"
+    }
+  ],
+  "carried_materialization_passes": 10,
+  "carried_frontend_pass": true,
+  "original_preparation_steps_passed": 13,
+  "original_preparation_steps_total": 17,
+  "artifacts": [
+    {
+      "kind": "native_server",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native/debug/universal-agent-runtime",
+      "bytes": 790241144,
+      "sha256": "sha256:944caef21b8906e9217779215f4dd3c7f56f2b4005f0547ddd1c4fd4e6dae0f8",
+      "immutable_snapshot": false
+    }
+  ],
+  "immutable_artifact_preparation_complete": false,
+  "product_gate": "CLOSED",
+  "product_tests": 0,
+  "provider_calls": 0,
+  "services_started": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repairs_consumed": 7,
+  "remaining_repairs": 0,
+  "retry_count": 0,
+  "source_changes_during_attempt": 0,
+  "prior_evidence_preserved": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/stop.json"
+  ],
+  "consumption": {
+    "prior_accounting": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-006.json",
+    "P0_004_wall_seconds_through_producer_finish": 49.644078,
+    "P0_004_producer_seconds": 20.803250964992912,
+    "P0_004_start_carried_max_seconds": 12115,
+    "remaining_carried_P0_seconds": 12065.355922,
+    "all_prior_consumption_retained": true,
+    "later_activity_accrues": true
+  },
+  "next_authority": "Discuss immediate bounded lockfile repair versus backlog with operator before any edit/retry. No remaining repair allowance or automatic execution authority.",
+  "cleanup": "Producer exited and its finally paths release owned processes/owner lock. No services or containers started."
+}

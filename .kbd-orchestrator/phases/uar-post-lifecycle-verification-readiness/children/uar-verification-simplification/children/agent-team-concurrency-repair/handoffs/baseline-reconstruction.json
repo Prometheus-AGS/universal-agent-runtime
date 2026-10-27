@@ -1,0 +1,20 @@
+[
+  {
+    "path": "src/uar/runtime/cost_budget.rs",
+    "archived_sha256": "45248cab0de43b8b449f9e6a0401a1a693534921329dcfc5c7025526541bbc39",
+    "reconstructed_sha256": "45248cab0de43b8b449f9e6a0401a1a693534921329dcfc5c7025526541bbc39",
+    "matches_archived_source": true
+  },
+  {
+    "path": "src/uar/runtime/team_execution/execution.rs",
+    "archived_sha256": "9d6e6cff98a151a3b3f5bb0b7dab8f9608424d11579895645c4a151f734a7549",
+    "reconstructed_sha256": "9d6e6cff98a151a3b3f5bb0b7dab8f9608424d11579895645c4a151f734a7549",
+    "matches_archived_source": true
+  },
+  {
+    "path": "src/uar/runtime/manager.rs",
+    "archived_sha256": "1c1604260db32cbe42eab56f2c1767837a6c682a86c0e79a1314ff5cc2c09d6a",
+    "reconstructed_sha256": "1c1604260db32cbe42eab56f2c1767837a6c682a86c0e79a1314ff5cc2c09d6a",
+    "matches_archived_source": true
+  }
+]

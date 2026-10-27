@@ -1,0 +1,9 @@
+{
+  "approved_at_recorded": "2026-10-26T12:14:34.995481+00:00",
+  "operator_reply": "Approve packet 002; run the single team verification",
+  "packet": "verification-packet-002.md",
+  "packet_sha256": "6f7f2f222902accf4ee1ec1ffaac62e2c657c7c13391c5eb357ff65e92551a0a",
+  "source_manifest_sha256": "45371cdc1495244d02eff575a37825b351188d1b70c9e368ab555a2156ae9b1a",
+  "scope": "Serial source reviews, frozen binding, cached Mac build, owned restart, single TEAM-01; first failure stop; no repair/retry",
+  "prior_consumption_preserved": true
+}

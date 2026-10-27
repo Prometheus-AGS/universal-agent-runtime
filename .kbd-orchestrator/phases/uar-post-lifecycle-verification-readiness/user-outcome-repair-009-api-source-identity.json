@@ -1,0 +1,55 @@
+{
+  "kind": "source-only implementation byte receipt; not verification",
+  "files": [
+    {
+      "path": "src/uar/api/mod.rs",
+      "beforeSha256": "85158cd5d890ae95e75ee7cf6593be1d772e0f77f666335acf4bfb70d2eb64e5",
+      "afterSha256": "d6f8b927198b634ae2a64bb57fa7ca3010a6ba7ed8f6725d43eda13b87974178"
+    },
+    {
+      "path": "src/uar/api/capabilities.rs",
+      "beforeSha256": "f9bfac1faccc3d40355ce02fcd724aab47840ffa8d5e0078aab5755b23914249",
+      "afterSha256": "166a3f24fb73420ec591f941cd548a4f645283d5851bd78c289bbd3cfe501e3e"
+    },
+    {
+      "path": "src/uar/domain/mod.rs",
+      "beforeSha256": "a697d61473f2e46f41c321092173691703b448d4581c78c399fbcd80b356ba22",
+      "afterSha256": "f0e379a6edb40459ddae5b76bf33c95e600507c25d1bcf6ee9aa2729de57e082"
+    },
+    {
+      "path": "src/uar/domain/execution_capabilities.rs",
+      "beforeSha256": null,
+      "afterSha256": "93b5c0153512487475beb712bc75ae24afde59f4546c46afb9834f3f0de54c42"
+    },
+    {
+      "path": "src/uar/compiler/collaboration/validation/projection.rs",
+      "beforeSha256": "0a36bb69fc5d66a3ec6a0706395ccce5259ee05f22660566bb7062fd84c9a91c",
+      "afterSha256": "e028ede4efc5e244d6c96c20073dd41353b62a47be041cc6eb49f2a2eb23eed7"
+    },
+    {
+      "path": "src/uar/compiler/collaboration/workflow_execution/mod.rs",
+      "beforeSha256": "73675d501e097930523b1c31da0b8c5b5c39815794b7f669eee8d3c922fd5610",
+      "afterSha256": "74779d3cecef6210cf7d9203ab6ceea97c45eade4ea79d6ea73c203c2e7e40aa"
+    },
+    {
+      "path": "src/uar/compiler/collaboration/workflow_execution/progression.rs",
+      "beforeSha256": "184f4edc5da74f727d4b5a42c97ccc3e604f33efb1d4e5e20c4b20c1d753f25c",
+      "afterSha256": "e7a7e2c2e09ba38cd9cd4a69a2afaad6e699a74fc8febe1346d27b3ade9b4865"
+    },
+    {
+      "path": "src/uar/compiler/collaboration/workflow_execution/start.rs",
+      "beforeSha256": "ef731f9839f28de63177a097e9e539811658c999ba53ce224131b6d87a99fb2f",
+      "afterSha256": "2e9d2514b961df8bef0e396dc3f07bac0e8643b5bc0e5ae48b5ac43100b64cdf"
+    },
+    {
+      "path": "src/uar/compiler/collaboration/team_execution/resolution.rs",
+      "beforeSha256": "2758c0bd8b3954f564b1aae8fc30be576c75e0367f40d9df0ff5702eef4cb431",
+      "afterSha256": "6dd8f6364ad53b27a5eb3d7f696b7727230f19256ab307eb81fad45e25a4759f"
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "beforeSha256": "16cd4513477e3271b5138a84a6b569bbaa3886f1fcf4ab884b0fe9bf344e728c",
+      "afterSha256": "e2ceb6f4966c6ecb576a2b4b78babe4a26db66c34b3e5e13feb94f8f131a4ee5"
+    }
+  ]
+}

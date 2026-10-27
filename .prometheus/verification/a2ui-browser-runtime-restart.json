@@ -1,0 +1,12 @@
+{
+  "previous_pid": 38530,
+  "pid": 67744,
+  "binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-team-concurrency-repair/debug/universal-agent-runtime",
+  "config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+  "static_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-ui",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-a2ui-browser-001.log",
+  "store_preserved": true,
+  "global_static_unchanged": true,
+  "existing_environment_retained_without_logging_values": true
+}

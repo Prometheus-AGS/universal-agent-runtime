@@ -1,0 +1,8 @@
+{
+  "command": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs",
+  "exit_code": 1,
+  "started_at": "2026-10-26T13:10:03.694167+00:00",
+  "ended_at": "2026-10-26T13:10:26.483565+00:00",
+  "elapsed_seconds": 22.789783837040886,
+  "method": "Single operator-directed manual scenario"
+}

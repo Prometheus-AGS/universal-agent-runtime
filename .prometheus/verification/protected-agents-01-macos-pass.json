@@ -1,0 +1,47 @@
+{
+  "scenario": "PROTECTED-AGENTS-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:49:12.862653+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/protected-agents.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 0.80s",
+  "agents": [
+    "default-agent",
+    "orchestrator-agent"
+  ],
+  "deletion_results": [
+    {
+      "method": "DELETE",
+      "path": "/api/agents/default-agent",
+      "status": 403,
+      "body": "Agent 'default-agent' is built in and cannot be deleted"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/orchestrator-agent",
+      "status": 403,
+      "body": "Agent 'orchestrator-agent' is built in and cannot be deleted"
+    }
+  ],
+  "definitions_unchanged": true,
+  "evidence": ".prometheus/verification/protected-agents/aa61314c-2794-4e2d-bd79-5dc3901c70cb.json",
+  "cucumber_report": ".prometheus/verification/protected-agents-001-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "provider_calls": 0,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/features/protected-agents.feature": "300ea92bb88ed51293719f4587eeda39b95b94ed698a9f3edab5b561588c7419",
+    "scripts/behaviors/steps/protected-agents.steps.mjs": "f5c395256e13d29b6612f521b8697cf6777b629622e632273924e617892c2eb1",
+    "scripts/behaviors/protected-agents.cucumber.mjs": "13816bacc2fecbdbfa2bf0e03afdc12d0ed670360d0ad39927db78c043f599b7"
+  },
+  "scope": "Built-in deletion protection through the agent REST API on Mac",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

@@ -1,0 +1,24 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "unreported-harness-native",
+  "producer_model": "unknown",
+  "isolation_mode": "harness-native",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "verification.md",
+      "claim": "SETTLE-01 isolation wording excluded the fresh attempt required for its terminal replay control.",
+      "evidence": "Replayed fresh TEAM-01 result but isolation said only named prior attempt.",
+      "suggested_fix": "Restrict mutation set to original and explicitly frozen owned terminal fixtures; no foreign/unrelated changes."
+    }
+  ],
+  "checked_classes": [
+    "All sibling artifacts",
+    "Known terminal vs uncertainty",
+    "Settlement path vs cached command",
+    "Genuine unknown-usage replay",
+    "Draft adoption and closed gate"
+  ]
+}

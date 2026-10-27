@@ -1,0 +1,7 @@
+fix(tools): complete caller tool execution across five interfaces [skip ci]
+
+Repair mounted protocol paths, governed graph-child continuation, durable replay,
+current authority, cleanup observation and honest budget terminal projection.
+Retain frozen1.2.0 and published1.2.1 artifacts; release repairs as1.2.2.
+
+Functional evidence and remaining platform/backend limits are in the release contract.

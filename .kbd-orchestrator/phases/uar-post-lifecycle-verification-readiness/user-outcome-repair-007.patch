@@ -1,0 +1,11 @@
+--- a/sdks/typescript/examples/user-outcome-acceptance.ts
++++ b/sdks/typescript/examples/user-outcome-acceptance.ts
+@@ -28,7 +28,7 @@
+ 
+ async function acceptance(input: Input): Promise<Record<string, unknown>> {
+   const authorization = process.env[input.authorization_env];
+-  requireValue(authorization?.startsWith("Bearer ") && authorization.length > 7, "bearer credential required");
++  requireValue(typeof authorization === "string" && authorization.startsWith("Bearer ") && authorization.length > 7, "bearer credential required");
+   const client = new UarClient(input.base_url, {
+     apiKey: authorization.slice(7),
+     fetch: (url, init) => globalThis.fetch(url, { ...init,

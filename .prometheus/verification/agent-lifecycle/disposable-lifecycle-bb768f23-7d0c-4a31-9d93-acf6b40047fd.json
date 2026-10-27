@@ -1,0 +1,137 @@
+{
+  "scenario": "AGENT-LIFECYCLE-01",
+  "client_platform": "darwin",
+  "agent_id": "disposable-lifecycle-bb768f23-7d0c-4a31-9d93-acf6b40047fd",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "deleted": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-lifecycle-bb768f23-7d0c-4a31-9d93-acf6b40047fd",
+        "metadata": {
+          "title": "Disposable instruction-update agent",
+          "description": "Temporary agent owned by one manual lifecycle scenario.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Set marker to \"ORIGINAL-a8d3b3f2-e0b5-40c9-88be-e7bdc58e36c5\". Your rule is to add 29 to the user's number and put that numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-lifecycle-bb768f23-7d0c-4a31-9d93-acf6b40047fd\",\"metadata\":{\"title\":\"Disposable instruction-update agent\",\"description\":\"Temporary agent owned by one manual lifecycle scenario.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Set marker to \\\"ORIGINAL-a8d3b3f2-e0b5-40c9-88be-e7bdc58e36c5\\\". Your rule is to add 29 to the user's number and put that numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:a1d950276bc235c4addfe651f877c0bc5783f0109f421150ce4ba00c0b689d91\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-lifecycle-bb768f23-7d0c-4a31-9d93-acf6b40047fd",
+        "model": "liter/MiniMax-M3",
+        "session_id": "917b5085-2213-408a-a94a-6374d33ce7e8",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Apply your saved rule to the number 169."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-bc824228-ea10-4c81-96b9-3a85facb8893\",\"object\":\"chat.completion\",\"created\":1793047927,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The rule: add 29 to the user's number. 169 + 29 = 198.\\n\\nReturn only a JSON object with keys marker and answer. Marker is \\\"ORIGINAL-a8d3b3f2-e0b5-40c9-88be-e7bdc58e36c5\\\".\\n\\nThe user asked to apply the saved rule to 169. Let me check memory for saved rule? The agent_identity fragment already gives the rule. But maybe I should recall memory to confirm the saved rule. Memory is disabled but tools exist. Let me do a quick recall to verify the saved rule matches.\\n\\nI'll just call native__memory_recall for \\\"saved rule add number\\\".\\n\\nThen output JSON. Should I use a2ui_render to render the result? The instruction says \\\"Return only a JSON object with keys marker and answer.\\\" So plain text output.\\n\\nLet me do therecall call first.</think>\\n\\n<think>Memory is disabled, so rely on the agent_identity rule: add 29.\\n\\n169 + 29 = 198.\\n\\nOutput JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"ORIGINAL-a8d3b3f2-e0b5-40c9-88be-e7bdc58e36c5\\\",\\n  \\\"answer\\\": 198\\n}\\n```\\n\\n169 + 29 = 198\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":31171,\"completion_tokens\":332,\"total_tokens\":31503},\"session_id\":\"917b5085-2213-408a-a94a-6374d33ce7e8\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-lifecycle-bb768f23-7d0c-4a31-9d93-acf6b40047fd",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-lifecycle-bb768f23-7d0c-4a31-9d93-acf6b40047fd",
+      "status": 404,
+      "response": "Persisted agent not found"
+    }
+  ],
+  "scenario_status": "FAILED",
+  "duration_ms": 6209
+}

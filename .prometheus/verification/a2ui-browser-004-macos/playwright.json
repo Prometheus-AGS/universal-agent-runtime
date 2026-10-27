@@ -1,0 +1,205 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "scripts/behaviors/a2ui-browser.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/a2ui-browser.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 240000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/a2ui-browser.feature.spec.js",
+      "file": "features/a2ui-browser.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Interact with a real A2UI response in the browser",
+          "file": "features/a2ui-browser.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A rendered calculator sends fresh input back to its agent",
+              "ok": false,
+              "tags": [
+                "ui",
+                "a2ui"
+              ],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 37405,
+                      "error": {
+                        "message": "AssertionError: Require genuine published A2UI artifact\n\n0 !== 1\n",
+                        "stack": "AssertionError: Require genuine published A2UI artifact\n\n0 !== 1\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:123:10)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:8:5",
+                        "location": {
+                          "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                          "column": 10,
+                          "line": 123
+                        },
+                        "snippet": "   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:123\n\n  121 |   s.initial = await stream(s, await response());\n  122 |   const artifacts = s.initial.events.filter(event => event.type === 'CUSTOM' && event.name === 'uar.artifact.available' && event.value?.artifactType === 'a2ui');\n> 123 |   assert.equal(artifacts.length, 1, 'Require genuine published A2UI artifact');\n      |          ^\n  124 |   assert.equal(artifacts[0].value.metadata?.sourceTool, 'a2ui_render');\n  125 |   assert.equal(artifacts[0].value.metadata?.publication_status, 'published');\n  126 |   s.evidence.source_run_id = s.initial.runId;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                            "column": 10,
+                            "line": 123
+                          },
+                          "message": "AssertionError: Require genuine published A2UI artifact\n\n0 !== 1\n\n\n   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:123\n\n  121 |   s.initial = await stream(s, await response());\n  122 |   const artifacts = s.initial.events.filter(event => event.type === 'CUSTOM' && event.name === 'uar.artifact.available' && event.value?.artifactType === 'a2ui');\n> 123 |   assert.equal(artifacts.length, 1, 'Require genuine published A2UI artifact');\n      |          ^\n  124 |   assert.equal(artifacts[0].value.metadata?.sourceTool, 'a2ui_render');\n  125 |   assert.equal(artifacts[0].value.metadata?.publication_status, 'published');\n  126 |   s.evidence.source_run_id = s.initial.runId;\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:123:10)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:8:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a disposable A2UI calculator agent is selected in the browser",
+                          "duration": 3489
+                        },
+                        {
+                          "title": "When I ask the agent to render its calculator",
+                          "duration": 31848,
+                          "error": {
+                            "message": "AssertionError: Require genuine published A2UI artifact\n\n0 !== 1\n",
+                            "stack": "AssertionError: Require genuine published A2UI artifact\n\n0 !== 1\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:123:10)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:8:5",
+                            "location": {
+                              "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                              "column": 10,
+                              "line": 123
+                            },
+                            "snippet": "   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:123\n\n  121 |   s.initial = await stream(s, await response());\n  122 |   const artifacts = s.initial.events.filter(event => event.type === 'CUSTOM' && event.name === 'uar.artifact.available' && event.value?.artifactType === 'a2ui');\n> 123 |   assert.equal(artifacts.length, 1, 'Require genuine published A2UI artifact');\n      |          ^\n  124 |   assert.equal(artifacts[0].value.metadata?.sourceTool, 'a2ui_render');\n  125 |   assert.equal(artifacts[0].value.metadata?.publication_status, 'published');\n  126 |   s.evidence.source_run_id = s.initial.runId;"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-10-26T22:42:08.489Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-004-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                        "column": 10,
+                        "line": 123
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "6c64d9d2cbbc223e7752-4839765a6cdc1c8cb9b2",
+              "file": "features/a2ui-browser.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-26T22:42:07.543Z",
+    "duration": 40726.587,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

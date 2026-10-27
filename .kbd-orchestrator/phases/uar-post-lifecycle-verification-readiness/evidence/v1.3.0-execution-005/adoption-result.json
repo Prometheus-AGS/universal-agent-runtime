@@ -1,0 +1,7 @@
+{
+  "chunk_id": "62f29d",
+  "wall_time_seconds": 5.154359335,
+  "exit_code": 0,
+  "original_token_count": 101,
+  "output": "ADOPTED path=.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.repair-004.proposed.json sha256=066971af1115e9408c77070f7b8ffcf7bc0dde1a5cdc5937d41e007adb1a1640 planRevision=113 decision=contract-adoption-uar-post-lifecycle-verification-readiness-066971af bound=revision-7 supersedes=contract-adoption-uar-post-lifecycle-verification-readiness-f99c0e44\n"
+}

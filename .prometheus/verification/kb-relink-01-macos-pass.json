@@ -1,0 +1,85 @@
+{
+  "scenario": "KB-RELINK-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:13:44.785282-05:00",
+  "attempt": 1,
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/kb-relink.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 4 steps (4 passed); 0m 7.925s",
+  "gherkin_steps": 3,
+  "evidence_hooks": 1,
+  "evidence": ".prometheus/verification/kb-relink/e9c77249-8969-4625-b496-369a11b30978.json",
+  "cucumber_report": ".prometheus/verification/kb-relink-001-macos/cucumber.json",
+  "agent_id": "disposable-kb-relink-e9c77249-8969-4625-b496-369a11b30978",
+  "knowledge_base_id": "726b0bec-5e1c-4b03-b579-8195a955d632",
+  "document_id": "5636796b-eefb-4ebd-b401-bff0bc5fcfa8",
+  "before_relink_selection": {
+    "ids": [],
+    "mode": "selected"
+  },
+  "after_relink_selection": {
+    "ids": [
+      "726b0bec-5e1c-4b03-b579-8195a955d632"
+    ],
+    "mode": "selected"
+  },
+  "original_agent_memory_restored": true,
+  "prompt_route_runtime_unchanged": true,
+  "answer": {
+    "agent_marker": "AGENT-eae581fb-829e-4bbc-b271-adf16c821972",
+    "sum": 411,
+    "knowledge_seal": "KNOWLEDGE-9977f920-4b13-481e-90d9-b03dec469af5",
+    "citation": "[1]"
+  },
+  "matched_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "b9a7fb8e-9e0c-fd6e-d738-558911355221",
+      "document_id": "5636796b-eefb-4ebd-b401-bff0bc5fcfa8",
+      "knowledge_base_id": "726b0bec-5e1c-4b03-b579-8195a955d632",
+      "document_name": "laboratory-profile.txt",
+      "relevance_score": 0.9060373306274414,
+      "snippet": "Laboratory profile lab-profile-e9c77249-8969-4625-b496-369a11b30978 has the private retrieval seal KNOWLEDGE-9977f920-4b13-481e-90d9-b03dec469af5. This exact seal is available only in this laboratory knowledge document.\n"
+    }
+  ],
+  "all_citations_from_original_kb": true,
+  "session_id": "aeff8f79-b72a-4920-8d70-74539481bb3d",
+  "run_id": "8d804e22-d1b4-4af7-b1b1-f31c1f009859",
+  "kb_and_document_unchanged": true,
+  "document_reuploaded_or_regenerated": false,
+  "agent_deleted_during_cleanup": true,
+  "kb_deleted_during_cleanup": true,
+  "embedding_space": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "authentication_supplied_by_test": false,
+  "history_replayed": false,
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "global_configuration_changes": false,
+  "restart": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "runtime_pid": 21601,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/kb-relink.cucumber.mjs": "860b205c345bed2c8c3e87780d7997392205bc45b1384d0e9ae92826c161aa1d",
+    "scripts/behaviors/features/kb-relink.feature": "ee6368988289e0b023757a2beea93dbb200762fd00816f463f9a6ba9d1f9d124",
+    "scripts/behaviors/steps/kb-relink.steps.mjs": "3d5076cd8f592e9d2d982c3660f1691902063cf43bfb5b149c655aab48b1c7e8"
+  },
+  "source_review": "Independent code and JavaScript artifact-only reviewers found no blockers; no separate executable checks.",
+  "scope": "One explicit relink to an existing indexedKB on Mac and fresh grounded answer. Other policy/platform/backend combinations not exercised.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

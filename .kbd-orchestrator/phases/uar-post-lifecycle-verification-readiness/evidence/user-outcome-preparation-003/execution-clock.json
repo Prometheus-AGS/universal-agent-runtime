@@ -1,0 +1,10 @@
+{
+  "started": "2026-10-25T11:25:42.724718+00:00",
+  "monotonic_started": 245879.629641518,
+  "remaining_carried_P0_seconds": 12813,
+  "native_stage_ceiling_seconds": 6607,
+  "prior_preparation_receipts": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/stop.json"
+  ]
+}

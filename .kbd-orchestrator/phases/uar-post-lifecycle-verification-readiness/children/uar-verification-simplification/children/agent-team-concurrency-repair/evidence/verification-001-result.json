@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-10-26T11:15:45.166470+00:00",
+  "status": "BLOCKED",
+  "reason": "Rust reviewer role mandates Cargo checks before reviewing, conflicting with the approved source-only review step. No Rust code verdict issued.",
+  "completed": [
+    {
+      "step": "code source review",
+      "result": "PASS",
+      "receipt": "review/execute/code-review.md",
+      "note": "Nonblocking wording issue: startup can attempt disabled loopback embedding requests."
+    }
+  ],
+  "blocked": {
+    "step": "Rust source review",
+    "receipt": "review/execute/rust-review.md",
+    "product_defect_found": false
+  },
+  "not_run": [
+    "JavaScript source review",
+    "source-manifest verification",
+    "Cargo build",
+    "owned UAR activation",
+    "TEAM-01 BDD"
+  ],
+  "effects": "No source edits, product verification commands, service/provider calls or restart. Existing UAR unchanged.",
+  "authority": "Stop at first failure; no automatic retry or repair. Existing limits/consumption retained."
+}

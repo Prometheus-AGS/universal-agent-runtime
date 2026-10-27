@@ -1,0 +1,18 @@
+{
+  "classification": "UNSIGNED_SCOPE_TEMPLATE_AUTHORING_NOT_VERIFICATION",
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.repair-008.proposed.json",
+    "--reason",
+    "Authorize bounded repair008 for stale independent SDK Parking Lot core lock version with repair cap7to8, all8consumed/no ninth. Retain original epoch, every prior consumption, other limits and USD10 per provider. One P0.005 producer: explicitly named cached native current-source rebind after prior PASS, failed locked Rust SDK build and3unrun stages; retain frontend/TS/install passes. Serial first failure stop; discuss any next repair versus backlog before action; no automatic retry/product/service/provider/publication.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n"
+}

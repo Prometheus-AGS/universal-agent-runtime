@@ -1,0 +1,15 @@
+{
+  "command": [
+    "ssh-keygen",
+    "-Y",
+    "sign",
+    "-f",
+    "/Users/gqadonis/.ssh/id_ed25519.pub",
+    "-n",
+    "prometheus-kbd-scope-amendment",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.repair-007.amendment.json"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "Signing file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.repair-007.amendment.json\nWrite signature to .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.repair-007.amendment.json.sig\n"
+}

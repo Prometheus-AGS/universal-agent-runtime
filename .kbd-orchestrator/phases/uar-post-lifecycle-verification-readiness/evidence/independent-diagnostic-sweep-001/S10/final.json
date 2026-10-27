@@ -1,0 +1,14 @@
+{
+  "item": "S10",
+  "status": "BLOCKED_TIMEOUT",
+  "attempts": 1,
+  "correction_used": false,
+  "cause": "Cold local image build exceeded1800seconds during backend compilation; no compiler error observed. No legitimate source correction or time extension within scope.",
+  "owned_client_exit": 130,
+  "build_step_cancellation_acknowledged": true,
+  "cancellation_evidence": "stderr.log: #24 CANCELED; ERROR failed to solve Canceled context canceled",
+  "image_produced": false,
+  "daemon_shutdown_required": false,
+  "shared_daemon_not_modified": true,
+  "source_identity": "sha256:c6963d648f9961315d62c8a975da6501f64c2dd5f60f69b21aac3612a701c500"
+}

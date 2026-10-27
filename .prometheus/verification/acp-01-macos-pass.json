@@ -1,0 +1,35 @@
+{
+  "scenario": "ACP-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T21:53:39.400247+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/acp.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 4 steps (4 passed); 0m 3.827s",
+  "agent_id": "math-specialist-db64c2a8",
+  "configured_model": "liter/MiniMax-M3",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 733
+  },
+  "run_id": "dafea557-5401-4784-894f-573d8e91da15",
+  "session_id": "4ea72edd-045d-49ca-8f1b-f0bb7b2e1403",
+  "evidence": ".prometheus/verification/acp/1f97faad-8008-4168-883c-987651e7a0cb.json",
+  "cucumber_report": ".prometheus/verification/acp-001-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/acp.cucumber.mjs": "7db4ae1b03dea32dc2b9eec08cd211744170a0cd02c7f4fcae3f4f798dead428",
+    "scripts/behaviors/features/acp-math.feature": "45c9599d065123b81da58a40d3b22b810156b39b2745f7996d72b6e1f96c9a51",
+    "scripts/behaviors/steps/acp-math.steps.mjs": "deef98588eea35c913bc4b0cb8b1d42ff7b61a700420801dc97caf71caae6730"
+  },
+  "scope": "One ACP sessions/create and runs/create streaming prompt to the saved math agent, with runs/get confirming Done; not continuation, cancellation, tools, other platforms or full protocol conformance",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

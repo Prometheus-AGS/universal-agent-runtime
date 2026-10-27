@@ -1,0 +1,21 @@
+[
+  {
+    "command": [
+      "node_modules/.bin/bddgen",
+      "--config",
+      "scripts/behaviors/a2ui-browser.config.mjs"
+    ],
+    "exit_code": 0,
+    "duration_seconds": 1.45092160301283
+  },
+  {
+    "command": [
+      "node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "scripts/behaviors/a2ui-browser.config.mjs"
+    ],
+    "exit_code": 1,
+    "duration_seconds": 10.55804714502301
+  }
+]

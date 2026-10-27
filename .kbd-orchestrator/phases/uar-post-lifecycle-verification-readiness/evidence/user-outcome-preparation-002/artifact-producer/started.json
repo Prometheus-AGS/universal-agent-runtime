@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "/Users/gqadonis/miniconda3/bin/python3",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/artifact-preparation.config.json"
+  ],
+  "pid": 41958,
+  "started": "2026-10-25T10:39:36.553736+00:00",
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR",
+    "UAR_PREP_BASE_HOME",
+    "UAR_PREP_BASE_LANG",
+    "UAR_PREP_BASE_LC_ALL",
+    "UAR_PREP_BASE_PATH",
+    "UAR_PREP_BASE_TMPDIR",
+    "UAR_PREP_BROWSER_ROOT",
+    "UAR_PREP_CARGO",
+    "UAR_PREP_GRPC_TARGET",
+    "UAR_PREP_NATIVE_TARGET",
+    "UAR_PREP_NONINTERACTIVE",
+    "UAR_PREP_PYTHON_SITE",
+    "UAR_PREP_RUST_SDK_TARGET"
+  ],
+  "product_gate": "CLOSED"
+}

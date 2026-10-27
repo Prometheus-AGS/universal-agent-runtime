@@ -1,0 +1,1 @@
+{"argv": ["cargo", "build", "--locked", "--no-default-features", "--features", "embedded-mobile", "--lib", "--target", "aarch64-apple-ios"], "started_unix": 1792945885.555845, "timeout_seconds": 1800, "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018"}

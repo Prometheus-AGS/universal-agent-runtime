@@ -1,0 +1,190 @@
+{
+  "mode": "artifact",
+  "target": "analyze",
+  "phase": "agent-team-concurrency-repair",
+  "producer_model": "unknown",
+  "artifact": {
+    "analysis.md": "# Analysis \u2014 agent-team-concurrency-repair\n\n2026-10-26. Stack specified: Rust/Tokio, pinned patched SurrealDB3.3.0, existing UAR team execution and portable Node/Cucumber BDD. Canonical child ID: uar-verification-simplification::agent-team-concurrency-repair.\n\n## Decision\n\n**READY to Spec for a bounded repair contract; not ready to execute or verify.** Adapt current skill reconciliation and terminal settlement; retain the executor. No new dependency, database, task framework or model is justified. The precise served-build error categories remain open and must not be written as established root causes.\n\nThe uncomfortable finding is a startup/admission invariant mismatch in the inspected source: filesystem skills can be published in memory without the durable rows later demanded by admission. A second gap allows a worker to finish locally after terminal persistence fails, leaving the durable attempt apparently running. These are more specific than \u201cconcurrency is broken.\u201d\n\n## Evidence and causal alternatives\n\n### R1: categorized, private failure evidence\n\nBoth saved member runs emitted skill_selection_unavailable. Current manager.rs:5149\u20135177 masks the capture cause. registry.rs:130\u2013153 distinguishes StoreUnavailable (including query/decoding failure) from StorageMissing (registered ID absent in storage). The captured error does not tell us which occurred.\n\nSafe owner/operator evidence should distinguish these categories without publishing skill bodies, secrets or another owner's metadata. Existing run/attempt/root IDs, effective source identity, provider IDs and counts are sufficient diagnostic boundaries. This is a contract requirement for the next stage, not permission for a live probe now.\n\n### R2: filesystem startup versus durable selection \u2014 leading explanation\n\nThe retained PID64463 log records a successful database connection at08:49:12.719770Z, 210 filesystem skills, zero Database Skills and a210-entry registry at08:49:15.442677\u2013.444626Z. No persistence-write failure is recorded. Successful empty startup reads weaken a startup decoding-failure hypothesis, but cannot rule out a later transient failure.\n\nSource chain:\n- src/server.rs:1749\u20131771 registers filesystem-skills-{index} plus db-skills.\n- SkillService::initialize, service.rs:302\u2013332, calls register_all_loaded, registry.rs:274\u2013278; this publishes entries without writing them to persistence.\n- reconcile_config_skills searches fs-skills at service.rs:339\u2013345; reconcile_standard_agent_skills searches agent-skills at432\u2013440. The inspected server path registers neither name.\n- matching_snapshot always calls reconcile_selection before matching. Any registered ID absent from durable rows causes StorageMissing, even if this team selects no skills.\n\nThis is a concrete source mismatch and a strong explanation of the boot counts plus later error. It remains conditional for the retained artifact because the inspected checkout has not been proved identical to built source28137dc\u2026. Falsifiers include a served-source path that persists those providers elsewhere, all registered IDs present at failure time, or a retained typed StoreUnavailable cause.\n\nAdapt the existing reconciliation mechanisms (cand-001), preserving API-created override precedence, saved scoped enablement, explicit roots and startup readiness. Do not delete skills, replace missing records with fabricated defaults, bypass all reconciliation, or treat every discovered filesystem body as permission to overwrite durable configuration.\n\n### R3: catalog result handling and terminal settlement\n\nThe actual recorded message is \u201cfailed to read collaboration catalog CAS result.\u201d In storage.rs:135\u2013148, UPDATE RETURN AFTER is followed by response.take(0); an error at that boundary is not proof of a generation mismatch, rollback or successful commit.\n\nservice.rs:419\u2013429 converts storage error to Storage(error.to_string()). Runtime execution.rs:243\u2013249 logs failed terminal settlement and returns. controller.rs:313\u2013329 then marks the local worker finished; normal drain dispatches queued work, not that durable running attempt. The saved calculation remains running/reserved-unknown; the writer separately failed/settled. Their current state is unqueried.\n\nReuse cand-002:\n- Preserve typed statement errors separately from result-decoding/transport errors. Pinned SDK query.rs:704\u2013753 supports check/take_errors; these APIs do not themselves determine a committed outcome.\n- UAR ingestion_records/surreal.rs:50\u201377 demonstrates bounded retry only for typed rolled-back conflicts. AG-UI CAS handling in providers/agui_runs/surreal.rs:38\u201366 rereads the exact predicate and keeps inconclusive errors. These are references, not authorization to copy retry policy wholesale.\n- Reconcile the original terminal outcome against the same owner/workspace/attempt/run/fence and durable fields. An exact already-committed outcome should converge without a second model/tool dispatch or another usage-revision increment.\n- If still unconfirmed, retain visible uncertainty and all unknown reservations. Any bounded settlement-only retry must require a known eligible outcome and stable identity. Changed fences, conflicting output, unknown commits and exhausted bounds must not become success.\n\nUpstream issues [7472](https://github.com/surrealdb/surrealdb/issues/7472) and [7428](https://github.com/surrealdb/surrealdb/issues/7428) explain why structured query/commit errors matter. They do not prove this captured error is a conflict, nor establish behavior of our patched build. Context7 returned main-branch examples; local3.3.0 vendored source is the API authority. No upgrade is proposed.\n\n### R4: preserve executor and prove concurrent merge\n\ncontroller.rs:207\u2013229 keys serial lanes by owner/workspace/team/**member**; different members do not share that lane. The code also bounds active capacity and spawns member workers. This permits overlap in source; it neither proves real overlap nor rules out other scheduling faults.\n\nAdopt cand-003 unchanged as the execution mechanism. Retain the existing project graph: independent calculation and outline, then writer article consuming both attributed output artifacts. Do not substitute two queued tasks or client futures for simultaneous live runs. Keep real model, exact member/session correlation, successful terminal results and selected artifact IDs. Sequential snapshots can miss a short overlap; address only if that failure is observed after admission works. Full ordinary-agent KB parity, autonomous project decomposition, backend parity, cancellation and other platforms remain outside this specific acceptance claim.\n\n## Candidate and readiness comparison\n\n| Candidate | Verdict | Why not a new library? | Readiness effect |\n|---|---|---|---|\n| cand-001 existing skill registration/reconciliation | Adapt | The problem is UAR's provider identity and persistence invariant | R1/R2 require application changes; runtime READY cannot be claimed now |\n| cand-002 pinned Surreal response APIs plus UAR CAS/receipts | Adapt | Existing APIs expose useful errors; terminal identity and accounting policy belong to UAR | R3 needs application code and bounded reconciliation; no SDK upgrade assumed |\n| cand-003 Tokio member lanes and team artifacts | Adopt existing | No evidence supports a replacement executor or distributed task framework | R4 needs repaired-path evidence, not a new executor |\n\nThe parent fourteen obligations, consumption history and signed-contract records are not replaced by these R1\u2013R4 analysis sections. Spec/Plan must preserve or explicitly reconcile them; this document is not a replacement exit contract.\n\n## Research scope and limitations\n\nResearch began09:20:10Z; hard limit20minutes/eight queries per tier. External queries: tier1 two GitHub code searches, both authentication failures; tier2 one Context7 resolution and one documentation query; tier3 zero; tier4 one Firecrawl developer-index query required for dependency archaeology. No further broad search was justified after pinned-source/API and reuse evidence answered the library question. Tier3 maintenance metrics and alternatives are unassessed; no fresh-package adoption or latest-version claim is made. The developer-index query was version-behavior research, not a stack-comparison campaign.\n\nThe local source supplies first-party reuse candidates; evidence entries labelled local are source inspection, not a successful remote GitHub search. Provider/call/store probes, registry commands, tests, builds and code changes were not run.\n\n## Prior context and knowledge gaps\n\nThe recall's relevant parent lesson is to separate installed-artifact identity from authored-source claims and keep conditional persistence findings distinct. Its old parent-stage approval statements are historical information, not authority for this child.\n\nThe recalled knowledge-gap list concerns another UI phase: rebuilding UI; app/features/shared/platform layering; Flat2.0 spacing/focus; bundle/latency/WCAG gates;365 style and11 filename exceptions;33.68% old coverage; assistive-technology receipts; performance receipt immutability; seven changes needing QA-log equivalents. These are historical recall, not measured here and not imported into this repair. Optional learning only: /learn-goal UI scope and architecture; /learn-goal Flat2.0 conventions; /learn-goal accessible UI verification; /learn-goal coverage interpretation; /learn-goal append-only performance evidence. None is run.\n\nLocal open questions are exact served-build selection category, whether filesystem rows were absent at that instant, original CAS error classification/commit outcome, and stable reconciliation for a no-usage terminal outcome. Current source repeats a matching unknown-usage settlement with an incremented usage_revision; this is a deduplication concern for the repair contract, not permission to replay the saved attempt.\n\n## Review boundary and handoff\n\nAdversarial artifact review uses a fresh harness-native critic with artifact/goals/constraints only. REST model preflight/dispatch was not attempted under the closed runtime/provider-probe scope; this is a declared review-method deviation, not a fabricated gateway failure. Model separation is unverified; carry that warning forward. No final local certification is implied.\n\nNext: Spec the provider reconciliation invariant, private typed diagnostics and same-attempt terminal reconciliation with explicit uncertainty. Plan must bind a safe way to resolve the remaining evidence gaps\u2014one separately named read-only diagnostic or categorized evidence from the authorized repaired-path gate\u2014before claiming the root cause or accounting certainty. No standalone probe or automatic verification retry is authorized here.\n\n",
+    "library-candidates.json": {
+      "phase": "agent-team-concurrency-repair",
+      "generated_at": "2026-10-26T09:35:00Z",
+      "research_budget": {
+        "max_queries_per_tier": 8,
+        "max_minutes": 20,
+        "queries_used": {
+          "tier_1": 2,
+          "tier_2": 2,
+          "tier_3": 0,
+          "tier_4": 1
+        }
+      },
+      "gaps_addressed": [
+        "G1-filesystem-skill-admission",
+        "G2-ambiguous-catalog-settlement",
+        "G3-real-overlap-and-merge"
+      ],
+      "candidates": [
+        {
+          "id": "cand-001",
+          "name": "Existing UAR filesystem skill reconciliation and typed selection errors",
+          "kind": "pattern",
+          "registry": "none",
+          "fit_for_gap": "G1: align startup registration with durable selection requirements and expose redacted cause categories",
+          "verdict": "adapt",
+          "maintenance": {
+            "source": "current checkout; served-artifact equivalence not established"
+          },
+          "evidence": [
+            {
+              "tier": 1,
+              "source_url": "local:src/server.rs:1749-1771",
+              "claim": "Server registers filesystem-skills-* providers."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:src/uar/runtime/skills/service.rs:302-345,432-440",
+              "claim": "Initialization loads provider results without persistence; reconciliation searches fs-skills and agent-skills IDs."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:src/uar/runtime/skills/registry.rs:130-153,274-278",
+              "claim": "Loaded entries remain memory-only; matching snapshot refuses registered IDs absent from durable skills."
+            }
+          ],
+          "risks": [
+            "Retained boot counts strongly support but do not prove the exact later StorageMissing branch.",
+            "Persisting skill bodies can overwrite API-owned/configured metadata unless source precedence and scoped selection are retained.",
+            "Do not bypass reconciliation globally or silently disable skills."
+          ],
+          "decision_rationale": "Adapt current startup/selection mechanisms rather than add a discovery library. Readiness R1/R2 needs source alignment and precise diagnostics; runtime code is required, exact served-build root cause remains conditional."
+        },
+        {
+          "id": "cand-002",
+          "name": "Pinned SurrealDB response errors plus UAR fenced CAS and same-attempt settlement reconciliation",
+          "kind": "pattern",
+          "repo_url": "https://github.com/surrealdb/surrealdb",
+          "registry": "crates",
+          "fit_for_gap": "G2: classify query/result failures and reconcile an original terminal attempt without model/tool replay",
+          "verdict": "adapt",
+          "maintenance": {
+            "pinned_version": "3.3.0 with repository lifecycle patches",
+            "registry_health": "Not queried; no dependency change proposed"
+          },
+          "evidence": [
+            {
+              "tier": 2,
+              "source_url": "https://github.com/surrealdb/surrealdb/blob/main/src/method/query.rs",
+              "claim": "Context7 exposes check/take_errors; local pinned query.rs independently confirms these APIs. Main-branch examples are not a version-equivalence claim."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/query.rs:704-753",
+              "claim": "Pinned response supports statement error inspection before result extraction."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:src/uar/persistence/providers/ingestion_records/surreal.rs:50-77",
+              "claim": "Existing UAR retries only typed rolled-back transaction conflicts, bounded; transport/unknown outcomes are returned."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:src/uar/persistence/providers/agui_runs/surreal.rs:38-66",
+              "claim": "Existing CAS pattern rereads exact predicate and preserves inconclusive errors."
+            },
+            {
+              "tier": 4,
+              "source_url": "https://github.com/surrealdb/surrealdb/issues/7472",
+              "claim": "Upstream issue distinguishes statement-query error handling from commit error flattening; it does not diagnose this run."
+            },
+            {
+              "tier": 4,
+              "source_url": "https://github.com/surrealdb/surrealdb/issues/7428",
+              "claim": "Upstream issue discusses typed conflict identification; text matching is not an adequate basis for automatic replay."
+            }
+          ],
+          "risks": [
+            "Recorded take(0) error could be statement failure or decoding; it does not prove rollback or commit.",
+            "Existing boolean CAS and Storage(error.to_string()) erase useful distinctions.",
+            "A duplicate no-usage settlement can increment usage_revision; convergence needs a stable same-outcome receipt/no-op decision.",
+            "Do not reuse ingestion retry timing/cap without an explicit phase bound; do not release unknown reservations."
+          ],
+          "decision_rationale": "Reuse pinned SDK and existing UAR patterns; no upgrade or new storage service. R3 requires typed outcome distinction, fenced receipt comparison and bounded settlement-only reconciliation, hence runtime code. Diagnostic evidence must select exact failure branch."
+        },
+        {
+          "id": "cand-003",
+          "name": "Existing Tokio member lanes, bounded task execution and output-artifact dependency graph",
+          "kind": "pattern",
+          "registry": "none",
+          "fit_for_gap": "G3: preserve team concurrency design and prove actual overlapping specialists plus dependent merge",
+          "verdict": "adopt",
+          "evidence": [
+            {
+              "tier": 1,
+              "source_url": "local:src/uar/runtime/team_execution/controller.rs:207-229,313-329",
+              "claim": "Lane key includes member ID; distinct members use distinct mutex lanes and worker tasks under shared active permits."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:src/uar/compiler/collaboration/team_execution/context.rs:90-164",
+              "claim": "Selected attributed output artifacts are handed to task context."
+            },
+            {
+              "tier": 1,
+              "source_url": "local:scripts/behaviors/steps/math-writing-team.steps.mjs",
+              "claim": "Existing BDD observes live runs and requires both completed artifact IDs in final writer context."
+            }
+          ],
+          "risks": [
+            "Permitted concurrency is not observed successful overlap.",
+            "Fast completion can make sequential snapshots miss a short real overlap.",
+            "A new executor/event bus would expand scope without fixing the identified admission gap."
+          ],
+          "decision_rationale": "Retain the implemented executor, not a new framework. R4 needs no replacement runtime architecture; real-path acceptance still depends on admission/settlement fixes and exact authorization."
+        }
+      ],
+      "build_required": [
+        {
+          "need": "Align actual filesystem provider reconciliation with durable skill selection, retain ownership/source precedence and safely categorized failure evidence.",
+          "why_no_candidate": "Current application source must enforce its own provider IDs, stored-skill invariants and precedence; a new discovery package cannot supply that policy."
+        },
+        {
+          "need": "Define and implement stable same-attempt terminal settlement receipts and safe reconciliation for confirmed/ambiguous CAS results.",
+          "why_no_candidate": "Pinned SDK APIs reveal errors, but application attempt fences, effect/accounting certainty and duplicate receipts are UAR-specific."
+        },
+        {
+          "need": "Bind repaired-source artifact to the existing math/writing BDD and capture real overlap/merged output without re-running unrelated accepted behaviors.",
+          "why_no_candidate": "No library can replace the required actual product evidence; keep the portable script and improve only demonstrated evidence gaps."
+        }
+      ]
+    }
+  },
+  "goals": "# Goals \u2014 uar-post-lifecycle-verification-readiness > uar-verification-simplification > agent-team-concurrency-repair\n\n- Investigate both retained skill_selection_unavailable failures without assuming the scheduler itself is broken.\n- Fix the observed team admission and catalog settlement defects; preserve existing agents, KBs, failed receipts and unresolved accounting.\n- Use the existing math/writing BDD project as acceptance: actual overlapping specialist execution followed by a dependent article consuming both output artifacts.\n- Preserve cumulative limits and separate USD10 embedding caps; complete implementation and obtain exact verification authority before rerunning the failed gate; do not repeat unrelated accepted behaviors.\n",
+  "prior_handoffs": {
+    "stage": "assess",
+    "completedAt": "2026-10-26T09:20:10Z",
+    "outputs": [
+      "assessment.md",
+      "assessment-review.md"
+    ],
+    "nextStage": "analyze",
+    "summaryForNext": "Source-only assessment complete; skill-selection cause and CAS commit outcome unresolved; failed BDD retained, no implementation or runtime verification",
+    "skipped": false,
+    "skipReason": null
+  },
+  "constraints": "Assess/Analyze documents only. No product edits, live API/services/provider preflight/model gateway probes, checks/tests/builds or repair retries. Retain unknown accounting, all previous consumption and separate USD10 embedding caps; exact whole-phase implementation boundary and fresh operator gate remain required. No claims of served-artifact/current-source equivalence.",
+  "file_tree": [
+    "src/server.rs",
+    "src/uar/runtime/skills/service.rs",
+    "src/uar/runtime/skills/registry.rs",
+    "src/uar/compiler/collaboration/storage.rs",
+    "src/uar/compiler/collaboration/team_execution/settlement.rs",
+    "src/uar/runtime/team_execution/controller.rs",
+    "scripts/behaviors/steps/math-writing-team.steps.mjs"
+  ],
+  "truncation": {
+    "field_cap_bytes": 40000,
+    "truncated": false,
+    "artifacts_complete": true
+  },
+  "review_method_warning": "REST route not attempted under closed provider-probe scope. Fresh-context harness-native review; cross-model check unverified. This is an explicit method deviation, not a fake unavailable-gateway result."
+}

@@ -1,0 +1,43 @@
+{
+  "scenario": "SKILL-DETECTION-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T22:59:32.061584+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/skill-detection.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 5.655s",
+  "gherkin_steps": 4,
+  "cleanup_hooks": 1,
+  "attempt": 2,
+  "matching_strategy": "skill_service.keyword",
+  "activation": "implicit",
+  "selected_skill": "parcel-pricing-fa374d50-6d5b-4a34-b07c-b3a6f85bb7f1",
+  "excluded_decoy": "garden-watering-fa374d50-6d5b-4a34-b07c-b3a6f85bb7f1",
+  "run_id": "5a06968d-d51c-4940-80ab-0a25a588b105",
+  "answer": {
+    "marker": "PARCEL-ea649c62-cbb4-4655-856e-aa677a51893d",
+    "quote": 280
+  },
+  "configured_model": "liter/MiniMax-M3",
+  "evidence": ".prometheus/verification/skill-detection/fa374d50-6d5b-4a34-b07c-b3a6f85bb7f1.json",
+  "cucumber_report": ".prometheus/verification/skill-detection-002-macos/cucumber.json",
+  "prior_failure": ".prometheus/verification/skill-detection-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "disposable_resources_deleted": true,
+  "service_kept_running": true,
+  "runtime_pid": 78802,
+  "binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "production_changes": false,
+  "source_sha256": {
+    "scripts/behaviors/skill-detection.cucumber.mjs": "4d8bd7e7572c6f06edf65eda272b511f1bd1de9c7a6a125d7353bec80eec325b",
+    "scripts/behaviors/features/skill-detection.feature": "3b976386cc877e1c84eb86bdb1aa45a777380677d1aabf014ca209fef5e7c184",
+    "scripts/behaviors/steps/skill-detection.steps.mjs": "724e3b7dc98c5ca3d7be489306f3acfe07b04fc824ed6c396f00f77c16fa35e2"
+  },
+  "scope": "One implicit keyword-based selection and genuine use; semantic, LLM, hybrid, local embedding, ambiguity and repeat reliability remain unverified.",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

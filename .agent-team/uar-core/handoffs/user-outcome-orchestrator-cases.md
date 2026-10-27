@@ -1,0 +1,40 @@
+# U06/U07 concrete orchestrator acceptance authoring handoff
+
+2026-10-25. Execute, active phase `uar-post-lifecycle-verification-readiness`. Verification **CLOSED**. Ownership was only the three new files named below. Shared checkout and all other writers' edits preserved. No tests, imports, syntax checks, builds, formatter, lint, validators, services, provider calls or other verification ran. Commands were source inspection and authorized file authoring. No production files changed.
+
+## Actual authored cases
+
+`scripts/acceptance/cases_orchestrator.py` exports:
+
+- `U06.live-roster-intent` (familyU06, durable=True, default3 repetitions): creates two actual custom registered specialists for disjoint orchard-invoice and estuary-survey computations with separate private prompt markers and arithmetic increments. No child ID, marker or arithmetic rule enters user routing input. Six actual official AG-UI turns: first seeds a fresh carry fact, second requires the other child to obtain it through Full history fork, third follows an actual persisted title/private-marker/arithmetic update, fourth selects a newly added volcano-ledger specialist, fifth follows deletion of the original custom specialist, sixth follows cold restart. Actual typed selection roster hash stays stable on unchanged catalog, changes separately on update/add/delete, and survives cold restart. Useful predicates require actual selected child output with exact private marker, arithmetic answer and inherited carry. Only generated custom IDs are deleted; protected definitions are untouched.
+- `U07.official-agui-selection-replay` (familyU07, durable=True, default3 repetitions): two actual official POST turns with fresh wire run/message IDs and one conversation wire thread. Each selects a different custom specialist by natural-language intent. Requires the official CUSTOM `uar.agent.selected` payload and actual RUN_STARTED/RUN_FINISHED identity/success, selection before root answer and completion, and no RUN_ERROR/RUN_CANCELLED. Reconnects from the exact selected event's Last-Event-ID using the official GET endpoint, then retries the identical POST with that cursor. Both suffixes must equal the original retained suffix exactly. The first reconnect is after a real cold restart; the second is warm. Durable bindings, selected child thread/run, settled shared accounting call IDs, actual results and canonical history digests must remain identical after replay. Two fresh wire IDs create distinct native runs while retaining one canonical session. This case assesses wire/retained-cursor replay, not a forced mid-generation TCP disconnect and not installed UI rendering.
+
+The code reuses `core`, `cases_agents.custom_artifact/read_agent/agent_path`, `cases_prompt.configure_provider`, and `protocol_clients.sse/verify_run`. Genuine provider setup and all effects remain deferred to the separately authorized frozen packet. Missing authority/provider/observer prerequisites become BLOCKED before specialist creation.
+
+## Concrete observer and hook binding
+
+`scripts/acceptance/observers_orchestrator.py` provides the implemented action `run`. Bind backend hook `orchestrator_run` to exact frozen argv `[<frozen Python interpreter>, <absolute frozen observers_orchestrator.py>, "run"]`. It reads the existing `UAR_ACCEPTANCE_RUNTIME_CONFIG`, `UAR_ACCEPTANCE_FIXTURE_PATH` and per-invocation `UAR_ACCEPTANCE_CONTEXT`; this is a concrete program, not a placeholder external hook.
+
+Both `postgres_pgvector` and `surreal_disk` queries use the existing owned `Store` adapter. The observer reads exact owner/thread-scoped `agui_runs`, actual `durable_run_records`, ordered `durable_run_events`, exact owner/root-scoped `agent_threads`, canonical owner-partitioned `sessions`, and principal/root-scoped `accounting_calls`. It corroborates actual native runs through authenticated mounted inspection and the selected current artifact through the mounted agent endpoint. It compares the wire selection to persisted `AgentSelected` fields, joins selected_thread_id to actual child lineage/result/run, checks current registered identity/title and actual child execution snapshot revision, and evaluates the useful result against the actual persisted child output.
+
+Graph fork context evidence is explicitly the actual parent and child canonical dialogue, emitted only as hashes, lengths and fresh-user-fact presence. It is not a claim to have read a persisted GraphState data bag. No private prompt, raw history, tool payload or child output body is printed by the observer. Caller expected output is a run-owned predicate input; output evidence contains only a digest and boolean. The root stream case records its public useful answer separately.
+
+Uncomfortable limitation: local child calls inherit `ModelCallBudget::narrowed`, which keeps root usage_id/scopes; actual durable call identities therefore belong to the root accounting group. The observer labels these `shared_root_group`, retains actual model/owner/run/call/scope identities and settled usage, and never invents per-child call attribution. Independent selected child thread/run/result plus private-marker/fresh-history consumption prove child execution. Exact individual routing-versus-child call assignment remains unavailable in current production evidence.
+
+## Frozen fixture profile requirements
+
+For each supported durable backend, freeze both new programs and their imported `core.py`, `cases_agents.py`, `cases_prompt.py`, `protocol_clients.py`, `observers_runtime.py` and `observers_startup.py`, the exact Python executable and existing observer/runtime configuration. Register both cases in the lead-owned case inventory/runner and both backend hook maps. This worker did not edit shared runner/config sources.
+
+The fixture needs a configured `provider.kind="genuine"` binding with working credential reference, actual endpoint, qualified model and observable settled genuine inference. Existing backend headers must authenticate one real owner and carry any required workspace. Add fixture `orchestrator` fields:
+
+- `expected_principal_key`: exact middleware-established CredentialPrincipal.storage_key (`v1:k:...`), also session/accounting/AG-UI owner.
+- `expected_history_owner_key`: exact ActorOwner.presentation_owner_key (`v1:s:...` or tenant form), used by durable public run records.
+- `expected_subject`: exact authenticated subject/user ID used by agent-thread owner_id.
+
+These are expected identities compared against actual owned stored rows and authenticated API reads, never authority derived from arbitrary row contents. They must correspond to the packet's actual verified credentials, not anonymous operation. Runtime must permit the built-in orchestrator's spawn/wait controls and genuine model calls within inherited root budgets. Enough request/output/command/restart time must cover6U06 turns plus2U07 turns per repetition, provider setup and concrete observations; do not claim existing finite fixture limits are automatically sufficient.
+
+No independent full eligible-roster hash is fabricated: cases compare the actual host-issued revision across isolated catalog changes and stable turns, and observer corroborates the actual selected current registered definition. Policy filtering remains implemented by the real host, not reimplemented incompletely in Python. Full roster membership/hash reconstruction and UI rendering remain separate obligations if demanded by the final exit contract.
+
+## Pending integration and unverified state
+
+Lead must wire case imports/inventory/hooks, supply and freeze actual authority identities, reconcile both-backend scenario denominator and ensure the source packet includes these files. No runtime blocker was observed because no runtime was launched. Compilation/imports, executable Python syntax, actual SQL adapter compatibility, genuine intent routing, useful output, canonical history retention, replay behavior and cold restart all remain unverified under CLOSED. No completion or acceptance credit is asserted.

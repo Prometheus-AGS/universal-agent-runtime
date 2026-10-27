@@ -1,0 +1,22 @@
+[
+  {
+    "createSurface": {
+      "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json",
+      "surfaceId": "greeting-e9fb0767-4e48-4b99-88aa-168fc284eb82"
+    },
+    "version": "v0.9"
+  },
+  {
+    "updateComponents": {
+      "components": [
+        {
+          "component": "Text",
+          "id": "root",
+          "text": "Welcome, visitor ee4cdb66!"
+        }
+      ],
+      "surfaceId": "greeting-e9fb0767-4e48-4b99-88aa-168fc284eb82"
+    },
+    "version": "v0.9"
+  }
+]

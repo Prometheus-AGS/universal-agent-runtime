@@ -1,0 +1,60 @@
+{
+  "scenario": "CONVERSATION-RESTART-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T23:52:44.642458+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/conversation-restart.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 17.442s",
+  "gherkin_steps": 5,
+  "cleanup_hooks": 1,
+  "attempt": 2,
+  "configured_model": "liter/MiniMax-M3",
+  "session_id": "0be2a4a8-c415-4bf7-9769-191ad66ea22a",
+  "initial_run_id": "2f762e69-1d20-4d81-ba68-206eb649e1a4",
+  "follow_up_run_id": "70505825-cb37-4528-8bd6-9d2a0e02ce0a",
+  "answer": {
+    "reference": "CASE-a04dddea-e965-4e2c-a1a2-70d6bd22e19e",
+    "total": 959
+  },
+  "restart": {
+    "previous_pid": 47246,
+    "binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-52ccf568-510c-403b-8461-29e81e95b6d6.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 47773,
+    "new_process_ready": true
+  },
+  "evidence": ".prometheus/verification/conversation-restart/0be2a4a8-c415-4bf7-9769-191ad66ea22a.json",
+  "cucumber_report": ".prometheus/verification/conversation-restart-002-macos/cucumber.json",
+  "prior_failure": ".prometheus/verification/conversation-restart-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "previous_scenarios_rerun": false,
+  "disposable_agent_deleted": true,
+  "service_kept_running": true,
+  "production_changes": [
+    "src/uar/runtime/manager.rs: owner-scoped cold session load and successful-turn durable save before terminal"
+  ],
+  "build": ".prometheus/verification/conversation-restart-repair/build.json",
+  "source_reviews": ".prometheus/verification/conversation-restart-repair/source-review.json",
+  "source_sha256": {
+    "scripts/behaviors/conversation-restart.cucumber.mjs": "ae27a05eb2d8e4f9c7b010682ed16e1923e6a7e6448f8ef250202c0dbb374f65",
+    "scripts/behaviors/features/conversation-restart.feature": "6b107e4ba54ad520730e0e9b47adbbd5bca8428888d16bb9164a7c249fb597de",
+    "scripts/behaviors/steps/conversation-restart.steps.mjs": "07f4dd62c89b057fa06f97d666dcff869a567b25ccd3d876b93541a307127817",
+    "scripts/behaviors/support/restart-owned-uar.mjs": "c9490b4c41ff3fdaa5574a499227f2ce8734e2c1d68c7b56fc9a1ee97e7cdcba",
+    "src/uar/runtime/manager.rs": "e65ac55d3b3fd9ff956dc301eb95be9b702c3ee2e61b1e751350eb00bfde767d"
+  },
+  "scope": "Sequential graceful Mac process restart with the existing store. Not crash/reboot or concurrent same-session durability certification.",
+  "known_review_limitation": "Overlapping same-session writes can commit older whole-session snapshots after newer ones; concurrent cache creation is also not atomic. Outside the selected sequential scenario and not fixed here.",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

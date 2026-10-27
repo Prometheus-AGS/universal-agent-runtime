@@ -1,0 +1,33 @@
+{
+  "scenario": "ANTHROPIC-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T21:26:27.971247+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/anthropic.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 4 steps (4 passed); 0m 11.822s",
+  "agent_id": "math-specialist-db64c2a8",
+  "model": "liter/MiniMax-M3",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1400
+  },
+  "evidence": ".prometheus/verification/anthropic/e09d47ff-ef92-4fbe-b53e-c7afb39e0f56.json",
+  "cucumber_report": ".prometheus/verification/anthropic-001-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/features/anthropic-math.feature": "e031435eb9ba4f011d3b1b2cb83e02b66c54da317be50f877545a2f873c4bbe1",
+    "scripts/behaviors/steps/anthropic-math.steps.mjs": "32fe794c40d5d0d1a7776561290367573e7ad36cd35c85d54f4ed6b1bab1b091",
+    "scripts/behaviors/anthropic.cucumber.mjs": "8e3d316cd07c69ab4d528d156ed54e455d993d4d0c61d13d4556557d743bf412"
+  },
+  "scope": "One nonstreaming saved-agent prompt through the Anthropic-compatible Messages API on Mac; no streaming/full-conformance or Anthropic-hosted provider claim",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

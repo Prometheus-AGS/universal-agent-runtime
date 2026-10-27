@@ -1,0 +1,25 @@
+{
+  "repair_ordinal": 12,
+  "item": "S8",
+  "status": "ONE_CORRECTION_IN_PROGRESS",
+  "started_at": "2026-10-25T16:38:37.557750+00:00",
+  "observed_failure": "gemm-common0.19 inline vector fp16 asm lacks function target feature, compile requires fullfp16",
+  "scope": [
+    "same-version vendor/patches/gemm-common-0.19.0",
+    "Cargo.toml patch mapping",
+    "Cargo.lock local-source metadata only"
+  ],
+  "baseline_policy": "Preserve runtime neon+fp16 detection and fallback; do not globally enableFP16 or raiseCPUminimum",
+  "upstream_evidence": [
+    "https://github.com/zed-industries/zed/issues/57770",
+    "https://github.com/huggingface/candle/issues/494",
+    "https://github.com/huggingface/candle/issues/2823"
+  ],
+  "primary_local_sources": [
+    "gemm-common0.19.0/src/simd.rs",
+    "gemm-f16-0.19.0/src/gemm.rs",
+    "gemm-f16-0.19.0/src/microkernel.rs"
+  ],
+  "verification": "one unchanged S8argv rerun only after source inventory and source-only correction review",
+  "second_correction_allowed": false
+}

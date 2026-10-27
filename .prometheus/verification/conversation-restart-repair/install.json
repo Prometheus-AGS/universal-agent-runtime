@@ -1,0 +1,17 @@
+{
+  "operation": "Install conversation persistence repair before selected BDD",
+  "replacement_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+  "previous_pid": 41761,
+  "binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+  "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+  "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+  "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-89a9f879-bfd6-4ab6-9007-eeb930a7715e.log",
+  "stop_signal": "SIGTERM",
+  "store_preserved": true,
+  "replaced_binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "previous_process_exited": true,
+  "new_pid": 47246,
+  "new_process_ready": true,
+  "status": "PASS"
+}

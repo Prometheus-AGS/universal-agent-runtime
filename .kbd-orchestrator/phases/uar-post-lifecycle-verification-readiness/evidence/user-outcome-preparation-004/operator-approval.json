@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-10-25T12:45:28.399301+00:00",
+  "human_answer": "Approve A10 and corrected P0.004; continue, sign, adopt and run serially. Stop first failure. Discuss any further retry/repair versus backlog with operator before acting.",
+  "contract_digest": "dc575f8ec79e2cbfea88276d46646f63294744eeae4f2889aa50479550f74b24",
+  "source_identity": "sha256:d8d714afb4024d4b4d838acbbdce4eba15001626fea1517fb9879f613c5525a4",
+  "scope": "Named SSH-agent signature/adoption; six-command serial producer once; no product V/service/provider/publication; all consumption and limits retained."
+}

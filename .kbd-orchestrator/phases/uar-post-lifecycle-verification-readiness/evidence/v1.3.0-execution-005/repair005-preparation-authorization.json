@@ -1,0 +1,6 @@
+{
+  "operatorRequest": "Diagnose the packet005 failures, prepare the exact fixes and an amendment for one more bounded repair with enough cumulative calls, then refresh the inventory and show me the approval needed to resume verification.",
+  "implementationChoice": "Preparation/proposed cumulative ceiling480; original epoch and all actual consumption retained. Explicit signed A6 amendment still required before verification.",
+  "proposedRepairCap": 5,
+  "noVerificationAuthorityInPreparation": true
+}

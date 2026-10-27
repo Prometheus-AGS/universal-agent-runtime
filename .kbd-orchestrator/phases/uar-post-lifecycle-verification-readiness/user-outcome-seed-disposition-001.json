@@ -1,0 +1,177 @@
+{
+  "schema_version": "uar.fixture-first-start-disposition.draft.v1",
+  "status": "INERT_DRAFT_REQUIRES_EXACT_OPERATOR_SIGNATURE_AND_ADOPTION",
+  "executable": false,
+  "operator_approved": false,
+  "operation": "propose-first-start-of-owned-genuine-forwarding-scope",
+  "epoch_id": "uar-user-outcomes-original-20261024",
+  "paths": {
+    "root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007",
+    "scope_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private",
+    "scope_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533",
+    "packet_state_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/packet",
+    "ledger_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/packet/uar_budget_5d3ed9f4d4218e05b533",
+    "composed": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed",
+    "sealed": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed"
+  },
+  "proposed_disposition": {
+    "owned_scope": "Only actual genuine forwarding by the named new fixture budget proxy and its owned ledger; unrelated operator Liter/provider account activity is excluded",
+    "first_use": "Operator must explicitly attest this exact new root/scope/ledger has never been created, started or forwarded traffic; receipt evidence supports reported P0 non-use, not a fresh physical-absence probe",
+    "six_counter_initialization": "Set ONLY owned genuine model_attempts, embedding_attempts, generated_tokens, cost_microunits, request_bytes, response_bytes to0",
+    "spend_pool_initialization": {
+      "cohere": 0,
+      "openai_embeddings": 0,
+      "liter": 0
+    },
+    "unresolved_genuine_reservations": [],
+    "zero_basis": "P0.001..P0.006 retained receipts report provider_calls0/services_started0 and both embedding spend pools0. Never-started owned forwarding has no prior genuine request/response/token bytes or reservations.",
+    "legacy_exclusion": "Controlled legacy peers, COUNT synthetic helpers and unknown original failure causes remain in separate preserved history and do not establish genuine provider billing.",
+    "no_reset": "Preserve original epoch/global host-time-repair consumption. If any proposed new root/scope/parent exists, stop; no reuse, overwrite, deletion, refund or ledger reset.",
+    "no_extra_authority": "This draft does not authorize services, provider calls, V commands, signing/adoption or third-party changes."
+  },
+  "preserved_history": {
+    "original_epoch_utc": "2026-10-24T13:38:17.685447Z",
+    "host_accounting": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-011.json",
+      "cutoff": "2026-10-25T13:59:30.207456+00:00",
+      "unique_emitted_host_dispatches": 2572,
+      "active_minutes_conservative_upper_bound": 1279.5506334833333,
+      "repair_floor": 9,
+      "remaining_repairs": 0,
+      "later_activity": "ACCRUES; no reset or new idle exclusions",
+      "historical_pre_epoch_effort": "UNKNOWN"
+    },
+    "legacy_controlled": {
+      "model_request_floor_including_count_helper": 8,
+      "embedding_request_floor": 1185,
+      "embedding_response_floor": 1184,
+      "unresolved_outcomes": [
+        {
+          "packet": "v1.3.0-execution-005",
+          "kind": "controlled_embedding_response_missing",
+          "requests": 398,
+          "responses": 397,
+          "status": "UNKNOWN_RETAINED_NOT_GENUINE_PROVIDER_BILLING"
+        }
+      ],
+      "scope": "Retained separately; no projection into genuine Liter/Cohere/OpenAI billing counters",
+      "prior_failures_and_unknown_causes": "PRESERVED_UNCHANGED"
+    },
+    "prior_authority": {
+      "name": "A12",
+      "binding_revision": 14,
+      "source_identity_name": "user-outcome-source-identity-010",
+      "signature_not_verified_here": true
+    }
+  },
+  "source_receipts": [
+    {
+      "source_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/stop.json",
+      "source_sha256": null,
+      "reported": {
+        "provider_calls": 0,
+        "services_started": 0,
+        "embedding_spend_usd": {
+          "cohere": 0,
+          "openai_embeddings": 0
+        }
+      }
+    },
+    {
+      "source_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/stop.json",
+      "source_sha256": null,
+      "reported": {
+        "provider_calls": 0,
+        "services_started": 0,
+        "embedding_spend_usd": {
+          "cohere": 0,
+          "openai_embeddings": 0
+        }
+      }
+    },
+    {
+      "source_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/stop.json",
+      "source_sha256": null,
+      "reported": {
+        "provider_calls": 0,
+        "services_started": 0,
+        "embedding_spend_usd": {
+          "cohere": 0,
+          "openai_embeddings": 0
+        }
+      }
+    },
+    {
+      "source_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/stop.json",
+      "source_sha256": null,
+      "reported": {
+        "provider_calls": 0,
+        "services_started": 0,
+        "embedding_spend_usd": {
+          "cohere": 0,
+          "openai_embeddings": 0
+        }
+      }
+    },
+    {
+      "source_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-005/stop.json",
+      "source_sha256": null,
+      "reported": {
+        "provider_calls": 0,
+        "services_started": 0,
+        "embedding_spend_usd": {
+          "cohere": 0,
+          "openai_embeddings": 0
+        }
+      }
+    },
+    {
+      "source_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-006/complete.json",
+      "source_sha256": null,
+      "reported": {
+        "provider_calls": 0,
+        "services_started": 0,
+        "embedding_spend_usd": {
+          "cohere": 0,
+          "openai_embeddings": 0
+        }
+      },
+      "retains_prior_five_receipts": true
+    }
+  ],
+  "legacy_receipt_paths": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-003/raw/peer-events.jsonl",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-004/raw/peer-events.jsonl",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-005/raw/peer-events.jsonl",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-006/raw/peer-events.jsonl",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-004/count-trusted-builder.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-005/count-trusted-builder.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-006/count-trusted-builder.json"
+  ],
+  "final_private_projection": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/seed-disposition.json",
+    "sha256": null
+  },
+  "sealing_requirements": [
+    "Future exact P1 authorization only; materialize private regular nonsymlink mode600 reference closure, freeze actual receipt bytes/digests and current accounting",
+    "Do not read or include env.json or credential values in this disposition or its evidence",
+    "Bind actual source010/installed001/A12 references supplied by lead; no acceptance inferred",
+    "Physical absence at new root/parents remains an operator first-use assertion until an exact separately authorized operation establishes exclusive creation; no standalone preflight implied"
+  ],
+  "remaining_dynamic_slots": [
+    "Operator first-use attestation/signature/adoption",
+    "All source receipt byte digests and exact private projection digest",
+    "Current accounting cutoff after011 and exact source010/installed001/A12 path-digest references"
+  ],
+  "current_global_accounting": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-012.json",
+    "sha256": "sha256:9f6eb63fc14dafd0fb6c852a18b96daee740c6da00a56bab5cf6a2065072ebbf"
+  },
+  "current_global_floor": {
+    "host_calls": 2684,
+    "active_minutes_upper_bound": 1334.8438981000002,
+    "repairs_consumed": 9,
+    "cutoff": "2026-10-25T14:54:47.803333+00:00",
+    "later_activity_accrues": true
+  }
+}

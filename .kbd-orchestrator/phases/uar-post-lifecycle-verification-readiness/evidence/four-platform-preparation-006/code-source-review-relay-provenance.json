@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "operation": "verbatim-source-review-report-persistence",
+  "gate": "CLOSED",
+  "report": "code-source-review.md",
+  "reviewer_id": "/root/a21_artifact_relay/code_source_critic",
+  "relay_id": "/root/a21_artifact_relay",
+  "reviewer_type": "code-reviewer",
+  "reviewer_tool_use": "NONE",
+  "report_text": "Final reviewer message copied unchanged; no verdict or evidence rewriting; no appended newline",
+  "source_identity_supplied": "sha256:4ace47fbfffc400f775f2fc5b3b0ace29e3e41fcf46cb877d54319b271d2ea52",
+  "source_identity_independently_certified": false,
+  "relay_read_mechanism": "Host exec_command, standard-library pathlib/json source-text reading, line numbering/data projection; rg text-only function/interface indexing. No repository modules executed.",
+  "relay_reads": [
+    {
+      "path": "four-platform-whole-phase-inventory-005.json",
+      "projection": "changed_regular_inputs_since_A15 only; no narrative/history fields"
+    },
+    {
+      "path": "four-platform-preparation-config-006.draft.json",
+      "coverage": "all fields"
+    },
+    {
+      "path": "four-platform-artifact-preparation-006.draft.json",
+      "coverage": "all fields except source_files projected to count29045 plus selected helper rows"
+    },
+    {
+      "path": "four-platform-supporting-config-006.draft.json",
+      "coverage": "all fields"
+    },
+    {
+      "path": "four-platform-source-008.json",
+      "projection": "scalar metadata and collection counts only; no source hashes recomputed"
+    },
+    {
+      "path": "scripts/acceptance/packet_processes.py",
+      "coverage": "1–221"
+    },
+    {
+      "path": "scripts/acceptance/prepare_platform_inputs.py",
+      "coverage": "1–378"
+    },
+    {
+      "path": "scripts/acceptance/prepare_supporting_inputs.py",
+      "coverage": "1–322"
+    },
+    {
+      "path": "scripts/acceptance/budget_proxy.py",
+      "coverage": "relay read1–718 in bounded chunks; delivered54–93,291–460,495–650; remaining gaps delivered by relay_runtime"
+    },
+    {
+      "path": "scripts/acceptance/ios/runner.py",
+      "coverage": "relay read175–550 plus textual function index; remaining1–174 delivered by relay_runtime"
+    },
+    {
+      "path": "scripts/acceptance/failure_sweep.py",
+      "coverage": "initial combined source read; full exact delivery owned by relay_runtime"
+    },
+    {
+      "path": "scripts/acceptance/platform_suite.py",
+      "coverage": "initial combined source read; full exact delivery owned by relay_runtime"
+    },
+    {
+      "path": "scripts/acceptance/ios/Tests/EmbeddedAcceptance.swift",
+      "coverage": "1–182"
+    },
+    {
+      "path": "scripts/acceptance/ios/rust/lib.rs",
+      "coverage": "1–157"
+    },
+    {
+      "path": "scripts/acceptance/ios/Acceptance.xcodeproj/project.pbxproj",
+      "coverage": "1–34"
+    },
+    {
+      "path": "scripts/acceptance/ios/Acceptance.xcodeproj/xcshareddata/xcschemes/UARAcceptance.xcscheme",
+      "coverage": "1–9"
+    },
+    {
+      "path": "scripts/acceptance/ios/Host/App.swift",
+      "coverage": "1–14"
+    },
+    {
+      "path": "scripts/acceptance/ios/Host/Bridge.h",
+      "coverage": "1–5"
+    },
+    {
+      "path": "scripts/acceptance/ios/Host/Info.plist",
+      "coverage": "1–12"
+    },
+    {
+      "path": "scripts/acceptance/ios/policies/acceptance.cedar",
+      "coverage": "1–6"
+    },
+    {
+      "path": "scripts/acceptance/ios/private-config.schema.json",
+      "coverage": "1–15"
+    },
+    {
+      "path": "scripts/acceptance/ios/receipt.schema.json",
+      "coverage": "1–31"
+    },
+    {
+      "path": "scripts/acceptance/ios/scenarios.json",
+      "coverage": "1–20"
+    },
+    {
+      "path": "sdks/rust/src/runtime.rs",
+      "coverage": "1–924; initially selected interfaces then every remaining gap delivered"
+    },
+    {
+      "path": "sdks/rust/Cargo.toml",
+      "coverage": "1–74"
+    },
+    {
+      "path": "sdks/rust/Cargo.lock",
+      "coverage": "selected complete package records read: gemm-common,liter-llm,reqwest0.12.28,reqwest0.13.5,surrealdb,surrealdb-core,surrealdb-engine-api,surrealdb-engine-local,surrealdb-kvs-surrealkv,universal-agent-runtime,universal-agent-runtime-sdk; transmitted selected package/graph entries; unrelated records not individually inspected"
+    },
+    {
+      "path": "vendor/git/README.md",
+      "coverage": "1–82"
+    },
+    {
+      "path": "versions.toml",
+      "coverage": "1–57"
+    }
+  ],
+  "other_delivery_receipts": {
+    "/root/a21_relay_runtime": "Full core522/failure_sweep365/platform_suite261/user_outcomes370/observers_runtime980; budget_proxy gaps1–53,94–290,461–494,651–718; ios/runner1–174; exact current text; no source writes or verification",
+    "/root/a21_relay_linux": "Full tools_fixture229/linux_runtime397/cases_capabilities705/compose_fixture1198; exact current text; no source writes or verification",
+    "/root/a21_relay_docs_tests": "Full docs/releases/v1.3.0-parking-lot120,docs/user-outcome-verification163,acceptance README209,failure_sweep README245,ios README228,linux_runtime README95,platform_suite README33,prepare_platform_inputs README77,prepare_supporting_inputs README83,tests/test_failure_sweep262,test_ios_failure_policy173,test_packet_settlement185; exact current text; no source writes or verification"
+  },
+  "delivery_disclosures": [
+    "Initial combined pretty-print config output truncated; replaced before review by complete compact JSON with declared source_files projection.",
+    "Initial combined failure_sweep/packet/platform output truncated; full file text delivered subsequently in bounded ranges by assigned relays.",
+    "One manually relayed runtime.rs comment lacked space after #; exact current line396 retransmitted before final report.",
+    "Docs/tests relay reported initial discovery treating source008 as directory produced no matches; actual current repository source was then delivered.",
+    "Docs/tests relay combined read truncated middle docs; replaced by bounded complete source read before delivery.",
+    "Root classified discovery/no matches and replaced truncation as input-gathering issues, not a completed review/preparation failure; no unresolved artifact access remained and no acceptance credit assigned to missing text.",
+    "Early host reads used exec_command default login; after root instruction all subsequent host reads/writes used login:false. Reviewer ran no commands.",
+    "All followup_task calls addressed the same single reviewer to resume artifact delivery/review; no second reviewer or review retry.",
+    "Reported source identity and cumulative usage are supplied metadata, not independently checked."
+  ],
+  "accounting_supplied": {
+    "record": "028",
+    "host_calls": 3799,
+    "active_minutes": 1849.850239,
+    "later_usage_accrues": true,
+    "ceilings_unchanged": {
+      "host_calls": 4000,
+      "active_minutes": 2400
+    }
+  },
+  "stop": "First required unresolved blocker returned; report saved without source fixes, further reviews, preparation, tests or runtime execution."
+}

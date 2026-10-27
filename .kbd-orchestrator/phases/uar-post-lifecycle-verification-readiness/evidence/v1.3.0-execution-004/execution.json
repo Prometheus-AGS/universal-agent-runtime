@@ -1,0 +1,88 @@
+{
+  "status": "STOPPED_FIRST_FAILURE_NO_REPAIRS_REMAIN",
+  "startedAt": "2026-10-24T17:08:14.207330+00:00",
+  "originalEpochStart": "2026-10-24T13:38:17.685447Z",
+  "contractDigest": "f99c0e44b0a1994560453211c6528b247d6ed88030602d0f0a94470c644eea72",
+  "sourceInventoryDigest": "d1002cebf542eed02aa63f2d403a768942b30fc5c46217529baef49dfebb5051",
+  "manifestSha256": "42dfcd72a54bbd53dcaeab456c9da0ffb0624dea0eb97f3e0aa31788d8095530",
+  "candidate": "Published774469746fee4de99be41dc1cd231857067e4487 plus cumulative sourcepatchc1aa5b8880930f63e9d214bf8b97b81c347f89e074de06d3a2a5130363f2169a",
+  "repairsApplied": 3,
+  "signedRepairLimit": 3,
+  "remainingRepairs": 0,
+  "adoptionDecision": "contract-adoption-uar-post-lifecycle-verification-readiness-f99c0e44",
+  "bindingRevision": 6,
+  "budgetAtLaunch": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-004/budget-at-launch.json",
+  "firstFailureStops": true,
+  "laterGates": "NOT_RUN: Issue426, six supported profiles, independent review, OpenSpec verification",
+  "stoppedAt": "2026-10-24T17:14:21.470474+00:00",
+  "verificationGate": "CLOSED",
+  "mainBoundaryOutcome": {
+    "outcome": "BLOCKED",
+    "testExitCode": 101,
+    "completeScenarioAndTeardownSummary": false
+  },
+  "caseOutcomes": {
+    "LIAB-01": {
+      "outcome": "PASS",
+      "reason": ""
+    },
+    "LIAB-02": {
+      "outcome": "BLOCKED",
+      "reason": "request_transport_failed"
+    },
+    "ERROR-01": {
+      "outcome": "BLOCKED",
+      "reason": "request_transport_failed"
+    },
+    "ERROR-02": {
+      "outcome": "BLOCKED",
+      "reason": "request_transport_failed"
+    },
+    "COUNT-01": {
+      "outcome": "BLOCKED",
+      "reason": "recorded final body differs from validated serialization",
+      "evidenceScope": "trusted_rust_builder",
+      "standaloneMainExactFit": "UNSUPPORTED"
+    },
+    "HISTORY-01": {
+      "outcome": "FAIL",
+      "reason": "http_status_mismatch"
+    },
+    "KB-01": {
+      "outcome": "FAIL",
+      "reason": "http_status_mismatch"
+    },
+    "CAS-01": {
+      "outcome": "FAIL",
+      "reason": "assertion_mismatch:cas_discriminator_see_actual_report"
+    },
+    "BTHREE-01": {
+      "outcome": "NOT_EXERCISED",
+      "reason": "specific_original_archive_absent",
+      "disposition": {
+        "located": false,
+        "status": "HISTORICAL_ATTRIBUTED_DISPOSITION_ONLY",
+        "sourceReferences": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/analysis.md#b3-evidence-search-result",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/assessment.md"
+        ],
+        "reason": "Specific original c9/B3 assertion archive not located in recorded bounded search; no new search or runtime result claimed."
+      }
+    },
+    "IDENTITY-01": {
+      "outcome": "PASS",
+      "observedMainStarts": 2,
+      "note": "overall PASS additionally requires successful awaited teardown and runner input rehash"
+    }
+  },
+  "build": "PASS exit0",
+  "test": "FAIL exit101; 0 passed, 1 failed",
+  "observedBootIdentityComparisons": "PASS for both observed launches; not full acceptance",
+  "teardown": "BLOCKED: two HTTP cleanup mismatches and process count mismatch",
+  "exactOwnedRowsCleanup": "PASS: 12 rows, observed absent",
+  "ownedProcessExits": "PASS: both main launches and peer awaited exit0",
+  "dockerCleanup": "PASS: stop/down exit0; owned container and network removed",
+  "budgetAtStop": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-004/budget-at-stop.json",
+  "finalCanonicalRevision": 372,
+  "completion": "NOT_ACCEPTED; tasks5.1/5.2 pending; no archive or phase reflection"
+}

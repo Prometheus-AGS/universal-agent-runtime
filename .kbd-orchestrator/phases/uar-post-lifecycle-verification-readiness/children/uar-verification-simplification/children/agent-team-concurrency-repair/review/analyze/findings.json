@@ -1,0 +1,18 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "unreported-harness-native",
+  "isolation_mode": "harness-native",
+  "producer_model": "unknown",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [],
+  "checked_classes": [
+    "Build-versus-adopt: all three candidates reuse existing mechanisms; application-specific persistence, precedence, fencing and accounting requirements justify the proposed adaptations without introducing dependencies.",
+    "Evidence certainty: filesystem admission and CAS explanations remain conditional; inspected source differs from the retained served-artifact baseline and unresolved commit outcomes are preserved.",
+    "Candidate currency: main-branch documentation is qualified, pinned patched source is API authority, and no unresearched package or upgrade is recommended.",
+    "Constraints: unknown reservations, no model/tool replay, consumption history and fresh verification authority remain explicit.",
+    "Acceptance: actual overlapping specialist runs and dependent writer consumption of both attributed artifacts remain required.",
+    "Readiness: READY means advance to Spec only; remaining diagnostic branches and settlement deduplication carry forward."
+  ]
+}
+

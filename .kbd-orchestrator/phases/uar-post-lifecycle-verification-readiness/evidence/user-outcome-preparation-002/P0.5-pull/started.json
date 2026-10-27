@@ -1,0 +1,21 @@
+{
+  "id": "P0.5-pull",
+  "argv": [
+    "/usr/local/bin/docker",
+    "pull",
+    "pgvector/pgvector:pg17@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "pid": 33415,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR"
+  ],
+  "CI_inherited": false,
+  "started": "2026-10-25T10:26:54.057216+00:00",
+  "stage_seconds": 7200,
+  "remaining_packet_seconds": 14178.324975786003
+}

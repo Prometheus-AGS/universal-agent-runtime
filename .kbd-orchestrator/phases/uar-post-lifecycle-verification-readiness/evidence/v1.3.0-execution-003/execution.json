@@ -1,0 +1,43 @@
+{
+  "status": "STOPPED_FIRST_FAILURE_NO_REPAIRS_REMAIN",
+  "startedAt": "2026-10-24T16:31:01.584321+00:00",
+  "originalEpochStart": "2026-10-24T13:38:17.685447Z",
+  "contractDigest": "5bc85ab9074eb0d950fb88d72dede1bde6d8b03c0a62c634a57c7b693e48513a",
+  "sourceInventoryDigest": "1aa17473c08d241abc4afc9b5d7677d325ea35b0d847c700e82553b5b9d34025",
+  "manifestSha256": "98ef12337d0a5033f95ea058f8dc26638bc4212b96ddaa5dc7769be28c6b457a",
+  "candidate": "Published774469746fee4de99be41dc1cd231857067e4487 plus cumulative repairs source patch ed0f3c6e3a8451e18958894dd8fb11cfb181d7730d662557c08e1f9d36ba3f48",
+  "repairsApplied": 2,
+  "remainingRepairs": 0,
+  "adoptionDecision": "contract-adoption-uar-post-lifecycle-verification-readiness-5bc85ab9",
+  "bindingRevision": 5,
+  "budgetAtLaunch": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-003/budget-at-launch.json",
+  "firstFailureStops": true,
+  "laterGates": "NOT_RUN",
+  "stoppedAt": "2026-10-24T16:34:37.416087+00:00",
+  "failedGate": "post_lifecycle_main prelaunch candidate identity",
+  "runnerExitCode": 1,
+  "testExitCode": 101,
+  "build": {
+    "outcome": "PASS",
+    "elapsedSeconds": 3.8619914870068897
+  },
+  "test": {
+    "compilation": "PASS21.64s",
+    "testsExecuted": 1,
+    "passed": 0,
+    "failed": 1,
+    "elapsedSeconds": 52.25700142898131
+  },
+  "scenarios": "All10BLOCKED: main_build_boot_identity_mismatch",
+  "mainLaunches": 0,
+  "peer": {
+    "readiness": "PASS after1retainedtransporterror",
+    "gracefulExitCode": 0,
+    "actualExitAwaited": true
+  },
+  "teardown": "BLOCKED due failed setup and process count mismatch; no child-stop or cleanup failures",
+  "storeCleanup": "stop/downboth0; ownedcontainer/network removed; disk retained",
+  "gate": "CLOSED_NO_AUTOMATIC_REPAIR_OR_RETRY",
+  "budgetStopCheckpoint": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-003/budget-at-stop.json",
+  "finalCanonicalRevision": 362
+}

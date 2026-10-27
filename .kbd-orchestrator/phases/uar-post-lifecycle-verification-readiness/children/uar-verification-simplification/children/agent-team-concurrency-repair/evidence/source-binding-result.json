@@ -1,0 +1,6 @@
+{
+  "command": "Exact PY_SOURCE block in verification-packet.md",
+  "exit_code": 0,
+  "output": "Frozen source inputs match",
+  "source_manifest_sha256": "72030618fe645a0f5327c9e4904be4f71acaa3ed64c924888fbc77e5d67385a7"
+}

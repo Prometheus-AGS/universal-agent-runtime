@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "--config",
+    "scripts/behaviors/a2ui-browser.config.mjs"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 29.3655864209868
+}

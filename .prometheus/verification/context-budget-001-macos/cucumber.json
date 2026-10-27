@@ -1,0 +1,122 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "bounded-context-preserves-information-needed-later;reduce-oversized-conversation-context-and-answer-a-dependent-follow-up",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Reduce oversized conversation context and answer a dependent follow-up",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 838185597
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with a small context budget and keep-first-and-latest strategy",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:64"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1123279972
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give it a fresh reference and quantities to remember",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1343623594
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I add oversized unrelated context and ask about the earlier information",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 5433290,
+              "error_message": "AssertionError [ERR_ASSERTION]: History must actually exceed the input budget\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/context-budget.steps.mjs:143:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the model request fits the budget after actual context reduction",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:136"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the follow-up correctly uses the original information",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:166"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 578783657
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LWJ1ZGdldC83MjZlZTYxNy0xMTM3LTQ5YWUtYmRjYS1mMDk3ZGRjYWFmZTUuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "bounded-context-preserves-information-needed-later",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Bounded context preserves information needed later",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/context-budget.feature"
+  }
+]

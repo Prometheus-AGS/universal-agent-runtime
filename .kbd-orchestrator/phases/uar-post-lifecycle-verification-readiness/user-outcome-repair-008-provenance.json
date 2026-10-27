@@ -1,0 +1,29 @@
+{
+  "classification": "LOCKFILE_SOURCE_AUTHORING_NOT_BUILD_VERIFICATION",
+  "patch_sha256": "sha256:28dafcfdda51faad51e0e7063093949d4760ad8f4151cdcb6ba93f3d14262f03",
+  "files": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.lock",
+      "before": "sha256:ae80e1b692e43e8fab6b56475c43be137b966b1c62c7f30f67790c002e14c3f9",
+      "after": "sha256:6bed587ee451e31d3c2002ec9247e24af16f9f2fd0d9de6e4fcc854fbeadf791"
+    }
+  ],
+  "line_substitutions": 1,
+  "local_crate_version": "prometheus-parking-lot-core0.3.0to0.4.0",
+  "registry_versions_or_dependency_lists_changed": false,
+  "authoring_command": [
+    "cargo",
+    "update",
+    "--offline",
+    "--manifest-path",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+    "--package",
+    "universal-agent-runtime"
+  ],
+  "authoring_exit_code": 0,
+  "offline_unrelated_downgrades_disposition": "Restored exact original inotify/tokio_with_wasm/tokio_with_wasm_proc records by source editing; final diff only local parking lot version. No Cargo retry.",
+  "handoff": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-sdk-lock-repair-008.md",
+  "compiler_verified": false,
+  "authoring_receipt_location": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-sdk-lock-repair-008.md section Authoring receipt",
+  "raw_Cargo_after_sha256": "sha256:bcece2d0b6c8ca9ae3bf5cbc74cabe05dcfcc57cad79778662ab2d78e5c0a603"
+}

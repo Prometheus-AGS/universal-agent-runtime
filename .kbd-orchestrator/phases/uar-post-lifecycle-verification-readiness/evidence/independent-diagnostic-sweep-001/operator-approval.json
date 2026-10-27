@@ -1,0 +1,11 @@
+{
+  "approved": "A15 independent sweep",
+  "contract": "02942ff1e5adafd5316183b09e8fea103238388efea8ccfba346e8d4760d2cc3",
+  "started_unix": 1792944441.069973,
+  "repair_floor": 10,
+  "repair_cap": 28,
+  "calls_cap": 4000,
+  "active_minutes_cap": 2400,
+  "product_gate": "CLOSED",
+  "independent_items": 18
+}

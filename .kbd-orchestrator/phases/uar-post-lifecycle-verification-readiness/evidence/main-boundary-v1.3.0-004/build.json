@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "cargo",
+    "build",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--bin",
+    "universal-agent-runtime"
+  ],
+  "exitCode": 0,
+  "outcome": "PASS",
+  "elapsedSeconds": 3.8570973739842884,
+  "descendantOwnership": "see awaited fixture teardown",
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrSha256": "f4b986b3d841ac18b5107cb73b4e3e36f84379cae476bd025862eeb75e5c9bf6"
+}

@@ -1,0 +1,179 @@
+{
+  "timestamp": "2026-10-25T13:11:58.345068+00:00",
+  "status": "STOPPED_FIRST_FAILURE",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-8aca00bf",
+  "binding_revision": 13,
+  "contract_digest": "8aca00bff66b22108aea2ea78cbe634c8d08208ff35e1565f64a6941c47c4c4b",
+  "source_identity": "sha256:b8114c31f92bb25420e35df8d4751bc7be5b7906eb946aaa420bbb978f012d5b",
+  "failed_stage": "P0.10",
+  "diagnostic_summary": "SDK locked resolution advanced; runtime library compilation failed under SDK selected feature combination. Missing axum/surrealdb and server-gated capability/security modules.",
+  "compiler_error_count_reported": 63,
+  "compiler_error_headers": [
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0432]: unresolved imports `crate::uar::security::delegation_grants`, `crate::uar::security::sidecar_guard`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0432]: unresolved import `crate::uar::security::sidecar_guard`",
+    "error[E0432]: unresolved import `crate::uar::security::sidecar_guard`",
+    "error[E0432]: unresolved import `crate::uar::persistence::providers::surreal`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0432]: unresolved import `axum`",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0432]: unresolved import `surrealdb`",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0433]: cannot find module or crate `axum` in this scope",
+    "error[E0433]: cannot find `sidecar_guard` in `security`",
+    "error[E0433]: cannot find `capabilities` in `super`",
+    "error[E0433]: cannot find `capabilities` in `super`",
+    "error[E0433]: cannot find `sidecar_guard` in `security`",
+    "error[E0433]: cannot find `capabilities` in `super`",
+    "error[E0433]: cannot find `capabilities` in `super`",
+    "error[E0433]: cannot find `sidecar_guard` in `security`",
+    "error[E0433]: cannot find `user_settings` in `super`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0433]: cannot find `capabilities` in `api`",
+    "error[E0425]: cannot find type `AppState` in the crate root",
+    "error[E0433]: cannot find module or crate `surrealdb` in this scope"
+  ],
+  "error_code_counts": {
+    "E0433": 48,
+    "E0432": 14,
+    "E0425": 1
+  },
+  "rust_sdk_exit_code": 101,
+  "artifact_producer_exit_code": 2,
+  "attempt_stages": [
+    {
+      "id": "P0.7",
+      "stage": "native",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 3.137650966644287,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-005/native/native-build.json"
+    },
+    {
+      "id": "P0.10",
+      "stage": "rust_sdk",
+      "exit_code": 101,
+      "status": "FAIL",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 256.63378620147705,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-005/rust_sdk/rust_sdk-build.json"
+    }
+  ],
+  "later_stages": [
+    {
+      "id": "P0.11",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.13-build-guest",
+      "status": "NOT_RUN"
+    }
+  ],
+  "carried_materialization_passes": 10,
+  "carried_frontend_pass": true,
+  "carried_typescript_pass": true,
+  "original_preparation_steps_passed": 13,
+  "original_preparation_steps_total": 17,
+  "artifacts": [
+    {
+      "kind": "native_server",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native/debug/universal-agent-runtime",
+      "bytes": 790241144,
+      "sha256": "sha256:944caef21b8906e9217779215f4dd3c7f56f2b4005f0547ddd1c4fd4e6dae0f8",
+      "immutable_snapshot": false
+    }
+  ],
+  "immutable_artifact_preparation_complete": false,
+  "product_gate": "CLOSED",
+  "product_tests": 0,
+  "provider_calls": 0,
+  "services_started": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repairs_consumed": 8,
+  "remaining_repairs": 0,
+  "retry_count": 0,
+  "source_changes_during_attempt": 0,
+  "prior_evidence_preserved": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/stop.json"
+  ],
+  "consumption": {
+    "prior_accounting": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-008.json",
+    "P0_005_wall_seconds_through_producer_finish": 289.947322,
+    "P0_005_producer_seconds": 266.6877536980028,
+    "P0_005_start_carried_max_seconds": 12065,
+    "remaining_carried_P0_seconds": 11775.052678,
+    "all_prior_consumption_retained": true,
+    "later_activity_accrues": true
+  },
+  "next_authority": "Discuss bounded feature-profile repair versus backlog/explicit scope amendment with operator before any source edit or retry. No ninth repair or automatic execution authority.",
+  "cleanup": "Producer exited and its finally paths release owned processes/owner lock. No services or containers started."
+}

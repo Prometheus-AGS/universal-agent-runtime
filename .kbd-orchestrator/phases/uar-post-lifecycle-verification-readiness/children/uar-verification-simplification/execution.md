@@ -1,0 +1,5 @@
+
+## Returned to manual parent — 2026-10-26
+Operator requested leaving this child and running only the existing manual TEAM-01. Owned UAR restart passed (PID50663), preserving store/agents; no build/review gates ran. Command `node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs` failed in21.988s:5steps passed(includingAfter),1failed,2skipped. Concurrent member runs and correct math passed; writer output lacked a completed answer outside reasoning. Dependent article/merge was not exercised. Evidence: `.prometheus/verification/team-repair-003-macos.cucumber.json`.
+
+Child work stops here and control returns to `uar-verification-simplification` for manual operator direction. This is an operator-requested return with failed acceptance, not a successful child certification/archive. Keep TEAM-01 FAILED in the scenario list and preserve the eight earlier validated behaviors. Do not automatically repair/retry, resurrect packets, or require signing/inventory/review/exit gates. UAR remains running. No final successful reflection or accepted OpenSpec archive is claimed.

@@ -1,0 +1,50 @@
+{
+  "status": "STOPPED_FIRST_FAILURE_NO_RETRY",
+  "failed_step": "A16_ADOPTION",
+  "exit_code": 5,
+  "error": "jq: error (at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.proposed.json:3656): Cannot index string with string (\"implementationComplete\")",
+  "current_binding": "A15 remains; adoption script stopped before canonical binding code",
+  "signature_created": true,
+  "source_reviews": "NOT_RUN",
+  "preparation_controller": "NOT_RUN",
+  "target_install": "NOT_RUN",
+  "supporting_metadata": "NOT_RUN",
+  "resource_signing": "NOT_RUN",
+  "composition": "NOT_RUN",
+  "product_verification": "CLOSED",
+  "provider_calls": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repair_floor": 15,
+  "repair16_charged": false,
+  "no_source_or_contract_repair": true,
+  "source_inspection_findings": [
+    {
+      "field": "status",
+      "observed": "string A16_PROPOSED_UNSIGNED_NOT_ADOPTED",
+      "required": "object containing boolean implementationComplete",
+      "classification": "OBSERVED_FAILURE_CAUSE"
+    },
+    {
+      "field": "boundaryPacket.singleRun",
+      "observed": "missing",
+      "required": true,
+      "classification": "SOURCE_INSPECTED_SCHEMA_MISMATCH_NOT_RERUN"
+    },
+    {
+      "field": "PLATFORM-WINDOWS and PLATFORM-ANDROID IDs",
+      "observed": "nonnumeric suffix",
+      "required": "pattern ^[A-Z]+-[0-9]+$",
+      "classification": "SOURCE_INSPECTED_SCHEMA_MISMATCH_NOT_RERUN"
+    },
+    {
+      "field": "two PLATFORM disposition scenario records",
+      "observed": "missing productionEntry negativeControl ownerTask evidence",
+      "required": "nonempty fields per adoption schema",
+      "classification": "SOURCE_INSPECTED_SCHEMA_MISMATCH_NOT_RERUN"
+    }
+  ],
+  "next": "Discuss immediate contract-metadata repair and replacement signed amendment versus backlog; no automatic repair/retry."
+}

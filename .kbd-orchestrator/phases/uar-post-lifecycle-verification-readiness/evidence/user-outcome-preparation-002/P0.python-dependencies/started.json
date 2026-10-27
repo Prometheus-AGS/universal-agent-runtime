@@ -1,0 +1,35 @@
+{
+  "id": "P0.python-dependencies",
+  "argv": [
+    "/Users/gqadonis/miniconda3/bin/python3",
+    "-m",
+    "pip",
+    "install",
+    "--disable-pip-version-check",
+    "--no-cache-dir",
+    "--no-compile",
+    "--no-warn-conflicts",
+    "--no-deps",
+    "--only-binary=:all:",
+    "--require-hashes",
+    "--target",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+    "--report",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-dependencies-install.json",
+    "-r",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/python-locked-requirements.txt"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "pid": 33514,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR"
+  ],
+  "CI_inherited": false,
+  "started": "2026-10-25T10:27:09.694773+00:00",
+  "stage_seconds": 7200,
+  "remaining_packet_seconds": 14162.687127262994
+}

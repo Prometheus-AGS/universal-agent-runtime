@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 679,
+  "derivedRevision": 679,
+  "frontier": {
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 567,
+    "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+  },
+  "conflictCount": 0,
+  "phase": "uar-verification-simplification",
+  "phaseId": "uar-verification-simplification",
+  "parentPhase": "uar-post-lifecycle-verification-readiness",
+  "last_updated": "2026-10-26T12:49:19.688967Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 1,
+  "changes_completed": 0,
+  "implementation_total": 1,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 1,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "completionScopes": {
+    "completion": "phase",
+    "runCompletion": "run"
+  },
+  "runCompletion": {
+    "scope": "run",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 144,
+      "total": 170,
+      "status": "BLOCKED"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "simplify-user-workflow-verification",
+      "title": "Simplify user-workflow verification",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 13,
+      "tasks_done": 4,
+      "last_task_completed": "Review design and resolve planning findings",
+      "next_task_pending": "Implement registry and complete legacy obligations map",
+      "blockers": []
+    }
+  ],
+  "children": {
+    "agent-team-concurrency-repair": {
+      "status": "IN_PROGRESS",
+      "changes_completed": 0,
+      "changes_total": 1,
+      "implementation_completed": 0,
+      "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    }
+  },
+  "migrationStatus": null
+}

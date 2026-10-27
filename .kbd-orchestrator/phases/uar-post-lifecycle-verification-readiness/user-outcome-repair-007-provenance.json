@@ -1,0 +1,14 @@
+{
+  "classification": "SOURCE_AUTHORING_NOT_VERIFICATION",
+  "patch_sha256": "sha256:98a932ccb40370d90588aef6f41ecad85add4549325d7e9c1b314028e2274f96",
+  "files": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/examples/user-outcome-acceptance.ts",
+      "before": "sha256:14453d9afbc85da849daf3ac031a35615b5ff0b394b0c2b31b5d82d9a0e1e446",
+      "after": "sha256:c433edc45909206906e37924170a81af8f7394c61c5e0cccc9f6b9c09bf73717"
+    }
+  ],
+  "production_line_substitutions": 1,
+  "compiler_verified": false,
+  "handoff": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-typescript-repair-007.md"
+}

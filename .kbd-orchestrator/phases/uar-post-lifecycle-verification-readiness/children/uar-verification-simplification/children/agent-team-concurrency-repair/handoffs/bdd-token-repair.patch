@@ -1,0 +1,46 @@
+--- a/scripts/behaviors/steps/math-writing-team.steps.mjs
++++ b/scripts/behaviors/steps/math-writing-team.steps.mjs
+@@ -8,9 +8,12 @@
+ setDefaultTimeout(185_000);
+ const basePath = '/api/v1/collaboration';
+ const profile = 'urn:prometheus:uar:collaboration:0.1.0-draft.2';
+-const reservation = { tokens: 32768, costMicrounits: 1000000, elapsedSeconds: 120 };
++// Separate input allowance and response ceiling; never reserve catalog capacity.
++const responseTokenCap = 64000;
++const inputTokenAllowance = 64000;
++const reservation = { tokens: inputTokenAllowance + responseTokenCap, costMicrounits: 1000000, elapsedSeconds: 120 };
+ const limits = { concurrentTurns: 2, maxMembers: 2, maxDepth: 1, maxPendingTasks: 8 };
+-const budget = { maxTokens: 98304, maxCostMicrounits: 3000000, currency: 'USD', maxElapsedSeconds: 360 };
++const budget = { maxTokens: 3 * reservation.tokens, maxCostMicrounits: 3000000, currency: 'USD', maxElapsedSeconds: 360 };
+ const canonical = value => JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item)
+   ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : item);
+ const digest = value => 'sha256:' + createHash('sha256').update(value).digest('hex');
+@@ -50,6 +53,8 @@
+   this.id = `urn:uar:math-writing:${randomUUID()}`;
+   this.record = resolve(`.prometheus/verification/teams/${this.id.split(':').at(-1)}.json`);
+   this.evidence = { platform: process.platform, model: process.env.UAR_MODEL, retained_for_future_use: true };
++  this.evidence.token_allocation = { input_allowance: inputTokenAllowance, response_cap: responseTokenCap,
++    per_attempt: reservation.tokens, team: budget.maxTokens, input_counting: 'estimated; no exact fit guarantee' };
+   this.caps = await api(this, 'GET', '/capabilities');
+   assert.ok(this.caps.capabilities.includes('collaboration_team_execution_v1'), 'Actual team execution unavailable');
+   assert.notEqual(this.caps.catalogStorage.backend, 'memory', 'Team catalog must be durable');
+@@ -233,6 +238,9 @@
+     const calls = await request(this, 'GET', `/api/uar/accounting/calls/${encodeURIComponent(attempt.runId)}`);
+     assert.ok(calls.length > 0 && calls.every(call => call.state === 'settled'
+       && call.admission.model === process.env.UAR_MODEL && call.observed_tokens > 0));
++    assert.ok(calls.every(call => Number.isSafeInteger(call.admission.reserved_tokens)
++      && call.admission.reserved_tokens > 0 && call.admission.reserved_tokens <= reservation.tokens),
++    'Model reservation exceeds the explicit team allocation');
+     (this.evidence.provider_calls ??= {})[attempt.runId] = calls;
+   }
+   this.evidence.independent_results = [this.mathDone, this.outlineDone];
+@@ -267,6 +275,9 @@
+   const calls = await request(this, 'GET', `/api/uar/accounting/calls/${encodeURIComponent(article.runId)}`);
+   assert.ok(calls.length > 0 && calls.every(call => call.state === 'settled'
+     && call.admission.model === process.env.UAR_MODEL && call.observed_tokens > 0));
++  assert.ok(calls.every(call => Number.isSafeInteger(call.admission.reserved_tokens)
++    && call.admission.reserved_tokens > 0 && call.admission.reserved_tokens <= reservation.tokens),
++  'Model reservation exceeds the explicit team allocation');
+   this.evidence.provider_calls[article.runId] = calls;
+   const receipt = execution.contextReceipts.find(receipt => receipt.authority.attemptId === article.id);
+   assert.ok(receipt, 'Missing actual final-writer selected context receipt');

@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "status": "FINAL_V_COMMAND_PLAN_NOT_APPROVED",
+  "product_command": {
+    "argv": [
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/user_outcomes.py",
+      "--fixture",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed/fixture.json",
+      "--evidence",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcomes-001",
+      "--execute"
+    ],
+    "environment": "Exact approved private env map plus nonsecret Docker/reference values and actual composed adoption required_environment_values; no shell sourcing."
+  },
+  "supporting_commands": [
+    {
+      "id": "S0",
+      "argv": [
+        "docker",
+        "compose",
+        "--project-name",
+        "uar-user-outcomes-007-supporting",
+        "--file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+        "up",
+        "--detach",
+        "--no-deps",
+        "store"
+      ],
+      "effects": "Create only explicitly owned disk-backed supporting store; no healthcheck/restart policy or shared service change. Requires exact fixture permission."
+    },
+    {
+      "id": "S1",
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/post_lifecycle/main_boundary.py",
+        "--manifest",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/boundary-manifest.json",
+        "--evidence-root",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/evidence/main"
+      ],
+      "argv_unresolved": [
+        "APPROVED_FROZEN_PYTHON",
+        "sealed environment-loading envelope"
+      ],
+      "nested_argv": [
+        [
+          "cargo",
+          "build",
+          "--locked",
+          "--no-default-features",
+          "--features",
+          "server-full",
+          "--bin",
+          "universal-agent-runtime"
+        ],
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--no-default-features",
+          "--features",
+          "server-full",
+          "--test",
+          "post_lifecycle_main",
+          "--",
+          "--test-threads=1"
+        ]
+      ],
+      "effects": "Input hash checks, exclusive evidence, BUILD, exclusive frozen candidate copy+hash before TEST, real main/peer HTTP/store effects and awaited teardown. Timeout1800seconds each Cargo child; timeout may leave descendants PENDING, not hard-containment proof."
+    },
+    {
+      "id": "S2",
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "server-full,test-probes",
+        "--test",
+        "ingestion_admission",
+        "--test",
+        "durable_ingestion",
+        "--test",
+        "lifecycle_owned_resources",
+        "--test",
+        "run_retention",
+        "--",
+        "--test-threads=1"
+      ],
+      "effects": "All four nonzero required targets. Embedded SurrealKV/tempdirs plus shared dedicated Surreal fixture; durable target self-exec current test binary with --nocapture --test-threads=1 for remote unattested and each accept/claim/publish stage; random api_key_<uuid> namespace, keys database. Source helper may own real runtime/sidecar child processes and temporary config. No postgres-backend feature here, no Postgres functional claim."
+    },
+    {
+      "id": "S3",
+      "argv": [
+        "docker",
+        "compose",
+        "--project-name",
+        "uar-user-outcomes-007-supporting",
+        "--file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+        "stop",
+        "--timeout",
+        "30",
+        "store"
+      ]
+    },
+    {
+      "id": "S4",
+      "argv": [
+        "docker",
+        "compose",
+        "--project-name",
+        "uar-user-outcomes-007-supporting",
+        "--file",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/local-store.yaml",
+        "down",
+        "--timeout",
+        "30"
+      ]
+    },
+    {
+      "id": "S5",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "minimal",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S6",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "server-full",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S7",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S8",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-apple-ios"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S9",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-linux-android"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S10",
+      "argv": [
+        "docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--tag",
+        "uar-issue-426:1.3.0",
+        "."
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy."
+    },
+    {
+      "id": "S11",
+      "operation": "fresh isolated artifact-only Rust review then fresh isolated React/TypeScript/Python/security code review",
+      "inputs": "final artifacts/diff/requirements/current source and actual user/main/Issue426/profile receipts; no generation history",
+      "outputs": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-rust-review.md",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-code-review.md"
+      ],
+      "constraint": "Explicit V review approval only; no reviewer may run additional commands. Required findings block, no repair remaining; at most one report clarification on unchanged source; disclose same-family fallback."
+    },
+    {
+      "id": "S12",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-rust-review.md",
+        "--strictness",
+        "standard"
+      ]
+    },
+    {
+      "id": "S13",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-code-review.md",
+        "--strictness",
+        "standard"
+      ]
+    },
+    {
+      "id": "S14",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-budget-reconciliation"
+      ]
+    },
+    {
+      "id": "S15",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-compatible-budget-errors"
+      ]
+    },
+    {
+      "id": "S16",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-destination-budget-contract"
+      ]
+    },
+    {
+      "id": "S17",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-persistence-discriminators"
+      ]
+    },
+    {
+      "id": "S18",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-boundary-evidence"
+      ]
+    },
+    {
+      "id": "S19",
+      "argv": [
+        "openspec",
+        "validate",
+        "openai-client-tools"
+      ]
+    },
+    {
+      "id": "S20",
+      "argv": [
+        "openspec",
+        "validate",
+        "update-parking-lot-admission"
+      ]
+    },
+    {
+      "id": "S21",
+      "argv": [
+        "openspec",
+        "validate",
+        "reengineer-user-outcome-verification"
+      ]
+    }
+  ],
+  "supporting_plan": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-final-001.plan.json",
+    "sha256": "sha256:92792e1060ed8c415ade29a8b46648375cb9f1df7fb8f84011d917aa6c6bab0e"
+  },
+  "operator_approval_required": true,
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "no_execution": true,
+  "activation": "After actual P1 completion and whole-phase inventory, final V approval must name exact supporting F/V activation overlay and external derived adoption; no P1 permission inferred."
+}

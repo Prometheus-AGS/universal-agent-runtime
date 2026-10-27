@@ -1,0 +1,13 @@
+# Packet 002 JavaScript source review
+
+Verdict: no blocking findings in the supplied BDD token-allocation patch. Source-only assessment; no runtime acceptance or merge-readiness claim.
+
+Scope: `handoffs/bdd-token-repair.patch`, current `scripts/behaviors/steps/math-writing-team.steps.mjs`, `scripts/behaviors/team.cucumber.mjs`, its selected feature, packet 002, and directly relevant accounting representation and host budget source. Local staged and unstaged diffs for the two JavaScript files were empty; the supplied patch defines the review scope. No producer history, memory, or other review reports were consulted.
+
+The allocation is arithmetically consistent: 64,000 input allowance plus 64,000 response ceiling gives 128,000 tokens per attempt; three reservations give 384,000 team tokens. Admission sends this reservation, and the same team budget feeds the definition and deployment binding. Per-attempt 1,000,000 cost microunits and 120 seconds, and team 3,000,000 cost microunits and 360 seconds, remain unchanged. The new retained allocation explicitly identifies estimated input counting and makes no exact-fit claim.
+
+Both new accounting assertions require every returned call to have a positive safe-integer reservation no greater than 128,000. This matches the serialized `CallAdmission.reserved_tokens` field and rejects null/unknown reservations. The existing nonempty-call, settled-state, selected-model and positive-observed-usage assertions remain. These assertions check each recorded call's admission reservation; they do not themselves prove the outbound output cap, exact input tokenization, aggregate spend, or provider behavior.
+
+The original concurrency oracle remains: distinct members and roots, registered runs, and a running math run observed before and after the running writer run. The independent-result checks, no-early-article check, two-artifact requirement, dependent article admission, math value/headline/byline/content checks, and exact selected-artifact receipt comparison are unchanged. The Cucumber configuration still selects only the existing feature and step module with retry zero. Packet 002 invokes that configuration without selecting an additional scenario.
+
+Activity was source inspection through `cat`, `sed`, `rg`, and read-only `git diff`, followed by this report write. No test, import, lint, format, typecheck, build, service/model call, or probe was executed. JavaScript execution, provider enforcement, real concurrent completion and merged article success remain unverified pending the separately authorized gate. No source files or guards were added or changed; this report is the only authored artifact.

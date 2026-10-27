@@ -1,0 +1,18 @@
+{
+  "classification": "UNSIGNED_AUTHORITY_TEMPLATE_AUTHORING_NOT_VERIFICATION",
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.repair-006.proposed.json",
+    "--reason",
+    "Authorize only bounded source repair006 for three observed compiler errors, raising cumulative repair cap5to6 with all6consumed and no seventh. Preserve original epoch, all prior consumption, other limits and USD10 per provider. Carry10passed materializations; one corrective P0.003 native build plus6unrun stages serially, first failure stop. No product verification or automatic retry.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n"
+}

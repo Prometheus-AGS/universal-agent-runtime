@@ -2,27 +2,27 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 296,
-  "derivedRevision": 296,
+  "sourceRevision": 679,
+  "derivedRevision": 679,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 184,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 567,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
   "phase": "uar-post-lifecycle-verification-readiness",
   "phaseId": "uar-post-lifecycle-verification-readiness",
   "parentPhase": null,
-  "last_updated": "2026-10-24T09:39:32.462355Z",
+  "last_updated": "2026-10-26T12:49:19.688967Z",
   "last_updated_by": "kbd-runtime",
-  "changes_total": 7,
+  "changes_total": 8,
   "changes_completed": 6,
-  "implementation_total": 7,
+  "implementation_total": 8,
   "implementation_completed": 6,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
       "completed": 6,
-      "total": 7,
+      "total": 8,
       "status": "IN_PROGRESS"
     },
     "evidence": {
@@ -51,8 +51,8 @@
     "primaryCounter": "implementation",
     "implementation": {
       "completed": 144,
-      "total": 167,
-      "status": "IN_PROGRESS"
+      "total": 170,
+      "status": "BLOCKED"
     },
     "evidence": {
       "status": "PENDING",
@@ -120,9 +120,9 @@
       "title": "Candidate-bound production integration and receipt packet",
       "status": "DONE",
       "implementation_status": "COMPLETE",
-      "tasks_total": 3,
-      "tasks_done": 3,
-      "last_task_completed": "Prepare complete implementation inventory and exact approval packet without running it",
+      "tasks_total": 15,
+      "tasks_done": 15,
+      "last_task_completed": "Author explicitly requested main identity repair003 and prepare amendment adding exactly one bounded repair plus refreshed inventory; no verification",
       "next_task_pending": null,
       "blockers": []
     },
@@ -138,6 +138,17 @@
       "blockers": []
     },
     {
+      "id": "reengineer-user-outcome-verification",
+      "title": "Reengineer verification around reliable user outcomes",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
+      "tasks_total": 36,
+      "tasks_done": 31,
+      "last_task_completed": "Bound iOS snapshot and settlement success by original deadlines",
+      "next_task_pending": "Freeze full implementation inventory and prepare actual signed authority and exact packet",
+      "blockers": []
+    },
+    {
       "id": "openai-client-tools",
       "title": "Caller-executed tools across OpenAI AG-UI Anthropic A2A ACP",
       "status": "DONE",
@@ -149,6 +160,17 @@
       "blockers": []
     }
   ],
-  "children": {},
+  "children": {
+    "uar-verification-simplification": {
+      "status": "PENDING",
+      "changes_completed": 0,
+      "changes_total": 1,
+      "implementation_completed": 0,
+      "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    }
+  },
   "migrationStatus": null
 }

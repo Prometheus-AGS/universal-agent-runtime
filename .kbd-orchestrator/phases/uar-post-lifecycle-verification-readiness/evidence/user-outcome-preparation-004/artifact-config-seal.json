@@ -1,0 +1,22 @@
+{
+  "contract_digest": "dc575f8ec79e2cbfea88276d46646f63294744eeae4f2889aa50479550f74b24",
+  "binding_revision": 12,
+  "source_identity": "sha256:d8d714afb4024d4b4d838acbbdce4eba15001626fea1517fb9879f613c5525a4",
+  "config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-004/artifact-preparation.config.json",
+  "config_sha256": "sha256:c37a5689c1e923d2adca854e22279a616240b9074ca018faeb57fa78d50adc14",
+  "approval": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-004/artifact-preparation.approval.json",
+  "projection_sha256": "sha256:ebc8cd51899b56ca901404dea48674129f862978e1566c1e3a1836c21c5418cf",
+  "cumulative_calls_floor": 2445,
+  "active_minutes_upper_bound": 1205.9849395166668,
+  "later_activity_accrues": true,
+  "effective_limits": {
+    "file_bytes": 17179869184,
+    "file_count": 1000000,
+    "output_bytes": 67108864,
+    "stage_seconds": 6017,
+    "total_seconds": 12086,
+    "tree_bytes": 137438953472
+  },
+  "all_prior_consumption_retained": true,
+  "provider_calls": 0
+}

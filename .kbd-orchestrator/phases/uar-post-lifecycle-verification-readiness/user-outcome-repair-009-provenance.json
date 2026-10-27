@@ -1,0 +1,86 @@
+{
+  "classification": "SOURCE_INTEGRATION_PROVENANCE_NOT_COMPILER_OR_REVIEW_VERIFICATION",
+  "patch_sha256": "sha256:106abdf365f5c383ea9ede6dbcfad56ae7b9dfdca5ef5a601ff75e7b5edafb5b",
+  "files": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/server.rs",
+      "before": "sha256:22b5f7800b402212d725eef24f19a51b743cb3f9e23ddb001a77cc70ee6cf4da",
+      "after": "sha256:5026e8f078f56b935058ae10510f58c19540296258c585d29c4d983a137cd5ad"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/capabilities.rs",
+      "before": "sha256:f9bfac1faccc3d40355ce02fcd724aab47840ffa8d5e0078aab5755b23914249",
+      "after": "sha256:166a3f24fb73420ec591f941cd548a4f645283d5851bd78c289bbd3cfe501e3e"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/mod.rs",
+      "before": "sha256:85158cd5d890ae95e75ee7cf6593be1d772e0f77f666335acf4bfb70d2eb64e5",
+      "after": "sha256:d6f8b927198b634ae2a64bb57fa7ca3010a6ba7ed8f6725d43eda13b87974178"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/team_execution/resolution.rs",
+      "before": "sha256:2758c0bd8b3954f564b1aae8fc30be576c75e0367f40d9df0ff5702eef4cb431",
+      "after": "sha256:6dd8f6364ad53b27a5eb3d7f696b7727230f19256ab307eb81fad45e25a4759f"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/validation/projection.rs",
+      "before": "sha256:0a36bb69fc5d66a3ec6a0706395ccce5259ee05f22660566bb7062fd84c9a91c",
+      "after": "sha256:e028ede4efc5e244d6c96c20073dd41353b62a47be041cc6eb49f2a2eb23eed7"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/mod.rs",
+      "before": "sha256:73675d501e097930523b1c31da0b8c5b5c39815794b7f669eee8d3c922fd5610",
+      "after": "sha256:74779d3cecef6210cf7d9203ab6ceea97c45eade4ea79d6ea73c203c2e7e40aa"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/progression.rs",
+      "before": "sha256:184f4edc5da74f727d4b5a42c97ccc3e604f33efb1d4e5e20c4b20c1d753f25c",
+      "after": "sha256:e7a7e2c2e09ba38cd9cd4a69a2afaad6e699a74fc8febe1346d27b3ade9b4865"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/start.rs",
+      "before": "sha256:ef731f9839f28de63177a097e9e539811658c999ba53ce224131b6d87a99fb2f",
+      "after": "sha256:2e9d2514b961df8bef0e396dc3f07bac0e8643b5bc0e5ae48b5ac43100b64cdf"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/domain/execution_capabilities.rs",
+      "before": null,
+      "after": "sha256:93b5c0153512487475beb712bc75ae24afde59f4546c46afb9834f3f0de54c42"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/domain/mod.rs",
+      "before": "sha256:a697d61473f2e46f41c321092173691703b448d4581c78c399fbcd80b356ba22",
+      "after": "sha256:f0e379a6edb40459ddae5b76bf33c95e600507c25d1bcf6ee9aa2729de57e082"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs",
+      "before": "sha256:d9bb191ef9712adcddaf04f59c32640c3f259759afda8927d5b3c4b13ff420d5",
+      "after": "sha256:3c4da46c0032265473ada3233521e7150caeb29334655dfa75f261f1f3b6dbbd"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/service.rs",
+      "before": "sha256:9a851c3035fd84c2db6e77bfc2bdbefac32dbfcffe197ed60821e4e18201e555",
+      "after": "sha256:85e9b5e00f9b61a0929f020259855ec9f993f508424cc14b8b180d18cb83835f"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs",
+      "before": "sha256:16cd4513477e3271b5138a84a6b569bbaa3886f1fcf4ab884b0fe9bf344e728c",
+      "after": "sha256:e2ceb6f4966c6ecb576a2b4b78babe4a26db66c34b3e5e13feb94f8f131a4ee5"
+    }
+  ],
+  "production_files_changed": 13,
+  "source_added_files": 1,
+  "scope": "Server-only API adapter gates; transport-free shared execution flags and callers; optional Surreal concrete memory plumbing plus matching server realtime gate.",
+  "preserved": "No manifest, dependency/lockfile/pin changes. No SDK example isolation/removal. Server-enabled values/paths remain.",
+  "new_guards": "All cfg/refusal branches trace to retained optional-dependency/compiler failures and absent-backend boundary. No-backend failed mutations remain unknown/unresolved.",
+  "limitations": [
+    "No compile/runtime/review acceptance performed",
+    "surreal-memory still brings transitive SurrealDB dependency",
+    "No new generic host memory adapter; absent-backend memory construction explicitly refuses"
+  ],
+  "handoffs": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-feature-boundary-plan-009.md",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-memory-boundary-plan-009.md"
+  ],
+  "spec_delta": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/reengineer-user-outcome-verification/specs/product-validation-evidence/spec.md"
+}
