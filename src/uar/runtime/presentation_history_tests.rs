@@ -8,7 +8,8 @@ use serde_json::{Value, json};
 
 fn user(tenant: &str) -> UserContext {
     UserContext {
-        host_authority: None, authority: None,
+        host_authority: None,
+        authority: None,
         user_id: "operator".into(),
         tenant_id: Some(TenantId::for_test(tenant)),
         claims: UserClaims {
@@ -77,6 +78,7 @@ async fn manager_with_run(captured: bool) -> RunManager {
                 pending_client_handoff: None,
                 client_handoff_failed: false,
             })),
+            caller_handoff_confirmation: Arc::new(Mutex::new(())),
             completion: None,
             delegation: None,
             tool_admission: None,

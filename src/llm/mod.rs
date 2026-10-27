@@ -29,9 +29,10 @@ pub mod orchestrator;
 pub mod prompt_dialect;
 pub mod provider_error;
 pub mod registry;
-pub mod team_profile;
-pub(crate) mod team_failure;
 pub mod router;
+pub(crate) mod team_failure;
+pub mod team_profile;
+mod tool_call_identity;
 pub mod tool_extractor;
 pub mod tool_normalizer;
 pub mod xml_tool_injector;
@@ -370,9 +371,15 @@ impl LlmRequest {
             Some(ToolChoice::Required) if self.tools.is_empty() => {
                 anyhow::bail!("tool_choice required needs at least one declared tool");
             }
-            Some(ToolChoice::Named(name)) if !self.tools.iter().any(|tool| {
-                tool.pointer("/function/name").and_then(serde_json::Value::as_str) == Some(name.as_str())
-            }) => anyhow::bail!("tool_choice names an undeclared tool: {name}"),
+            Some(ToolChoice::Named(name))
+                if !self.tools.iter().any(|tool| {
+                    tool.pointer("/function/name")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(name.as_str())
+                }) =>
+            {
+                anyhow::bail!("tool_choice names an undeclared tool: {name}")
+            }
             _ => Ok(()),
         }
     }

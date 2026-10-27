@@ -108,6 +108,9 @@ def openai(request, calls, text, wire_usage):
             body += chunk({"tool_calls": [{"index": index, "id": call["id"], "type": "function",
                 "function": {"name": call["function"]["name"], "arguments": arguments[:middle]}}]})
             body += chunk({"tool_calls": [{"index": index, "function": {"arguments": arguments[middle:]}}]})
+            body += chunk({"tool_calls": [{"index": index, "id": call["id"]}]})
+            body += chunk({"tool_calls": [{"index": index, "id": ""}]})
+            body += chunk({"tool_calls": [{"index": index, "id": " \t"}]})
     else:
         body += chunk({"content": text})
     body += chunk({}, "tool_calls" if calls else "stop")

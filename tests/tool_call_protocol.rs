@@ -25,7 +25,7 @@ use universal_agent_runtime::{
     uar::{
         defaults,
         domain::{events::NormalizedEvent as RunEvent, policy::ToolApprovalPolicy},
-        rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend},
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::native_skill::{NativeSkill, NativeSkillRegistry},
         runtime::{manager::RunManager, skills::SkillRegistry},
         tools::{
@@ -134,6 +134,28 @@ fn history_tool_result(request: &universal_agent_runtime::llm::LlmRequest, id: &
         .expect("failed tool result reaches the next provider request")
 }
 
+fn assert_native_validation_failure(result: &Value, id: &str) -> Value {
+    assert_eq!(result["status"], "error");
+    assert_eq!(result["tool_call_id"], id);
+    assert_eq!(result["tool"], "path_tool");
+    assert_eq!(
+        result["provenance"],
+        json!({
+            "source": "native",
+            "terminal_state": "failed",
+            "observed_by": "trusted_host"
+        })
+    );
+    let validation: Value = serde_json::from_str(
+        result["message"]
+            .as_str()
+            .expect("failure envelope retains the validation message"),
+    )
+    .expect("validation message is structured JSON");
+    assert_eq!(validation["type"], "invalid_arguments");
+    validation
+}
+
 #[tokio::test]
 async fn malformed_json_is_model_visible_and_never_executes_the_tool() {
     let executions = Arc::new(AtomicUsize::new(0));
@@ -168,9 +190,9 @@ async fn malformed_json_is_model_visible_and_never_executes_the_tool() {
 
     let (result, success) = model_visible_tool_result(&events, "malformed");
     assert!(!success);
-    assert_eq!(result["type"], "invalid_arguments");
+    let validation = assert_native_validation_failure(&result, "malformed");
     assert!(
-        result["message"]
+        validation["message"]
             .as_str()
             .is_some_and(|message| { message.contains("EOF") || message.contains("end of input") }),
         "parse error is preserved: {result}"
@@ -216,9 +238,9 @@ async fn schema_invalid_json_is_model_visible_and_never_executes_the_tool() {
 
     let (result, success) = model_visible_tool_result(&events, "schema-invalid");
     assert!(!success);
-    assert_eq!(result["type"], "invalid_arguments");
+    let validation = assert_native_validation_failure(&result, "schema-invalid");
     assert!(
-        result["message"]
+        validation["message"]
             .as_str()
             .is_some_and(|message| message.contains("string")),
         "validator message is preserved: {result}"
@@ -594,11 +616,10 @@ async fn descriptor_output_limit_applies_to_sequential_and_parallel_paths() {
     assert_descriptor_output_bound(&parallel, 2);
 }
 
-fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
-    Arc::new(UnavailableEmbeddingBackend::new(
-        384,
-        "embeddings are not exercised by this test",
-    ))
+fn unavailable_embedding_backend() -> Arc<SwappableEmbeddingBackend> {
+    Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+        UnavailableEmbeddingBackend::new(384, "embeddings are not exercised by this test"),
+    )))
 }
 
 async fn governed_probe_run(
@@ -752,12 +773,19 @@ async fn approved_read_executes_before_the_next_approval_and_is_charged_once() {
         } else {
             assert_eq!(timeline, vec!["start:probe_first", "end:probe_first"]);
         }
-        let approval_id = approval_events.iter().filter_map(|event| match &event.event {
-            RunEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id.as_deref(),
-            _ => None,
-        }).nth(count - 1).expect("originating batch approval identity");
+        let approval_id = approval_events
+            .iter()
+            .filter_map(|event| match &event.event {
+                RunEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id.as_deref(),
+                _ => None,
+            })
+            .nth(count - 1)
+            .expect("originating batch approval identity");
         tokio::time::timeout(Duration::from_secs(2), async {
-            while !manager.resolve_approval_request(&run_id, Some(approval_id), true).await {
+            while !manager
+                .resolve_approval_request(&run_id, Some(approval_id), true)
+                .await
+            {
                 tokio::task::yield_now().await;
             }
         })
@@ -907,13 +935,23 @@ async fn readonly_mcp_hint_does_not_bypass_ask_approval() {
         "the run remains on its tool turn"
     );
 
-    let approval_id = parked_events.iter().find_map(|event| match &event.event {
-        RunEvent::ToolCallApprovalRequired { tool_call_id, approval_id, .. } if tool_call_id == "readonly-call" => approval_id.as_deref(),
-        _ => None,
-    }).expect("originating read-only approval identity");
+    let approval_id = parked_events
+        .iter()
+        .find_map(|event| match &event.event {
+            RunEvent::ToolCallApprovalRequired {
+                tool_call_id,
+                approval_id,
+                ..
+            } if tool_call_id == "readonly-call" => approval_id.as_deref(),
+            _ => None,
+        })
+        .expect("originating read-only approval identity");
     tokio::time::timeout(Duration::from_secs(2), async {
         loop {
-            if manager.resolve_approval_request(&run_id, Some(approval_id), true).await {
+            if manager
+                .resolve_approval_request(&run_id, Some(approval_id), true)
+                .await
+            {
                 break;
             }
             tokio::task::yield_now().await;

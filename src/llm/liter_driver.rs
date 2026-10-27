@@ -40,8 +40,16 @@ struct ToolAccum {
 // matches_model implementation strips only its own prefix before comparison.
 fn uses_generic_chat_adapter(config: &ClientConfig, model: &str) -> bool {
     config.base_url.is_some()
-        && !["azure/", "anthropic/", "gemini/", "google_ai/", "vertex_ai/", "bedrock/"]
-            .iter().any(|prefix| model.starts_with(prefix))
+        && ![
+            "azure/",
+            "anthropic/",
+            "gemini/",
+            "google_ai/",
+            "vertex_ai/",
+            "bedrock/",
+        ]
+        .iter()
+        .any(|prefix| model.starts_with(prefix))
         && model.strip_prefix("dashscope/").unwrap_or(model) != "tongyi-embedding-vision-plus"
 }
 
@@ -90,8 +98,10 @@ impl LiterLlmDriver {
         super::local_only::check_base_url(config.base_url.as_deref())?;
         let fingerprint = config.base_url.as_deref().map(endpoint_fingerprint);
         validate_endpoint_profile(&profile, &profile.qualified_model, fingerprint.as_deref())?;
-        anyhow::ensure!(profile.transform == EndpointRequestTransform::OpenAiCompatibleChatV1,
-            "TEAM_PROFILE_UNSUPPORTED");
+        anyhow::ensure!(
+            profile.transform == EndpointRequestTransform::OpenAiCompatibleChatV1,
+            "TEAM_PROFILE_UNSUPPORTED"
+        );
         // The captured endpoint is authoritative; provider environment overrides
         // and redirects must not replace it after admission.
         config.load_env = false;
@@ -99,8 +109,13 @@ impl LiterLlmDriver {
         config.transport = config.transport.with_redirects_disabled(true);
         // Liter pins generic chat when an explicit URL and a non-native hint are supplied.
         let client = Arc::new(DefaultClient::new(config, Some("uar-settings-profile"))?);
-        Self::from_client(client, profile.qualified_model.clone(), parallel_tool_calls, fingerprint)
-            .with_endpoint_profile(profile)
+        Self::from_client(
+            client,
+            profile.qualified_model.clone(),
+            parallel_tool_calls,
+            fingerprint,
+        )
+        .with_endpoint_profile(profile)
     }
     /// Create a new driver from a `ClientConfig` and model identifier.
     ///
@@ -490,58 +505,106 @@ fn build_chat_request(
     generic_chat_adapter: bool,
     req: &LlmRequest,
 ) -> anyhow::Result<PreparedChatRequest> {
-    anyhow::ensure!(req.output_token_cap != Some(0), "Output token cap must be positive");
+    anyhow::ensure!(
+        req.output_token_cap != Some(0),
+        "Output token cap must be positive"
+    );
     req.validate_tool_controls()?;
     let messages = convert_messages(&req.messages, req.budget_contract.is_some())?;
     let tools = convert_tools(&req.tools)?;
 
     let mut chat_req = ChatCompletionRequest::default();
-    chat_req.model = endpoint_profile.map_or_else(|| model.to_owned(), |profile| profile.wire_model.clone());
+    chat_req.model =
+        endpoint_profile.map_or_else(|| model.to_owned(), |profile| profile.wire_model.clone());
     chat_req.messages = messages;
     chat_req.tools = if tools.is_empty() { None } else { Some(tools) };
     chat_req.parallel_tool_calls = req.parallel_tool_calls.or(parallel_tool_calls);
     // Liter provider adapters may strip unsupported fields. Refuse explicit
     // caller settings unless this path preserves their exact semantics.
-    let provider = if generic_chat_adapter { "openai-compatible" } else { super::detect_provider(model) };
+    let provider = if generic_chat_adapter {
+        "openai-compatible"
+    } else {
+        super::detect_provider(model)
+    };
     if req.parallel_tool_calls.is_some()
-        && !matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible")
+        && !matches!(
+            provider,
+            "openai" | "azure" | "azure_openai" | "openai-compatible"
+        )
         && endpoint_profile.is_none()
     {
-        anyhow::bail!("provider capability error: explicit parallel_tool_calls is unsupported by the {provider} Liter adapter");
+        anyhow::bail!(
+            "provider capability error: explicit parallel_tool_calls is unsupported by the {provider} Liter adapter"
+        );
     }
     if req.tool_choice.is_some()
-        && !matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible" | "anthropic")
+        && !matches!(
+            provider,
+            "openai" | "azure" | "azure_openai" | "openai-compatible" | "anthropic"
+        )
         && endpoint_profile.is_none()
     {
-        anyhow::bail!("provider capability error: explicit tool_choice is unsupported by the {provider} Liter adapter");
+        anyhow::bail!(
+            "provider capability error: explicit tool_choice is unsupported by the {provider} Liter adapter"
+        );
     }
-    if !matches!(provider, "openai" | "azure" | "azure_openai" | "openai-compatible")
-        && endpoint_profile.is_none()
-        && req.tools.iter().any(|tool| tool.pointer("/function/strict").is_some())
+    if !matches!(
+        provider,
+        "openai" | "azure" | "azure_openai" | "openai-compatible"
+    ) && endpoint_profile.is_none()
+        && req
+            .tools
+            .iter()
+            .any(|tool| tool.pointer("/function/strict").is_some())
     {
-        anyhow::bail!("provider capability error: strict tool semantics are unsupported by the {provider} Liter adapter; Anthropic callers can select the native driver");
+        anyhow::bail!(
+            "provider capability error: strict tool semantics are unsupported by the {provider} Liter adapter; Anthropic callers can select the native driver"
+        );
     }
-    if provider == "anthropic" && req.tools.iter().any(|tool| {
-        tool.pointer("/function/parameters/type").and_then(serde_json::Value::as_str) != Some("object")
-    }) {
-        anyhow::bail!("provider capability error: the Anthropic Liter adapter would rewrite the tool input schema; select the native driver");
+    if provider == "anthropic"
+        && req.tools.iter().any(|tool| {
+            tool.pointer("/function/parameters/type")
+                .and_then(serde_json::Value::as_str)
+                != Some("object")
+        })
+    {
+        anyhow::bail!(
+            "provider capability error: the Anthropic Liter adapter would rewrite the tool input schema; select the native driver"
+        );
     }
-    if let Some(extra) = req.extra_params.as_ref().and_then(serde_json::Value::as_object) {
-        if extra.contains_key("tool_choice") || extra.contains_key("parallel_tool_calls") || extra.contains_key("tools") {
+    if let Some(extra) = req
+        .extra_params
+        .as_ref()
+        .and_then(serde_json::Value::as_object)
+    {
+        if extra.contains_key("tool_choice")
+            || extra.contains_key("parallel_tool_calls")
+            || extra.contains_key("tools")
+        {
             anyhow::bail!("tool controls must use typed request fields, not extra_params");
         }
     }
     if let Some(cap) = req.output_token_cap {
-        if provider == "anthropic" && anthropic_reasoning_minimum(req.extra_params.as_ref())?
-            .is_some_and(|required| required > u64::from(cap))
+        if provider == "anthropic"
+            && anthropic_reasoning_minimum(req.extra_params.as_ref())?
+                .is_some_and(|required| required > u64::from(cap))
         {
-            anyhow::bail!("Anthropic thinking configuration would exceed the caller output token cap");
+            anyhow::bail!(
+                "Anthropic thinking configuration would exceed the caller output token cap"
+            );
         }
-        let output_field = endpoint_profile.and_then(|profile| profile.output_ceiling)
-            .unwrap_or(if provider == "anthropic" { OutputCeilingField::MaxTokens } else { OutputCeilingField::MaxCompletionTokens });
+        let output_field = endpoint_profile
+            .and_then(|profile| profile.output_ceiling)
+            .unwrap_or(if provider == "anthropic" {
+                OutputCeilingField::MaxTokens
+            } else {
+                OutputCeilingField::MaxCompletionTokens
+            });
         match output_field {
             OutputCeilingField::MaxTokens => chat_req.max_tokens = Some(u64::from(cap)),
-            OutputCeilingField::MaxCompletionTokens => chat_req.max_completion_tokens = Some(u64::from(cap)),
+            OutputCeilingField::MaxCompletionTokens => {
+                chat_req.max_completion_tokens = Some(u64::from(cap))
+            }
         }
     }
     chat_req.stream_options = Some(StreamOptions {
@@ -552,10 +615,12 @@ fn build_chat_request(
         Some(super::ToolChoice::Auto) => Some(ToolChoice::Mode(ToolChoiceMode::Auto)),
         Some(super::ToolChoice::None) => Some(ToolChoice::Mode(ToolChoiceMode::None)),
         Some(super::ToolChoice::Required) => Some(ToolChoice::Mode(ToolChoiceMode::Required)),
-        Some(super::ToolChoice::Named(name)) => Some(ToolChoice::Specific(liter_llm::SpecificToolChoice {
-            choice_type: liter_llm::ToolType::Function,
-            function: liter_llm::SpecificFunction { name: name.clone() },
-        })),
+        Some(super::ToolChoice::Named(name)) => {
+            Some(ToolChoice::Specific(liter_llm::SpecificToolChoice {
+                choice_type: liter_llm::ToolType::Function,
+                function: liter_llm::SpecificFunction { name: name.clone() },
+            }))
+        }
         None if chat_req.tools.is_some() => Some(ToolChoice::Mode(ToolChoiceMode::Auto)),
         None => None,
     };
@@ -594,20 +659,40 @@ fn build_chat_request(
 /// calls reject an oversized chunk without opening a provider connection.
 /// Compute the reservation from the same validated bytes used by the leaf driver.
 /// Approximate counts are never promoted into enforceable budget evidence.
-pub(crate) fn request_budget_bound(model: &str, req: &LlmRequest) -> anyhow::Result<(u64,u64)> {
-    let contract = req.budget_contract.as_ref()
+pub(crate) fn request_budget_bound(model: &str, req: &LlmRequest) -> anyhow::Result<(u64, u64)> {
+    let contract = req
+        .budget_contract
+        .as_ref()
         .ok_or_else(|| anyhow::anyhow!("request budget contract is required"))?;
-    let prepared = build_chat_request(model, Some(true), Some(&contract.destination_endpoint_fingerprint), None, false, req)?;
-    let bytes = prepared.validated_wire.as_ref()
+    let prepared = build_chat_request(
+        model,
+        Some(true),
+        Some(&contract.destination_endpoint_fingerprint),
+        None,
+        false,
+        req,
+    )?;
+    let bytes = prepared
+        .validated_wire
+        .as_ref()
         .ok_or_else(|| anyhow::anyhow!("validated final request bytes are required"))?;
     let count = TokenService::count_serialized(contract.counting, bytes)?;
-    anyhow::ensure!(count.quality != crate::uar::runtime::context::token_service::CountQuality::Approximate,
-        "approximate input counts cannot reserve a finite budget");
+    anyhow::ensure!(
+        count.quality != crate::uar::runtime::context::token_service::CountQuality::Approximate,
+        "approximate input counts cannot reserve a finite budget"
+    );
     let output = u64::try_from(contract.limits.output_tokens)?;
     let reasoning = u64::try_from(contract.limits.additional_reasoning_tokens)?;
     let uncertainty = u64::try_from(contract.limits.count_uncertainty_tokens)?;
-    Ok((count.tokens.checked_add(uncertainty).ok_or_else(|| anyhow::anyhow!("input reservation overflow"))?,
-        output.checked_add(reasoning).ok_or_else(|| anyhow::anyhow!("output reservation overflow"))?))
+    Ok((
+        count
+            .tokens
+            .checked_add(uncertainty)
+            .ok_or_else(|| anyhow::anyhow!("input reservation overflow"))?,
+        output
+            .checked_add(reasoning)
+            .ok_or_else(|| anyhow::anyhow!("output reservation overflow"))?,
+    ))
 }
 
 pub(crate) fn preflight_budgeted_request(model: &str, req: &LlmRequest) -> anyhow::Result<()> {
@@ -754,8 +839,10 @@ impl LlmDriver for LiterLlmDriver {
                             let idx = tc.index;
                             let accum = tool_accum.entry(idx).or_default();
 
-                            if let Some(ref id) = tc.id {
-                                accum.id = Some(id.clone());
+                            if let Err(reason) = super::tool_call_identity::merge(&mut accum.id, tc.id.as_deref()) {
+                                record_call_latency(&metrics_model, call_start);
+                                yield Err(super::tool_call_identity::failure(reason));
+                                return;
                             }
                             if let Some(ref func) = tc.function {
                                 if let Some(ref name) = func.name {
@@ -894,16 +981,150 @@ mod prompt_caching_tests {
         )
         .expect("enabled request")
         .request;
-        let disabled =
-            build_chat_request("openai/gpt-test", Some(true), None, None, false, &request(None))
-                .expect("disabled request")
-                .request;
+        let disabled = build_chat_request(
+            "openai/gpt-test",
+            Some(true),
+            None,
+            None,
+            false,
+            &request(None),
+        )
+        .expect("disabled request")
+        .request;
 
         assert_eq!(
             serde_json::to_value(enabled).expect("serialize enabled request"),
             serde_json::to_value(disabled).expect("serialize disabled request"),
             "UAR prompt-caching policy must not alter OpenAI-compatible bodies"
         );
+    }
+
+    async fn identity_stream(
+        deltas: Vec<serde_json::Value>,
+    ) -> Vec<anyhow::Result<NormalizedEvent>> {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0_u8; 4096];
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let read = socket.read(&mut buffer).await.unwrap();
+                assert!(read > 0);
+                request.extend_from_slice(&buffer[..read]);
+            }
+            let header_end = request
+                .windows(4)
+                .position(|window| window == b"\r\n\r\n")
+                .unwrap()
+                + 4;
+            let content_length = std::str::from_utf8(&request[..header_end])
+                .unwrap()
+                .lines()
+                .filter_map(|line| line.split_once(':'))
+                .find(|(name, _)| name.eq_ignore_ascii_case("content-length"))
+                .map(|(_, value)| value.trim().parse::<usize>().unwrap())
+                .unwrap();
+            while request.len() < header_end + content_length {
+                let read = socket.read(&mut buffer).await.unwrap();
+                assert!(read > 0);
+                request.extend_from_slice(&buffer[..read]);
+            }
+            let mut body = String::new();
+            for (delta, finish) in deltas
+                .into_iter()
+                .map(|delta| (delta, serde_json::Value::Null))
+                .chain([(serde_json::json!({}), serde_json::json!("tool_calls"))])
+            {
+                body.push_str(&format!(
+                    "data: {}\n\n",
+                    serde_json::json!({
+                        "id":"identity-fixture", "object":"chat.completion.chunk", "created":0,
+                        "model":"test", "choices":[{"index":0,"delta":delta,"finish_reason":finish}]
+                    })
+                ));
+            }
+            body.push_str("data: [DONE]\n\n");
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            socket.write_all(response.as_bytes()).await.unwrap();
+        });
+        let config = liter_llm::ClientConfigBuilder::new("identity-fixture-key")
+            .base_url(format!("http://{address}/v1"))
+            .max_retries(0)
+            .build();
+        let driver = LiterLlmDriver::new(config, "openai/test".into(), None).unwrap();
+        let events = driver
+            .stream(request(None))
+            .await
+            .unwrap()
+            .collect::<Vec<_>>()
+            .await;
+        server.await.unwrap();
+        events
+    }
+
+    #[tokio::test]
+    async fn typed_sse_preserves_interleaved_identity_and_arguments() {
+        let events = identity_stream(vec![
+            serde_json::json!({"tool_calls":[{"index":0,"id":" call-authentic ","type":"function","function":{"name":"first","arguments":"{\"a\":"}}]}),
+            serde_json::json!({"tool_calls":[{"index":1,"id":"call-second","type":"function","function":{"name":"second","arguments":"{\"b\":"}}]}),
+            serde_json::json!({"tool_calls":[{"index":0,"function":{"arguments":"1"}},{"index":1,"id":"","function":{"arguments":"2"}}]}),
+            serde_json::json!({"tool_calls":[{"index":0,"id":"","function":{"arguments":"}"}},{"index":1,"id":"call-second","function":{"arguments":"}"}}]}),
+            serde_json::json!({"tool_calls":[{"index":0,"id":" \t"},{"index":1}]}),
+        ]).await;
+        let events = events
+            .into_iter()
+            .collect::<anyhow::Result<Vec<_>>>()
+            .unwrap();
+        let calls = events
+            .iter()
+            .filter_map(|event| match event {
+                NormalizedEvent::ToolCallComplete {
+                    call_index,
+                    id,
+                    name,
+                    arguments_json,
+                } => Some((
+                    *call_index,
+                    id.as_str(),
+                    name.as_str(),
+                    arguments_json.as_str(),
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            calls,
+            vec![
+                (0, " call-authentic ", "first", "{\"a\":1}"),
+                (1, "call-second", "second", "{\"b\":2}")
+            ]
+        );
+        assert!(matches!(events.last(), Some(NormalizedEvent::Done)));
+    }
+
+    #[tokio::test]
+    async fn typed_sse_conflict_is_a_fixed_typed_failure_without_completion() {
+        let events = identity_stream(vec![
+            serde_json::json!({"tool_calls":[{"index":0,"id":"private-first","type":"function","function":{"name":"first","arguments":"{}"}}]}),
+            serde_json::json!({"tool_calls":[{"index":0,"id":"private-second"}]}),
+        ]).await;
+        let error = events.last().unwrap().as_ref().unwrap_err();
+        let typed = error
+            .downcast_ref::<ProviderError>()
+            .expect("typed stream failure");
+        assert_eq!(typed.kind, super::super::ProviderErrorKind::Stream);
+        assert_eq!(
+            typed.message,
+            "Provider tool call identity changed within one stream index"
+        );
+        assert!(events.iter().all(|event| !matches!(
+            event,
+            Ok(NormalizedEvent::ToolCallComplete { .. } | NormalizedEvent::Done)
+        )));
     }
 
     #[test]
@@ -920,9 +1141,15 @@ mod prompt_caching_tests {
             "name":"lookup", "strict":true,
             "parameters":{"type":"object","properties":{},"additionalProperties":false}
         }})];
-        let prepared = build_chat_request(&driver.model, None,
-            driver.budget_endpoint_fingerprint.as_deref(), None,
-            driver.generic_chat_adapter, &req).expect("preserve explicit controls");
+        let prepared = build_chat_request(
+            &driver.model,
+            None,
+            driver.budget_endpoint_fingerprint.as_deref(),
+            None,
+            driver.generic_chat_adapter,
+            &req,
+        )
+        .expect("preserve explicit controls");
         let body = serde_json::to_value(prepared.request).expect("serialize typed request");
         assert_eq!(body["model"], "gpt-4o-mini");
         assert_eq!(body["parallel_tool_calls"], false);
@@ -931,15 +1158,37 @@ mod prompt_caching_tests {
 
         // Explicit endpoint native adapters must retain their refusal semantics.
         let config = liter_llm::ClientConfigBuilder::new("test-key")
-            .base_url("http://127.0.0.1:1/v1").build();
+            .base_url("http://127.0.0.1:1/v1")
+            .build();
         assert!(!uses_generic_chat_adapter(&config, "anthropic/claude-test"));
-        let failure = build_chat_request("anthropic/claude-test", None, None,
-            None, uses_generic_chat_adapter(&config, "anthropic/claude-test"), &req)
-            .err().expect("native unsupported parallel control must fail");
-        assert!(failure.to_string().contains("explicit parallel_tool_calls is unsupported"));
-        for model in ["tongyi-embedding-vision-plus", "dashscope/tongyi-embedding-vision-plus",
-            "azure/deployment", "gemini/model", "google_ai/model", "vertex_ai/model", "bedrock/model"] {
-            assert!(!uses_generic_chat_adapter(&config, model), "native adapter: {model}");
+        let failure = build_chat_request(
+            "anthropic/claude-test",
+            None,
+            None,
+            None,
+            uses_generic_chat_adapter(&config, "anthropic/claude-test"),
+            &req,
+        )
+        .err()
+        .expect("native unsupported parallel control must fail");
+        assert!(
+            failure
+                .to_string()
+                .contains("explicit parallel_tool_calls is unsupported")
+        );
+        for model in [
+            "tongyi-embedding-vision-plus",
+            "dashscope/tongyi-embedding-vision-plus",
+            "azure/deployment",
+            "gemini/model",
+            "google_ai/model",
+            "vertex_ai/model",
+            "bedrock/model",
+        ] {
+            assert!(
+                !uses_generic_chat_adapter(&config, model),
+                "native adapter: {model}"
+            );
         }
     }
 

@@ -32,11 +32,11 @@ use futures::{Stream, StreamExt};
 use uuid::Uuid;
 
 use crate::config::{FailoverConfig, FallbackModel, LlmConfig};
+use crate::mcp::outcome::{McpToolFailure, ToolOutcome};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 use crate::uar::runtime::tool_admission::ToolExecutionKind;
-use crate::mcp::outcome::{McpToolFailure, ToolOutcome};
 use crate::uar::tools::descriptor::{
     ApprovalClass, Exposure, ToolCollision, ToolDescriptor, ToolEffect,
 };
@@ -96,9 +96,11 @@ fn build_driver_inner(
     // that can make "local-only" a guarantee rather than a configuration
     // preference. Fails closed: no driver is returned, so no request is sent.
     if let Some(url) = &llm_config.base_url {
-        capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(
-            vec![url.clone().into()],
-        ));
+        capture.extend(
+            crate::uar::runtime::turn::host::RunSecretScrubber::from_values(vec![
+                url.clone().into(),
+            ]),
+        );
     }
     super::local_only::check_base_url(llm_config.base_url.as_deref())?;
 
@@ -114,9 +116,11 @@ fn build_driver_inner(
             .clone()
             .or_else(|| llm_config.provider_keys.get("anthropic").cloned())
             .unwrap_or_default();
-        capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(
-            vec![api_key.clone().into()],
-        ));
+        capture.extend(
+            crate::uar::runtime::turn::host::RunSecretScrubber::from_values(vec![
+                api_key.clone().into(),
+            ]),
+        );
         return Ok(Arc::new(super::anthropic_driver::AnthropicDriver::new(
             api_key,
             model_id,
@@ -293,7 +297,8 @@ pub struct Orchestrator {
     /// Exact prepared-invocation authority used by standalone and paired hosts.
     tool_admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
     #[cfg(feature = "bauar-native-admission-gate")]
-    native_admission_gate: Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver>,
+    native_admission_gate:
+        Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver>,
     /// Optional sandbox runner for isolated code execution.
     sandbox_runner: Option<Arc<dyn crate::sandbox::SandboxRunner>>,
     sandbox_scope: Option<crate::sandbox::execution::SandboxRun>,
@@ -407,10 +412,14 @@ impl DestinationRequestPreparation {
                 == crate::uar::runtime::context::token_service::SerializedCountingContract::ExactCl100kJsonV1,
             "Destination preparation has no validated counting contract"
         );
-        crate::uar::runtime::context::budget::input_allowance_for_limits(&self.budget_contract.limits)
-            .map_err(|outcome| anyhow::anyhow!("Invalid destination capacity contract: {outcome:?}"))?;
-        anyhow::ensure!(self.budget_contract.limits.context_tokens > 0,
-            "Destination preparation requires a known positive capacity");
+        crate::uar::runtime::context::budget::input_allowance_for_limits(
+            &self.budget_contract.limits,
+        )
+        .map_err(|outcome| anyhow::anyhow!("Invalid destination capacity contract: {outcome:?}"))?;
+        anyhow::ensure!(
+            self.budget_contract.limits.context_tokens > 0,
+            "Destination preparation requires a known positive capacity"
+        );
         super::prompt_dialect::PromptTemplateResolver::new(vec![self.template.clone()]).resolve(
             &self.destination,
             None,
@@ -453,7 +462,9 @@ impl DestinationRequestPreparations {
         &self,
         model: &str,
     ) -> Option<&crate::uar::runtime::context::budget::RequestBudgetContract> {
-        self.profiles.get(model).map(|profile| &profile.budget_contract)
+        self.profiles
+            .get(model)
+            .map(|profile| &profile.budget_contract)
     }
 
     fn prepare(
@@ -494,7 +505,9 @@ impl DestinationRequestPreparations {
         request.messages = messages;
         request.extra_params.clone_from(&profile.exact_settings);
         request.budget_contract = Some(profile.budget_contract.clone());
-        if let (Some(cap), Some(contract)) = (request.output_token_cap, &mut request.budget_contract) {
+        if let (Some(cap), Some(contract)) =
+            (request.output_token_cap, &mut request.budget_contract)
+        {
             contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(cap));
         }
 
@@ -520,8 +533,14 @@ impl Orchestrator {
         validated_arguments: serde_json::Value,
         call_index: usize,
     ) -> Result<crate::uar::runtime::tool_admission::AdmittedToolInvocation, String> {
-        self.prepare_and_admit_tool_with_history(model_tool_call_id, descriptor,
-            validated_arguments, call_index, None).await
+        self.prepare_and_admit_tool_with_history(
+            model_tool_call_id,
+            descriptor,
+            validated_arguments,
+            call_index,
+            None,
+        )
+        .await
     }
 
     async fn prepare_and_admit_tool_with_history(
@@ -535,6 +554,10 @@ impl Orchestrator {
         use crate::uar::runtime::tool_admission::{
             HostAdmissionDisposition, LocalAdmissionDisposition, ToolApprovalRequest,
         };
+
+        if model_tool_call_id.trim().is_empty() {
+            return Err("Provider native tool call identity is missing".to_owned());
+        }
 
         let admission_owner = self
             .native_skills
@@ -575,12 +598,7 @@ impl Orchestrator {
                 }
                 ToolApprovalResult::Rejected { reason } => {
                     self.tool_admission
-                        .resolve(
-                            prepared,
-                            host,
-                            LocalAdmissionDisposition::Denied,
-                            false,
-                        )
+                        .resolve(prepared, host, LocalAdmissionDisposition::Denied, false)
                         .await
                         .map_err(|error| format!("Host denial acknowledgment failed: {error}"))?;
                     return Err(reason);
@@ -614,7 +632,8 @@ impl Orchestrator {
                 return Err("Tool call requires an unavailable approval channel".to_string());
             }
         };
-        let admitted = self.tool_admission
+        let admitted = self
+            .tool_admission
             .resolve(prepared, host, local_disposition, true)
             .await
             .map_err(|error| format!("Host admission failed: {error}"))?
@@ -639,25 +658,55 @@ impl Orchestrator {
     /// The trusted host supplies data from a protected checkpoint. Every effect
     /// still receives a new descriptor, preparation, decision, claim and receipt.
     pub(crate) async fn execute_recovered_tool_call(
-        &self, call: &crate::llm::ToolCall, call_index: usize, history: Vec<Message>,
+        &self,
+        call: &crate::llm::ToolCall,
+        call_index: usize,
+        history: Vec<Message>,
     ) -> anyhow::Result<(String, String, ToolOutcome)> {
         let descriptors = self.assembled_descriptors().await?;
-        let descriptor = descriptors.get(&call.function.name)
+        let descriptor = descriptors
+            .get(&call.function.name)
             .ok_or_else(|| anyhow::anyhow!("Recovered tool descriptor is unavailable"))?;
-        anyhow::ensure!(!self.requires_sandbox(descriptor), "Recovered tool requires unavailable sandbox renewal");
+        anyhow::ensure!(
+            !self.requires_sandbox(descriptor),
+            "Recovered tool requires unavailable sandbox renewal"
+        );
         let arguments = validate::validate(&descriptor.validator, &call.function.arguments)?;
-        let admitted = self.prepare_and_admit_tool_with_history(call.id.clone(), descriptor, arguments, call_index, Some(history))
-            .await.map_err(anyhow::Error::msg)?;
-        let outcome = self.execute_direct_tool((1_u64 << 32) | call_index as u64, &admitted,
-            descriptor.output_limit.unwrap_or(self.tool_output_policy)).await;
+        let admitted = self
+            .prepare_and_admit_tool_with_history(
+                call.id.clone(),
+                descriptor,
+                arguments,
+                call_index,
+                Some(history),
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+        let outcome = self
+            .execute_direct_tool(
+                (1_u64 << 32) | call_index as u64,
+                &admitted,
+                descriptor.output_limit.unwrap_or(self.tool_output_policy),
+            )
+            .await;
         self.finish_tool_execution(&admitted, outcome).await
     }
 
     /// Replace the complete canonical history after host recovery produced real results.
     pub(crate) fn with_recovered_history(mut self, history: Vec<Message>) -> Self {
-        let unrendered = history.iter().filter(|message| message.role != MessageRole::System).cloned().collect::<Vec<_>>();
-        if let Some((_, shadow_history)) = &mut self.shadow_turn { *shadow_history = unrendered.clone(); }
-        self.canonical_history = Some(if self.destination_preparations.is_some() { unrendered } else { history });
+        let unrendered = history
+            .iter()
+            .filter(|message| message.role != MessageRole::System)
+            .cloned()
+            .collect::<Vec<_>>();
+        if let Some((_, shadow_history)) = &mut self.shadow_turn {
+            *shadow_history = unrendered.clone();
+        }
+        self.canonical_history = Some(if self.destination_preparations.is_some() {
+            unrendered
+        } else {
+            history
+        });
         self
     }
 
@@ -668,16 +717,26 @@ impl Orchestrator {
     ) -> anyhow::Result<()> {
         use crate::uar::runtime::tool_admission::AdmissionCancellationReason;
         #[cfg(feature = "bauar-native-admission-gate")]
-        if self.native_admission_gate.checkpoint(admitted, execution_kind).await.is_err() {
-            let cancellation = self.tool_admission.cancel(
-                admitted.prepared.as_ref(), &admitted.host_receipt.admission_id,
-                AdmissionCancellationReason::Invalidated,
-            ).await;
+        if self
+            .native_admission_gate
+            .checkpoint(admitted, execution_kind)
+            .await
+            .is_err()
+        {
+            let cancellation = self
+                .tool_admission
+                .cancel(
+                    admitted.prepared.as_ref(),
+                    &admitted.host_receipt.admission_id,
+                    AdmissionCancellationReason::Invalidated,
+                )
+                .await;
             return Err(ToolDispatchBlocked(if cancellation.is_err() {
                 "Native acceptance checkpoint failed; cancellation is unconfirmed"
             } else {
                 "Native acceptance checkpoint failed"
-            }).into());
+            })
+            .into());
         }
         let (message, reason) = if admitted.prepared.execution_kind != execution_kind
             || admitted.host_receipt.execution_kind != execution_kind
@@ -698,8 +757,13 @@ impl Orchestrator {
             self.native_admission_gate.observe_guard(admitted, false);
             return Ok(());
         };
-        let cancellation = self.tool_admission
-            .cancel(admitted.prepared.as_ref(), &admitted.host_receipt.admission_id, reason)
+        let cancellation = self
+            .tool_admission
+            .cancel(
+                admitted.prepared.as_ref(),
+                &admitted.host_receipt.admission_id,
+                reason,
+            )
             .await;
         Err(ToolDispatchBlocked(if cancellation.is_err() {
             "Tool dispatch blocked; cancellation is unconfirmed"
@@ -714,15 +778,22 @@ impl Orchestrator {
         admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
         outcome: anyhow::Result<(String, String, ToolOutcome)>,
     ) -> anyhow::Result<(String, String, ToolOutcome)> {
-        if outcome.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
+        if outcome
+            .as_ref()
+            .err()
+            .is_some_and(|error| error.is::<ToolDispatchBlocked>())
+        {
             // Preserve the cancelled/unknown lifecycle; no body produced a
             // terminal execution result to acknowledge to the host.
             return outcome;
         }
-        let succeeded = outcome.as_ref()
+        let succeeded = outcome
+            .as_ref()
             .map(|(_, _, outcome)| *outcome)
             .unwrap_or(ToolOutcome::OutcomeUnknown);
-        self.tool_admission.finish_outcome(admitted, succeeded.into()).await
+        self.tool_admission
+            .finish_outcome(admitted, succeeded.into())
+            .await
             .map_err(|_| anyhow::anyhow!("Tool terminal receipt was not persisted"))?;
         outcome
     }
@@ -737,7 +808,8 @@ impl Orchestrator {
         let provider_name = admitted.prepared.provider_tool_name.as_str();
         let arguments = &admitted.prepared.validated_arguments;
         if let Some(native) = self.native_skills.get(provider_name).await {
-            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
+            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative)
+                .await?;
             let execution = match crate::uar::runtime::native_skill::execute_native(
                 Arc::clone(&native),
                 arguments.clone(),
@@ -786,20 +858,25 @@ impl Orchestrator {
             } else {
                 crate::uar::persistence::agent_threads::CanonicalReceiptSource::Mcp
             };
-            let value = match self
-                .call_mcp_tool(admitted)
-                .await
-            {
+            let value = match self.call_mcp_tool(admitted).await {
                 Ok(value) => value,
                 Err(error) if error.is::<ToolDispatchBlocked>() => return Err(error),
                 Err(error) if self.mcp.is_native_tool(provider_name) => {
-                    let content = self.preserve_terminal_tool_failure(
-                        sequence, call_id, provider_name, source, error.to_string(),
-                    ).await?;
+                    let content = self
+                        .preserve_terminal_tool_failure(
+                            sequence,
+                            call_id,
+                            provider_name,
+                            source,
+                            error.to_string(),
+                        )
+                        .await?;
                     return Ok((content.clone(), content, ToolOutcome::ApplicationFailed));
-                },
+                }
                 Err(error) => {
-                    return self.preserve_mcp_failure(sequence, call_id, provider_name, source, &error).await;
+                    return self
+                        .preserve_mcp_failure(sequence, call_id, provider_name, source, &error)
+                        .await;
                 }
             };
             let value = self
@@ -901,7 +978,13 @@ impl Orchestrator {
     /// Share host-owned activations without persisting their reclaimable bodies
     /// in the history that compaction summarizes.
     #[must_use]
-    pub(crate) fn with_team_model_handoff(mut self,binding:Option<crate::uar::runtime::turn::CollaborationRunBinding>)->Self{self.team_model_handoff=binding;self}
+    pub(crate) fn with_team_model_handoff(
+        mut self,
+        binding: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
+    ) -> Self {
+        self.team_model_handoff = binding;
+        self
+    }
 
     pub fn with_skill_activation(
         mut self,
@@ -959,7 +1042,8 @@ impl Orchestrator {
 
     #[must_use]
     pub fn with_endpoint_settings_profiles(
-        mut self, profiles: BTreeMap<String, super::EndpointRequestProfile>,
+        mut self,
+        profiles: BTreeMap<String, super::EndpointRequestProfile>,
     ) -> Self {
         self.endpoint_settings_profiles = profiles;
         self
@@ -972,15 +1056,24 @@ impl Orchestrator {
         canonical_messages: &[serde_json::Value],
         fragments: &[crate::uar::runtime::prompt::PromptFragment],
     ) -> anyhow::Result<LlmRequest> {
-        for message in &mut request.messages { self.secret_scrubber.project_message_json(message); }
+        for message in &mut request.messages {
+            self.secret_scrubber.project_message_json(message);
+        }
         let mut canonical_messages = canonical_messages.to_vec();
-        for message in &mut canonical_messages { self.secret_scrubber.project_message_json(message); }
+        for message in &mut canonical_messages {
+            self.secret_scrubber.project_message_json(message);
+        }
         let mut fragments = fragments.to_vec();
         self.secret_scrubber.project_fragments(&mut fragments);
         if !self.endpoint_settings_profiles.is_empty() {
-            let profile = self.endpoint_settings_profiles.get(model)
+            let profile = self
+                .endpoint_settings_profiles
+                .get(model)
                 .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
-            anyhow::ensure!(profile.qualified_model == model, "TEAM_ROUTE_PROFILE_MISMATCH");
+            anyhow::ensure!(
+                profile.qualified_model == model,
+                "TEAM_ROUTE_PROFILE_MISMATCH"
+            );
             // The registered narrow profile has only off reasoning. Never inject
             // family or multi-turn parameters into this captured destination.
             request.extra_params = None;
@@ -1048,7 +1141,8 @@ impl Orchestrator {
     fn provider_failure(&self, error: &anyhow::Error, streaming: bool) -> NormalizedEvent {
         if !self.endpoint_settings_profiles.is_empty() {
             let diagnostic = super::team_failure::diagnostic(error, streaming);
-            tracing::warn!(code = diagnostic.code.as_str(),
+            tracing::warn!(
+                code = diagnostic.code.as_str(),
                 diagnostic_reference = diagnostic.protected_diagnostic_ref.as_deref(),
                 provider_error_kind = super::ProviderError::from_anyhow(error)
                     .map_or("provider_error", super::ProviderError::code),
@@ -1056,26 +1150,37 @@ impl Orchestrator {
                 category = diagnostic.category.as_deref(),
                 http_status = diagnostic.http_status,
                 collaboration_code = diagnostic.collaboration_code.as_deref(),
-                "Captured safe team provider failure");
+                "Captured safe team provider failure"
+            );
             return NormalizedEvent::Error {
                 message: super::team_failure::reason(&diagnostic),
                 code: Some(diagnostic.code),
             };
         }
         if let Some((code, message)) = crate::uar::runtime::cost_budget::client_failure(error) {
-            return NormalizedEvent::Error { message, code: Some(code.to_owned()) };
+            return NormalizedEvent::Error {
+                message,
+                code: Some(code.to_owned()),
+            };
         }
         NormalizedEvent::Error {
             message: self.secret_scrubber.scrub(&error.to_string()),
-            code: Some(super::ProviderError::from_anyhow(error)
-                .map_or("provider_error", super::ProviderError::code).to_owned()),
+            code: Some(
+                super::ProviderError::from_anyhow(error)
+                    .map_or("provider_error", super::ProviderError::code)
+                    .to_owned(),
+            ),
         }
     }
 
     fn provider_log_summary(&self, error: &anyhow::Error) -> String {
-        if self.endpoint_settings_profiles.is_empty() { self.secret_scrubber.scrub(&error.to_string()) }
-        else { super::ProviderError::from_anyhow(error)
-            .map_or("provider_error", super::ProviderError::code).to_owned() }
+        if self.endpoint_settings_profiles.is_empty() {
+            self.secret_scrubber.scrub(&error.to_string())
+        } else {
+            super::ProviderError::from_anyhow(error)
+                .map_or("provider_error", super::ProviderError::code)
+                .to_owned()
+        }
     }
 
     #[must_use]
@@ -1087,7 +1192,10 @@ impl Orchestrator {
         self
     }
 
-    pub(crate) fn with_client_tool_budget(mut self, budget: Arc<crate::uar::runtime::cost_budget::ModelCallBudget>) -> Self {
+    pub(crate) fn with_client_tool_budget(
+        mut self,
+        budget: Arc<crate::uar::runtime::cost_budget::ModelCallBudget>,
+    ) -> Self {
         self.client_tool_budget = Some(budget);
         self
     }
@@ -1108,7 +1216,10 @@ impl Orchestrator {
     }
 
     #[must_use]
-    pub fn with_secret_scrubber(mut self, capture: crate::uar::runtime::turn::host::RunSecretScrubber) -> Self {
+    pub fn with_secret_scrubber(
+        mut self,
+        capture: crate::uar::runtime::turn::host::RunSecretScrubber,
+    ) -> Self {
         self.secret_scrubber.extend(capture);
         self
     }
@@ -1146,8 +1257,10 @@ impl Orchestrator {
                 acquisition_complete,
                 observed_bytes,
             )?;
-        receipt.principal_key = turn.verified_owner()
-            .and_then(|owner| owner.credential_principal()).map(|principal| principal.storage_key());
+        receipt.principal_key = turn
+            .verified_owner()
+            .and_then(|owner| owner.credential_principal())
+            .map(|principal| principal.storage_key());
         receipt.outcome = Some(outcome);
         receipt.secret_projection = Some(projected.secret_projection);
         let stored = store.save_canonical_tool_receipt(&receipt).await?;
@@ -1270,22 +1383,20 @@ impl Orchestrator {
         let name = admitted.prepared.provider_tool_name.as_str();
         let arguments = admitted.prepared.validated_arguments.clone();
         if self.mcp.is_native_tool(name) {
-            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
+            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative)
+                .await?;
             return self
                 .mcp
                 .call_native_with_context(name, arguments, &self.native_execution_context(call_id))
                 .await;
         }
-        self.ensure_tool_dispatch(admitted, ToolExecutionKind::HostMcp).await?;
+        self.ensure_tool_dispatch(admitted, ToolExecutionKind::HostMcp)
+            .await?;
         if let Some(preflight) = &self.mcp_preflight
             && !self.mcp.is_native_tool(name)
         {
             return preflight
-                .call_tool(
-                    name,
-                    arguments,
-                    admitted.host_receipt.mcp_request_meta(),
-                )
+                .call_tool(name, arguments, admitted.host_receipt.mcp_request_meta())
                 .await;
         }
         self.mcp
@@ -1376,17 +1487,25 @@ impl Orchestrator {
         // ToolStart publication awaits the event sink. Revocation during that
         // await must not turn shutdown's drain into a new external operation.
         let result = if cancellation.is_cancelled() {
-            host.tool_admission.cancel(
-                admitted.prepared.as_ref(),
-                &admitted.host_receipt.admission_id,
-                crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
-            ).await?;
+            host.tool_admission
+                .cancel(
+                    admitted.prepared.as_ref(),
+                    &admitted.host_receipt.admission_id,
+                    crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
+                )
+                .await?;
             Err(ToolDispatchBlocked("Graph tool cancelled before dispatch").into())
         } else {
             host.call_mcp_tool(&admitted).await
         };
-        if result.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
-            return Err(anyhow::anyhow!("Graph tool dispatch was blocked before execution"));
+        if result
+            .as_ref()
+            .err()
+            .is_some_and(|error| error.is::<ToolDispatchBlocked>())
+        {
+            return Err(anyhow::anyhow!(
+                "Graph tool dispatch was blocked before execution"
+            ));
         }
         let (canonical_content, execution_outcome) = match result {
             Ok(result) => match host
@@ -1404,23 +1523,30 @@ impl Orchestrator {
                 .await
             {
                 Ok(result) => (serde_json::to_string(&result)?, ToolOutcome::Succeeded),
-                Err(error) => (format!("Canonical receipt error: {error}"), ToolOutcome::OutcomeUnknown),
+                Err(error) => (
+                    format!("Canonical receipt error: {error}"),
+                    ToolOutcome::OutcomeUnknown,
+                ),
             },
             Err(error) => {
-                let (canonical, _, outcome) = host.preserve_mcp_failure(
-                    u64::from(step) << 32, &call_id, name,
-                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
-                    &error,
-                ).await?;
+                let (canonical, _, outcome) = host
+                    .preserve_mcp_failure(
+                        u64::from(step) << 32,
+                        &call_id,
+                        name,
+                        crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
+                        &error,
+                    )
+                    .await?;
                 (canonical, outcome)
-            },
+            }
         };
         host.tool_admission
             .finish_outcome(&admitted, execution_outcome.into())
             .await
-            .map_err(|error| anyhow::anyhow!(
-                "Graph tool terminal receipt was not persisted: {error}"
-            ))?;
+            .map_err(|error| {
+                anyhow::anyhow!("Graph tool terminal receipt was not persisted: {error}")
+            })?;
         let display_content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
             &canonical_content,
             descriptor.output_limit.unwrap_or(host.tool_output_policy),
@@ -1630,7 +1756,10 @@ impl Orchestrator {
 
     /// Observer for the separately compiled acceptance sidecar's finalizer.
     #[cfg(feature = "bauar-native-admission-gate")]
-    pub(crate) fn native_admission_gate(&self) -> Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver> {
+    pub(crate) fn native_admission_gate(
+        &self,
+    ) -> Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver>
+    {
         Arc::clone(&self.native_admission_gate)
     }
 
@@ -1858,9 +1987,13 @@ impl Orchestrator {
         // shared host registry or another child using the same native handlers.
         orchestrator.native_skills = Arc::new(self.native_skills.filtered(None).await);
         let mut messages = messages.clone();
-        for message in &mut messages { orchestrator.secret_scrubber.project_message(message); }
+        for message in &mut messages {
+            orchestrator.secret_scrubber.project_message(message);
+        }
         if let Some(history) = &mut orchestrator.canonical_history {
-            for message in history { orchestrator.secret_scrubber.project_message(message); }
+            for message in history {
+                orchestrator.secret_scrubber.project_message(message);
+            }
         }
         if let Some(fragments) = &mut orchestrator.canonical_fragments {
             orchestrator.secret_scrubber.project_fragments(fragments);
@@ -2599,8 +2732,9 @@ impl Orchestrator {
                                 } => {
                                     has_tool_calls = true;
                                     let acc = tool_accumulators.entry(*call_index).or_default();
-                                    if acc.id.is_none() {
-                                        acc.id = id.clone();
+                                    if let Err(reason) = super::tool_call_identity::merge(&mut acc.id, id.as_deref()) {
+                                        yield orchestrator.provider_failure(&super::tool_call_identity::failure(reason), true);
+                                        return;
                                     }
                                     if acc.name.is_none() {
                                         acc.name = name.clone();
@@ -2611,7 +2745,11 @@ impl Orchestrator {
                                 }
                                 NormalizedEvent::ToolCallComplete { call_index, id, name, arguments_json } => {
                                     let acc = tool_accumulators.entry(*call_index).or_default();
-                                    acc.id = Some(id.clone()); acc.name = Some(name.clone()); acc.arguments = arguments_json.clone();
+                                    if let Err(reason) = super::tool_call_identity::merge(&mut acc.id, Some(id.as_str())) {
+                                        yield orchestrator.provider_failure(&super::tool_call_identity::failure(reason), true);
+                                        return;
+                                    }
+                                    acc.name = Some(name.clone()); acc.arguments = arguments_json.clone();
                                     has_tool_calls = true;
                                     finish_reason = Some("tool_calls".to_string());
                                 }
@@ -2635,11 +2773,20 @@ impl Orchestrator {
                                 }
                                 _ => {}
                             }
-                            // Caller-facing tool metadata is published only after durable handoff.
-                            // Raw provider IDs remain private so no unresumable call escapes.
-                            if !(orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_some()
-                                && matches!(event, NormalizedEvent::ToolCallDelta { .. } | NormalizedEvent::ToolCallComplete { .. })) {
-                                yield event;
+                            match event {
+                                // A completion is provisional until terminal EOF and whole-batch
+                                // validation. Later fragments can still invalidate its identity.
+                                NormalizedEvent::ToolCallComplete { .. } => {}
+                                NormalizedEvent::ToolCallDelta { call_index, name, arguments_delta, .. } => {
+                                    // Caller metadata remains private until durable host handoff.
+                                    if orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_none() {
+                                        let id = tool_accumulators.get(&call_index)
+                                            .and_then(|acc| acc.id.as_ref())
+                                            .filter(|id| !id.trim().is_empty()).cloned();
+                                        yield NormalizedEvent::ToolCallDelta { call_index, id, name, arguments_delta };
+                                    }
+                                }
+                                event => yield event,
                             }
                         }
                         Err(e) => {
@@ -2656,6 +2803,15 @@ impl Orchestrator {
                             return;
                         }
                     }
+                }
+
+                let client_input = orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools());
+                if let Err(reason) = super::tool_call_identity::validate_native_batch(
+                    tool_accumulators.values().map(|acc| (acc.id.as_deref(), acc.name.as_deref())),
+                    |name| client_input.is_some_and(|input| input.owns(name)),
+                ) {
+                    yield orchestrator.provider_failure(&super::tool_call_identity::failure(reason), true);
+                    return;
                 }
 
                 // If no tool calls, we're done
@@ -2683,23 +2839,22 @@ impl Orchestrator {
                 );
 
                 // Build tool calls from accumulators
-                let mut tool_calls: Vec<ToolCall> = tool_accumulators
-                    .values()
-                    .filter_map(|acc| {
+                let (tool_call_indexes, mut tool_calls): (Vec<usize>, Vec<ToolCall>) = tool_accumulators
+                    .iter()
+                    .filter_map(|(index, acc)| {
                         let id = acc.id.clone()?;
                         let name = acc.name.clone()?;
-                        Some(ToolCall {
+                        Some((*index, ToolCall {
                             id,
                             call_type: "function".to_string(),
                             function: ToolCallFunction {
                                 name,
                                 arguments: acc.arguments.clone(),
                             },
-                        })
+                        }))
                     })
-                    .collect();
+                    .unzip();
 
-                let client_input = orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools());
                 let batch_id = Uuid::new_v4().to_string();
                 for call in &mut tool_calls {
                     if client_input.is_some_and(|input| input.owns(&call.function.name)) {
@@ -2773,11 +2928,9 @@ impl Orchestrator {
                     );
                 }
 
-                if client_input.is_some() {
-                    for (call_index, call) in tool_calls.iter().enumerate() {
-                        if !client_input.is_some_and(|input| input.owns(&call.function.name)) {
-                            yield NormalizedEvent::ToolCallComplete { call_index, id: call.id.clone(), name: call.function.name.clone(), arguments_json: call.function.arguments.clone() };
-                        }
+                for (call_index, call) in tool_call_indexes.iter().copied().zip(&tool_calls) {
+                    if !client_input.is_some_and(|input| input.owns(&call.function.name)) {
+                        yield NormalizedEvent::ToolCallComplete { call_index, id: call.id.clone(), name: call.function.name.clone(), arguments_json: call.function.arguments.clone() };
                     }
                 }
                 // Add assistant message with tool calls to history
@@ -3360,7 +3513,9 @@ impl Orchestrator {
     ///
     /// This collects all message deltas into a single string response.
     pub async fn chat_non_streaming(&self, mut messages: Vec<Message>) -> anyhow::Result<String> {
-        for message in &mut messages { self.secret_scrubber.project_message(message); }
+        for message in &mut messages {
+            self.secret_scrubber.project_message(message);
+        }
         let request_id = Uuid::new_v4().to_string();
         let tools = Vec::new(); // No tools for simple requests
 
@@ -3470,6 +3625,959 @@ mod tests {
     }
 
     struct LargeResultSkill;
+
+    struct IdentityReadSkill {
+        calls: Arc<AtomicUsize>,
+    }
+
+    #[async_trait::async_trait]
+    impl NativeSkill for IdentityReadSkill {
+        fn name(&self) -> &str {
+            "search_web"
+        }
+        fn description(&self) -> &str {
+            "Read-only identity regression fixture"
+        }
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({"type":"object","properties":{"query":{"type":"string"}}})
+        }
+        fn effect(&self) -> ToolEffect {
+            ToolEffect::ReadOnly
+        }
+        async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(args)
+        }
+    }
+
+    fn identity_delta(index: usize, id: Option<&str>) -> NormalizedEvent {
+        NormalizedEvent::ToolCallDelta {
+            call_index: index,
+            id: id.map(str::to_owned),
+            name: Some("search_web".into()),
+            arguments_delta: Some(r#"{"query":"identity fixture"}"#.into()),
+        }
+    }
+
+    fn identity_complete(index: usize, id: &str) -> NormalizedEvent {
+        NormalizedEvent::ToolCallComplete {
+            call_index: index,
+            id: id.into(),
+            name: "search_web".into(),
+            arguments_json: r#"{"query":"identity fixture"}"#.into(),
+        }
+    }
+
+    fn identity_turn(run_id: &str, caller_tools: bool) -> crate::uar::runtime::turn::ResolvedTurn {
+        use crate::uar::domain::policy::{PolicyResolutionInput, resolve_run_policy};
+        use crate::uar::runtime::turn::{
+            ResolvedTurn, TurnEnvironment, client_tools::ClientToolInput,
+        };
+
+        let caller = caller_tools.then(|| ClientToolInput {
+            tools: vec![serde_json::json!({"type":"function","function":{
+                "name":"caller_tool","parameters":{"type":"object"}
+            }})],
+            tool_choice: Some(super::super::ToolChoice::Auto),
+            parallel_tool_calls: None,
+            history: Vec::new(),
+            visible_history: None,
+            graph_state: None,
+            output_token_cap: None,
+            budget_snapshot: None,
+            delegation: None,
+            protocol: "openai".into(),
+        });
+        if let Some(input) = &caller {
+            input.validate().unwrap();
+        }
+        ResolvedTurn::new(
+            crate::uar::defaults::default_agent(),
+            resolve_run_policy(PolicyResolutionInput::default()),
+            TurnEnvironment {
+                run_id: run_id.into(),
+                owner_id: "identity-owner".into(),
+                session_id: "identity-session".into(),
+            },
+            LlmConfig::default(),
+            Vec::new(),
+        )
+        .with_client_tools(caller)
+    }
+
+    #[tokio::test]
+    async fn native_identity_malformed_batches_never_publish_complete_or_reach_effects() {
+        for (parallel, caller_tools) in [(false, false), (false, true), (true, false), (true, true)]
+        {
+            let mut cases = vec![
+                vec![identity_delta(0, None)],
+                vec![identity_delta(0, Some("")), identity_complete(0, "")],
+                vec![identity_delta(0, Some(" \t")), identity_complete(0, " \t")],
+                vec![
+                    identity_delta(0, Some("private-first")),
+                    identity_complete(0, "private-second"),
+                ],
+                vec![
+                    identity_delta(0, Some("private-first")),
+                    identity_delta(0, Some("private-second")),
+                ],
+                vec![identity_complete(0, "valid-first"), identity_delta(1, None)],
+                vec![
+                    identity_complete(0, "valid-first"),
+                    identity_complete(1, ""),
+                ],
+                vec![
+                    identity_complete(0, "duplicate"),
+                    identity_complete(1, "duplicate"),
+                ],
+            ];
+            for after_done in [false, true] {
+                for conflict in [
+                    identity_delta(7, Some("private-second")),
+                    identity_complete(7, "private-second"),
+                ] {
+                    let mut batch = vec![identity_complete(7, "private-first")];
+                    if after_done {
+                        batch.push(NormalizedEvent::Done);
+                    }
+                    batch.push(conflict);
+                    cases.push(batch);
+                }
+            }
+            if caller_tools {
+                for invalid in [None, Some(""), Some(" \t")] {
+                    cases.push(vec![
+                        NormalizedEvent::ToolCallComplete {
+                            call_index: 2,
+                            id: String::new(),
+                            name: "caller_tool".into(),
+                            arguments_json: "{}".into(),
+                        },
+                        identity_complete(4, "valid-first"),
+                        identity_delta(9, invalid),
+                    ]);
+                }
+            }
+            for mut batch in cases {
+                batch.push(NormalizedEvent::Done);
+                let driver = Arc::new(MockLlmDriver::new(vec![batch]));
+                let executions = Arc::new(AtomicUsize::new(0));
+                let approvals = Arc::new(AtomicUsize::new(0));
+                let skills = Arc::new(NativeSkillRegistry::new());
+                if parallel {
+                    skills
+                        .register(IdentityReadSkill {
+                            calls: Arc::clone(&executions),
+                        })
+                        .await
+                        .unwrap();
+                } else {
+                    skills
+                        .register(SearchSkill {
+                            calls: Arc::clone(&executions),
+                        })
+                        .await
+                        .unwrap();
+                }
+                let observed = Arc::clone(&approvals);
+                let gate: ToolApprovalGate = Arc::new(move |_| {
+                    observed.fetch_add(1, Ordering::SeqCst);
+                    Box::pin(async move {
+                        if parallel {
+                            ToolApprovalResult::Allowed
+                        } else {
+                            ToolApprovalResult::Approved
+                        }
+                    })
+                });
+                let orchestrator = Orchestrator::from_driver(
+                    LlmConfig {
+                        parallel_tool_calls: Some(parallel),
+                        ..LlmConfig::default()
+                    },
+                    Arc::new(McpRegistry::empty()),
+                    skills,
+                    driver.clone(),
+                )
+                .with_tool_approval_gate(gate)
+                .with_resolved_turn(Arc::new(identity_turn(
+                    "invalid-identity-run",
+                    caller_tools,
+                )));
+                let events = orchestrator
+                    .chat("identity fixture")
+                    .await
+                    .unwrap()
+                    .collect::<Vec<_>>()
+                    .await;
+                assert_eq!(executions.load(Ordering::SeqCst), 0);
+                assert_eq!(approvals.load(Ordering::SeqCst), 0);
+                assert_eq!(driver.requests().len(), 1);
+                assert!(
+                    matches!(events.last(), Some(NormalizedEvent::Error { code: Some(code), .. })
+                    if code == "provider_stream_failed")
+                );
+                assert!(events.iter().all(|event| !matches!(
+                    event,
+                    NormalizedEvent::ToolCallComplete { .. }
+                        | NormalizedEvent::ToolResult { .. }
+                        | NormalizedEvent::ClientToolsRequested { .. }
+                        | NormalizedEvent::Done
+                )));
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn native_identity_survives_blank_completion_through_approval_and_receipt() {
+        use crate::uar::domain::policy::{PolicyResolutionInput, resolve_run_policy};
+        use crate::uar::persistence::PersistenceLayer;
+        use crate::uar::persistence::providers::memory::InMemoryProvider;
+        use crate::uar::runtime::turn::{ResolvedTurn, TurnEnvironment};
+
+        let id = " call-authentic ";
+        let driver = Arc::new(MockLlmDriver::new(vec![
+            vec![
+                identity_delta(0, Some(id)),
+                NormalizedEvent::ToolCallDelta {
+                    call_index: 0,
+                    id: None,
+                    name: None,
+                    arguments_delta: None,
+                },
+                identity_complete(0, ""),
+                NormalizedEvent::Done,
+            ],
+            vec![
+                NormalizedEvent::MessageDelta {
+                    text: "complete".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+        ]));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let skills = Arc::new(NativeSkillRegistry::new());
+        skills
+            .register(SearchSkill {
+                calls: Arc::clone(&calls),
+            })
+            .await
+            .unwrap();
+        let approvals = Arc::new(Mutex::new(Vec::new()));
+        let captured = Arc::clone(&approvals);
+        let gate: ToolApprovalGate = Arc::new(move |request| {
+            captured.lock().unwrap().push((
+                request.invocation.model_tool_call_id.clone(),
+                request
+                    .checkpoint_history
+                    .clone()
+                    .expect("protected approval history"),
+            ));
+            Box::pin(async { ToolApprovalResult::Approved })
+        });
+        let store: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+        let turn = Arc::new(ResolvedTurn::new(
+            crate::uar::defaults::default_agent(),
+            resolve_run_policy(PolicyResolutionInput::default()),
+            TurnEnvironment {
+                run_id: "identity-run".into(),
+                owner_id: "identity-owner".into(),
+                session_id: "identity-session".into(),
+            },
+            LlmConfig::default(),
+            Vec::new(),
+        ));
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::clone(&skills),
+            driver.clone(),
+        )
+        .with_resolved_turn(turn)
+        .with_tool_approval_gate(Arc::clone(&gate))
+        .with_canonical_receipt_store(Some(Arc::clone(&store)));
+        let events = orchestrator
+            .chat("identity fixture")
+            .await
+            .unwrap()
+            .collect::<Vec<_>>()
+            .await;
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(
+            events
+                .iter()
+                .all(|event| !matches!(event, NormalizedEvent::Error { .. }))
+        );
+        let completions = events
+            .iter()
+            .filter_map(|event| match event {
+                NormalizedEvent::ToolCallComplete {
+                    call_index,
+                    id,
+                    name,
+                    arguments_json,
+                } => Some((
+                    *call_index,
+                    id.as_str(),
+                    name.as_str(),
+                    arguments_json.as_str(),
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            completions,
+            vec![(0, id, "search_web", r#"{"query":"identity fixture"}"#)]
+        );
+        assert!(events.iter().any(|event| matches!(event,
+            NormalizedEvent::ToolResult { id: result_id, success: true, .. } if result_id == id)));
+        let pending_history = {
+            let approvals = approvals.lock().unwrap();
+            assert_eq!(approvals.len(), 1);
+            assert_eq!(approvals[0].0, id);
+            let pending = approvals[0]
+                .1
+                .iter()
+                .flat_map(|message| message.tool_calls.iter().flatten())
+                .collect::<Vec<_>>();
+            assert_eq!(pending.len(), 1);
+            assert_eq!(pending[0].id, id);
+            approvals[0].1.clone()
+        };
+        let receipts = store
+            .list_canonical_tool_receipts("identity-owner", "identity-run")
+            .await
+            .unwrap();
+        assert_eq!(receipts.len(), 1);
+        assert_eq!(receipts[0].call_id, id);
+        receipts[0].validate().unwrap();
+        let results = events
+            .iter()
+            .filter_map(|event| match event {
+                NormalizedEvent::ToolResult {
+                    id: result_id,
+                    content,
+                    success,
+                    ..
+                } => Some((
+                    result_id.as_str(),
+                    serde_json::from_str::<serde_json::Value>(content).unwrap(),
+                    *success,
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            results,
+            vec![(id, receipts[0].typed_value.clone().unwrap(), true)]
+        );
+        let requests = driver.requests();
+        assert_eq!(requests.len(), 2);
+        assert!(
+            requests[1]
+                .messages
+                .iter()
+                .any(|message| message["role"] == "tool" && message["tool_call_id"] == id)
+        );
+        assert!(
+            requests[1]
+                .messages
+                .iter()
+                .any(|message| message["role"] == "assistant"
+                    && message["tool_calls"][0]["id"] == id)
+        );
+        let provider_result = requests[1]
+            .messages
+            .iter()
+            .find(|message| message["role"] == "tool" && message["tool_call_id"] == id)
+            .unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(provider_result["content"].as_str().unwrap())
+                .unwrap(),
+            receipts[0].typed_value.clone().unwrap()
+        );
+
+        // Feed the exact protected checkpoint history through native recovery,
+        // which must obtain fresh admission and retain the original call ID.
+        let state = crate::uar::runtime::graph::GraphState {
+            data: Default::default(),
+            messages: pending_history
+                .iter()
+                .map(|message| serde_json::json!(message))
+                .collect(),
+            iteration: 0,
+        };
+        let authorization = crate::uar::runtime::checkpoint::raw_digest(&"identity-fixture-policy");
+        let checkpoint = crate::uar::runtime::checkpoint::Checkpoint::new(
+            "identity-run",
+            "identity-session",
+            "pending_tool_approval",
+            &state,
+            &authorization,
+        );
+        let history =
+            crate::uar::runtime::checkpoint::history_from_checkpoint(&checkpoint).unwrap();
+        let call = history
+            .iter()
+            .flat_map(|message| message.tool_calls.iter().flatten())
+            .next()
+            .unwrap()
+            .clone();
+        assert_eq!(call.id, id);
+        let recovered_turn = Arc::new(ResolvedTurn::new(
+            crate::uar::defaults::default_agent(),
+            resolve_run_policy(PolicyResolutionInput::default()),
+            TurnEnvironment {
+                run_id: "recovered-identity-run".into(),
+                owner_id: "identity-owner".into(),
+                session_id: "identity-session".into(),
+            },
+            LlmConfig::default(),
+            Vec::new(),
+        ));
+        let recovered = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            skills,
+            Arc::new(MockLlmDriver::echo()),
+        )
+        .with_resolved_turn(recovered_turn)
+        .with_tool_approval_gate(gate)
+        .with_canonical_receipt_store(Some(Arc::clone(&store)));
+        let (_, _, outcome) = recovered
+            .execute_recovered_tool_call(&call, 0, history.clone())
+            .await
+            .unwrap();
+        assert!(outcome.succeeded());
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(approvals.lock().unwrap()[1].0, id);
+        let receipts = store
+            .list_canonical_tool_receipts("identity-owner", "recovered-identity-run")
+            .await
+            .unwrap();
+        assert_eq!(receipts.len(), 1);
+        assert_eq!(receipts[0].call_id, id);
+        receipts[0].validate().unwrap();
+        for invalid in ["", " \t"] {
+            let mut invalid_call = call.clone();
+            invalid_call.id = invalid.into();
+            assert!(
+                recovered
+                    .execute_recovered_tool_call(&invalid_call, 0, history.clone())
+                    .await
+                    .is_err()
+            );
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(approvals.lock().unwrap().len(), 2);
+    }
+
+    fn identity_fragment(index: usize, id: Option<&str>, arguments: &str) -> NormalizedEvent {
+        NormalizedEvent::ToolCallDelta {
+            call_index: index,
+            id: id.map(str::to_owned),
+            name: Some("search_web".into()),
+            arguments_delta: Some(arguments.into()),
+        }
+    }
+
+    fn identity_test_orchestrator(
+        driver: Arc<dyn LlmDriver>,
+        parallel: bool,
+        caller_tools: bool,
+    ) -> (Orchestrator, Arc<AtomicUsize>, Arc<AtomicUsize>) {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let approvals = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&approvals);
+        let gate: ToolApprovalGate = Arc::new(move |_| {
+            observed.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async { ToolApprovalResult::Allowed })
+        });
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig {
+                parallel_tool_calls: Some(parallel),
+                ..LlmConfig::default()
+            },
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            driver,
+        )
+        .with_tool_approval_gate(gate)
+        .with_resolved_turn(Arc::new(identity_turn(
+            "publication-identity-run",
+            caller_tools,
+        )));
+        (orchestrator, calls, approvals)
+    }
+
+    #[derive(Debug, Default)]
+    struct IdentityEofBarrier {
+        entered: std::sync::atomic::AtomicBool,
+        release: tokio::sync::Notify,
+    }
+
+    #[derive(Debug)]
+    struct IdentityScriptDriver {
+        turns: Mutex<std::collections::VecDeque<Vec<anyhow::Result<NormalizedEvent>>>>,
+        requests: Mutex<Vec<LlmRequest>>,
+        eof: Option<Arc<IdentityEofBarrier>>,
+    }
+
+    #[async_trait::async_trait]
+    impl LlmDriver for IdentityScriptDriver {
+        async fn stream(
+            &self,
+            request: LlmRequest,
+        ) -> anyhow::Result<super::super::ExternalDriverStream> {
+            let first = {
+                let mut requests = self.requests.lock().unwrap();
+                requests.push(request);
+                requests.len() == 1
+            };
+            let events = self
+                .turns
+                .lock()
+                .unwrap()
+                .pop_front()
+                .expect("scripted provider turn");
+            let eof = if first { self.eof.clone() } else { None };
+            Ok(Box::pin(async_stream::stream! {
+                for event in events { yield event; }
+                if let Some(eof) = eof {
+                    eof.entered.store(true, Ordering::SeqCst);
+                    eof.release.notified().await;
+                }
+            }))
+        }
+    }
+
+    #[tokio::test]
+    async fn native_identity_sparse_interleaved_publication_preserves_indexes_and_arguments() {
+        for (parallel, caller_tools) in [(false, false), (false, true), (true, false), (true, true)]
+        {
+            let finish = |index, id: &str, query: &str| NormalizedEvent::ToolCallComplete {
+                call_index: index,
+                id: id.into(),
+                name: "search_web".into(),
+                arguments_json: serde_json::json!({"query":query}).to_string(),
+            };
+            let driver = Arc::new(MockLlmDriver::new(vec![
+                vec![
+                    identity_fragment(9, Some(" \t"), ""),
+                    identity_fragment(9, Some(" native-nine "), r#"{"query":"#),
+                    identity_fragment(2, Some("native-two"), r#"{"query":"#),
+                    identity_fragment(9, None, r#""nine""#),
+                    identity_fragment(2, Some(""), r#""two""#),
+                    identity_fragment(9, Some(" \t"), "}"),
+                    identity_fragment(2, Some("native-two"), "}"),
+                    finish(9, "", "nine"),
+                    finish(2, " \t", "two"),
+                    finish(9, " native-nine ", "nine"),
+                    NormalizedEvent::Done,
+                ],
+                vec![NormalizedEvent::Done],
+            ]));
+            let (orchestrator, calls, approvals) =
+                identity_test_orchestrator(driver.clone(), parallel, caller_tools);
+            orchestrator
+                .native_skills
+                .register(IdentityReadSkill {
+                    calls: Arc::clone(&calls),
+                })
+                .await
+                .unwrap();
+            let events = tokio::time::timeout(std::time::Duration::from_secs(3), async {
+                orchestrator
+                    .chat("interleaved identity fixture")
+                    .await
+                    .unwrap()
+                    .collect::<Vec<_>>()
+                    .await
+            })
+            .await
+            .expect("native identity stream completes");
+            assert!(
+                events
+                    .iter()
+                    .all(|event| !matches!(event, NormalizedEvent::Error { .. }))
+            );
+            let deltas = events
+                .iter()
+                .filter_map(|event| match event {
+                    NormalizedEvent::ToolCallDelta {
+                        call_index,
+                        id,
+                        arguments_delta,
+                        ..
+                    } => Some((*call_index, id.as_deref(), arguments_delta.as_deref())),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            if caller_tools {
+                assert!(deltas.is_empty());
+            } else {
+                assert_eq!(
+                    deltas,
+                    vec![
+                        (9, None, Some("")),
+                        (9, Some(" native-nine "), Some(r#"{"query":"#)),
+                        (2, Some("native-two"), Some(r#"{"query":"#)),
+                        (9, Some(" native-nine "), Some(r#""nine""#)),
+                        (2, Some("native-two"), Some(r#""two""#)),
+                        (9, Some(" native-nine "), Some("}")),
+                        (2, Some("native-two"), Some("}")),
+                    ]
+                );
+            }
+            let completions = events
+                .iter()
+                .enumerate()
+                .filter_map(|(position, event)| match event {
+                    NormalizedEvent::ToolCallComplete {
+                        call_index,
+                        id,
+                        name,
+                        arguments_json,
+                    } => Some((
+                        position,
+                        *call_index,
+                        id.as_str(),
+                        name.as_str(),
+                        arguments_json.as_str(),
+                    )),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                completions
+                    .iter()
+                    .map(|(_, index, id, name, arguments)| (*index, *id, *name, *arguments))
+                    .collect::<Vec<_>>(),
+                vec![
+                    (2, "native-two", "search_web", r#"{"query":"two"}"#),
+                    (9, " native-nine ", "search_web", r#"{"query":"nine"}"#)
+                ]
+            );
+            let results = events
+                .iter()
+                .enumerate()
+                .filter_map(|(position, event)| match event {
+                    NormalizedEvent::ToolResult { id, success, .. } => {
+                        Some((position, id.as_str(), *success))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                results
+                    .iter()
+                    .map(|(_, id, success)| (*id, *success))
+                    .collect::<Vec<_>>(),
+                vec![("native-two", true), (" native-nine ", true)]
+            );
+            assert!(completions.last().unwrap().0 < results.first().unwrap().0);
+            assert_eq!(calls.load(Ordering::SeqCst), 2);
+            assert_eq!(approvals.load(Ordering::SeqCst), 2);
+            let requests = driver.requests();
+            assert_eq!(requests.len(), 2);
+            let assistant = requests[1]
+                .messages
+                .iter()
+                .find(|message| message["tool_calls"].is_array())
+                .unwrap();
+            assert_eq!(
+                assistant["tool_calls"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|call| call["id"].as_str().unwrap())
+                    .collect::<Vec<_>>(),
+                vec!["native-two", " native-nine "]
+            );
+            assert_eq!(
+                requests[1]
+                    .messages
+                    .iter()
+                    .filter(|message| message["role"] == "tool")
+                    .map(|message| message["tool_call_id"].as_str().unwrap())
+                    .collect::<Vec<_>>(),
+                vec!["native-two", " native-nine "]
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn native_identity_completion_waits_for_terminal_eof_while_deltas_remain_live() {
+        use futures::FutureExt;
+        for caller_tools in [false, true] {
+            let eof = Arc::new(IdentityEofBarrier::default());
+            let driver = Arc::new(IdentityScriptDriver {
+                turns: Mutex::new(std::collections::VecDeque::from([
+                    vec![
+                        Ok(NormalizedEvent::MessageDelta {
+                            text: "working".into(),
+                        }),
+                        Ok(identity_delta(5, Some(" exact-live-id "))),
+                        Ok(identity_complete(5, "")),
+                        Ok(NormalizedEvent::Done),
+                        Ok(NormalizedEvent::Custom {
+                            source: "identity-fixture".into(),
+                            event_name: "before_eof".into(),
+                            payload: serde_json::Value::Null,
+                        }),
+                    ],
+                    vec![Ok(NormalizedEvent::Done)],
+                ])),
+                requests: Mutex::new(Vec::new()),
+                eof: Some(Arc::clone(&eof)),
+            });
+            let (orchestrator, calls, approvals) =
+                identity_test_orchestrator(driver.clone(), false, caller_tools);
+            orchestrator
+                .native_skills
+                .register(IdentityReadSkill {
+                    calls: Arc::clone(&calls),
+                })
+                .await
+                .unwrap();
+            let stream = orchestrator
+                .chat("terminal boundary fixture")
+                .await
+                .unwrap();
+            futures::pin_mut!(stream);
+            let mut events = Vec::new();
+            loop {
+                let event = tokio::time::timeout(std::time::Duration::from_secs(3), stream.next())
+                    .await
+                    .expect("provider reaches EOF barrier")
+                    .expect("barrier marker");
+                let marker = matches!(&event, NormalizedEvent::Custom { event_name, .. } if event_name == "before_eof");
+                events.push(event);
+                if marker {
+                    break;
+                }
+            }
+            assert!(
+                stream.next().now_or_never().is_none(),
+                "completion cannot escape while EOF is pending"
+            );
+            assert!(eof.entered.load(Ordering::SeqCst));
+            assert!(events.iter().any(
+                |event| matches!(event, NormalizedEvent::MessageDelta { text } if text == "working")
+            ));
+            assert_eq!(
+                events
+                    .iter()
+                    .filter(|event| matches!(event, NormalizedEvent::ToolCallDelta { .. }))
+                    .count(),
+                if caller_tools { 0 } else { 1 }
+            );
+            assert!(events.iter().all(|event| !matches!(
+                event,
+                NormalizedEvent::ToolCallComplete { .. }
+                    | NormalizedEvent::ToolResult { .. }
+                    | NormalizedEvent::Done
+            )));
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            assert_eq!(approvals.load(Ordering::SeqCst), 0);
+            eof.release.notify_one();
+            events.extend(
+                tokio::time::timeout(
+                    std::time::Duration::from_secs(3),
+                    stream.collect::<Vec<_>>(),
+                )
+                .await
+                .expect("released stream completes"),
+            );
+            assert!(
+                events
+                    .iter()
+                    .all(|event| !matches!(event, NormalizedEvent::Error { .. }))
+            );
+            assert_eq!(events.iter().filter(|event| matches!(event,
+                NormalizedEvent::ToolCallComplete { call_index: 5, id, .. } if id == " exact-live-id ")).count(), 1);
+            assert_eq!(calls.load(Ordering::SeqCst), 1);
+            assert_eq!(approvals.load(Ordering::SeqCst), 1);
+            assert_eq!(driver.requests.lock().unwrap().len(), 2);
+        }
+    }
+
+    #[tokio::test]
+    async fn native_identity_failed_or_incomplete_streams_discard_pending_completions() {
+        for caller_tools in [false, true] {
+            for (kind, terminal) in [
+                ("normalized", false),
+                ("normalized", true),
+                ("typed", false),
+                ("typed", true),
+                ("eof", false),
+            ] {
+                let mut batch = vec![Ok(identity_complete(3, "retained-private-id"))];
+                if terminal {
+                    batch.push(Ok(NormalizedEvent::Done));
+                }
+                match kind {
+                    "normalized" => batch.push(Ok(NormalizedEvent::Error {
+                        message: "fixture provider failed".into(),
+                        code: Some("fixture_stream_error".into()),
+                    })),
+                    "typed" => batch.push(Err(super::super::ProviderError::new(
+                        None,
+                        super::super::ProviderErrorKind::Stream,
+                        None,
+                        "fixture provider failed",
+                    )
+                    .into())),
+                    _ => {}
+                }
+                let driver = Arc::new(IdentityScriptDriver {
+                    turns: Mutex::new(std::collections::VecDeque::from([batch])),
+                    requests: Mutex::new(Vec::new()),
+                    eof: None,
+                });
+                let (orchestrator, calls, approvals) =
+                    identity_test_orchestrator(driver.clone(), false, caller_tools);
+                orchestrator
+                    .native_skills
+                    .register(IdentityReadSkill {
+                        calls: Arc::clone(&calls),
+                    })
+                    .await
+                    .unwrap();
+                let events = tokio::time::timeout(std::time::Duration::from_secs(3), async {
+                    orchestrator
+                        .chat("failed identity fixture")
+                        .await
+                        .unwrap()
+                        .collect::<Vec<_>>()
+                        .await
+                })
+                .await
+                .expect("failed stream terminates");
+                let expected = match kind {
+                    "normalized" => "fixture_stream_error",
+                    "typed" => "provider_stream_failed",
+                    _ => "provider_stream_incomplete",
+                };
+                assert!(
+                    matches!(events.last(), Some(NormalizedEvent::Error { code: Some(code), .. }) if code == expected)
+                );
+                assert!(events.iter().all(|event| !matches!(
+                    event,
+                    NormalizedEvent::ToolCallComplete { .. }
+                        | NormalizedEvent::ToolResult { .. }
+                        | NormalizedEvent::ClientToolsRequested { .. }
+                        | NormalizedEvent::Done
+                )));
+                assert_eq!(calls.load(Ordering::SeqCst), 0);
+                assert_eq!(approvals.load(Ordering::SeqCst), 0);
+                assert_eq!(driver.requests.lock().unwrap().len(), 1);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn native_identity_caller_choice_and_schema_fail_before_native_publication() {
+        for (choice, arguments, expected) in [
+            (
+                Some(super::super::ToolChoice::Required),
+                None,
+                "client_tool_choice_not_honored",
+            ),
+            (
+                Some(super::super::ToolChoice::Auto),
+                Some("[]"),
+                "invalid_client_tool_arguments",
+            ),
+        ] {
+            let mut batch = vec![identity_complete(8, "native-valid")];
+            if let Some(arguments) = arguments {
+                batch.push(NormalizedEvent::ToolCallComplete {
+                    call_index: 3,
+                    id: String::new(),
+                    name: "caller_tool".into(),
+                    arguments_json: arguments.into(),
+                });
+            }
+            batch.push(NormalizedEvent::Done);
+            let driver = Arc::new(MockLlmDriver::new(vec![batch]));
+            let (mut orchestrator, calls, approvals) =
+                identity_test_orchestrator(driver.clone(), true, true);
+            let turn = identity_turn("caller-validation-identity-run", true);
+            let mut caller = turn.client_tools().unwrap().clone();
+            caller.tool_choice = choice;
+            caller.validate().unwrap();
+            orchestrator =
+                orchestrator.with_resolved_turn(Arc::new(turn.with_client_tools(Some(caller))));
+            orchestrator
+                .native_skills
+                .register(IdentityReadSkill {
+                    calls: Arc::clone(&calls),
+                })
+                .await
+                .unwrap();
+            let events = tokio::time::timeout(std::time::Duration::from_secs(3), async {
+                orchestrator
+                    .chat("caller validation fixture")
+                    .await
+                    .unwrap()
+                    .collect::<Vec<_>>()
+                    .await
+            })
+            .await
+            .expect("caller validation terminates");
+            assert!(
+                matches!(events.last(), Some(NormalizedEvent::Error { code: Some(code), .. }) if code == expected)
+            );
+            assert!(events.iter().all(|event| !matches!(
+                event,
+                NormalizedEvent::ToolCallDelta { .. }
+                    | NormalizedEvent::ToolCallComplete { .. }
+                    | NormalizedEvent::ToolResult { .. }
+                    | NormalizedEvent::ClientToolsRequested { .. }
+                    | NormalizedEvent::Done
+            )));
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            assert_eq!(approvals.load(Ordering::SeqCst), 0);
+            assert_eq!(driver.requests().len(), 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn native_identity_uncompleted_valid_delta_does_not_invent_completion() {
+        for caller_tools in [false, true] {
+            let driver = Arc::new(MockLlmDriver::new(vec![vec![
+                identity_delta(4, Some("valid-delta")),
+                NormalizedEvent::Done,
+            ]]));
+            let (orchestrator, calls, approvals) =
+                identity_test_orchestrator(driver.clone(), false, caller_tools);
+            orchestrator
+                .native_skills
+                .register(IdentityReadSkill {
+                    calls: Arc::clone(&calls),
+                })
+                .await
+                .unwrap();
+            let events = orchestrator
+                .chat("incomplete call fixture")
+                .await
+                .unwrap()
+                .collect::<Vec<_>>()
+                .await;
+            assert!(matches!(events.last(), Some(NormalizedEvent::Done)));
+            assert!(events.iter().all(|event| !matches!(
+                event,
+                NormalizedEvent::ToolCallComplete { .. }
+                    | NormalizedEvent::ToolResult { .. }
+                    | NormalizedEvent::ClientToolsRequested { .. }
+                    | NormalizedEvent::Error { .. }
+            )));
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            assert_eq!(approvals.load(Ordering::SeqCst), 0);
+            assert_eq!(driver.requests().len(), 1);
+        }
+    }
 
     #[test]
     fn resolved_provider_identity_survives_bare_model_for_explicit_base_url() {

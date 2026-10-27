@@ -429,6 +429,7 @@ impl PreparedToolInvocation {
         );
         for value in [
             &self.invocation_id,
+            &self.model_tool_call_id,
             &self.root_run_id,
             &self.executing_run_id,
             &self.owner_id,
@@ -790,7 +791,10 @@ impl ToolAdmissionRuntime {
             "Tool admission context belongs to another host binding"
         );
         let context = Arc::new(context);
-        let host = Arc::new(owned::OwnedToolAdmissionPort::new(Arc::clone(&context), host));
+        let host = Arc::new(owned::OwnedToolAdmissionPort::new(
+            Arc::clone(&context),
+            host,
+        ));
         Ok(Self {
             context,
             host,
@@ -896,7 +900,9 @@ impl ToolAdmissionRuntime {
                 self.cancellation.clone(),
                 self.lifecycle_scope.clone(),
             )
-            .map_err(|error| anyhow::anyhow!("tool admission cancellation owner is unavailable: {error}"))?;
+            .map_err(|error| {
+                anyhow::anyhow!("tool admission cancellation owner is unavailable: {error}")
+            })?;
         Ok(prepared)
     }
 
