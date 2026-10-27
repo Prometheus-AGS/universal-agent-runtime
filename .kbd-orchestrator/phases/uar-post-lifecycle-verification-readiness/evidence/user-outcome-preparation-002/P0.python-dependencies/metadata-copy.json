@@ -1,0 +1,12 @@
+{
+  "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/python",
+  "destination": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-sdk-source",
+  "copied": [
+    "pyproject.toml",
+    "README.md",
+    "uv.lock",
+    "src",
+    "examples"
+  ],
+  "repository_mutated": false
+}

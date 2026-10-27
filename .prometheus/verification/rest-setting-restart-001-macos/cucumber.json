@@ -1,0 +1,116 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "rest-setting-survives-a-uar-restart;persist-a-changed-user-preference-through-restart",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Persist a changed user preference through restart",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 445194666
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the original prompt caching preference is recorded",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-setting-restart.steps.mjs:27"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 60378558
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I change that preference through the REST API",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-setting-restart.steps.mjs:49"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13246009136
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "UAR restarts with the existing settings store",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-setting-restart.steps.mjs:59"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22845174
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the REST API returns the same saved preference after restart",
+            "match": {
+              "location": "scripts/behaviors/steps/rest-setting-restart.steps.mjs:65"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 48735757
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9yZXN0LXNldHRpbmctcmVzdGFydC8xZDkwZDFjNy04ZGNhLTQwOTItOWM0My01OWM2NDg0MzliODEuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "rest-setting-survives-a-uar-restart",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "REST setting survives a UAR restart",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@settings",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/rest-setting-restart.feature"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "post_lifecycle_main",
+    "--",
+    "--test-threads=1"
+  ],
+  "exitCode": 101,
+  "outcome": "FAIL",
+  "elapsedSeconds": 101.81448849398294,
+  "descendantOwnership": "see awaited fixture teardown",
+  "stdoutSha256": "2364121a218a352fb6d1c122f11d5b5e5bcefd5d427335f954d6a2baec2e419d",
+  "stderrSha256": "88787de25faa7c0e7fe55ab0f52e12e76d5d2e24f7947b8c26a57a477409be1d"
+}

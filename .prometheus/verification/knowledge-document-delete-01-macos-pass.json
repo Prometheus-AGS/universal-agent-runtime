@@ -1,0 +1,61 @@
+{
+  "scenario": "KNOWLEDGE-DOCUMENT-DELETE-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T19:44:56.458617-05:00",
+  "attempt": 1,
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/knowledge-document-delete.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 2.925s",
+  "gherkin_steps": 4,
+  "evidence_hooks": 1,
+  "evidence": ".prometheus/verification/knowledge-document-delete/728fbaab-5ff2-46cf-bcb1-0726c5224550.json",
+  "cucumber_report": ".prometheus/verification/knowledge-document-delete-001-macos/cucumber.json",
+  "knowledge_base_id": "6d5c3338-7d5c-4884-a597-a3e95dccd132",
+  "deleted_document_id": "146987d2-fa40-4474-a9e8-8c7b630dbfe1",
+  "retained_document_id": "c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+  "before_retrieval_document_ids": [
+    "c719ea86-d7c6-4b48-a278-770a8e8f1df6",
+    "146987d2-fa40-4474-a9e8-8c7b630dbfe1"
+  ],
+  "after_retrieval_document_ids": [
+    "c719ea86-d7c6-4b48-a278-770a8e8f1df6"
+  ],
+  "identical_query_before_after": true,
+  "delete_status": 204,
+  "deleted_get_status": 404,
+  "retained_document_unchanged": true,
+  "kb_survived_until_cleanup": true,
+  "disposable_kb_deleted": true,
+  "embedding_space": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "configuration_changes": false,
+  "restart": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "runtime_pid": 97354,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/knowledge-document-delete.cucumber.mjs": "84ba72eecf2dd66743500d06f148a694baf619438d926b00245dd8bd566cda3f",
+    "scripts/behaviors/features/knowledge-document-delete.feature": "b405b2a44371f78fa7382f148940fa4b2d373216b7d6ccd5dce6c9b95a39db36",
+    "scripts/behaviors/steps/knowledge-document-delete.steps.mjs": "ced006e0e2a114eb01c4c8853ccfa8443b5c2cdb3c8889fecdd0e49dd9ac90d8"
+  },
+  "source_review": "Code and JavaScript artifact-only reviewers found no blockers; no separate executable checks.",
+  "scope": "One sequential deletion of an indexed document with retained-control retrieval on Mac. Not concurrent ingestion/deletion, restart durability or other backends/platforms.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

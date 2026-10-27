@@ -1,0 +1,175 @@
+{
+  "contractVersion": "1",
+  "kind": "kbd.adopted-contract",
+  "identity": {
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "phaseId": "uar-verification-simplification::agent-team-concurrency-repair",
+    "planRevision": null,
+    "contractDigest": null
+  },
+  "digestNormalization": {
+    "algorithm": "sha256",
+    "command": "jq -S -c 'del(.identity.contractDigest) | del(.identity.planRevision)'",
+    "rationale": "Canonical adoption writer stamps digest/revision after normalized content; not computed/adopted in Spec.",
+    "stalenessRule": "Reject mismatch against latest explicitly adopted canonical contract decision for this path. Null stamps and no adoption decision grant no execution authority."
+  },
+  "adoptionSource": "DRAFT ONLY: user /kbd-spec authorizes specification, not contract adoption/signature or execution. A later explicit operator decision and any required parent-contract amendment are prerequisites.",
+  "decisionOwner": "Human operator; no adoption decision made",
+  "amendmentPolicy": "Material scope/acceptance/budget changes require explicit new adoption/amendment with lineage; this child draft does not supersede parent signed authority or fourteen obligations.",
+  "releaseClaim": {
+    "userOperation": "Create a saved math/writing team, execute independent useful work concurrently and integrate both outputs into an article, with honest terminal accounting.",
+    "supportedEnvironments": [
+      "macOS native server with the explicitly bound durable Surreal/Liter fixture only"
+    ],
+    "currentCapabilities": "Original team/member/task setup passed; actual member execution and merge failed/not exercised. No repaired-source result yet.",
+    "explicitUnknowns": [
+      "Exact historical skill error branch and CAS commit outcome",
+      "Repaired-source build and behavior",
+      "Current validity/availability of fixture authority and remaining allowances",
+      "Other backends/platforms, team KB parity and autonomous project planning"
+    ]
+  },
+  "statusVocabulary": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "NOT_EXERCISED"
+  ],
+  "scenarioMatrix": [
+    {
+      "id": "ADMIT-01",
+      "name": "Configured filesystem-source admission preserves durable settings",
+      "ownerTask": "2.1+3.1+3.2",
+      "productionEntry": "Configured native startup and the existing team BDD through /api/v1/collaboration admission and existing skill/run views",
+      "realCollaborators": [
+        "native UAR",
+        "actual configured filesystem roots",
+        "durable Surreal store",
+        "verified owner/workspace",
+        "TEAM-01 real Liter model"
+      ],
+      "oracle": "Configured source records are reconciled before admission; stored API overrides and scoped disable survive; both real team members enter without the source-mismatch failure. Categorized actual failure evidence remains redacted.",
+      "negativeControl": "Owned absent/mismatched required skill reference refused before provider dispatch. This is not a simulated storage outage or proof of all error branches.",
+      "fixtures": "FIXTURE-ADMIT-BOUND NOT_EXERCISED; see fixture-inputs.json and verification.md. Plan freezes exact owned source roots/selection controls; do not mutate unrelated live skills.",
+      "evidence": "Input/source/config/fixture identities, startup/selection records, refused-resource command outcome and zero provider dispatch, correlated team runs; stable scenario receipt at openspec/changes/repair-agent-team-concurrent-operation/verification.md"
+    },
+    {
+      "id": "TEAM-01",
+      "name": "Real math/writer concurrency and dependent artifact merge",
+      "ownerTask": "2.3+3.1+3.2",
+      "productionEntry": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs",
+      "realCollaborators": [
+        "repaired native UAR",
+        "durable Surreal",
+        "Liter/MiniMax-M3 genuine inference",
+        "saved math and writer immutable team definitions"
+      ],
+      "oracle": "Distinct real member runs overlap; both succeed, arithmetic is independently correct; final writer consumes both exact output artifact IDs and produces a useful article with number, outline headline and saved byline; successful terminal and settled actual model calls.",
+      "negativeControl": "Article admission before dependencies succeed must not dispatch or produce successful output; queue/client overlap never substitutes for active execution.",
+      "fixtures": "FIXTURE-TEAM-BOUND NOT_EXERCISED; bind repaired binary/source identity, model profile/settings revision, valid credential refs, configured identity/capacity2, existing owner store, scoped fresh team IDs and evidence paths. See verification.md.",
+      "evidence": "Exact argv/cwd/redacted env names, source/binary/config/store/fixture IDs, member/task/root/session/call IDs, live overlap observations, successful task outputs, selected artifact receipt and actual article. No old prompting/KB scenarios rerun."
+    },
+    {
+      "id": "SETTLE-01",
+      "name": "Reconcile original uncertain terminal state without re-executing work",
+      "ownerTask": "2.2+3.1+3.2",
+      "productionEntry": "Existing authorized collaboration team recovery/execution views, original team72860111-231c-49ec-a973-e0a4e53f2a63 and attempt285108f8-4cfe-4ff6-8b3b-3a8d9fba052a",
+      "realCollaborators": [
+        "native recovery controller",
+        "original durable attempt/thread/effect records",
+        "fenced collaboration catalog",
+        "verified privileged owner/workspace"
+      ],
+      "oracle": "Historical unknown outcomes stay explicit and charged but DO NOT satisfy terminal idempotency. Production terminal reconciliation must exercise a conclusively terminal known-usage attempt (fresh TEAM-01) and a genuine confirmed terminal unknown-usage attempt (retained original only with authoritative proof). Repeating each exact terminal-settlement reconciliation yields identical output/receipt/reservation/artifacts and unchanged usage revision, with no new attempt/provider call. Cached recovery-command replay alone cannot pass. Missing qualifying evidence or unreadable storage/authority is BLOCKED. Reach settlement through two separately identified authorized reconciliation requests (fresh command IDs/current revisions), then test exact-command replay; execution identity/outcome stay fixed.",
+      "negativeControl": "Same reconciliation command ID with changed payload or stale authority is refused without modifying prior outcome/reservation.",
+      "fixtures": "FIXTURE-SETTLE-BOUND NOT_EXERCISED; original input record digests in fixture-inputs.json; current owner/fence/receipt availability and exact authorized commands must be bound in Plan. Require both known-usage and genuine unknown-usage confirmed terminal fixtures; if retained original lacks proof, do not fabricate state or pass via uncertainty. Allowed mutations are restricted to the retained original and exact owned terminal fixture attempts frozen in Plan, including fresh TEAM-01, with owner/workspace/team/run/fence checked; no unrelated attempts.",
+      "evidence": "Before/after exact attempt/fence/outcome/accounting/usage revision/artifacts; identical-command receipt and conflicting-command refusal; no new inference/tool dispatch; record retained uncertainty and limitations. Separate recorded before/after comparisons for both confirmed terminal fixture categories; prove the production settlement path, not only command-response cache."
+    }
+  ],
+  "functionalScope": [
+    "Configured-source admission with preserved durable selection",
+    "Real overlapping math/outline and artifact-dependent article using existing executor"
+  ],
+  "resilienceScope": {
+    "policy": "SETTLE-01 and named negative controls are required once adopted; exhaustion checkpoints BLOCKED, never silently defers or passes them. Preserve unknown reservations and prohibit execution replay.",
+    "deferredOptional": [
+      "General lost-ack/transport fault campaign and other-backend matrices are not adopted by this child; their parent dispositions remain unchanged."
+    ]
+  },
+  "exclusions": [
+    "New concurrency framework or database/dependency upgrade",
+    "Automatic natural-language task decomposition or full team KB parity",
+    "Other platforms, broader skill-strategy/UI/Boss certification",
+    "Release publication and unrelated accepted-scenario reruns"
+  ],
+  "requiredSafetyChecks": [
+    "No model/tool replay for ambiguous effects",
+    "Owner/workspace/attempt/run/fence match before reconciliation",
+    "No duplicate terminal artifacts or usage revisions on exact replay",
+    "Keep unknown accounting charged; no budget reset",
+    "Preserve source precedence/scoped settings and private content",
+    "No early check/build/test/probe; exact applicable phase boundary and fresh operator authority required"
+  ],
+  "budgets": {
+    "timeMinutes": 3000,
+    "toolCalls": 4800,
+    "repairAttempts": 28,
+    "noProgressLimit": 3,
+    "tokenBudget": "UNKNOWN",
+    "tokenFallback": "Retain parent fallback and actual history; unknown remaining allowance blocks execution. Spec does not allocate tokens.",
+    "consumedAtAuthoring": {
+      "hostCalls": "UNKNOWN; preserve all prior entries",
+      "activeMinutes": "UNKNOWN; preserve original epoch/prior consumption",
+      "repairs": "UNKNOWN; preserve every consumed repair",
+      "embeddingSpend": "No new embedding calls in this Spec; prior totals retained",
+      "embeddingCapsUsd": {
+        "cohere": 10,
+        "openai": 10
+      },
+      "authority": "Inherited ceilings only, not a fresh grant"
+    },
+    "exhaustion": "Checkpoint and BLOCKED for exhausted/unknown allowance; never reset or drop adopted resilience. Documentation/state may be retained without running product tests."
+  },
+  "evidenceInvalidation": "Bind source/artifact/fixture/contract identity at the final boundary. Invalidate only affected evidence after changes, retain old results and all failures; never declare old artifact equivalent to repaired source.",
+  "workerRoutes": {
+    "agent": "Existing uar-core roles where applicable; Plan assigns one writer per file and one build owner",
+    "model": "Existing configured routes; positive inference liter/MiniMax-M3 with exact profile/settings captured in Plan",
+    "billing": "Subscriptions per operator; no new embedding work authorized, independent USD10 caps retained",
+    "subagents": "Bounded research/implementation and independent artifact-only review; no history to critics",
+    "reviewRoundsMax": 2
+  },
+  "boundaryPacket": {
+    "postImplementationOnly": true,
+    "singleRun": true,
+    "commands": [
+      "CARGO_TARGET_DIR=target/uar-team-concurrency-repair cargo build --locked --no-default-features --features server-full --bin universal-agent-runtime",
+      "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs"
+    ],
+    "expectedEffects": [
+      "Owned customer artifact build",
+      "Only explicitly approved repaired-binary activation and owner-scoped fixture/recovery effects after Plan binds them",
+      "Real bounded team model calls, retained tasks/artifacts and scenario receipts; no earlier prompt/KB test rerun"
+    ],
+    "requiredApprovals": "NOT READY TO EXECUTE. Plan must bind FIXTURE-ADMIT-BOUND/FIXTURE-SETTLE-BOUND/FIXTURE-TEAM-BOUND, exact startup/readiness/cleanup commands, valid credential env references, source inventory, remaining allowance and named Rust-review delegation. Obtain explicit instruction/adoption plus any parent-boundary exception/amendment; /kbd-spec is not approval. No hidden preflight or command addition.",
+    "receipts": [
+      "Whole-scope implementation/source/fixture inventory",
+      "Scenario-specific ADMIT-01/SETTLE-01/TEAM-01 evidence under .prometheus/verification/teams and this child",
+      "Actual source review/build/process identity and redacted command receipts",
+      "Prior failures and uncertainty preserved"
+    ],
+    "cleanup": [
+      "No current service/store/agent/KB mutation during Spec",
+      "Later cleanup is exact-owned per frozen packet; retain shared live UAR/agents/KBs and all original receipts unless explicitly authorized otherwise"
+    ],
+    "stopConditions": [
+      "First gate failure or unconfirmed effect",
+      "Unknown/exhausted cumulative allowance",
+      "Missing fixture, invalid credential, stale source/contract or absent exact approval",
+      "No automatic product repair/retry; discuss immediate correction versus backlog"
+    ]
+  },
+  "status": {
+    "implementationComplete": false
+  }
+}

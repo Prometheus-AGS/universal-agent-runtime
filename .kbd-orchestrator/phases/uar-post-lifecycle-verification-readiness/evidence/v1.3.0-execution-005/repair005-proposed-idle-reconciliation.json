@@ -1,0 +1,66 @@
+{
+  "classification": "PROPOSED_EXACT_HUMAN_WAIT_RECONCILIATION_A6_SIGNATURE_REQUIRED",
+  "originalSignedWaitSeconds": 5213.007,
+  "additionalProposedIdleIntervals": [
+    {
+      "terminalWaitStart": "2026-10-24T15:55:54.344Z",
+      "nextDirectOperatorReply": "2026-10-24T16:07:41.495Z",
+      "seconds": 707.151,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T16:12:49.378Z",
+      "nextDirectOperatorReply": "2026-10-24T16:14:09.856Z",
+      "seconds": 80.478,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T16:28:05.157Z",
+      "nextDirectOperatorReply": "2026-10-24T16:29:51.971Z",
+      "seconds": 106.814,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T16:35:25.887Z",
+      "nextDirectOperatorReply": "2026-10-24T16:43:58.846Z",
+      "seconds": 512.959,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T16:57:39.677Z",
+      "nextDirectOperatorReply": "2026-10-24T17:07:33.380Z",
+      "seconds": 593.703,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T17:14:28.857Z",
+      "nextDirectOperatorReply": "2026-10-24T17:33:59.597Z",
+      "seconds": 1170.74,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T17:36:41.921Z",
+      "nextDirectOperatorReply": "2026-10-24T17:38:34.708Z",
+      "seconds": 112.787,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T17:49:01.845Z",
+      "nextDirectOperatorReply": "2026-10-24T18:18:30.322Z",
+      "seconds": 1768.477,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    },
+    {
+      "terminalWaitStart": "2026-10-24T18:27:38.783Z",
+      "nextDirectOperatorReply": "2026-10-24T18:38:12.151Z",
+      "seconds": 633.368,
+      "emittedLeadOrDescendantCallsInInterval": 0
+    }
+  ],
+  "additionalProposedIdleSeconds": 5686.477,
+  "rejectedIntervalsWithDispatches": [],
+  "priorConservativeActiveUpperBound": 224.83888181666666,
+  "reconciledActiveAtSameCutoff": 130.06426514999998,
+  "method": "Exact root task_complete to next direct human message only; zero unique lead/descendant emitted dispatches required; no overlap with original signed wait; excludes no active work. Historical upper bounds/overrun/actual calls retained; any canonical floor remains binding. Not effective authority until A6 approval/signature.",
+  "canonicalConsumptionHighWaterAtSnapshot": {}
+}

@@ -1,0 +1,1288 @@
+{
+  "scenario": "SEMANTIC-SKILL-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+        "description": "Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.",
+        "triggers": {
+          "keywords": [
+            "freight tariff",
+            "consignment valuation"
+          ],
+          "semantic": "Calculate the total price to dispatch packages to a recipient."
+        },
+        "prompt_overlay": "For delivery charges, multiply the box count by 19 and add 46. Return only JSON with marker \"PARCEL-b5d2aca7-6001-4342-a8c2-6f106325803c\" and numeric quote. This is the private pricing recipe; do not substitute general shipping rates."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"title\":\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"description\":\"Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"freight tariff\",\"consignment valuation\"],\"semantic\":\"Calculate the total price to dispatch packages to a recipient.\"},\"preferred_tools\":[],\"prompt_overlay\":\"For delivery charges, multiply the box count by 19 and add 46. Return only JSON with marker \\\"PARCEL-b5d2aca7-6001-4342-a8c2-6f106325803c\\\" and numeric quote. This is the private pricing recipe; do not substitute general shipping rates.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+        "description": "Schedule garden watering.",
+        "triggers": {
+          "keywords": [
+            "garden watering"
+          ]
+        },
+        "prompt_overlay": "For garden watering requests, return only JSON {\"marker\":\"GARDEN-ONLY\",\"litres\":12}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"title\":\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"description\":\"Schedule garden watering.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"garden watering\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"For garden watering requests, return only JSON {\\\"marker\\\":\\\"GARDEN-ONLY\\\",\\\"litres\\\":12}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+        "metadata": {
+          "title": "Disposable service assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Help with the requested task using relevant available skills. Follow the selected skill instructions and return its requested answer format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+                "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4"
+              ],
+              "denied_ids": []
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"metadata\":{\"title\":\"Disposable service assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Help with the requested task using relevant available skills. Follow the selected skill instructions and return its requested answer format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"],\"denied_ids\":[]}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:10f2c6599267c481a18b39644cb2844373b7897ba3b4471c13604fe4e19be03d\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/skills/config",
+      "request": {
+        "engine": "service",
+        "algorithm": "local_embedding",
+        "threshold": 0.5,
+        "margin_threshold": 0.05,
+        "top_k": 3,
+        "model_name": null
+      },
+      "status": 200,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"local_embedding\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+        "model": "liter/MiniMax-M3",
+        "session_id": "53f4c991-d058-40f1-a9bf-57e1f6a25832",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 64000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "How much should I charge to send 24 boxes to a customer? Please work out the delivery fee."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"skills\\\":\\\"Skills · selected · 2 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selected · 14 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.skill.activated\",\"value\":{\"skill\":{\"id\":\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"title\":\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"},\"selectionMethod\":\"implicit\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.skill.activated\",\"value\":{\"skill\":{\"id\":\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"title\":\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"},\"selectionMethod\":\"implicit\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"90db62dceca7e504c6a76e2eda36fa0a2c04af9165fec80f59e71e4efa00408e\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"d5f5465a0cab935585fcfb1febe69b4c4a95624f105b517f2c196484a8e5f9ad\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"da8f0afd1648c40d1e79560efe3ec80c0ce6394353ccb8cf2454f1bf16fd6102\\\"},{\\\"id\\\":\\\"skill.delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"036971178869bafa05d7222287ce86cd3084f4782decb8b8989ac7728c51ced8\\\"},{\\\"id\\\":\\\"skill.garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"dea9b0b7dcca336f090411a865cf9a78720b00f6f061b0202ef33bf7b19cb67b\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1bed2e6f08fdcbe1fcdf5ab3af61fe061409383a60ce679f914f415efa599075\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"071b2fb277666b5729e870e9028b3e4488917dd1381e412d49e4141c4ae873ca\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":9,\\\"by_section\\\":{\\\"active_skills\\\":2,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":3,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":4589,\\\"rendered_characters\\\":4585,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[\\\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\"],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"90db62dceca7e504c6a76e2eda36fa0a2c04af9165fec80f59e71e4efa00408e\",\"fragment_count\":9},\"sourceRunId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"input\":{\"agentId\":\"disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"},\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"run_id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"agent_id\":\"disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"status\":\"running\",\"started_at\":\"2026-10-26T23:03:36.510653+00:00\",\"updated_at\":\"2026-10-26T23:03:36.510663+00:00\"}\nid: 6:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"conversation_id\":\"53f4c991-d058-40f1-a9bf-57e1f6a25832\",\"status\":\"running\"}}],\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb-1\",\"run_id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-26T23:03:36.510835+00:00\"}\nid: 8:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"0062ac868f345ef38736368e68bd362f72f14f0dd0f92f5d77698ba84084a4e2\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"d5f5465a0cab935585fcfb1febe69b4c4a95624f105b517f2c196484a8e5f9ad\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"da8f0afd1648c40d1e79560efe3ec80c0ce6394353ccb8cf2454f1bf16fd6102\\\"},{\\\"id\\\":\\\"skill.delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"036971178869bafa05d7222287ce86cd3084f4782decb8b8989ac7728c51ced8\\\"},{\\\"id\\\":\\\"skill.garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"dea9b0b7dcca336f090411a865cf9a78720b00f6f061b0202ef33bf7b19cb67b\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1bed2e6f08fdcbe1fcdf5ab3af61fe061409383a60ce679f914f415efa599075\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"071b2fb277666b5729e870e9028b3e4488917dd1381e412d49e4141c4ae873ca\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":9,\\\"by_section\\\":{\\\"active_skills\\\":2,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":3,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":4400,\\\"rendered_characters\\\":4396,\\\"context_window_tokens\\\":985576},\\\"selected_skills\\\":[\\\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\",\\\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\\\"],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":3251,\\\"serialized_bytes\\\":13941,\\\"serialized_sha256\\\":\\\"d95351d4a930b85266115de73821b5e9503a87bf0495464d0e4f7ee5f14111da\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\"},\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"role\":\"assistant\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"12:0\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"<think>Th\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e task:\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" delivery\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" pricing skill\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\". \",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"24 boxes × 19 +\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" 46 = 456\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" + 46 = 502.\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" Return only JSON with marker \\\"\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"PARCEL-b5d2aca7\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"-6001-4342-a8\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"c2-6f106325803\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"c\\\" and numeric quote.\\n\\nThe skill\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" says \\\"Return only JSON with marker ...\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" and numeric quote.\\\" Should\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" I use \",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"a2ui_render? The skill\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" doesn't require \",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"29:8\",\"sequence\":464}\nid: 29:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"a UI. It\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"30:8\",\"sequence\":480}\nid: 30:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" says return only JSON. Let me just\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"31:8\",\"sequence\":496}\nid: 31:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" output the JSON.\\n\\nLet me check whether\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"32:8\",\"sequence\":512}\nid: 32:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" activat\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"33:8\",\"sequence\":528}\nid: 33:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e_skill is needed. The skill i\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"34:8\",\"sequence\":544}\nid: 34:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"s already in\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"35:8\",\"sequence\":560}\nid: 35:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" active_\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"36:8\",\"sequence\":576}\nid: 36:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"skills list (th\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"37:8\",\"sequence\":592}\nid: 37:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e enforced\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"38:8\",\"sequence\":608}\nid: 38:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" policy show\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"39:8\",\"sequence\":624}\nid: 39:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"s skills selected wit\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"40:8\",\"sequence\":640}\nid: 40:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"h ids). Th\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"41:8\",\"sequence\":656}\nid: 41:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e skill content\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"42:8\",\"sequence\":672}\nid: 42:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" is already provided in\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"43:8\",\"sequence\":688}\nid: 43:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" active_skills. So no activation\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"44:8\",\"sequence\":704}\nid: 44:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" needed.\\n\\nAlso\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"45:8\",\"sequence\":720}\nid: 45:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" memory_enabled\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"46:8\",\"sequence\":736}\nid: 46:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\": false, so no memory\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"47:8\",\"sequence\":752}\nid: 47:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" save.\\n\\nOutput JSON with marker\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"48:8\",\"sequence\":768}\nid: 48:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" and quote numeri\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"49:8\",\"sequence\":784}\nid: 49:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"c valu\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"50:8\",\"sequence\":800}\nid: 50:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e \",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"51:8\",\"sequence\":816}\nid: 51:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"502.\\n\\nMaybe includ\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"52:8\",\"sequence\":832}\nid: 52:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e a field\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"53:8\",\"sequence\":848}\nid: 53:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" name for th\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"54:8\",\"sequence\":864}\nid: 54:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e numeric quote,\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"55:8\",\"sequence\":880}\nid: 55:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" \",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"56:8\",\"sequence\":896}\nid: 56:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"e.g., \\\"quote\\\": 502.\\n\\n\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"57:8\",\"sequence\":912}\nid: 57:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"Let me answer\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"58:8\",\"sequence\":928}\nid: 58:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\".\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"59:8\",\"sequence\":944}\nid: 59:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"</think>\\n\\n```\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"60:8\",\"sequence\":960}\nid: 60:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"json\\n{\\n\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"61:8\",\"sequence\":976}\nid: 61:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"  \\\"marker\\\": \\\"PARCEL-b\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"62:8\",\"sequence\":992}\nid: 62:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"5d2aca7-6001\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"63:8\",\"sequence\":1008}\nid: 63:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"-4342-a8c2-\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"64:8\",\"sequence\":1024}\nid: 64:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\"6f106325803c\\\",\\n \",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"65:8\",\"sequence\":1040}\nid: 65:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"delta\":\" \\\"quote\\\": 502\\n}\\n```\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"66:8\",\"sequence\":1056}\nid: 66:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"eventId\":\"67:8\",\"sequence\":1072}\nid: 67:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"68:0\",\"sequence\":1088}\nid: 68:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"runId\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"result\":{\"usage\":{\"inputTokens\":3970,\"outputTokens\":241,\"totalTokens\":4211,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"68:8\",\"sequence\":1088}\nid: 68:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"run_id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"status\":\"completed\",\"input_tokens\":3970,\"output_tokens\":241,\"total_tokens\":4211,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-26T23:03:38.313240+00:00\"}\nid: 68:2:3\n\n",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "status": 200,
+      "response": "{\"run_id\":\"b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"agent_id\":\"disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"conversation_id\":\"53f4c991-d058-40f1-a9bf-57e1f6a25832\",\"status\":\"done\",\"agent_revision\":\"sha256:10f2c6599267c481a18b39644cb2844373b7897ba3b4471c13604fe4e19be03d\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"selected\",\"ids\":[\"a2ui_render\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.local_embedding\",\"effective_method\":\"skill_service.local_embedding\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"score\":0.7420538663864136,\"accepted\":true},{\"skill_id\":\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"score\":0.5237928628921509,\"accepted\":true}]},\"activated_skills\":[\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:ac34d6e665da127aa0d8beaae57fea704679388f35305d960231c05f09978692\",\"prepared_sha256\":\"sha256:ac34d6e665da127aa0d8beaae57fea704679388f35305d960231c05f09978692\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":611,\"prepared_tokens\":611,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:ac34d6e665da127aa0d8beaae57fea704679388f35305d960231c05f09978692\",\"final_messages\":2,\"final_tokens\":611,\"input_allowance\":982304,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1046695,\"reserve_tokens\":1000,\"request_input_limit\":1045695,\"history_tokens\":999,\"request_tokens\":1214,\"rendered_tokens\":212,\"rendered_sha256\":\"sha256:0cecda141df00a59c116a368134957a92351e0b21174f5251c6f6de151285954\",\"fragments\":[{\"fragment_id\":\"skill.delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"skill_id\":\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"original_body_tokens\":98,\"retained_body_tokens\":98,\"original_body_sha256\":\"sha256:269dae22be1cac07dc136168981c4b3b17c49ec36db456e2aa3e4eb8590c616b\",\"retained_body_sha256\":\"sha256:269dae22be1cac07dc136168981c4b3b17c49ec36db456e2aa3e4eb8590c616b\",\"original_rendered_tokens\":128,\"retained_rendered_tokens\":128,\"original_rendered_sha256\":\"sha256:acf72cba95f0016f5de58cd73f41770566cebc164fb1a5e9a3c267bda9c8c7e2\",\"retained_rendered_sha256\":\"sha256:acf72cba95f0016f5de58cd73f41770566cebc164fb1a5e9a3c267bda9c8c7e2\",\"retained\":true,\"truncated\":false},{\"fragment_id\":\"skill.garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"skill_id\":\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"original_body_tokens\":54,\"retained_body_tokens\":54,\"original_body_sha256\":\"sha256:3b3b11c695ce9a4bf158846d1aaa8f696b608c93b8cd9ed944e6fa2d96f44601\",\"retained_body_sha256\":\"sha256:3b3b11c695ce9a4bf158846d1aaa8f696b608c93b8cd9ed944e6fa2d96f44601\",\"original_rendered_tokens\":84,\"retained_rendered_tokens\":84,\"original_rendered_sha256\":\"sha256:e0ff774d2f541b696c5cf8d35d70e1a9ee7d54cdea201e9a539416650ea1aa48\",\"retained_rendered_sha256\":\"sha256:e0ff774d2f541b696c5cf8d35d70e1a9ee7d54cdea201e9a539416650ea1aa48\",\"retained\":true,\"truncated\":false}]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"local_embedding\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/skills/config",
+      "request": {
+        "engine": "service",
+        "algorithm": "keyword",
+        "threshold": 0.5,
+        "margin_threshold": 0.05,
+        "top_k": 3,
+        "model_name": null
+      },
+      "status": 200,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "matching_config": {
+    "engine": "service",
+    "algorithm": "keyword",
+    "threshold": 0.5,
+    "margin_threshold": 0.05,
+    "top_k": 3,
+    "model_name": null
+  },
+  "agent_id": "disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+  "skill_id": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+  "decoy_id": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+  "model": "liter/MiniMax-M3",
+  "expected": {
+    "marker": "PARCEL-b5d2aca7-6001-4342-a8c2-6f106325803c",
+    "quote": 502
+  },
+  "keyword_controls": [
+    {
+      "skill_id": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "keywords": [
+        "freight tariff",
+        "consignment valuation"
+      ],
+      "matched_keywords": [],
+      "derived_keyword_score": 0
+    },
+    {
+      "skill_id": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "keywords": [
+        "garden watering"
+      ],
+      "matched_keywords": [],
+      "derived_keyword_score": 0
+    }
+  ],
+  "events": [
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+        "artifactType": "effective_run_policy",
+        "title": "Effective run policy",
+        "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"skills\":\"Skills · selected · 2 available · agent scope\",\"tools\":\"Tools · selected · 14 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+        "language": "a2ui",
+        "metadata": {
+          "profile": "uar.a2ui/1",
+          "protocol_version": "v0.9.1",
+          "catalog_id": "urn:uar:a2ui:catalog:1",
+          "version": 1,
+          "warnings": []
+        },
+        "sourceRunId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "1:8",
+      "sequence": 16
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "running",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": false,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "2:8",
+      "sequence": 32
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.skill.activated",
+      "value": {
+        "skill": {
+          "id": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+          "title": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4"
+        },
+        "selectionMethod": "implicit"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "3:8",
+      "sequence": 48
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.skill.activated",
+      "value": {
+        "skill": {
+          "id": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+          "title": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4"
+        },
+        "selectionMethod": "implicit"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "4:8",
+      "sequence": 64
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "turn-manifest-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+        "artifactType": "turn_manifest",
+        "title": "Turn manifest",
+        "content": "{\"schema_version\":1,\"manifest_hash\":\"90db62dceca7e504c6a76e2eda36fa0a2c04af9165fec80f59e71e4efa00408e\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d5f5465a0cab935585fcfb1febe69b4c4a95624f105b517f2c196484a8e5f9ad\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"da8f0afd1648c40d1e79560efe3ec80c0ce6394353ccb8cf2454f1bf16fd6102\"},{\"id\":\"skill.delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"section\":\"active_skills\",\"source\":\"skill:delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"036971178869bafa05d7222287ce86cd3084f4782decb8b8989ac7728c51ced8\"},{\"id\":\"skill.garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"section\":\"active_skills\",\"source\":\"skill:garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"dea9b0b7dcca336f090411a865cf9a78720b00f6f061b0202ef33bf7b19cb67b\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1bed2e6f08fdcbe1fcdf5ab3af61fe061409383a60ce679f914f415efa599075\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"071b2fb277666b5729e870e9028b3e4488917dd1381e412d49e4141c4ae873ca\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":9,\"by_section\":{\"active_skills\":2,\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":3,\"system\":1}},\"budgets\":{\"rendered_bytes\":4589,\"rendered_characters\":4585,\"context_window_tokens\":1048576},\"selected_skills\":[\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}",
+        "language": "json",
+        "metadata": {
+          "schema_version": 1,
+          "manifest_hash": "90db62dceca7e504c6a76e2eda36fa0a2c04af9165fec80f59e71e4efa00408e",
+          "fragment_count": 9
+        },
+        "sourceRunId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "5:8",
+      "sequence": 80
+    },
+    {
+      "type": "RUN_STARTED",
+      "profile": "uar.agui/1",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "input": {
+        "agentId": "disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4"
+      },
+      "eventId": "6:8",
+      "sequence": 96
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "replace",
+          "path": "/run",
+          "value": {
+            "run_id": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+            "conversation_id": "53f4c991-d058-40f1-a9bf-57e1f6a25832",
+            "status": "running"
+          }
+        }
+      ],
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "7:8",
+      "sequence": 112
+    },
+    {
+      "type": "STEP_STARTED",
+      "profile": "uar.agui/1",
+      "stepId": "step-1",
+      "stepName": "step-1",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "8:8",
+      "sequence": 128
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.turn:resolved_step",
+        "artifactType": "provider_event",
+        "title": "resolved_step",
+        "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"0062ac868f345ef38736368e68bd362f72f14f0dd0f92f5d77698ba84084a4e2\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d5f5465a0cab935585fcfb1febe69b4c4a95624f105b517f2c196484a8e5f9ad\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"da8f0afd1648c40d1e79560efe3ec80c0ce6394353ccb8cf2454f1bf16fd6102\"},{\"id\":\"skill.delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"section\":\"active_skills\",\"source\":\"skill:delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"036971178869bafa05d7222287ce86cd3084f4782decb8b8989ac7728c51ced8\"},{\"id\":\"skill.garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"section\":\"active_skills\",\"source\":\"skill:garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"dea9b0b7dcca336f090411a865cf9a78720b00f6f061b0202ef33bf7b19cb67b\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1bed2e6f08fdcbe1fcdf5ab3af61fe061409383a60ce679f914f415efa599075\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"071b2fb277666b5729e870e9028b3e4488917dd1381e412d49e4141c4ae873ca\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":9,\"by_section\":{\"active_skills\":2,\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":3,\"system\":1}},\"budgets\":{\"rendered_bytes\":4400,\"rendered_characters\":4396,\"context_window_tokens\":985576},\"selected_skills\":[\"delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4\",\"garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "9:8",
+      "sequence": 144
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "attempt-manifest-b7c3c3ac-70bf-4dbf-9d5a-29daac225deb-MiniMax-M3",
+        "artifactType": "attempt_manifest",
+        "title": "Provider attempt manifest",
+        "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+        "language": "json",
+        "metadata": {
+          "source": "uar.request",
+          "budgeting_label": "legacy_unbudgeted"
+        },
+        "sourceRunId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "10:8",
+      "sequence": 160
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.request:budget_receipt",
+        "artifactType": "provider_event",
+        "title": "budget_receipt",
+        "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":3251,\"serialized_bytes\":13941,\"serialized_sha256\":\"d95351d4a930b85266115de73821b5e9503a87bf0495464d0e4f7ee5f14111da\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb"
+      },
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "11:8",
+      "sequence": 176
+    },
+    {
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "role": "assistant",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "type": "TEXT_MESSAGE_START",
+      "profile": "uar.agui/1",
+      "eventId": "12:0",
+      "sequence": 192
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "<think>Th",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "12:8",
+      "sequence": 192
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e task:",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "13:8",
+      "sequence": 208
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " delivery",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "14:8",
+      "sequence": 224
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " pricing skill",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "15:8",
+      "sequence": 240
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": ". ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "16:8",
+      "sequence": 256
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "24 boxes × 19 +",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "17:8",
+      "sequence": 272
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " 46 = 456",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "18:8",
+      "sequence": 288
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " + 46 = 502.",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "19:8",
+      "sequence": 304
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " Return only JSON with marker \"",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "20:8",
+      "sequence": 320
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "PARCEL-b5d2aca7",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "21:8",
+      "sequence": 336
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "-6001-4342-a8",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "22:8",
+      "sequence": 352
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "c2-6f106325803",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "23:8",
+      "sequence": 368
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "c\" and numeric quote.\n\nThe skill",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "24:8",
+      "sequence": 384
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " says \"Return only JSON with marker ...",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "25:8",
+      "sequence": 400
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " and numeric quote.\" Should",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "26:8",
+      "sequence": 416
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " I use ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "27:8",
+      "sequence": 432
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "a2ui_render? The skill",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "28:8",
+      "sequence": 448
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " doesn't require ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "29:8",
+      "sequence": 464
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "a UI. It",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "30:8",
+      "sequence": 480
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " says return only JSON. Let me just",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "31:8",
+      "sequence": 496
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " output the JSON.\n\nLet me check whether",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "32:8",
+      "sequence": 512
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " activat",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "33:8",
+      "sequence": 528
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e_skill is needed. The skill i",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "34:8",
+      "sequence": 544
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "s already in",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "35:8",
+      "sequence": 560
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " active_",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "36:8",
+      "sequence": 576
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "skills list (th",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "37:8",
+      "sequence": 592
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e enforced",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "38:8",
+      "sequence": 608
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " policy show",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "39:8",
+      "sequence": 624
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "s skills selected wit",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "40:8",
+      "sequence": 640
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "h ids). Th",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "41:8",
+      "sequence": 656
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e skill content",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "42:8",
+      "sequence": 672
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " is already provided in",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "43:8",
+      "sequence": 688
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " active_skills. So no activation",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "44:8",
+      "sequence": 704
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " needed.\n\nAlso",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "45:8",
+      "sequence": 720
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " memory_enabled",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "46:8",
+      "sequence": 736
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": ": false, so no memory",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "47:8",
+      "sequence": 752
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " save.\n\nOutput JSON with marker",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "48:8",
+      "sequence": 768
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " and quote numeri",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "49:8",
+      "sequence": 784
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "c valu",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "50:8",
+      "sequence": 800
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "51:8",
+      "sequence": 816
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "502.\n\nMaybe includ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "52:8",
+      "sequence": 832
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e a field",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "53:8",
+      "sequence": 848
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " name for th",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "54:8",
+      "sequence": 864
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e numeric quote,",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "55:8",
+      "sequence": 880
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "56:8",
+      "sequence": 896
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "e.g., \"quote\": 502.\n\n",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "57:8",
+      "sequence": 912
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "Let me answer",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "58:8",
+      "sequence": 928
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": ".",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "59:8",
+      "sequence": 944
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "</think>\n\n```",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "60:8",
+      "sequence": 960
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "json\n{\n",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "61:8",
+      "sequence": 976
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "  \"marker\": \"PARCEL-b",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "62:8",
+      "sequence": 992
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "5d2aca7-6001",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "63:8",
+      "sequence": 1008
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "-4342-a8c2-",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "64:8",
+      "sequence": 1024
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": "6f106325803c\",\n ",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "65:8",
+      "sequence": 1040
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "delta": " \"quote\": 502\n}\n```",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "66:8",
+      "sequence": 1056
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "finished",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": false,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "eventId": "67:8",
+      "sequence": 1072
+    },
+    {
+      "messageId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb:assistant",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "type": "TEXT_MESSAGE_END",
+      "profile": "uar.agui/1",
+      "eventId": "68:0",
+      "sequence": 1088
+    },
+    {
+      "type": "RUN_FINISHED",
+      "profile": "uar.agui/1",
+      "threadId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "runId": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+      "result": {
+        "usage": {
+          "inputTokens": 3970,
+          "outputTokens": 241,
+          "totalTokens": 4211,
+          "costUsdEstimate": null,
+          "model": "MiniMax-M3"
+        }
+      },
+      "eventId": "68:8",
+      "sequence": 1088
+    }
+  ],
+  "run_id": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+  "run_inspection": {
+    "run_id": "b7c3c3ac-70bf-4dbf-9d5a-29daac225deb",
+    "agent_id": "disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+    "conversation_id": "53f4c991-d058-40f1-a9bf-57e1f6a25832",
+    "status": "done",
+    "agent_revision": "sha256:10f2c6599267c481a18b39644cb2844373b7897ba3b4471c13604fe4e19be03d",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-semantic-skill-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "selected",
+        "ids": [
+          "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+          "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4"
+        ],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "selected",
+        "ids": [
+          "a2ui_render",
+          "native__memory_capture_policy",
+          "native__memory_delete_by_id",
+          "native__memory_history",
+          "native__memory_list",
+          "native__memory_recall",
+          "native__memory_save",
+          "native__memory_update_by_id",
+          "native_echo",
+          "native_system_info",
+          "uar_compile",
+          "uar_session_check_completeness",
+          "uar_session_compile",
+          "uar_session_update_section"
+        ],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "auto",
+        "ids": [],
+        "source": "legacy"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "legacy"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "legacy",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.local_embedding",
+      "effective_method": "skill_service.local_embedding",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": [
+        {
+          "skill_id": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+          "score": 0.7420538663864136,
+          "accepted": true
+        },
+        {
+          "skill_id": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+          "score": 0.5237928628921509,
+          "accepted": true
+        }
+      ]
+    },
+    "activated_skills": [
+      "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+      "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4"
+    ],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "source_sha256": "sha256:ac34d6e665da127aa0d8beaae57fea704679388f35305d960231c05f09978692",
+      "prepared_sha256": "sha256:ac34d6e665da127aa0d8beaae57fea704679388f35305d960231c05f09978692",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 611,
+      "prepared_tokens": 611,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:ac34d6e665da127aa0d8beaae57fea704679388f35305d960231c05f09978692",
+      "final_messages": 2,
+      "final_tokens": 611,
+      "input_allowance": 982304,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1046695,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1045695,
+        "history_tokens": 999,
+        "request_tokens": 1214,
+        "rendered_tokens": 212,
+        "rendered_sha256": "sha256:0cecda141df00a59c116a368134957a92351e0b21174f5251c6f6de151285954",
+        "fragments": [
+          {
+            "fragment_id": "skill.delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+            "skill_id": "delivery-pricing-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+            "original_body_tokens": 98,
+            "retained_body_tokens": 98,
+            "original_body_sha256": "sha256:269dae22be1cac07dc136168981c4b3b17c49ec36db456e2aa3e4eb8590c616b",
+            "retained_body_sha256": "sha256:269dae22be1cac07dc136168981c4b3b17c49ec36db456e2aa3e4eb8590c616b",
+            "original_rendered_tokens": 128,
+            "retained_rendered_tokens": 128,
+            "original_rendered_sha256": "sha256:acf72cba95f0016f5de58cd73f41770566cebc164fb1a5e9a3c267bda9c8c7e2",
+            "retained_rendered_sha256": "sha256:acf72cba95f0016f5de58cd73f41770566cebc164fb1a5e9a3c267bda9c8c7e2",
+            "retained": true,
+            "truncated": false
+          },
+          {
+            "fragment_id": "skill.garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+            "skill_id": "garden-watering-f0ddc448-2353-4322-9659-7ea8f3fd93d4",
+            "original_body_tokens": 54,
+            "retained_body_tokens": 54,
+            "original_body_sha256": "sha256:3b3b11c695ce9a4bf158846d1aaa8f696b608c93b8cd9ed944e6fa2d96f44601",
+            "retained_body_sha256": "sha256:3b3b11c695ce9a4bf158846d1aaa8f696b608c93b8cd9ed944e6fa2d96f44601",
+            "original_rendered_tokens": 84,
+            "retained_rendered_tokens": 84,
+            "original_rendered_sha256": "sha256:e0ff774d2f541b696c5cf8d35d70e1a9ee7d54cdea201e9a539416650ea1aa48",
+            "retained_rendered_sha256": "sha256:e0ff774d2f541b696c5cf8d35d70e1a9ee7d54cdea201e9a539416650ea1aa48",
+            "retained": true,
+            "truncated": false
+          }
+        ]
+      }
+    }
+  },
+  "matching_config_restored": true,
+  "cleanup_errors": [],
+  "disposable_resources_deleted": true,
+  "status": "FAILED",
+  "duration_ms": 17049
+}

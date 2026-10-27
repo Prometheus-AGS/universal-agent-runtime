@@ -1,0 +1,30 @@
+{
+  "classification": "METADATA_AUTHORING_NOT_SCHEMA_VALIDATION_OR_ADOPTION",
+  "failed_contract_preserved": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.proposed.json",
+    "sha256": "sha256:a946e80c2344f46652b9ce0567ad0d96a189515aa1fbbcf6cf46c0807dc4431c"
+  },
+  "replacement_contract": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-002.proposed.json",
+    "digest": "e4525d25b528cc017ba6639dc610c06188902e0718bf4db786706ad96db4f217"
+  },
+  "replacement_packet": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-002.packet.json",
+    "sha256": "sha256:8f971047212e838a3d046c89234496c14e885b6ccbc4831c57b21e7745af0653"
+  },
+  "source_identity": "sha256:580f7196999aa00b78e211a9894424b0d8c4074acf07fbafb483d00592e8673f",
+  "source_files_edited": [],
+  "execution_commands_changed": false,
+  "budgets_changed": false,
+  "prior_consumption_preserved": true,
+  "prior_repairs_consumed": 15,
+  "repair16_charged": false,
+  "schema_sources_inspected": [
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-contract-adopt.sh",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/skills/process/kbd-process-orchestrator/references/schemas/adopted-contract.schema.json"
+  ],
+  "schema_validation": "NOT_RUN",
+  "adoption_retry": "NOT_RUN",
+  "signature": "NOT_CREATED",
+  "product_verification": "CLOSED"
+}

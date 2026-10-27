@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "status": "DRAFT_COLLECT_RESULTS_SCOPE_AWAITING_OPERATOR_CHOICE_NOT_AUTHORITY",
+  "created_at": "2026-10-25T15:43:11.313478+00:00",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "current_contract": "A14 cb7b76fe3ba7127bb91c2dfb5bd57641a862a15039817582ff89f7f96bc098ce binding16",
+  "P1_002": "SIGNED_ADOPTED_BUT_M0_NOT_STARTED; deferred by latest instruction",
+  "gate": "CLOSED",
+  "scope_choices": [
+    "independent items first, fixture-dependent items blocked",
+    "minimum fixture setup then complete full sweep"
+  ],
+  "failure_policy": {
+    "record_each_exit_and_artifact": true,
+    "continue_independent_after_failure": true,
+    "dependent_item_without_prerequisites": "BLOCKED_NOT_TEST_FAILURE",
+    "automatic_retry": false,
+    "repairs_during_sweep": false,
+    "global_stop": [
+      "unknown/exhausted signed resource allowance",
+      "uncontained owned child/process cleanup",
+      "credential exposure or authority violation requiring immediate stop"
+    ],
+    "no_release_claim": true
+  },
+  "unfinished_implementation": [
+    "canonical2.9 actual supporting fixture/private-derived inventory/resource authority/composition/final activation"
+  ],
+  "early_verification_exception_required": "Exact independent diagnostic batch before deferred fixture implementation completes; supported profile compilation and spec/source checks require actual execution; source inspection cannot establish those results. This proves only individual diagnostic outcomes, never full user suitability or release acceptance.",
+  "independent_items": [
+    {
+      "id": "S5",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "minimal",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S6",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "server-full",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S7",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S8",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-apple-ios"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S9",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-linux-android"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S10",
+      "argv": [
+        "docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--tag",
+        "uar-issue-426:1.3.0",
+        "."
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S11",
+      "operation": "fresh isolated artifact-only Rust review then fresh isolated React/TypeScript/Python/security code review",
+      "inputs": "frozen source010/diff/requirements and available build/spec receipts only; runtime acceptance absent and explicitly unreviewed; two isolated source reviews, no extra commands",
+      "outputs": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-rust-review.md",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-code-review.md"
+      ],
+      "constraint": "Explicit V review approval only; no reviewer may run additional commands. Required findings block, no repair remaining; at most one report clarification on unchanged source; disclose same-family fallback.",
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S12",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-rust-review.md",
+        "--strictness",
+        "standard"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction",
+      "depends_on": "corresponding source review report only; absent report means BLOCKED, continue other checks"
+    },
+    {
+      "id": "S13",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/reviews/whole-phase-code-review.md",
+        "--strictness",
+        "standard"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction",
+      "depends_on": "corresponding source review report only; absent report means BLOCKED, continue other checks"
+    },
+    {
+      "id": "S14",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-budget-reconciliation"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S15",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-compatible-budget-errors"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S16",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-destination-budget-contract"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S17",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-persistence-discriminators"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S18",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-boundary-evidence"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S19",
+      "argv": [
+        "openspec",
+        "validate",
+        "openai-client-tools"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S20",
+      "argv": [
+        "openspec",
+        "validate",
+        "update-parking-lot-admission"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    },
+    {
+      "id": "S21",
+      "argv": [
+        "openspec",
+        "validate",
+        "reengineer-user-outcome-verification"
+      ],
+      "status": "PROPOSED_NOT_RUN",
+      "execution": "serial once, record exit/output/artifact, continue unrelated items after failure; no retry or correction"
+    }
+  ],
+  "blocked_items": [
+    {
+      "group": "User outcomes",
+      "cases": 97,
+      "backend_repetition_rows": 582,
+      "reason": "composed fixture absent"
+    },
+    {
+      "group": "Post-lifecycle main",
+      "scenarios": 10,
+      "reason": "supporting config/env/manifest absent"
+    },
+    {
+      "group": "Issue426 integration",
+      "targets": 4,
+      "reason": "approved supporting isolated-store inputs not materialized; do not contact shared stores or silently skip remote cases"
+    }
+  ],
+  "limits": "All original consumption/calls/time/spend/pins/targets retained. No new repair/spend budget under a collect-results sweep. A14 repair10 not charged because M0 never entered. No P1 prep or provider/service startup included in independent-only option.",
+  "approval": "Prepare one exact amended packet for selected scope before any command/review. Existing first-failure authority is not silently reused.",
+  "no_execution": true
+}

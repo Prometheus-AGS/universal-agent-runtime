@@ -6635,3 +6635,102 @@ All active scripts/behaviors scripts no longer require or send JWT/authenticatio
 User authorized accumulated implementation and manual evidence in one PR. Preserve the passed scenario and article; no BDD rerun. Exclude unrelated editor/skill regeneration, generated SDK output, private target fixture material and multi-gigabyte KBD execution artifacts. npm audit could not run because this pnpm project has no npm lock; pnpm audit completed with71 findings (4critical,31high,24moderate,12low). These are reported without dependency changes. Normal commit hooks remain enabled.
 
 Publication hook attempt1 stopped on5frontend lint/3type errors; deployment-policy validator passed. Applied five minimal source corrections (explicitly unused compatibility options, redundant border class, typed fetch mock, receipt index signature, preserved error cause). Source-only React/TypeScript reviews found no introduced issues. No functional behavior scenario reran. Normal hooks will retry on corrected staged source.
+
+## 2026-10-26 — CONTINUITY-01 Mac PASS
+Operator selected saved-math conversation continuity. Added one HTTP-only Cucumber feature/step file/config using Prometheus bdd-cucumber-js; no authentication in tests, no history replay. Initial attempt failed before inference with model_not_verified. Refreshed existing liter/MiniMax-M3 verification via existing provider endpoint (HTTP200,oktrue); unchanged BDD then passed1scenario/6steps in11.440s. Both answers matched fresh independent arithmetic and saved identity, distinct completions in one session. Retained requests/responses, failed attempt and pass receipt at .prometheus/verification/continuity-01-macos-pass.json. No production repair/restart, previous scenario rerun, commit or push. Ledger10behaviors/7journeys on Mac. Warm continuity complete; restart/cross-session memory unverified. UAR remains running. Stop for operator direction.
+
+## 2026-10-26 — PROTECTED-AGENTS-01 Mac PASS
+Operator selected only default/orchestrator deletion protection. Added one simple Node/Cucumber feature, steps and config. Exact command: node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/protected-agents.cucumber.mjs. First run passed1scenario/5steps in0.80s: both DELETE requests returned403 with the exact built-in protection message and both full definitions remained unchanged. No model calls, credentials, restart, previous scenario rerun or production repair. Evidence .prometheus/verification/protected-agents-01-macos-pass.json. Ledger11behaviors/8journeys. UAR remains running; stopped for direction.
+
+## 2026-10-26 — AGENT-LIFECYCLE-01 Mac PASS
+Operator selected only a new disposable custom-agent update/prompt/delete workflow. New HTTP-only Cucumber feature/steps/config created original instructions, observed their genuine answer, PATCHed different rule/random marker, read them back, then prompted in a fresh session to confirm the changed behavior before DELETE204/GET404. First attempt failed on correct fencedJSON followed by prose; cleanup confirmed. Adopted existing team parsing pattern without weakening marker/arithmetic assertions; addressed source-review cleanup/timeout boundaries. Final run passed1scenario/9steps in6.580s. Both disposable agents removed; existing agents untouched. Evidence .prometheus/verification/agent-lifecycle-01-macos-pass.json. Ledger12behaviors/9journeys. No previous scenario rerun, testcredentials, production repair, restart, commit or push. UAR remains running; stopped for direction.
+
+## 2026-10-26 — ANTHROPIC-01 Mac PASS
+Operator selected a saved-math-agent prompt through the Anthropic-compatible API. Added one simple HTTP-only Cucumber feature/steps/config; POST/v1/messages used existing liter/MiniMax-M3 and fresh arithmetic. First attempt passed1scenario/4steps in11.822s. Correct final answer and saved identity, HTTP200/message/assistant/model/msg_/end_turn validated. Evidence .prometheus/verification/anthropic-01-macos-pass.json. Ledger13behaviors/10journeys. No previous scenarios rerun, test credentials, model switch, production change, restart, commit or push. UAR remains running; stopped for operator direction.
+
+## 2026-10-26 — A2A-01 Mac PASS
+Operator selected only saved-math-agent prompting through A2A. Added one HTTP-only Cucumber feature/steps/config using A2A v1 SendMessage with returnImmediately false. First attempt passed1scenario/4steps in4.539s: correlated success, completed task, selected agent, matching task/context identities, saved specialist marker and independently correct answer. Evidence .prometheus/verification/a2a-01-macos-pass.json. Ledger14behaviors/11journeys. No prior scenario rerun, test credentials, model/agent change, production repair, restart, commit or push. UAR stays running; stopped for operator direction.
+
+
+## ACP-01 — 2026-10-26T21:53:39.400247+00:00
+ACP-01 passed on Mac on the first attempt: 1 scenario/4 steps in3.827s. Added only the selected Cucumber feature/config/steps and scoped documentation. Correct arithmetic and saved specialist identity through ACP stream; runs/get Done for matching agent/run. No prior scenario rerun, production change, authentication in tests, restart or publication. Evidence .prometheus/verification/acp-01-macos-pass.json. UAR stays running; stopped.
+
+
+## AGUI-01 — 2026-10-26T21:57:28.834998+00:00
+AGUI-01 passed on Mac first attempt: 1 scenario/4 steps in7.15s. 16 streamed fragments, correct answer 2173, saved specialist identity, message/run/thread correlation and successful completion. Added selected feature/config/steps and documentation only. No credentials in tests, production changes, prior scenario reruns, restart or publication. Evidence .prometheus/verification/agui-01-macos-pass.json. UAR remains running; stopped.
+
+
+## A2UI-01 — 2026-10-26T22:03:54.157007+00:00
+A2UI-01 Mac PASS attempt002: 1 scenario/4 steps/6.824s. Real a2ui_render call, host publication metadata, exact requested Text surface, ordered STATE_DELTA and correlated completion. Attempt001 test parser rejected trailing runtime.run; corrected only that parser distinction, retained raw failure. Both disposable agents deleted. No prior scenario reruns, production changes, test authentication, restart or publication. Evidence .prometheus/verification/a2ui-01-macos-pass.json; UAR stays running; stopped.
+
+
+## A2UI-BROWSER-01 — 2026-10-26T22:53:58.936068+00:00
+A2UI-BROWSER-01 Mac PASS attempt007: one Chrome/Playwright-BDD scenario, all5steps, test25.4s. Actual rendered textbox/button sent606 to agent, distinct continuation returned625 plus saved-only marker in assistant DOM. Native schema now allows browser UAR catalog; current frontend served by owned runtime after cached build. Six failures retained. Disposable deleted, no test credentials or prior scenario reruns. Ledger18behaviors/15journeys. UAR PID78802 remains running. No publication; stop for direction.
+
+
+## SKILL-DETECTION-01 — 2026-10-26T22:59:32.061584+00:00
+Operator-selected SKILL-DETECTION-01 passed on Mac:1scenario/5reportedsteps/5.655s. Matching config unchanged service/keyword. Exact accepted/activated parcel skill, implicit event, skill-only random formula and marker produced280. Unrelated gardening skill excluded, disposable skills/agent deleted. First attempt setup404 corrected trailing slash; retained evidence. No previous scenarios rerun, product edits, authentication, restart or publication. Ledger19behaviors/16journeys. UAR left running; stop.
+
+
+## SEMANTIC-SKILL-01 — 2026-10-26T23:06:34.193261+00:00
+Operator-selected semantic skill BDD passed attempt002 on Mac: 1 scenario / 5 reported steps / 17.395s. Zero trigger matches; effective local embeddings at threshold0.65 selected/activated only delivery, skill-only recipe/marker produced360. Initial0.5 selected unrelated gardening too; failure preserved. Original config restored; all acknowledged disposable resources deleted. No prior scenario reruns, production edits, test credentials, restart or publication. Ledger20behaviors/17journeys. Stop; UAR remains running.
+
+
+## CONTEXT-BUDGET-01 — 2026-10-26T23:28:14.185251+00:00
+Operator-selected CONTEXT-BUDGET-01 passed attempt002 on Mac: 1 scenario / 6 reported steps /18.413s. Five genuine conversation turns under temporary8192context/2048output reserve. History12,869→4,830 tokens fits5,879 allowance; final wire estimate5,339 and provider input4,689 fit6,144. Original reference and sum906 recalled without replay. Initial multi-message fixture failed to deliver appendices; separate turns fixed it. Original provider view restored, operation receipt refreshed, disposable agent deleted. No credentials, production changes, prior scenario reruns, restart or publication. Ledger21behaviors/18journeys. Stop; UAR running.
+
+
+## CONVERSATION-SUMMARY-01 — 2026-10-26T23:33:52.413377+00:00
+CONVERSATION-SUMMARY-01 passed attempt002 on Mac:1scenario/5reportedsteps/10.430s. Actual summary-model receipt binds exact initial fact-bearing turn; context3,968→917 estimatedtokens. Follow-up preserves random reference, derived19attendees andGateQ without replay; initial ACK contains no facts. Initial receipt-format test mismatch fixed (resolved model and JSON insertion-order hash); failure retained. Disposable deleted. No global settings, credentials, production edits, previous scenario reruns, restart or publication. Ledger22behaviors/19journeys. Stop; UAR running.
+
+
+## CONVERSATION-RESTART-01 — 2026-10-26T23:52:44.642458+00:00
+CONVERSATION-RESTART-01 passed on Mac: 1 scenario, 6 reported steps, 17.442s, attempt002. Corrected normal-chat session save/load after genuine failed recall; built once and preserved same store. Recorded PID47246→47773, random reference and959sum recalled without replay. UAR running; no earlier scenario reruns, stop. Ledger23behaviors/20journeys. Receipt .prometheus/verification/conversation-restart-01-macos-pass.json.
+
+
+## CONCURRENT-CONVERSATION-RESTART-01 — 2026-10-27T00:01:47.877656+00:00
+CONCURRENT-CONVERSATION-RESTART-01 Mac PASS first attempt,1scenario/6steps/21.43s. Real A→B→A running observations in one session; both references and933sum recalled after graceful restart. No earlier scenarios or production edits. UAR PID52394 running. Ledger24behaviors/21journeys. Public conversation export and causal process log: .prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/.
+
+
+## REST-SETTING-RESTART-01 — 2026-10-27T00:07:31.794289+00:00
+REST-SETTING-RESTART-01 Mac PASS, first run,1scenario/5steps/13.834s. REST preference null→true survived same-store restart with identical saved record/timestamp; null restored. PID62351 running. No prior tests, provider calls, build or product edits. Ledger25behaviors/22journeys. Receipt .prometheus/verification/rest-setting-restart-01-macos-pass.json. Process and conversation in .prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/.
+
+
+## KNOWLEDGE-RESTART-01 — 2026-10-27T00:18:28.588039+00:00
+KNOWLEDGE-RESTART-01 Mac PASS first attempt,1scenario/5steps/22.95s. Saved math agent and indexed KB/document unchanged across same-store restart; fresh-session answer had correct11/199/39601, exact document seal and matching actual RAG citation. Local embedding only. No setup/prior test reruns, production edits or build. PID73870 running; ledger26behaviors/23journeys. Receipt .prometheus/verification/knowledge-restart-01-macos-pass.json. Result/process/transcript appended to Karpathy.
+
+## KNOWLEDGE-REGENERATION-01 PASS — 2026-10-26T19:40:34.981660-05:00
+
+One Mac Cucumber scenario passed all6reportedsteps in7.328s. Real384→1536embedding change, old-index409, same-document regeneration and private-fact retrieval. Host credentials outside BDD; original settings/config restored, disposable deleted, UAR PID97354 running. No earlier scenario rerun. Evidence `.prometheus/verification/knowledge-regeneration-01-macos-pass.json`; process `.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md`. Stop after logging.
+
+## KNOWLEDGE-DOCUMENT-DELETE-01 PASS — 2026-10-26T19:44:56.458617-05:00
+
+One Mac Cucumber scenario passed5reportedsteps in2.925s. Deleted document absent from identical-query retrieval while retained control still present; target404, list/control/KBstate corroborated. DisposableKB cleaned up, UAR staysrunning, no prior scenario reruns or product changes. Receipt `.prometheus/verification/knowledge-document-delete-01-macos-pass.json`; process `.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md`. Stop.
+
+## LINKED-KB-DELETE-01 PASS — 2026-10-26T19:49:08.234441-05:00
+
+One Mac scenario passed5reportedsteps in14.145s. Unchanged agent retains deletedKBreference but freshsession still answers476 without removedseal/citations; genuine predeletion retrieval established. Disposable agent/KB removed; no prior scenario reruns, source repair or restart. Receipt `.prometheus/verification/linked-kb-delete-01-macos-pass.json`; process `.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md`. UAR remains running; stop.
+
+## KB-UNLINK-01 PASS — 2026-10-26T20:07:08.758403-05:00
+
+Attempt004 passed5reportedsteps in21.190s after explicitKBselection persistence fix and two parser corrections. Unlinkedagent answered679 without fact/citations; originalKB/doc stillretrievable unchanged beforecleanup. Allfailedattempts preserved, oneMacbuild/restart completed. No prior scenario reruns. Receipt `.prometheus/verification/kb-unlink-01-macos-pass.json`; process `.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md`. UAR PID21601 running; stop.
+
+## KB-RELINK-01 PASS — 2026-10-26T20:13:44.785282-05:00
+
+Firstattempt passed4reportedsteps in7.925s. RestoredoriginalKBlink and persistedselection; freshanswer411/privateseal with matchingcitation fromunchangedoriginaldocument. Disposablecleanup succeeded; no productionchanges,build,restart or prior scenario reruns. Receipt `.prometheus/verification/kb-relink-01-macos-pass.json`; Karpathyprocess `.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md`. UAR running; stop.
+
+## TWO-KB-ANSWER-01 PASS — 2026-10-26T20:29:35.070003-05:00
+
+First attempt passed 5 reported steps in 8.488s. Two selected KBs contributed distinct private facts: 233 + 864 = 1097, both seals and matching actual citations. Resource snapshots unchanged; owned agent/KBs cleaned up. No prior scenario reruns, product edits, build or restart. Receipt `.prometheus/verification/two-kb-answer-01-macos-pass.json`; Karpathy process `.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md`. UAR running; stop.
+
+## KB-UNLINK-ONE-01 — observed PASS 2026-10-26T20:40:26.784956-05:00
+
+Executed only `node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-unlink-one.cucumber.mjs`. Attempt002: 1 scenario passed, 6 reported steps passed, 22.672s, exit0. Attempt001 retained: unavailable source was represented by an all-null object instead of null. The fixture now accepts either exact unavailable form; private-fact/citation/provenance assertions unchanged. Source-only code and JavaScript reviews completed, including correction review.
+
+Both original links were persisted before removing only cobalt. Knowledge remained enabled with amber selected; fresh inference returned amber's actual quantity/seal and matching KB/document citation, cobalt and total unavailable, with no cobalt seal or quantity disclosure in response and no cobalt retrieval provenance. Both original KB/documents remained unchanged and directly searchable. All disposable resources cleaned up. No product edits, rebuild, restart, older scenario rerun or hosted embedding spend. UAR PID21601 remains running. Credentials external.
+
+Method lesson: distinguish absent-value representation from information leakage; verify both positive remaining-source provenance and negative removed-source disclosure, with source availability as a control. Raw evidence `.prometheus/verification/kb-unlink-one/5dfa7246-5221-4bb3-8d42-c582750f6fb3.json`; receipt `.prometheus/verification/kb-unlink-one-01-macos-pass.json`. 33 verified behaviors across30 journeys. Functional testing stopped; publication/status reconciliation follows operator request. No canonical KBD transition.
+
+## Manual verification publication preparation — 2026-10-26
+
+Operator authorized accumulated source, BDD scripts, evidence and Karpathy logs for commit/push/new PR. PR438 is already merged; new branch codex/mac-manual-behavior-progress starts at origin/main. Publish the previously dirty Liter prepared-request method on its existing fork and pin that commit so the parent source is reproducible. Exclude only six multi-hundred-MB compiler artifacts, generated SDK emit output and generated static entry/graph with ignored assets; preserve originals and all .prometheus history. Safety source inspection found no confirmed credentials. pnpm audit found72 existing advisories:4critical,31high,25moderate,12low; no unrelated upgrades. No earlier functional test rerun.

@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "interact-with-a-real-a2ui-response-in-the-browser;a-rendered-calculator-sends-fresh-input-back-to-its-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A rendered calculator sends fresh input back to its agent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable A2UI calculator agent is selected in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 3489000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask the agent to render its calculator",
+            "result": {
+              "status": "failed",
+              "duration": 31848000000,
+              "error_message": "AssertionError: Require genuine published A2UI artifact\n\n0 !== 1\n\n   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:123\n\n  121 |   s.initial = await stream(s, await response());\n  122 |   const artifacts = s.initial.events.filter(event => event.type === 'CUSTOM' && event.name === 'uar.artifact.available' && event.value?.artifactType === 'a2ui');\n> 123 |   assert.equal(artifacts.length, 1, 'Require genuine published A2UI artifact');\n      |          ^\n  124 |   assert.equal(artifacts[0].value.metadata?.sourceTool, 'a2ui_render');\n  125 |   assert.equal(artifacts[0].value.metadata?.publication_status, 'published');\n  126 |   s.evidence.source_run_id = s.initial.runId;\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:123:10)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:8:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the browser displays the generated input and action button",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I enter a fresh number and press the rendered calculate button",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the agent answers using that browser input and its saved instructions",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1631000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1431000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@a2ui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "interact-with-a-real-a2ui-response-in-the-browser",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Interact with a real A2UI response in the browser",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@a2ui",
+        "line": 1
+      }
+    ],
+    "uri": "features/a2ui-browser.feature"
+  }
+]

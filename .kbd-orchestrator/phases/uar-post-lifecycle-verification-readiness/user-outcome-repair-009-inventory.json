@@ -1,0 +1,1601 @@
+{
+  "classification": "WHOLE_PHASE_SOURCE_AUTHORING_INVENTORY_DERIVED_IMPLEMENTATION_PENDING",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "waypoint": {
+    "schemaVersion": "5",
+    "generatedBy": "kbd-runtime",
+    "projectionContractVersion": 2,
+    "sourceRevision": 501,
+    "derivedRevision": 501,
+    "frontier": {
+      "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 389,
+      "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+    },
+    "conflictCount": 0,
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "path": [
+      "uar-post-lifecycle-verification-readiness"
+    ],
+    "phaseIds": [
+      "uar-post-lifecycle-verification-readiness"
+    ],
+    "activePhaseId": "uar-post-lifecycle-verification-readiness",
+    "activePhase": "uar-post-lifecycle-verification-readiness",
+    "phase": "uar-post-lifecycle-verification-readiness",
+    "parentPhase": null,
+    "childPointer": null,
+    "change": "reengineer-user-outcome-verification",
+    "currentTask": "2.9",
+    "status": "ready",
+    "lifecycle": "ready",
+    "stageId": "user-outcome-implementation",
+    "stageStatus": "IN_PROGRESS",
+    "completionMetric": "implementation",
+    "implementationCompleted": 144,
+    "implementationTotal": 168,
+    "planRevision": 134,
+    "revision": 501,
+    "exactNextCommand": "Complete source assessment/plan and bounded feature-boundary repair009; collect all handoffs, refresh inventory, propose A12 cap8to9/P0.006. No verification, signing/adoption, provider/service or publication.",
+    "nextChange": "reengineer-user-outcome-verification",
+    "nextTask": "2.9",
+    "updatedAt": "2026-10-25T13:21:50.227310Z"
+  },
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-010.json",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "regular_files": 29003,
+  "unresolved_entries": [
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kilocode/skills/frontend-design",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/frontend-design",
+      "sha256": null,
+      "target": "../../.agents/skills/frontend-design"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kilocode/skills/impeccable",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/impeccable",
+      "sha256": null,
+      "target": "../../.agents/skills/impeccable"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kilocode/skills/ui-ux-pro-max",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/ui-ux-pro-max",
+      "sha256": null,
+      "target": "../../.agents/skills/ui-ux-pro-max"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kilocode/skills/web-design-guidelines",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/web-design-guidelines",
+      "sha256": null,
+      "target": "../../.agents/skills/web-design-guidelines"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.qwen/skills/frontend-design",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/frontend-design",
+      "sha256": null,
+      "target": "../../.agents/skills/frontend-design"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.qwen/skills/impeccable",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/impeccable",
+      "sha256": null,
+      "target": "../../.agents/skills/impeccable"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.qwen/skills/ui-ux-pro-max",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/ui-ux-pro-max",
+      "sha256": null,
+      "target": "../../.agents/skills/ui-ux-pro-max"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.qwen/skills/web-design-guidelines",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/web-design-guidelines",
+      "sha256": null,
+      "target": "../../.agents/skills/web-design-guidelines"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.roo/skills/frontend-design",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/frontend-design",
+      "sha256": null,
+      "target": "../../.agents/skills/frontend-design"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.roo/skills/impeccable",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/impeccable",
+      "sha256": null,
+      "target": "../../.agents/skills/impeccable"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.roo/skills/ui-ux-pro-max",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/ui-ux-pro-max",
+      "sha256": null,
+      "target": "../../.agents/skills/ui-ux-pro-max"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.roo/skills/web-design-guidelines",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/web-design-guidelines",
+      "sha256": null,
+      "target": "../../.agents/skills/web-design-guidelines"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.windsurf/skills/frontend-design",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/frontend-design",
+      "sha256": null,
+      "target": "../../.agents/skills/frontend-design"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.windsurf/skills/impeccable",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/impeccable",
+      "sha256": null,
+      "target": "../../.agents/skills/impeccable"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.windsurf/skills/ui-ux-pro-max",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/ui-ux-pro-max",
+      "sha256": null,
+      "target": "../../.agents/skills/ui-ux-pro-max"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.windsurf/skills/web-design-guidelines",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agents/skills/web-design-guidelines",
+      "sha256": null,
+      "target": "../../.agents/skills/web-design-guidelines"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/CLAUDE.md",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/AGENTS.md",
+      "sha256": "sha256:389b16d1d73c80ce9d821bd0ea413dd186755ec1067f822172f52dd52f707017",
+      "target": "AGENTS.md"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/WARP.md",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/AGENTS.md",
+      "sha256": "sha256:389b16d1d73c80ce9d821bd0ea413dd186755ec1067f822172f52dd52f707017",
+      "target": "CLAUDE.md"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/.claude-plugin/hooks",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/hooks",
+      "sha256": null,
+      "target": "../hooks"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/alibaba-cn/models/qwen3-coder-plus.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/alibaba/models/qwen3-coder-plus.toml",
+      "sha256": "sha256:037e14e3bfeaf5240eadc2e795342c77650c8552bdc75e7608b84bdec7bdfbf6",
+      "target": "../../alibaba/models/qwen3-coder-plus.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/codestral-2501.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/codestral-2501.toml",
+      "sha256": "sha256:363a5fe0e2ba551f200ecdff62c2c49dd86f101be5b26830b292b1d411c8406c",
+      "target": "../../azure/models/codestral-2501.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/codex-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/codex-mini.toml",
+      "sha256": "sha256:d90a60c906705f1ebfbb4edc19597197420b777ee9f0688ea150b821f64498b2",
+      "target": "../../azure/models/codex-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/cohere-command-a.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/cohere-command-a.toml",
+      "sha256": "sha256:d9433124d8ee310e5ce60e6ab4367430c69e1dcfe3791d7dc55144639a1ba62b",
+      "target": "../../azure/models/cohere-command-a.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/cohere-embed-v-4-0.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/cohere-embed-v-4-0.toml",
+      "sha256": "sha256:bc4d9d02645d353bc78c78b22fea5975605ef088f4e3bf382dfa5ae8b17d1bce",
+      "target": "../../azure/models/cohere-embed-v-4-0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/cohere-embed-v3-english.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/cohere-embed-v3-english.toml",
+      "sha256": "sha256:426b1c78caf85990dee40e6fd9de5b6d8bf9ed91bc1bc8b0f80db132f88989dc",
+      "target": "../../azure/models/cohere-embed-v3-english.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/cohere-embed-v3-multilingual.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/cohere-embed-v3-multilingual.toml",
+      "sha256": "sha256:2f837fa0208eedf081e1230ae2c07c7a4e2ed07a512df87e6896f04e8a76fb55",
+      "target": "../../azure/models/cohere-embed-v3-multilingual.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/deepseek-r1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/deepseek-r1.toml",
+      "sha256": "sha256:5851373674944a89ab30c322dc7d79e6d7ee36468821cb3efafcbb840de73218",
+      "target": "../../azure/models/deepseek-r1.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/deepseek-v3.2-speciale.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/deepseek-v3.2-speciale.toml",
+      "sha256": "sha256:7fa175553fc3b610b3d506e731ea05954a32e3988e2998c6ae88a35b1c500d01",
+      "target": "../../azure/models/deepseek-v3.2-speciale.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/deepseek-v3.2.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/deepseek-v3.2.toml",
+      "sha256": "sha256:2765cbba73ec135d4e99626139adc91b244e3a1e680fd84b67b23491c4850a85",
+      "target": "../../azure/models/deepseek-v3.2.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-3.5-turbo-0125.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-3.5-turbo-0125.toml",
+      "sha256": "sha256:fdbfdd9bd0105ac04357d29386bf4a3e15e33cc97a4d6d76f87f63e723bda310",
+      "target": "../../azure/models/gpt-3.5-turbo-0125.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-3.5-turbo-1106.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-3.5-turbo-1106.toml",
+      "sha256": "sha256:50186ebc234e7976adeea4a3c46ea21a76e32b7c43ff32971c6ac562e6eca269",
+      "target": "../../azure/models/gpt-3.5-turbo-1106.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-3.5-turbo-instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-3.5-turbo-instruct.toml",
+      "sha256": "sha256:cab3f2ca0b4b95f467fa60b128441872b9c5e78b46d3ec4853ee1e3b852d2777",
+      "target": "../../azure/models/gpt-3.5-turbo-instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4-turbo-vision.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4-turbo-vision.toml",
+      "sha256": "sha256:ef8e325d657c31a8ee03b4cb73ddf12140ab70e15c16add5e2b4a599c245b1b5",
+      "target": "../../azure/models/gpt-4-turbo-vision.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4-turbo.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4-turbo.toml",
+      "sha256": "sha256:3d678e682c6bd1f73def1f53dfba5e76a45c92f04f438e6b078a0bc0f179a09e",
+      "target": "../../azure/models/gpt-4-turbo.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4.1-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4.1-mini.toml",
+      "sha256": "sha256:31776e0363f45b4b1fedb0bfd6fbf77d38f07456aca360a69ec0bf346704b575",
+      "target": "../../azure/models/gpt-4.1-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4.1-nano.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4.1-nano.toml",
+      "sha256": "sha256:8062ac7bd735b4c568222d2ec9ecc14a04f181607e43421658b0c47a8359f999",
+      "target": "../../azure/models/gpt-4.1-nano.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4.1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4.1.toml",
+      "sha256": "sha256:8f99380605a6d82092c4707b4998fc74b374b982b65b50840d4bf13b06787daf",
+      "target": "../../azure/models/gpt-4.1.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4o-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4o-mini.toml",
+      "sha256": "sha256:5c693a4ad9beaf0c62309747ed892f3818f3280f7d01b4b54e515242b147bf61",
+      "target": "../../azure/models/gpt-4o-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-4o.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-4o.toml",
+      "sha256": "sha256:c935b70afb18bcf59777670a9483ed366a7a98e80df4e1bc59ef1bddc55e9e0a",
+      "target": "../../azure/models/gpt-4o.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5-codex.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5-codex.toml",
+      "sha256": "sha256:3132c111784e47f4fffc0b5afe83bf634a0802744d7beb988c0103c773f78701",
+      "target": "../../azure/models/gpt-5-codex.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5-mini.toml",
+      "sha256": "sha256:7f77bd116bb94926220bf8804f38c57f11938a2761d3b6bd7418034c9a0362df",
+      "target": "../../azure/models/gpt-5-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5-nano.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5-nano.toml",
+      "sha256": "sha256:fc56ed3e470e99a1c8f7e9ca9f4e59670fd4cabcdc8e9a0bd1f4b33fb7f76b8d",
+      "target": "../../azure/models/gpt-5-nano.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5-pro.toml",
+      "sha256": "sha256:fffdb93431e8246d5f19e7e46ac402c076ca8c40c74b993a2027a87a609d519f",
+      "target": "../../azure/models/gpt-5-pro.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.1-codex-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.1-codex-mini.toml",
+      "sha256": "sha256:8df8161c25f98b2a15494963fb2ecf43cf19da887c0880d456f70b662233417c",
+      "target": "../../azure/models/gpt-5.1-codex-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.1-codex.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.1-codex.toml",
+      "sha256": "sha256:c4fbe5647b133911aec5de7924c9dc192ae01e5e337ddb2c139224e7c0473478",
+      "target": "../../azure/models/gpt-5.1-codex.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.1.toml",
+      "sha256": "sha256:2c2c73dde6ec9f577ded330eac984fd1f3059c80cb9795f067fabe381a8acf93",
+      "target": "../../azure/models/gpt-5.1.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.2-codex.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.2-codex.toml",
+      "sha256": "sha256:8c7fda08b76dcfbfd5f983d25c996b23a6ddc24765d77582678f4cab64c9af33",
+      "target": "../../azure/models/gpt-5.2-codex.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.2.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.2.toml",
+      "sha256": "sha256:5ec1d61d33021e2139659b4987581993bdfc2aefdf02398ebb780e08c8fa83b6",
+      "target": "../../azure/models/gpt-5.2.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.3-codex.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.3-codex.toml",
+      "sha256": "sha256:e4a42e530cc4990c71d522ffa6695af3578dae99ed5778bd071faec2db5e0241",
+      "target": "../../azure/models/gpt-5.3-codex.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.5.toml",
+      "sha256": "sha256:e717ea06a0269c3c1fafa360eeaea5e4dd59198b9f65d66b8973c815f7bbfd92",
+      "target": "../../azure/models/gpt-5.5.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/gpt-5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/gpt-5.toml",
+      "sha256": "sha256:1d1150ad2565808d9169076886ab647dbdf5e20c024748940171686c06b23d23",
+      "target": "../../azure/models/gpt-5.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/llama-3.3-70b-instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/llama-3.3-70b-instruct.toml",
+      "sha256": "sha256:bb1a0f1721bb704cee5d433b6811e69f834d80d321b19b6bf3f541316d4774eb",
+      "target": "../../azure/models/llama-3.3-70b-instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/llama-4-maverick-17b-128e-instruct-fp8.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/llama-4-maverick-17b-128e-instruct-fp8.toml",
+      "sha256": "sha256:2599de3a5eb20b785c018e0a420f77f7ce194d034b4788286f7746bbf28ecc6b",
+      "target": "../../azure/models/llama-4-maverick-17b-128e-instruct-fp8.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/llama-4-scout-17b-16e-instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/llama-4-scout-17b-16e-instruct.toml",
+      "sha256": "sha256:fee157b7a992bf702dc22ac8c6b2d2f43f5b429302645e3bec5c0c99151ca05b",
+      "target": "../../azure/models/llama-4-scout-17b-16e-instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/ministral-3b.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/ministral-3b.toml",
+      "sha256": "sha256:7d78ff1168b52a0b4ebe14ef28638c3b19d5ed5a1cf3b9bc7d68d64367edf732",
+      "target": "../../azure/models/ministral-3b.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/mistral-medium-2505.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/mistral-medium-2505.toml",
+      "sha256": "sha256:d21aca924868c6ebce435a5750fa46050f7c4071ea48a851da3f51383959005f",
+      "target": "../../azure/models/mistral-medium-2505.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/mistral-small-2503.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/mistral-small-2503.toml",
+      "sha256": "sha256:2523b533c035648bd60e6da17a8f89648f3bc3348bdd111f13e9f43377c91348",
+      "target": "../../azure/models/mistral-small-2503.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/model-router.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/model-router.toml",
+      "sha256": "sha256:92f217d6922070d114aae4b37d6b9719554032bd2902b9bf9837e9b26e5f0c4d",
+      "target": "../../azure/models/model-router.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/o1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/o1.toml",
+      "sha256": "sha256:53ab195ea50b968642f301998e720612f346cd62dde6a274c3842c712835f9ee",
+      "target": "../../azure/models/o1.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/o3-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/o3-mini.toml",
+      "sha256": "sha256:fd0c18d8537b769433a7601ce6943fd216849d9635e59d7e1a61c50d74115190",
+      "target": "../../azure/models/o3-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/o3.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/o3.toml",
+      "sha256": "sha256:c88f90ebefa1fe0d0068efe998e445a4a289b317ebf2c1ca06205b23db4bcf6c",
+      "target": "../../azure/models/o3.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/o4-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/o4-mini.toml",
+      "sha256": "sha256:8fc9ad60b457deab0916159f25845afca2e433df14ce97e4d9224d5c89483ee9",
+      "target": "../../azure/models/o4-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/phi-4-mini-reasoning.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/phi-4-mini-reasoning.toml",
+      "sha256": "sha256:44df7caf69254cee2ae745d7fe276fb39389d66e276f491c05fd23788bc2e15e",
+      "target": "../../azure/models/phi-4-mini-reasoning.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/phi-4-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/phi-4-mini.toml",
+      "sha256": "sha256:9a282b8cf948a0316015197d58292e3eecbef4c06e12c7ccbc52adbc082faa73",
+      "target": "../../azure/models/phi-4-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/phi-4-multimodal.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/phi-4-multimodal.toml",
+      "sha256": "sha256:c8794db74c11d7f8a3a70e2a75d96c6bdc19bb6997425f7dd578bcaa73b1fd6d",
+      "target": "../../azure/models/phi-4-multimodal.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/phi-4-reasoning-plus.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/phi-4-reasoning-plus.toml",
+      "sha256": "sha256:1574eecab7af37f3562637356c26e611c472b5435431bc397c1e6219cdd0fcc0",
+      "target": "../../azure/models/phi-4-reasoning-plus.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/phi-4-reasoning.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/phi-4-reasoning.toml",
+      "sha256": "sha256:52b74da9aa80ecef8686b08fe6326840e05e41b2a60bcefa3cd53e4afc97a583",
+      "target": "../../azure/models/phi-4-reasoning.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/phi-4.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/phi-4.toml",
+      "sha256": "sha256:098e2cb4698bc0c2500619dffc1065018c971f145ca42bdb9767f21c803aa901",
+      "target": "../../azure/models/phi-4.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/text-embedding-3-large.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/text-embedding-3-large.toml",
+      "sha256": "sha256:d13cb08ed232236d78afb7113a88885cb8da06e81164848e3495ee654f6678f3",
+      "target": "../../azure/models/text-embedding-3-large.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/text-embedding-3-small.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/text-embedding-3-small.toml",
+      "sha256": "sha256:25330f78b2da745f98ae2ee19a6bab31649119d2b87367b78bb7040e70b8fc9b",
+      "target": "../../azure/models/text-embedding-3-small.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure-cognitive-services/models/text-embedding-ada-002.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/azure/models/text-embedding-ada-002.toml",
+      "sha256": "sha256:f4bdfe3f536fc3fbc39ab82383236b15303c5437703d0e813069138b36429547",
+      "target": "../../azure/models/text-embedding-ada-002.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai-cn/models/kimi-k2.6.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai/models/kimi-k2.6.toml",
+      "sha256": "sha256:d6ed6f2eb4ce9bd02730427b59e290b651ada64df578b9f910ea3f61f0ff1ed7",
+      "target": "../../moonshotai/models/kimi-k2.6.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai-cn/models/kimi-k2.7-code-highspeed.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai/models/kimi-k2.7-code-highspeed.toml",
+      "sha256": "sha256:a5a9b353fe5313b4292efb79c867bf69391cb969169799192a6e16a1f4b10cf1",
+      "target": "../../moonshotai/models/kimi-k2.7-code-highspeed.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai-cn/models/kimi-k2.7-code.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai/models/kimi-k2.7-code.toml",
+      "sha256": "sha256:eb01a155b6e85ecb609a6b5e3036ec438bbb4312ac7071fbc266c83c49defa0f",
+      "target": "../../moonshotai/models/kimi-k2.7-code.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai-cn/models/kimi-k3.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/moonshotai/models/kimi-k3.toml",
+      "sha256": "sha256:591608c5c780a2a5a8fb9100de734226d1d4886e0fecd6b3ff9eee7f702d9bdd",
+      "target": "../../moonshotai/models/kimi-k3.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/ByteDance-Seed/Seed-OSS-36B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/ByteDance-Seed/Seed-OSS-36B-Instruct.toml",
+      "sha256": "sha256:e714374d801bdf75af076aa3b22bb2b7814ede6542728f0e807aee7eb3be7b80",
+      "target": "../../../siliconflow/models/ByteDance-Seed/Seed-OSS-36B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/QwQ-32B.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/QwQ-32B.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/QwQ-32B.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-14B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-14B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-14B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-32B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-32B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-32B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-72B-Instruct-128K.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-72B-Instruct-128K.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-72B-Instruct-128K.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-72B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-72B-Instruct.toml",
+      "sha256": "sha256:6b182732c188f19c9e4e06c9719c7a732692438f92f07628c2c8fe32941e9db0",
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-72B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-7B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-7B-Instruct.toml",
+      "sha256": "sha256:c16f96f90711b99201bccef50d0ba0c5a115a9830068da61da7fc09078ab3632",
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-7B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-Coder-32B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-Coder-32B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-Coder-32B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-VL-32B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-VL-32B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-VL-32B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen2.5-VL-72B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen2.5-VL-72B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen2.5-VL-72B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-235B-A22B-Instruct-2507.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-235B-A22B-Instruct-2507.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-235B-A22B-Instruct-2507.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-30B-A3B-Instruct-2507.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-30B-A3B-Instruct-2507.toml",
+      "sha256": "sha256:58e41a9be6bb8a55862b6cac778b4ebdc29b52fe718d0cdd3279c4df801a4080",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-30B-A3B-Instruct-2507.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-30B-A3B-Thinking-2507.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-30B-A3B-Thinking-2507.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-30B-A3B-Thinking-2507.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Coder-30B-A3B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Coder-30B-A3B-Instruct.toml",
+      "sha256": "sha256:fd38f48dbb80f5cb73b1329d59c35f45255049681524dd635b03501ce1adafde",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Coder-30B-A3B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Coder-480B-A35B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Coder-480B-A35B-Instruct.toml",
+      "sha256": "sha256:fadc42502fa741ea2628189be7ab913c35e6ae9fdfbe530f18872749321c7db8",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Coder-480B-A35B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Next-80B-A3B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Next-80B-A3B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Next-80B-A3B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Next-80B-A3B-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Next-80B-A3B-Thinking.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Next-80B-A3B-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Omni-30B-A3B-Captioner.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Omni-30B-A3B-Captioner.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Omni-30B-A3B-Captioner.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Omni-30B-A3B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Omni-30B-A3B-Instruct.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Omni-30B-A3B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-Omni-30B-A3B-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-Omni-30B-A3B-Thinking.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-Omni-30B-A3B-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-235B-A22B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-235B-A22B-Instruct.toml",
+      "sha256": "sha256:f9bfdd6636a2075a5e3b54fd4390b9f71a8bac9167775d39a92c82c43f7f085c",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-235B-A22B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-235B-A22B-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-235B-A22B-Thinking.toml",
+      "sha256": "sha256:eb5ac44e8d803593ae2b124b5706d1b759b30e2460b74afac68177e95e237c0f",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-235B-A22B-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-30B-A3B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-30B-A3B-Instruct.toml",
+      "sha256": "sha256:8a77c150a801695bd16861fce5b8bfc339f6ee687cc63a427040e979d571b26f",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-30B-A3B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-30B-A3B-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-30B-A3B-Thinking.toml",
+      "sha256": "sha256:f528d34802d4d8b6cb73d62ad2fd149861fc16551b445407c938f9aa5b5c0fcf",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-30B-A3B-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-32B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-32B-Instruct.toml",
+      "sha256": "sha256:0c3843f55f24364ce5da9b0f380f116be4edd6073080024d447896adba3a5ea0",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-32B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-32B-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-32B-Thinking.toml",
+      "sha256": "sha256:4a9a3ae9fdff0d694deaffe084e05b007446d5c6f1f8420e8f9f6a71109cce1c",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-32B-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-8B-Instruct.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-8B-Instruct.toml",
+      "sha256": "sha256:03b5d9ca22eab15207c78ee5780bfa8e628de67feccdb01952f247a5f27209d7",
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-8B-Instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/Qwen/Qwen3-VL-8B-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/Qwen/Qwen3-VL-8B-Thinking.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/Qwen/Qwen3-VL-8B-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/THUDM/GLM-4-32B-0414.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/THUDM/GLM-4-32B-0414.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/THUDM/GLM-4-32B-0414.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/THUDM/GLM-4-9B-0414.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/THUDM/GLM-4-9B-0414.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/THUDM/GLM-4-9B-0414.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/THUDM/GLM-Z1-32B-0414.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/THUDM/GLM-Z1-32B-0414.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/THUDM/GLM-Z1-32B-0414.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/THUDM/GLM-Z1-9B-0414.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/THUDM/GLM-Z1-9B-0414.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/THUDM/GLM-Z1-9B-0414.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/baidu/ERNIE-4.5-300B-A47B.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/baidu/ERNIE-4.5-300B-A47B.toml",
+      "sha256": "sha256:3d6e3f07437b0e40ad21f0149ea5d4c3ae973c27f46ae2fb8c6003181f9e8411",
+      "target": "../../../siliconflow/models/baidu/ERNIE-4.5-300B-A47B.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/deepseek-ai/DeepSeek-V3.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/deepseek-ai/DeepSeek-V3.toml",
+      "sha256": "sha256:7a6cdc1870f536c2d537f4084d9cea76bef33592074ee3141c6f736361c0710e",
+      "target": "../../../siliconflow/models/deepseek-ai/DeepSeek-V3.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/deepseek-ai/deepseek-vl2.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/deepseek-ai/deepseek-vl2.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/deepseek-ai/deepseek-vl2.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/inclusionAI/Ling-flash-2.0.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/inclusionAI/Ling-flash-2.0.toml",
+      "sha256": "sha256:a64ce1d47dee10fd7e0b7cbbadd3a78d7c97a241aaeb7efbf5e0cf60977f7684",
+      "target": "../../../siliconflow/models/inclusionAI/Ling-flash-2.0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/inclusionAI/Ling-mini-2.0.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/inclusionAI/Ling-mini-2.0.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/inclusionAI/Ling-mini-2.0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/inclusionAI/Ring-flash-2.0.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/inclusionAI/Ring-flash-2.0.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/inclusionAI/Ring-flash-2.0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/moonshotai/Kimi-K2-Instruct-0905.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/moonshotai/Kimi-K2-Instruct-0905.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/moonshotai/Kimi-K2-Instruct-0905.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/moonshotai/Kimi-K2-Thinking.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/moonshotai/Kimi-K2-Thinking.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/moonshotai/Kimi-K2-Thinking.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/tencent/Hunyuan-MT-7B.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/tencent/Hunyuan-MT-7B.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/tencent/Hunyuan-MT-7B.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/zai-org/GLM-4.5-Air.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/zai-org/GLM-4.5-Air.toml",
+      "sha256": "sha256:14f9936e56577b6997fd5f6c6b88e31c685604dc5839124ec8e8a4c97df4686e",
+      "target": "../../../siliconflow/models/zai-org/GLM-4.5-Air.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/zai-org/GLM-4.5V.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/zai-org/GLM-4.5V.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/zai-org/GLM-4.5V.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/zai-org/GLM-4.6.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/zai-org/GLM-4.6.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/zai-org/GLM-4.6.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow-cn/models/zai-org/GLM-4.6V.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/siliconflow/models/zai-org/GLM-4.6V.toml",
+      "sha256": null,
+      "target": "../../../siliconflow/models/zai-org/GLM-4.6V.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/step-1-32k.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/step-1-32k.toml",
+      "sha256": "sha256:b0f7f71be1db0ba1655613f218fde59962631b281c14caf980ece7f8f4bf4f7b",
+      "target": "../../stepfun/models/step-1-32k.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/step-2-16k.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/step-2-16k.toml",
+      "sha256": "sha256:8d646a43bf3a0b12911b52c1d6d6d3375167de194bdb0aa2bb9b59f96b8a693c",
+      "target": "../../stepfun/models/step-2-16k.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/step-3.5-flash-2603.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/step-3.5-flash-2603.toml",
+      "sha256": "sha256:0557d659e5a959662f2c77204f9e6712527a30d13aba733deb1e9c176615b0e1",
+      "target": "../../stepfun/models/step-3.5-flash-2603.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/step-3.5-flash.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/step-3.5-flash.toml",
+      "sha256": "sha256:00c53671014566cc8975990816f0a5746eff87de571fbda77d67c6fcbd04a1e0",
+      "target": "../../stepfun/models/step-3.5-flash.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/step-3.7-flash.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/step-3.7-flash.toml",
+      "sha256": "sha256:11dbaf9329fb28a9f8f1df229f797ed5c18deb4073945ba503f20e026cd788a0",
+      "target": "../../stepfun/models/step-3.7-flash.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/step-tts-2.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/step-tts-2.toml",
+      "sha256": "sha256:b67529fc567f0cfb40886de8e921975094ba1bdc4cbbcc9e799cb2b8cc868709",
+      "target": "../../stepfun/models/step-tts-2.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/stepaudio-2.5-asr.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/stepaudio-2.5-asr.toml",
+      "sha256": "sha256:7e21a5360d311fe6d1daaab6d5c7e13ebbe1225999289db0569c9d71853e33dd",
+      "target": "../../stepfun/models/stepaudio-2.5-asr.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun-ai/models/stepaudio-2.5-tts.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/stepfun/models/stepaudio-2.5-tts.toml",
+      "sha256": "sha256:43797b96b71cae592045b1c4420d862d504e22178001af64824ee36af970f4fd",
+      "target": "../../stepfun/models/stepaudio-2.5-tts.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/amazon/nova-lite.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/amazon-bedrock/models/amazon.nova-lite-v1:0.toml",
+      "sha256": "sha256:c1f58b7c21d529f44f7d1e77bf5d4be3c3537764662aa41f322549b0b98ac8f8",
+      "target": "../../../amazon-bedrock/models/amazon.nova-lite-v1:0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/amazon/nova-micro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/amazon-bedrock/models/amazon.nova-micro-v1:0.toml",
+      "sha256": "sha256:e5c95def27fe351ea514df363778055323847f14d043e115a32b3d649a479695",
+      "target": "../../../amazon-bedrock/models/amazon.nova-micro-v1:0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/amazon/nova-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/amazon-bedrock/models/amazon.nova-pro-v1:0.toml",
+      "sha256": "sha256:58092ccee4053dcd79b27c4a31f0d79dafe1cab992871f0533f5be0f86279151",
+      "target": "../../../amazon-bedrock/models/amazon.nova-pro-v1:0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/anthropic/claude-sonnet-4.5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/anthropic/models/claude-sonnet-4-5-20250929.toml",
+      "sha256": "sha256:e0833dd05f09252248c0b6c6e76ecb7aaf2dcdc0a34ddd32d20ee6e303cc9dfc",
+      "target": "../../../anthropic/models/claude-sonnet-4-5-20250929.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/deepseek/deepseek-r1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/amazon-bedrock/models/deepseek.r1-v1:0.toml",
+      "sha256": "sha256:9b9262a16a301323b7c1b9092a304217dd058ce6b778f9847bf1fa8dabf732d7",
+      "target": "../../../amazon-bedrock/models/deepseek.r1-v1:0.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/google/gemini-2.5-flash.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/google/models/gemini-2.5-flash.toml",
+      "sha256": "sha256:f767a073bd91b5fcba3769041eb88cf44651bdde3ade902c8c4e93e3738e4a65",
+      "target": "../../../google/models/gemini-2.5-flash.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/google/gemini-2.5-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/google/models/gemini-2.5-pro.toml",
+      "sha256": "sha256:9a89a2f8b676cc0d5fdfebce834011f7de5f8f81cc7cf297cd1cf365818a5e39",
+      "target": "../../../google/models/gemini-2.5-pro.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/meta/llama-3.3-70b.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/llama/models/llama-3.3-70b-instruct.toml",
+      "sha256": "sha256:a70f38b34bbb9cdd303f83bb5a210578c979b7e1488726f1affa995e76813994",
+      "target": "../../../llama/models/llama-3.3-70b-instruct.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/meta/llama-4-maverick.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/llama/models/llama-4-maverick-17b-128e-instruct-fp8.toml",
+      "sha256": "sha256:6d12fd5ef21cf7645d915bd5c62448b38dbb530e02a345a6460f962aa132ce94",
+      "target": "../../../llama/models/llama-4-maverick-17b-128e-instruct-fp8.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/meta/llama-4-scout.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/llama/models/llama-4-scout-17b-16e-instruct-fp8.toml",
+      "sha256": "sha256:e858f8c36adedbd55d852845d3a6ab9dc9ee30e23da54d6dd8216a404be7279d",
+      "target": "../../../llama/models/llama-4-scout-17b-16e-instruct-fp8.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/mistral/codestral.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/mistral/models/codestral-latest.toml",
+      "sha256": "sha256:1b4a0603e18c9fa33c7c3986725d5119d19d5ba26d8fd1fba92c6fbae970c301",
+      "target": "../../../mistral/models/codestral-latest.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/mistral/ministral-3b.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/mistral/models/ministral-3b-latest.toml",
+      "sha256": "sha256:53e480b1da95a861cd60a9d474bc1af4195154c228c3bd9ae232c2dbd5a9ca57",
+      "target": "../../../mistral/models/ministral-3b-latest.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/mistral/ministral-8b.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/mistral/models/ministral-8b-latest.toml",
+      "sha256": "sha256:d8f758e77b3853d7e8c641953a1204248acd20ba09703701d5af07d38c18a91b",
+      "target": "../../../mistral/models/ministral-8b-latest.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/mistral/pixtral-12b.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/mistral/models/pixtral-12b.toml",
+      "sha256": "sha256:c40b7544f79fa40d7b04e0831a90d4d68d331c7125c897a52ffbacfc6b214df7",
+      "target": "../../../mistral/models/pixtral-12b.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/morph/morph-v3-fast.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/morph/models/morph-v3-fast.toml",
+      "sha256": "sha256:ce2e63f84b25cfbfe8feac7704b2df43546bc54255b67a939543ac142b34798d",
+      "target": "../../../morph/models/morph-v3-fast.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/morph/morph-v3-large.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/morph/models/morph-v3-large.toml",
+      "sha256": "sha256:efb38c3e42e5065252cd34f84e0e9794fd51300f9bdc4e90e81e5f1e505b4c88",
+      "target": "../../../morph/models/morph-v3-large.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-4-turbo.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-4-turbo.toml",
+      "sha256": "sha256:d916f4c402936c3a034fd139f6169daa630e5b7774538a28902a091c7300dcd7",
+      "target": "../../../openai/models/gpt-4-turbo.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-4.1-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-4.1-mini.toml",
+      "sha256": "sha256:c32779c4e080afff3d8658ca54c7257ad240b08e1ba8b4ae013a1cbd5ca16806",
+      "target": "../../../openai/models/gpt-4.1-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-4.1-nano.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-4.1-nano.toml",
+      "sha256": "sha256:2ac5183ea8bf9c79f54d307e5e313f6786f3b1314a6c212a4940c024bc5c8210",
+      "target": "../../../openai/models/gpt-4.1-nano.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-4.1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-4.1.toml",
+      "sha256": "sha256:3ad03951a0ada9f9035324c753e415ee7f858a42c57ee918fd8890e49055f0b6",
+      "target": "../../../openai/models/gpt-4.1.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-4o-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-4o-mini.toml",
+      "sha256": "sha256:058a5a9e1ffe83c255f5cbaf8d7b294382f5357cf5399ade4199b5ef13dee5c8",
+      "target": "../../../openai/models/gpt-4o-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-4o.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-4o.toml",
+      "sha256": "sha256:775e8d03124d24972b56677e3465df062eb9eb262071411660ca50385d9aa1e4",
+      "target": "../../../openai/models/gpt-4o.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-5-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-5-mini.toml",
+      "sha256": "sha256:190ca7bbbfacc290ebc069dd319e37f62e69966209d9de7e2a4f4e0b6dc1ba8d",
+      "target": "../../../openai/models/gpt-5-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-5-nano.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-5-nano.toml",
+      "sha256": "sha256:7920134a0dc4d25391f03e0815d03d08a8111e38d2f82a0eea3a6c3626797da4",
+      "target": "../../../openai/models/gpt-5-nano.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/gpt-5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/gpt-5.toml",
+      "sha256": "sha256:0b02f6f49237d12336a18120b913a077d8ac829fd28b7e73ac66e05f5197814b",
+      "target": "../../../openai/models/gpt-5.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/o1.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/o1.toml",
+      "sha256": "sha256:3f58e5a9daebd31e7341547a42ca0095dc30b215efc45c023414e9b9c7624831",
+      "target": "../../../openai/models/o1.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/o3-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/o3-mini.toml",
+      "sha256": "sha256:3c91f53e97d2136c40fe77c2c36331f5273d64bfd9e469556eec7f55cb2892b0",
+      "target": "../../../openai/models/o3-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/o3.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/o3.toml",
+      "sha256": "sha256:65c35ecddef7f66fb91172aee175a4315a35f6c4a98f2a625c91c01b2ba0ef03",
+      "target": "../../../openai/models/o3.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/vercel/models/openai/o4-mini.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/openai/models/o4-mini.toml",
+      "sha256": "sha256:f7648f0cf62a0f53d4039c450db5a8917f58ad28e0d2d0addb477f61275e22a5",
+      "target": "../../../openai/models/o4-mini.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2-pro.toml",
+      "sha256": "sha256:6a8b292e7a3c0ed6c19611938ad3f908fde10d4e09492b45a5ca1494f240be95",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2-pro.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2-tts.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2-tts.toml",
+      "sha256": "sha256:7fbda95b1c70285d20bad6bb9cc5bb1c0af63d3ac5aa59d0fc65d3ceb0f903ff",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2-tts.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2.5-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-pro.toml",
+      "sha256": "sha256:34024e681383878e7f38c6daa1fc81cf5d47a03e96fe617a18b2cb1fd5c8366e",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-pro.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2.5-tts-voiceclone.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-tts-voiceclone.toml",
+      "sha256": "sha256:c78888681aa4df6f08d7acfc61ae6859a4ecf7b574a54919c21003bb92cc5445",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-tts-voiceclone.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2.5-tts-voicedesign.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-tts-voicedesign.toml",
+      "sha256": "sha256:5d6afda669144b9528b6cc1c1a06a662a097db7bcad799f7a69411a980d34ead",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-tts-voicedesign.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2.5-tts.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-tts.toml",
+      "sha256": "sha256:474d927c5aec8d4e3619d2ca23ce367a1475917a510cdb62d86e8768ca9d35f8",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-tts.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-ams/models/mimo-v2.5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5.toml",
+      "sha256": "sha256:17b2ffafbc453f55686d91874b04734c85e687e6350847d6a7a978c521c14a1d",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2-pro.toml",
+      "sha256": "sha256:6a8b292e7a3c0ed6c19611938ad3f908fde10d4e09492b45a5ca1494f240be95",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2-pro.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2-tts.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2-tts.toml",
+      "sha256": "sha256:7fbda95b1c70285d20bad6bb9cc5bb1c0af63d3ac5aa59d0fc65d3ceb0f903ff",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2-tts.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2.5-pro.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-pro.toml",
+      "sha256": "sha256:34024e681383878e7f38c6daa1fc81cf5d47a03e96fe617a18b2cb1fd5c8366e",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-pro.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2.5-tts-voiceclone.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-tts-voiceclone.toml",
+      "sha256": "sha256:c78888681aa4df6f08d7acfc61ae6859a4ecf7b574a54919c21003bb92cc5445",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-tts-voiceclone.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2.5-tts-voicedesign.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-tts-voicedesign.toml",
+      "sha256": "sha256:5d6afda669144b9528b6cc1c1a06a662a097db7bcad799f7a69411a980d34ead",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-tts-voicedesign.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2.5-tts.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5-tts.toml",
+      "sha256": "sha256:474d927c5aec8d4e3619d2ca23ce367a1475917a510cdb62d86e8768ca9d35f8",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5-tts.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-sgp/models/mimo-v2.5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/xiaomi-token-plan-cn/models/mimo-v2.5.toml",
+      "sha256": "sha256:17b2ffafbc453f55686d91874b04734c85e687e6350847d6a7a978c521c14a1d",
+      "target": "../../xiaomi-token-plan-cn/models/mimo-v2.5.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai-coding-plan/models/glm-4.5-air.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai-coding-plan/models/glm-4.5-air.toml",
+      "sha256": null,
+      "target": "../../zai-coding-plan/models/glm-4.5-air.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai-coding-plan/models/glm-4.6v.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.6v.toml",
+      "sha256": "sha256:421bb7bf16c10603c8cafa2456f699e4e45997b803146a651fa728a5455b06c7",
+      "target": "../../zai/models/glm-4.6v.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai-coding-plan/models/glm-4.7.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai-coding-plan/models/glm-4.7.toml",
+      "sha256": "sha256:08b65fefed99c1ca1adbdea92a33da145a42978ae3ff55590e83cfbc36352e8c",
+      "target": "../../zai-coding-plan/models/glm-4.7.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai-coding-plan/models/glm-5-turbo.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai-coding-plan/models/glm-5-turbo.toml",
+      "sha256": "sha256:0dd1846eee08a12cbc54b4d5cde9fa8feb3107a8c75b87c87a69b9b277992326",
+      "target": "../../zai-coding-plan/models/glm-5-turbo.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai-coding-plan/models/glm-5.2-highspeed.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai-coding-plan/models/glm-5.2-highspeed.toml",
+      "sha256": "sha256:5059d9fa4af0539048871740f8dee0598577040e5edcedddca497c8232902c45",
+      "target": "../../zai-coding-plan/models/glm-5.2-highspeed.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai-coding-plan/models/glm-5.2.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai-coding-plan/models/glm-5.2.toml",
+      "sha256": "sha256:7b0ed747a546c86808671b6712cda509b33964dbb998a5c1a5c6d6ab94e20338",
+      "target": "../../zai-coding-plan/models/glm-5.2.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.5-air.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.5-air.toml",
+      "sha256": "sha256:ca53527f939783c6b69955f82011da1b1376c2c823ec3d5be98a1fed62dd2894",
+      "target": "../../zai/models/glm-4.5-air.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.5-flash.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.5-flash.toml",
+      "sha256": "sha256:d121d46dba087f4572ed52fb0a6250c592d2d1e418cc22719e74bd572b2186f0",
+      "target": "../../zai/models/glm-4.5-flash.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.5.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.5.toml",
+      "sha256": "sha256:7a20444fbd35143ef0ca47a9da2a52a4620cf35859f0d733b1d96bcd9a9f62c1",
+      "target": "../../zai/models/glm-4.5.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.5v.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.5v.toml",
+      "sha256": "sha256:9db9cdc3cedb40ca53fb9bb1888a37b4232636fe699f5a816e95654779f3e8b2",
+      "target": "../../zai/models/glm-4.5v.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.6.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.6.toml",
+      "sha256": "sha256:16c2d310910451d1eb47053c3cd797314876317ddb9205c08472b6abe482045c",
+      "target": "../../zai/models/glm-4.6.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.6v-flash.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.6v-flash.toml",
+      "sha256": null,
+      "target": "../../zai/models/glm-4.6v-flash.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.6v.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.6v.toml",
+      "sha256": "sha256:421bb7bf16c10603c8cafa2456f699e4e45997b803146a651fa728a5455b06c7",
+      "target": "../../zai/models/glm-4.6v.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.7-flash.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.7-flash.toml",
+      "sha256": "sha256:37a85a266a57a7d18cba814c81301997480603e49f230865726704fc8ce28cea",
+      "target": "../../zai/models/glm-4.7-flash.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.7-flashx.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.7-flashx.toml",
+      "sha256": "sha256:db86be338e54fc8f95059352471d9c1b3bbf53b59d50c43416427460e7e2b3b3",
+      "target": "../../zai/models/glm-4.7-flashx.toml"
+    },
+    {
+      "kind": "symlink",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zhipuai/models/glm-4.7.toml",
+      "resolved_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev/providers/zai/models/glm-4.7.toml",
+      "sha256": "sha256:405f4b04015fac95e98cbdc910d8eecdeae57117715e91b6f08d970788cdb4b1",
+      "target": "../../zai/models/glm-4.7.toml"
+    },
+    {
+      "kind": "missing",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core/LICENSE-MIT",
+      "sha256": null
+    },
+    {
+      "kind": "missing",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-embedded/LICENSE-MIT",
+      "sha256": null
+    },
+    {
+      "kind": "missing",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-iggy/LICENSE-MIT",
+      "sha256": null
+    },
+    {
+      "kind": "missing",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-pg/LICENSE-MIT",
+      "sha256": null
+    },
+    {
+      "kind": "missing",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-runtime-tokio/LICENSE-MIT",
+      "sha256": null
+    },
+    {
+      "kind": "missing",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/prometheus-parking-lot-rs/crates/parking-lot-wasm/LICENSE-MIT",
+      "sha256": null
+    }
+  ],
+  "repair_provenance": {
+    "classification": "SOURCE_INTEGRATION_PROVENANCE_NOT_COMPILER_OR_REVIEW_VERIFICATION",
+    "patch_sha256": "sha256:106abdf365f5c383ea9ede6dbcfad56ae7b9dfdca5ef5a601ff75e7b5edafb5b",
+    "files": [
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/server.rs",
+        "before": "sha256:22b5f7800b402212d725eef24f19a51b743cb3f9e23ddb001a77cc70ee6cf4da",
+        "after": "sha256:5026e8f078f56b935058ae10510f58c19540296258c585d29c4d983a137cd5ad"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/capabilities.rs",
+        "before": "sha256:f9bfac1faccc3d40355ce02fcd724aab47840ffa8d5e0078aab5755b23914249",
+        "after": "sha256:166a3f24fb73420ec591f941cd548a4f645283d5851bd78c289bbd3cfe501e3e"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/mod.rs",
+        "before": "sha256:85158cd5d890ae95e75ee7cf6593be1d772e0f77f666335acf4bfb70d2eb64e5",
+        "after": "sha256:d6f8b927198b634ae2a64bb57fa7ca3010a6ba7ed8f6725d43eda13b87974178"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/team_execution/resolution.rs",
+        "before": "sha256:2758c0bd8b3954f564b1aae8fc30be576c75e0367f40d9df0ff5702eef4cb431",
+        "after": "sha256:6dd8f6364ad53b27a5eb3d7f696b7727230f19256ab307eb81fad45e25a4759f"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/validation/projection.rs",
+        "before": "sha256:0a36bb69fc5d66a3ec6a0706395ccce5259ee05f22660566bb7062fd84c9a91c",
+        "after": "sha256:e028ede4efc5e244d6c96c20073dd41353b62a47be041cc6eb49f2a2eb23eed7"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/mod.rs",
+        "before": "sha256:73675d501e097930523b1c31da0b8c5b5c39815794b7f669eee8d3c922fd5610",
+        "after": "sha256:74779d3cecef6210cf7d9203ab6ceea97c45eade4ea79d6ea73c203c2e7e40aa"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/progression.rs",
+        "before": "sha256:184f4edc5da74f727d4b5a42c97ccc3e604f33efb1d4e5e20c4b20c1d753f25c",
+        "after": "sha256:e7a7e2c2e09ba38cd9cd4a69a2afaad6e699a74fc8febe1346d27b3ade9b4865"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/start.rs",
+        "before": "sha256:ef731f9839f28de63177a097e9e539811658c999ba53ce224131b6d87a99fb2f",
+        "after": "sha256:2e9d2514b961df8bef0e396dc3f07bac0e8643b5bc0e5ae48b5ac43100b64cdf"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/domain/execution_capabilities.rs",
+        "before": null,
+        "after": "sha256:93b5c0153512487475beb712bc75ae24afde59f4546c46afb9834f3f0de54c42"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/domain/mod.rs",
+        "before": "sha256:a697d61473f2e46f41c321092173691703b448d4581c78c399fbcd80b356ba22",
+        "after": "sha256:f0e379a6edb40459ddae5b76bf33c95e600507c25d1bcf6ee9aa2729de57e082"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs",
+        "before": "sha256:d9bb191ef9712adcddaf04f59c32640c3f259759afda8927d5b3c4b13ff420d5",
+        "after": "sha256:3c4da46c0032265473ada3233521e7150caeb29334655dfa75f261f1f3b6dbbd"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/service.rs",
+        "before": "sha256:9a851c3035fd84c2db6e77bfc2bdbefac32dbfcffe197ed60821e4e18201e555",
+        "after": "sha256:85e9b5e00f9b61a0929f020259855ec9f993f508424cc14b8b180d18cb83835f"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs",
+        "before": "sha256:16cd4513477e3271b5138a84a6b569bbaa3886f1fcf4ab884b0fe9bf344e728c",
+        "after": "sha256:e2ceb6f4966c6ecb576a2b4b78babe4a26db66c34b3e5e13feb94f8f131a4ee5"
+      }
+    ],
+    "production_files_changed": 13,
+    "source_added_files": 1,
+    "scope": "Server-only API adapter gates; transport-free shared execution flags and callers; optional Surreal concrete memory plumbing plus matching server realtime gate.",
+    "preserved": "No manifest, dependency/lockfile/pin changes. No SDK example isolation/removal. Server-enabled values/paths remain.",
+    "new_guards": "All cfg/refusal branches trace to retained optional-dependency/compiler failures and absent-backend boundary. No-backend failed mutations remain unknown/unresolved.",
+    "limitations": [
+      "No compile/runtime/review acceptance performed",
+      "surreal-memory still brings transitive SurrealDB dependency",
+      "No new generic host memory adapter; absent-backend memory construction explicitly refuses"
+    ],
+    "handoffs": [
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-feature-boundary-plan-009.md",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-memory-boundary-plan-009.md"
+    ],
+    "spec_delta": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/reengineer-user-outcome-verification/specs/product-validation-evidence/spec.md"
+  },
+  "handoffs_collected": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-feature-boundary-plan-009.md",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/handoffs/user-outcome-memory-boundary-plan-009.md"
+  ],
+  "active_source_writers": [],
+  "source_authoring_complete": true,
+  "whole_phase_implementation_complete": false,
+  "remaining_implementation": [
+    "2.9: successful build/artifact/selected-resource capture, actual derived fixture and adoption"
+  ],
+  "pending_verification": [
+    "3.1 user-outcome acceptance",
+    "3.2 independent Rust/evidence review and supporting gates",
+    "update-parking-lot-admission/5.1 integration and profiles",
+    "update-parking-lot-admission/5.2 independent review"
+  ],
+  "pending_completion": [
+    "3.3 canonical acceptance, archive and reflection after all criteria"
+  ],
+  "gate": "CLOSED",
+  "source_compiler_verified": false,
+  "accounting": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-010.json",
+  "all_prior_evidence_preserved": true,
+  "scenario_matrix_changes": {
+    "added": [],
+    "modified": [],
+    "removed": []
+  },
+  "no_product_claim": true,
+  "retained_preparation_results": {
+    "materialization_passes": 10,
+    "frontend_source007_pass": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/frontend/frontend-build.json",
+    "native_source008_pass": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/native/native-build.json",
+    "typescript_source008_pass": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/typescript_sdk/typescript_sdk-build.json",
+    "SDK_source008_fail": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/rust_sdk/rust_sdk-build.json",
+    "frontend_tree_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-retained-frontend-004.json",
+    "typescript_tree_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-retained-typescript-005.json",
+    "original_steps_passed": 13,
+    "original_steps_total": 17
+  },
+  "source_delta_from_009": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/server.rs",
+      "before": "sha256:22b5f7800b402212d725eef24f19a51b743cb3f9e23ddb001a77cc70ee6cf4da",
+      "after": "sha256:5026e8f078f56b935058ae10510f58c19540296258c585d29c4d983a137cd5ad"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/capabilities.rs",
+      "before": "sha256:f9bfac1faccc3d40355ce02fcd724aab47840ffa8d5e0078aab5755b23914249",
+      "after": "sha256:166a3f24fb73420ec591f941cd548a4f645283d5851bd78c289bbd3cfe501e3e"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/mod.rs",
+      "before": "sha256:85158cd5d890ae95e75ee7cf6593be1d772e0f77f666335acf4bfb70d2eb64e5",
+      "after": "sha256:d6f8b927198b634ae2a64bb57fa7ca3010a6ba7ed8f6725d43eda13b87974178"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/team_execution/resolution.rs",
+      "before": "sha256:2758c0bd8b3954f564b1aae8fc30be576c75e0367f40d9df0ff5702eef4cb431",
+      "after": "sha256:6dd8f6364ad53b27a5eb3d7f696b7727230f19256ab307eb81fad45e25a4759f"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/validation/projection.rs",
+      "before": "sha256:0a36bb69fc5d66a3ec6a0706395ccce5259ee05f22660566bb7062fd84c9a91c",
+      "after": "sha256:e028ede4efc5e244d6c96c20073dd41353b62a47be041cc6eb49f2a2eb23eed7"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/mod.rs",
+      "before": "sha256:73675d501e097930523b1c31da0b8c5b5c39815794b7f669eee8d3c922fd5610",
+      "after": "sha256:74779d3cecef6210cf7d9203ab6ceea97c45eade4ea79d6ea73c203c2e7e40aa"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/progression.rs",
+      "before": "sha256:184f4edc5da74f727d4b5a42c97ccc3e604f33efb1d4e5e20c4b20c1d753f25c",
+      "after": "sha256:e7a7e2c2e09ba38cd9cd4a69a2afaad6e699a74fc8febe1346d27b3ade9b4865"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/workflow_execution/start.rs",
+      "before": "sha256:ef731f9839f28de63177a097e9e539811658c999ba53ce224131b6d87a99fb2f",
+      "after": "sha256:2e9d2514b961df8bef0e396dc3f07bac0e8643b5bc0e5ae48b5ac43100b64cdf"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/domain/execution_capabilities.rs",
+      "before": null,
+      "after": "sha256:93b5c0153512487475beb712bc75ae24afde59f4546c46afb9834f3f0de54c42"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/domain/mod.rs",
+      "before": "sha256:a697d61473f2e46f41c321092173691703b448d4581c78c399fbcd80b356ba22",
+      "after": "sha256:f0e379a6edb40459ddae5b76bf33c95e600507c25d1bcf6ee9aa2729de57e082"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs",
+      "before": "sha256:d9bb191ef9712adcddaf04f59c32640c3f259759afda8927d5b3c4b13ff420d5",
+      "after": "sha256:3c4da46c0032265473ada3233521e7150caeb29334655dfa75f261f1f3b6dbbd"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/service.rs",
+      "before": "sha256:9a851c3035fd84c2db6e77bfc2bdbefac32dbfcffe197ed60821e4e18201e555",
+      "after": "sha256:85e9b5e00f9b61a0929f020259855ec9f993f508424cc14b8b180d18cb83835f"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs",
+      "before": "sha256:16cd4513477e3271b5138a84a6b569bbaa3886f1fcf4ab884b0fe9bf344e728c",
+      "after": "sha256:e2ceb6f4966c6ecb576a2b4b78babe4a26db66c34b3e5e13feb94f8f131a4ee5"
+    }
+  ],
+  "limitations": [
+    "No compile/runtime/review acceptance performed",
+    "surreal-memory still brings transitive SurrealDB dependency",
+    "No new generic host memory adapter; absent-backend memory construction explicitly refuses"
+  ],
+  "required_spec_delta": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/reengineer-user-outcome-verification/specs/product-validation-evidence/spec.md"
+}

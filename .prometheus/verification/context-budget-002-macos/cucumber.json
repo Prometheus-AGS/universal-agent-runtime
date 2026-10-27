@@ -1,0 +1,121 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "bounded-context-preserves-information-needed-later;reduce-oversized-conversation-context-and-answer-a-dependent-follow-up",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Reduce oversized conversation context and answer a dependent follow-up",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 820503983
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with a small context budget and keep-first-and-latest strategy",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:64"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2839654763
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give it a fresh reference and quantities to remember",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10663779141
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I add oversized unrelated context and ask about the earlier information",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5830146
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the model request fits the budget after actual context reduction",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:141"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 303469
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the follow-up correctly uses the original information",
+            "match": {
+              "location": "scripts/behaviors/steps/context-budget.steps.mjs:171"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4055434541
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LWJ1ZGdldC82ZTk2M2NmNy04NzA5LTQ2MTAtYjhlMC01OWFiYmFjOWFhZjEuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "bounded-context-preserves-information-needed-later",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Bounded context preserves information needed later",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/context-budget.feature"
+  }
+]

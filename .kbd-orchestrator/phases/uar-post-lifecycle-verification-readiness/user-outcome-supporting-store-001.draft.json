@@ -1,0 +1,28 @@
+{
+  "name": "uar-user-outcomes-007-supporting",
+  "x-uar-draft": {
+    "status": "INERT_PENDING_P1_AND_EXACT_FINAL_V",
+    "executable": false,
+    "gate": "CLOSED"
+  },
+  "services": {
+    "store": {
+      "image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20",
+      "container_name": "uar-user-outcomes-007-supporting",
+      "ports": [
+        "127.0.0.1:49312:8000"
+      ],
+      "command": [
+        "start",
+        "--log=warn",
+        null,
+        null,
+        "--bind=0.0.0.0:8000",
+        "rocksdb:/data/surreal.db"
+      ],
+      "volumes": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/store:/data"
+      ]
+    }
+  }
+}

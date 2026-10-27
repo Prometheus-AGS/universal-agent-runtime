@@ -2471,3 +2471,94 @@ The active UAR already has jwt_required=false; team APIs nevertheless require a 
 
 ## 2026-10-26 — Retain TEAM-01 as complete
 Operator accepted TEAM-01 PASS and requested commit, push and PR before the next manual step. Mark the selected Mac behavior complete and reuse its saved evidence; do not schedule another run during this manual sequence. Evidence is historical for the recorded binary/source; a later relevant change may justify an operator-selected regression rather than erase this pass. Operator selected publishing accumulated UAR implementation plus manual evidence. No new scenario or retest is authorized by this publication step.
+
+## 2026-10-26 — Conversation continuity complete
+CONTINUITY-01 passed the operator-selected warm two-turn saved-math workflow on Mac. Reuse its saved evidence; do not repeat within the manual sequence. Follow-up-only payloads preserve server-owned context as the thing being tested. This does not claim long-term cross-session memory or persistence after restart.
+
+## 2026-10-26 — Built-in deletion protection complete on Mac
+PROTECTED-AGENTS-01 passed for default-agent and orchestrator-agent. Require the specific built-in protection refusal plus unchanged definitions, not just any403. Reuse saved evidence and do not rerun within the manual sequence without operator direction. No inference is needed for this behavior.
+
+## 2026-10-26 — Disposable agent lifecycle complete on Mac
+AGENT-LIFECYCLE-01 passed instruction-update behavioral verification and deletion. Fresh sessions and random markers known only to saved instructions distinguish a real persisted change from conversation carryover or client hinting. Preserve both attempts; reuse the pass rather than rerunning within the manual sequence without operator direction. The generated agents were deleted; established math/writing/default/orchestrator agents were not modified.
+
+## 2026-10-26 — Anthropic-compatible saved-agent prompting complete on Mac
+ANTHROPIC-01 passed the operator-selected nonstreaming Messages workflow with the real existing Liter/MiniMax-M3 binding. Saved-agent identity and independently computed answer prove the selected useful behavior. Preserve this receipt and do not rerun within the manual sequence without direction. Streaming, complete protocol conformance and upstream Anthropic-hosted inference are separate claims not made here.
+
+## 2026-10-26 — A2A saved-agent prompting complete on Mac
+A2A-01 passed the selected nonstreaming A2A v1 SendMessage workflow for the saved math agent. Retain and reuse its evidence; no repeat in the manual sequence without direction. This does not claim streaming, task continuation/cancellation, legacy A2A, all protocol options or another platform.
+
+
+## ACP-01 — 2026-10-26T21:53:39.400247+00:00
+ACP-01 is complete for the manual Mac sequence. Accept one saved-agent ACP prompt with correct final answer and correlated successful terminal/status; do not inflate this into full protocol, continuation, tools or other-platform certification. No automatic rerun. Preserve raw evidence and independent USD10/provider embedding limits; this run made no embedding request.
+
+
+## AGUI-01 — 2026-10-26T21:57:28.834998+00:00
+AGUI-01 is complete for the manual Mac sequence. Accept the selected direct saved-agent streamed prompt with independently correct answer and correlated success; this does not certify browser rendering, A2UI, reconnect/replay or full protocol conformance. No automatic rerun. Existing USD10/provider embedding caps unchanged; no embedding request in this scenario.
+
+
+## A2UI-01 — 2026-10-26T22:03:54.157007+00:00
+A2UI-01 complete for manual Mac sequence, scoped to /v1/chat/completions stream_mode agui_spec and genuine published response. Browser display/actions and dedicated AG-UI agent-route A2UI are not claimed. No automatic rerun. Existing USD10/provider embedding caps unchanged; scenario makes no embedding request.
+
+
+## A2UI-BROWSER-01 — 2026-10-26T22:53:58.936068+00:00
+Use one isolated Playwright-BDD scenario for real A2UI browser actions, retaining Cucumber reporting and the manual sequence. Supply a valid explicit surface template, but require actual model/native-tool publication, fresh input generated after render, real click POST, distinct successful continuation, and independent exact answer. This avoids conflating unconstrained component design with action delivery. Selected workflow passed; no general repeat-reliability claim.
+
+
+## SKILL-DETECTION-01 — 2026-10-26T22:59:32.061584+00:00
+Skill-use evidence combines a task-only prompt, random recipe and marker stored only in the skill, exact run matching/activation records, streamed implicit activation, and independently computed answer. This prevents a generic correct answer from being misreported as detected skill use. Certify only current keyword strategy; do not infer other strategies.
+
+
+## SEMANTIC-SKILL-01 — 2026-10-26T23:06:34.193261+00:00
+Record semantic detection separately from keyword detection. Require no exact trigger matches, actual local_embedding method/activation evidence, and private skill recipe/marker use. Temporarily configure semantic threshold0.65, preserve0.5 failure, restore original settings after the test. Do not claim all matching strategies or default-threshold suitability from this one pass.
+
+
+## CONTEXT-BUDGET-01 — 2026-10-26T23:28:14.185251+00:00
+Context-budget acceptance requires actual source tokens above input allowance, fewer final messages/tokens within allowance, final serialized request receipt, reported provider usage within reserve, and correct recall of random earlier facts absent from new prompt/assistant acknowledgements. Keep-first/latest passed at8192context with2048output reserve. Counts are explicitly approximate, not exact-tokenizer certification; do not expand the claim to summarization or other strategies.
+
+
+## CONVERSATION-SUMMARY-01 — 2026-10-26T23:33:52.413377+00:00
+Summarization acceptance requires completed summary-model calls bound by digest to the actual fact-bearing source turn, changed/prepared context with compression, and correct random facts/derived answer in a separate follow-up without replay. Strategy labels or recall alone do not prove summarization. One warm Mac case passed; no claim of arbitrary or repeated fact retention.
+
+
+## CONVERSATION-RESTART-01 — 2026-10-26T23:52:44.642458+00:00
+For the selected restart behavior, save successful host conversations before terminal completion and load owner-scoped history on a cold session lookup. Keep the BDD strict and preserve the initial null-recall failure. Accept only sequential graceful Mac restart; do not infer crash/reboot or concurrent durability. No broader verification or auth work.
+
+
+## CONCURRENT-CONVERSATION-RESTART-01 — 2026-10-27T00:01:47.877656+00:00
+For concurrent-turn evidence, require server live-state bracketing A-running→B-running→A-running; separate SSE receive-time intervals alone permit false positives. Keep stream timing only as support. The selected real interleaving passed; do not infer exhaustive persistence ordering safety. Stop after selected PASS.
+
+
+## REST-SETTING-RESTART-01 — 2026-10-27T00:07:31.794289+00:00
+REST restart verification uses the reversible per-user prompt_caching_enabled preference. PUT only this field; preserve preferred_scope; null means inherit and is restored explicitly. Full-record equality after actual same-store process replacement proves this stored-preference behavior. Do not infer prompt-caching effectiveness or all-settings durability.
+
+
+## KNOWLEDGE-RESTART-01 — 2026-10-27T00:18:28.588039+00:00
+Retained-KB restart acceptance uses the existing saved math agent and document, snapshots binding/index identity, and requires an actual retrieved-document citation plus a seal unavailable in current agent instructions or the fresh request. Correct arithmetic alone is not a knowledge-use oracle. Keep unchanged-space persistence separate from embedding regeneration.
+
+## Embedding BDD credential boundary — 2026-10-26T19:40:34.981660-05:00
+
+Operator required credentials outside the test. Use a separate host launcher to provision upstream provider configuration and restore it in finally; Cucumber receives only a nonsecret environment. Product steps exercise settings/regeneration/retrieval through mounted APIs. This supersedes the initial imported host-provisioning draft. One selected live scenario passed; no wider verification implied.
+
+## Document deletion oracle — 2026-10-26T19:44:56.458617-05:00
+
+Use a retained control in the same disposableKB and identical before/after query. Empty search alone cannot prove selective deletion. KNOWLEDGE-DOCUMENT-DELETE-01 passed with positive retained retrieval plus deletedGET404 and survivingKBstate; no broader deletion claims.
+
+## Linked knowledge deletion scope — 2026-10-26T19:49:08.234441-05:00
+
+Keep consumer agent definition/reference unchanged across KBdeletion and ask identical prompt in a freshsession. Require genuine predeletion citation, useful independent arithmetic afterward, null unavailable knowledge and no runtime citations. Do not conflate deleting the retrieval source with erasing already-revealed facts from old history. LINKED-KB-DELETE-01 passed on Mac.
+
+## Explicit KB unlink intent — 2026-10-26T20:07:08.758403-05:00
+
+Preserve legacy empty-list default behavior, but deliberate shared agentPATCH link/enabled edits persist selected/none in uar.run_policy. Preserve unrelated fields and deniedIDs; samepatch explicitKBpolicy wins. This fixes observed KB-UNLINK-01 leakage without globally changing default-agent eligibility. One Mac scenario passed; otherpolicycombinations remainunverified.
+
+## Relink acceptance boundary — 2026-10-26T20:13:44.785282-05:00
+
+Use unlink as prerequisite RESTstate setup, not another inference/acceptance run. Certify only restoration: sameKBID and explicitselection, fresh privatefact answer with matching runtimecitation, unchanged KB/doc. KB-RELINK-01 passed firstattempt onMac; no broaderpolicyclaims.
+
+## Two-KB answer acceptance — 2026-10-26T20:29:35.070003-05:00
+
+Require a private fact and matching provenance from each distinct source, plus a result calculated from both. Counting two citations alone would not prove both facts were used. TWO-KB-ANSWER-01 passed on Mac; one bounded synthesis, no general retrieval-quality claim.
+
+## 2026-10-26T20:40:26.784956-05:00 — Maintain explicit behavior denominators
+
+Keep `.prometheus/verification/behavior-status.md` as the full status index, mapping manual Mac receipts to all97 legacy scenario IDs without adding overlapping counts or reopening obsolete verification ceremonies. Current33behavior/30journey passes remain valid scoped evidence; incomplete legacy predicates remain explicit.

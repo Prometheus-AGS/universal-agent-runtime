@@ -1,0 +1,18 @@
+{
+  "status": "SELECTED_INPUTS_CAPTURED_CONFIG_PENDING_GRPC_MAPPING",
+  "source_identity": "sha256:7e2655915ee4ab9e40f4b566e9615988659ab2a930337bb6ff0cfda93fb81610",
+  "existing_resource_roots": {
+    "python_runtime": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/runtime-inputs/python-runtime",
+    "host_tools": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/runtime-inputs/host-tools",
+    "python_site": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+    "python_sdk": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-sdk-source",
+    "playwright": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright@1.62.1/node_modules",
+    "playwright_test": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/@playwright+test@1.62.1/node_modules",
+    "playwright_core": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-core@1.62.1/node_modules/playwright-core",
+    "fsevents": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/fsevents@2.3.2/node_modules/fsevents",
+    "browsers": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+    "local_models": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models"
+  },
+  "no_program_probe": true,
+  "provider_calls": 0
+}

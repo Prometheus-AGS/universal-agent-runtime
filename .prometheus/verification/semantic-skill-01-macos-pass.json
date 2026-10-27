@@ -1,0 +1,80 @@
+{
+  "scenario": "SEMANTIC-SKILL-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T23:06:34.193261+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/semantic-skill.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 17.395s",
+  "gherkin_steps": 4,
+  "cleanup_hooks": 1,
+  "attempt": 2,
+  "matching_strategy": "skill_service.local_embedding",
+  "configured_threshold": 0.65,
+  "previous_threshold_failure": 0.5,
+  "matching_evidence": {
+    "requested_method": "skill_service.local_embedding",
+    "effective_method": "skill_service.local_embedding",
+    "requested_model": null,
+    "effective_model": null,
+    "threshold": 0.6499999761581421,
+    "margin": 0.05000000074505806,
+    "top_k": 3,
+    "candidates": [
+      {
+        "skill_id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+        "score": 0.7354971766471863,
+        "accepted": true
+      }
+    ]
+  },
+  "keyword_controls": [
+    {
+      "skill_id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "keywords": [
+        "freight tariff",
+        "consignment valuation"
+      ],
+      "matched_keywords": [],
+      "derived_keyword_score": 0
+    },
+    {
+      "skill_id": "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "keywords": [
+        "garden watering"
+      ],
+      "matched_keywords": [],
+      "derived_keyword_score": 0
+    }
+  ],
+  "selected_skill": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+  "excluded_decoy": "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1",
+  "run_id": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+  "answer": {
+    "marker": "PARCEL-f12daa87-e9a5-48a4-9f2d-ec99aba62011",
+    "quote": 360
+  },
+  "configured_model": "liter/MiniMax-M3",
+  "evidence": ".prometheus/verification/semantic-skill/1740f52e-a229-416c-a3f4-9f7243f259e1.json",
+  "cucumber_report": ".prometheus/verification/semantic-skill-002-macos/cucumber.json",
+  "prior_failure": ".prometheus/verification/semantic-skill-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "matching_config_restored": true,
+  "disposable_resources_deleted": true,
+  "service_kept_running": true,
+  "runtime_pid": 78802,
+  "binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "production_changes": false,
+  "source_sha256": {
+    "scripts/behaviors/semantic-skill.cucumber.mjs": "d0565944e2e4e1bc5151fb72d232791471557e2a00e7d2082eea8b4a1d1dc1ec",
+    "scripts/behaviors/features/semantic-skill.feature": "08667ac45fb7d34b990bf35611e9d9d2c74e24da4c4c88a51cb450238dd56ca8",
+    "scripts/behaviors/steps/semantic-skill.steps.mjs": "00f4768f11d49661fbb3f1078f62086254d6b9a69c35d56779ae9126c0af345d"
+  },
+  "scope": "One paraphrased prompt with zero exact trigger matches, local embeddings at threshold0.65, selected skill use with private recipe and marker. Does not validate default0.5, all paraphrases, other matchers, restart durability or other platforms.",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

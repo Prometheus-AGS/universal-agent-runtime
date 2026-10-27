@@ -1,3 +1,8 @@
-[mcp_servers.compass]
-command = "/usr/local/bin/compass"
-args = ["serve","--graph","/Users/gqadonis/Projects/prometheus/universal-agent-runtime/compass-out/graph.json","--transport","stdio"]
+[mcp_servers.zed-workspace-mcp]
+command = "zed-workspace-mcp"
+args = [
+    "--workspace",
+    "flint-platform",
+    "--manifest",
+    "/Users/gqadonis/.config/zed/workspaces/flint-platform.zworkspace.toml",
+]

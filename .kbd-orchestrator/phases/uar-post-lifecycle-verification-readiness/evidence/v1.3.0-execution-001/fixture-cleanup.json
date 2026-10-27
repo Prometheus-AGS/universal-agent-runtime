@@ -1,0 +1,27 @@
+{
+  "fixtureB": {
+    "command": "docker compose --project-name uar-post-lifecycle-v130-001 --file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/local-store.yaml up --detach --no-deps store",
+    "exitCode": 0,
+    "observed": "Pinned image pulled; owned store container and network created; container started."
+  },
+  "cleanupD": {
+    "cmd": "docker compose --project-name uar-post-lifecycle-v130-001 --file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/local-store.yaml stop --timeout 30 store",
+    "result": {
+      "chunk_id": "96f5d0",
+      "wall_time_seconds": 0.598906354,
+      "exit_code": 0,
+      "original_token_count": 28,
+      "output": " Container uar-post-lifecycle-v130-001-store Stopping \n Container uar-post-lifecycle-v130-001-store Stopped \n"
+    }
+  },
+  "cleanupE": {
+    "cmd": "docker compose --project-name uar-post-lifecycle-v130-001 --file .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/local-store.yaml down --timeout 30",
+    "result": {
+      "chunk_id": "b31247",
+      "wall_time_seconds": 0.244975586,
+      "exit_code": 0,
+      "original_token_count": 82,
+      "output": " Container uar-post-lifecycle-v130-001-store Stopping \n Container uar-post-lifecycle-v130-001-store Stopped \n Container uar-post-lifecycle-v130-001-store Removing \n Container uar-post-lifecycle-v130-001-store Removed \n Network uar-post-lifecycle-v130-001_default Removing \n Network uar-post-lifecycle-v130-001_default Removed \n"
+    }
+  }
+}

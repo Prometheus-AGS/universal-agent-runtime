@@ -1,0 +1,45 @@
+{
+  "status": "STOPPED_NEXT_REQUIRED_SOURCE_FINDING_NO_RETRY",
+  "recorded_at_utc": "2026-10-25T23:39:54.819027+00:00",
+  "attempt": "A21_P16_006_CONTINUATION_001",
+  "failed_step": "CODE_SOURCE_REVIEW_IOS_SETTLEMENT_TIMING",
+  "review_verdict": "BLOCK_SOURCE_ONLY",
+  "required_finding_severity": "MEDIUM",
+  "finding": "iOS ledger snapshot is not passed remaining settlement/original allowance; known-completed return path lacks post-read deadline checks and may accept late settlement.",
+  "report": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/code-source-review.md",
+    "sha256": "sha256:3edc6aa457c3c47c264c2f8c41634e49e84cfae482d50ff6478d6a60b21d2a23"
+  },
+  "relay_provenance": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/code-source-review-relay-provenance.json",
+  "review_scope": "Relayed current text for all42 changed paths; Cargo.lock and source_files projections explicitly partial.",
+  "reviewer_id": "/root/a21_artifact_relay/code_source_critic",
+  "contract_digest": "a4a2786a952ec79931974c6458e094178421d6af43572abf4dca9f2d8bdcffe9",
+  "binding_revision": 22,
+  "source_identity": "sha256:4ace47fbfffc400f775f2fc5b3b0ace29e3e41fcf46cb877d54319b271d2ea52",
+  "source_or_contract_changes_after_approval": false,
+  "rust_review": "NOT_RUN",
+  "swift_review": "NOT_RUN",
+  "preparation_controller": "NOT_RUN",
+  "fixture20_charged": false,
+  "repair_floor": 19,
+  "target_install": "NOT_RUN",
+  "supporting_metadata": "NOT_RUN",
+  "resource_signing": "NOT_RUN",
+  "composition": "NOT_RUN",
+  "product_verification": "CLOSED",
+  "provider_calls_this_attempt": 0,
+  "embedding_spend_this_attempt_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "all_prior_consumption_and_limits_retained": true,
+  "accounting": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-029.json",
+    "calls": 3830,
+    "active_minutes_upper_bound": 1856.5970857,
+    "cutoff": "2026-10-25T23:36:32.994589+00:00",
+    "later_activity_accrues": true
+  },
+  "automatic_repair_or_retry": false,
+  "next": "Discuss bounded iOS deadline fix and refreshed approval; propose explicitly retained isolated artifact-only critic context for unchanged source to conserve original remaining calls. No repair/review-policy change yet."
+}

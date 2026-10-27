@@ -1,0 +1,1 @@
+examples/user-outcome-acceptance.ts(33,13): error TS18048: 'authorization' is possibly 'undefined'.

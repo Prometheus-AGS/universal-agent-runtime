@@ -1,0 +1,184 @@
+{
+  "scenario": "AGENT-LIFECYCLE-01",
+  "client_platform": "darwin",
+  "agent_id": "disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "deleted": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+        "metadata": {
+          "title": "Disposable instruction-update agent",
+          "description": "Temporary agent owned by one manual lifecycle scenario.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Set marker to \"ORIGINAL-ed99fc1e-3425-45b9-93c2-fc3add72f973\". Your rule is to add 16 to the user's number and put that numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61\",\"metadata\":{\"title\":\"Disposable instruction-update agent\",\"description\":\"Temporary agent owned by one manual lifecycle scenario.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Set marker to \\\"ORIGINAL-ed99fc1e-3425-45b9-93c2-fc3add72f973\\\". Your rule is to add 16 to the user's number and put that numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:4abff732a0f661daaa224c2ed4b1f40ab269a9e73e90ab64d79b846a2ffec968\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+        "model": "liter/MiniMax-M3",
+        "session_id": "9966e39c-86d0-44c8-a676-900bd658c33a",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Apply your saved rule to the number 161."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-131dc254-26ea-41c4-9168-c246e78cb567\",\"object\":\"chat.completion\",\"created\":1793048006,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The rule: add 16 to 161 → 177. Output JSON with marker and answer.\\n\\nThe marker is \\\"ORIGINAL-ed99fc1e-3425-45b9-93c2-fc3add72f973\\\".\\n\\nShould I output just the JSON object? The agent identity section says \\\"Return only a JSON object with keys marker and answer.\\\" Let me do that. Maybe use a2ui_render? No — it says return only a JSON object.\\n\\nI could also save memory, but memory_enabled is false. Just answer.</think>\\n\\n{\\\"marker\\\":\\\"ORIGINAL-ed99fc1e-3425-45b9-93c2-fc3add72f973\\\",\\\"answer\\\":177}\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15390,\"completion_tokens\":148,\"total_tokens\":15538},\"session_id\":\"9966e39c-86d0-44c8-a676-900bd658c33a\"}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/agents/disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+      "request": {
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Set marker to \"UPDATED-34b3d6e7-ea66-4699-a83a-89692af6630a\". Your rule is to multiply the user's number by 5 and put that numeric result in answer.",
+          "instructions": []
+        }
+      },
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61\",\"metadata\":{\"title\":\"Disposable instruction-update agent\",\"description\":\"Temporary agent owned by one manual lifecycle scenario.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Set marker to \\\"UPDATED-34b3d6e7-ea66-4699-a83a-89692af6630a\\\". Your rule is to multiply the user's number by 5 and put that numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:d6780b73f60d093b69e1552509c831b62267858abb7785fa1212485c74659eb6\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61\",\"metadata\":{\"title\":\"Disposable instruction-update agent\",\"description\":\"Temporary agent owned by one manual lifecycle scenario.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Set marker to \\\"UPDATED-34b3d6e7-ea66-4699-a83a-89692af6630a\\\". Your rule is to multiply the user's number by 5 and put that numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:d6780b73f60d093b69e1552509c831b62267858abb7785fa1212485c74659eb6\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+        "model": "liter/MiniMax-M3",
+        "session_id": "ff455436-3779-4b2f-8cbd-e054b77f1f55",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Apply your saved rule to the number 161."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-e0bc9edd-357d-49e2-a9b9-8d4d3245636a\",\"object\":\"chat.completion\",\"created\":1793048010,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The saved rule: multiply the user's number by 5 and put the numeric result in answer. 161 * 5 = 805.\\n\\nReturn only a JSON object with keys marker and answer.\\n\\nAlso I should consider saving memory? The rule is already in the agent identity fragment. The task is simple: return JSON.\\n\\nLet me just return the JSON.\\n\\nShould I call any tools? Probably not necessary. But perhaps saving the rule to memory would be \\\"apply your saved rule\\\" — the rule is already present. I'll just answer.\\n\\n161* 5 = 805.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"UPDATED-34b3d6e7-ea66-4699-a83a-89692af6630a\\\", \\\"answer\\\": 805}\\n```\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15391,\"completion_tokens\":159,\"total_tokens\":15550},\"session_id\":\"ff455436-3779-4b2f-8cbd-e054b77f1f55\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+      "status": 404,
+      "response": "Persisted agent not found"
+    }
+  ],
+  "expected_original": {
+    "marker": "ORIGINAL-ed99fc1e-3425-45b9-93c2-fc3add72f973",
+    "answer": 177
+  },
+  "expected_updated": {
+    "marker": "UPDATED-34b3d6e7-ea66-4699-a83a-89692af6630a",
+    "answer": 805
+  },
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 6569
+}

@@ -1,0 +1,20 @@
+{
+  "step": "A21_SIGNATURE",
+  "classification": "EXPLICITLY_APPROVED_SIGNING",
+  "argv": [
+    "ssh-keygen",
+    "-Y",
+    "sign",
+    "-f",
+    "/Users/gqadonis/.ssh/id_ed25519.pub",
+    "-n",
+    "prometheus-kbd-scope-amendment",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-006.amendment.json"
+  ],
+  "started_at_utc": "2026-10-25T22:48:49.359740+00:00",
+  "finished_at_utc": "2026-10-25T22:48:49.383607+00:00",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "Signing file /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-006.amendment.json\nWrite signature to /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-006.amendment.json.sig\n",
+  "signature_sha256": "sha256:297b25dd1be4835a7466b5017c85483636d0e6ea5bce4d8b3e6a874b680b8644"
+}

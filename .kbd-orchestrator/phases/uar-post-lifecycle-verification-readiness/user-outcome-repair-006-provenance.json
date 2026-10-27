@@ -1,0 +1,19 @@
+{
+  "classification": "SOURCE_EDIT_PROVENANCE_NOT_COMPILER_VERIFICATION",
+  "prior_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-006.json",
+  "patch_sha256": "sha256:6bf3d0b5f894c6b172e41ddd11a9f193ba543278b40e08fee9507263c4858ce9",
+  "files": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/scoped.rs",
+      "before": "sha256:1a4f12411911e50df0f85fa6aca52e4a3caf267c6a57f44a3984e96622059954",
+      "after": "sha256:0022538c568ab20cdc9141e1aae2e758a9a95b0db2680f094fb1f8995e2bb17e"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/llm/liter_driver.rs",
+      "before": "sha256:9668d3478041841d480cfb073168a96a5e7cfae1068a942caf44e879d73ce0e9",
+      "after": "sha256:0cea5cda674f06cfd78881bb127197170f377d2746fe5b579d5468322cb206b2"
+    }
+  ],
+  "production_line_substitutions": 3,
+  "tests_or_builds_run": false
+}

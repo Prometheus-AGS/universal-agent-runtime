@@ -206,6 +206,26 @@ pub async fn patch_agent_if_revision(
 
     let mut agent: AgentArtifact = serde_json::from_value(base)
         .map_err(|e| AgentStoreError::Invalid(format!("invalid agent after merge: {e}")))?;
+    // A deliberate link edit is an explicit selection, unlike a legacy empty
+    // list which inherits automatic KB access. Never turn unlinking into access
+    // to every available KB. A policy supplied in the same patch wins explicitly.
+    let edits_kb_selection = patch.pointer("/memory/kb/knowledge_bases").is_some()
+        || patch.pointer("/memory/kb/enabled").is_some();
+    if edits_kb_selection
+        && patch.pointer("/extensions/uar.run_policy/knowledge_bases").is_none()
+    {
+        let policy = agent.extensions.entry("uar.run_policy".to_string())
+            .or_insert_with(|| serde_json::json!({}));
+        if !policy.is_object() {
+            return Err(AgentStoreError::Invalid("run policy must be an object for KB selection edits".to_string()));
+        }
+        json_merge(policy, &serde_json::json!({
+            "knowledge_bases": {
+                "mode": if agent.memory.kb.enabled { "selected" } else { "none" },
+                "ids": agent.memory.kb.knowledge_bases,
+            }
+        }));
+    }
     agent.id = id.to_string();
     agent = agent.with_catalog_metadata("uar_api");
     validate_agent(&agent)?;

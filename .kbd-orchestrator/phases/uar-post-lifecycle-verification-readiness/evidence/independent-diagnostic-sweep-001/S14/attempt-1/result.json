@@ -1,0 +1,16 @@
+{
+  "item": "S14",
+  "attempt": 1,
+  "argv": [
+    "openspec",
+    "validate",
+    "pl-main-budget-reconciliation"
+  ],
+  "exit_code": 0,
+  "status": "PASS",
+  "elapsed_seconds": 0.6695890426635742,
+  "source_identity": "sha256:c6963d648f9961315d62c8a975da6501f64c2dd5f60f69b21aac3612a701c500",
+  "stdout": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S14/attempt-1/stdout.log",
+  "stderr": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S14/attempt-1/stderr.log",
+  "correction_used": false
+}

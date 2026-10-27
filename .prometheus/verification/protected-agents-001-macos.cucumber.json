@@ -1,0 +1,108 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "built-in-agents-remain-available;the-default-and-orchestrator-agents-cannot-be-deleted",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The default and orchestrator agents cannot be deleted",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 44199010
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the default and orchestrator agent definitions are available",
+            "match": {
+              "location": "scripts/behaviors/steps/protected-agents.steps.mjs:23"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8403710
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I attempt to delete each built-in agent",
+            "match": {
+              "location": "scripts/behaviors/steps/protected-agents.steps.mjs:40"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 126967
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both deletions are refused because the agents are built in",
+            "match": {
+              "location": "scripts/behaviors/steps/protected-agents.steps.mjs:48"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16492535
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "both agent definitions remain unchanged",
+            "match": {
+              "location": "scripts/behaviors/steps/protected-agents.steps.mjs:54"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1512413
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJzY2VuYXJpbyI6IlBST1RFQ1RFRC1BR0VOVFMtMDEiLCJjbGllbnRfcGxhdGZvcm0iOiJkYXJ3aW4iLCJhdXRoZW50aWNhdGlvbl9zdXBwbGllZF9ieV90ZXN0IjpmYWxzZSwic2VydmljZV9rZXB0X3J1bm5pbmciOnRydWUsImV4Y2hhbmdlcyI6W3sibWV0aG9kIjoiR0VUIiwicGF0aCI6Ii9hcGkvYWdlbnRzL2RlZmF1bHQtYWdlbnQiLCJzdGF0dXMiOjIwMCwiYm9keSI6IntcInZlcnNpb25cIjpcIjEuMC4wXCIsXCJraW5kXCI6XCJhZ2VudFwiLFwiaWRcIjpcImRlZmF1bHQtYWdlbnRcIixcIm1ldGFkYXRhXCI6e1widGl0bGVcIjpcIkRlZmF1bHQgQXNzaXN0YW50XCIsXCJkZXNjcmlwdGlvblwiOlwiQSBoZWxwZnVsIGdlbmVyaWMgQUkgYXNzaXN0YW50LlwiLFwidGFnc1wiOltcImRlZmF1bHRcIixcImdlbmVyYWxcIl0sXCJhdXRob3JcIjpcIlN5c3RlbVwiLFwiaWNvblwiOm51bGx9LFwicnVudGltZVwiOntcImVudHJ5XCI6XCJkZWZhdWx0XCIsXCJwcm90b2NvbHNcIjp7fX0sXCJwb2xpY3lcIjp7XCJwcm92aWRlclwiOntcImRlZmF1bHRcIjp7XCJwcm92aWRlclwiOlwiXCIsXCJtb2RlbFwiOlwiXCJ9LFwiZmFsbGJhY2tzXCI6W119LFwidG9vbHNcIjp7XCJhbGxvd1wiOltcIipcIl0sXCJkZW55XCI6W10sXCJtYXhfY29uY3VycmVudFwiOjEsXCJleGVjdXRpb25fbW9kZVwiOlwiZGlyZWN0XCJ9LFwic2tpbGxzXCI6e1wicHJlZmVyXCI6W10sXCJtYXhfYWN0aXZlXCI6M319LFwic2NoZW1hc1wiOntcImlucHV0c1wiOm51bGwsXCJvdXRwdXRzXCI6bnVsbCxcInN0YXRlXCI6bnVsbH0sXCJwcm9tcHRcIjp7XCJzeXN0ZW1cIjpcIllvdSBhcmUgYSBoZWxwZnVsLCBpbnRlbGxpZ2VudCwgYW5kIGNhcGFibGUgQUkgYXNzaXN0YW50LiBZb3UgY2FuIGFuc3dlciBxdWVzdGlvbnMsIHBlcmZvcm0gdGFza3MsIGFuZCB1c2UgcHJvdmlkZWQgdG9vbHMuIEFsd2F5cyBwcm92aWRlIGNsZWFyLCBjb25jaXNlLCBhbmQgYWNjdXJhdGUgaW5mb3JtYXRpb24uXCIsXCJpbnN0cnVjdGlvbnNcIjpbXX0sXCJtZW1vcnlcIjp7XCJjb252ZXJzYXRpb25cIjp7XCJlbmFibGVkXCI6dHJ1ZX0sXCJrYlwiOntcImVuYWJsZWRcIjp0cnVlLFwia25vd2xlZGdlX2Jhc2VzXCI6W10sXCJjaXRhdGlvbl9yZXF1aXJlZFwiOmZhbHNlfX0sXCJ0b29sc1wiOntcImJ1bmRsZXNcIjpbXX0sXCJ1aVwiOntcImZvcm1zXCI6e1wiZW5hYmxlZFwiOmZhbHNlfSxcImFydGlmYWN0c1wiOntcImVuYWJsZWRcIjpmYWxzZSxcInByZWZlcnJlZF90eXBlc1wiOltdfX0sXCJleHRlbnNpb25zXCI6e1widWFyLmNhdGFsb2dcIjp7XCJzY2hlbWFfdmVyc2lvblwiOjEsXCJyZXZpc2lvblwiOlwic2hhMjU2OjBmZTEzMzlmZjE4YjBkMmFiZGYyNGZjM2IxZWU4YWM3NjZiOGViMmJmYzE0YzY0NjhkZGVhNGJiMGY3Mjk0M2VcIixcInNvdXJjZVwiOntcImtpbmRcIjpcImJ1aWx0aW5cIixcImlkXCI6XCJkZWZhdWx0LWFnZW50XCIsXCJyZXZpc2lvblwiOlwiMS4wLjBcIn19fX0ifSx7Im1ldGhvZCI6IkdFVCIsInBhdGgiOiIvYXBpL2FnZW50cy9vcmNoZXN0cmF0b3ItYWdlbnQiLCJzdGF0dXMiOjIwMCwiYm9keSI6IntcInZlcnNpb25cIjpcIjEuMC4wXCIsXCJraW5kXCI6XCJhZ2VudFwiLFwiaWRcIjpcIm9yY2hlc3RyYXRvci1hZ2VudFwiLFwibWV0YWRhdGFcIjp7XCJ0aXRsZVwiOlwiT3JjaGVzdHJhdG9yXCIsXCJkZXNjcmlwdGlvblwiOlwiQ2xhc3NpZmllcyByZXF1ZXN0cyBhZ2FpbnN0IHRoZSBjdXJyZW50IHJlZ2lzdGVyZWQgYWdlbnQgcm9zdGVyIGFuZCByZXR1cm5zIHRoZSBzZWxlY3RlZCBhZ2VudCdzIGNvbnRyaWJ1dGlvbi5cIixcInRhZ3NcIjpbXCJvcmNoZXN0cmF0aW9uXCIsXCJkZWxlZ2F0aW9uXCIsXCJtdWx0aS1hZ2VudFwiXSxcImF1dGhvclwiOlwiU3lzdGVtXCIsXCJpY29uXCI6bnVsbH0sXCJydW50aW1lXCI6e1wiZW50cnlcIjpcIm9yY2hlc3RyYXRvclwiLFwicHJvdG9jb2xzXCI6e319LFwicG9saWN5XCI6e1wicHJvdmlkZXJcIjp7XCJkZWZhdWx0XCI6e1wicHJvdmlkZXJcIjpcIlwiLFwibW9kZWxcIjpcIlwifSxcImZhbGxiYWNrc1wiOltdfSxcInRvb2xzXCI6e1wiYWxsb3dcIjpbXCIqXCIsXCJzcGF3bl9hZ2VudFwiXSxcImRlbnlcIjpbXSxcIm1heF9jb25jdXJyZW50XCI6MSxcImV4ZWN1dGlvbl9tb2RlXCI6XCJkaXJlY3RcIn0sXCJza2lsbHNcIjp7XCJwcmVmZXJcIjpbXSxcIm1heF9hY3RpdmVcIjozfX0sXCJzY2hlbWFzXCI6e1wiaW5wdXRzXCI6bnVsbCxcIm91dHB1dHNcIjpudWxsLFwic3RhdGVcIjpudWxsfSxcInByb21wdFwiOntcInN5c3RlbVwiOlwiWW91IGNvb3JkaW5hdGUgc3BlY2lhbGlzdCBzdWItYWdlbnRzLiBSb3V0ZSBlYWNoIHJlcXVlc3QgdG8gdGhlIGJlc3QgYXZhaWxhYmxlIHNwZWNpYWxpc3QgYW5kIHJldHVybiB0aGF0IHNwZWNpYWxpc3QncyBldmlkZW5jZS1iYWNrZWQgY29udHJpYnV0aW9uLlwiLFwiaW5zdHJ1Y3Rpb25zXCI6W1wiU2VsZWN0IHRoZSBiZXN0IGVsaWdpYmxlIHJlZ2lzdGVyZWQgYWdlbnQgZm9yIHRoZSB1c2VyJ3MgaW50ZW50LiBVc2UgdGhlIGN1cnJlbnQgcm9zdGVyIHJhdGhlciB0aGFuIGEgZml4ZWQgc3BlY2lhbGlzdCBsaXN0LlwiXX0sXCJtZW1vcnlcIjp7XCJjb252ZXJzYXRpb25cIjp7XCJlbmFibGVkXCI6dHJ1ZX0sXCJrYlwiOntcImVuYWJsZWRcIjp0cnVlLFwia25vd2xlZGdlX2Jhc2VzXCI6W10sXCJjaXRhdGlvbl9yZXF1aXJlZFwiOmZhbHNlfX0sXCJ0b29sc1wiOntcImJ1bmRsZXNcIjpbXX0sXCJ1aVwiOntcImZvcm1zXCI6e1wiZW5hYmxlZFwiOmZhbHNlfSxcImFydGlmYWN0c1wiOntcImVuYWJsZWRcIjpmYWxzZSxcInByZWZlcnJlZF90eXBlc1wiOltdfX0sXCJleHRlbnNpb25zXCI6e1widWFyLmNhdGFsb2dcIjp7XCJzY2hlbWFfdmVyc2lvblwiOjEsXCJyZXZpc2lvblwiOlwic2hhMjU2OjBkYTlmMDk3NTJjYjc2ODlhZTZkZDAzNWIwZTZkZDZmZDRiZTY0NzEwZGVlZGU3NTAwNmZhMDRlODQyYWE1MDBcIixcInNvdXJjZVwiOntcImtpbmRcIjpcImJ1aWx0aW5cIixcImlkXCI6XCJvcmNoZXN0cmF0b3ItYWdlbnRcIixcInJldmlzaW9uXCI6XCIxLjAuMFwifX19fSJ9LHsibWV0aG9kIjoiREVMRVRFIiwicGF0aCI6Ii9hcGkvYWdlbnRzL2RlZmF1bHQtYWdlbnQiLCJzdGF0dXMiOjQwMywiYm9keSI6IkFnZW50ICdkZWZhdWx0LWFnZW50JyBpcyBidWlsdCBpbiBhbmQgY2Fubm90IGJlIGRlbGV0ZWQifSx7Im1ldGhvZCI6IkRFTEVURSIsInBhdGgiOiIvYXBpL2FnZW50cy9vcmNoZXN0cmF0b3ItYWdlbnQiLCJzdGF0dXMiOjQwMywiYm9keSI6IkFnZW50ICdvcmNoZXN0cmF0b3ItYWdlbnQnIGlzIGJ1aWx0IGluIGFuZCBjYW5ub3QgYmUgZGVsZXRlZCJ9LHsibWV0aG9kIjoiR0VUIiwicGF0aCI6Ii9hcGkvYWdlbnRzL2RlZmF1bHQtYWdlbnQiLCJzdGF0dXMiOjIwMCwiYm9keSI6IntcInZlcnNpb25cIjpcIjEuMC4wXCIsXCJraW5kXCI6XCJhZ2VudFwiLFwiaWRcIjpcImRlZmF1bHQtYWdlbnRcIixcIm1ldGFkYXRhXCI6e1widGl0bGVcIjpcIkRlZmF1bHQgQXNzaXN0YW50XCIsXCJkZXNjcmlwdGlvblwiOlwiQSBoZWxwZnVsIGdlbmVyaWMgQUkgYXNzaXN0YW50LlwiLFwidGFnc1wiOltcImRlZmF1bHRcIixcImdlbmVyYWxcIl0sXCJhdXRob3JcIjpcIlN5c3RlbVwiLFwiaWNvblwiOm51bGx9LFwicnVudGltZVwiOntcImVudHJ5XCI6XCJkZWZhdWx0XCIsXCJwcm90b2NvbHNcIjp7fX0sXCJwb2xpY3lcIjp7XCJwcm92aWRlclwiOntcImRlZmF1bHRcIjp7XCJwcm92aWRlclwiOlwiXCIsXCJtb2RlbFwiOlwiXCJ9LFwiZmFsbGJhY2tzXCI6W119LFwidG9vbHNcIjp7XCJhbGxvd1wiOltcIipcIl0sXCJkZW55XCI6W10sXCJtYXhfY29uY3VycmVudFwiOjEsXCJleGVjdXRpb25fbW9kZVwiOlwiZGlyZWN0XCJ9LFwic2tpbGxzXCI6e1wicHJlZmVyXCI6W10sXCJtYXhfYWN0aXZlXCI6M319LFwic2NoZW1hc1wiOntcImlucHV0c1wiOm51bGwsXCJvdXRwdXRzXCI6bnVsbCxcInN0YXRlXCI6bnVsbH0sXCJwcm9tcHRcIjp7XCJzeXN0ZW1cIjpcIllvdSBhcmUgYSBoZWxwZnVsLCBpbnRlbGxpZ2VudCwgYW5kIGNhcGFibGUgQUkgYXNzaXN0YW50LiBZb3UgY2FuIGFuc3dlciBxdWVzdGlvbnMsIHBlcmZvcm0gdGFza3MsIGFuZCB1c2UgcHJvdmlkZWQgdG9vbHMuIEFsd2F5cyBwcm92aWRlIGNsZWFyLCBjb25jaXNlLCBhbmQgYWNjdXJhdGUgaW5mb3JtYXRpb24uXCIsXCJpbnN0cnVjdGlvbnNcIjpbXX0sXCJtZW1vcnlcIjp7XCJjb252ZXJzYXRpb25cIjp7XCJlbmFibGVkXCI6dHJ1ZX0sXCJrYlwiOntcImVuYWJsZWRcIjp0cnVlLFwia25vd2xlZGdlX2Jhc2VzXCI6W10sXCJjaXRhdGlvbl9yZXF1aXJlZFwiOmZhbHNlfX0sXCJ0b29sc1wiOntcImJ1bmRsZXNcIjpbXX0sXCJ1aVwiOntcImZvcm1zXCI6e1wiZW5hYmxlZFwiOmZhbHNlfSxcImFydGlmYWN0c1wiOntcImVuYWJsZWRcIjpmYWxzZSxcInByZWZlcnJlZF90eXBlc1wiOltdfX0sXCJleHRlbnNpb25zXCI6e1widWFyLmNhdGFsb2dcIjp7XCJzY2hlbWFfdmVyc2lvblwiOjEsXCJyZXZpc2lvblwiOlwic2hhMjU2OjBmZTEzMzlmZjE4YjBkMmFiZGYyNGZjM2IxZWU4YWM3NjZiOGViMmJmYzE0YzY0NjhkZGVhNGJiMGY3Mjk0M2VcIixcInNvdXJjZVwiOntcImtpbmRcIjpcImJ1aWx0aW5cIixcImlkXCI6XCJkZWZhdWx0LWFnZW50XCIsXCJyZXZpc2lvblwiOlwiMS4wLjBcIn19fX0ifSx7Im1ldGhvZCI6IkdFVCIsInBhdGgiOiIvYXBpL2FnZW50cy9vcmNoZXN0cmF0b3ItYWdlbnQiLCJzdGF0dXMiOjIwMCwiYm9keSI6IntcInZlcnNpb25cIjpcIjEuMC4wXCIsXCJraW5kXCI6XCJhZ2VudFwiLFwiaWRcIjpcIm9yY2hlc3RyYXRvci1hZ2VudFwiLFwibWV0YWRhdGFcIjp7XCJ0aXRsZVwiOlwiT3JjaGVzdHJhdG9yXCIsXCJkZXNjcmlwdGlvblwiOlwiQ2xhc3NpZmllcyByZXF1ZXN0cyBhZ2FpbnN0IHRoZSBjdXJyZW50IHJlZ2lzdGVyZWQgYWdlbnQgcm9zdGVyIGFuZCByZXR1cm5zIHRoZSBzZWxlY3RlZCBhZ2VudCdzIGNvbnRyaWJ1dGlvbi5cIixcInRhZ3NcIjpbXCJvcmNoZXN0cmF0aW9uXCIsXCJkZWxlZ2F0aW9uXCIsXCJtdWx0aS1hZ2VudFwiXSxcImF1dGhvclwiOlwiU3lzdGVtXCIsXCJpY29uXCI6bnVsbH0sXCJydW50aW1lXCI6e1wiZW50cnlcIjpcIm9yY2hlc3RyYXRvclwiLFwicHJvdG9jb2xzXCI6e319LFwicG9saWN5XCI6e1wicHJvdmlkZXJcIjp7XCJkZWZhdWx0XCI6e1wicHJvdmlkZXJcIjpcIlwiLFwibW9kZWxcIjpcIlwifSxcImZhbGxiYWNrc1wiOltdfSxcInRvb2xzXCI6e1wiYWxsb3dcIjpbXCIqXCIsXCJzcGF3bl9hZ2VudFwiXSxcImRlbnlcIjpbXSxcIm1heF9jb25jdXJyZW50XCI6MSxcImV4ZWN1dGlvbl9tb2RlXCI6XCJkaXJlY3RcIn0sXCJza2lsbHNcIjp7XCJwcmVmZXJcIjpbXSxcIm1heF9hY3RpdmVcIjozfX0sXCJzY2hlbWFzXCI6e1wiaW5wdXRzXCI6bnVsbCxcIm91dHB1dHNcIjpudWxsLFwic3RhdGVcIjpudWxsfSxcInByb21wdFwiOntcInN5c3RlbVwiOlwiWW91IGNvb3JkaW5hdGUgc3BlY2lhbGlzdCBzdWItYWdlbnRzLiBSb3V0ZSBlYWNoIHJlcXVlc3QgdG8gdGhlIGJlc3QgYXZhaWxhYmxlIHNwZWNpYWxpc3QgYW5kIHJldHVybiB0aGF0IHNwZWNpYWxpc3QncyBldmlkZW5jZS1iYWNrZWQgY29udHJpYnV0aW9uLlwiLFwiaW5zdHJ1Y3Rpb25zXCI6W1wiU2VsZWN0IHRoZSBiZXN0IGVsaWdpYmxlIHJlZ2lzdGVyZWQgYWdlbnQgZm9yIHRoZSB1c2VyJ3MgaW50ZW50LiBVc2UgdGhlIGN1cnJlbnQgcm9zdGVyIHJhdGhlciB0aGFuIGEgZml4ZWQgc3BlY2lhbGlzdCBsaXN0LlwiXX0sXCJtZW1vcnlcIjp7XCJjb252ZXJzYXRpb25cIjp7XCJlbmFibGVkXCI6dHJ1ZX0sXCJrYlwiOntcImVuYWJsZWRcIjp0cnVlLFwia25vd2xlZGdlX2Jhc2VzXCI6W10sXCJjaXRhdGlvbl9yZXF1aXJlZFwiOmZhbHNlfX0sXCJ0b29sc1wiOntcImJ1bmRsZXNcIjpbXX0sXCJ1aVwiOntcImZvcm1zXCI6e1wiZW5hYmxlZFwiOmZhbHNlfSxcImFydGlmYWN0c1wiOntcImVuYWJsZWRcIjpmYWxzZSxcInByZWZlcnJlZF90eXBlc1wiOltdfX0sXCJleHRlbnNpb25zXCI6e1widWFyLmNhdGFsb2dcIjp7XCJzY2hlbWFfdmVyc2lvblwiOjEsXCJyZXZpc2lvblwiOlwic2hhMjU2OjBkYTlmMDk3NTJjYjc2ODlhZTZkZDAzNWIwZTZkZDZmZDRiZTY0NzEwZGVlZGU3NTAwNmZhMDRlODQyYWE1MDBcIixcInNvdXJjZVwiOntcImtpbmRcIjpcImJ1aWx0aW5cIixcImlkXCI6XCJvcmNoZXN0cmF0b3ItYWdlbnRcIixcInJldmlzaW9uXCI6XCIxLjAuMFwifX19fSJ9XSwicmVzdWx0IjoiVkVSSUZJRUQiLCJzY2VuYXJpb19zdGF0dXMiOiJQQVNTRUQiLCJkdXJhdGlvbl9tcyI6NzB9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "built-in-agents-remain-available",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Built-in agents remain available",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/protected-agents.feature"
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "item": "S7",
+  "attempt": 1,
+  "argv": [
+    "cargo",
+    "build",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "embedded-mobile",
+    "--lib"
+  ],
+  "exit_code": 0,
+  "status": "PASS",
+  "elapsed_seconds": 318.1343140602112,
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "artifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S7/attempt-1/libuniversal_agent_runtime.rlib",
+      "sha256": "4616d5255b810ab65e912c5d8b282e96f3575ff71892508bfbebf294bce5c164"
+    }
+  ],
+  "stdout": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S7/attempt-1/stdout.log",
+  "stderr": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S7/attempt-1/stderr.log",
+  "correction_used": false
+}

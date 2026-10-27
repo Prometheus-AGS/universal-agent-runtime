@@ -1,0 +1,25 @@
+{
+  "startedAt": "2026-10-24T13:38:17.685447+00:00",
+  "contractDigest": "d00c3c5bd3057ad70ce7324efb6d4476066271081f87833ed811f2929e521551",
+  "sourceInventoryDigest": "770fd322db7b4d4ec4209755d3698101d04fcc0f78ee1d649f0eedaa7aa4aa7a",
+  "manifestSha256": "d330f532b0a06ca39ab2ffa1ee0ebe364deb921043d1197265e191c04406b8f3",
+  "source": "774469746fee4de99be41dc1cd231857067e4487",
+  "toolCallsSinceEpoch": null,
+  "repairs": 0,
+  "historicalEffort": "UNKNOWN",
+  "status": "STOPPED_FIRST_FAILURE",
+  "laterGates": "NOT_RUN",
+  "stoppedAt": "2026-10-24T14:06:45.159606+00:00",
+  "failedGate": "post_lifecycle_main compilation",
+  "runnerExitCode": 1,
+  "testExitCode": 101,
+  "toolCallConsumption": {
+    "classification": "UNKNOWN",
+    "reason": "No complete persisted call-counter audit available; do not use this receipt for finite-budget closure."
+  },
+  "cleanup": "Owned store stop/down exit0; disk retained",
+  "runtimeScenarios": "NOT_RUN",
+  "teardown": "Runtime fixture not reached; no runtime teardown receipt produced",
+  "gate": "CLOSED_PENDING_CORRECTIVE_INVENTORY_AND_INSTRUCTION",
+  "elapsedWallSeconds": 1707.474159
+}

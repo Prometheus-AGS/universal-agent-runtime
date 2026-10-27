@@ -1,0 +1,11 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/knowledge-document-delete.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 3.4328446469735354,
+  "child_credential_variables": []
+}

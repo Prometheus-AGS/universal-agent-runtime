@@ -1,0 +1,66 @@
+{
+  "scenario": "CONVERSATION-SUMMARY-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T23:33:52.413377+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/conversation-summary.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 10.430s",
+  "gherkin_steps": 4,
+  "cleanup_hooks": 1,
+  "attempt": 2,
+  "configured_model": "liter/MiniMax-M3",
+  "strategy": {
+    "type": "summarize",
+    "threshold": 2,
+    "summary_max_tokens": 2048,
+    "model": "liter/MiniMax-M3"
+  },
+  "summary_generated": true,
+  "source_tokens": 3968,
+  "prepared_tokens": 917,
+  "summary_source_sha256": "sha256:d0fc0eba96351da8dc087a84a3b1c2c94819d5bb8cefeab82d1bdc535217da88",
+  "summary_calls": [
+    {
+      "tier": "summary",
+      "model": "liter/MiniMax-M3",
+      "completed": true,
+      "input_tokens": 3417,
+      "count_quality": "approximate",
+      "counting_revision": "host-plaintext-estimate-v1",
+      "output_tokens": 317,
+      "input_sha256": "sha256:d0fc0eba96351da8dc087a84a3b1c2c94819d5bb8cefeab82d1bdc535217da88",
+      "output_sha256": "sha256:16f7960b5b83d2c4e4d2aec1216198b5664c0aa536d7f51203532bb6bea20109"
+    }
+  ],
+  "answer": {
+    "reference": "BOOK-40f57158-05ab-46e2-a9e8-00827cbbac8a",
+    "attendees": 19,
+    "entrance": "Gate Q"
+  },
+  "initial_run_id": "ba237784-f404-47db-ad92-d7759374f085",
+  "follow_up_run_id": "5fc3a58e-9020-44fa-9e62-a7fd476260ea",
+  "evidence": ".prometheus/verification/conversation-summary/c54371b9-13cf-4586-9e2e-d60ae7cb2d9b.json",
+  "cucumber_report": ".prometheus/verification/conversation-summary-002-macos/cucumber.json",
+  "prior_failure": ".prometheus/verification/conversation-summary-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "previous_scenarios_rerun": false,
+  "global_settings_changed": false,
+  "disposable_agent_deleted": true,
+  "service_kept_running": true,
+  "runtime_pid": 78802,
+  "binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "production_changes": false,
+  "source_sha256": {
+    "scripts/behaviors/conversation-summary.cucumber.mjs": "b7be56db522bea0ef70c981f9e5430eb378ac0604d9dad617800732ae9ff33f5",
+    "scripts/behaviors/features/conversation-summary.feature": "2dd0e9b4599d1c0ec9113946bbaccab880b525d4dccbfd6737ac5b36c979da56",
+    "scripts/behaviors/steps/conversation-summary.steps.mjs": "e4dd901e13d3c64d2e849470f45e649d3ea8b1da5a616e44a3d207e73a781ea7"
+  },
+  "scope": "One warm conversation-summary replacement preserving exact random reference, derived headcount and delivery gate. Approximate token counts; no restart, repeated summarization, all-fact or other-platform claim.",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

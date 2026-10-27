@@ -1,0 +1,18 @@
+{
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.proposed.json",
+    "--reason",
+    "A16 four-platform source and fixture unblocking; published Parking Lot0.4.0 first; macOS Linux iOS simulator, Windows BLOCKED Android DEFERRED. Preserve all prior consumption and caps. Named source-review preparation metadata signing and pinned simulator-target installation only; final runtime V separately approved.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n",
+  "classification": "UNSIGNED_AUTHORITY_DOCUMENT_AUTHORING_NOT_VERIFICATION"
+}

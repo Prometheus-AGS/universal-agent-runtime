@@ -1,0 +1,12 @@
+{
+  "received_at_utc": "2026-10-25T23:12:24.900490+00:00",
+  "operator_answer": "Approve one same-packet continuation",
+  "scope": "One unchanged A21/P16.006 review/preparation continuation using lead-relayed current artifacts and verbatim reviewer reports; source/contract/commands unchanged, serial first-failure stop, no automatic retry.",
+  "contract_digest": "a4a2786a952ec79931974c6458e094178421d6af43572abf4dca9f2d8bdcffe9",
+  "binding_revision": 22,
+  "source_identity": "sha256:4ace47fbfffc400f775f2fc5b3b0ace29e3e41fcf46cb877d54319b271d2ea52",
+  "accounting": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-027.json",
+  "repair_floor": 19,
+  "fixture20_charged": false,
+  "product_verification": "CLOSED"
+}

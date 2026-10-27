@@ -1,0 +1,1 @@
+{"argv": ["cargo", "build", "--locked", "--no-default-features", "--features", "minimal", "--bin", "universal-agent-runtime"], "started_unix": 1792944509.334825, "timeout_seconds": 1800, "source_identity_at_start": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018", "operator_approval": "A15 binding17"}

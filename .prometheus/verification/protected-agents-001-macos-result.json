@@ -1,0 +1,24 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/protected-agents.cucumber.mjs"
+  ],
+  "started_at": "2026-10-26T20:48:42.136625+00:00",
+  "duration_seconds": 0.9072148619452491,
+  "exit_code": 0,
+  "platform": "Mac",
+  "authentication_supplied_by_test": false,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR",
+    "UAR_BASE_URL",
+    "UAR_CUCUMBER_REPORT",
+    "UAR_WORKSPACE_ID"
+  ],
+  "report": ".prometheus/verification/protected-agents-001-macos.cucumber.json"
+}

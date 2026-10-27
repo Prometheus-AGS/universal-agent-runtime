@@ -1,0 +1,209 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "scripts/behaviors/a2ui-browser.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/a2ui-browser.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 240000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/a2ui-browser.feature.spec.js",
+      "file": "features/a2ui-browser.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Interact with a real A2UI response in the browser",
+          "file": "features/a2ui-browser.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A rendered calculator sends fresh input back to its agent",
+              "ok": false,
+              "tags": [
+                "ui",
+                "a2ui"
+              ],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 10878,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true })\nExpected substring: \u001b[32m\"Parcel calculator\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: 'A2UI display artifact', exact: true }) resolved to 2 elements:\n    1) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactA2UI v0.9.1 · rendered · surfaceEffective run policyResolved policy v1')\n    2) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactInvalid surface · surface · application/a2ui+jsonInteractive UI could')\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true })\nExpected substring: \u001b[32m\"Parcel calculator\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: 'A2UI display artifact', exact: true }) resolved to 2 elements:\n    1) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactA2UI v0.9.1 · rendered · surfaceEffective run policyResolved policy v1')\n    2) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactInvalid surface · surface · application/a2ui+jsonInteractive UI could')\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true })\u001b[22m\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:132:27)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5",
+                        "location": {
+                          "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                          "column": 27,
+                          "line": 132
+                        },
+                        "snippet": "   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:132\n\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n  131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n> 132 |   await expect(s.surface).toContainText('Parcel calculator');\n      |                           ^\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();\n  135 |   await page.screenshot({ path: resolve(process.env.UAR_BROWSER_EVIDENCE_DIR, 'rendered-surface.png'), fullPage: true });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                            "column": 27,
+                            "line": 132
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true })\nExpected substring: \u001b[32m\"Parcel calculator\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: 'A2UI display artifact', exact: true }) resolved to 2 elements:\n    1) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactA2UI v0.9.1 · rendered · surfaceEffective run policyResolved policy v1')\n    2) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactInvalid surface · surface · application/a2ui+jsonInteractive UI could')\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true })\u001b[22m\n\n\n   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:132\n\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n  131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n> 132 |   await expect(s.surface).toContainText('Parcel calculator');\n      |                           ^\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();\n  135 |   await page.screenshot({ path: resolve(process.env.UAR_BROWSER_EVIDENCE_DIR, 'rendered-surface.png'), fullPage: true });\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:132:27)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a disposable A2UI calculator agent is selected in the browser",
+                          "duration": 2675
+                        },
+                        {
+                          "title": "When I ask the agent to render its calculator",
+                          "duration": 6538
+                        },
+                        {
+                          "title": "Then the browser displays the generated input and action button",
+                          "duration": 63,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true })\nExpected substring: \u001b[32m\"Parcel calculator\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: 'A2UI display artifact', exact: true }) resolved to 2 elements:\n    1) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactA2UI v0.9.1 · rendered · surfaceEffective run policyResolved policy v1')\n    2) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactInvalid surface · surface · application/a2ui+jsonInteractive UI could')\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true })\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true })\nExpected substring: \u001b[32m\"Parcel calculator\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: 'A2UI display artifact', exact: true }) resolved to 2 elements:\n    1) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactA2UI v0.9.1 · rendered · surfaceEffective run policyResolved policy v1')\n    2) <section aria-label=\"A2UI display artifact\" class=\"my-2 rounded-xl bg-card px-3 py-3\">…</section> aka getByText('ArtifactInvalid surface · surface · application/a2ui+jsonInteractive UI could')\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true })\u001b[22m\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:132:27)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5",
+                            "location": {
+                              "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                              "column": 27,
+                              "line": 132
+                            },
+                            "snippet": "   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:132\n\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n  131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n> 132 |   await expect(s.surface).toContainText('Parcel calculator');\n      |                           ^\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();\n  135 |   await page.screenshot({ path: resolve(process.env.UAR_BROWSER_EVIDENCE_DIR, 'rendered-surface.png'), fullPage: true });"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-10-26T22:46:30.862Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-006-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                        "column": 27,
+                        "line": 132
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "6c64d9d2cbbc223e7752-4839765a6cdc1c8cb9b2",
+              "file": "features/a2ui-browser.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-26T22:46:30.257Z",
+    "duration": 13504.926,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

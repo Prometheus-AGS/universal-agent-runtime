@@ -1,0 +1,92 @@
+--- a/tests/support/post_lifecycle_store.rs
++++ b/tests/support/post_lifecycle_store.rs
+@@ -4,10 +4,9 @@
+ 
+ use std::{fs::OpenOptions, io::Write, path::Path, sync::Arc, time::Duration};
+ use serde_json::{Value, json};
+-use sha2::{Digest, Sha256};
+ use surrealdb::{Surreal, engine::any::{self, Any}, opt::auth::Root};
+ use tokio::sync::Barrier;
+-use universal_agent_runtime::uar::persistence::{PersistenceLayer,
++use universal_agent_runtime::uar::persistence::{DurableStoreEligibility, PersistenceLayer,
+     providers::surreal::SurrealDbProvider, agui_runs::{AguiRunBinding, AguiTerminal}};
+ 
+ type Result<T> = std::result::Result<T, String>;
+@@ -90,7 +89,7 @@
+     owned.push(json!({"table":"agui_runs","key":before.storage_key(),"match":{
+         "owner_key":before.owner,"agent_id":before.agent_id,"thread_id":before.thread_id}}));
+     owned.push(json!({"table":"agui_contexts","key":before.context_key(),"match":{"run_key":before.storage_key()}}));
+-    let suffix = format!("{:x}",Sha256::digest(before.storage_key().as_bytes()));
++    let suffix = super::hash(before.storage_key().as_bytes());
+     let contention = format!("uar_post_lifecycle_contention_{suffix}");
+     let event_name = format!("uar_post_lifecycle_{}",&suffix[..16]);
+     db.query("CREATE type::record('agui_contexts',$key) SET run_key='fixture-initial'")
+@@ -185,7 +184,8 @@
+     let mut events = Vec::new();
+     let mut owned = Vec::new();
+     let body = async {
+-        if !provider.durable_store_eligibility().permits_durable_work() {
++        if !matches!(provider.durable_store_eligibility(),
++            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested) {
+             return Err("store_durability_unproven_no_substitution".into());
+         }
+         let db = raw_client(manifest).await?;
+@@ -194,7 +194,7 @@
+                 let before = AguiRunBinding { owner:owner.into(),agent_id:format!("{prefix}-agent"),
+                     thread_id:format!("{prefix}-{ordering}"),wire_run_id:format!("{prefix}-run"),
+                     native_run_id:format!("{prefix}-native"),session_id:format!("{prefix}-session"),
+-                    workspace_id:None,input_digest:format!("{:x}",Sha256::digest(prefix.as_bytes())),
++                    workspace_id:None,input_digest:super::hash(prefix.as_bytes()),
+                     ordinal:1,revision:1,start_cursor:0,previous_wire_run_id:None,resumed_tool_ids:Vec::new(),terminal:None };
+                 if !provider.create_agui_run(&before,None).await.map_err(|_| "cas_seed_failed")? {
+                     return Err("cas_seed_not_fresh".into());
+@@ -250,7 +250,7 @@
+                 let before = AguiRunBinding { owner:owner.into(),agent_id:format!("{prefix}-agent"),
+                     thread_id:format!("{prefix}-schedule"),wire_run_id:format!("{prefix}-run"),
+                     native_run_id:format!("{prefix}-native"),session_id:format!("{prefix}-session"),
+-                    workspace_id:None,input_digest:format!("{:x}",Sha256::digest(prefix.as_bytes())),
++                    workspace_id:None,input_digest:super::hash(prefix.as_bytes()),
+                     ordinal:1,revision:1,start_cursor:0,previous_wire_run_id:None,resumed_tool_ids:Vec::new(),terminal:None };
+                 unrelated_conflict_schedule(&provider,&db,&before,&mut events,&mut owned).await?;
+             }
+--- a/tests/post_lifecycle_main.rs
++++ b/tests/post_lifecycle_main.rs
+@@ -18,7 +18,7 @@
+ #[path = "support/post_lifecycle_store.rs"]
+ mod post_lifecycle_store;
+ #[cfg(feature = "surreal-backend")]
+-use universal_agent_runtime::uar::persistence::{PersistenceLayer,
++use universal_agent_runtime::uar::persistence::{DurableStoreEligibility, PersistenceLayer,
+     providers::surreal::SurrealDbProvider,
+     accounting::{CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity, ScopeLimits}};
+ 
+@@ -254,7 +254,8 @@
+         let password = std::env::var(field(spec, "passwordEnv")?).map_err(|_| "existing_store_password_unavailable")?;
+         let provider = SurrealDbProvider::new(endpoint, Some(&user), Some(&password), Some(namespace), Some(database))
+             .await.map_err(|_| "store_connect_failed")?;
+-        if !provider.durable_store_eligibility().permits_durable_work() {
++        if !matches!(provider.durable_store_eligibility(),
++            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested) {
+             let report = provider.close_scope().await;
+             self.events.push(json!({"kind":"store_close","scopeReleased":report.scope_released}));
+             return Err("store_durability_unproven_no_mode_substitution".into());
+--- a/tools/seed-minimax-verification/main.rs
++++ b/tools/seed-minimax-verification/main.rs
+@@ -209,7 +209,7 @@
+         "updated_at": verified_at,
+     });
+     db.query("UPSERT type::record('settings', $rid) CONTENT $data")
+-        .bind(("rid", record_id))
++        .bind(("rid", record_id.clone()))
+         .bind(("data", setting_payload))
+         .await
+         .with_context(|| format!("upserting setting '{proof_key}'"))?
+@@ -229,7 +229,7 @@
+     // (`src/uar/persistence/providers/surreal.rs:get_setting`).
+     let mut resp = db
+         .query("SELECT * FROM type::record('settings', $rid)")
+-        .bind(("rid", record_id))
++        .bind(("rid", record_id.clone()))
+         .await
+         .context("readback get_setting")?;
+     let rows: Vec<surrealdb::types::Value> = resp

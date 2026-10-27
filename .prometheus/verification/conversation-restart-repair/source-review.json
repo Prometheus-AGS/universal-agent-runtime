@@ -1,0 +1,9 @@
+{
+  "recorded_at": "2026-10-26T23:47:56.067627+00:00",
+  "scope": "Selected sequential conversation restart, source inspection only",
+  "rust_review": "No blocker for owner-scoped cold load and save before terminal",
+  "code_review": "Sequential path correct; overlapping whole-session writes may commit out of order. Concurrent-turn durability not accepted by this scenario.",
+  "host_helper_review": "Endpoint/process binding and NUL environment preservation inspected; explicit replacement digest does not change same-binary BDD requirement.",
+  "js_review": "Aggregate timeouts corrected to cover sequential bounded operations.",
+  "unverified_limitation": "Existing read-then-insert session cache and unconditional persistence writes are not a proof of concurrent same-session durability."
+}

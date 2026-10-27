@@ -4281,7 +4281,34 @@ impl RunManager {
             }
         };
         let retained_session = if let Some(id) = session_id {
-            self.sessions.get_or_create_for_user(&id, &session_owner)
+            // A process restart clears the local cache, not the conversation.
+            // Load through the same owner partition before staging this turn.
+            let saved = if self.sessions.get_for_user(&id, &session_owner).is_none() {
+                if let Some(db) = &self.persistence {
+                    match db.load_session(&session_owner, &id).await {
+                        Ok(saved) => saved,
+                        Err(error) => {
+                            tracing::warn!(%error, "Failed to restore conversation");
+                            emitter.emit(NormalizedEvent::Error {
+                                run_id: run_id.clone(), code: "session_restore_failed".into(),
+                                message: "Stored conversation could not be loaded".into(),
+                            }).await;
+                            emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                            return run_id;
+                        }
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let retained = self.sessions.get_or_create_for_user(&id, &session_owner);
+            if let Some(saved) = saved {
+                // A concurrent request may already have warmed this session.
+                retained.seed_if_empty(&saved.messages());
+            }
+            retained
         } else {
             self.sessions.create_for_user(&session_owner)
         };
@@ -8670,6 +8697,20 @@ impl RunManager {
                         history.add_assistant_message(accumulated_content.clone());
                     });
                 }
+            }
+
+            // A successful text-only turn must be durable before its terminal
+            // event. Otherwise a restart silently loses both user and answer.
+            if !run_cancelled && !run_failed
+                && let Some(db) = &persistence_for_run
+                && let Err(error) = db.save_session(&execution_session).await
+            {
+                run_failed = true;
+                tracing::warn!(%error, run_id = %execute_run_id, "Failed to persist completed conversation");
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: execute_run_id.clone(), code: "session_persist_failed".into(),
+                    message: "Completed conversation could not be saved".into(),
+                }).await;
             }
 
             let completed_active_skills = activation_context.lock().await.active().into_iter()

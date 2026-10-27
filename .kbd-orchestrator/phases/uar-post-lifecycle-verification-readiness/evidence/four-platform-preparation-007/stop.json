@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-10-26T00:28:57.566227+00:00",
+  "status": "STOPPED_INPUT_METADATA_FAILURE",
+  "failure": "artifact_source_files_includes_nonregular_inventory_metadata",
+  "observed": {
+    "source_inventory_regular_file_count": 29045,
+    "inventory_files_total": 29240,
+    "regular_rows": 29045,
+    "nonregular_rows": 195,
+    "artifact_draft_source_files_count": 29240,
+    "whole_phase_inventory_regular_files_value": 29240,
+    "nonregular_kind_counts": {
+      "missing": 6,
+      "symlink": 189
+    }
+  },
+  "cause": "Lead authoring projected all inventory files rather than only kind=regular, and used total count in whole-phase regular_files field",
+  "first_observation": "Host data relay reported29240 bulk source_files entries; lead inspected exact current metadata",
+  "source_identity": "sha256:85a26d5002f0fd26a5d150b1dcf2e75cd260e0baa5dd0fe7e741702b5318574f",
+  "signed_adopted_contract": "31fb611d89ee969c717e28bd0195e557c9770f158fe5e1d898b092b7ded68326",
+  "binding_revision": 23,
+  "code_review": "CURRENT_SOURCE009_REVIEW_NOT_TRIGGERED; old source008 verdict historical only",
+  "relay_status": "Interrupted before current review trigger; partial delivered artifact text preserved",
+  "rust_review": "NOT_RUN",
+  "swift_review": "NOT_RUN",
+  "preparation_commands": "NOT_RUN",
+  "fixture21_charged": false,
+  "repair_floor": 20,
+  "product_verification": "NOT_EXERCISED",
+  "service_or_provider_calls": false,
+  "signature_adoption": "Both exit0; receipts retained",
+  "automatic_correction_or_retry": false,
+  "proposed_only": "Filter only draft artifact source_files to exact regular manifest preimage and correct whole-phase regular_files count; refresh metadata hashes/amendment with unchanged source009. No execution until new approval."
+}

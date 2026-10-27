@@ -1,0 +1,40 @@
+[
+  {
+    "timestamp": "2026-10-26T11:38:31.986381Z",
+    "fields": {
+      "message": "Model call budget admission refused",
+      "run_id": "cfcdd46f-1e27-4cc9-9496-841dfe77cf0c",
+      "stage": "model_call_admission",
+      "category": "budget_admission_failed",
+      "cause": "accounting_budget_exhausted",
+      "storage_error_kind": "accounting_error",
+      "storage_error_detail": "none",
+      "diagnostic_reference": "c4a54685-91cf-4bda-b61c-30891f3d3289",
+      "reservation_source": "catalog_context_and_output",
+      "reserved_tokens": "Some(1512000)",
+      "configured_turn_token_limit": "Some(32768)",
+      "configured_session_token_limit": "Some(32768)"
+    },
+    "target": "universal_agent_runtime::uar::runtime::cost_budget",
+    "line_number": 1835
+  },
+  {
+    "timestamp": "2026-10-26T11:38:32.706405Z",
+    "fields": {
+      "message": "Model call budget admission refused",
+      "run_id": "ae3a56c4-dc74-4443-9a49-17b29df4349d",
+      "stage": "model_call_admission",
+      "category": "budget_admission_failed",
+      "cause": "accounting_budget_exhausted",
+      "storage_error_kind": "accounting_error",
+      "storage_error_detail": "none",
+      "diagnostic_reference": "ec1154a3-c9a8-4e34-aaf8-a291ef5f012d",
+      "reservation_source": "catalog_context_and_output",
+      "reserved_tokens": "Some(1512000)",
+      "configured_turn_token_limit": "Some(32768)",
+      "configured_session_token_limit": "Some(32768)"
+    },
+    "target": "universal_agent_runtime::uar::runtime::cost_budget",
+    "line_number": 1835
+  }
+]

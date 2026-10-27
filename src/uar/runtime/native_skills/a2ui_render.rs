@@ -1,6 +1,6 @@
 //! Native tool that lets an agent emit a validated interactive A2UI surface.
 
-use crate::uar::a2ui::protocol::parse_message;
+use crate::uar::a2ui::protocol::{BASIC_CATALOG_ID, CATALOG_ID, parse_message};
 use crate::uar::runtime::native_skill::NativeSkill;
 use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
@@ -38,7 +38,7 @@ impl NativeSkill for A2uiRenderSkill {
                                         "required": ["surfaceId", "catalogId"],
                                         "properties": {
                                             "surfaceId": { "type": "string" },
-                                            "catalogId": { "type": "string", "const": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json" }
+                                            "catalogId": { "type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID] }
                                         },
                                         "additionalProperties": false
                                     }

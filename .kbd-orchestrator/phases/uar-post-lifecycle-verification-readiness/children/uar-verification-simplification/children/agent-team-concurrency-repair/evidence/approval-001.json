@@ -1,0 +1,9 @@
+{
+  "approval": "Approve the single team verification run",
+  "question_call_id": "call_7a0e4ce1a20d4dadaa4112760aeadc35",
+  "recorded_at": "2026-10-26T11:09:05.206882+00:00",
+  "packet_sha256": "f67bb509a2c3441e4d752325a05d8216e97596751f1b7ced3ce157b2ccef1c79",
+  "source_manifest_sha256": "72030618fe645a0f5327c9e4904be4f71acaa3ed64c924888fbc77e5d67385a7",
+  "scope": "Task1.4 exact packet only; first failure stops; no automatic repair/retry",
+  "limits": "All prior consumption retained; 4800 calls, 3000 active minutes, 28 repairs, USD10 per embedding provider"
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "ssh-keygen",
+    "-Y",
+    "sign",
+    "-f",
+    "/Users/gqadonis/.ssh/id_ed25519.pub",
+    "-n",
+    "prometheus-kbd-scope-amendment",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-002.amendment.json"
+  ],
+  "exit_code": 0,
+  "signature": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-002.amendment.json.sig",
+  "signature_sha256": "sha256:936deb9a08936dccbc55046432b05ae1c98dce6ce05f3f1a010828387be0805f"
+}

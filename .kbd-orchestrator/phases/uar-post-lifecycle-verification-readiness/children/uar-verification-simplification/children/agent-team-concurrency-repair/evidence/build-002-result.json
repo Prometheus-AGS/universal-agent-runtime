@@ -1,0 +1,7 @@
+{
+  "command": "CARGO_TARGET_DIR=target/uar-team-concurrency-repair cargo build --locked --no-default-features --features server-full --bin universal-agent-runtime",
+  "started_at": "2026-10-26T12:18:52.536636+00:00",
+  "ended_at": "2026-10-26T12:23:34.622315+00:00",
+  "elapsed_seconds": 282.0938065800001,
+  "exit_code": 0
+}

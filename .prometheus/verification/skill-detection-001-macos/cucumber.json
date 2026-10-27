@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "detect-and-use-the-appropriate-skill;a-parcel-request-selects-the-pricing-skill-and-uses-its-private-recipe",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A parcel request selects the pricing skill and uses its private recipe",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 40055330,
+              "error_message": "AssertionError [ERR_ASSERTION]: POST /api/uar/skills/: 404: {\"error\":{\"message\":\"API route not found\",\"type\":\"invalid_request_error\",\"code\":\"api_route_not_found\"}}\n\n404 !== 201\n\n    + expected - actual\n\n    -404\n    +201\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-detection.steps.mjs:22:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-detection.steps.mjs:54:19)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and distinct parcel and gardening skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-detection.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask for a parcel quote without naming a skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-detection.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the runtime selects and activates the parcel skill instead of gardening",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-detection.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the answer uses the recipe and marker stored only in that skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-detection.steps.mjs:126"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1975184
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1kZXRlY3Rpb24vOTRlMmM5YzEtYWEwYy00MmE2LWFjZjktNmNjMjc0YWFlODg0Lmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "detect-and-use-the-appropriate-skill",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Detect and use the appropriate skill",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-detection.feature"
+  }
+]

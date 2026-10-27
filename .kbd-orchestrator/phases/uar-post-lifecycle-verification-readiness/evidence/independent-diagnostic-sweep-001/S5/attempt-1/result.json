@@ -1,0 +1,9 @@
+{
+  "item": "S5",
+  "attempt": 1,
+  "status": "FAIL",
+  "exit_code": null,
+  "error": "FileNotFoundError cargo: baseline uses UAR_PREP_BASE_PATH, not PATH",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "correction_used": false
+}

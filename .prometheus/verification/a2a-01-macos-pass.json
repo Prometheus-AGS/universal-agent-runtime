@@ -1,0 +1,35 @@
+{
+  "scenario": "A2A-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T21:34:05.693268+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/a2a.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 4 steps (4 passed); 0m 4.539s",
+  "agent_id": "math-specialist-db64c2a8",
+  "configured_model": "liter/MiniMax-M3",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 898
+  },
+  "task_id": "a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316",
+  "context_id": "a2a-eb1702c62365f083ec1f88b22d0a18307a5985f862527cf6593c70a053f6b316",
+  "evidence": ".prometheus/verification/a2a/f5c001b0-9d15-4548-af63-345f8211f98b.json",
+  "cucumber_report": ".prometheus/verification/a2a-001-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/features/a2a-math.feature": "cf911481914be36ecf1f7a9c6d493d90c0d475aaa1343ef80d96340b42777236",
+    "scripts/behaviors/steps/a2a-math.steps.mjs": "c7663350f926301df2307885ff44cf18dcb92235d12e8d2ab05669028a824ec1",
+    "scripts/behaviors/a2a.cucumber.mjs": "2326cfd3c517bb3cc3b4e78fab632e619bf3a66f87570c36655888b54be8f8ce"
+  },
+  "scope": "One nonstreaming A2A v1 JSON-RPC SendMessage prompt to the saved math agent on Mac; not streaming, cancellation, continuation, legacy A2A or full protocol conformance",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

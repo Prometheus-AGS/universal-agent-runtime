@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "executable": false,
+  "epoch_id": "uar-user-outcomes-original-20261024",
+  "scope_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private",
+  "composition_output_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed",
+  "selected_embedding_services": [
+    "cohere"
+  ],
+  "validity": {
+    "not_before_unix": 1792938392,
+    "expires_unix": 1793024792
+  },
+  "ports": {
+    "postgres_http": 49401,
+    "postgres_grpc": 49402,
+    "postgres": 49403,
+    "surreal_http": 49411,
+    "surreal_grpc": 49412,
+    "surreal": 49413,
+    "primary_proxy": 49421,
+    "alternate_proxy": 49422,
+    "structured_proxy": 49423,
+    "cohere_embedding_proxy": 49424,
+    "structured_metadata": 49425,
+    "negative_401_peer": 49426
+  },
+  "existing_key_sources": {
+    "COHERE_API_KEY": "/Users/gqadonis/.bash_profile",
+    "LITER_LLM_MASTER_KEY": "/Users/gqadonis/.prometheus/kbd/secrets.env"
+  },
+  "source_contracts": {
+    "claims": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/claims.rs",
+      "sha256": "sha256:a269f6dc7c05f14c2419a7e70f0b0cda89c67a0d0cb4de3fe3210f0fd95a5ded"
+    },
+    "verifier": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/verifier/mod.rs",
+      "sha256": "sha256:6f68f3f27618bfe5cb39ebedb9c6ce0204360bb0cc71651d5e89d2b9297ba50f"
+    },
+    "presentation_owner": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/actor/messages.rs",
+      "sha256": "sha256:93196dea061aeafce7dd8fffc06da3ccf051be48acbad4d87859d7d9d9355b60"
+    },
+    "user_settings": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/user_settings.rs",
+      "sha256": "sha256:be631a36446e0849af1496a3e29b2624567f1c515fb2bc36dade79dfe81f0346"
+    },
+    "collaboration_scope": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/collaboration.rs",
+      "sha256": "sha256:ae91e1b57ee3e1c2254cd6f62fea42181e7bd3cf355a02688c94d297c2fe7157"
+    },
+    "session_storage": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/mod.rs",
+      "sha256": "sha256:4e52f6480d5ec21eba3545c57e87b13d880c50cde068e813a3bd142ed52f8097"
+    }
+  },
+  "preparation_approval": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private-preparation.approval.json",
+    "sha256": null
+  },
+  "pending_operator_inputs": [
+    "Actual final resource authority/signature/seed are generated only by explicitly approved P1 metadata steps",
+    "Final external derived adoption and exact product V instruction remain separate"
+  ]
+}

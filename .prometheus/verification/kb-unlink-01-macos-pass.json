@@ -1,0 +1,163 @@
+{
+  "scenario": "KB-UNLINK-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:07:08.758403-05:00",
+  "attempt": 4,
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/kb-unlink.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 21.190s",
+  "gherkin_steps": 4,
+  "evidence_hooks": 1,
+  "evidence": ".prometheus/verification/kb-unlink/04e6d7ba-0385-44aa-9bd7-f453e05eeee4.json",
+  "cucumber_report": ".prometheus/verification/kb-unlink-004-macos/cucumber.json",
+  "prior_attempts": [
+    {
+      "evidence": ".prometheus/verification/kb-unlink/2c639dd3-f8b7-4272-8355-caab308cbb5a.json",
+      "result": "FAILED"
+    },
+    {
+      "evidence": ".prometheus/verification/kb-unlink/8dbb918f-12a1-47ce-8f7a-e22f588fe066.json",
+      "result": "FAILED"
+    },
+    {
+      "evidence": ".prometheus/verification/kb-unlink/da3873c8-a931-4757-9997-e117f3efe21c.json",
+      "result": "FAILED"
+    }
+  ],
+  "agent_id": "disposable-kb-unlink-04e6d7ba-0385-44aa-9bd7-f453e05eeee4",
+  "knowledge_base_id": "ffdb6e74-6cc4-4231-9eee-a58cec5c60d4",
+  "document_id": "5154f2b3-6aaa-46ae-ad24-e3dfc88a38e3",
+  "knowledge_support_remains_enabled": true,
+  "remaining_agent_kb_links": [],
+  "persisted_selection": {
+    "ids": [],
+    "mode": "selected"
+  },
+  "before_answer": {
+    "agent_marker": "AGENT-8ccfcfd5-1027-4886-9f50-c29c295376f5",
+    "sum": 679,
+    "knowledge_seal": "KNOWLEDGE-6d5f24c7-b24c-4772-8cc1-d541148805ea",
+    "citation": "[1]"
+  },
+  "after_answer": {
+    "agent_marker": "AGENT-8ccfcfd5-1027-4886-9f50-c29c295376f5",
+    "sum": 679,
+    "knowledge_seal": null,
+    "citation": null
+  },
+  "before_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "ea1fb659-ea71-f95a-8b99-29b27674844b",
+      "document_id": "5154f2b3-6aaa-46ae-ad24-e3dfc88a38e3",
+      "knowledge_base_id": "ffdb6e74-6cc4-4231-9eee-a58cec5c60d4",
+      "document_name": "laboratory-profile.txt",
+      "relevance_score": 0.9113921523094177,
+      "snippet": "Laboratory profile lab-profile-04e6d7ba-0385-44aa-9bd7-f453e05eeee4 has the private retrieval seal KNOWLEDGE-6d5f24c7-b24c-4772-8cc1-d541148805ea. This exact seal is available only in this laboratory knowledge document.\n"
+    }
+  ],
+  "after_citations": [],
+  "before_session": "e9297774-d6ec-4e44-bca5-77426288b3a4",
+  "after_session": "f59f3c78-46ef-4b0f-8331-3f959612897d",
+  "before_run_id": "f09098d2-5932-4c7f-8f05-2c96ee9361da",
+  "after_run_id": "6e6a982b-95a7-49df-80b0-8bdd275a2d63",
+  "same_question_fresh_session": true,
+  "unlinked_seal_absent_from_completion_and_events": true,
+  "kb_and_document_unchanged": true,
+  "retained_kb_retrieval": {
+    "results": [
+      {
+        "content": "Laboratory profile lab-profile-04e6d7ba-0385-44aa-9bd7-f453e05eeee4 has the private retrieval seal KNOWLEDGE-6d5f24c7-b24c-4772-8cc1-d541148805ea. This exact seal is available only in this laboratory knowledge document.\n",
+        "score": 0.9160574,
+        "metadata": {
+          "document_id": "5154f2b3-6aaa-46ae-ad24-e3dfc88a38e3",
+          "embedding_space": {
+            "backend": "fastembed",
+            "dimension": 384,
+            "model": "bge-small-en-v1.5"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "laboratory-profile.txt",
+          "index": 0,
+          "ingestion_generation": "9158b59d-4450-4a18-8237-8458c1f570b7",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "5154f2b3-6aaa-46ae-ad24-e3dfc88a38e3"
+      }
+    ]
+  },
+  "agent_deleted_during_cleanup": true,
+  "kb_deleted_only_during_cleanup": true,
+  "embedding_space": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "authentication_supplied_by_test": false,
+  "history_replayed": false,
+  "previous_scenarios_rerun": false,
+  "global_configuration_changes": false,
+  "production_repair": "agent_store::patch_agent_if_revision persists explicit KB selected/none intent when links/enabled are edited; preserves legacy default resolution.",
+  "fixture_repairs": "Handle one unambiguous fenced JSON answer outside reasoning with surrounding explanatory prose.",
+  "build": {
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--no-default-features",
+      "--features",
+      "server-full",
+      "--bin",
+      "universal-agent-runtime"
+    ],
+    "CARGO_TARGET_DIR": "target/uar-team-concurrency-repair",
+    "exit_code": 0,
+    "duration_seconds": 147.92751822102582
+  },
+  "build_log": ".prometheus/verification/kb-unlink-repair/build.log",
+  "build_warnings": "Three existing UAR warnings and two vendored dependency warnings; unchanged code, not repaired in this scenario.",
+  "restart": {
+    "previous_pid": 97354,
+    "binary_sha256": "f84baeaf99c7c0478fe01df20e9f2726f1f3f346b335d04d0958dbf2d800496d",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-7c7ea853-9592-4d53-a674-202ee3da476d.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "replaced_binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+    "previous_process_exited": true,
+    "new_pid": 21601,
+    "new_process_ready": true
+  },
+  "service_kept_running": true,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/kb-unlink.cucumber.mjs": "09d327f191d178452b40d48329e7fe38952674ae4be02b5b8197f398cebf3fdc",
+    "scripts/behaviors/features/kb-unlink.feature": "c771d006eb2b75e74ad3c325c46668760a465a805a019d0b36a482203d250ef5",
+    "scripts/behaviors/steps/kb-unlink.steps.mjs": "c7b09770c12c1c3a5e052f13aaad6ec85fc2464d49a983ae70c3056fcb00087d",
+    "src/uar/domain/agent_store.rs": "42a4646e837e36dba16f34fd7ef16b4632bd84addb12ca0d2ea4cf656d2f3b0c"
+  },
+  "source_review": "Revised Rust/shared-agent-store repair and JavaScript parser cleared source-only independent reviews.",
+  "scope": "Explicit unlink of sole KB on Mac; fresh-session non-use plus direct KB availability. Old conversation fact erasure, legacy-default behavior, other policy edit combinations/backends/platforms were not runtime-retested.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

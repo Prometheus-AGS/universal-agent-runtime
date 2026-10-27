@@ -1,0 +1,19 @@
+{
+  "status": "REPAIR002_APPLIED_NOT_VERIFIED",
+  "repairAttempt": 2,
+  "maxRepairs": 2,
+  "remainingRepairs": 0,
+  "publishedBaseline": "774469746fee4de99be41dc1cd231857067e4487",
+  "cumulativeSourcePatch": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-002/repair-002.cumulative-source.patch",
+  "cumulativeSourcePatchSha256": "ed0f3c6e3a8451e18958894dd8fb11cfb181d7730d662557c08e1f9d36ba3f48",
+  "repair001PatchSha256": "a781dc5c8fa6fd62d12378a1ead0947cdc2a6e8a6ce874a6a3509ccb744bec8a",
+  "sourceFiles": {
+    "tests/support/post_lifecycle_store.rs": "3d304c9f16898e4f018580bddde88d84065d0f23802fa8f346e843962d2ec119",
+    "tests/post_lifecycle_main.rs": "e3398d86968b210d7061b3fd767baa00f6b504447339ba1bba28fa5ed8869272",
+    "tools/seed-minimax-verification/main.rs": "6957deca33ec83db7a0667c24edf31b09aa41664a82ff6e4f72441b5ed7efb86"
+  },
+  "repair002WriterHandoff": ".agent-team/uar-core/handoffs/v130-verification-repair-002.md",
+  "runtimeApiOrDependencyChanges": false,
+  "verification": "NOT_RUN; mandatory independent code/Rust acceptance review deferred until exact gate approval",
+  "guards": "Startup-only owned GET retry and stage-aware cleanup trace directly to packet002 transport/cleanup failure; original teardown success conditions not weakened."
+}

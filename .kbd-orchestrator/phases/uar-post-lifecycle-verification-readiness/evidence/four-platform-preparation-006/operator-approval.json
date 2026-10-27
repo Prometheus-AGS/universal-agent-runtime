@@ -1,0 +1,13 @@
+{
+  "received_at_utc": "2026-10-25T22:48:39.768549+00:00",
+  "operator_answer": "Approve A21 and P16.006 preparation",
+  "contract_digest": "a4a2786a952ec79931974c6458e094178421d6af43572abf4dca9f2d8bdcffe9",
+  "packet_sha256": "ae6fb1051bfb7a00c15747be98e6f475ab9644c6f4997f3bc05018628d2b4601",
+  "source_identity": "sha256:4ace47fbfffc400f775f2fc5b3b0ace29e3e41fcf46cb877d54319b271d2ea52",
+  "accounting": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-026.json",
+  "serial_first_failure_stop": true,
+  "automatic_retry": false,
+  "repair_floor": 19,
+  "fixture20_charged": false,
+  "product_verification": "CLOSED"
+}

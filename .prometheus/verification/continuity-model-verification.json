@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-26T20:38:43.814Z",
+  "operation": "Refresh model verification after persisted output cap change",
+  "status": 200,
+  "response": {
+    "ok": true,
+    "provider_id": "liter",
+    "model_id": "MiniMax-M3",
+    "latency_ms": 1718,
+    "received_text": true
+  }
+}

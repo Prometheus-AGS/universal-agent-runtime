@@ -1,0 +1,32 @@
+{
+  "classification": "OFFICIAL_UPSTREAM_SOURCE_INSPECTION_NOT_UAR_VERIFICATION",
+  "release": "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs/releases/tag/v0.4.0",
+  "tag_object": "943c62d860e8971847334e9196ad34881658fbcb",
+  "tag_target": "53682521cb2a7a49c06e046c826890d9e11b6bfe",
+  "github_tag_verification": {
+    "verified": true,
+    "reason": "valid"
+  },
+  "previous_snapshot": "f24382acd7ba818204e32f4449e9c9c37c52558d",
+  "comparison_url": "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs/compare/f24382acd7ba818204e32f4449e9c9c37c52558d...53682521cb2a7a49c06e046c826890d9e11b6bfe",
+  "ahead_by": 14,
+  "changed_paths": [
+    ".github/scripts/assurance-materials.md",
+    ".github/scripts/assurance_build_storage.py",
+    ".github/scripts/operational-assurance.py",
+    ".github/scripts/prepare-hosted-assurance-platform.py",
+    ".github/scripts/prepare-hosted-assurance.md",
+    ".github/scripts/stage-assurance-seed.py",
+    ".github/scripts/tests/assurance-seed.py",
+    ".github/scripts/tests/boundary-packet.py",
+    ".github/scripts/tests/build-storage.py",
+    ".github/scripts/tests/hosted-materials.py",
+    ".github/scripts/tests/rehearsal-bootstrap.py",
+    ".github/workflows/assurance-materials.yml",
+    ".github/workflows/operational-assurance.yml",
+    ".github/workflows/release.yml",
+    "openspec/changes/oa-20-merged-certification/plan.md",
+    "scripts/release/test-preparation.py"
+  ],
+  "exported_implementation_changes": []
+}

@@ -2,19 +2,19 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 299,
-  "derivedRevision": 299,
+  "sourceRevision": 682,
+  "derivedRevision": 682,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 187,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 570,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
-  "updatedAt": "2026-10-24T10:23:08.509491Z",
+  "updatedAt": "2026-10-26T13:11:33.461203Z",
   "cursor": [
     "uar-post-lifecycle-verification-readiness",
-    "execute",
-    "update-parking-lot-admission",
-    "5.1"
+    "uar-verification-simplification",
+    "simplify-user-workflow-verification",
+    "2.1"
   ],
   "root": {
     "type": "phase",
@@ -22,7 +22,7 @@
     "status": "ready",
     "progress": {
       "done": 144,
-      "total": 167
+      "total": 170
     },
     "children": [
       {
@@ -2066,9 +2066,53 @@
         "status": "IN_PROGRESS",
         "progress": {
           "done": 6,
-          "total": 7
+          "total": 8
         },
         "children": [
+          {
+            "type": "phase",
+            "id": "uar-verification-simplification",
+            "canonicalId": "uar-verification-simplification",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "phase",
+                "id": "agent-team-concurrency-repair",
+                "canonicalId": "uar-verification-simplification::agent-team-concurrency-repair",
+                "status": "IN_PROGRESS",
+                "progress": {
+                  "done": 0,
+                  "total": 1
+                },
+                "children": [
+                  {
+                    "type": "change",
+                    "id": "repair-agent-team-concurrent-operation",
+                    "status": "BLOCKED",
+                    "progress": {
+                      "done": 5,
+                      "total": 6
+                    }
+                  }
+                ],
+                "annotations": []
+              },
+              {
+                "type": "change",
+                "id": "simplify-user-workflow-verification",
+                "status": "PENDING",
+                "progress": {
+                  "done": 4,
+                  "total": 13
+                }
+              }
+            ],
+            "annotations": []
+          },
           {
             "type": "change",
             "id": "pl-main-budget-reconciliation",
@@ -2110,8 +2154,8 @@
             "id": "pl-main-boundary-evidence",
             "status": "COMPLETE",
             "progress": {
-              "done": 3,
-              "total": 3
+              "done": 15,
+              "total": 15
             }
           },
           {
@@ -2121,6 +2165,15 @@
             "progress": {
               "done": 8,
               "total": 10
+            }
+          },
+          {
+            "type": "change",
+            "id": "reengineer-user-outcome-verification",
+            "status": "IN_PROGRESS",
+            "progress": {
+              "done": 31,
+              "total": 36
             }
           },
           {

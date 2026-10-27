@@ -1,0 +1,36 @@
+{
+  "scenario": "AGUI-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T21:57:28.834998+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/agui.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 4 steps (4 passed); 0m 7.15s",
+  "agent_id": "math-specialist-db64c2a8",
+  "configured_model": "liter/MiniMax-M3",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 2173
+  },
+  "run_id": "8f4552c1-ec95-492a-871d-1a182d97c889",
+  "thread_id": "71e2a7b3-2e61-4dbf-ad9f-0fee8786c972",
+  "content_fragments": 16,
+  "evidence": ".prometheus/verification/agui/aa061402-829b-475d-887d-d8176243c5c6.json",
+  "cucumber_report": ".prometheus/verification/agui-001-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/agui.cucumber.mjs": "cf4822a55253052f9e5aa9fe26a16bc9dcedf56b8416dabe42dbe7f14b497d41",
+    "scripts/behaviors/features/agui-math.feature": "34d8de1e09c23d2c3d066bebf135965cfdf36d78fc475b195790e2bfb67a9835",
+    "scripts/behaviors/steps/agui-math.steps.mjs": "6b2d392f2cd9c26893212297cc5cdf03caafc8359e98e1a990cb48d1a314a4fd"
+  },
+  "scope": "One AG-UI streamed prompt to saved mathematics agent; not browser rendering, A2UI, reconnect/replay, cancellation, other platforms or full conformance",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

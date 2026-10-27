@@ -1,0 +1,1079 @@
+{
+  "scenario": "A2UI-01",
+  "client_platform": "darwin",
+  "agent_id": "disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2",
+  "protocol": "AG-UI agui_spec with published A2UI v0.9",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2",
+        "metadata": {
+          "title": "Disposable A2UI greeting agent",
+          "description": "One manual A2UI surface response scenario.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "a2ui_render"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Use the real a2ui_render tool exactly once to publish the requested greeting. Send canonical A2UI v0.9 createSurface then updateComponents messages using the https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json catalog. Use exactly one component: id root, component Text, text equal to the requested greeting. Use the requested surfaceId in both messages. After the tool succeeds, give a brief summary. Do not return UI JSON in prose instead of calling the tool. Do not claim a browser displayed it.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\",\"metadata\":{\"title\":\"Disposable A2UI greeting agent\",\"description\":\"One manual A2UI surface response scenario.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2ui_render\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Use the real a2ui_render tool exactly once to publish the requested greeting. Send canonical A2UI v0.9 createSurface then updateComponents messages using the https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json catalog. Use exactly one component: id root, component Text, text equal to the requested greeting. Use the requested surfaceId in both messages. After the tool succeeds, give a brief summary. Do not return UI JSON in prose instead of calling the tool. Do not claim a browser displayed it.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:316b08f96382526f19a8ac576c911e175fb057b825e001640f6fdb09fc4ab8e4\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2",
+        "model": "liter/MiniMax-M3",
+        "session_id": "d59ef4f3-95b3-4a7d-b5b9-349c6eaedbc9",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 64000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Publish an A2UI greeting surface with surfaceId greeting-281940cf-5872-45e1-8852-014f190df383. The exact greeting is: Welcome, visitor b902259b!"
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\\\",\\\"skills\\\":\\\"Skills · auto · 210 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selected · 1 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-a620f956-8814-424d-b77c-0e260cfd3cd9\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"73ec5916445bb85ac486177e05a314f9f593eb4484babef54da1a65ac82f7266\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1bd304ce49e1168a7164ab1da06aa3f2fc30c051ea8725e4037db9f2b087a15a\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"9d2d01edc7d86dbc492455ed011d006c0bf0fd900a96dee5c351bff840ba8323\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"d77ed6dbeef567fdfafab070e307d297b37ad4baaa1ddd06bcacff342b99ce29\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"4e52e2407b48215b7a26a5016714639064d1625cbf75c3aa5a6d952fa3f41d81\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"fd5434067871c7e5992ec142111d00411f3798a496f138717dcb78e9b574adeb\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":54868,\\\"rendered_characters\\\":54364,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"73ec5916445bb85ac486177e05a314f9f593eb4484babef54da1a65ac82f7266\",\"fragment_count\":7},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"input\":{\"agentId\":\"disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"agent_id\":\"disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\",\"status\":\"running\",\"started_at\":\"2026-10-26T22:02:07.345832+00:00\",\"updated_at\":\"2026-10-26T22:02:07.345839+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"conversation_id\":\"d59ef4f3-95b3-4a7d-b5b9-349c6eaedbc9\",\"status\":\"running\"}}],\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9-1\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-26T22:02:07.416510+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"021a3ceff1c15eb1cfbf2b79d991e5d303d755a94c6aad119bb14e36d6e80af8\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1bd304ce49e1168a7164ab1da06aa3f2fc30c051ea8725e4037db9f2b087a15a\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"9d2d01edc7d86dbc492455ed011d006c0bf0fd900a96dee5c351bff840ba8323\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"d77ed6dbeef567fdfafab070e307d297b37ad4baaa1ddd06bcacff342b99ce29\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"4e52e2407b48215b7a26a5016714639064d1625cbf75c3aa5a6d952fa3f41d81\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"fd5434067871c7e5992ec142111d00411f3798a496f138717dcb78e9b574adeb\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":54733,\\\"rendered_characters\\\":54229,\\\"context_window_tokens\\\":985576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-a620f956-8814-424d-b77c-0e260cfd3cd9-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":13723,\\\"serialized_bytes\\\":60081,\\\"serialized_sha256\\\":\\\"1b45129bc4df410d3c9f15f1b94e7fb0ecb87efbefba144332fbe62a78bcd2d7\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"role\":\"assistant\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"I'll\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" publish the greeting surface using the canonical\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" A2UI v0.9 messag\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"e format.\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TOOL_CALL_START\ndata: {\"type\":\"TOOL_CALL_START\",\"profile\":\"uar.agui/1\",\"toolCallId\":\"call_01a17a3c36d675218af1e40d\",\"toolCallName\":\"tool-Some(0)\",\"eventId\":\"14:0\",\"sequence\":224}\nid: 14:0:3\n\nevent: TOOL_CALL_ARGS\ndata: {\"type\":\"TOOL_CALL_ARGS\",\"profile\":\"uar.agui/1\",\"toolCallId\":\"call_01a17a3c36d675218af1e40d\",\"delta\":\"\\\"\\\"\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:1:3\n\nevent: TOOL_CALL_END\ndata: {\"type\":\"TOOL_CALL_END\",\"profile\":\"uar.agui/1\",\"toolCallId\":\"call_01a17a3c36d675218af1e40d\",\"toolCallName\":\"a2ui_render\",\"arguments\":{\"messages\":[{\"createSurface\":{\"catalogId\":\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\",\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"},\"version\":\"v0.9\"},{\"updateComponents\":{\"components\":[{\"component\":\"Text\",\"id\":\"root\",\"text\":\"Welcome, visitor b902259b!\"}],\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"},\"version\":\"v0.9\"}]},\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: runtime.tool_call\ndata: {\"type\":\"tool_call_started\",\"id\":\"call_01a17a3c36d675218af1e40d\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"call_index\":0,\"tool_call_id\":\"call_01a17a3c36d675218af1e40d\",\"name\":\"a2ui_render\",\"arguments_json\":\"{\\\"messages\\\":[{\\\"createSurface\\\":{\\\"catalogId\\\":\\\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\\\",\\\"surfaceId\\\":\\\"greeting-281940cf-5872-45e1-8852-014f190df383\\\"},\\\"version\\\":\\\"v0.9\\\"},{\\\"updateComponents\\\":{\\\"components\\\":[{\\\"component\\\":\\\"Text\\\",\\\"id\\\":\\\"root\\\",\\\"text\\\":\\\"Welcome, visitor b902259b!\\\"}],\\\"surfaceId\\\":\\\"greeting-281940cf-5872-45e1-8852-014f190df383\\\"},\\\"version\\\":\\\"v0.9\\\"}]}\",\"status\":\"running\",\"updated_at\":\"2026-10-26T22:02:09.314780+00:00\"}\nid: 15:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/a2ui/surfaces/greeting-281940cf-5872-45e1-8852-014f190df383\",\"value\":{\"catalogId\":\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\",\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"}}],\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":true,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/a2ui/surfaces/greeting-281940cf-5872-45e1-8852-014f190df383/components\",\"value\":{\"components\":[{\"component\":\"Text\",\"id\":\"root\",\"text\":\"Welcome, visitor b902259b!\"}],\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"}}],\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"a2ui:a0726878-155e-43d7-8661-660b4fe6cf64\",\"artifactType\":\"a2ui\",\"title\":\"Interactive UI\",\"content\":\"{\\\"createSurface\\\":{\\\"catalogId\\\":\\\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\\\",\\\"surfaceId\\\":\\\"greeting-281940cf-5872-45e1-8852-014f190df383\\\"},\\\"version\\\":\\\"v0.9\\\"}\\n{\\\"updateComponents\\\":{\\\"components\\\":[{\\\"component\\\":\\\"Text\\\",\\\"id\\\":\\\"root\\\",\\\"text\\\":\\\"Welcome, visitor b902259b!\\\"}],\\\"surfaceId\\\":\\\"greeting-281940cf-5872-45e1-8852-014f190df383\\\"},\\\"version\\\":\\\"v0.9\\\"}\",\"language\":\"application/a2ui+json\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"surfaceIds\":[\"greeting-281940cf-5872-45e1-8852-014f190df383\"],\"sourceTool\":\"a2ui_render\",\"presentation\":null,\"publication_status\":\"published\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TOOL_CALL_RESULT\ndata: {\"type\":\"TOOL_CALL_RESULT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:tool:call_01a17a3c36d675218af1e40d\",\"toolCallId\":\"call_01a17a3c36d675218af1e40d\",\"toolCallName\":\"a2ui_render\",\"content\":\"{\\\"status\\\":\\\"prepared\\\",\\\"terminal\\\":true,\\\"instruction\\\":\\\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\\\"}\",\"isError\":false,\"role\":\"tool\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: runtime.tool_call\ndata: {\"type\":\"tool_call_finished\",\"id\":\"call_01a17a3c36d675218af1e40d\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"call_index\":0,\"tool_call_id\":\"call_01a17a3c36d675218af1e40d\",\"name\":\"a2ui_render\",\"result\":\"{\\\"status\\\":\\\"prepared\\\",\\\"terminal\\\":true,\\\"instruction\\\":\\\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\\\"}\",\"status\":\"completed\",\"updated_at\":\"2026-10-26T22:02:09.977132+00:00\"}\nid: 20:1:3\n\nevent: STEP_FINISHED\ndata: {\"type\":\"STEP_FINISHED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_finished\",\"id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9-1\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"step\":1,\"status\":\"finished\",\"updated_at\":\"2026-10-26T22:02:09.977393+00:00\"}\nid: 21:1:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-2\",\"stepName\":\"step-2\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9-2\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"step\":2,\"status\":\"started\",\"updated_at\":\"2026-10-26T22:02:10.064707+00:00\"}\nid: 22:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":2,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"ef6cfe5dd38322c3412d6d94b4b9838ee45699d03d849cac286201019cbfc417\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1bd304ce49e1168a7164ab1da06aa3f2fc30c051ea8725e4037db9f2b087a15a\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"9d2d01edc7d86dbc492455ed011d006c0bf0fd900a96dee5c351bff840ba8323\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"d77ed6dbeef567fdfafab070e307d297b37ad4baaa1ddd06bcacff342b99ce29\\\"}],\\\"counts\\\":{\\\"total\\\":3,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1},\\\"by_authority\\\":{\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":55037,\\\"rendered_characters\\\":54533,\\\"context_window_tokens\\\":985576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-a620f956-8814-424d-b77c-0e260cfd3cd9-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":13991,\\\"serialized_bytes\\\":61037,\\\"serialized_sha256\\\":\\\"c8fca2885212d96654abcfe5663a50a06318d79317fed94fc165fa4f8bd05a0d\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\"},\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"Th\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"e greeting\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" surface has been prepared for publication\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\".\\n\\n\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"29:8\",\"sequence\":464}\nid: 29:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"**Detail\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"30:8\",\"sequence\":480}\nid: 30:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"s:**\\n- **\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"31:8\",\"sequence\":496}\nid: 31:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"surfaceId:** `greeting-281\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"32:8\",\"sequence\":512}\nid: 32:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"940cf-5872-45\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"33:8\",\"sequence\":528}\nid: 33:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"e1-8852-014f190\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"34:8\",\"sequence\":544}\nid: 34:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"df383`\\n- **Catalog:** `\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"35:8\",\"sequence\":560}\nid: 35:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"https://a2ui.org/specification\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"36:8\",\"sequence\":576}\nid: 36:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"/v0_9/catalogs/b\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"37:8\",\"sequence\":592}\nid: 37:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"asic/catalog.json`\\n- **Protocol\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"38:8\",\"sequence\":608}\nid: 38:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" version\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"39:8\",\"sequence\":624}\nid: 39:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\":** `v0\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"40:8\",\"sequence\":640}\nid: 40:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\".9`\\n- **Messages:** `\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"41:8\",\"sequence\":656}\nid: 41:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"createSurface` →\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"42:8\",\"sequence\":672}\nid: 42:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" `updateComponents`\\n\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"43:8\",\"sequence\":688}\nid: 43:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"- **Component tre\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"44:8\",\"sequence\":704}\nid: 44:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"e:** \",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"45:8\",\"sequence\":720}\nid: 45:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"a single `\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"46:8\",\"sequence\":736}\nid: 46:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"root\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"47:8\",\"sequence\":752}\nid: 47:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"` component of typ\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"48:8\",\"sequence\":768}\nid: 48:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"e `Text` with the text `\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"49:8\",\"sequence\":784}\nid: 49:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"Welcome, visitor b902259b!\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"50:8\",\"sequence\":800}\nid: 50:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\"`\\n\\nThe tool reported\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"51:8\",\"sequence\":816}\nid: 51:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" `status:\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"52:8\",\"sequence\":832}\nid: 52:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" prepared`, meaning\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"53:8\",\"sequence\":848}\nid: 53:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" the messages were accepted\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"54:8\",\"sequence\":864}\nid: 54:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" and handed\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"55:8\",\"sequence\":880}\nid: 55:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" to the host for publication — I'm\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"56:8\",\"sequence\":896}\nid: 56:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" not asserting\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"57:8\",\"sequence\":912}\nid: 57:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" anything\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"58:8\",\"sequence\":928}\nid: 58:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" about\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"59:8\",\"sequence\":944}\nid: 59:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"delta\":\" client-side rendering.\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"60:8\",\"sequence\":960}\nid: 60:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":true,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"eventId\":\"61:8\",\"sequence\":976}\nid: 61:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9:assistant\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"62:0\",\"sequence\":992}\nid: 62:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"runId\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"result\":{\"usage\":{\"inputTokens\":28405,\"outputTokens\":399,\"totalTokens\":28804,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"62:8\",\"sequence\":992}\nid: 62:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"run_id\":\"a620f956-8814-424d-b77c-0e260cfd3cd9\",\"status\":\"completed\",\"input_tokens\":28405,\"output_tokens\":399,\"total_tokens\":28804,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-26T22:02:11.595817+00:00\"}\nid: 62:2:3\n\n",
+      "status": 200,
+      "content_type": "text/event-stream"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "events": [
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9",
+        "artifactType": "effective_run_policy",
+        "title": "Effective run policy",
+        "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-a620f956-8814-424d-b77c-0e260cfd3cd9\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\",\"skills\":\"Skills · auto · 210 available · agent scope\",\"tools\":\"Tools · selected · 1 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+        "language": "a2ui",
+        "metadata": {
+          "profile": "uar.a2ui/1",
+          "protocol_version": "v0.9.1",
+          "catalog_id": "urn:uar:a2ui:catalog:1",
+          "version": 1,
+          "warnings": []
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "1:8",
+      "sequence": 16
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "running",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": false,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "2:8",
+      "sequence": 32
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "turn-manifest-a620f956-8814-424d-b77c-0e260cfd3cd9",
+        "artifactType": "turn_manifest",
+        "title": "Turn manifest",
+        "content": "{\"schema_version\":1,\"manifest_hash\":\"73ec5916445bb85ac486177e05a314f9f593eb4484babef54da1a65ac82f7266\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1bd304ce49e1168a7164ab1da06aa3f2fc30c051ea8725e4037db9f2b087a15a\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"9d2d01edc7d86dbc492455ed011d006c0bf0fd900a96dee5c351bff840ba8323\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d77ed6dbeef567fdfafab070e307d297b37ad4baaa1ddd06bcacff342b99ce29\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"4e52e2407b48215b7a26a5016714639064d1625cbf75c3aa5a6d952fa3f41d81\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fd5434067871c7e5992ec142111d00411f3798a496f138717dcb78e9b574adeb\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":7,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":54868,\"rendered_characters\":54364,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}",
+        "language": "json",
+        "metadata": {
+          "schema_version": 1,
+          "manifest_hash": "73ec5916445bb85ac486177e05a314f9f593eb4484babef54da1a65ac82f7266",
+          "fragment_count": 7
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "3:8",
+      "sequence": 48
+    },
+    {
+      "type": "RUN_STARTED",
+      "profile": "uar.agui/1",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "input": {
+        "agentId": "disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2"
+      },
+      "eventId": "4:8",
+      "sequence": 64
+    },
+    {
+      "type": "run_started",
+      "id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "agent_id": "disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2",
+      "status": "running",
+      "started_at": "2026-10-26T22:02:07.345832+00:00",
+      "updated_at": "2026-10-26T22:02:07.345839+00:00"
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "replace",
+          "path": "/run",
+          "value": {
+            "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+            "conversation_id": "d59ef4f3-95b3-4a7d-b5b9-349c6eaedbc9",
+            "status": "running"
+          }
+        }
+      ],
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "5:8",
+      "sequence": 80
+    },
+    {
+      "type": "STEP_STARTED",
+      "profile": "uar.agui/1",
+      "stepId": "step-1",
+      "stepName": "step-1",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "6:8",
+      "sequence": 96
+    },
+    {
+      "type": "step_started",
+      "id": "a620f956-8814-424d-b77c-0e260cfd3cd9-1",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "step": 1,
+      "status": "started",
+      "updated_at": "2026-10-26T22:02:07.416510+00:00"
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.turn:resolved_step",
+        "artifactType": "provider_event",
+        "title": "resolved_step",
+        "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"021a3ceff1c15eb1cfbf2b79d991e5d303d755a94c6aad119bb14e36d6e80af8\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1bd304ce49e1168a7164ab1da06aa3f2fc30c051ea8725e4037db9f2b087a15a\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"9d2d01edc7d86dbc492455ed011d006c0bf0fd900a96dee5c351bff840ba8323\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d77ed6dbeef567fdfafab070e307d297b37ad4baaa1ddd06bcacff342b99ce29\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"4e52e2407b48215b7a26a5016714639064d1625cbf75c3aa5a6d952fa3f41d81\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fd5434067871c7e5992ec142111d00411f3798a496f138717dcb78e9b574adeb\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":7,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":54733,\"rendered_characters\":54229,\"context_window_tokens\":985576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "7:8",
+      "sequence": 112
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "attempt-manifest-a620f956-8814-424d-b77c-0e260cfd3cd9-MiniMax-M3",
+        "artifactType": "attempt_manifest",
+        "title": "Provider attempt manifest",
+        "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+        "language": "json",
+        "metadata": {
+          "source": "uar.request",
+          "budgeting_label": "legacy_unbudgeted"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "8:8",
+      "sequence": 128
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.request:budget_receipt",
+        "artifactType": "provider_event",
+        "title": "budget_receipt",
+        "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":13723,\"serialized_bytes\":60081,\"serialized_sha256\":\"1b45129bc4df410d3c9f15f1b94e7fb0ecb87efbefba144332fbe62a78bcd2d7\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "9:8",
+      "sequence": 144
+    },
+    {
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "role": "assistant",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "type": "TEXT_MESSAGE_START",
+      "profile": "uar.agui/1",
+      "eventId": "10:0",
+      "sequence": 160
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "I'll",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "10:8",
+      "sequence": 160
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " publish the greeting surface using the canonical",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "11:8",
+      "sequence": 176
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " A2UI v0.9 messag",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "12:8",
+      "sequence": 192
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "e format.",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "13:8",
+      "sequence": 208
+    },
+    {
+      "type": "TOOL_CALL_START",
+      "profile": "uar.agui/1",
+      "toolCallId": "call_01a17a3c36d675218af1e40d",
+      "toolCallName": "tool-Some(0)",
+      "eventId": "14:0",
+      "sequence": 224
+    },
+    {
+      "type": "TOOL_CALL_ARGS",
+      "profile": "uar.agui/1",
+      "toolCallId": "call_01a17a3c36d675218af1e40d",
+      "delta": "\"\"",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "14:8",
+      "sequence": 224
+    },
+    {
+      "type": "TOOL_CALL_END",
+      "profile": "uar.agui/1",
+      "toolCallId": "call_01a17a3c36d675218af1e40d",
+      "toolCallName": "a2ui_render",
+      "arguments": {
+        "messages": [
+          {
+            "createSurface": {
+              "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json",
+              "surfaceId": "greeting-281940cf-5872-45e1-8852-014f190df383"
+            },
+            "version": "v0.9"
+          },
+          {
+            "updateComponents": {
+              "components": [
+                {
+                  "component": "Text",
+                  "id": "root",
+                  "text": "Welcome, visitor b902259b!"
+                }
+              ],
+              "surfaceId": "greeting-281940cf-5872-45e1-8852-014f190df383"
+            },
+            "version": "v0.9"
+          }
+        ]
+      },
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "15:8",
+      "sequence": 240
+    },
+    {
+      "type": "tool_call_started",
+      "id": "call_01a17a3c36d675218af1e40d",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "call_index": 0,
+      "tool_call_id": "call_01a17a3c36d675218af1e40d",
+      "name": "a2ui_render",
+      "arguments_json": "{\"messages\":[{\"createSurface\":{\"catalogId\":\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\",\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"},\"version\":\"v0.9\"},{\"updateComponents\":{\"components\":[{\"component\":\"Text\",\"id\":\"root\",\"text\":\"Welcome, visitor b902259b!\"}],\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"},\"version\":\"v0.9\"}]}",
+      "status": "running",
+      "updated_at": "2026-10-26T22:02:09.314780+00:00"
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/a2ui/surfaces/greeting-281940cf-5872-45e1-8852-014f190df383",
+          "value": {
+            "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json",
+            "surfaceId": "greeting-281940cf-5872-45e1-8852-014f190df383"
+          }
+        }
+      ],
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "16:8",
+      "sequence": 256
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "running",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": true,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "17:8",
+      "sequence": 272
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "replace",
+          "path": "/a2ui/surfaces/greeting-281940cf-5872-45e1-8852-014f190df383/components",
+          "value": {
+            "components": [
+              {
+                "component": "Text",
+                "id": "root",
+                "text": "Welcome, visitor b902259b!"
+              }
+            ],
+            "surfaceId": "greeting-281940cf-5872-45e1-8852-014f190df383"
+          }
+        }
+      ],
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "18:8",
+      "sequence": 288
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "a2ui:a0726878-155e-43d7-8661-660b4fe6cf64",
+        "artifactType": "a2ui",
+        "title": "Interactive UI",
+        "content": "{\"createSurface\":{\"catalogId\":\"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json\",\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"},\"version\":\"v0.9\"}\n{\"updateComponents\":{\"components\":[{\"component\":\"Text\",\"id\":\"root\",\"text\":\"Welcome, visitor b902259b!\"}],\"surfaceId\":\"greeting-281940cf-5872-45e1-8852-014f190df383\"},\"version\":\"v0.9\"}",
+        "language": "application/a2ui+json",
+        "metadata": {
+          "profile": "uar.a2ui/1",
+          "surfaceIds": [
+            "greeting-281940cf-5872-45e1-8852-014f190df383"
+          ],
+          "sourceTool": "a2ui_render",
+          "presentation": null,
+          "publication_status": "published"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "19:8",
+      "sequence": 304
+    },
+    {
+      "type": "TOOL_CALL_RESULT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:tool:call_01a17a3c36d675218af1e40d",
+      "toolCallId": "call_01a17a3c36d675218af1e40d",
+      "toolCallName": "a2ui_render",
+      "content": "{\"status\":\"prepared\",\"terminal\":true,\"instruction\":\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\"}",
+      "isError": false,
+      "role": "tool",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "20:8",
+      "sequence": 320
+    },
+    {
+      "type": "tool_call_finished",
+      "id": "call_01a17a3c36d675218af1e40d",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "call_index": 0,
+      "tool_call_id": "call_01a17a3c36d675218af1e40d",
+      "name": "a2ui_render",
+      "result": "{\"status\":\"prepared\",\"terminal\":true,\"instruction\":\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\"}",
+      "status": "completed",
+      "updated_at": "2026-10-26T22:02:09.977132+00:00"
+    },
+    {
+      "type": "STEP_FINISHED",
+      "profile": "uar.agui/1",
+      "stepId": "step-1",
+      "stepName": "step-1",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "21:8",
+      "sequence": 336
+    },
+    {
+      "type": "step_finished",
+      "id": "a620f956-8814-424d-b77c-0e260cfd3cd9-1",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "step": 1,
+      "status": "finished",
+      "updated_at": "2026-10-26T22:02:09.977393+00:00"
+    },
+    {
+      "type": "STEP_STARTED",
+      "profile": "uar.agui/1",
+      "stepId": "step-2",
+      "stepName": "step-2",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "22:8",
+      "sequence": 352
+    },
+    {
+      "type": "step_started",
+      "id": "a620f956-8814-424d-b77c-0e260cfd3cd9-2",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "step": 2,
+      "status": "started",
+      "updated_at": "2026-10-26T22:02:10.064707+00:00"
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.turn:resolved_step",
+        "artifactType": "provider_event",
+        "title": "resolved_step",
+        "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":2,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"ef6cfe5dd38322c3412d6d94b4b9838ee45699d03d849cac286201019cbfc417\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-2024b480-7590-41c9-8481-f15da501e6f2\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1bd304ce49e1168a7164ab1da06aa3f2fc30c051ea8725e4037db9f2b087a15a\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"9d2d01edc7d86dbc492455ed011d006c0bf0fd900a96dee5c351bff840ba8323\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"d77ed6dbeef567fdfafab070e307d297b37ad4baaa1ddd06bcacff342b99ce29\"}],\"counts\":{\"total\":3,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1},\"by_authority\":{\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":55037,\"rendered_characters\":54533,\"context_window_tokens\":985576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "23:8",
+      "sequence": 368
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "attempt-manifest-a620f956-8814-424d-b77c-0e260cfd3cd9-MiniMax-M3",
+        "artifactType": "attempt_manifest",
+        "title": "Provider attempt manifest",
+        "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+        "language": "json",
+        "metadata": {
+          "source": "uar.request",
+          "budgeting_label": "legacy_unbudgeted"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "24:8",
+      "sequence": 384
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.request:budget_receipt",
+        "artifactType": "provider_event",
+        "title": "budget_receipt",
+        "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":13991,\"serialized_bytes\":61037,\"serialized_sha256\":\"c8fca2885212d96654abcfe5663a50a06318d79317fed94fc165fa4f8bd05a0d\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "a620f956-8814-424d-b77c-0e260cfd3cd9"
+      },
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "25:8",
+      "sequence": 400
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "Th",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "26:8",
+      "sequence": 416
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "e greeting",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "27:8",
+      "sequence": 432
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " surface has been prepared for publication",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "28:8",
+      "sequence": 448
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": ".\n\n",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "29:8",
+      "sequence": 464
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "**Detail",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "30:8",
+      "sequence": 480
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "s:**\n- **",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "31:8",
+      "sequence": 496
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "surfaceId:** `greeting-281",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "32:8",
+      "sequence": 512
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "940cf-5872-45",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "33:8",
+      "sequence": 528
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "e1-8852-014f190",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "34:8",
+      "sequence": 544
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "df383`\n- **Catalog:** `",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "35:8",
+      "sequence": 560
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "https://a2ui.org/specification",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "36:8",
+      "sequence": 576
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "/v0_9/catalogs/b",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "37:8",
+      "sequence": 592
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "asic/catalog.json`\n- **Protocol",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "38:8",
+      "sequence": 608
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " version",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "39:8",
+      "sequence": 624
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": ":** `v0",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "40:8",
+      "sequence": 640
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": ".9`\n- **Messages:** `",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "41:8",
+      "sequence": 656
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "createSurface` →",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "42:8",
+      "sequence": 672
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " `updateComponents`\n",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "43:8",
+      "sequence": 688
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "- **Component tre",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "44:8",
+      "sequence": 704
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "e:** ",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "45:8",
+      "sequence": 720
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "a single `",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "46:8",
+      "sequence": 736
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "root",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "47:8",
+      "sequence": 752
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "` component of typ",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "48:8",
+      "sequence": 768
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "e `Text` with the text `",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "49:8",
+      "sequence": 784
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "Welcome, visitor b902259b!",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "50:8",
+      "sequence": 800
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": "`\n\nThe tool reported",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "51:8",
+      "sequence": 816
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " `status:",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "52:8",
+      "sequence": 832
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " prepared`, meaning",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "53:8",
+      "sequence": 848
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " the messages were accepted",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "54:8",
+      "sequence": 864
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " and handed",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "55:8",
+      "sequence": 880
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " to the host for publication — I'm",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "56:8",
+      "sequence": 896
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " not asserting",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "57:8",
+      "sequence": 912
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " anything",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "58:8",
+      "sequence": 928
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " about",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "59:8",
+      "sequence": 944
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "delta": " client-side rendering.",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "60:8",
+      "sequence": 960
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "finished",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": true,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "eventId": "61:8",
+      "sequence": 976
+    },
+    {
+      "messageId": "a620f956-8814-424d-b77c-0e260cfd3cd9:assistant",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "type": "TEXT_MESSAGE_END",
+      "profile": "uar.agui/1",
+      "eventId": "62:0",
+      "sequence": 992
+    },
+    {
+      "type": "RUN_FINISHED",
+      "profile": "uar.agui/1",
+      "threadId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "runId": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "result": {
+        "usage": {
+          "inputTokens": 28405,
+          "outputTokens": 399,
+          "totalTokens": 28804,
+          "costUsdEstimate": null,
+          "model": "MiniMax-M3"
+        }
+      },
+      "eventId": "62:8",
+      "sequence": 992
+    },
+    {
+      "type": "run_finished",
+      "id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "run_id": "a620f956-8814-424d-b77c-0e260cfd3cd9",
+      "status": "completed",
+      "input_tokens": 28405,
+      "output_tokens": 399,
+      "total_tokens": 28804,
+      "cost_usd_estimate": null,
+      "updated_at": "2026-10-26T22:02:11.595817+00:00"
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "surface_id": "greeting-281940cf-5872-45e1-8852-014f190df383",
+  "greeting": "Welcome, visitor b902259b!",
+  "session_id": "d59ef4f3-95b3-4a7d-b5b9-349c6eaedbc9",
+  "disposable_agent_deleted": true,
+  "scenario_status": "FAILED",
+  "duration_ms": 5832
+}

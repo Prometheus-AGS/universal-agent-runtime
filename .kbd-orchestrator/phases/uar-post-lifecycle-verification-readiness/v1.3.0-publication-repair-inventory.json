@@ -1,0 +1,22 @@
+{
+  "kind": "uar.publication-repair-inventory/v1",
+  "baseSource": "3d9253fc09e916d1ba7230c0b363f4631a07ce1e",
+  "currentSourceTag": "v1.3.0",
+  "currentTagObject": "2773672a5d7a7ef735dd5b941475e7e6f1a0d328",
+  "observedFailureRun": 40087378392,
+  "repair": "Explicit nested Parking Lot package.workspace ../..; upstream Rust source unchanged",
+  "files": {
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core/Cargo.toml": "e4d9bfecc7002d544861904f68df4d74e2b1662094b3ba70106fb3816c0c96ac",
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-embedded/Cargo.toml": "d684dcf0d4ab48e9ef31a5556e49965e68c6899653fce66e3c38676c760ba7dc",
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-ffi/Cargo.toml": "68bdd4a2b15a89e7c5d0b0321911f4e457a60c1b73da1cb571e5e349c53f3e98",
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-iggy/Cargo.toml": "656cace864900a4fbe5990969c74d18e930ef62dd5aa9ca5f2109071159a7edf",
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-pg/Cargo.toml": "0baffbdc7f3a029c549687ccaab77149f32a1e0cd2f03988de0dce4580851c6b",
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-runtime-tokio/Cargo.toml": "a0a298b628bbe41ebcec12adc0139ea81a2199ebe571074d8fbfaf1e4136a404",
+    "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-wasm/Cargo.toml": "d0d610544ebb7eda0b43766720b966f54c41af9206fbb20ba9b00a8f9c78b991",
+    "vendor/git/README.md": "4d7a4765976268d03894acd981a805e99f73be6161034a5b89077b055773973d"
+  },
+  "patchSha256": "b236032d7714495312e81b243e433ca445da0bcf69c0c81e183ef7c228937ada",
+  "verification": "NOT_RUN_AFTER_REPAIR",
+  "operatorApproval": "PENDING for public tag correction and exact redeployment",
+  "productVerification": "CLOSED"
+}

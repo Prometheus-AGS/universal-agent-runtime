@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/conversation-summary.cucumber.mjs"
+  ],
+  "exit_code": 1,
+  "duration_seconds": 8.824822236027103
+}

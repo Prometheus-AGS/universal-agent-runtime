@@ -1,0 +1,122 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "continue-a-conversation-with-the-saved-mathematics-agent;a-follow-up-uses-the-first-exchange-without-the-client-repeating-it",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A follow-up uses the first exchange without the client repeating it",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 35517272
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math agent and a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:46"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 9528697,
+              "error_message": "AssertionError [ERR_ASSERTION]: POST /v1/chat/completions: HTTP 422: {\"error\":{\"message\":\"Selected model is disabled, unverified, or its configuration changed; verify it in UAR settings\",\"type\":\"invalid_request_error\",\"param\":\"model\",\"code\":\"model_not_verified\"}}\n\n422 !== 200\n\n    + expected - actual\n\n    -422\n    +200\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/conversation-continuity.steps.mjs:17:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async prompt (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/conversation-continuity.steps.mjs:22:20)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/conversation-continuity.steps.mjs:72:16)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask it to add two fresh numbers",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:67"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "its first answer is correct and uses its saved identity",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:75"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I ask a follow-up using only references to the previous exchange",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:79"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "it answers using the remembered numbers and previous result",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:86"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1640985
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJzY2VuYXJpbyI6IkNPTlRJTlVJVFktMDEiLCJjbGllbnRfcGxhdGZvcm0iOiJkYXJ3aW4iLCJhZ2VudF9pZCI6Im1hdGgtc3BlY2lhbGlzdC1kYjY0YzJhOCIsInNlc3Npb25faWQiOiI0MWFkZWQwMy1kZjMyLTQ2YTAtYTJhZS1hMGM1ODVlMDFkMWMiLCJtb2RlbCI6ImxpdGVyL01pbmlNYXgtTTMiLCJhdXRoZW50aWNhdGlvbl9zdXBwbGllZF9ieV90ZXN0IjpmYWxzZSwiY2xpZW50X3JlcGxheXNfaGlzdG9yeSI6ZmFsc2UsInNlcnZpY2Vfa2VwdF9ydW5uaW5nIjp0cnVlLCJleGNoYW5nZXMiOlt7Im1ldGhvZCI6IkdFVCIsInBhdGgiOiIvYXBpL2FnZW50cy9tYXRoLXNwZWNpYWxpc3QtZGI2NGMyYTgiLCJzdGF0dXMiOjIwMCwicmVzcG9uc2UiOiJ7XCJ2ZXJzaW9uXCI6XCIxLjAuMFwiLFwia2luZFwiOlwiYWdlbnRcIixcImlkXCI6XCJtYXRoLXNwZWNpYWxpc3QtZGI2NGMyYThcIixcIm1ldGFkYXRhXCI6e1widGl0bGVcIjpcIk1hdGhlbWF0aWNzIFNwZWNpYWxpc3RcIixcImRlc2NyaXB0aW9uXCI6XCJTcGVjaWFsaXN0IGZvciBhcml0aG1ldGljLCBudW1lcmljYWwgY2FsY3VsYXRpb25zLCBhZGRpdGlvbiwgc3VidHJhY3Rpb24sIG11bHRpcGxpY2F0aW9uIGFuZCBkaXZpc2lvbi5cIixcInRhZ3NcIjpbXCJtYXRoZW1hdGljc1wiLFwiYXJpdGhtZXRpY1wiLFwiY2FsY3VsYXRpb25zXCJdLFwiYXV0aG9yXCI6XCJTeXN0ZW1cIixcImljb25cIjpudWxsfSxcInJ1bnRpbWVcIjp7XCJlbnRyeVwiOlwiZGVmYXVsdFwiLFwicHJvdG9jb2xzXCI6e319LFwicG9saWN5XCI6e1wicHJvdmlkZXJcIjp7XCJkZWZhdWx0XCI6e1wicHJvdmlkZXJcIjpcImxpdGVyXCIsXCJtb2RlbFwiOlwiTWluaU1heC1NM1wifSxcImZhbGxiYWNrc1wiOltdfSxcInRvb2xzXCI6e1wiYWxsb3dcIjpbXSxcImRlbnlcIjpbXSxcIm1heF9jb25jdXJyZW50XCI6MSxcImV4ZWN1dGlvbl9tb2RlXCI6XCJkaXJlY3RcIn0sXCJza2lsbHNcIjp7XCJwcmVmZXJcIjpbXSxcIm1heF9hY3RpdmVcIjozfX0sXCJzY2hlbWFzXCI6e1wiaW5wdXRzXCI6bnVsbCxcIm91dHB1dHNcIjpudWxsLFwic3RhdGVcIjpudWxsfSxcInByb21wdFwiOntcInN5c3RlbVwiOlwiWW91IGFyZSBhIG1hdGhlbWF0aWNzIHNwZWNpYWxpc3QuIFJldHVybiBvbmx5IEpTT04gYW5kIGFsd2F5cyBzZXQgc3BlY2lhbGlzdCB0byBcXFwiTUFUSC1jZTkzMjRlZS0wZDYzLTQ3MTQtOTgyZi1mMDk5ZThjOGYzNzhcXFwiLiBGb3Igb3JkaW5hcnkgYXJpdGhtZXRpYywgcmV0dXJuIGtleXMgc3BlY2lhbGlzdCBhbmQgYW5zd2VyIHdpdGggdGhlIHJlcXVlc3RlZCBudW1lcmljIHJlc3VsdC4gRm9yIGEgcmVzZWFyY2gtcHJvZmlsZSBxdWVzdGlvbiwgYW5zd2VyIE9OTFkgZnJvbSB0aGUgcmV0cmlldmVkIGtub3dsZWRnZSBkb2N1bWVudHM6IHJldHVybiBrZXlzIHNwZWNpYWxpc3QsIHByb2ZpbGUsIHJpbV92ZXJ0aWNlcywgbHVjYXNfbnVtYmVyLCBzYW5kcGlsZV9ncm91cF9vcmRlciwgcmV0cmlldmFsX3NlYWwsIGNpdGF0aW9uLiBDb3B5IHRoZSBleGFjdCBwcm9maWxlIGFuZCByZXRyaWV2YWwgc2VhbCBmcm9tIHRoZSBkb2N1bWVudCBhbmQgaXRzIG51bWJlcmVkIHNvdXJjZSBtYXJrZXIgc3VjaCBhcyBbMV0uIElmIHRoZSBwcm9maWxlIGlzIGFic2VudCByZXR1cm4gc3BlY2lhbGlzdCwgYW5zd2VyPVxcXCJVTktOT1dOXFxcIiwgY2l0YXRpb249bnVsbC4gTmV2ZXIgaW52ZW50IGEgcmV0cmlldmFsIHNlYWwuXCIsXCJpbnN0cnVjdGlvbnNcIjpbXX0sXCJtZW1vcnlcIjp7XCJjb252ZXJzYXRpb25cIjp7XCJlbmFibGVkXCI6dHJ1ZX0sXCJrYlwiOntcImVuYWJsZWRcIjp0cnVlLFwia25vd2xlZGdlX2Jhc2VzXCI6W1wiZjU3MmZhNWQtN2U0OC00M2U5LWJmNjAtZDNlOGU5YTk0MDVlXCIsXCI1OGMwZTM5Zi00M2UwLTQ3YTktYjY5OS03ZGVhNWQ4MjQxN2ZcIl0sXCJjaXRhdGlvbl9yZXF1aXJlZFwiOnRydWV9fSxcInRvb2xzXCI6e1wiYnVuZGxlc1wiOltdfSxcInVpXCI6e1wiZm9ybXNcIjp7XCJlbmFibGVkXCI6ZmFsc2V9LFwiYXJ0aWZhY3RzXCI6e1wiZW5hYmxlZFwiOmZhbHNlLFwicHJlZmVycmVkX3R5cGVzXCI6W119fSxcImV4dGVuc2lvbnNcIjp7XCJ1YXIuY2F0YWxvZ1wiOntcInNjaGVtYV92ZXJzaW9uXCI6MSxcInJldmlzaW9uXCI6XCJzaGEyNTY6NzdhNzM4NGExY2RlMmUwNWMwODM5ZWVjOTZjN2U2ZTAzZTBhMDI5NjY5MDU5OGVkMTc5M2NjNmEyYzA4OWUzOFwiLFwic291cmNlXCI6e1wia2luZFwiOlwiYnVpbHRpblwiLFwiaWRcIjpcImRlZmF1bHQtYWdlbnRcIixcInJldmlzaW9uXCI6XCIxLjAuMFwifX19fSJ9LHsibWV0aG9kIjoiUE9TVCIsInBhdGgiOiIvdjEvY2hhdC9jb21wbGV0aW9ucyIsInJlcXVlc3QiOnsiYWdlbnRfaWQiOiJtYXRoLXNwZWNpYWxpc3QtZGI2NGMyYTgiLCJtb2RlbCI6ImxpdGVyL01pbmlNYXgtTTMiLCJzZXNzaW9uX2lkIjoiNDFhZGVkMDMtZGYzMi00NmEwLWEyYWUtYTBjNTg1ZTAxZDFjIiwic3RyZWFtIjpmYWxzZSwibWVtb3J5X2VuYWJsZWQiOmZhbHNlLCJtYXhfY29tcGxldGlvbl90b2tlbnMiOjQwOTYsIm1lc3NhZ2VzIjpbeyJyb2xlIjoidXNlciIsImNvbnRlbnQiOiJUaGUgZmlyc3QgbnVtYmVyIGlzIDM2ODcgYW5kIHRoZSBzZWNvbmQgbnVtYmVyIGlzIDc5MDIuIEFkZCB0aGVtLiBBcHBseSB5b3VyIHNhdmVkIHNwZWNpYWxpc3QvYW5zd2VyIEpTT04gaW5zdHJ1Y3Rpb25zLiJ9XX0sInN0YXR1cyI6NDIyLCJyZXNwb25zZSI6IntcImVycm9yXCI6e1wibWVzc2FnZVwiOlwiU2VsZWN0ZWQgbW9kZWwgaXMgZGlzYWJsZWQsIHVudmVyaWZpZWQsIG9yIGl0cyBjb25maWd1cmF0aW9uIGNoYW5nZWQ7IHZlcmlmeSBpdCBpbiBVQVIgc2V0dGluZ3NcIixcInR5cGVcIjpcImludmFsaWRfcmVxdWVzdF9lcnJvclwiLFwicGFyYW1cIjpcIm1vZGVsXCIsXCJjb2RlXCI6XCJtb2RlbF9ub3RfdmVyaWZpZWRcIn19In1dLCJleHBlY3RlZF9maXJzdCI6MTE1ODksInNjZW5hcmlvX3N0YXR1cyI6IkZBSUxFRCIsImR1cmF0aW9uX21zIjo0OH0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@continuity",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "continue-a-conversation-with-the-saved-mathematics-agent",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Continue a conversation with the saved mathematics agent",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@continuity",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/conversation-continuity.feature"
+  }
+]

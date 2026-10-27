@@ -1,0 +1,108 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "interact-with-a-real-a2ui-response-in-the-browser;a-rendered-calculator-sends-fresh-input-back-to-its-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A rendered calculator sends fresh input back to its agent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable A2UI calculator agent is selected in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 10112000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask the agent to render its calculator",
+            "result": {
+              "status": "passed",
+              "duration": 6684000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the browser displays the generated input and action button",
+            "result": {
+              "status": "passed",
+              "duration": 227000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I enter a fresh number and press the rendered calculate button",
+            "result": {
+              "status": "passed",
+              "duration": 4923000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the agent answers using that browser input and its saved instructions",
+            "result": {
+              "status": "passed",
+              "duration": 1470000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1555000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1374000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@a2ui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "interact-with-a-real-a2ui-response-in-the-browser",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Interact with a real A2UI response in the browser",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@a2ui",
+        "line": 1
+      }
+    ],
+    "uri": "features/a2ui-browser.feature"
+  }
+]

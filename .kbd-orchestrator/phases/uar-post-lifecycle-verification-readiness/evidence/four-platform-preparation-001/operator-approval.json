@@ -1,0 +1,19 @@
+{
+  "operator_answer": "Approve A16 and P16 preparation",
+  "received_at_utc": "2026-10-25T19:46:41.805679+00:00",
+  "contract_digest": "d88f31dc84d6de72a94a7be26e224924f08bac0a16e32812f235863992929442",
+  "source_identity": "sha256:580f7196999aa00b78e211a9894424b0d8c4074acf07fbafb483d00592e8673f",
+  "packet_sha256": "29ed12e8f7902bc4f80b6b816bfafb81a3590d96aa8713dd3c3baefdcb9f156f",
+  "prior_accounting": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-017.json",
+  "active_minutes_upper_bound_now": 1626.7439372000001,
+  "historical_call_floor": 3274,
+  "limits": {
+    "active_minutes": 2400,
+    "calls": 4000,
+    "repairs": 28,
+    "embedding_usd_each": 10
+  },
+  "scope": "A16 signature/adoption, serial named source-only reviewers, then P16 preparation and declared metadata effects. Stop first failure. No product V/provider/service/publication.",
+  "repair_floor": 15,
+  "fixture_repair16_charged": false
+}

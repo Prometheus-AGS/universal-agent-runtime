@@ -1,0 +1,21 @@
+{
+  "pid": 50663,
+  "base_url": "http://127.0.0.1:53587",
+  "model": "liter/MiniMax-M3",
+  "provider_url": "http://127.0.0.1:4000/v1",
+  "binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-team-concurrency-repair/debug/universal-agent-runtime",
+  "binary_sha256": "2bc678222801b9cd386931125d3a831188aa143cbefd760943931c8f68164fa7",
+  "built_source_identity": "sha256:45371cdc1495244d02eff575a37825b351188d1b70c9e368ab555a2156ae9b1a",
+  "config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-team-repair-003.log",
+  "platform": "macos",
+  "keep_running": true,
+  "retained_agent_id": "math-specialist-db64c2a8",
+  "retained_writer_id": "writing-specialist",
+  "service_instance_id": "uar-macos-behaviors",
+  "source_manifest_sha256": "45371cdc1495244d02eff575a37825b351188d1b70c9e368ab555a2156ae9b1a",
+  "backup": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/store.before-team-repair-003",
+  "status": "ready",
+  "verification_source_manifest_sha256": "8b30ef7996d8a16ae56196991b5613e903f891a738534cdd71ec5d0d757a7a24",
+  "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc"
+}

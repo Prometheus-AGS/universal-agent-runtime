@@ -1,0 +1,121 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "restrict-agent-knowledge-after-removing-one-of-two-kb-links;removing-cobalt-leaves-only-amber-available-to-the-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Removing cobalt leaves only amber available to the agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1670749061
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with two indexed knowledge bases ready to link",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink-one.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40208043
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "both knowledge base links are persisted on that agent",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink-one.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 39444942
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I unlink only the cobalt knowledge base while leaving knowledge enabled",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink-one.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 20548056411
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "I ask for both inventories in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink-one.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 134585349
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "only the remaining knowledge base contributes facts and citations while both KBs stay searchable",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink-one.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 164963510
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi11bmxpbmstb25lLzVkZmE3MjQ2LTUyMjEtNGJiMy04ZDQyLWM1ODI3NTBmNmZiMy5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@kb-unlink-one",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "restrict-agent-knowledge-after-removing-one-of-two-kb-links",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Restrict agent knowledge after removing one of two KB links",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@kb-unlink-one",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-unlink-one.feature"
+  }
+]

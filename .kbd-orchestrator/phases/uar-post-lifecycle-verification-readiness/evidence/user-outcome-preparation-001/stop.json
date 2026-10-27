@@ -1,0 +1,108 @@
+{
+  "timestamp": "2026-10-25T09:56:55.406147+00:00",
+  "status": "STOPPED_FIRST_FAILURE",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-2ebb1c04",
+  "binding_revision": 9,
+  "failed_stage": "P0.1",
+  "argv": [
+    "/Users/gqadonis/.volta/bin/pnpm",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts"
+  ],
+  "exit_code": 1,
+  "error_code": "ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY",
+  "observed_message": "Aborted removal of modules directory due to no TTY",
+  "elapsed_seconds": 1.350480196007993,
+  "later_stages": [
+    {
+      "id": "P0.2",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.3",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.4",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.5-pull",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.5",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.python-dependencies",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.python-sdk",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.6-pull",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.6",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.7",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.8",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.9",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.10",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.11",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.13-build-guest",
+      "status": "NOT_RUN"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/P0.1/stdout.log",
+      "bytes": 836,
+      "sha256": "f9a5a0f001614dc7af3e55320e01ab0a0b2f5d9dc3ed720977f8c4c570562cea"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/P0.1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "retry_count": 0,
+  "corrective_edits": 0,
+  "provider_calls": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "builds_or_product_tests": 0,
+  "services_started": 0,
+  "product_gate": "CLOSED",
+  "retained_owned_scope": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001",
+  "installation_state": "Not certified; no added probe or repair after failure",
+  "next_authority": "New explicit corrected preparation instruction required; no automatic retry or source repair"
+}

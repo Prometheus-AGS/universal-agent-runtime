@@ -1,0 +1,14 @@
+{
+  "previous_pid": 97354,
+  "binary_sha256": "f84baeaf99c7c0478fe01df20e9f2726f1f3f346b335d04d0958dbf2d800496d",
+  "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+  "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+  "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-7c7ea853-9592-4d53-a674-202ee3da476d.log",
+  "stop_signal": "SIGTERM",
+  "store_preserved": true,
+  "replaced_binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+  "previous_process_exited": true,
+  "new_pid": 21601,
+  "new_process_ready": true
+}

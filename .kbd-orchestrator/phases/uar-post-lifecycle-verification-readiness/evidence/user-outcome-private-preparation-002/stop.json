@@ -1,0 +1,9 @@
+{
+  "status": "STOPPED_FIRST_FAILURE_NO_RETRY",
+  "stage": "M0.002_or_M1.002",
+  "error_type": "AttributeError",
+  "error": "'NoneType' object has no attribute 'split'",
+  "remaining_stages": "NOT_RUN",
+  "repair_charged": 10,
+  "gate": "CLOSED"
+}

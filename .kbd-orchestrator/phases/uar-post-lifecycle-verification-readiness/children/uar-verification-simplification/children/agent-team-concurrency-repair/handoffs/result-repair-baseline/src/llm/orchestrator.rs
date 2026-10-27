@@ -1,0 +1,3903 @@
+//! LLM orchestrator with tool loop execution.
+//!
+//! The orchestrator manages the complete lifecycle of an LLM interaction:
+//! 1. Send user message to the LLM
+//! 2. Stream the response, detecting tool calls
+//! 3. Execute tool calls via MCP
+//! 4. Feed tool results back to the LLM
+//! 5. Repeat until the model produces a final response
+//!
+//! # Example
+//!
+//! ```rust,ignore
+//! use universal_agent_runtime::config::LlmConfig;
+//! use universal_agent_runtime::llm::Orchestrator;
+//! use universal_agent_runtime::mcp::registry::McpRegistry;
+//! use universal_agent_runtime::uar::runtime::native_skill::NativeSkillRegistry;
+//!
+//! let llm_config = LlmConfig::default();
+//! let mcp = McpRegistry::load_from_file("mcp.json").await?;
+//! let native_skills = Arc::new(NativeSkillRegistry::new());
+//! let orchestrator = Orchestrator::new(llm_config, mcp, native_skills)?;
+//!
+//! let stream = orchestrator.chat("Hello, what time is it?").await?;
+//! ```
+
+use std::collections::BTreeMap;
+use std::pin::Pin;
+use std::sync::Arc;
+
+use backon::Retryable;
+use futures::{Stream, StreamExt};
+use uuid::Uuid;
+
+use crate::config::{FailoverConfig, FallbackModel, LlmConfig};
+use crate::mcp::registry::McpRegistry;
+use crate::normalized::{NormalizedEvent, RuntimeStepKind};
+use crate::uar::runtime::native_skill::NativeSkillRegistry;
+use crate::uar::runtime::tool_admission::ToolExecutionKind;
+use crate::mcp::outcome::{McpToolFailure, ToolOutcome};
+use crate::uar::tools::descriptor::{
+    ApprovalClass, Exposure, ToolCollision, ToolDescriptor, ToolEffect,
+};
+use crate::uar::tools::validate;
+
+use super::{
+    LlmDriver, LlmRequest, Message, MessageContent, MessageRole, ToolCall, ToolCallFunction,
+    anthropic_cache::CacheStrategy,
+};
+
+/// Build the protocol driver for a resolved LLM configuration.
+///
+/// Anthropic models use the native Messages API when its runtime gate is on;
+/// all other configurations retain liter-llm's compatible provider routing.
+pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    build_driver_inner(llm_config, &mut Default::default())
+}
+
+/// Capture actual construction inputs once, retaining them even on failure.
+/// Empty-key constructor-owned credentials remain outside this finite corpus.
+pub(crate) fn build_driver_captured(
+    llm_config: &LlmConfig,
+    capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
+) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    build_driver_inner(llm_config, capture)
+        .map_err(|_| anyhow::anyhow!("Provider client construction failed"))
+}
+
+pub(crate) fn capture_client_config(
+    config: &mut liter_llm::ClientConfig,
+    capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
+) {
+    use secrecy::ExposeSecret;
+    let key = config.api_key.expose_secret();
+    let mut values = vec![key.to_owned().into()];
+    if let Some(url) = &config.base_url {
+        values.push(url.clone().into());
+    }
+    capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(values));
+    // Liter fills a missing key only. Do not disable that legacy path for an
+    // empty key, and do not independently rediscover provider environment.
+    if !key.is_empty() {
+        config.load_env = false;
+    }
+}
+
+fn build_driver_inner(
+    llm_config: &LlmConfig,
+    capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
+) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    anyhow::ensure!(
+        !llm_config.model.trim().is_empty(),
+        "No LLM model configured; select a provider model or set UAR_LLM__MODEL explicitly"
+    );
+    // ADR-010 §1a (b)+(c). Every inference path -- primary, failover, server,
+    // turn bindings -- constructs its driver here, so this is the one place
+    // that can make "local-only" a guarantee rather than a configuration
+    // preference. Fails closed: no driver is returned, so no request is sent.
+    if let Some(url) = &llm_config.base_url {
+        capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(
+            vec![url.clone().into()],
+        ));
+    }
+    super::local_only::check_base_url(llm_config.base_url.as_deref())?;
+
+    let (model_provider_id, model_id) = super::registry::split_model_string_pub(&llm_config.model);
+    let provider_id = llm_config
+        .host_provider_kind
+        .as_deref()
+        .or(llm_config.resolved_provider_id.as_deref())
+        .unwrap_or(&model_provider_id);
+    if provider_id == "anthropic" && super::anthropic_native_driver_enabled() {
+        let api_key = llm_config
+            .api_key
+            .clone()
+            .or_else(|| llm_config.provider_keys.get("anthropic").cloned())
+            .unwrap_or_default();
+        capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(
+            vec![api_key.clone().into()],
+        ));
+        return Ok(Arc::new(super::anthropic_driver::AnthropicDriver::new(
+            api_key,
+            model_id,
+            llm_config.base_url.clone(),
+            None,
+            None,
+            None,
+        )));
+    }
+
+    let mut client_config = crate::config::build_client_config(llm_config);
+    capture_client_config(&mut client_config, capture);
+    tracing::info!(
+        target: "llm",
+        provider = %provider_id,
+        model = %model_id,
+        timeout_secs = llm_config.timeout_secs,
+        max_retries = llm_config.max_retries,
+        "Built LLM client with effective request timeout"
+    );
+    Ok(Arc::new(super::LiterLlmDriver::new(
+        client_config,
+        llm_config.model.clone(),
+        llm_config.parallel_tool_calls,
+    )?))
+}
+
+type DriverEventStream = Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>;
+
+/// An admitted invocation whose executor body was never entered.
+#[derive(Debug)]
+struct ToolDispatchBlocked(&'static str);
+
+impl std::fmt::Display for ToolDispatchBlocked {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.0)
+    }
+}
+
+impl std::error::Error for ToolDispatchBlocked {}
+
+async fn open_driver_stream(
+    driver: &dyn LlmDriver,
+    request: LlmRequest,
+    start_timeout: std::time::Duration,
+    idle_timeout: std::time::Duration,
+) -> anyhow::Result<DriverEventStream> {
+    let mut stream = tokio::time::timeout(start_timeout, driver.stream(request))
+        .await
+        .map_err(|_| {
+            super::ProviderError::timeout(format!(
+                "LLM stream start timed out after {} ms",
+                start_timeout.as_millis()
+            ))
+        })??;
+
+    // Provider lifecycle/usage metadata is not committed assistant output.
+    // Keep this prelude inside the retry boundary; otherwise Anthropic's
+    // message_start makes a subsequent content-free stall non-retryable.
+    // Coalesce the two metadata kinds so an untrusted prelude cannot grow
+    // without bound. Metadata does not reset the first-output deadline.
+    let mut prelude = Vec::new();
+    let first = tokio::time::timeout(idle_timeout, async {
+        loop {
+            let Some(event) = stream.next().await else {
+                return Ok::<_, anyhow::Error>(None);
+            };
+            let event = event?;
+            match &event {
+                NormalizedEvent::StreamStart { .. } | NormalizedEvent::Usage { .. } => {
+                    prelude.retain(|previous| {
+                        std::mem::discriminant(previous) != std::mem::discriminant(&event)
+                    });
+                    prelude.push(event);
+                }
+                NormalizedEvent::MessageDelta { text }
+                | NormalizedEvent::ThinkingDelta { text }
+                | NormalizedEvent::ReasoningDelta { text }
+                    if text.is_empty() => {}
+                _ => return Ok(Some(event)),
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .map_err(|_| {
+        super::ProviderError::timeout(format!(
+            "LLM stream idle timed out after {} ms before semantic output",
+            idle_timeout.as_millis()
+        ))
+    })??;
+    prelude.extend(first);
+    Ok(Box::pin(
+        futures::stream::iter(prelude.into_iter().map(Ok::<_, anyhow::Error>)).chain(stream),
+    ))
+}
+
+fn prepend_attempt_manifest(
+    stream: DriverEventStream,
+    manifest: serde_json::Value,
+) -> DriverEventStream {
+    Box::pin(
+        futures::stream::once(async move {
+            Ok(NormalizedEvent::Custom {
+                source: "uar.request".to_string(),
+                event_name: "attempt_manifest".to_string(),
+                payload: manifest,
+            })
+        })
+        .chain(stream),
+    )
+}
+
+/// Result of a tool approval gate check.
+#[derive(Debug, Clone)]
+pub enum ToolApprovalResult {
+    /// Tool is approved, but may have required user confirmation. Execute serially.
+    Approved,
+    /// Host policy permits execution without user confirmation.
+    Allowed,
+    /// Governance was intentionally bypassed for a verified local-only process.
+    GovernanceBypassed,
+    /// Tool execution was rejected by the user or timed out.
+    Rejected { reason: String },
+    /// The run/root was cancelled while this exact invocation was unclaimed.
+    Cancelled { reason: String },
+}
+
+/// A callback invoked before each tool call execution to allow approval/rejection.
+/// Returns an admitted outcome to proceed or `Rejected` to skip the tool call.
+pub type ToolApprovalGate = Arc<
+    dyn Fn(
+            crate::uar::runtime::tool_admission::ToolApprovalRequest,
+        ) -> Pin<Box<dyn Future<Output = ToolApprovalResult> + Send>>
+        + Send
+        + Sync,
+>;
+
+/// Maximum number of tool loop iterations to prevent infinite loops.
+const MAX_TOOL_ITERATIONS: usize = 10;
+
+/// Accumulated state for a streaming tool call.
+#[derive(Debug, Default, Clone)]
+struct ToolCallAccumulator {
+    id: Option<String>,
+    name: Option<String>,
+    arguments: String,
+}
+
+/// LLM orchestrator with tool loop execution.
+///
+/// The orchestrator wraps an [`LlmDriver`] and adds:
+/// - Tool call detection and accumulation
+/// - Tool execution via MCP
+/// - Automatic tool result feeding
+/// - Request ID tracking
+#[derive(Clone)]
+pub struct Orchestrator {
+    llm_config: LlmConfig,
+    mcp: Arc<McpRegistry>,
+    driver: Arc<dyn LlmDriver>,
+    /// Ordered fallback drivers activated when the primary driver errors.
+    fallback_drivers: Vec<FailoverTarget>,
+    /// Controls when/how to switch to the fallback driver.
+    failover_config: FailoverConfig,
+    /// Shared provider-health monitor (CH-03). When set, every driver
+    /// success/failure updates `ProviderRegistry::health()` so subsequent
+    /// routing decisions see the outcome immediately.
+    health_monitor: Option<Arc<super::health::ProviderHealthMonitor>>,
+    native_skills: Arc<NativeSkillRegistry>,
+    /// Optional gate that is consulted before each tool call execution.
+    /// If `None`, all tool calls are approved automatically.
+    tool_approval_gate: Option<ToolApprovalGate>,
+    /// Exact prepared-invocation authority used by standalone and paired hosts.
+    tool_admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
+    #[cfg(feature = "bauar-native-admission-gate")]
+    native_admission_gate: Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver>,
+    /// Optional sandbox runner for isolated code execution.
+    sandbox_runner: Option<Arc<dyn crate::sandbox::SandboxRunner>>,
+    sandbox_scope: Option<crate::sandbox::execution::SandboxRun>,
+    terminal_scope: Option<crate::uar::tools::terminal_process::TerminalRun>,
+    artifact_collector: Option<crate::uar::runtime::thread::artifacts::RunArtifactCollector>,
+    thread_policy: Option<Arc<crate::uar::runtime::thread::policy_intersection::ThreadPolicy>>,
+    /// Controls which tool calls are routed to the sandbox runner.
+    tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode,
+    resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    /// Bound applied once to every tool result when it is recorded into the
+    /// model-visible history (MCP, native, and terminal results alike).
+    tool_output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+    /// Per-run cache strategy copied into every policy-bearing tool-loop request.
+    cache_strategy: Option<CacheStrategy>,
+    /// Host-resolved final-wire budget contract copied into every request.
+    request_budget_contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
+    /// Exact model/template/settings contracts used to rebuild every provider
+    /// attempt from canonical history.
+    destination_preparations: Option<Arc<DestinationRequestPreparations>>,
+    /// Settings-only exact profiles captured on the leaf clients for this run.
+    endpoint_settings_profiles: BTreeMap<String, super::EndpointRequestProfile>,
+    /// Unrendered, unreduced messages captured by the trusted host. Completed
+    /// tool records are appended to this stream, never to a prepared view only.
+    canonical_history: Option<Vec<Message>>,
+    canonical_fragments: Option<Vec<crate::uar::runtime::prompt::PromptFragment>>,
+    protected_continuity: Option<ProtectedContinuity>,
+    skill_activation: Option<SkillActivationRuntime>,
+    resolved_turn: Option<Arc<crate::uar::runtime::turn::ResolvedTurn>>,
+    mcp_preflight: Option<Arc<crate::mcp::preflight::McpPreflight>>,
+    shadow_turn: Option<(Arc<crate::uar::runtime::turn::ResolvedTurn>, Vec<Message>)>,
+    world_state: Option<Arc<crate::uar::runtime::world_state::runtime::WorldStateRuntime>>,
+    canonical_receipt_store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
+    team_model_handoff: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
+    client_graph_state: Option<serde_json::Value>,
+    client_tool_budget: Option<Arc<crate::uar::runtime::cost_budget::ModelCallBudget>>,
+}
+
+#[derive(Clone)]
+struct SkillActivationRuntime {
+    context: Arc<tokio::sync::Mutex<crate::uar::runtime::skills::activation::ActivationContext>>,
+    strategy: crate::uar::context::ContextStrategy,
+    model: String,
+    context_limit: usize,
+    budget: crate::config::SkillReattachmentBudget,
+}
+
+#[derive(Clone)]
+struct FailoverTarget {
+    model: String,
+    provider_id: String,
+    driver: Arc<dyn LlmDriver>,
+}
+
+/// Opaque provider state that must survive only through an explicitly
+/// compatible destination. The body remains in canonical host storage; this
+/// identity prevents transparent failover from rewriting or inventing it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProtectedContinuity {
+    pub provider_id: String,
+    pub endpoint_kind: String,
+    pub protocol_revision: String,
+}
+
+/// Exact host-reviewed preparation contract for one destination model.
+#[derive(Debug, Clone)]
+pub struct DestinationRequestPreparation {
+    pub destination: super::prompt_dialect::TemplateDestination,
+    pub template: crate::uar::runtime::prompt::PromptTemplateProfile,
+    pub request_profile: super::EndpointRequestProfile,
+    pub budget_contract: crate::uar::runtime::context::budget::RequestBudgetContract,
+    pub exact_settings: Option<serde_json::Value>,
+    pub compatible_continuity: Vec<ProtectedContinuity>,
+}
+
+impl DestinationRequestPreparation {
+    fn qualified_model(&self) -> String {
+        format!(
+            "{}/{}",
+            self.destination.provider_id, self.destination.model_id
+        )
+    }
+
+    fn validate(&self) -> anyhow::Result<()> {
+        let qualified_model = self.qualified_model();
+        anyhow::ensure!(
+            self.request_profile.qualified_model == qualified_model,
+            "Destination preparation request profile belongs to another model"
+        );
+        anyhow::ensure!(
+            self.request_profile.provider_id == self.destination.provider_id
+                && self.request_profile.endpoint_kind == self.destination.endpoint_kind
+                && self.request_profile.model_revision == self.destination.model_revision,
+            "Destination preparation identities do not match the request profile"
+        );
+        anyhow::ensure!(
+            self.budget_contract.destination_model == qualified_model,
+            "Destination preparation budget belongs to another model"
+        );
+        anyhow::ensure!(
+            self.budget_contract.destination_endpoint_fingerprint
+                == self.request_profile.endpoint_fingerprint,
+            "Destination preparation budget belongs to another endpoint"
+        );
+        anyhow::ensure!(
+            self.request_profile.output_ceiling == Some(self.budget_contract.output_ceiling),
+            "Destination preparation output ceiling does not match its budget"
+        );
+        anyhow::ensure!(
+            self.budget_contract.counting
+                == crate::uar::runtime::context::token_service::SerializedCountingContract::ExactCl100kJsonV1,
+            "Destination preparation has no validated counting contract"
+        );
+        crate::uar::runtime::context::budget::input_allowance_for_limits(&self.budget_contract.limits)
+            .map_err(|outcome| anyhow::anyhow!("Invalid destination capacity contract: {outcome:?}"))?;
+        anyhow::ensure!(self.budget_contract.limits.context_tokens > 0,
+            "Destination preparation requires a known positive capacity");
+        super::prompt_dialect::PromptTemplateResolver::new(vec![self.template.clone()]).resolve(
+            &self.destination,
+            None,
+            &super::prompt_dialect::TemplateOverridePolicy::default(),
+        )?;
+        Ok(())
+    }
+}
+
+/// Immutable destination contracts captured by the trusted run host.
+#[derive(Debug, Clone, Default)]
+pub struct DestinationRequestPreparations {
+    profiles: BTreeMap<String, DestinationRequestPreparation>,
+}
+
+impl DestinationRequestPreparations {
+    /// Validate and index exact destination profiles.
+    pub fn new(profiles: Vec<DestinationRequestPreparation>) -> anyhow::Result<Self> {
+        let mut indexed = BTreeMap::new();
+        for profile in profiles {
+            profile.validate()?;
+            let model = profile.qualified_model();
+            anyhow::ensure!(
+                indexed.insert(model.clone(), profile).is_none(),
+                "Duplicate destination preparation for model `{model}`"
+            );
+        }
+        Ok(Self { profiles: indexed })
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.profiles.is_empty()
+    }
+
+    /// Return only a host-installed, validated destination contract. Catalog
+    /// metadata and tokenizer lookup never manufacture one.
+    #[must_use]
+    pub fn budget_contract(
+        &self,
+        model: &str,
+    ) -> Option<&crate::uar::runtime::context::budget::RequestBudgetContract> {
+        self.profiles.get(model).map(|profile| &profile.budget_contract)
+    }
+
+    fn prepare(
+        &self,
+        model: &str,
+        mut request: LlmRequest,
+        canonical_messages: &[serde_json::Value],
+        fragments: &[crate::uar::runtime::prompt::PromptFragment],
+        continuity: Option<&ProtectedContinuity>,
+    ) -> anyhow::Result<LlmRequest> {
+        let profile = self
+            .profiles
+            .get(model)
+            .ok_or_else(|| anyhow::anyhow!("No exact request preparation for `{model}`"))?;
+        if let Some(continuity) = continuity {
+            anyhow::ensure!(
+                profile.compatible_continuity.contains(continuity),
+                "Destination `{model}` is incompatible with protected continuity `{}/{}/{}`",
+                continuity.provider_id,
+                continuity.endpoint_kind,
+                continuity.protocol_revision
+            );
+        }
+        let rendered =
+            crate::uar::runtime::prompt::render_with_template(fragments, &profile.template)?;
+        let system = serde_json::json!({"role": "system", "content": rendered});
+        let mut messages = canonical_messages.to_vec();
+        if messages
+            .first()
+            .and_then(|message| message.get("role"))
+            .and_then(serde_json::Value::as_str)
+            == Some("system")
+        {
+            messages[0] = system;
+        } else {
+            messages.insert(0, system);
+        }
+        request.messages = messages;
+        request.extra_params.clone_from(&profile.exact_settings);
+        request.budget_contract = Some(profile.budget_contract.clone());
+        if let (Some(cap), Some(contract)) = (request.output_token_cap, &mut request.budget_contract) {
+            contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(cap));
+        }
+
+        Ok(request)
+    }
+}
+
+#[allow(clippy::missing_fields_in_debug)]
+impl std::fmt::Debug for Orchestrator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Orchestrator")
+            .field("model", &self.llm_config.model)
+            .field("mcp", &"McpRegistry")
+            .finish()
+    }
+}
+
+impl Orchestrator {
+    async fn prepare_and_admit_tool(
+        &self,
+        model_tool_call_id: String,
+        descriptor: &crate::uar::tools::descriptor::ToolDescriptor,
+        validated_arguments: serde_json::Value,
+        call_index: usize,
+    ) -> Result<crate::uar::runtime::tool_admission::AdmittedToolInvocation, String> {
+        self.prepare_and_admit_tool_with_history(model_tool_call_id, descriptor,
+            validated_arguments, call_index, None).await
+    }
+
+    async fn prepare_and_admit_tool_with_history(
+        &self,
+        model_tool_call_id: String,
+        descriptor: &crate::uar::tools::descriptor::ToolDescriptor,
+        validated_arguments: serde_json::Value,
+        call_index: usize,
+        checkpoint_history: Option<Vec<Message>>,
+    ) -> Result<crate::uar::runtime::tool_admission::AdmittedToolInvocation, String> {
+        use crate::uar::runtime::tool_admission::{
+            HostAdmissionDisposition, LocalAdmissionDisposition, ToolApprovalRequest,
+        };
+
+        let admission_owner = self
+            .native_skills
+            .get(&descriptor.provider_name)
+            .await
+            .map_or(
+                crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
+                |handler| handler.admission_owner(),
+            );
+        let prepared = self.tool_admission.prepare_owned(
+            model_tool_call_id,
+            descriptor,
+            validated_arguments,
+            call_index,
+            admission_owner,
+        );
+        let host = self
+            .tool_admission
+            .prepare_host(Arc::clone(&prepared))
+            .await
+            .map_err(|error| format!("Host preparation failed: {error}"))?;
+        if host.host_disposition == HostAdmissionDisposition::Deny {
+            return Err("Tool call is denied by the host policy".to_string());
+        }
+        let request = ToolApprovalRequest {
+            invocation: Arc::clone(&prepared),
+            admission_id: host.admission_id.clone(),
+            host_requires_approval: host.host_disposition == HostAdmissionDisposition::Ask,
+            action_display: host.action_display.clone(),
+            checkpoint_history,
+        };
+        let local_disposition = match &self.tool_approval_gate {
+            Some(gate) => match gate(request).await {
+                ToolApprovalResult::Approved => LocalAdmissionDisposition::Approved,
+                ToolApprovalResult::Allowed => LocalAdmissionDisposition::Allowed,
+                ToolApprovalResult::GovernanceBypassed => {
+                    LocalAdmissionDisposition::GovernanceBypassed
+                }
+                ToolApprovalResult::Rejected { reason } => {
+                    self.tool_admission
+                        .resolve(
+                            prepared,
+                            host,
+                            LocalAdmissionDisposition::Denied,
+                            false,
+                        )
+                        .await
+                        .map_err(|error| format!("Host denial acknowledgment failed: {error}"))?;
+                    return Err(reason);
+                }
+                ToolApprovalResult::Cancelled { reason } => {
+                    self.tool_admission
+                        .cancel(
+                            prepared.as_ref(),
+                            &host.admission_id,
+                            crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
+                        )
+                        .await
+                        .map_err(|error| format!("Host cancellation failed: {error}"))?;
+                    return Err(reason);
+                }
+            },
+            None if host.host_disposition == HostAdmissionDisposition::Auto => {
+                LocalAdmissionDisposition::Allowed
+            }
+            None => {
+                self.tool_admission
+                    .cancel(
+                        prepared.as_ref(),
+                        &host.admission_id,
+                        crate::uar::runtime::tool_admission::AdmissionCancellationReason::Invalidated,
+                    )
+                    .await
+                    .map_err(|error| format!(
+                        "Unavailable approval channel could not invalidate host authority: {error}"
+                    ))?;
+                return Err("Tool call requires an unavailable approval channel".to_string());
+            }
+        };
+        let admitted = self.tool_admission
+            .resolve(prepared, host, local_disposition, true)
+            .await
+            .map_err(|error| format!("Host admission failed: {error}"))?
+            .ok_or_else(|| "Host did not authorize the tool invocation".to_string())?;
+        if self.tool_admission.claim(&admitted).await.is_err() {
+            let cancellation = self
+                .tool_admission
+                .cancel(
+                    admitted.prepared.as_ref(),
+                    &admitted.host_receipt.admission_id,
+                    crate::uar::runtime::tool_admission::AdmissionCancellationReason::Invalidated,
+                )
+                .await;
+            return Err(match cancellation {
+                Ok(_) => "Tool admission claim was refused or unconfirmed".to_string(),
+                Err(_) => "Tool admission claim and cancellation are unconfirmed".to_string(),
+            });
+        }
+        Ok(admitted)
+    }
+
+    /// The trusted host supplies data from a protected checkpoint. Every effect
+    /// still receives a new descriptor, preparation, decision, claim and receipt.
+    pub(crate) async fn execute_recovered_tool_call(
+        &self, call: &crate::llm::ToolCall, call_index: usize, history: Vec<Message>,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
+        let descriptors = self.assembled_descriptors().await?;
+        let descriptor = descriptors.get(&call.function.name)
+            .ok_or_else(|| anyhow::anyhow!("Recovered tool descriptor is unavailable"))?;
+        anyhow::ensure!(!self.requires_sandbox(descriptor), "Recovered tool requires unavailable sandbox renewal");
+        let arguments = validate::validate(&descriptor.validator, &call.function.arguments)?;
+        let admitted = self.prepare_and_admit_tool_with_history(call.id.clone(), descriptor, arguments, call_index, Some(history))
+            .await.map_err(anyhow::Error::msg)?;
+        let outcome = self.execute_direct_tool((1_u64 << 32) | call_index as u64, &admitted,
+            descriptor.output_limit.unwrap_or(self.tool_output_policy)).await;
+        self.finish_tool_execution(&admitted, outcome).await
+    }
+
+    /// Replace the complete canonical history after host recovery produced real results.
+    pub(crate) fn with_recovered_history(mut self, history: Vec<Message>) -> Self {
+        let unrendered = history.iter().filter(|message| message.role != MessageRole::System).cloned().collect::<Vec<_>>();
+        if let Some((_, shadow_history)) = &mut self.shadow_turn { *shadow_history = unrendered.clone(); }
+        self.canonical_history = Some(if self.destination_preparations.is_some() { unrendered } else { history });
+        self
+    }
+
+    async fn ensure_tool_dispatch(
+        &self,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+        execution_kind: ToolExecutionKind,
+    ) -> anyhow::Result<()> {
+        use crate::uar::runtime::tool_admission::AdmissionCancellationReason;
+        #[cfg(feature = "bauar-native-admission-gate")]
+        if self.native_admission_gate.checkpoint(admitted, execution_kind).await.is_err() {
+            let cancellation = self.tool_admission.cancel(
+                admitted.prepared.as_ref(), &admitted.host_receipt.admission_id,
+                AdmissionCancellationReason::Invalidated,
+            ).await;
+            return Err(ToolDispatchBlocked(if cancellation.is_err() {
+                "Native acceptance checkpoint failed; cancellation is unconfirmed"
+            } else {
+                "Native acceptance checkpoint failed"
+            }).into());
+        }
+        let (message, reason) = if admitted.prepared.execution_kind != execution_kind
+            || admitted.host_receipt.execution_kind != execution_kind
+        {
+            (
+                "Tool admission executor kind mismatch",
+                AdmissionCancellationReason::Invalidated,
+            )
+        } else if self.tool_admission.is_cancelled() {
+            #[cfg(feature = "bauar-native-admission-gate")]
+            self.native_admission_gate.observe_guard(admitted, true);
+            (
+                "Tool cancelled before dispatch",
+                AdmissionCancellationReason::Cancelled,
+            )
+        } else {
+            #[cfg(feature = "bauar-native-admission-gate")]
+            self.native_admission_gate.observe_guard(admitted, false);
+            return Ok(());
+        };
+        let cancellation = self.tool_admission
+            .cancel(admitted.prepared.as_ref(), &admitted.host_receipt.admission_id, reason)
+            .await;
+        Err(ToolDispatchBlocked(if cancellation.is_err() {
+            "Tool dispatch blocked; cancellation is unconfirmed"
+        } else {
+            message
+        })
+        .into())
+    }
+
+    async fn finish_tool_execution(
+        &self,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+        outcome: anyhow::Result<(String, String, ToolOutcome)>,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
+        if outcome.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
+            // Preserve the cancelled/unknown lifecycle; no body produced a
+            // terminal execution result to acknowledge to the host.
+            return outcome;
+        }
+        let succeeded = outcome.as_ref()
+            .map(|(_, _, outcome)| *outcome)
+            .unwrap_or(ToolOutcome::OutcomeUnknown);
+        self.tool_admission.finish_outcome(admitted, succeeded.into()).await
+            .map_err(|_| anyhow::anyhow!("Tool terminal receipt was not persisted"))?;
+        outcome
+    }
+
+    async fn execute_direct_tool(
+        &self,
+        sequence: u64,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+        output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
+        let call_id = admitted.prepared.model_tool_call_id.as_str();
+        let provider_name = admitted.prepared.provider_tool_name.as_str();
+        let arguments = &admitted.prepared.validated_arguments;
+        if let Some(native) = self.native_skills.get(provider_name).await {
+            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
+            let execution = match crate::uar::runtime::native_skill::execute_native(
+                Arc::clone(&native),
+                arguments.clone(),
+                &self.native_execution_context(call_id),
+            )
+            .await
+            {
+                Ok(execution) => execution,
+                Err(error) => {
+                    let content = self
+                        .preserve_terminal_tool_failure(
+                            sequence,
+                            call_id,
+                            provider_name,
+                            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native,
+                            error.to_string(),
+                        )
+                        .await?;
+                    return Ok((content.clone(), content, ToolOutcome::ApplicationFailed));
+                }
+            };
+            let source = if provider_name == "terminal_exec" {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Terminal
+            } else {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
+            };
+            let value = self
+                .preserve_canonical_tool_result(
+                    sequence,
+                    call_id,
+                    provider_name,
+                    source,
+                    ToolOutcome::Succeeded,
+                    execution.value,
+                    execution.canonical.raw_segments,
+                    execution.canonical.acquisition_complete,
+                    execution.canonical.observed_bytes,
+                )
+                .await?;
+            let canonical = serde_json::to_string(&value)?;
+            let display = native.format_result(&value, output_policy, &self.llm_config.model);
+            Ok((canonical, display, ToolOutcome::Succeeded))
+        } else {
+            let source = if self.mcp.is_native_tool(provider_name) {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
+            } else {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Mcp
+            };
+            let value = match self
+                .call_mcp_tool(admitted)
+                .await
+            {
+                Ok(value) => value,
+                Err(error) if error.is::<ToolDispatchBlocked>() => return Err(error),
+                Err(error) if self.mcp.is_native_tool(provider_name) => {
+                    let content = self.preserve_terminal_tool_failure(
+                        sequence, call_id, provider_name, source, error.to_string(),
+                    ).await?;
+                    return Ok((content.clone(), content, ToolOutcome::ApplicationFailed));
+                },
+                Err(error) => {
+                    return self.preserve_mcp_failure(sequence, call_id, provider_name, source, &error).await;
+                }
+            };
+            let value = self
+                .preserve_canonical_tool_result(
+                    sequence,
+                    call_id,
+                    provider_name,
+                    source,
+                    ToolOutcome::Succeeded,
+                    value,
+                    Vec::new(),
+                    true,
+                    0,
+                )
+                .await?;
+            let canonical = serde_json::to_string(&value)?;
+            let display = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                &canonical,
+                output_policy,
+                &self.llm_config.model,
+            );
+            Ok((canonical, display, ToolOutcome::Succeeded))
+        }
+    }
+
+    /// Create a new orchestrator with the given LLM config, MCP registry, and native skill registry.
+    ///
+    /// Uses `LiterLlmDriver` backed by liter-llm's `DefaultClient` for all
+    /// 142+ providers with unified tool-call normalization.
+    /// # Errors
+    ///
+    /// Returns an error if the underlying LLM client cannot be constructed.
+    #[allow(dead_code)]
+    pub fn new(
+        llm_config: LlmConfig,
+        mcp: Arc<McpRegistry>,
+        native_skills: Arc<NativeSkillRegistry>,
+    ) -> anyhow::Result<Self> {
+        let mut capture = crate::uar::runtime::turn::host::RunSecretScrubber::default();
+        let driver = build_driver_captured(&llm_config, &mut capture)?;
+        Ok(Self::from_driver(llm_config, mcp, native_skills, driver).with_secret_scrubber(capture))
+    }
+
+    /// Create a new orchestrator with a host-supplied LLM driver.
+    ///
+    /// This is the embedding seam for environments that own a local model
+    /// runtime outside UAR, such as KnowMe mobile. UAR still owns the agent
+    /// loop, tool governance, skills, and normalized events; the host-supplied
+    /// driver only provides model streaming.
+    #[must_use]
+    pub fn from_driver(
+        llm_config: LlmConfig,
+        mcp: Arc<McpRegistry>,
+        native_skills: Arc<NativeSkillRegistry>,
+        driver: Arc<dyn LlmDriver>,
+    ) -> Self {
+        Self {
+            llm_config,
+            mcp,
+            driver,
+            fallback_drivers: Vec::new(),
+            failover_config: FailoverConfig::default(),
+            health_monitor: None,
+            native_skills,
+            tool_approval_gate: None,
+            tool_admission: Arc::new(
+                crate::uar::runtime::tool_admission::ToolAdmissionRuntime::standalone_ephemeral(),
+            ),
+            #[cfg(feature = "bauar-native-admission-gate")]
+            native_admission_gate: Arc::new(Default::default()),
+            sandbox_runner: None,
+            sandbox_scope: None,
+            terminal_scope: None,
+            artifact_collector: None,
+            thread_policy: None,
+            tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode::default(),
+            resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
+            tool_output_policy: crate::uar::runtime::context::truncate::TruncationPolicy::default(),
+            cache_strategy: None,
+            request_budget_contract: None,
+            destination_preparations: None,
+            endpoint_settings_profiles: BTreeMap::new(),
+            canonical_history: None,
+            canonical_fragments: None,
+            protected_continuity: None,
+            skill_activation: None,
+            resolved_turn: None,
+            mcp_preflight: None,
+            shadow_turn: None,
+            world_state: None,
+            canonical_receipt_store: None,
+            secret_scrubber: Default::default(),
+            team_model_handoff: None,
+            client_graph_state: None,
+            client_tool_budget: None,
+        }
+    }
+
+    /// Share host-owned activations without persisting their reclaimable bodies
+    /// in the history that compaction summarizes.
+    #[must_use]
+    pub(crate) fn with_team_model_handoff(mut self,binding:Option<crate::uar::runtime::turn::CollaborationRunBinding>)->Self{self.team_model_handoff=binding;self}
+
+    pub fn with_skill_activation(
+        mut self,
+        context: Arc<
+            tokio::sync::Mutex<crate::uar::runtime::skills::activation::ActivationContext>,
+        >,
+        strategy: crate::uar::context::ContextStrategy,
+        model: String,
+        context_limit: usize,
+        budget: crate::config::SkillReattachmentBudget,
+    ) -> Self {
+        self.skill_activation = Some(SkillActivationRuntime {
+            context,
+            strategy,
+            model,
+            context_limit,
+            budget,
+        });
+        self
+    }
+
+    /// Attach a trusted-host-resolved final-wire budget contract to every
+    /// request preparation performed by this orchestrator.
+    #[must_use]
+    pub fn with_request_budget_contract(
+        mut self,
+        contract: crate::uar::runtime::context::budget::RequestBudgetContract,
+    ) -> Self {
+        self.request_budget_contract = Some(contract);
+        self
+    }
+
+    /// Attach exact destination contracts and the immutable canonical history
+    /// from which every initial, retry, failover, graph, resume and loop request
+    /// is prepared.
+    #[must_use]
+    pub fn with_destination_preparations(
+        mut self,
+        preparations: Arc<DestinationRequestPreparations>,
+        canonical_history: Vec<Message>,
+        canonical_fragments: Vec<crate::uar::runtime::prompt::PromptFragment>,
+    ) -> Self {
+        self.destination_preparations = Some(preparations);
+        self.canonical_history = Some(canonical_history);
+        self.canonical_fragments = Some(canonical_fragments);
+        self
+    }
+
+    /// Bind opaque provider continuity retained by the trusted host.
+    #[must_use]
+    pub fn with_protected_continuity(mut self, continuity: ProtectedContinuity) -> Self {
+        self.protected_continuity = Some(continuity);
+        self
+    }
+
+    #[must_use]
+    pub fn with_endpoint_settings_profiles(
+        mut self, profiles: BTreeMap<String, super::EndpointRequestProfile>,
+    ) -> Self {
+        self.endpoint_settings_profiles = profiles;
+        self
+    }
+
+    fn prepare_attempt(
+        &self,
+        model: &str,
+        mut request: LlmRequest,
+        canonical_messages: &[serde_json::Value],
+        fragments: &[crate::uar::runtime::prompt::PromptFragment],
+    ) -> anyhow::Result<LlmRequest> {
+        for message in &mut request.messages { self.secret_scrubber.project_message_json(message); }
+        let mut canonical_messages = canonical_messages.to_vec();
+        for message in &mut canonical_messages { self.secret_scrubber.project_message_json(message); }
+        let mut fragments = fragments.to_vec();
+        self.secret_scrubber.project_fragments(&mut fragments);
+        if !self.endpoint_settings_profiles.is_empty() {
+            let profile = self.endpoint_settings_profiles.get(model)
+                .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+            anyhow::ensure!(profile.qualified_model == model, "TEAM_ROUTE_PROFILE_MISMATCH");
+            // The registered narrow profile has only off reasoning. Never inject
+            // family or multi-turn parameters into this captured destination.
+            request.extra_params = None;
+            request.thinking_config = None;
+            request.budget_contract = None;
+            return Ok(request);
+        }
+        match &self.destination_preparations {
+            Some(preparations) => preparations.prepare(
+                model,
+                request,
+                &canonical_messages,
+                &fragments,
+                self.protected_continuity.as_ref(),
+            ),
+            None => Ok(request),
+        }
+    }
+
+    /// Only public turn inference gets the caller's output contract. Private
+    /// summarization/title inference continues to use prepare_attempt directly.
+    fn prepare_user_attempt(
+        &self,
+        model: &str,
+        request: LlmRequest,
+        canonical_messages: &[serde_json::Value],
+        fragments: &[crate::uar::runtime::prompt::PromptFragment],
+    ) -> anyhow::Result<LlmRequest> {
+        let mut request = self.prepare_attempt(model, request, canonical_messages, fragments)?;
+        if let Some(format) = self.resolved_turn.as_ref().and_then(|turn| turn.response_format()) {
+            format.validate()?;
+            // The native Anthropic driver has no response-format wire field.
+            // Do not let its ignored extra_params become a successful fallback.
+            let provider = if model == self.llm_config.model {
+                self.llm_config.host_provider_kind.as_deref()
+                    .or(self.llm_config.resolved_provider_id.as_deref())
+                    .unwrap_or_else(|| super::detect_provider(model))
+            } else { super::detect_provider(model) };
+            anyhow::ensure!(!format.is_structured() || provider != "anthropic",
+                "provider capability error: response_format is unsupported by the captured Anthropic path");
+            let projected = self.secret_scrubber.project_json_text(&serde_json::to_string(format)?);
+            let projected: super::response_format::ResponseFormat = serde_json::from_str(&projected)?;
+            projected.validate()?;
+            request.extra_params.get_or_insert_with(|| serde_json::json!({}))
+                .as_object_mut().ok_or_else(|| anyhow::anyhow!("Request parameters must be an object"))?
+                .insert("response_format".into(), serde_json::to_value(projected)?);
+        }
+        Ok(request)
+    }
+
+    fn attempt_manifest(&self, model: &str, request: &LlmRequest) -> serde_json::Value {
+        if let Some(profile) = self.endpoint_settings_profiles.get(model) {
+            return serde_json::json!({
+                "schema_version": "uar.attempt-manifest.v1",
+                "destination_model": model, "wire_model_alias": profile.wire_model,
+                "profile": {"id":profile.profile_id,"revision":profile.profile_revision},
+                "settings_revision":profile.settings_revision,
+                "reasoning":{"mode":"off"},
+                "budgeting":{"label":"settings-only","contract_present":false,"fit_guarantee":false},
+            });
+        }
+        match &self.destination_preparations {
+            Some(preparations) => {
+                let preparation = preparations.profiles.get(model);
+                serde_json::json!({
+                    "schema_version": "uar.attempt-manifest.v1",
+                    "destination_model": model,
+                    "budgeting": {
+                        "label": "budgeted",
+                        "contract_present": request.budget_contract.is_some(),
+                        "fit_guarantee": false,
+                        "counting_scope": "host-reviewed final-wire contract; fit is checked by the destination driver",
+                    },
+                    "template": preparation.map(|profile| serde_json::json!({
+                        "id": profile.template.id,
+                        "revision": profile.template.revision,
+                        "wire_contract_id": profile.template.wire_contract_id,
+                    })),
+                    "request_profile_revision": preparation
+                        .map(|profile| profile.request_profile.profile_revision.clone()),
+                })
+            }
+            None => serde_json::json!({
+                "schema_version": "uar.attempt-manifest.v1",
+                "destination_model": model,
+                "budgeting": {
+                    "label": "legacy_unbudgeted",
+                    "contract_present": false,
+                    "fit_guarantee": false,
+                },
+                "warning": "Provider dispatch is using the legacy unbudgeted path",
+            }),
+        }
+    }
+
+    fn provider_failure(&self, error: &anyhow::Error, streaming: bool) -> NormalizedEvent {
+        if !self.endpoint_settings_profiles.is_empty() {
+            let diagnostic = super::team_failure::diagnostic(error, streaming);
+            tracing::warn!(code = diagnostic.code.as_str(),
+                diagnostic_reference = diagnostic.protected_diagnostic_ref.as_deref(),
+                provider_error_kind = super::ProviderError::from_anyhow(error)
+                    .map_or("provider_error", super::ProviderError::code),
+                source_stage = diagnostic.source_stage.as_deref(),
+                category = diagnostic.category.as_deref(),
+                http_status = diagnostic.http_status,
+                collaboration_code = diagnostic.collaboration_code.as_deref(),
+                "Captured safe team provider failure");
+            return NormalizedEvent::Error {
+                message: super::team_failure::reason(&diagnostic),
+                code: Some(diagnostic.code),
+            };
+        }
+        if let Some((code, message)) = crate::uar::runtime::cost_budget::client_failure(error) {
+            return NormalizedEvent::Error { message, code: Some(code.to_owned()) };
+        }
+        NormalizedEvent::Error {
+            message: self.secret_scrubber.scrub(&error.to_string()),
+            code: Some(super::ProviderError::from_anyhow(error)
+                .map_or("provider_error", super::ProviderError::code).to_owned()),
+        }
+    }
+
+    fn provider_log_summary(&self, error: &anyhow::Error) -> String {
+        if self.endpoint_settings_profiles.is_empty() { self.secret_scrubber.scrub(&error.to_string()) }
+        else { super::ProviderError::from_anyhow(error)
+            .map_or("provider_error", super::ProviderError::code).to_owned() }
+    }
+
+    #[must_use]
+    pub fn with_resolved_turn(
+        mut self,
+        turn: Arc<crate::uar::runtime::turn::ResolvedTurn>,
+    ) -> Self {
+        self.resolved_turn = Some(turn);
+        self
+    }
+
+    pub(crate) fn with_client_tool_budget(mut self, budget: Arc<crate::uar::runtime::cost_budget::ModelCallBudget>) -> Self {
+        self.client_tool_budget = Some(budget);
+        self
+    }
+
+    pub(crate) fn with_client_graph_state(mut self, state: serde_json::Value) -> Self {
+        self.client_graph_state = Some(state);
+        self
+    }
+
+    /// Persist pre-format tool results through the trusted host's run store.
+    #[must_use]
+    pub fn with_canonical_receipt_store(
+        mut self,
+        store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    ) -> Self {
+        self.canonical_receipt_store = store;
+        self
+    }
+
+    #[must_use]
+    pub fn with_secret_scrubber(mut self, capture: crate::uar::runtime::turn::host::RunSecretScrubber) -> Self {
+        self.secret_scrubber.extend(capture);
+        self
+    }
+
+    async fn preserve_canonical_tool_result(
+        &self,
+        sequence: u64,
+        call_id: &str,
+        tool: &str,
+        source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        outcome: ToolOutcome,
+        value: serde_json::Value,
+        raw_segments: Vec<crate::uar::persistence::agent_threads::CanonicalRawSegment>,
+        acquisition_complete: bool,
+        observed_bytes: u64,
+    ) -> anyhow::Result<serde_json::Value> {
+        let projected = self.secret_scrubber.project_receipt(value, raw_segments)?;
+        let Some(store) = &self.canonical_receipt_store else {
+            return Ok(projected.value);
+        };
+        let turn = self
+            .resolved_turn
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Canonical receipt store has no resolved turn"))?;
+        let mut receipt =
+            crate::uar::persistence::agent_threads::CanonicalToolReceipt::acquire_with_segments(
+                turn.environment().owner_id.clone(),
+                turn.environment().run_id.clone(),
+                sequence,
+                call_id,
+                tool,
+                source,
+                projected.value,
+                projected.raw_segments,
+                acquisition_complete,
+                observed_bytes,
+            )?;
+        receipt.principal_key = turn.verified_owner()
+            .and_then(|owner| owner.credential_principal()).map(|principal| principal.storage_key());
+        receipt.outcome = Some(outcome);
+        receipt.secret_projection = Some(projected.secret_projection);
+        let stored = store.save_canonical_tool_receipt(&receipt).await?;
+        stored.typed_value.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Canonical tool result was not retained: {:?}",
+                stored.completeness
+            )
+        })
+    }
+
+    async fn preserve_terminal_tool_failure(
+        &self,
+        sequence: u64,
+        call_id: &str,
+        tool: &str,
+        source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        error: String,
+    ) -> anyhow::Result<String> {
+        let value = serde_json::json!({
+            "status": "error",
+            "tool_call_id": call_id,
+            "tool": tool,
+            "provenance": {
+                "source": source,
+                "terminal_state": "failed",
+                "observed_by": "trusted_host"
+            },
+            "message": error,
+        });
+        let stored = self
+            .preserve_canonical_tool_result(
+                sequence,
+                call_id,
+                tool,
+                source,
+                ToolOutcome::ApplicationFailed,
+                value,
+                Vec::new(),
+                true,
+                0,
+            )
+            .await?;
+        serde_json::to_string(&stored).map_err(Into::into)
+    }
+
+    async fn preserve_mcp_failure(
+        &self,
+        sequence: u64,
+        call_id: &str,
+        tool: &str,
+        source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        error: &anyhow::Error,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
+        let failure = McpToolFailure::find(error);
+        let outcome = failure.map_or(ToolOutcome::TransportFailed, |failure| failure.outcome);
+        let value = serde_json::json!({
+            "status": "error",
+            "outcome": outcome,
+            "tool_call_id": call_id,
+            "tool": tool,
+            "provenance": {
+                "source": source,
+                "terminal_state": if outcome == ToolOutcome::OutcomeUnknown { "outcome_unknown" } else { "failed" },
+                "observed_by": "trusted_host"
+            },
+            "result": failure.and_then(|failure| failure.result.as_ref()),
+            "message": match outcome {
+                ToolOutcome::ApplicationFailed => "MCP application failure",
+                ToolOutcome::OutcomeUnknown => "MCP response lost after dispatch; reconcile before another attempt",
+                _ => "MCP failed before dispatch",
+            },
+        });
+        let stored = self
+            .preserve_canonical_tool_result(
+                sequence,
+                call_id,
+                tool,
+                source,
+                outcome,
+                value,
+                Vec::new(),
+                true,
+                0,
+            )
+            .await?;
+        let content = serde_json::to_string(&stored)?;
+        Ok((content.clone(), content, outcome))
+    }
+
+    fn canonical_source_for(
+        tool: &str,
+        descriptor: &crate::uar::tools::descriptor::ToolDescriptor,
+    ) -> crate::uar::persistence::agent_threads::CanonicalReceiptSource {
+        if tool == "terminal_exec" {
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Terminal
+        } else if descriptor.source == crate::uar::tools::descriptor::ToolSource::Mcp {
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Mcp
+        } else {
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
+        }
+    }
+
+    /// Use the host-prepared projection for all MCP advertisement and execution.
+    /// Native implementations remain in their existing governed registries.
+    #[must_use]
+    pub fn with_mcp_preflight(
+        mut self,
+        preflight: Arc<crate::mcp::preflight::McpPreflight>,
+    ) -> Self {
+        self.mcp_preflight = Some(preflight);
+        self
+    }
+
+    async fn call_mcp_tool(
+        &self,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+    ) -> anyhow::Result<serde_json::Value> {
+        let call_id = admitted.prepared.model_tool_call_id.as_str();
+        let name = admitted.prepared.provider_tool_name.as_str();
+        let arguments = admitted.prepared.validated_arguments.clone();
+        if self.mcp.is_native_tool(name) {
+            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
+            return self
+                .mcp
+                .call_native_with_context(name, arguments, &self.native_execution_context(call_id))
+                .await;
+        }
+        self.ensure_tool_dispatch(admitted, ToolExecutionKind::HostMcp).await?;
+        if let Some(preflight) = &self.mcp_preflight
+            && !self.mcp.is_native_tool(name)
+        {
+            return preflight
+                .call_tool(
+                    name,
+                    arguments,
+                    admitted.host_receipt.mcp_request_meta(),
+                )
+                .await;
+        }
+        self.mcp
+            .call_namespaced_tool_with_meta(
+                name,
+                arguments,
+                admitted.host_receipt.mcp_request_meta(),
+            )
+            .await
+    }
+
+    /// Execute a graph's explicit MCP operation at the same trusted boundary
+    /// as a model tool call. Graph state supplies arguments, never authority.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) async fn execute_graph_mcp_tool(
+        &self,
+        run_id: &str,
+        step: u32,
+        name: &str,
+        arguments: serde_json::Value,
+        events: &dyn crate::uar::domain::events::RuntimeEventSink,
+        cancellation: &tokio_util::sync::CancellationToken,
+    ) -> anyhow::Result<String> {
+        use crate::uar::domain::events::NormalizedEvent as RuntimeEvent;
+        anyhow::ensure!(!cancellation.is_cancelled(), "Graph tool host is closed");
+        let turn = self
+            .resolved_turn
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Graph tool host has no resolved turn"))?;
+        anyhow::ensure!(
+            turn.environment().run_id == run_id,
+            "Graph tool belongs to another run"
+        );
+        let mut host = self.clone();
+        if let Some(activation) = &self.skill_activation {
+            let context = activation.context.lock().await;
+            host.mcp = Arc::new(context.mcp().clone());
+            host.mcp_preflight = context.mcp_preflight().cloned();
+        }
+        if let Some(preflight) = &host.mcp_preflight {
+            anyhow::ensure!(
+                turn.verified_owner() == Some(preflight.owner()),
+                "Graph MCP binding belongs to another owner"
+            );
+        }
+        let descriptors = host.assembled_descriptors().await?;
+        let descriptor = descriptors
+            .get(name)
+            .ok_or_else(|| anyhow::anyhow!("Graph tool is absent from the captured projection"))?;
+        anyhow::ensure!(
+            descriptor.source == crate::uar::tools::descriptor::ToolSource::Mcp
+                || host.mcp.is_native_tool(name),
+            "Graph tool is not an MCP registry operation"
+        );
+        anyhow::ensure!(
+            !matches!(descriptor.exposure, Exposure::Hidden | Exposure::ModelOnly),
+            "Graph tool is not exposed to host callers"
+        );
+        anyhow::ensure!(
+            !host.requires_sandbox(descriptor),
+            "Graph MCP operation has no sandbox execution adapter"
+        );
+        let arguments_json = serde_json::to_string(&arguments)?;
+        let arguments = validate::validate(&descriptor.validator, &arguments_json)?;
+        let call_id = Uuid::new_v4().to_string();
+        anyhow::ensure!(
+            host.tool_approval_gate.is_some(),
+            "Graph tool host has no approval gate"
+        );
+        let admitted = host
+            .prepare_and_admit_tool(
+                call_id.clone(),
+                descriptor,
+                arguments.clone(),
+                step as usize,
+            )
+            .await
+            .map_err(|reason| anyhow::anyhow!("Graph tool rejected: {reason}"))?;
+        events
+            .emit(RuntimeEvent::ToolStart {
+                run_id: run_id.to_owned(),
+                call_index: step as usize,
+                tool_call_id: call_id.clone(),
+                tool: name.to_owned(),
+                input: arguments.clone(),
+            })
+            .await;
+        // ToolStart publication awaits the event sink. Revocation during that
+        // await must not turn shutdown's drain into a new external operation.
+        let result = if cancellation.is_cancelled() {
+            host.tool_admission.cancel(
+                admitted.prepared.as_ref(),
+                &admitted.host_receipt.admission_id,
+                crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
+            ).await?;
+            Err(ToolDispatchBlocked("Graph tool cancelled before dispatch").into())
+        } else {
+            host.call_mcp_tool(&admitted).await
+        };
+        if result.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
+            return Err(anyhow::anyhow!("Graph tool dispatch was blocked before execution"));
+        }
+        let (canonical_content, execution_outcome) = match result {
+            Ok(result) => match host
+                .preserve_canonical_tool_result(
+                    u64::from(step) << 32,
+                    &call_id,
+                    name,
+                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
+                    ToolOutcome::Succeeded,
+                    result,
+                    Vec::new(),
+                    true,
+                    0,
+                )
+                .await
+            {
+                Ok(result) => (serde_json::to_string(&result)?, ToolOutcome::Succeeded),
+                Err(error) => (format!("Canonical receipt error: {error}"), ToolOutcome::OutcomeUnknown),
+            },
+            Err(error) => {
+                let (canonical, _, outcome) = host.preserve_mcp_failure(
+                    u64::from(step) << 32, &call_id, name,
+                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
+                    &error,
+                ).await?;
+                (canonical, outcome)
+            },
+        };
+        host.tool_admission
+            .finish_outcome(&admitted, execution_outcome.into())
+            .await
+            .map_err(|error| anyhow::anyhow!(
+                "Graph tool terminal receipt was not persisted: {error}"
+            ))?;
+        let display_content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+            &canonical_content,
+            descriptor.output_limit.unwrap_or(host.tool_output_policy),
+            &host.llm_config.model,
+        );
+        events
+            .emit(RuntimeEvent::ToolEnd {
+                run_id: run_id.to_owned(),
+                call_index: step as usize,
+                tool_call_id: call_id,
+                tool: name.to_owned(),
+                output: serde_json::Value::String(display_content.clone()),
+                ok: execution_outcome.succeeded(),
+            })
+            .await;
+        anyhow::ensure!(execution_outcome.succeeded(), "{display_content}");
+        Ok(canonical_content)
+    }
+
+    #[must_use]
+    pub fn with_shadow_turn(
+        mut self,
+        turn: Arc<crate::uar::runtime::turn::ResolvedTurn>,
+        history: Vec<Message>,
+    ) -> Self {
+        self.shadow_turn = Some((turn, history));
+        self
+    }
+
+    /// Attach the host-owned world state for reduction and governed file reads.
+    pub fn with_world_state(
+        mut self,
+        state: Arc<crate::uar::runtime::world_state::runtime::WorldStateRuntime>,
+    ) -> Self {
+        self.world_state = Some(state);
+        self
+    }
+
+    fn native_execution_context(
+        &self,
+        call_id: &str,
+    ) -> crate::uar::runtime::native_skill::NativeExecutionContext {
+        crate::uar::runtime::native_skill::NativeExecutionContext {
+            presentations: self
+                .resolved_turn
+                .as_ref()
+                .and_then(|turn| turn.presentations().cloned())
+                .map(|snapshot| {
+                    crate::uar::runtime::native_skill::PresentationExecutionContext::new(
+                        snapshot, call_id,
+                    )
+                }),
+            verified_owner: self
+                .resolved_turn
+                .as_ref()
+                .and_then(|turn| turn.verified_owner().cloned()),
+            session_id: self
+                .resolved_turn
+                .as_ref()
+                .map(|turn| turn.environment().session_id.clone()),
+            thread_policy: self.thread_policy.clone(),
+            terminal_scope: self.terminal_scope.clone(),
+            artifact_collector: self.artifact_collector.clone(),
+            project_instructions: self
+                .world_state
+                .as_ref()
+                .map(|state| Arc::clone(&state.instructions)),
+        }
+    }
+
+    async fn assembled_descriptors(&self) -> anyhow::Result<BTreeMap<String, Arc<ToolDescriptor>>> {
+        let mut descriptors = BTreeMap::<String, Arc<ToolDescriptor>>::new();
+        let mut mcp_descriptors = self.mcp.descriptors();
+        if let Some(preflight) = &self.mcp_preflight {
+            mcp_descriptors
+                .retain(|tool| tool.source != crate::uar::tools::descriptor::ToolSource::Mcp);
+            mcp_descriptors.extend(
+                preflight
+                    .projection()
+                    .tools()
+                    .values()
+                    .map(|tool| Arc::clone(tool.descriptor())),
+            );
+        }
+        for descriptor in mcp_descriptors
+            .into_iter()
+            .chain(self.native_skills.descriptors().await)
+        {
+            if let Some(existing) = descriptors.get(&descriptor.provider_name) {
+                if !existing.equivalent_to(&descriptor) {
+                    return Err(ToolCollision {
+                        provider_name: descriptor.provider_name.clone(),
+                    }
+                    .into());
+                }
+            } else {
+                descriptors.insert(descriptor.provider_name.clone(), descriptor);
+            }
+        }
+        Ok(descriptors)
+    }
+
+    /// Attach one fallback driver and failover configuration.
+    ///
+    /// When `failover_config.enabled` is `true` and the primary driver fails,
+    /// the orchestrator will re-try the same request against the fallback.
+    /// This compatibility helper uses the first configured fallback model.
+    #[must_use]
+    pub fn with_failover(
+        self,
+        fallback_driver: Arc<dyn LlmDriver>,
+        failover_config: FailoverConfig,
+    ) -> Self {
+        let model = failover_config.fallback_models.first().map_or_else(
+            || "external/fallback".to_string(),
+            |fallback| fallback.model.clone(),
+        );
+        self.with_failovers(vec![(model, fallback_driver)], failover_config)
+    }
+
+    /// Attach an ordered set of fallback model drivers.
+    #[must_use]
+    pub fn with_failovers(
+        mut self,
+        fallback_drivers: Vec<(String, Arc<dyn LlmDriver>)>,
+        failover_config: FailoverConfig,
+    ) -> Self {
+        self.fallback_drivers = fallback_drivers
+            .into_iter()
+            .map(|(model, driver)| FailoverTarget {
+                provider_id: super::registry::split_model_string_pub(&model).0,
+                model,
+                driver,
+            })
+            .collect();
+        self.failover_config = failover_config;
+        self
+    }
+
+    /// Attach the shared provider-health monitor (CH-03). Driver
+    /// successes/failures are recorded against it so `ModelRouter` and
+    /// `ProviderRegistry::resolve_to_llm_config` see the outcome on the very
+    /// next call.
+    #[must_use]
+    pub fn with_health_monitor(
+        mut self,
+        health_monitor: Arc<super::health::ProviderHealthMonitor>,
+    ) -> Self {
+        self.health_monitor = Some(health_monitor);
+        self
+    }
+
+    /// Build a driver for one `FailoverConfig::fallback_models` entry, reusing
+    /// `base_llm_config` for every field except `model`/`api_key`/`base_url`
+    /// (CH-03). Used by callers wiring `with_failover` from app config.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying LLM client cannot be constructed.
+    pub fn build_fallback_driver(
+        base_llm_config: &LlmConfig,
+        fallback: &FallbackModel,
+    ) -> anyhow::Result<Arc<dyn LlmDriver>> {
+        let fallback_llm_config = Self::fallback_llm_config(base_llm_config, fallback);
+        build_driver(&fallback_llm_config)
+    }
+
+    pub(crate) fn fallback_llm_config(base: &LlmConfig, fallback: &FallbackModel) -> LlmConfig {
+        let mut config = base.clone();
+        config.model.clone_from(&fallback.model);
+        config.resolved_provider_id = None;
+        config.api_key.clone_from(&fallback.api_key);
+        config.base_url.clone_from(&fallback.base_url);
+        config
+    }
+
+    /// Get the LLM configuration.
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn llm_config(&self) -> &LlmConfig {
+        &self.llm_config
+    }
+
+    /// Get the MCP registry.
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn mcp(&self) -> &McpRegistry {
+        &self.mcp
+    }
+
+    /// Set a tool approval gate that will be consulted before each tool call.
+    #[must_use]
+    pub fn with_tool_approval_gate(mut self, gate: ToolApprovalGate) -> Self {
+        self.tool_approval_gate = Some(gate);
+        self
+    }
+
+    /// Attach the run's host-bound exact-invocation admission service.
+    #[must_use]
+    pub fn with_tool_admission(
+        mut self,
+        admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
+    ) -> Self {
+        self.tool_admission = admission;
+        self
+    }
+
+    /// Observer for the separately compiled acceptance sidecar's finalizer.
+    #[cfg(feature = "bauar-native-admission-gate")]
+    pub(crate) fn native_admission_gate(&self) -> Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver> {
+        Arc::clone(&self.native_admission_gate)
+    }
+
+    /// Attach a sandbox runner and execution mode for tool isolation.
+    ///
+    /// Sandboxed mode requires isolation for every tool; Auto requires it for
+    /// code-execution tools. A descriptor's sandbox requirement always applies.
+    /// Missing isolation or an unsupported tool adapter returns a failed result
+    /// and never falls through to direct native/MCP execution.
+    #[must_use]
+    pub fn with_sandbox(
+        mut self,
+        runner: Arc<dyn crate::sandbox::SandboxRunner>,
+        mode: crate::uar::domain::artifact::ToolExecutionMode,
+    ) -> Self {
+        self.sandbox_runner = Some(runner);
+        self.tool_execution_mode = mode;
+        self
+    }
+
+    /// Apply the artifact's execution mode even when no sandbox is available.
+    /// Absence of a runner is not permission to discard an isolation policy.
+    #[must_use]
+    pub fn with_tool_execution_mode(
+        mut self,
+        mode: crate::uar::domain::artifact::ToolExecutionMode,
+    ) -> Self {
+        self.tool_execution_mode = mode;
+        self
+    }
+
+    /// Bind the host-owned operation scope. The host must retain its lease and
+    /// drain it before terminal completion; an unowned runner cannot execute.
+    #[must_use]
+    pub fn with_sandbox_scope(mut self, scope: crate::sandbox::execution::SandboxRun) -> Self {
+        self.sandbox_scope = Some(scope);
+        self
+    }
+
+    /// Attach the trusted host's terminal lifetime scope after run admission.
+    pub(crate) fn with_terminal_scope(
+        mut self,
+        scope: crate::uar::tools::terminal_process::TerminalRun,
+    ) -> Self {
+        self.terminal_scope = Some(scope);
+        self
+    }
+
+    /// Retain the exact actor invocation's structured-output receipt.
+    pub(crate) fn with_artifact_collector(
+        mut self,
+        collector: Option<crate::uar::runtime::thread::artifacts::RunArtifactCollector>,
+    ) -> Self {
+        self.artifact_collector = collector;
+        self
+    }
+
+    /// Retain the host-intersected authority for direct native tool calls.
+    pub(crate) fn with_thread_policy(
+        mut self,
+        policy: Arc<crate::uar::runtime::thread::policy_intersection::ThreadPolicy>,
+    ) -> Self {
+        self.thread_policy = Some(policy);
+        self
+    }
+
+    fn requires_sandbox(&self, descriptor: &crate::uar::tools::descriptor::ToolDescriptor) -> bool {
+        use crate::uar::domain::artifact::ToolExecutionMode;
+        descriptor.sandbox_required
+            || match self.tool_execution_mode {
+                ToolExecutionMode::Direct => false,
+                ToolExecutionMode::Sandboxed => true,
+                ToolExecutionMode::Auto => descriptor.effect == ToolEffect::CodeExecution,
+            }
+    }
+
+    /// Apply bounded provider retry and stream-start policy to this run.
+    #[must_use]
+    pub fn with_resilience_policy(
+        mut self,
+        policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    ) -> Self {
+        self.resilience_policy = policy;
+        self
+    }
+
+    /// Set the bound applied to every recorded tool result.
+    #[must_use]
+    pub fn with_tool_output_policy(
+        mut self,
+        policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+    ) -> Self {
+        self.tool_output_policy = policy;
+        self
+    }
+
+    /// Apply the effective prompt-caching strategy to every policy-bearing
+    /// request created by this orchestrator, including retries and failover.
+    #[must_use]
+    pub fn with_cache_strategy(mut self, strategy: Option<CacheStrategy>) -> Self {
+        self.cache_strategy = strategy;
+        self
+    }
+
+    /// Start a chat interaction with the given user message.
+    ///
+    /// Returns a stream of [`NormalizedEvent`]s that includes:
+    /// - `StreamStart` with a unique request ID
+    /// - `MessageDelta` for assistant text
+    /// - `ToolCallDelta` and `ToolCallComplete` for tool calls
+    /// - `ToolResult` after tool execution
+    /// - `Done` when complete
+    ///
+    /// The orchestrator will automatically execute tool calls and feed
+    /// results back to the LLM until a final response is produced.
+    #[allow(dead_code)]
+    pub async fn chat(
+        &self,
+        user_message: &str,
+    ) -> anyhow::Result<impl Stream<Item = NormalizedEvent> + Send> {
+        self.chat_with_history(vec![Message {
+            role: MessageRole::User,
+            content: MessageContent::text(user_message),
+            tool_call_id: None,
+            tool_calls: None,
+        }])
+        .await
+    }
+
+    /// Start a chat interaction with existing message history.
+    pub(crate) async fn graph_chat_with_history(
+        &self,
+        run_id: &str,
+        messages: Vec<Message>,
+        cancellation: &tokio_util::sync::CancellationToken,
+    ) -> anyhow::Result<impl Stream<Item = NormalizedEvent> + Send + 'static> {
+        anyhow::ensure!(
+            self.resolved_turn
+                .as_ref()
+                .is_some_and(|turn| { turn.environment().run_id == run_id }),
+            "Graph model turn belongs to another run"
+        );
+        anyhow::ensure!(
+            !cancellation.is_cancelled(),
+            "Graph model turn is cancelled"
+        );
+        let gate = self
+            .tool_approval_gate
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("Graph model turn has no host approval gate"))?;
+        let cancellation = cancellation.clone();
+        let mut host = self.clone();
+        host.tool_approval_gate = Some(Arc::new(move |invocation| {
+            let gate = Arc::clone(&gate);
+            let cancellation = cancellation.clone();
+            Box::pin(async move {
+                if cancellation.is_cancelled() {
+                    return ToolApprovalResult::Cancelled {
+                        reason: "Graph model turn is cancelled".into(),
+                    };
+                }
+                let decision = gate(invocation).await;
+                if cancellation.is_cancelled() {
+                    ToolApprovalResult::Cancelled {
+                        reason: "Graph model turn is cancelled".into(),
+                    }
+                } else {
+                    decision
+                }
+            })
+        }));
+        host.chat_with_history_mode(messages, true).await
+    }
+
+    /// Start a chat interaction with existing message history.
+    pub async fn chat_with_history(
+        &self,
+        messages: Vec<Message>,
+    ) -> anyhow::Result<impl Stream<Item = NormalizedEvent> + Send + 'static + use<>> {
+        self.chat_with_history_mode(messages, false).await
+    }
+
+    /// Captured graph capabilities cannot enter the legacy ungoverned remote
+    /// adapter. This is not an authorization handshake with an A2A peer.
+    pub(crate) fn check_graph_remote_compatibility(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.mcp_preflight.is_none() && self.thread_policy.is_none(),
+            "Captured or delegated graph runs require a policy-bound remote delegation host"
+        );
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_lines)]
+    async fn chat_with_history_mode(
+        &self,
+        messages: Vec<Message>,
+        require_terminal: bool,
+    ) -> anyhow::Result<impl Stream<Item = NormalizedEvent> + Send + 'static + use<>> {
+        let request_id = Uuid::new_v4().to_string();
+        let exposure = crate::mcp::exposure::McpToolExposure::default();
+        let initial_exposure = exposure.project(&self.assembled_descriptors().await?);
+
+        tracing::info!(
+            request_id = %request_id,
+            message_count = messages.len(),
+            tool_count = initial_exposure.visible().len() + usize::from(initial_exposure.has_deferred()),
+            "Starting orchestrator chat"
+        );
+
+        // Log initial message history
+        for (idx, msg) in messages.iter().enumerate() {
+            let content_preview = msg.content.as_text().map_or(0, str::len);
+            tracing::debug!(
+                request_id = %request_id,
+                message_index = idx,
+                role = ?msg.role,
+                content_length = content_preview,
+                has_tool_calls = msg.tool_calls.is_some(),
+                "Initial message"
+            );
+        }
+
+        let mut orchestrator = self.clone();
+        // Discovery controls and selections belong to this stream, never the
+        // shared host registry or another child using the same native handlers.
+        orchestrator.native_skills = Arc::new(self.native_skills.filtered(None).await);
+        let mut messages = messages.clone();
+        for message in &mut messages { orchestrator.secret_scrubber.project_message(message); }
+        if let Some(history) = &mut orchestrator.canonical_history {
+            for message in history { orchestrator.secret_scrubber.project_message(message); }
+        }
+        if let Some(fragments) = &mut orchestrator.canonical_fragments {
+            orchestrator.secret_scrubber.project_fragments(fragments);
+        }
+        let output_capture = orchestrator.secret_scrubber.clone();
+
+        let stream = async_stream::stream! {
+            // Emit stream start
+            yield NormalizedEvent::StreamStart {
+                request_id: request_id.clone(),
+            };
+
+            // Convert messages to JSON for the driver
+            let mut message_json: Vec<serde_json::Value> = messages
+                .iter()
+                .map(|m| serde_json::to_value(m).unwrap_or_default())
+                .collect();
+            let canonical_messages = if require_terminal {
+                &messages
+            } else {
+                orchestrator.canonical_history.as_ref().unwrap_or(&messages)
+            };
+            let mut caller_visible_assistant_text = String::new();
+            let mut canonical_message_json: Vec<serde_json::Value> = canonical_messages
+                .iter()
+                .map(|message| serde_json::to_value(message).unwrap_or_default())
+                .collect();
+
+            tracing::debug!(
+                request_id = %request_id,
+                "Converted messages to JSON for driver"
+            );
+
+            let mut iteration = 0;
+            let mut search_registered = false;
+
+            loop {
+                if iteration >= MAX_TOOL_ITERATIONS {
+                    tracing::error!(
+                        request_id = %request_id,
+                        iteration = iteration,
+                        max_iterations = MAX_TOOL_ITERATIONS,
+                        "Maximum tool loop iterations exceeded"
+                    );
+                    yield NormalizedEvent::Error {
+                        message: "Maximum tool loop iterations exceeded".to_string(),
+                        code: Some("MAX_ITERATIONS".to_string()),
+                    };
+                    break;
+                }
+                iteration += 1;
+                let step = u32::try_from(iteration).unwrap_or(u32::MAX);
+
+                let mut request_messages = message_json.clone();
+                let mut active_bodies = Vec::new();
+                let mut step_fragments = orchestrator.canonical_fragments.as_deref()
+                    .or_else(|| orchestrator.resolved_turn.as_ref().map(|turn| turn.fragments()))
+                    .map(|fragments| {
+                    fragments.iter().filter(|fragment| {
+                        fragment.retention != crate::uar::runtime::prompt::Retention::Reclaimable
+                            && (iteration == 1 || fragment.section != crate::uar::runtime::prompt::PromptSection::WorldState)
+                    }).cloned().collect::<Vec<_>>()
+                }).unwrap_or_default();
+                let mut skill_usage = crate::uar::runtime::skills::usage::SkillRequestUsage::new(
+                    orchestrator.llm_config.model.clone(), Vec::new(), orchestrator.llm_config.cost_tracking,
+                );
+                let mut active_skills = Vec::new();
+                if let Some(activation) = &orchestrator.skill_activation {
+                    let (mcp, preflight, active) = {
+                        let context = activation.context.lock().await;
+                        (context.mcp().clone(), context.mcp_preflight().cloned(), context.active())
+                    };
+                    skill_usage.skills = active.iter().map(|entry| entry.skill.skill_id.clone()).collect();
+                    active_bodies = active.iter().map(|entry| entry.fragment()).collect();
+                    orchestrator.mcp = Arc::new(mcp);
+                    if let Some(preflight) = preflight { orchestrator.mcp_preflight = Some(preflight); }
+                    active_skills = active;
+                }
+
+                // The request's tool list is projected before history is reduced so
+                // that reduction and refusal use the tools actually sent this step.
+                let projected = async {
+                    use crate::uar::runtime::native_skills::search_tools::{SEARCH_TOOLS_NAME, SearchToolsTool};
+                    let mut current = orchestrator.assembled_descriptors().await?;
+                    if search_registered { current.remove(SEARCH_TOOLS_NAME); }
+                    let snapshot = exposure.project(&current);
+                    let mut visible = snapshot.visible().clone();
+                    if snapshot.has_deferred() {
+                        if !search_registered {
+                            if current.contains_key(SEARCH_TOOLS_NAME) {
+                                return Err(ToolCollision { provider_name: SEARCH_TOOLS_NAME.to_owned() }.into());
+                            }
+                            let search = SearchToolsTool::new(exposure.clone())
+                                .with_thread_policy(orchestrator.thread_policy.clone());
+                            #[cfg(feature = "bauar-native-admission-gate")]
+                            let search = search.with_gate_observer(Arc::clone(&orchestrator.native_admission_gate));
+                            orchestrator.native_skills.register(search).await?;
+                            search_registered = true;
+                        }
+                        let descriptor = orchestrator.native_skills.descriptor(SEARCH_TOOLS_NAME).await
+                            .ok_or_else(|| anyhow::anyhow!("registered MCP discovery control is missing"))?;
+                        visible.insert(SEARCH_TOOLS_NAME.to_owned(), descriptor);
+                    }
+                    Ok::<_, anyhow::Error>(visible)
+                }.await;
+                let mut descriptors = match projected {
+                    Ok(visible) => Arc::new(visible),
+                    Err(error) => {
+                        yield NormalizedEvent::Error {
+                            message: error.to_string(), code: Some("TOOL_ASSEMBLY_FAILED".to_string()),
+                        };
+                        break;
+                    }
+                };
+                // Execution consults this same frozen visible map, so a search
+                // cannot authorize another call in the current model batch.
+                let tools = descriptors.values().map(|tool| tool.openai_tool_json()).collect::<Vec<_>>();
+
+                if let Some(activation) = &orchestrator.skill_activation {
+                    let destination_contract = orchestrator.destination_preparations.as_ref()
+                        .and_then(|preparations| preparations.budget_contract(&orchestrator.llm_config.model))
+                        .or(orchestrator.request_budget_contract.as_ref());
+                    let input_allowance = match destination_contract {
+                        Some(contract) => crate::uar::runtime::context::budget::input_allowance_for_limits(&contract.limits)
+                            .ok().and_then(|allowance| usize::try_from(allowance).ok()).unwrap_or(0),
+                        None => activation.context_limit.saturating_sub(
+                            crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS),
+                    };
+                    let active = active_skills;
+                    // The window carries no tool cost; this step's actual tool
+                    // definitions are withheld here, on every iteration.
+                    let tool_tokens = crate::uar::runtime::context::reduce::tool_definition_tokens(&activation.model, &tools);
+                    let history = match serde_json::from_value::<Vec<Message>>(serde_json::Value::Array(message_json.clone())) {
+                        Ok(history) => history,
+                        Err(error) => {
+                            yield NormalizedEvent::Error {
+                                message: error.to_string(),
+                                code: Some("HISTORY_NORMALIZATION_FAILED".to_string()),
+                            };
+                            break;
+                        }
+                    };
+                    // Initial history was already reduced by the run manager.
+                    // Later steps reduce body-free history before reattachment.
+                    let world_contributor = if iteration > 1 {
+                        match &orchestrator.world_state {
+                            Some(world_state) => Some(world_state.contributor(false).await),
+                            None => None,
+                        }
+                    } else { None };
+                    let world_reserved_tokens = if let Some(contributor) = &world_contributor {
+                        match contributor.reserved_tokens(&history, &activation.model) {
+                            Ok(tokens) if tokens < input_allowance => tokens,
+                            result => {
+                                let message = match result {
+                                    Ok(tokens) => format!("World state requires {tokens} tokens and does not fit the model context budget"),
+                                    Err(error) => error.to_string(),
+                                };
+                                yield NormalizedEvent::Error { message, code: Some("WORLD_STATE_BUDGET_EXCEEDED".into()) };
+                                break;
+                            }
+                        }
+                    } else { 0 };
+                    // Refuse before any provider call when this step's tools, world
+                    // state and the response reserve already fill the window.
+                    let history_limit = match crate::uar::runtime::context::reduce::reserve_fixed_input_tokens(
+                        input_allowance, world_reserved_tokens, tool_tokens,
+                    ) {
+                        Ok(limit) => limit,
+                        Err(error) => {
+                            // New refusals use the lowercase code the run manager emits for
+                            // the same condition; no layer between here and the client
+                            // normalizes case.
+                            yield NormalizedEvent::Error {
+                                message: error.to_string(),
+                                code: Some(error.code().to_string()),
+                            };
+                            break;
+                        }
+                    };
+                    let (mut history, rewritten) = if iteration > 1 {
+                        match crate::uar::runtime::context::reduce::reduce_history_with_input_allowance(
+                            history, &activation.strategy, &activation.model,
+                            history_limit, Some(orchestrator.driver.as_ref()), destination_contract, &[],
+                        ).await {
+                            Ok((history, report)) => (history, report.history_rewritten),
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: crate::uar::runtime::context::reduce::liability_message(
+                                        &error, world_reserved_tokens.saturating_add(tool_tokens),
+                                    ),
+                                    code: Some(error.code().to_ascii_uppercase()),
+                                };
+                                break;
+                            }
+                        }
+                    } else {
+                        (history, false)
+                    };
+                    if let (Some(world_state), Some(contributor)) = (&orchestrator.world_state, &world_contributor) {
+                        match contributor.baseline.prepare(&contributor.snapshot, &history, rewritten) {
+                            Ok(update) => {
+                                history.extend(update.messages.iter().cloned());
+                                step_fragments.extend(update.fragments.iter().cloned());
+                                world_state.commit(&update).await;
+                            }
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: error.to_string(), code: Some("WORLD_STATE_ASSEMBLY_FAILED".into()),
+                                };
+                                break;
+                            }
+                        }
+                    }
+                    let dialect = super::prompt_dialect::PromptDialect::detect(&orchestrator.llm_config.model);
+                    let (attached, skill_fragments) = crate::uar::runtime::skills::retention::reattach_skills(
+                        &history, &active, &activation.model, activation.context_limit.saturating_sub(tool_tokens),
+                        activation.budget,
+                        crate::uar::runtime::prompt::RenderOptions {
+                            prefers_xml_envelope: dialect.prefers_xml_envelope(),
+                            markdown_averse: dialect.markdown_averse(),
+                        },
+                    );
+                    step_fragments.extend(skill_fragments);
+                    {
+                        // Recount every prepared step, including actual tool definitions
+                        // and reattached skills; trimming estimates are not fit proof.
+                        let measured = crate::uar::runtime::context::token_service::TokenService::count_messages(
+                            &activation.model, &attached,
+                        );
+                        let required_tokens = measured.saturating_add(tool_tokens);
+                        if required_tokens > input_allowance {
+                            let error = crate::uar::runtime::context::reduce::ReduceHistoryError::ContextOverflow {
+                                required_tokens, input_allowance,
+                            };
+                            yield NormalizedEvent::Error {
+                                message: format!(
+                                    "{error}; the request holds {measured} estimated message tokens and {tool_tokens} estimated tool-definition tokens against the applicable input allowance {input_allowance}",
+                                ),
+                                code: Some(error.code().to_string()),
+                            };
+                            break;
+                        }
+                    }
+                    message_json = history.iter().map(|message| serde_json::json!(message)).collect();
+                    request_messages = attached.iter().map(|message| serde_json::json!(message)).collect();
+                }
+
+                // Per-step run progress: this iteration is beginning.
+                yield NormalizedEvent::RuntimeStep {
+                    step,
+                    kind: RuntimeStepKind::Started,
+                };
+
+                tracing::info!(
+                    request_id = %request_id,
+                    iteration = iteration,
+                    message_count = message_json.len(),
+                    "Starting tool loop iteration"
+                );
+
+                let normalize_report = match crate::uar::runtime::context::normalize::normalize_provider_messages(&mut request_messages) {
+                    Ok(report) => report,
+                    Err(error) => {
+                        tracing::error!(
+                            request_id = %request_id,
+                            iteration,
+                            error = %error,
+                            "Provider history normalization failed"
+                        );
+                        yield NormalizedEvent::Error {
+                            message: error.to_string(),
+                            code: Some("INVALID_HISTORY".to_string()),
+                        };
+                        break;
+                    }
+                };
+                let _ = normalize_report;
+
+                // CH-04: per-model dialect params (extended-thinking budgets,
+                // reasoning-persistence toggles) keyed off the model id.
+                // `thinking_budget` doubles as the "this deployment wants
+                // reasoning" signal — it was otherwise a dead config knob.
+                // A host-supplied OpenAI-compatible gateway owns translation to
+                // the underlying provider. Its public request schema need not
+                // accept provider-specific fields such as Kimi's `thinking`.
+                let dialect_params = if orchestrator.llm_config.host_supplied_connection
+                    && orchestrator.llm_config.host_provider_kind.as_deref()
+                        == Some("openai_compatible")
+                {
+                    serde_json::json!({})
+                } else {
+                    super::prompt_dialect::PromptDialectEngine::new().request_params(
+                        &orchestrator.llm_config.model,
+                        super::prompt_dialect::DialectRequest {
+                            wants_reasoning: orchestrator.llm_config.thinking_budget.is_some(),
+                            multi_turn: message_json.len() > 1,
+                            hard: orchestrator.llm_config.thinking_budget.unwrap_or(0) > 4096,
+                            effort: orchestrator.llm_config.reasoning_effort,
+                        },
+                    )
+                };
+                let base_req = LlmRequest {
+                    messages: request_messages,
+                    tools: tools.clone(),
+                    output_token_cap: orchestrator.resolved_turn.as_ref().and_then(|turn| turn.output_token_cap()),
+                    tool_choice: orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).and_then(|input| input.tool_choice.clone()),
+                    parallel_tool_calls: orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).and_then(|input| input.parallel_tool_calls),
+                    cache_strategy: orchestrator.cache_strategy.clone(),
+                    thinking_config: None,
+                    anthropic_system: None,
+                    extra_params: dialect_params
+                        .as_object()
+                        .filter(|o| !o.is_empty())
+                        .map(|_| dialect_params.clone()),
+                    budget_contract: orchestrator.request_budget_contract.clone(),
+                };
+                let primary_model = orchestrator.llm_config.model.clone();
+                let req = match orchestrator.prepare_user_attempt(
+                    &primary_model,
+                    base_req.clone(),
+                    &canonical_message_json,
+                    &step_fragments,
+                ) {
+                    Ok(request) => request,
+                    Err(error) => {
+                        yield NormalizedEvent::Error {
+                            message: error.to_string(),
+                            code: Some("DESTINATION_PREPARATION_FAILED".into()),
+                        };
+                        break;
+                    }
+                };
+
+                orchestrator.secret_scrubber.project_fragments(&mut step_fragments);
+                let resolved_step = if let Some(turn) = &orchestrator.resolved_turn {
+                    let rendered = req.messages.iter().filter_map(|message| message["content"].as_str())
+                        .collect::<Vec<_>>().join("\n");
+                    let mut budgets = crate::uar::runtime::prompt::PromptBudgets::for_rendered(&rendered);
+                    budgets.context_window_tokens = orchestrator.skill_activation.as_ref().map(|activation| activation.context_limit);
+                    match crate::uar::runtime::turn::ResolvedStep::new(
+                        Arc::clone(turn), step, req.clone(), (*descriptors).clone(),
+                        Arc::clone(&orchestrator.mcp), skill_usage.skills.clone(), budgets,
+                        step_fragments.clone(),
+                    ).and_then(|snapshot| match &orchestrator.mcp_preflight {
+                        Some(preflight) => snapshot.with_mcp_preflight(Arc::clone(preflight)),
+                        None => Ok(snapshot),
+                    }) {
+                        Ok(snapshot) => Some(snapshot),
+                        Err(error) => {
+                            yield NormalizedEvent::Error { message: error.to_string(), code: Some("TURN_ASSEMBLY_REJECTED".to_string()) };
+                            break;
+                        }
+                    }
+                } else { None };
+                let resolved_step = if let (Some(snapshot), Some((typed_turn, initial_history))) = (resolved_step.as_ref(), &orchestrator.shadow_turn) {
+                    let comparison = (|| -> anyhow::Result<_> {
+                        let history = if iteration == 1 {
+                            initial_history.clone()
+                        } else {
+                            serde_json::from_value::<Vec<Message>>(serde_json::Value::Array(message_json.clone()))?
+                        };
+                        let dialect = super::prompt_dialect::PromptDialect::detect(&orchestrator.llm_config.model);
+                        crate::uar::runtime::turn::shadow::compare_step(
+                            snapshot, typed_turn, &history, &active_bodies,
+                            orchestrator.skill_activation.as_ref().map(|activation| activation.budget).unwrap_or_default(),
+                            crate::uar::runtime::prompt::RenderOptions {
+                                prefers_xml_envelope: dialect.prefers_xml_envelope(),
+                                markdown_averse: dialect.markdown_averse(),
+                            },
+                        )
+                    })();
+                    match comparison {
+                        Ok(report) => Some(snapshot.clone().with_shadow(report)),
+                        Err(error) => {
+                            yield NormalizedEvent::Error { message: error.to_string(), code: Some("SHADOW_ASSEMBLY_FAILED".into()) };
+                            break;
+                        }
+                    }
+                } else { resolved_step };
+                let req = if let Some(snapshot) = &resolved_step {
+                    descriptors = Arc::new(snapshot.tools().clone());
+                    orchestrator.mcp = Arc::clone(snapshot.mcp());
+                    orchestrator.mcp_preflight = snapshot.mcp_preflight().cloned();
+                    let original_manifest = snapshot.manifest();
+                    let mut manifest = crate::uar::runtime::prompt::TurnManifest::from_fragments(
+                        snapshot.fragments(), original_manifest.budgets,
+                        original_manifest.selected_skills, original_manifest.selected_tools,
+                        original_manifest.warnings.iter().map(|warning| orchestrator.secret_scrubber.scrub(warning)),
+                    );
+                    if let Some(shadow) = original_manifest.shadow { manifest = manifest.with_shadow(shadow); }
+                    yield NormalizedEvent::Custom {
+                        source: "uar.turn".into(),
+                        event_name: "resolved_step".into(),
+                        payload: serde_json::json!({
+                            "step": snapshot.index(),
+                            "model": snapshot.turn().credentials().model,
+                            "mcp_catalog": snapshot.mcp_catalog(),
+                            "manifest": manifest,
+                        }),
+                    };
+                    snapshot.request().clone()
+                } else { req };
+                let mut attempt_source = base_req;
+                attempt_source.tools.clone_from(&req.tools);
+
+                if orchestrator.endpoint_settings_profiles.is_empty() {
+                    tracing::debug!(request_id = %request_id, iteration,
+                        messages = ?req.messages, tool_count = req.tools.len(),
+                        "Sending request to LLM driver");
+                } else {
+                    tracing::debug!(request_id = %request_id, iteration,
+                        message_count = req.messages.len(), tool_count = req.tools.len(),
+                        "Sending captured team request to LLM driver");
+                }
+
+                // Stream from the driver (with automatic failover if configured).
+                // CH-03: every outcome is recorded against the shared health
+                // monitor (when attached) so ModelRouter/ProviderRegistry see
+                // it on the very next routing decision, independent of
+                // whether failover itself is enabled.
+                let primary_provider_id = orchestrator
+                    .llm_config
+                    .resolved_provider_id
+                    .clone()
+                    .unwrap_or_else(|| {
+                        super::registry::split_model_string_pub(&orchestrator.llm_config.model).0
+                    });
+                let driver_stream = {
+                    let policy = &orchestrator.resilience_policy;
+                    let max_attempts = if policy.retries_enabled {
+                        policy
+                            .retry_max_attempts
+                            .min(orchestrator.llm_config.max_retries.saturating_add(1))
+                            .max(1)
+                    } else {
+                        1
+                    };
+                    let mut retry_backoff_policy = policy.clone();
+                    retry_backoff_policy.retry_max_attempts = max_attempts;
+                    let retry_driver = Arc::clone(&orchestrator.driver);
+                    let retry_orchestrator = orchestrator.clone();
+                    let retry_source = attempt_source.clone();
+                    let retry_canonical = canonical_message_json.clone();
+                    let retry_fragments = step_fragments.clone();
+                    let retry_model = primary_model.clone();
+                    let stream_start_timeout =
+                        std::time::Duration::from_millis(policy.stream_start_timeout_ms);
+                    let stream_idle_timeout =
+                        std::time::Duration::from_millis(policy.stream_idle_timeout_ms);
+                    let retry_budget = std::time::Duration::from_millis(policy.retry_budget_ms);
+                    let mut adjusted_delay_spent = std::time::Duration::ZERO;
+                    let mut attempt = 1_u32;
+                    let primary = (|| {
+                        let driver = Arc::clone(&retry_driver);
+                        let orchestrator = retry_orchestrator.clone();
+                        let source = retry_source.clone();
+                        let canonical = retry_canonical.clone();
+                        let fragments = retry_fragments.clone();
+                        let model = retry_model.clone();
+                        async move {
+                            let profiled = !orchestrator.endpoint_settings_profiles.is_empty();
+                            let request = orchestrator.prepare_user_attempt(
+                                &model,
+                                source,
+                                &canonical,
+                                &fragments,
+                            ).map_err(|error| super::team_failure::at_stage(
+                                error, super::team_failure::TeamFailureStage::Preparation, profiled,
+                            ))?;
+                            let manifest = orchestrator.attempt_manifest(&model, &request);
+                            if let Some(binding) = &orchestrator.team_model_handoff {
+                                if let Some(attempt) = &binding.team_attempt {
+                                    binding.service.validate_team_model_handoff(attempt).await
+                                        .map_err(|error| super::team_failure::at_stage(error.into(),
+                                            super::team_failure::TeamFailureStage::Validation, profiled))?;
+                                }
+                            }
+                            let stream = open_driver_stream(
+                                driver.as_ref(),
+                                request,
+                                stream_start_timeout,
+                                stream_idle_timeout,
+                            )
+                            .await.map_err(|error| super::team_failure::at_stage(error,
+                                super::team_failure::TeamFailureStage::Opening, profiled))?;
+                            if let Some(binding) = &orchestrator.team_model_handoff {
+                                if let Some(attempt) = &binding.team_attempt {
+                                    binding.service.record_team_model_handoff(attempt).await
+                                        .map_err(|error| super::team_failure::at_stage(error.into(),
+                                            super::team_failure::TeamFailureStage::Recording, profiled))?;
+                                }
+                            }
+                            Ok(prepend_attempt_manifest(stream, manifest))
+                        }
+                    })
+                    .retry(retry_backoff_policy.retry_backoff_builder())
+                    .when(|error| {
+                        policy.retries_enabled
+                            && super::ProviderError::from_anyhow(error)
+                                .is_some_and(|error| error.is_retryable(policy))
+                    })
+                    .adjust(|error, proposed_delay| {
+                        let proposed_delay = proposed_delay?;
+                        let delay = if policy.retry_respect_retry_after {
+                            super::ProviderError::from_anyhow(error)
+                                .and_then(|error| error.retry_after)
+                                .unwrap_or(proposed_delay)
+                        } else {
+                            proposed_delay
+                        };
+                        if adjusted_delay_spent.saturating_add(delay) > retry_budget {
+                            return None;
+                        }
+                        adjusted_delay_spent = adjusted_delay_spent.saturating_add(delay);
+                        Some(delay)
+                    })
+                    .notify(|error, delay| {
+                        let diagnostic = (!orchestrator.endpoint_settings_profiles.is_empty())
+                            .then(|| super::team_failure::diagnostic(error, false));
+                        tracing::warn!(
+                            request_id = %request_id,
+                            iteration,
+                            attempt,
+                            max_attempts,
+                            delay_ms = delay.as_millis(),
+                            error = %orchestrator.provider_log_summary(error),
+                            code = diagnostic.as_ref().map(|value| value.code.as_str()),
+                            diagnostic_reference = diagnostic.as_ref()
+                                .and_then(|value| value.protected_diagnostic_ref.as_deref()),
+                            source_stage = diagnostic.as_ref().and_then(|value| value.source_stage.as_deref()),
+                            category = diagnostic.as_ref().and_then(|value| value.category.as_deref()),
+                            http_status = diagnostic.as_ref().and_then(|value| value.http_status),
+                            collaboration_code = diagnostic.as_ref()
+                                .and_then(|value| value.collaboration_code.as_deref()),
+                            "LLM stream creation failed; retrying before semantic events"
+                        );
+                        attempt = attempt.saturating_add(1);
+                    })
+                    .await;
+                    match primary {
+                        Ok(s) => {
+                            tracing::debug!(
+                                request_id = %request_id,
+                                iteration = iteration,
+                                "Driver stream created successfully"
+                            );
+                            if let Some(health) = &orchestrator.health_monitor {
+                                health.record_success(&primary_provider_id).await;
+                            }
+                            s
+                        }
+                        Err(e) if crate::uar::runtime::cost_budget::client_failure(&e).is_some() => {
+                            // A host budget refusal precedes provider dispatch.
+                            // Preserve it without cooling down a healthy provider
+                            // or attempting another model for the same refused call.
+                            yield orchestrator.provider_failure(&e, false);
+                            break;
+                        }
+                        Err(e) if orchestrator.failover_config.enabled => {
+                            if let Some(health) = &orchestrator.health_monitor {
+                                health
+                                    .record_failure(
+                                        &primary_provider_id,
+                                        orchestrator.failover_config.error_threshold,
+                                        orchestrator.failover_config.cooldown_secs,
+                                    )
+                                    .await;
+                            }
+                            let mut fallback_stream = None;
+                            let mut fallback_errors = Vec::new();
+                            for fallback in &orchestrator.fallback_drivers {
+                                if let Some(health) = &orchestrator.health_monitor
+                                    && !health.is_available(&fallback.provider_id).await
+                                {
+                                    tracing::info!(
+                                        request_id = %request_id,
+                                        iteration,
+                                        fallback_model = %fallback.model,
+                                        fallback_provider = %fallback.provider_id,
+                                        "Skipping fallback provider in cooldown"
+                                    );
+                                    continue;
+                                }
+                                tracing::warn!(
+                                    request_id = %request_id,
+                                    iteration,
+                                    primary_error = %orchestrator.provider_log_summary(&e),
+                                    fallback_model = %fallback.model,
+                                    "Primary LLM driver failed; attempting fallback",
+                                );
+                                let fallback_result = match orchestrator.prepare_user_attempt(
+                                    &fallback.model,
+                                    attempt_source.clone(),
+                                    &canonical_message_json,
+                                    &step_fragments,
+                                ) {
+                                    Ok(request) => {
+                                        let manifest = orchestrator
+                                            .attempt_manifest(&fallback.model, &request);
+                                        async {
+                                            if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.validate_team_model_handoff(attempt).await?;}}
+                                            let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout).await?;
+                                            if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.record_team_model_handoff(attempt).await?;}}
+                                            Ok::<_,anyhow::Error>(prepend_attempt_manifest(stream,manifest))
+                                        }.await
+                                    }
+                                    Err(error) => Err(error),
+                                };
+                                match fallback_result
+                                {
+                                    Ok(s) => {
+                                        if let Some(health) = &orchestrator.health_monitor {
+                                            health.record_success(&fallback.provider_id).await;
+                                        }
+                                        skill_usage.model = fallback.model.clone();
+                                        fallback_stream = Some(s);
+                                        break;
+                                    }
+                                    Err(fe) => {
+                                        if let Some(health) = &orchestrator.health_monitor {
+                                            health
+                                                .record_failure(
+                                                    &fallback.provider_id,
+                                                    orchestrator.failover_config.error_threshold,
+                                                    orchestrator.failover_config.cooldown_secs,
+                                                )
+                                                .await;
+                                        }
+                                        tracing::warn!(
+                                            request_id = %request_id,
+                                            primary_error = %orchestrator.provider_log_summary(&e),
+                                            fallback_error = %orchestrator.provider_log_summary(&fe),
+                                            fallback_model = %fallback.model,
+                                            "Fallback driver failed; trying the next candidate",
+                                        );
+                                        fallback_errors.push(format!("{}: {}", fallback.model, orchestrator.provider_log_summary(&fe)));
+                                    }
+                                }
+                            }
+                            if let Some(stream) = fallback_stream {
+                                stream
+                            } else {
+                                tracing::error!(
+                                    request_id = %request_id,
+                                    iteration = iteration,
+                                    error = %orchestrator.provider_log_summary(&e),
+                                    fallback_errors = ?fallback_errors,
+                                    "Primary driver failed; no healthy fallback succeeded",
+                                );
+                                let fallback_detail = if fallback_errors.is_empty() {
+                                    "no healthy fallback available".to_string()
+                                } else {
+                                    fallback_errors.join("; ")
+                                };
+                                yield if orchestrator.endpoint_settings_profiles.is_empty()
+                                    && crate::uar::runtime::cost_budget::client_failure(&e).is_none() {
+                                    NormalizedEvent::Error {
+                                        message: format!("primary: {e}; fallbacks: {fallback_detail}"),
+                                        code: Some(super::ProviderError::from_anyhow(&e)
+                                            .map_or("provider_error", super::ProviderError::code).to_owned()),
+                                    }
+                                } else { orchestrator.provider_failure(&e, false) };
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            if let Some(health) = &orchestrator.health_monitor {
+                                health
+                                    .record_failure(
+                                        &primary_provider_id,
+                                        orchestrator.failover_config.error_threshold,
+                                        orchestrator.failover_config.cooldown_secs,
+                                    )
+                                    .await;
+                            }
+                            tracing::error!(
+                                request_id = %request_id,
+                                iteration = iteration,
+                                error = %orchestrator.provider_log_summary(&e),
+                                "Failed to create driver stream"
+                            );
+                            yield orchestrator.provider_failure(&e, false);
+                            break;
+                        }
+                    }
+                };
+
+                let mut tool_accumulators: BTreeMap<usize, ToolCallAccumulator> = BTreeMap::new();
+                let mut assistant_text = String::new();
+                let mut has_tool_calls = false;
+                let mut finish_reason: Option<String> = None;
+                let mut saw_terminal = false;
+
+                futures::pin_mut!(driver_stream);
+
+                loop {
+                    let result = match tokio::time::timeout(
+                        std::time::Duration::from_millis(
+                            orchestrator.resilience_policy.stream_idle_timeout_ms,
+                        ),
+                        driver_stream.next(),
+                    )
+                    .await
+                    {
+                        Ok(Some(result)) => result,
+                        Ok(None) => {
+                            if !saw_terminal {
+                                yield NormalizedEvent::Error {
+                                    message: "Provider stream ended without a terminal event".into(),
+                                    code: Some("provider_stream_incomplete".into()),
+                                };
+                                return;
+                            }
+                            break;
+                        },
+                        Err(_) => Err(super::ProviderError::timeout(format!(
+                            "LLM stream idle timed out after {} ms",
+                            orchestrator.resilience_policy.stream_idle_timeout_ms
+                        ))
+                        .into()),
+                    };
+                    match result {
+                        Ok(event) => {
+                            skill_usage.observe(&event);
+                            match &event {
+                                NormalizedEvent::MessageDelta { text } => {
+                                    assistant_text.push_str(text);
+                                    if orchestrator.resolved_turn.as_ref().and_then(|turn| turn.response_format())
+                                        .is_some_and(super::response_format::ResponseFormat::is_structured) {
+                                        // Tool-round prose and unvalidated partial JSON must not
+                                        // contaminate the single caller-visible JSON payload.
+                                        continue;
+                                    }
+                                    caller_visible_assistant_text.push_str(text);
+                                }
+                                NormalizedEvent::ToolCallDelta {
+                                    call_index,
+                                    id,
+                                    name,
+                                    arguments_delta,
+                                } => {
+                                    has_tool_calls = true;
+                                    let acc = tool_accumulators.entry(*call_index).or_default();
+                                    if acc.id.is_none() {
+                                        acc.id = id.clone();
+                                    }
+                                    if acc.name.is_none() {
+                                        acc.name = name.clone();
+                                    }
+                                    if let Some(delta) = arguments_delta {
+                                        acc.arguments.push_str(delta);
+                                    }
+                                }
+                                NormalizedEvent::ToolCallComplete { call_index, id, name, arguments_json } => {
+                                    let acc = tool_accumulators.entry(*call_index).or_default();
+                                    acc.id = Some(id.clone()); acc.name = Some(name.clone()); acc.arguments = arguments_json.clone();
+                                    has_tool_calls = true;
+                                    finish_reason = Some("tool_calls".to_string());
+                                }
+                                NormalizedEvent::Done => {
+                                    saw_terminal = true;
+                                    // Don't yield Done yet if we have tool calls to process
+                                    if !has_tool_calls {
+                                        if let Some(format) = orchestrator.resolved_turn.as_ref().and_then(|turn| turn.response_format()) {
+                                            let projected = orchestrator.secret_scrubber.scrub(&assistant_text);
+                                            if let Err(error) = format.validate_output(&projected) {
+                                                yield NormalizedEvent::Error { message: error.to_string(), code: Some("structured_output_invalid".into()) };
+                                                return;
+                                            }
+                                            if format.is_structured() {
+                                                yield NormalizedEvent::MessageDelta { text: projected };
+                                            }
+                                        }
+                                        if orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_some_and(|input| matches!(input.tool_choice, Some(super::ToolChoice::Required | super::ToolChoice::Named(_)))) {
+                                            yield NormalizedEvent::Error { message: "Provider completed without required caller tool call".into(), code: Some("client_tool_choice_not_honored".into()) };
+                                            return;
+                                        }
+                                        yield event;
+                                        return;
+                                    }
+                                    continue;
+                                }
+                                NormalizedEvent::Error { message, .. } => {
+                                    yield if orchestrator.endpoint_settings_profiles.is_empty() { event }
+                                    else { orchestrator.provider_failure(&anyhow::anyhow!(message.clone()), true) };
+                                    return;
+                                }
+                                _ => {}
+                            }
+                            // Caller-facing tool metadata is published only after durable handoff.
+                            // Raw provider IDs remain private so no unresumable call escapes.
+                            if !(orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_some()
+                                && matches!(event, NormalizedEvent::ToolCallDelta { .. } | NormalizedEvent::ToolCallComplete { .. })) {
+                                yield event;
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                target: "llm",
+                                request_id = %request_id,
+                                run_id = orchestrator.resolved_turn.as_ref()
+                                    .map(|turn| turn.environment().run_id.as_str()),
+                                error_kind = super::ProviderError::from_anyhow(&e)
+                                    .map_or("provider_error", super::ProviderError::code),
+                                "LLM stream failed mid-response"
+                            );
+                            yield orchestrator.provider_failure(&e, true);
+                            return;
+                        }
+                    }
+                }
+
+                // If no tool calls, we're done
+                if !has_tool_calls || finish_reason.as_deref() != Some("tool_calls") {
+                    tracing::info!(
+                        request_id = %request_id,
+                        iteration = iteration,
+                        has_tool_calls = has_tool_calls,
+                        finish_reason = ?finish_reason,
+                        "No tool calls to process, completing stream"
+                    );
+                    yield NormalizedEvent::RuntimeStep {
+                        step,
+                        kind: RuntimeStepKind::Finished,
+                    };
+                    yield NormalizedEvent::Done;
+                    break;
+                }
+
+                tracing::info!(
+                    request_id = %request_id,
+                    iteration = iteration,
+                    accumulator_count = tool_accumulators.len(),
+                    "Building tool calls from accumulators"
+                );
+
+                // Build tool calls from accumulators
+                let mut tool_calls: Vec<ToolCall> = tool_accumulators
+                    .values()
+                    .filter_map(|acc| {
+                        let id = acc.id.clone()?;
+                        let name = acc.name.clone()?;
+                        Some(ToolCall {
+                            id,
+                            call_type: "function".to_string(),
+                            function: ToolCallFunction {
+                                name,
+                                arguments: acc.arguments.clone(),
+                            },
+                        })
+                    })
+                    .collect();
+
+                let client_input = orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools());
+                let batch_id = Uuid::new_v4().to_string();
+                for call in &mut tool_calls {
+                    if client_input.is_some_and(|input| input.owns(&call.function.name)) {
+                        call.id = format!("uar_client_{}_{}", batch_id, Uuid::new_v4());
+                        // Persist exactly the host-redacted public argument bytes.
+                        // Schema validation below runs after projection as well.
+                        call.function.arguments = orchestrator.secret_scrubber.project_json_text(&call.function.arguments);
+                    }
+                }
+                assistant_text = orchestrator.secret_scrubber.scrub(&assistant_text);
+                let caller_calls = tool_calls.iter().filter(|call| client_input.is_some_and(|input| input.owns(&call.function.name))).cloned().collect::<Vec<_>>();
+                if let Some(input) = client_input {
+                    let choice_honored = match &input.tool_choice {
+                        Some(super::ToolChoice::None) => tool_calls.is_empty(),
+                        Some(super::ToolChoice::Required) => !caller_calls.is_empty(),
+                        Some(super::ToolChoice::Named(name)) => !caller_calls.is_empty() && caller_calls.iter().all(|call| &call.function.name == name),
+                        _ => true,
+                    };
+                    if tool_calls.is_empty() || !choice_honored {
+                        yield NormalizedEvent::Error { message: "Provider returned incomplete tool calls or did not honor tool choice".into(), code: Some("client_tool_choice_not_honored".into()) }; return;
+                    }
+                    if input.parallel_tool_calls == Some(false) && tool_calls.len() > 1 {
+                        yield NormalizedEvent::Error { message: "Provider returned parallel caller calls when disabled".into(), code: Some("client_tool_choice_not_honored".into()) }; return;
+                    }
+                    for call in &caller_calls {
+                        let valid = input.tools.iter().find(|schema| schema["function"]["name"].as_str() == Some(call.function.name.as_str()))
+                            .and_then(|schema| crate::uar::tools::validate::compile(&schema["function"]["parameters"]).ok())
+                            .is_some_and(|validator| crate::uar::tools::validate::validate(&validator, &call.function.arguments).is_ok());
+                        if !valid {
+                            yield NormalizedEvent::Error { message: "Provider returned invalid caller tool arguments".into(), code: Some("invalid_client_tool_arguments".into()) }; return;
+                        }
+                    }
+                }
+                if tool_calls.is_empty() {
+                    tracing::warn!(
+                        request_id = %request_id,
+                        iteration = iteration,
+                        "No valid tool calls built from accumulators"
+                    );
+                    yield NormalizedEvent::RuntimeStep {
+                        step,
+                        kind: RuntimeStepKind::Finished,
+                    };
+                    yield NormalizedEvent::Done;
+                    break;
+                }
+
+                tracing::info!(
+                    request_id = %request_id,
+                    iteration = iteration,
+                    tool_call_count = tool_calls.len(),
+                    "Built tool calls, adding to message history"
+                );
+
+                // Log each tool call
+                for (idx, tc) in tool_calls.iter().enumerate() {
+                    tracing::info!(
+                        request_id = %request_id,
+                        iteration = iteration,
+                        tool_index = idx,
+                        tool_id = %tc.id,
+                        tool_name = %tc.function.name,
+                        args_length = tc.function.arguments.len(),
+                        "Tool call to execute"
+                    );
+                    tracing::debug!(
+                        request_id = %request_id,
+                        tool_id = %tc.id,
+                        arguments = %orchestrator.secret_scrubber.project_json_text(&tc.function.arguments),
+                        "Tool call arguments"
+                    );
+                }
+
+                if client_input.is_some() {
+                    for (call_index, call) in tool_calls.iter().enumerate() {
+                        if !client_input.is_some_and(|input| input.owns(&call.function.name)) {
+                            yield NormalizedEvent::ToolCallComplete { call_index, id: call.id.clone(), name: call.function.name.clone(), arguments_json: call.function.arguments.clone() };
+                        }
+                    }
+                }
+                // Add assistant message with tool calls to history
+                message_json.push(serde_json::json!({
+                    "role": "assistant",
+                    "content": orchestrator.secret_scrubber.scrub(&assistant_text),
+                    "tool_calls": tool_calls.iter().map(|tc| {
+                        serde_json::json!({
+                            "id": tc.id,
+                            "type": tc.call_type,
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": orchestrator.secret_scrubber.project_json_text(&tc.function.arguments)
+                            }
+                        })
+                    }).collect::<Vec<_>>()
+                }));
+                canonical_message_json.push(
+                    message_json
+                        .last()
+                        .cloned()
+                        .expect("assistant tool-call record was just appended"),
+                );
+
+                tracing::debug!(
+                    request_id = %request_id,
+                    iteration = iteration,
+                    "Added assistant message with tool calls to history"
+                );
+
+                let batch_descriptors = tool_calls
+                    .iter()
+                    .map(|call| descriptors.get(&call.function.name).cloned())
+                    .collect::<Option<Vec<_>>>();
+                let schedulable = batch_descriptors.as_ref().is_some_and(|descriptors| {
+                    descriptors.iter().all(|descriptor| {
+                        descriptor.approval_class == ApprovalClass::NotRequired
+                            && !orchestrator.requires_sandbox(descriptor)
+                    })
+                });
+                let mut admitted_calls = std::collections::VecDeque::new();
+                if orchestrator.llm_config.parallel_tool_calls == Some(true)
+                    && tool_calls.len() > 1
+                    && schedulable
+                    && !tool_calls.iter().any(|call|call.function.name=="team_wait")
+                {
+                    let batch_descriptors = Arc::new(
+                        batch_descriptors.expect("schedulable batches have one descriptor per call"),
+                    );
+                    // Admit in call order before dispatch, so a policy-driven
+                    // confirmation never races another tool's execution. The
+                    // host gate includes budget admission and runs exactly once.
+                    let mut confirmed = false;
+                    for (index, (call, descriptor)) in tool_calls.iter()
+                        .zip(batch_descriptors.iter()).enumerate()
+                    {
+                        let arguments = match validate::validate(
+                            &descriptor.validator,
+                            &call.function.arguments,
+                        ) {
+                            Ok(arguments) => arguments,
+                            Err(error) => {
+                                admitted_calls.push_back(Err(error.model_result().to_string()));
+                                continue;
+                            }
+                        };
+                        let admitted = match orchestrator
+                            .prepare_and_admit_tool_with_history(
+                                call.id.clone(),
+                                descriptor,
+                                arguments,
+                                index,
+                                serde_json::from_value(serde_json::Value::Array(canonical_message_json.clone())).ok(),
+                            )
+                            .await
+                        {
+                            Ok(admitted) => admitted,
+                            Err(reason) => {
+                                admitted_calls
+                                    .push_back(Err(format!("Tool call rejected: {reason}")));
+                                confirmed = true;
+                                break;
+                            }
+                        };
+                        confirmed = admitted.local_disposition
+                            == crate::uar::runtime::tool_admission::LocalAdmissionDisposition::Approved;
+                        admitted_calls.push_back(Ok(admitted));
+                        if confirmed {
+                            // Resume this approved call before asking about the
+                            // next. The sequential path consumes these receipts
+                            // without repeating approval or charging the budget.
+                            break;
+                        }
+                    }
+                    if !confirmed {
+                    // Read-only descriptors share the global read lock. Every
+                    // mutating, code-executing, or unknown descriptor takes the
+                    // write lock and therefore runs alone. Equal read keys also
+                    // share a FIFO mutex; distinct or absent keys may overlap.
+                    let execution_gate = Arc::new(tokio::sync::RwLock::new(()));
+                    let key_gates = Arc::new(
+                        batch_descriptors
+                            .iter()
+                            .filter(|descriptor| descriptor.effect == ToolEffect::ReadOnly)
+                            .filter_map(|descriptor| descriptor.concurrency_key.clone())
+                            .map(|key| (key, Arc::new(tokio::sync::Mutex::new(()))))
+                            .collect::<BTreeMap<_, _>>(),
+                    );
+                    let executions = futures::stream::iter(tool_calls.iter().cloned().zip(
+                        batch_descriptors.iter().cloned(),
+                    ).zip(admitted_calls.drain(..)).enumerate().map(|(index, ((call, descriptor), arguments))| {
+                        let orchestrator = orchestrator.clone();
+                        let execution_gate = Arc::clone(&execution_gate);
+                        let key_gates = Arc::clone(&key_gates);
+                        let sequence = (u64::from(step) << 32) | index as u64;
+                        async move {
+                            let admitted = match arguments {
+                                Ok(admitted) => admitted,
+                                Err(error) => {
+                                    let source = Self::canonical_source_for(
+                                        &call.function.name,
+                                        &descriptor,
+                                    );
+                                    let outcome = orchestrator
+                                        .preserve_terminal_tool_failure(
+                                            sequence,
+                                            &call.id,
+                                            &call.function.name,
+                                            source,
+                                            error,
+                                        )
+                                        .await
+                                        .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed));
+                                    return (call, outcome);
+                                }
+                            };
+                            let output_policy = descriptor
+                                .output_limit
+                                .unwrap_or(orchestrator.tool_output_policy);
+                            let outcome = if descriptor.effect == ToolEffect::ReadOnly {
+                                let _read = execution_gate.read().await;
+                                if let Some(key_gate) = descriptor
+                                    .concurrency_key
+                                    .as_ref()
+                                    .and_then(|key| key_gates.get(key))
+                                {
+                                    let _key = key_gate.lock().await;
+                                    orchestrator
+                                        .execute_direct_tool(
+                                            sequence,
+                                            &admitted,
+                                            output_policy,
+                                        )
+                                        .await
+                                } else {
+                                    orchestrator
+                                        .execute_direct_tool(
+                                            sequence,
+                                            &admitted,
+                                            output_policy,
+                                        )
+                                        .await
+                                }
+                            } else {
+                                let _write = execution_gate.write().await;
+                                orchestrator
+                                    .execute_direct_tool(
+                                        sequence,
+                                        &admitted,
+                                        output_policy,
+                                    )
+                                    .await
+                            };
+                            let outcome = orchestrator.finish_tool_execution(&admitted, outcome).await;
+                            (call, outcome)
+                        }
+                    }))
+                    .buffered(8)
+                    .collect::<Vec<_>>()
+                    .await;
+
+                    for (call, outcome) in executions {
+                        let (canonical_content, content, execution_outcome) = match outcome {
+                            Ok(outcome) => outcome,
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: error.to_string(),
+                                    code: Some(if error.is::<ToolDispatchBlocked>() {
+                                        "TOOL_DISPATCH_REFUSED"
+                                    } else {
+                                        "TERMINAL_RESULT_PERSISTENCE_FAILED"
+                                    }.to_string()),
+                                };
+                                return;
+                            }
+                        };
+                        let success = execution_outcome.succeeded();
+                        yield NormalizedEvent::ToolResult {
+                            id: call.id.clone(),
+                            name: call.function.name.clone(),
+                            content: content.clone(),
+                            success,
+                        };
+                        if execution_outcome == ToolOutcome::OutcomeUnknown {
+                            yield NormalizedEvent::Error { message: "MCP outcome unknown; reconcile before another attempt".into(), code: Some("TOOL_OUTCOME_UNKNOWN".into()) };
+                            return;
+                        }
+                        message_json.push(serde_json::json!({
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "content": content
+                        }));
+                        canonical_message_json.push(serde_json::json!({
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "content": canonical_content
+                        }));
+                    }
+                    yield NormalizedEvent::RuntimeStep {
+                        step,
+                        kind: RuntimeStepKind::Finished,
+                    };
+                    continue;
+                    }
+                }
+
+                // Execute mutating, approval-gated, sandboxed, or unknown calls
+                // sequentially to preserve policy and side-effect ordering.
+                for (idx, tool_call) in tool_calls.iter().enumerate() {
+                    if client_input.is_some_and(|input| input.owns(&tool_call.function.name)) { continue; }
+                    let tool_name = &tool_call.function.name;
+                    let sequence = (u64::from(step) << 32) | idx as u64;
+                    let Some(descriptor) = descriptors.get(tool_name) else {
+                        yield NormalizedEvent::Error {
+                            message: format!(
+                                "No descriptor exists for requested tool '{tool_name}'"
+                            ),
+                            code: Some("UNKNOWN_TOOL_STATE_UNRECOVERED".to_string()),
+                        };
+                        return;
+                    };
+                    let preadmitted = admitted_calls.pop_front();
+                    let admission = match preadmitted {
+                        Some(admitted) => admitted,
+                        None => match validate::validate(
+                            &descriptor.validator,
+                            &tool_call.function.arguments,
+                        ) {
+                            Ok(arguments) => orchestrator
+                                .prepare_and_admit_tool_with_history(
+                                    tool_call.id.clone(),
+                                    descriptor,
+                                    arguments,
+                                    idx,
+                                    serde_json::from_value(serde_json::Value::Array(canonical_message_json.clone())).ok(),
+                                )
+                                .await
+                                .map_err(|reason| format!("Tool call rejected: {reason}")),
+                            Err(error) => Err(error.model_result().to_string()),
+                        },
+                    };
+                    let admitted = match admission {
+                        Ok(admitted) => admitted,
+                        Err(error) => {
+                            let source = Self::canonical_source_for(tool_name, descriptor);
+                            let content = match orchestrator
+                                .preserve_terminal_tool_failure(
+                                    sequence,
+                                    &tool_call.id,
+                                    tool_name,
+                                    source,
+                                    error,
+                                )
+                                .await
+                            {
+                                Ok(content) => content,
+                                Err(error) => {
+                                    yield NormalizedEvent::Error {
+                                        message: error.to_string(),
+                                        code: Some(
+                                            "TERMINAL_RESULT_PERSISTENCE_FAILED".to_string(),
+                                        ),
+                                    };
+                                    return;
+                                }
+                            };
+                            yield NormalizedEvent::ToolResult {
+                                id: tool_call.id.clone(),
+                                name: tool_name.clone(),
+                                content: content.clone(),
+                                success: false,
+                            };
+                            message_json.push(serde_json::json!({
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "content": content
+                            }));
+                            canonical_message_json.push(
+                                message_json
+                                    .last()
+                                    .cloned()
+                                    .expect("invalid tool result was just appended"),
+                            );
+                            continue;
+                        }
+                    };
+                    let arguments = &admitted.prepared.validated_arguments;
+                    let output_policy = descriptor
+                        .output_limit
+                        .unwrap_or(orchestrator.tool_output_policy);
+
+                    tracing::info!(
+                        request_id = %request_id,
+                        iteration = iteration,
+                        tool_index = idx,
+                        tool_id = %tool_call.id,
+                        tool_name = %tool_name,
+                        "Executing tool call"
+                    );
+
+                    // Determine sandbox routing
+                    let sandbox_required = orchestrator.requires_sandbox(&descriptor);
+                    let sandbox_attempt = sandbox_required.then(|| orchestrator.sandbox_runner.clone()).flatten()
+                        .filter(|runner| runner.enforces_isolation());
+
+                    let outcome: anyhow::Result<(String, String, ToolOutcome)> = if sandbox_required && sandbox_attempt.is_none() {
+                        let error = "Tool execution rejected: required sandbox isolation is unavailable";
+                        orchestrator
+                            .preserve_terminal_tool_failure(
+                                sequence,
+                                &tool_call.id,
+                                tool_name,
+                                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                error.to_string(),
+                            )
+                            .await
+                            .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed))
+                    } else if let Some(runner) = sandbox_attempt {
+                        let request = match orchestrator.native_skills.get(tool_name).await {
+                            Some(tool) => tool.sandbox_request((*arguments).clone()),
+                            None => Err(anyhow::anyhow!("MCP tool binding has no sandbox execution adapter")),
+                        };
+                        if let Ok(exec_req) = request {
+                            let lang = exec_req.language.clone();
+                            tracing::info!(
+                                request_id = %request_id,
+                                iteration = iteration,
+                                tool_id = %tool_call.id,
+                                tool_name = %tool_name,
+                                language = ?lang,
+                                "Executing tool in the bound sandbox"
+                            );
+                            if let Err(error) = orchestrator
+                                .ensure_tool_dispatch(&admitted, ToolExecutionKind::RuntimeNative).await
+                            {
+                                Err(error)
+                            } else {
+                                let outcome = match &orchestrator.sandbox_scope {
+                                    Some(scope) => scope.execute(runner, exec_req).await,
+                                    None => Err(crate::sandbox::execution::SandboxExecutionError::Unavailable),
+                                };
+                                match outcome {
+                                    Ok(result) => {
+                                        let value = serde_json::json!({
+                                            "exit_code": result.exit_code,
+                                            "stdout": result.stdout.clone(),
+                                            "stderr": result.stderr.clone(),
+                                        });
+                                        orchestrator.preserve_canonical_tool_result(
+                                            sequence,
+                                            &tool_call.id,
+                                            tool_name,
+                                            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                            if result.exit_code == 0 { ToolOutcome::Succeeded } else { ToolOutcome::ApplicationFailed },
+                                            value,
+                                            Vec::new(),
+                                            true,
+                                            0,
+                                        ).await.and_then(|stored| {
+                                            let canonical = serde_json::to_string(&stored)?;
+                                            if result.exit_code == 0 {
+                                                Ok((canonical, format!("exit_code: {}\nstdout:\n{}\nstderr:\n{}",
+                                                    result.exit_code, result.stdout, result.stderr), ToolOutcome::Succeeded))
+                                            } else {
+                                                Ok((canonical, serde_json::json!({
+                                                    "status": "error",
+                                                    "tool_call_id": tool_call.id,
+                                                    "tool": tool_name,
+                                                    "provenance": {
+                                                        "source": "sandbox",
+                                                        "terminal_state": "failed",
+                                                        "observed_by": "trusted_host"
+                                                    },
+                                                    "result": stored,
+                                                }).to_string(), ToolOutcome::ApplicationFailed))
+                                            }
+                                        })
+                                    }
+                                    Err(error) => orchestrator
+                                        .preserve_terminal_tool_failure(
+                                            sequence,
+                                            &tool_call.id,
+                                            tool_name,
+                                            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                            error.to_string(),
+                                        )
+                                        .await
+                                        .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed)),
+                                }
+                            }
+                        } else {
+                            let error = "Tool execution rejected: no sandbox adapter for this tool call";
+                            orchestrator
+                                .preserve_terminal_tool_failure(
+                                    sequence,
+                                    &tool_call.id,
+                                    tool_name,
+                                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                    error.to_string(),
+                                )
+                                .await
+                                .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed))
+                        }
+                    } else {
+                        orchestrator
+                            .execute_direct_tool(
+                                sequence,
+                                &admitted,
+                                output_policy,
+                            )
+                            .await
+                    };
+                    let outcome = orchestrator.finish_tool_execution(&admitted, outcome).await;
+                    let (canonical_content, content, execution_outcome) = match outcome {
+                        Ok(outcome) => outcome,
+                        Err(error) => {
+                            yield NormalizedEvent::Error {
+                                message: error.to_string(),
+                                code: Some(if error.is::<ToolDispatchBlocked>() {
+                                    "TOOL_DISPATCH_REFUSED"
+                                } else {
+                                    "TERMINAL_RESULT_PERSISTENCE_FAILED"
+                                }.to_string()),
+                            };
+                            return;
+                        }
+                    };
+                    let success = execution_outcome.succeeded();
+                    let content =
+                        crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                            &content,
+                            output_policy,
+                            &orchestrator.llm_config.model,
+                        );
+
+                    // Emit tool result event
+                    yield NormalizedEvent::ToolResult {
+                        id: tool_call.id.clone(),
+                        name: tool_name.clone(),
+                        content: content.clone(),
+                        success,
+                    };
+
+                    if execution_outcome == ToolOutcome::OutcomeUnknown {
+                        yield NormalizedEvent::Error { message: "MCP outcome unknown; reconcile before another attempt".into(), code: Some("TOOL_OUTCOME_UNKNOWN".into()) };
+                        return;
+                    }
+                    if success && tool_name == "team_wait" {
+                        if let Some(tool) = orchestrator.native_skills.get(tool_name).await {
+                            let remaining=tool_calls.iter().skip(idx+1).map(|call|crate::uar::domain::team_wait::UnexecutedTeamToolCall{tool_call_id:call.id.clone(),disposition:"not-executed-due-to-yield".into()}).collect();
+                            match tool.finish_team_yield(remaining).await {
+                                Ok(Some(_)) => { yield NormalizedEvent::RuntimeStep {step,kind:RuntimeStepKind::Finished}; yield NormalizedEvent::Done; return; },
+                                Ok(None) => {},
+                                Err(_) => {yield NormalizedEvent::Error{message:"TEAM_EFFECTS_UNCERTAIN".into(),code:Some("TEAM_EFFECTS_UNCERTAIN".into())};return;}
+                            }
+                        }
+                    }
+                    // Add tool result to message history
+                    message_json.push(serde_json::json!({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": content
+                    }));
+                    canonical_message_json.push(serde_json::json!({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": canonical_content
+                    }));
+
+                    tracing::debug!(
+                        request_id = %request_id,
+                        iteration = iteration,
+                        tool_id = %tool_call.id,
+                        "Added tool result to message history"
+                    );
+                }
+
+                if !caller_calls.is_empty() {
+                    let saved = async {
+                        let input = client_input.ok_or_else(|| anyhow::anyhow!("client_tools_missing"))?;
+                        let turn = orchestrator.resolved_turn.as_ref().ok_or_else(|| anyhow::anyhow!("client_tool_turn_missing"))?;
+                        let owner = turn.verified_owner().ok_or_else(|| anyhow::anyhow!("client_tools_require_authenticated_owner"))?;
+                        let store = orchestrator.canonical_receipt_store.as_ref().ok_or_else(|| anyhow::anyhow!("durable_client_tools_unsupported"))?;
+                        anyhow::ensure!(store.supports_durable_client_tools(), "durable_client_tools_unsupported");
+                        let mut visible = input.visible_history.as_ref().unwrap_or(&input.history).clone();
+                        visible.push(serde_json::json!({"role":"assistant", "content":orchestrator.secret_scrubber.scrub(&caller_visible_assistant_text), "tool_calls":caller_calls}));
+                        let (agent_id, source_run_id, session_id, execution_source, graph_state) =
+                            if let Some(binding) = &input.delegation {
+                                anyhow::ensure!(binding.executing_run_id == turn.environment().run_id,
+                                    "graph_caller_execution_binding_conflict");
+                                (binding.root_agent_id.clone(), binding.root_run_id.clone(),
+                                    binding.root_session_id.clone(),
+                                    Some(crate::uar::persistence::client_tools::ClientToolExecutionSource {
+                                        agent_id: turn.artifact().id.clone(),
+                                        run_id: binding.executing_run_id.clone(),
+                                        thread_id: binding.executing_thread_id.clone(),
+                                    }), input.graph_state.clone())
+                            } else {
+                                (turn.artifact().id.clone(), turn.environment().run_id.clone(),
+                                    turn.environment().session_id.clone(), None,
+                                    orchestrator.client_graph_state.clone())
+                            };
+                        let pending = crate::uar::persistence::client_tools::ClientToolContinuation {
+                            owner_key: owner.session_owner_key()?, tenant_id: owner.tenant_id().map(str::to_owned),
+                            agent_id, batch_id: batch_id.clone(), protocol: input.protocol.clone(),
+                            source_run_id, execution_source, source_settled: false,
+                            session_id: Some(session_id),
+                            graph_state,
+                            output_token_cap: turn.output_token_cap(),
+                            budget_snapshot: Some(orchestrator.client_tool_budget.as_ref()
+                                .ok_or_else(|| anyhow::anyhow!("client_tool_budget_missing"))?.snapshot_client_handoff()?),
+                            canonical_transcript: serde_json::Value::Array(canonical_message_json.clone()),
+                            visible_transcript: serde_json::Value::Array(visible),
+                            client_schemas: serde_json::json!({"tools":input.tools,"tool_choice":input.tool_choice,"parallel_tool_calls":input.parallel_tool_calls}),
+                            pending_call_ids: caller_calls.iter().map(|call| call.id.clone()).collect(),
+                            state: crate::uar::persistence::client_tools::ClientToolContinuationState::Pending,
+                            result_batch: None, completed_response: None, completed_events: Vec::new(),
+                        };
+                        anyhow::ensure!(store.create_client_tool_continuation(&pending).await?, "client_tool_batch_conflict");
+                        Ok::<(), anyhow::Error>(())
+                    }.await;
+                    if let Err(error) = saved {
+                        yield NormalizedEvent::Error { message: error.to_string(), code: Some("client_tool_handoff_persistence_failed".into()) };
+                        return;
+                    }
+                    yield NormalizedEvent::ClientToolsRequested { batch_id, calls: caller_calls };
+                    yield NormalizedEvent::Done;
+                    return;
+                }
+                tracing::info!(
+                    request_id = %request_id,
+                    iteration = iteration,
+                    "All tool calls executed, continuing to next iteration"
+                );
+
+                // This iteration's tool work is done; the loop cycles for the
+                // next response.
+                yield NormalizedEvent::RuntimeStep {
+                    step,
+                    kind: RuntimeStepKind::Finished,
+                };
+
+                // Continue the loop to get the next response
+            }
+        };
+
+        // Keep raw producer accumulators private for admission/execution. The
+        // returned stream is a content copy with independent bounded tails.
+        Ok(async_stream::stream! {
+            let mut projection = crate::uar::runtime::turn::host::ProjectedEventStream::new(output_capture);
+            futures::pin_mut!(stream);
+            while let Some(event) = stream.next().await {
+                for event in projection.push(event) { yield event; }
+            }
+            for event in projection.finish() { yield event; }
+        })
+    }
+
+    /// Non-streaming chat for simple requests (e.g., title generation).
+    ///
+    /// This collects all message deltas into a single string response.
+    pub async fn chat_non_streaming(&self, mut messages: Vec<Message>) -> anyhow::Result<String> {
+        for message in &mut messages { self.secret_scrubber.project_message(message); }
+        let request_id = Uuid::new_v4().to_string();
+        let tools = Vec::new(); // No tools for simple requests
+
+        tracing::debug!(
+            request_id = %request_id,
+            message_count = messages.len(),
+            "Starting non-streaming chat"
+        );
+
+        let mut message_json: Vec<serde_json::Value> = messages
+            .iter()
+            .map(|m| serde_json::to_value(m).unwrap_or_default())
+            .collect();
+        crate::uar::runtime::context::normalize::normalize_provider_messages(&mut message_json)?;
+
+        let req = LlmRequest {
+            messages: message_json,
+            tools,
+            output_token_cap: None,
+            tool_choice: None,
+            parallel_tool_calls: None,
+            cache_strategy: None,
+            thinking_config: None,
+            anthropic_system: None,
+            extra_params: None,
+            budget_contract: self.request_budget_contract.clone(),
+        };
+
+        let canonical = req.messages.clone();
+        let fragments = self.canonical_fragments.as_deref().unwrap_or(&[]);
+        let req = self.prepare_attempt(&self.llm_config.model, req, &canonical, fragments)?;
+
+        // Stream from the driver and collect message deltas
+        let mut stream = self.driver.stream(req).await?;
+        let mut content = String::new();
+        let mut saw_terminal = false;
+
+        while let Some(event_result) = stream.next().await {
+            match event_result {
+                Ok(NormalizedEvent::MessageDelta { text }) => {
+                    content.push_str(&text);
+                }
+                Ok(NormalizedEvent::Done) => saw_terminal = true,
+                Ok(NormalizedEvent::Error { message, .. }) => {
+                    return Err(anyhow::anyhow!(self.secret_scrubber.scrub(&message)));
+                }
+                Err(e) => {
+                    let message = self.secret_scrubber.scrub(&e.to_string());
+                    tracing::error!(request_id = %request_id, error = %message, "Error in stream");
+                    return Err(anyhow::anyhow!(message));
+                }
+                _ => {} // Ignore other events
+            }
+        }
+
+        if !saw_terminal {
+            return Err(super::ProviderError::new(
+                None,
+                super::ProviderErrorKind::Stream,
+                None,
+                "Provider stream ended without a terminal event",
+            )
+            .into());
+        }
+
+        tracing::debug!(
+            request_id = %request_id,
+            content_length = content.len(),
+            "Non-streaming chat completed"
+        );
+
+        Ok(self.secret_scrubber.scrub(&content))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::llm::mock_driver::MockLlmDriver;
+    use crate::uar::runtime::native_skill::NativeSkill;
+    use std::sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    #[derive(Debug, Default)]
+    struct FailingDriver {
+        requests: Mutex<Vec<LlmRequest>>,
+    }
+
+    #[async_trait::async_trait]
+    impl LlmDriver for FailingDriver {
+        async fn stream(
+            &self,
+            req: LlmRequest,
+        ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
+        {
+            self.requests.lock().expect("requests lock").push(req);
+            Err(anyhow::anyhow!("stub primary failure"))
+        }
+    }
+
+    struct RenderSkill;
+
+    struct SearchSkill {
+        calls: Arc<AtomicUsize>,
+    }
+
+    struct LargeResultSkill;
+
+    #[test]
+    fn resolved_provider_identity_survives_bare_model_for_explicit_base_url() {
+        let config = LlmConfig {
+            model: "custom-claude-alias".to_string(),
+            resolved_provider_id: Some("anthropic".to_string()),
+            base_url: Some("https://anthropic-proxy.example/v1/messages".to_string()),
+            ..LlmConfig::default()
+        };
+        let (inferred, _) = super::super::registry::split_model_string_pub(&config.model);
+        assert_ne!(inferred, "anthropic");
+        assert_eq!(config.resolved_provider_id.as_deref(), Some("anthropic"));
+    }
+
+    #[test]
+    fn cross_provider_fallback_does_not_reuse_primary_provider_identity() {
+        let primary = LlmConfig {
+            model: "custom-claude-alias".to_string(),
+            resolved_provider_id: Some("anthropic".to_string()),
+            base_url: Some("https://anthropic-proxy.example".to_string()),
+            ..LlmConfig::default()
+        };
+        let fallback = FallbackModel {
+            model: "openai/gpt-5.6".to_string(),
+            api_key: Some("fallback-key".to_string()),
+            base_url: Some("https://openai-proxy.example/v1".to_string()),
+        };
+
+        let resolved = Orchestrator::fallback_llm_config(&primary, &fallback);
+        assert_eq!(resolved.model, "openai/gpt-5.6");
+        assert_eq!(resolved.resolved_provider_id, None);
+        assert_eq!(
+            super::super::registry::split_model_string_pub(&resolved.model).0,
+            "openai"
+        );
+    }
+
+    #[async_trait::async_trait]
+    impl NativeSkill for RenderSkill {
+        fn name(&self) -> &str {
+            "a2ui_render"
+        }
+        fn description(&self) -> &str {
+            "Render an A2UI surface"
+        }
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({"type":"object","properties":{"messages":{"type":"array"}}})
+        }
+        async fn execute(&self, _: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            Ok(serde_json::json!({"ok": true}))
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl NativeSkill for SearchSkill {
+        fn name(&self) -> &str {
+            "search_web"
+        }
+
+        fn description(&self) -> &str {
+            "Searches the web fixture"
+        }
+
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({
+                "type": "object",
+                "properties": { "query": { "type": "string" } }
+            })
+        }
+
+        async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(serde_json::json!({"result": args["query"]}))
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl NativeSkill for LargeResultSkill {
+        fn name(&self) -> &str {
+            "large_result"
+        }
+
+        fn description(&self) -> &str {
+            "Returns a large deterministic result"
+        }
+
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({"type": "object"})
+        }
+
+        async fn execute(&self, _: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            Ok(serde_json::json!({"payload": "x".repeat(20_000)}))
+        }
+    }
+
+    #[tokio::test]
+    async fn direct_tool_preserves_canonical_value_before_display_truncation() {
+        use crate::uar::domain::policy::{PolicyResolutionInput, resolve_run_policy};
+        use crate::uar::persistence::PersistenceLayer;
+        use crate::uar::persistence::providers::memory::InMemoryProvider;
+        use crate::uar::runtime::context::truncate::TruncationPolicy;
+        use crate::uar::runtime::turn::{ResolvedTurn, TurnEnvironment};
+
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills.register(LargeResultSkill).await.unwrap();
+        let store: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+        let turn = Arc::new(ResolvedTurn::new(
+            crate::uar::defaults::default_agent(),
+            resolve_run_policy(PolicyResolutionInput::default()),
+            TurnEnvironment {
+                run_id: "receipt-run".to_owned(),
+                owner_id: "receipt-owner".to_owned(),
+                session_id: "receipt-session".to_owned(),
+            },
+            LlmConfig::default(),
+            Vec::new(),
+        ));
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            Arc::new(MockLlmDriver::echo()),
+        )
+        .with_resolved_turn(turn)
+        .with_canonical_receipt_store(Some(Arc::clone(&store)));
+
+        let descriptor = orchestrator
+            .assembled_descriptors()
+            .await
+            .unwrap()
+            .get("large_result")
+            .unwrap()
+            .clone();
+        let admitted = orchestrator
+            .prepare_and_admit_tool(
+                "large-call".to_string(),
+                &descriptor,
+                serde_json::json!({}),
+                0,
+            )
+            .await
+            .unwrap();
+        let (canonical, displayed, success) = orchestrator
+            .execute_direct_tool(1, &admitted, TruncationPolicy::Bytes(256))
+            .await
+            .unwrap();
+        assert!(success.succeeded());
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&canonical).unwrap(),
+            serde_json::json!({"payload": "x".repeat(20_000)})
+        );
+        assert!(displayed.len() <= 256);
+        assert!(
+            displayed.starts_with(crate::uar::runtime::context::truncate::WARNING_HEADER_PREFIX)
+        );
+        let receipts = store
+            .list_canonical_tool_receipts("receipt-owner", "receipt-run")
+            .await
+            .unwrap();
+        assert_eq!(receipts.len(), 1);
+        assert_eq!(
+            receipts[0].typed_value,
+            Some(serde_json::json!({"payload": "x".repeat(20_000)}))
+        );
+    }
+
+    #[tokio::test]
+    async fn from_driver_uses_host_supplied_driver() {
+        let driver = Arc::new(MockLlmDriver::echo());
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            driver.clone(),
+        );
+
+        let response = orchestrator
+            .chat_non_streaming(vec![Message {
+                role: MessageRole::User,
+                content: MessageContent::text("hello"),
+                tool_call_id: None,
+                tool_calls: None,
+            }])
+            .await
+            .unwrap();
+
+        assert_eq!(response, "Hello from mock!");
+        assert_eq!(driver.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn declares_registered_native_skills_to_the_model() {
+        let driver = Arc::new(MockLlmDriver::echo());
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills
+            .register(RenderSkill)
+            .await
+            .expect("render descriptor registers");
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            driver.clone(),
+        );
+
+        let stream = orchestrator.chat("render a card").await.unwrap();
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        let requests = driver.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].tools.len(), 1);
+        assert_eq!(requests[0].tools[0]["function"]["name"], "a2ui_render");
+    }
+
+    #[tokio::test]
+    async fn applies_cache_strategy_to_policy_bearing_requests_only_when_configured() {
+        let enabled_driver = Arc::new(MockLlmDriver::echo());
+        let enabled = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            enabled_driver.clone(),
+        )
+        .with_cache_strategy(Some(CacheStrategy::default()));
+        let stream = enabled.chat("cache this").await.unwrap();
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        let disabled_driver = Arc::new(MockLlmDriver::echo());
+        let disabled = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            disabled_driver.clone(),
+        );
+        let stream = disabled.chat("do not cache this").await.unwrap();
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        assert!(enabled_driver.requests()[0].cache_strategy.is_some());
+        assert!(disabled_driver.requests()[0].cache_strategy.is_none());
+    }
+
+    #[tokio::test]
+    async fn cache_strategy_is_preserved_across_tool_loop_iterations() {
+        let driver = Arc::new(MockLlmDriver::new(vec![
+            vec![
+                NormalizedEvent::ToolCallDelta {
+                    call_index: 0,
+                    id: Some("call-1".into()),
+                    name: Some("a2ui_render".into()),
+                    arguments_delta: Some("{}".into()),
+                },
+                NormalizedEvent::ToolCallComplete {
+                    call_index: 0,
+                    id: "call-1".into(),
+                    name: "a2ui_render".into(),
+                    arguments_json: "{}".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+            vec![
+                NormalizedEvent::MessageDelta {
+                    text: "complete".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+        ]));
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills
+            .register(RenderSkill)
+            .await
+            .expect("render descriptor registers");
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            driver.clone(),
+        )
+        .with_cache_strategy(Some(CacheStrategy::default()));
+
+        let stream = orchestrator.chat("render").await.expect("chat stream");
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        let requests = driver.requests();
+        assert_eq!(requests.len(), 2);
+        assert!(
+            requests
+                .iter()
+                .all(|request| request.cache_strategy.is_some())
+        );
+    }
+
+    #[tokio::test]
+    async fn governance_bypassed_executes_tool_without_approval_or_denial_events() {
+        let driver = Arc::new(MockLlmDriver::new(vec![
+            vec![
+                NormalizedEvent::ToolCallDelta {
+                    call_index: 0,
+                    id: Some("search-call".into()),
+                    name: Some("search_web".into()),
+                    arguments_delta: Some(r#"{"query":"loopback governance"}"#.into()),
+                },
+                NormalizedEvent::ToolCallComplete {
+                    call_index: 0,
+                    id: "search-call".into(),
+                    name: "search_web".into(),
+                    arguments_json: r#"{"query":"loopback governance"}"#.into(),
+                },
+                NormalizedEvent::Done,
+            ],
+            vec![
+                NormalizedEvent::MessageDelta {
+                    text: "search complete".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+        ]));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills
+            .register(SearchSkill {
+                calls: Arc::clone(&calls),
+            })
+            .await
+            .expect("search descriptor registers");
+        let gate: ToolApprovalGate =
+            Arc::new(|_| Box::pin(async { ToolApprovalResult::GovernanceBypassed }));
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            driver,
+        )
+        .with_tool_approval_gate(gate);
+
+        let stream = orchestrator.chat("search").await.expect("chat stream");
+        let events = stream.collect::<Vec<_>>().await;
+
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            NormalizedEvent::ToolResult {
+                name,
+                success: true,
+                ..
+            } if name == "search_web"
+        )));
+        assert!(
+            events
+                .iter()
+                .all(|event| !matches!(event, NormalizedEvent::ToolResult { success: false, .. }))
+        );
+    }
+
+    #[tokio::test]
+    async fn cache_strategy_is_preserved_on_failover_request() {
+        let primary = Arc::new(FailingDriver::default());
+        let fallback = Arc::new(MockLlmDriver::echo());
+        let mut failover = FailoverConfig::default();
+        failover.enabled = true;
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            primary.clone(),
+        )
+        .with_failover(fallback.clone(), failover)
+        .with_cache_strategy(Some(CacheStrategy::default()));
+
+        let stream = orchestrator.chat("fail over").await.expect("chat stream");
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        assert!(
+            primary.requests.lock().expect("primary requests")[0]
+                .cache_strategy
+                .is_some()
+        );
+        assert!(fallback.requests()[0].cache_strategy.is_some());
+    }
+}

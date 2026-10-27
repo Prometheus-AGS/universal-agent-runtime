@@ -1,0 +1,8 @@
+{
+  "outcome": "PASS",
+  "scope": "local reviewed input bindings; actual process setup is retained in target events",
+  "manifestSha256": "98ef12337d0a5033f95ea058f8dc26638bc4212b96ddaa5dc7769be28c6b457a",
+  "sourceInventoryDigest": "1aa17473c08d241abc4afc9b5d7677d325ea35b0d847c700e82553b5b9d34025",
+  "contractDigest": "5bc85ab9074eb0d950fb88d72dede1bde6d8b03c0a62c634a57c7b693e48513a",
+  "boundInputsChecked": 32075
+}

@@ -1,0 +1,7 @@
+{
+  "started": "2026-10-25T10:23:14.307193+00:00",
+  "monotonic_started": 242131.352372695,
+  "corrected_execution_ceiling_seconds": 14398,
+  "prior_execution_seconds": 1.350480196007993,
+  "original_total_execution_limit_seconds": 14400
+}

@@ -1,0 +1,129 @@
+{
+  "contractVersion": "1",
+  "kind": "kbd.adopted-contract",
+  "identity": {
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "phaseId": "uar-verification-simplification::agent-team-concurrency-repair",
+    "planRevision": 178,
+    "contractDigest": "fd4bfb892b805f980295aafa26259b427ee5cee30af2b6891e4ec7ea37263d76"
+  },
+  "digestNormalization": {
+    "algorithm": "sha256",
+    "command": "jq -S -c 'del(.identity.contractDigest) | del(.identity.planRevision)'",
+    "rationale": "Canonical adoption writer stamps digest/revision after normalized content; not computed/adopted in Spec.",
+    "stalenessRule": "Reject mismatch against latest explicitly adopted canonical contract decision for this path. Null stamps and no adoption decision grant no execution authority."
+  },
+  "adoptionSource": "Operator instruction on2026-10-26: Finalize only the agent-team bug fix. Remove expanded verification requirements. Exit criterion is the existing math/writing BDD proving concurrent work and correctly merged article. Finish Plan handoff then stop.",
+  "decisionOwner": "Human operator; single-scenario scope explicitly instructed",
+  "amendmentPolicy": "Material changes to this single-scenario scope require explicit operator agreement; never silently reintroduce expanded acceptance. Existing signed parent authority and historical consumption remain unchanged.",
+  "releaseClaim": {
+    "userOperation": "Saved math and writing agents perform concurrent work and produce an article combining their real outputs.",
+    "supportedEnvironments": [
+      "macOS native server with the explicitly bound durable Surreal/Liter fixture only"
+    ],
+    "currentCapabilities": "Original team/member/task setup passed; actual member execution and merge failed/not exercised. No repaired-source result yet.",
+    "explicitUnknowns": [
+      "Exact historical skill error and CAS commit outcome",
+      "Repaired-source behavior until existing BDD runs",
+      "Other platforms and unrelated team functionality"
+    ]
+  },
+  "statusVocabulary": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "NOT_EXERCISED"
+  ],
+  "scenarioMatrix": [
+    {
+      "id": "TEAM-01",
+      "name": "Real math/writer concurrency and dependent artifact merge",
+      "ownerTask": "1.1+1.2+1.3+1.4",
+      "productionEntry": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs",
+      "realCollaborators": [
+        "repaired native UAR",
+        "durable Surreal",
+        "Liter/MiniMax-M3 genuine inference",
+        "saved math and writer immutable team definitions"
+      ],
+      "oracle": "Distinct real member runs overlap; both succeed, arithmetic is independently correct; final writer consumes both exact output artifact IDs and produces a useful article with number, outline headline and saved byline; successful terminal and settled actual model calls.",
+      "negativeControl": "Existing scenario assertions reject errored/queued-only member runs, missing overlap, wrong arithmetic and a final article without both actual outputs; no new fault scenario.",
+      "fixtures": "Existing persistent Mac math/writing fixture recorded in target/prompt-macos-launch.json; actual repaired binary/config/model revision and valid owner authority frozen before the authorized run.",
+      "evidence": "Stable actual BDD receipt and correlated member/attempt/artifact IDs under .prometheus/verification/teams; child parent-results.md records source/binary identity and final outcome."
+    }
+  ],
+  "functionalScope": [
+    "Fix the observed admission/terminal path blocking the existing math/writing concurrent project"
+  ],
+  "resilienceScope": {
+    "policy": "Preserve existing honest outcomes/reservations and no execution replay; no additional resilience acceptance scenario in this child."
+  },
+  "exclusions": [
+    "Expanded ADMIT-01/SETTLE-01 scenarios and unknown-usage fixture campaign",
+    "New recovery API, executor or testing framework",
+    "Dependency upgrades, other platforms, unrelated earlier accepted behavior reruns",
+    "Parent/release certification and publication"
+  ],
+  "requiredSafetyChecks": [
+    "Preserve existing agents/KBs/store and historical failed receipts",
+    "Do not turn ambiguous effects into successful execution or release unknown reservations",
+    "No automatic agent-work replay or silent verification retry",
+    "Complete child implementation before exact operator-approved verification; Plan runs no product operations"
+  ],
+  "budgets": {
+    "timeMinutes": 3000,
+    "toolCalls": 4800,
+    "repairAttempts": 28,
+    "noProgressLimit": 3,
+    "tokenBudget": "UNKNOWN",
+    "tokenFallback": "Retain parent fallback and actual history; unknown remaining allowance blocks execution. Spec does not allocate tokens.",
+    "consumedAtAuthoring": {
+      "hostCalls": "UNKNOWN; preserve all prior entries",
+      "activeMinutes": "UNKNOWN; preserve original epoch/prior consumption",
+      "repairs": "UNKNOWN; preserve every consumed repair",
+      "embeddingSpend": "No new embedding calls in this Spec; prior totals retained",
+      "embeddingCapsUsd": {
+        "cohere": 10,
+        "openai": 10
+      },
+      "authority": "Inherited cumulative limits; no reset. Reconcile remaining allowance before Execute."
+    },
+    "exhaustion": "Checkpoint and BLOCKED for exhausted/unknown allowance; never reset or drop adopted resilience. Documentation/state may be retained without running product tests."
+  },
+  "evidenceInvalidation": "Bind source/artifact/fixture/contract identity at the final boundary. Invalidate only affected evidence after changes, retain old results and all failures; never declare old artifact equivalent to repaired source.",
+  "workerRoutes": {
+    "agent": "Codex lead plus one serial uar-runtime source writer; independent fresh-context Rust/code reviewer after complete boundary",
+    "model": "Existing native roles; product inference uses configured Liter/MiniMax-M3",
+    "reviewRoundsMax": 2
+  },
+  "boundaryPacket": {
+    "postImplementationOnly": true,
+    "singleRun": true,
+    "commands": [
+      "CARGO_TARGET_DIR=target/uar-team-concurrency-repair cargo build --locked --no-default-features --features server-full --bin universal-agent-runtime",
+      "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs"
+    ],
+    "expectedEffects": [
+      "Build repaired native candidate",
+      "After explicitly named owned activation, run the existing real math/writing team scenario and retain its data/evidence"
+    ],
+    "requiredApprovals": "Current instruction finalizes Plan and its one-scenario exit criterion only. Execute is next; final review/build/restart/BDD authority follows full implementation inventory. No product command is approved by metadata adoption.",
+    "receipts": [
+      "Actual independent review/build and TEAM-01 result, source/binary identity",
+      "Stable parent-results.md and actual cumulative resource accounting"
+    ],
+    "cleanup": [
+      "Preserve existing durable agents/KBs/store and failures",
+      "Keep repaired UAR running after acceptance; only exact-owned lifecycle effects allowed by final packet"
+    ],
+    "stopConditions": [
+      "First failure or unconfirmed effect: record and discuss, no automatic retry",
+      "Unknown/exhausted allowance or invalid required authority",
+      "Scope expansion or missing exact verification approval"
+    ]
+  },
+  "status": {
+    "implementationComplete": false
+  }
+}

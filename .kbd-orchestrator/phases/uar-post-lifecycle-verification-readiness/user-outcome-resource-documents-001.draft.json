@@ -1,0 +1,220 @@
+{
+  "status": "INERT_CANDIDATES_NOT_APPROVED",
+  "documents": {
+    "charge-liter-primary": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "liter-primary",
+      "upstream_url": "http://localhost:4000/v1/chat/completions",
+      "allowed_models": [
+        "gpt-5.4"
+      ],
+      "max_request_bytes": 1048576,
+      "max_response_bytes": 8388608,
+      "charge_ceiling_microunits": 0,
+      "spend_pool": "liter",
+      "spend_pool_limit_microunits": 0,
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "pricing_evidence": "Operator attests existing Liter subscriptions have no incremental charge; internal retry3/fallback-chain included.",
+      "basis": "full-context-plus-output-ceiling",
+      "full_context_tokens": 1050000,
+      "max_output_tokens_per_attempt": 4096,
+      "zero_charge_explicitly_approved": false,
+      "upstream_authority_kind": "existing-service-loopback"
+    },
+    "upstream-liter-primary": {
+      "kind": "existing-service-loopback",
+      "service_id": "ai.prometheus.liter-llm-api",
+      "operator_approved": false,
+      "endpoint_url": "http://localhost:4000/v1/chat/completions",
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "liter-primary",
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "launchagent": {
+        "path": "/Users/gqadonis/Library/LaunchAgents/ai.prometheus.liter-llm-api.plist",
+        "sha256": "sha256:44e579670c91155b596053c79e19a8348d3b105fe7e7ca7aa7c8f130f299d1df"
+      },
+      "launch_script": {
+        "path": "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/liter-llm-api-launch.sh",
+        "sha256": "sha256:ebbdbbf7fa783c307c55b909531265fd405f97caa6acd6ea020f3bb8aa5706f5"
+      },
+      "service_config": {
+        "path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
+        "sha256": "sha256:eee487b1a000fd64805a799f216bba60971e0e160ed6627a89f1001c129958d1"
+      }
+    },
+    "charge-liter-alternate": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "liter-alternate",
+      "upstream_url": "http://localhost:4000/v1/chat/completions",
+      "allowed_models": [
+        "k3"
+      ],
+      "max_request_bytes": 1048576,
+      "max_response_bytes": 8388608,
+      "charge_ceiling_microunits": 0,
+      "spend_pool": "liter",
+      "spend_pool_limit_microunits": 0,
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "pricing_evidence": "Operator attests existing Liter subscriptions have no incremental charge; internal retry3/fallback-chain included.",
+      "basis": "full-context-plus-output-ceiling",
+      "full_context_tokens": 1048576,
+      "max_output_tokens_per_attempt": 4096,
+      "zero_charge_explicitly_approved": false,
+      "upstream_authority_kind": "existing-service-loopback"
+    },
+    "upstream-liter-alternate": {
+      "kind": "existing-service-loopback",
+      "service_id": "ai.prometheus.liter-llm-api",
+      "operator_approved": false,
+      "endpoint_url": "http://localhost:4000/v1/chat/completions",
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "liter-alternate",
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "launchagent": {
+        "path": "/Users/gqadonis/Library/LaunchAgents/ai.prometheus.liter-llm-api.plist",
+        "sha256": "sha256:44e579670c91155b596053c79e19a8348d3b105fe7e7ca7aa7c8f130f299d1df"
+      },
+      "launch_script": {
+        "path": "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/liter-llm-api-launch.sh",
+        "sha256": "sha256:ebbdbbf7fa783c307c55b909531265fd405f97caa6acd6ea020f3bb8aa5706f5"
+      },
+      "service_config": {
+        "path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
+        "sha256": "sha256:eee487b1a000fd64805a799f216bba60971e0e160ed6627a89f1001c129958d1"
+      }
+    },
+    "charge-liter-structured": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "liter-structured",
+      "upstream_url": "http://localhost:4000/v1/chat/completions",
+      "allowed_models": [
+        "gpt-5.4"
+      ],
+      "max_request_bytes": 1048576,
+      "max_response_bytes": 8388608,
+      "charge_ceiling_microunits": 0,
+      "spend_pool": "liter",
+      "spend_pool_limit_microunits": 0,
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "pricing_evidence": "Operator attests existing Liter subscriptions have no incremental charge; internal retry3/fallback-chain included.",
+      "basis": "full-context-plus-output-ceiling",
+      "full_context_tokens": 1050000,
+      "max_output_tokens_per_attempt": 4096,
+      "zero_charge_explicitly_approved": false,
+      "upstream_authority_kind": "existing-service-loopback"
+    },
+    "upstream-liter-structured": {
+      "kind": "existing-service-loopback",
+      "service_id": "ai.prometheus.liter-llm-api",
+      "operator_approved": false,
+      "endpoint_url": "http://localhost:4000/v1/chat/completions",
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "liter-structured",
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "launchagent": {
+        "path": "/Users/gqadonis/Library/LaunchAgents/ai.prometheus.liter-llm-api.plist",
+        "sha256": "sha256:44e579670c91155b596053c79e19a8348d3b105fe7e7ca7aa7c8f130f299d1df"
+      },
+      "launch_script": {
+        "path": "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/liter-llm-api-launch.sh",
+        "sha256": "sha256:ebbdbbf7fa783c307c55b909531265fd405f97caa6acd6ea020f3bb8aa5706f5"
+      },
+      "service_config": {
+        "path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
+        "sha256": "sha256:eee487b1a000fd64805a799f216bba60971e0e160ed6627a89f1001c129958d1"
+      }
+    },
+    "charge-cohere-embeddings": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "binding_id": "cohere-embeddings",
+      "upstream_url": "https://api.cohere.ai/compatibility/v1/embeddings",
+      "allowed_models": [
+        "embed-multilingual-v3.0",
+        "embed-english-v3.0",
+        "embed-english-light-v3.0"
+      ],
+      "max_request_bytes": 1048576,
+      "max_response_bytes": 8388608,
+      "charge_ceiling_microunits": 5000,
+      "spend_pool": "cohere",
+      "spend_pool_limit_microunits": 10000000,
+      "header_prefixes": {
+        "Authorization": "Bearer "
+      },
+      "pricing_evidence": "Operator supplied Coherev3 text USD0.10 per million input tokens; adopted at-most96textinputs*512billabletokens/no-extra-charge assumption, rounded5000microUSD/fullrequest. Not verified tariff/tokenizer/invoice.",
+      "basis": "embedding-request-ceiling",
+      "text_only": true,
+      "max_inputs": 96,
+      "max_billable_tokens_per_input_assumption": 512,
+      "failed_or_unknown_reservations_retained": true
+    },
+    "embedding-source-1": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "source_kind": "approved_hosted_endpoint",
+      "endpoint": "https://api.cohere.ai/compatibility/v1",
+      "fingerprint": {
+        "backend": "openai",
+        "dimension": 1024,
+        "model": "embed-multilingual-v3.0"
+      },
+      "wire_protocol": "openai-compatible",
+      "provider": "cohere",
+      "selected_secret_env": "COHERE_API_KEY",
+      "binding_id": "cohere-embeddings",
+      "availability_verified": false,
+      "synthetic": false
+    },
+    "embedding-source-2": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "source_kind": "approved_hosted_endpoint",
+      "endpoint": "https://api.cohere.ai/compatibility/v1",
+      "fingerprint": {
+        "backend": "openai",
+        "dimension": 1024,
+        "model": "embed-english-v3.0"
+      },
+      "wire_protocol": "openai-compatible",
+      "provider": "cohere",
+      "selected_secret_env": "COHERE_API_KEY",
+      "binding_id": "cohere-embeddings",
+      "availability_verified": false,
+      "synthetic": false
+    },
+    "embedding-source-3": {
+      "operator_approved": false,
+      "epoch_id": "uar-user-outcomes-original-20261024",
+      "source_kind": "approved_hosted_endpoint",
+      "endpoint": "https://api.cohere.ai/compatibility/v1",
+      "fingerprint": {
+        "backend": "openai",
+        "dimension": 384,
+        "model": "embed-english-light-v3.0"
+      },
+      "wire_protocol": "openai-compatible",
+      "provider": "cohere",
+      "selected_secret_env": "COHERE_API_KEY",
+      "binding_id": "cohere-embeddings",
+      "availability_verified": false,
+      "synthetic": false
+    }
+  },
+  "materialization": "After actual A13 approval only: create final docs under007/authority with operator_approved=true; liter zero_charge_explicitly_approved=true; all other fields immutable. Compute refs over actual final bytes; no service/provider call."
+}

@@ -1,0 +1,10 @@
+{
+  "sourceInventoryDigest": "9ef107844e009bf977cedd6ebf411cfa3751e815247cf836b8f0288529786b11",
+  "buildOutputPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-post-lifecycle-main/debug/universal-agent-runtime",
+  "buildOutputSha256": "2310bd4ee834a094f31e5449f6cbbbea7f42e9068993cbb628c112286b164b6c",
+  "candidatePath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-006/artifacts/universal-agent-runtime",
+  "frozenMainSha256": "2310bd4ee834a094f31e5449f6cbbbea7f42e9068993cbb628c112286b164b6c",
+  "builtMainSha256": "2310bd4ee834a094f31e5449f6cbbbea7f42e9068993cbb628c112286b164b6c",
+  "freezeOutcome": "PASS",
+  "bootEvidence": "see process receipts; not inferred from build"
+}

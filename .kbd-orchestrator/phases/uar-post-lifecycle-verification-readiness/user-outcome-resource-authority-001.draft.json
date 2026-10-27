@@ -1,0 +1,145 @@
+{
+  "schema_version": "uar.fixture-resource-authority.draft.v1",
+  "status": "INERT_DRAFT_PENDING_A13_AND_P1_INSTRUCTION",
+  "executable": false,
+  "operator_approved": false,
+  "epoch_id": "uar-user-outcomes-original-20261024",
+  "paths": {
+    "root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007",
+    "scope_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private",
+    "scope_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533",
+    "packet_state_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/packet",
+    "ledger_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/packet/uar_budget_5d3ed9f4d4218e05b533",
+    "composed": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed",
+    "sealed": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed"
+  },
+  "proposed_scope": {
+    "allowed_after_exact_future_instruction": [
+      "Exclusive creation of fresh007 root/private/composed/sealed parents; stop if proposed new path exists",
+      "Actual private-input preparer using exact lead-approved source/config/credential-reference contract; no credential bytes in source projections",
+      "Private byte-bound metadata/resource sealing with detached authority reference and no self-reference",
+      "Deterministic fixture composition using existing installed001/P0.006 artifacts and final prepared references"
+    ],
+    "not_authorized": [
+      "Starting budget proxy or any runtime/store/service/container",
+      "Any model/embedding/provider request, discovery probe, readiness check or standalone preflight",
+      "Any V/test/lint/format/typecheck/compiler/build/packaging/review gate",
+      "Publication/push/remote agents, credential changes, reset/deletion/reuse of prior state"
+    ],
+    "external_action_approval": "This inert authoring document itself grants none; lead must obtain exact A13 signature/adoption and P1 argv instruction"
+  },
+  "global_limits": {
+    "unique_host_dispatches": 4000,
+    "active_minutes": 2400,
+    "repair_attempts": 9,
+    "repairs_consumed": 9,
+    "remaining_repairs": 0,
+    "no_progress_limit": 3,
+    "original_epoch_utc": "2026-10-24T13:38:17.685447Z",
+    "reset_allowed": false
+  },
+  "forwarding_limits": {
+    "model_attempts": 6000,
+    "embedding_attempts": 20000,
+    "generated_tokens": 2000000,
+    "cost_microunits": 20000000,
+    "request_bytes": 2147483648,
+    "response_bytes": 4294967296,
+    "max_in_flight": 4,
+    "wall_seconds": 259200
+  },
+  "spend_pools": {
+    "cohere": {
+      "limit_microunits": 10000000
+    },
+    "openai_embeddings": {
+      "limit_microunits": 10000000
+    },
+    "liter": {
+      "limit_microunits": 0
+    }
+  },
+  "billing_disposition": {
+    "liter": "Subscriptions; no incremental charge; future exact full-chain zero-charge approval required",
+    "cohere": "Independent USD10 pool; full-request5000microUSD reservation under exact approved charge assumptions, no refund for failed/unknown",
+    "openai_embeddings": "Independent USD10 pool, unused in selected Cohere-only packet; no transfer",
+    "selected_embedding_services": [
+      "cohere"
+    ],
+    "aggregate_limit_is_not_new_balance": true
+  },
+  "epoch_started_unix": 1792849097,
+  "deadline_unix": 1793108297,
+  "seed_draft_source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-budget-seed.final-001.draft.json",
+  "seed_disposition_draft_source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-seed-disposition-001.json",
+  "proposed_final_authority_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/resource-authority.json",
+  "future_detached_signature": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/resource-authority.json.sig",
+    "sha256": null
+  },
+  "future_seed": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/budget-seed.json",
+    "sha256": null
+  },
+  "private_disposition": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/seed-disposition.json",
+    "sha256": null
+  },
+  "preserved_history": {
+    "original_epoch_utc": "2026-10-24T13:38:17.685447Z",
+    "host_accounting": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-011.json",
+      "cutoff": "2026-10-25T13:59:30.207456+00:00",
+      "unique_emitted_host_dispatches": 2572,
+      "active_minutes_conservative_upper_bound": 1279.5506334833333,
+      "repair_floor": 9,
+      "remaining_repairs": 0,
+      "later_activity": "ACCRUES; no reset or new idle exclusions",
+      "historical_pre_epoch_effort": "UNKNOWN"
+    },
+    "legacy_controlled": {
+      "model_request_floor_including_count_helper": 8,
+      "embedding_request_floor": 1185,
+      "embedding_response_floor": 1184,
+      "unresolved_outcomes": [
+        {
+          "packet": "v1.3.0-execution-005",
+          "kind": "controlled_embedding_response_missing",
+          "requests": 398,
+          "responses": 397,
+          "status": "UNKNOWN_RETAINED_NOT_GENUINE_PROVIDER_BILLING"
+        }
+      ],
+      "scope": "Retained separately; no projection into genuine Liter/Cohere/OpenAI billing counters",
+      "prior_failures_and_unknown_causes": "PRESERVED_UNCHANGED"
+    },
+    "prior_authority": {
+      "name": "A12",
+      "binding_revision": 14,
+      "source_identity_name": "user-outcome-source-identity-010",
+      "signature_not_verified_here": true
+    }
+  },
+  "preimage_rule": "Final resource authority signed preimage must omit its own signature digest, future signature-dependent seed/fixture hashes, and any recursive output digest. Seed/fixture/derived receipts may reference already sealed authority/signature. Source/build preimage remains separate from these derived metadata inputs.",
+  "draft_reference_rule": "Null future digests here are explicit unresolved draft slots, not final references. When forming the final signed authority, move future signature/seed/output references outside its signed preimage; never hash placeholders as final authority.",
+  "remaining_dynamic_slots": [
+    "Lead A13 canonical amendment/proposed contract and exact command authorization",
+    "Actual source010/installed001/P0.006/reference closure digests",
+    "Actual private preparer config/source approvals and exact credential-reference authorizations",
+    "Current global accounting cutoff retaining011 floor",
+    "Exact charge/service/source approvals and models/ports",
+    "Actual adopted resource authority digest, detached signature digest, private seed/disposition digests",
+    "Actual derived fixture/configuration hashes and final derived-input receipt; never self-bound into authority"
+  ],
+  "current_global_accounting": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-012.json",
+    "sha256": "sha256:9f6eb63fc14dafd0fb6c852a18b96daee740c6da00a56bab5cf6a2065072ebbf"
+  },
+  "current_global_floor": {
+    "host_calls": 2684,
+    "active_minutes_upper_bound": 1334.8438981000002,
+    "repairs_consumed": 9,
+    "cutoff": "2026-10-25T14:54:47.803333+00:00",
+    "later_activity_accrues": true
+  }
+}

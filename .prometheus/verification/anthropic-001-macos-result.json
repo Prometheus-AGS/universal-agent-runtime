@@ -1,0 +1,25 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/anthropic.cucumber.mjs"
+  ],
+  "started_at": "2026-10-26T21:25:45.311250+00:00",
+  "duration_seconds": 12.588882973010186,
+  "exit_code": 0,
+  "platform": "Mac",
+  "authentication_supplied_by_test": false,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR",
+    "UAR_BASE_URL",
+    "UAR_CUCUMBER_REPORT",
+    "UAR_MODEL",
+    "UAR_WORKSPACE_ID"
+  ],
+  "report": ".prometheus/verification/anthropic-001-macos.cucumber.json"
+}

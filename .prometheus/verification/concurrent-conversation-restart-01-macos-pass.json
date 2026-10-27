@@ -1,0 +1,68 @@
+{
+  "scenario": "CONCURRENT-CONVERSATION-RESTART-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-27T00:01:47.877656+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/concurrent-conversation-restart.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 21.43s",
+  "gherkin_steps": 5,
+  "cleanup_hooks": 1,
+  "attempt": 1,
+  "configured_model": "liter/MiniMax-M3",
+  "session_id": "85bf68ab-d292-41c7-80b3-b9647641f110",
+  "concurrent_runs": [
+    {
+      "status": "fulfilled",
+      "run_id": "0bc16c47-1224-4cea-9ada-e48c6068772c"
+    },
+    {
+      "status": "fulfilled",
+      "run_id": "c382fe45-5889-42c1-8d88-faaaa2fd4e42"
+    }
+  ],
+  "follow_up_run_id": "e627d9fa-78e0-4040-870c-8f472ba06d7b",
+  "overlap_proof": "Sequential server GETs A running, B running, A still running; same conversation and agent; distinct run IDs. Client stream times are supporting evidence only.",
+  "client_stream_overlap_ms": 846.9069830000001,
+  "answer": {
+    "alpha": "ALPHA-18317935-713f-46cc-8a90-aa5463cdb759",
+    "beta": "BETA-8066ecae-8e94-474a-982f-f63c2267d0cf",
+    "total": 933
+  },
+  "restart": {
+    "previous_pid": 47773,
+    "binary_sha256": "ed9b8875707df169f125a345afa442dd12c5c2efc0e2ff03ea50d3b915391252",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-8f23ad9a-17b5-435d-bc75-6e47102082e8.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 52394,
+    "new_process_ready": true
+  },
+  "evidence": ".prometheus/verification/concurrent-conversation-restart/85bf68ab-d292-41c7-80b3-b9647641f110.json",
+  "cucumber_report": ".prometheus/verification/concurrent-conversation-restart-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "previous_scenarios_rerun": false,
+  "disposable_agent_deleted": true,
+  "production_changes": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "source_sha256": {
+    "scripts/behaviors/concurrent-conversation-restart.cucumber.mjs": "cc900d6d2da9c8f58d08ca9629f9a2f112fe41ef318a14277de82fcec85db75c",
+    "scripts/behaviors/features/concurrent-conversation-restart.feature": "d2829c4f5d2ef4c348448e43d38720cbd604dea66e2ee82f449726852cd4e6a4",
+    "scripts/behaviors/steps/concurrent-conversation-restart.steps.mjs": "d15810e59697f0aa2f884ab33ac4f26a2e57eb7fbf6e4c80082d70e280dfabab",
+    "scripts/behaviors/support/restart-owned-uar.mjs": "c9490b4c41ff3fdaa5574a499227f2ce8734e2c1d68c7b56fc9a1ee97e7cdcba"
+  },
+  "scope": "One genuine overlapping pair in a fresh conversation, graceful Mac restart and exact recall of both references plus their combined quantity. Not exhaustive write-ordering/race/crash/backend/platform certification.",
+  "known_limit": "Previously identified out-of-order whole-session persistence risk is not disproven or repaired by this successful interleaving.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

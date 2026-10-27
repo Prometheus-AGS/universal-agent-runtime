@@ -1,0 +1,14 @@
+{
+  "id": "P0.1",
+  "status": "FAIL",
+  "exit_code": 1,
+  "reason": null,
+  "started": "2026-10-25T09:55:07.781265+00:00",
+  "finished": "2026-10-25T09:55:09.132056+00:00",
+  "elapsed_seconds": 1.350480196007993,
+  "output_bytes": 836,
+  "stdout": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/P0.1/stdout.log",
+  "stderr": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/P0.1/stderr.log",
+  "later_stages": "NOT_RUN",
+  "product_gate": "CLOSED"
+}

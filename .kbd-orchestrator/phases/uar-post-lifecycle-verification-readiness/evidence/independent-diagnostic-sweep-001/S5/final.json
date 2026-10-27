@@ -1,0 +1,8 @@
+{
+  "item": "S5",
+  "status": "BLOCKED_AFTER_ONE_CORRECTION",
+  "correction_used": true,
+  "repair_ordinal": 11,
+  "cause": "Source inventory producer rejects the approved nested output destination; no product compiler ran. No second S5 correction/rerun.",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018"
+}

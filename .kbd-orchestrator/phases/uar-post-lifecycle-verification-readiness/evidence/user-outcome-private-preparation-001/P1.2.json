@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "ssh-keygen",
+    "-Y",
+    "sign",
+    "-f",
+    "/Users/gqadonis/.ssh/id_ed25519.pub",
+    "-n",
+    "prometheus-kbd-scope-amendment",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "Signing file /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json\nWrite signature to /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority.json.sig\n",
+  "elapsed_seconds": 0.015554189682006836
+}

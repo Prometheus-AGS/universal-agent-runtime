@@ -1,0 +1,37 @@
+{
+  "classification": "AUTHORIZED_SOURCE_AND_METADATA_AUTHORING_ONLY",
+  "timestamp": "2026-10-25T20:42:50.061282+00:00",
+  "source_inventory_command": "python3 scripts/acceptance/source_inventory.py --output /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-005.json",
+  "source_inventory_output": {
+    "source_identity": "sha256:c32a2b5dc153a28511c2c4e76ac88b4a8acbdaf2dfaa9d935a934982a8eeae0c",
+    "regular_files": 29044,
+    "nonregular_entries": 195,
+    "gate": "CLOSED"
+  },
+  "unsigned_amendment_template_exit": 0,
+  "amendment_manifest_sha256": "sha256:d5b8c10d181abd49cbcdb2299315979499a5a1bc8aee44296b7cc87b6f2b68dd",
+  "scenario_changes": {
+    "added": [],
+    "modified": [],
+    "removed": []
+  },
+  "contract_digest": "f625a31047924ef4e3610f070a48c956719fce523452adcf83bb0e19338d5bfe",
+  "packet_sha256": "sha256:feae246ef42db63cced121f64723dbf75441b9ea41928470d141b65749cdf3b9",
+  "current_adopted_contract": "e4525d25b528cc017ba6639dc610c06188902e0718bf4db786706ad96db4f217",
+  "binding_revision": 18,
+  "new_signature": "NOT_CREATED",
+  "new_adoption": "NOT_RUN",
+  "reviews": "NOT_RUN",
+  "tests_builds_probes": "NOT_RUN",
+  "preparation": "NOT_RUN",
+  "provider_calls": 0,
+  "embedding_spend_this_authoring_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repair_floor": 16,
+  "fixture17_charged": false,
+  "unrequested_changes": "NONE",
+  "guards_trace_to": "Observed A17 iOS failure-policy gap and actual host trust boundaries; no automatic retry/fallback added",
+  "remaining_unverified": "All changed source behavior, syntax, regression tests, review, proposal adoptability, construction and actual user outcomes"
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/rest-setting-restart.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 14.310579656041227
+}

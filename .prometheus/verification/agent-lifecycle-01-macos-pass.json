@@ -1,0 +1,39 @@
+{
+  "scenario": "AGENT-LIFECYCLE-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:54:13.260655+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/agent-lifecycle.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 9 steps (9 passed); 0m 6.580s",
+  "agent_id": "disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61",
+  "model": "liter/MiniMax-M3",
+  "expected_original": {
+    "marker": "ORIGINAL-ed99fc1e-3425-45b9-93c2-fc3add72f973",
+    "answer": 177
+  },
+  "expected_updated": {
+    "marker": "UPDATED-34b3d6e7-ea66-4699-a83a-89692af6630a",
+    "answer": 805
+  },
+  "deleted": true,
+  "evidence": ".prometheus/verification/agent-lifecycle/disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61.json",
+  "cucumber_report": ".prometheus/verification/agent-lifecycle-002-macos.cucumber.json",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "source_sha256": {
+    "scripts/behaviors/features/custom-agent-lifecycle.feature": "227c592d328edc018c2f935e8b61d0d01a34b249c957a9609d24e3337878786c",
+    "scripts/behaviors/steps/custom-agent-lifecycle.steps.mjs": "fda96845425ae4f3eee89dcbe7b14d93ac08fd6e8f0c793765c790b1d8727a53",
+    "scripts/behaviors/agent-lifecycle.cucumber.mjs": "83f27f9cd5122e5e432cee494a4ad7ef11d636c34638db110bc6914e3b6f4379"
+  },
+  "scope": "Disposable custom-agent instruction update, actual changed inference behavior, and deletion through REST on Mac",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction",
+  "prior_failure": "agent-lifecycle-001-macos.cucumber.json: final JSON fence followed by explanatory prose; raw evidence retained and disposable agent cleaned up"
+}

@@ -1,0 +1,23 @@
+{
+  "status": "OPERATOR_SUPPLIED_RATE_NOT_INDEPENDENTLY_VERIFIED",
+  "currency": "USD",
+  "cohere": {
+    "models": [
+      "embed-multilingual-v3.0",
+      "embed-english-v3.0",
+      "embed-english-light-v3.0"
+    ],
+    "input_modality": "text",
+    "usd_per_million_input_tokens": "0.10",
+    "output_token_charge": "none as supplied",
+    "maximum_usd": 10
+  },
+  "openai_embeddings": {
+    "maximum_usd": 10,
+    "selected": false,
+    "credential_env_if_selected": "OPENAI_API_KEY"
+  },
+  "combined_maximum_usd": 20,
+  "transfer_allowed": false,
+  "rate_does_not_authorize_execution": true
+}

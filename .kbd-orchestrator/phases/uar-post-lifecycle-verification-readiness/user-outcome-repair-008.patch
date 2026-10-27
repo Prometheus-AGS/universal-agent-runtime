@@ -1,0 +1,11 @@
+--- a/sdks/rust/Cargo.lock
++++ b/sdks/rust/Cargo.lock
+@@ -5381,7 +5381,7 @@
+ 
+ [[package]]
+ name = "prometheus-parking-lot-core"
+-version = "0.3.0"
++version = "0.4.0"
+ dependencies = [
+  "anyhow",
+  "async-trait",

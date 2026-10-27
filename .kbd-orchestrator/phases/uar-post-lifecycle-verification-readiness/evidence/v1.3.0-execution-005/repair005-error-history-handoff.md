@@ -1,0 +1,19 @@
+# Repair005 error/history handoff — source only
+
+Phase: Execute / uar-post-lifecycle-verification-readiness. Verification CLOSED. Shared checkout; only tests/post_lifecycle_main.rs changed by this writer. No production changes, signing, adoption, publication, tests, compiler, formatter, or checks run. Source/log inspection only before these authorized fixture/documentation edits.
+
+## Observations and exact repairs
+
+- Packet005 teardown recorded ERROR01 root_closed_class HTTP200, 685 bytes, failed sse_object_count; HISTORY terminal_one HTTP200, also685 bytes, failed text_count; ERROR02 budget_error_envelope HTTP422,194 bytes. Bodies were not retained, only SHA256 and length. Exact original body content is unproven. Do not represent these as passing or replace the budget classification oracle with a generic error.
+- ERROR02 proven fixture selector mismatch: mounted /v1/chat/completions is server::api_chat_completion (src/server.rs:2718,6325). resolve_requested_model treats model as verified provider/model selector (6232 onward), not registered agent ID. At6537 onward agent_id is separate. Manifest ERROR02 request json.model currently {fixtureId}-open-budget/open-success. Lead must move those existing values to json.agent_id and set json.model to {approvedProviderId}/{approvedModelId}, including nested disconnect_stream request. Keep budget_error envelope, DONE count, no stop, success, provider failure and disconnect assertions unchanged. This reaches the intended ingress contract; execution remains unverified.
+- HISTORY literal text assertions event: agui.done/error depend on SSE whitespace. Replace terminal_one and terminal_two assertions with sse_object_count match /kind=done count1 and /kind=error count0. Legacy source src/uar/api/sse.rs:649-665 supplies these objects. This is source-backed parsing, not proof that whitespace caused packet005 failure. Other history controls and both-owner isolation remain mandatory.
+- ERROR01 source legacy /kind error and /code budget_admission_failed assertions are consistent with declared protocol; no evidence supports changing their values yet. Missing raw bodies prevent a causal claim. Main1 and main2 retained JSON log WARN/ERROR entries contain no budget diagnostic. Preserve these oracles.
+- Driver assertion receipts now include observedCount and expectedCount for text_count and sse_object_count, without storing response bodies or arbitrary content.
+- Driver CAS control accounting now consumes actual reports emitted during that cas_fixture step, only outcome PASS plus claims.actualRequiredOrderingsObserved=true and claims.actualUnrelatedConflictPreserved=true. These establish both_exact_row_orderings and unrelated_storage_error_preserved respectively. Requirements remain; no rerun, inferred intention, or fabricated PASS.
+- Cleanup owner mismatch belongs tests/support/post_lifecycle_store.rs:367 onward, assigned to lead. Its exact owner proof is not weakened here.
+
+## Files and remaining work
+
+Changed tests/post_lifecycle_main.rs (assertion count receipts; actual CAS claim-to-control accounting) and this handoff. Lead owns manifest changes and cleanup repair. No other additions. No new defensive production guards. CAS accounting only recognizes existing collaborator successful claims; missing claims remain blocked. Count receipts address observed failed assertions without retained diagnostic counts.
+
+Unresolved: original ERROR01 content/classification and original HISTORY terminal content; do not claim resolved by parser change. Runtime terminal behavior, correct provider selection, three main starts, restart persistence and cleanup are unverified. Source identity must be captured by lead's unsigned whole-phase inventory after all writers finish; any subsequent edit keeps gate CLOSED and requires renewed explicit approval.

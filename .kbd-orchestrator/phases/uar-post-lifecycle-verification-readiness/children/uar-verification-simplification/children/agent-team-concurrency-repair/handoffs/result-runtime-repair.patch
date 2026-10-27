@@ -1,0 +1,6 @@
+# Intentionally empty Rust production diff.
+#
+# Source inspection established that the requested 64,000-token cap is passed
+# through the runtime and narrowed by the retained fixture's
+# `providers[0].models[0].max_output_tokens: 512` setting. The lead owns that
+# fixture correction. No runtime source modification is evidence-supported.

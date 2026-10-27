@@ -1,0 +1,49 @@
+{
+  "scenario": "REST-SETTING-RESTART-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "provider_calls": 0,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/user/settings",
+      "status": 200,
+      "response": "{\"user_id\":\"uar-supporting-owner-007\",\"prompt_caching_enabled\":null,\"preferred_scope\":\"session\",\"updated_at\":\"2026-10-27T00:05:51.722438Z\"}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/user/settings",
+      "request": {
+        "prompt_caching_enabled": true
+      },
+      "status": 200,
+      "response": "{\"user_id\":\"uar-supporting-owner-007\",\"prompt_caching_enabled\":true,\"preferred_scope\":\"session\",\"updated_at\":\"2026-10-27T00:05:51.736900Z\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/user/settings",
+      "status": 200,
+      "response": "{\"user_id\":\"uar-supporting-owner-007\",\"prompt_caching_enabled\":true,\"preferred_scope\":\"session\",\"updated_at\":\"2026-10-27T00:05:51.736900Z\"}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 52394
+  },
+  "original": {
+    "user_id": "uar-supporting-owner-007",
+    "prompt_caching_enabled": null,
+    "preferred_scope": "session",
+    "updated_at": "2026-10-27T00:05:51.722438Z"
+  },
+  "target": true,
+  "saved": {
+    "user_id": "uar-supporting-owner-007",
+    "prompt_caching_enabled": true,
+    "preferred_scope": "session",
+    "updated_at": "2026-10-27T00:05:51.736900Z"
+  }
+}

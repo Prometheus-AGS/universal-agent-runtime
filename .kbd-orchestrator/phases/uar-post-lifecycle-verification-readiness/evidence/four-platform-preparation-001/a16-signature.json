@@ -1,0 +1,18 @@
+{
+  "command": [
+    "ssh-keygen",
+    "-Y",
+    "sign",
+    "-f",
+    "/Users/gqadonis/.ssh/id_ed25519.pub",
+    "-n",
+    "prometheus-kbd-scope-amendment",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json"
+  ],
+  "exit_code": 0,
+  "observed_at_utc": "2026-10-25T19:48:15.057476+00:00",
+  "signature_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json.sig",
+  "signature_sha256": "sha256:f25e76a8ec2344e3ffd722568e48805c830ffda73bbde89d6e80b36a5f049608",
+  "actual_output": "Signing file /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json\nWrite signature to /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json.sig",
+  "key_source": "existing SSH-agent public-key reference; private key not read"
+}

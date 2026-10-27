@@ -1,0 +1,12 @@
+{
+  "status": "METADATA_MATERIALIZED_PENDING_SUPPORTING_AND_FINAL_INVENTORY",
+  "seed": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/budget-seed.json",
+    "sha256": "sha256:4ab2c0c33086d2f20324a990abe0f180e14ff29852c225668a1c80f4b413dc28"
+  },
+  "bindings_working": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/bindings.materializing.json",
+    "sha256": "sha256:764611c8f8930e3876fa045971b9946f3b534904843d9425d5963b8854d4a3a4"
+  },
+  "no_ledger_or_service_started": true
+}

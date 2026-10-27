@@ -1,0 +1,14 @@
+{
+  "excluded_from_staging_only": [
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S6/attempt-1/universal-agent-runtime",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S7/attempt-1/libuniversal_agent_runtime.rlib",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S8/attempt-2/libuniversal_agent_runtime.rlib",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-004/artifacts/universal-agent-runtime",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-005/artifacts/universal-agent-runtime",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/main-boundary-v1.3.0-006/artifacts/universal-agent-runtime",
+    "sdks/typescript/.acceptance-artifacts",
+    "static/index.html",
+    "static/.vite/markdown-engine-graph.json"
+  ],
+  "reason": "Generated compiler artifacts, SDK emit output, and generated static entry/graph whose assets are ignored. Local originals remain intact; source, evidence receipts and logs are included. No .prometheus history is excluded."
+}

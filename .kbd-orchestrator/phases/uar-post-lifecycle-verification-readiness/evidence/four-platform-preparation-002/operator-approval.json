@@ -1,0 +1,13 @@
+{
+  "operator_answer": "Approve A17 and P16.002 preparation",
+  "received_at_utc": "2026-10-25T20:24:21.539829+00:00",
+  "contract_digest": "e4525d25b528cc017ba6639dc610c06188902e0718bf4db786706ad96db4f217",
+  "source_identity": "sha256:580f7196999aa00b78e211a9894424b0d8c4074acf07fbafb483d00592e8673f",
+  "packet_sha256": "8f971047212e838a3d046c89234496c14e885b6ccbc4831c57b21e7745af0653",
+  "accounting": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-018.json",
+  "repairs_consumed": 15,
+  "repair16_charged": false,
+  "product_verification": "CLOSED",
+  "stop_first_failure": true,
+  "automatic_retry": false
+}

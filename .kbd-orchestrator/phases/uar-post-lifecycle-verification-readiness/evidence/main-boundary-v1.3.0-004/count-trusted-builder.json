@@ -1,0 +1,14 @@
+{
+  "kind": "uar.count-evidence-split/v1",
+  "outcome": "FAIL_OR_BLOCKED",
+  "evidenceScope": "trusted_rust_builder",
+  "standaloneMainExactFit": "UNSUPPORTED",
+  "standaloneMain": "UNSUPPORTED",
+  "trustedRustBuilder": "FAIL_OR_BLOCKED",
+  "setup": "PASS",
+  "bodyStatus": "FAIL_OR_BLOCKED",
+  "bodyError": "recorded final body differs from validated serialization",
+  "teardown": "PASS",
+  "teardownError": null,
+  "modelRequests": 1
+}

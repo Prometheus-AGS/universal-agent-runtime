@@ -1,0 +1,29 @@
+{
+  "item": "S8",
+  "attempt": 2,
+  "argv": [
+    "cargo",
+    "build",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "embedded-mobile",
+    "--lib",
+    "--target",
+    "aarch64-apple-ios"
+  ],
+  "exit_code": 0,
+  "status": "PASS_AFTER_ONE_CORRECTION",
+  "elapsed_seconds": 309.8399500846863,
+  "source_identity": "sha256:c6963d648f9961315d62c8a975da6501f64c2dd5f60f69b21aac3612a701c500",
+  "artifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S8/attempt-2/libuniversal_agent_runtime.rlib",
+      "sha256": "25c0f1f1cac1d65f1fe468b5f0acf9f867420e8042b098b5c117df338a0edfa5"
+    }
+  ],
+  "stdout": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S8/attempt-2/stdout.log",
+  "stderr": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S8/attempt-2/stderr.log",
+  "correction_used": true,
+  "repair_ordinal": 12
+}

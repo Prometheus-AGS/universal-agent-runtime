@@ -1,0 +1,173 @@
+{
+  "status": "STOPPED_FIRST_FAILURE_NO_REPAIRS_REMAIN",
+  "startedAt": "2026-10-24T18:58:31.497115+00:00",
+  "originalEpochStart": "2026-10-24T13:38:17.685447Z",
+  "contractDigest": "8b2557856e30e257dd91e82c6fcb6fa659c663c0e603a8754e36140c7231552d",
+  "sourceInventoryDigest": "9ef107844e009bf977cedd6ebf411cfa3751e815247cf836b8f0288529786b11",
+  "manifestSha256": "296ef9995094432f3bcd8574650e6d9c956c7053ef9e10407ec6078afa9adf12",
+  "adoptionDecision": "contract-adoption-uar-post-lifecycle-verification-readiness-8b255785",
+  "bindingRevision": 8,
+  "repairsApplied": 5,
+  "signedRepairLimit": 5,
+  "remainingRepairs": 0,
+  "cumulativeCallLimit": 480,
+  "activeMinuteLimit": 240,
+  "signedIdleSeconds": 10899.484,
+  "firstFailureStops": true,
+  "laterGates": "NOT_RUN: Issue426, six supported builds, independent Rust/code reviews/screens, seven spec validations",
+  "stoppedAt": "2026-10-24T19:06:50.190871+00:00",
+  "verificationGate": "CLOSED",
+  "build": {
+    "argv": [
+      "cargo",
+      "build",
+      "--locked",
+      "--no-default-features",
+      "--features",
+      "server-full",
+      "--bin",
+      "universal-agent-runtime"
+    ],
+    "exitCode": 0,
+    "outcome": "PASS",
+    "elapsedSeconds": 144.25752578899846,
+    "descendantOwnership": "see awaited fixture teardown",
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "298cdd335e1b3403623f303898a51f4fa7f6417acbd528a47a7ad3bcef2efd2a"
+  },
+  "body": {
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "--no-default-features",
+      "--features",
+      "server-full",
+      "--test",
+      "post_lifecycle_main",
+      "--",
+      "--test-threads=1"
+    ],
+    "exitCode": 101,
+    "outcome": "FAIL",
+    "elapsedSeconds": 227.1282059479854,
+    "descendantOwnership": "see awaited fixture teardown",
+    "stdoutSha256": "3fba9fa8db9922b3853b7d4dc2124455c9e4a8d2e537e1b71172000012a8e725",
+    "stderrSha256": "0b048527277942efdcbe736f9706f7a78e56778283496799de7bbcbaf6342240"
+  },
+  "mainBoundaryOutcome": {
+    "outcome": "BLOCKED",
+    "testExitCode": 101,
+    "completeScenarioAndTeardownSummary": false
+  },
+  "caseOutcomes": {
+    "LIAB-01": {
+      "outcome": "PASS",
+      "reason": ""
+    },
+    "LIAB-02": {
+      "outcome": "PASS",
+      "reason": ""
+    },
+    "ERROR-01": {
+      "outcome": "FAIL",
+      "reason": "assertion_mismatch:sse_object_count"
+    },
+    "ERROR-02": {
+      "outcome": "FAIL",
+      "reason": "assertion_mismatch:sse_object_count"
+    },
+    "COUNT-01": {
+      "kind": "uar.count-evidence-split/v1",
+      "body": {
+        "outcome": "PASS",
+        "evidenceScope": "trusted_rust_builder",
+        "standaloneMainExactFit": "UNSUPPORTED",
+        "trustedRustBuilder": "PASS",
+        "standaloneMain": "UNSUPPORTED",
+        "standaloneReason": "No serialized/runtime trusted preparation seam; not added by this phase",
+        "proofScope": "Existing Rust builder plus real controlled loopback HTTP peer; synthetic cl100k JSON agreement only",
+        "modelRequests": 2,
+        "atLimitCount": 181,
+        "atLimitWireSha256": "ba4239287cf3a023db8bbad7eb9e9728e1e3cc983db52fcb62dd137af8cc0f2f",
+        "toolFreeCount": 136,
+        "reservedOutput": 512,
+        "reservedReasoning": 19,
+        "reservedUncertainty": 7,
+        "oneOverNoEffect": true,
+        "approximateNoEffect": true,
+        "unsupportedPreparationRejected": true,
+        "protectedRecordsUnchanged": true,
+        "builderAtLimitCount": 82,
+        "builderWireSha256": "d463321ec8a58c23e0bb2638175150059ebf38ffa0c618cab55a38db406c2c4a",
+        "bodyHashes": [
+          "ba4239287cf3a023db8bbad7eb9e9728e1e3cc983db52fcb62dd137af8cc0f2f",
+          "d463321ec8a58c23e0bb2638175150059ebf38ffa0c618cab55a38db406c2c4a"
+        ]
+      },
+      "outcome": "PASS",
+      "evidenceScope": "trusted_rust_builder",
+      "standaloneMainExactFit": "UNSUPPORTED",
+      "setup": "PASS",
+      "bodyStatus": "PASS",
+      "teardown": "PASS"
+    },
+    "HISTORY-01": {
+      "outcome": "FAIL",
+      "reason": "assertion_mismatch:sse_object_count"
+    },
+    "KB-01": {
+      "outcome": "FAIL",
+      "reason": "assertion_mismatch:typed_ingestion_failure_see_poll_receipt"
+    },
+    "CAS-01": {
+      "outcome": "PASS",
+      "reason": ""
+    },
+    "BTHREE-01": {
+      "outcome": "NOT_EXERCISED",
+      "reason": "specific_original_archive_absent",
+      "disposition": {
+        "located": false,
+        "status": "HISTORICAL_ATTRIBUTED_DISPOSITION_ONLY",
+        "sourceReferences": [
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/analysis.md#b3-evidence-search-result",
+          ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/assessment.md"
+        ],
+        "reason": "Specific original c9/B3 assertion archive not located in recorded bounded search; no new search or runtime result claimed."
+      }
+    },
+    "IDENTITY-01": {
+      "outcome": "PASS",
+      "observedMainStarts": 2,
+      "note": "overall PASS additionally requires successful awaited teardown and runner input rehash"
+    }
+  },
+  "caseTotals": {
+    "PASS": 5,
+    "FAIL": 4,
+    "BLOCKED": 0,
+    "NOT_EXERCISED": 1
+  },
+  "teardownSummary": {
+    "outcome": "BLOCKED",
+    "cleanupFailures": [],
+    "processCountMismatch": true,
+    "storeScopeReleased": true
+  },
+  "currentExactOwnedRows": {
+    "declared": 20,
+    "outcome": "PASS",
+    "allAbsenceObserved": true
+  },
+  "ownedChildExits": "PASS: two main plus peer awaitedexit0",
+  "dockerCleanup": "PASS stop/down exit0; owned container/network removed, disk retained",
+  "finalCanonicalRevision": 390,
+  "completion": "NOT_ACCEPTED; canonical5.1/5.2pending; no archive/closure/reflection",
+  "budgetAtStop": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-006/budget-at-stop.json",
+  "budgetCutoff": {
+    "calls": 381,
+    "signedActiveMinuteUpperBound": 147.17569844999997,
+    "repairsConsumed": 5
+  }
+}

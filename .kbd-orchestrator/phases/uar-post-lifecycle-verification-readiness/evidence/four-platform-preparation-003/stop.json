@@ -1,0 +1,45 @@
+{
+  "status": "STOPPED_FIRST_REQUIRED_REVIEW_BLOCKER_NO_RETRY",
+  "recorded_at_utc": "2026-10-25T20:49:13.148273+00:00",
+  "failed_step": "A18_CODE_SOURCE_REVIEW",
+  "review_verdict": "BLOCKED_SOURCE_ONLY",
+  "finding": "Server collection can dispatch the next item before prior genuine upstream forwarding reservations settle.",
+  "report": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-003/code-source-review.md",
+    "sha256": "sha256:d7f083ed5ee35c62f804e40a9bb521fad46f632670e149de7fd1a96bd06944cf"
+  },
+  "contract_digest": "f625a31047924ef4e3610f070a48c956719fce523452adcf83bb0e19338d5bfe",
+  "binding_revision": 19,
+  "source_identity": "sha256:c32a2b5dc153a28511c2c4e76ac88b4a8acbdaf2dfaa9d935a934982a8eeae0c",
+  "signature": "SUCCEEDED",
+  "adoption": "SUCCEEDED_BINDING19",
+  "rust_review": "NOT_RUN",
+  "swift_review": "NOT_RUN",
+  "preparation_controller": "NOT_RUN",
+  "fixture17_charged": false,
+  "repair_floor": 16,
+  "target_install": "NOT_RUN",
+  "supporting_metadata": "NOT_RUN",
+  "resource_signing": "NOT_RUN",
+  "composition": "NOT_RUN",
+  "product_verification": "CLOSED",
+  "provider_calls_this_attempt": 0,
+  "embedding_spend_this_attempt_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "all_prior_consumption_and_limits_retained": true,
+  "automatic_repair_or_retry": false,
+  "additional_source_observation_before_review_stop": {
+    "classification": "LEAD_SOURCE_INSPECTION_NOT_RUNTIME_REPRODUCTION_NOT_REVIEWED",
+    "files": [
+      "scripts/acceptance/prepare_artifacts.py:136-145",
+      "scripts/acceptance/prepare_platform_inputs.py:240-257",
+      ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-config-003.draft.json"
+    ],
+    "observation": "Artifact child requires UAR_PREP_BASE_HOME, UAR_PREP_BASE_LANG, UAR_PREP_BASE_LC_ALL, UAR_PREP_BASE_PATH and UAR_PREP_BASE_TMPDIR. Parent passes only its literal stage environment; frozen draft does not bind these names, and controller does not inject them.",
+    "execution": "NOT_RUN",
+    "repair": "NOT_AUTHORIZED_OR_APPLIED"
+  },
+  "next": "Discuss bounded shared-ledger settlement and literal preparation environment correction versus backlog. No repair or retry before instruction."
+}

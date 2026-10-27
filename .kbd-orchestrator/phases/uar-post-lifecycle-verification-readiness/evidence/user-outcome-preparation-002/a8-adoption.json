@@ -1,0 +1,10 @@
+{
+  "status": "ADOPTED",
+  "contract_digest": "fddca102edb4a2eaa38dab39fafd653011cad00f7a225fd1af1398dc47b09ae6",
+  "decision": "contract-adoption-uar-post-lifecycle-verification-readiness-fddca102",
+  "binding_revision": 10,
+  "plan_revision": 126,
+  "signature_exit": 0,
+  "adoption_exit": 0,
+  "product_gate": "CLOSED"
+}

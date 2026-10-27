@@ -1,0 +1,9 @@
+{
+  "approved": "A14 and corrected P1.002",
+  "contract": "cb7b76fe3ba7127bb91c2dfb5bd57641a862a15039817582ff89f7f96bc098ce",
+  "setup_started_unix": 1792942740,
+  "total_seconds": 1445,
+  "previous_P1_seconds": 354.230021238327,
+  "repair_charged_on_M0_entry": 10,
+  "product_gate": "CLOSED"
+}

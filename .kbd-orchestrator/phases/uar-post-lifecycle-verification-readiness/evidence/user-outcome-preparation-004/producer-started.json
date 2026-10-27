@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/Users/gqadonis/miniconda3/bin/python3",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-004/artifact-preparation.config.json"
+  ],
+  "started": "2026-10-25T12:45:57.240083+00:00",
+  "monotonic_started": 250693.871760007,
+  "serial": true,
+  "automatic_retry": false
+}
