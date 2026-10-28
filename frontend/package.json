@@ -44,7 +44,7 @@
     "@prometheus-ags/a2ui-core": "workspace:*",
     "@prometheus-ags/a2ui-uar": "workspace:*",
     "@prometheus-ags/entity-graph-core": "3.0.3",
-    "@prometheus-ags/prometheus-entity-management": "3.0.3",
+    "@prometheus-ags/prometheus-entity-management": "4.2.0",
     "@prometheus-ags/uar-ui": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "3.14.9",
