@@ -2372,7 +2372,12 @@ impl RunManager {
 
     /// Whether this artifact enters the configured host-owned graph path.
     pub(crate) fn uses_agent_graph(&self, artifact: &AgentArtifact) -> bool {
-        artifact.id == "orchestrator-agent" && self.agent_graph.is_some()
+        self.uses_agent_graph_for(&artifact.id)
+    }
+
+    /// Same decision keyed by agent id, for callers that have not resolved an artifact.
+    pub(crate) fn uses_agent_graph_for(&self, agent_id: &str) -> bool {
+        agent_id == "orchestrator-agent" && self.agent_graph.is_some()
     }
 
     /// Content-free host diagnostics for retained sandbox operations.

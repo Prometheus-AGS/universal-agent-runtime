@@ -1,0 +1,217 @@
+{
+  "scenario": "E15-SKILL-LEXICAL-SEMANTIC",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+        "description": "Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.",
+        "triggers": {
+          "keywords": [
+            "freight tariff",
+            "consignment valuation"
+          ],
+          "semantic": "Calculate the total price to dispatch packages to a recipient."
+        },
+        "prompt_overlay": "For delivery charges, multiply the box count by 11 and add 62. Return only JSON with marker \"TARGET-0550da1d-c725-4c4f-b2b7-1ff4990532f6\" and numeric quote. This is the private pricing recipe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a\",\"title\":\"delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a\",\"description\":\"Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"freight tariff\",\"consignment valuation\"],\"semantic\":\"Calculate the total price to dispatch packages to a recipient.\"},\"preferred_tools\":[],\"prompt_overlay\":\"For delivery charges, multiply the box count by 11 and add 62. Return only JSON with marker \\\"TARGET-0550da1d-c725-4c4f-b2b7-1ff4990532f6\\\" and numeric quote. This is the private pricing recipe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+        "description": "Schedule repotting for tropical orchids in a greenhouse.",
+        "triggers": {
+          "keywords": [
+            "orchid-5a19e867"
+          ]
+        },
+        "prompt_overlay": "For any request, return only JSON with marker \"DECOY-aeb1242b-2648-48de-9556-30e6bee9ba2a\" and numeric litres 21. This is the private greenhouse recipe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a\",\"title\":\"orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a\",\"description\":\"Schedule repotting for tropical orchids in a greenhouse.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"orchid-5a19e867\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"For any request, return only JSON with marker \\\"DECOY-aeb1242b-2648-48de-9556-30e6bee9ba2a\\\" and numeric litres 21. This is the private greenhouse recipe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-lexical-semantic-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+        "metadata": {
+          "title": "Disposable lexical/semantic assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "e15-no-tools-5a19e867"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Follow the instructions of the skill the runtime has loaded for you and return its requested answer format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+                "orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a"
+              ],
+              "denied_ids": []
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-lexical-semantic-5a19e867-00c9-4902-b5b6-cebb3325f02a\",\"metadata\":{\"title\":\"Disposable lexical/semantic assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"e15-no-tools-5a19e867\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Follow the instructions of the skill the runtime has loaded for you and return its requested answer format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:37ccbc4727c13627f6934fe6d32c6e8a48cf0058b523eb2895e343d48adde241\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a\",\"orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a\"],\"denied_ids\":[]}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-lexical-semantic-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+        "model": "liter/MiniMax-M3",
+        "session_id": "d4dfe718-8aa9-4582-85ff-871da9c6a99c",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "How much should I charge to send 7 boxes to a customer? Please work out the delivery fee. Order reference orchid-5a19e867."
+          }
+        ]
+      },
+      "status": 504,
+      "response": "{\"error\":{\"message\":\"Timed out waiting for model response\",\"type\":\"timeout_error\"}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-lexical-semantic-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "original_config": {
+    "engine": "service",
+    "algorithm": "keyword",
+    "threshold": 0.5,
+    "margin_threshold": 0.05,
+    "top_k": 3,
+    "model_name": null
+  },
+  "keyword_controls": [
+    {
+      "skill_id": "delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+      "matched_keywords": []
+    },
+    {
+      "skill_id": "orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+      "matched_keywords": [
+        "orchid-5a19e867"
+      ]
+    }
+  ],
+  "agent_id": "disposable-lexical-semantic-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+  "target_id": "delivery-pricing-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+  "decoy_id": "orchid-repotting-5a19e867-00c9-4902-b5b6-cebb3325f02a",
+  "model": "liter/MiniMax-M3",
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 31145
+}

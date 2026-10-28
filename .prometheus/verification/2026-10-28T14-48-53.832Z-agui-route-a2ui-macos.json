@@ -1,0 +1,104 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "an-ag-ui-client-sees-the-agent's-a2ui-surface-on-uar's-dedicated-ag-ui-route;a-real-agent-publishes-an-a2ui-greeting-and-the-ag-ui-client-receives-the-surface",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A real agent publishes an A2UI greeting and the AG-UI client receives the surface",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 98126326
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent can publish A2UI surfaces on the dedicated AG-UI route",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:22"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7377945235
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "an AG-UI client asks the agent for a fresh greeting surface",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:51"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 630611,
+              "error_message": "AssertionError [ERR_ASSERTION]: No A2UI activity reached the AG-UI client; event types seen: RUN_STARTED, TEXT_MESSAGE_START, TEXT_MESSAGE_CONTENT, TOOL_CALL_START, TOOL_CALL_ARGS, TOOL_CALL_END, TOOL_CALL_RESULT, TEXT_MESSAGE_END, RUN_FINISHED\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/agui-route-a2ui.steps.mjs:83:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the AG-UI stream carries the published surface as an A2UI activity the client can render",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:77"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 58546961
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ3VpLXJvdXRlLWEydWkvZGlzcG9zYWJsZS1hZ3VpLWEydWktZGJkOWQ5OTEtNGQxOC00Njg3LTk3ZDUtYjA0MzI0MDc3YTIwLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          },
+          {
+            "name": "@a2ui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "an-ag-ui-client-sees-the-agent's-a2ui-surface-on-uar's-dedicated-ag-ui-route",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "An AG-UI client sees the agent's A2UI surface on UAR's dedicated AG-UI route",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agui",
+        "line": 1
+      },
+      {
+        "name": "@a2ui",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/agui-route-a2ui.feature"
+  }
+]

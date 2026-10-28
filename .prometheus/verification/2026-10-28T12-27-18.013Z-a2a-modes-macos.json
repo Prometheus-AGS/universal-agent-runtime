@@ -1,0 +1,169 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks;legacy-a2a-message/send-completes-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Legacy A2A message/send completes and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 102271521
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for A2A",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:34"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 27278584,
+              "error_message": "AssertionError [ERR_ASSERTION]: {\"code\":-32002,\"message\":\"task is active, closed, or cannot be cancelled\"}\n    + expected - actual\n\n    -false\n    +true\n\n    at legacySend (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/a2a-modes.steps.mjs:70:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/a2a-modes.steps.mjs:79:17)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a fresh calculation and then a dependent follow-up through legacy A2A message/send",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both legacy tasks complete with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:82"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 60562413
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hMmEtbW9kZXMvNDUwYzQzZTItZWM0Ny00YjI3LWE4ZTMtZWFmNTI4Nzc3OWRlLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks;a2a-v1-sendstreamingmessage-streams-task-updates-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "A2A v1 SendStreamingMessage streams task updates and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 41148437
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for A2A",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:34"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9681136706
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I send a fresh calculation and then a dependent follow-up through A2A v1 SendStreamingMessage",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:118"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 784649
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both streams progress to a completed task with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 74549654
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hMmEtbW9kZXMvNWMwNzk0NWYtZjNhMy00NzhiLWI2ZDMtZWRlODAwN2FlNDBiLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Legacy A2A JSON and A2A v1 streamed tasks",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@a2a",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/a2a-modes.feature"
+  }
+]

@@ -2210,3 +2210,18 @@ Through Liter, MiniMax-M3 writes reasoning into `content`; the driver maps only 
 
 ## 2026-10-27 — Gate plans must follow the real-path evidence rule
 In orchestrator-routing-reasoning-repair, plan revision 2 put filtered `cargo test --lib` and mock-LLM integration tests into the verification gate and its exit criteria. `CLAUDE.md` says unit, module-local, mock-only and filtered tests do not count as completion evidence. The operator removed both steps, but only after one had run. That run needed a test-only repair of two stale initializers outside the change: the lib test target had been broken since 2026-10-20/22 and nobody had noticed. Before proposing gate commands, check each against that rule. For UAR product behavior, the gate is build → (validate) → owned restart → the manual BDD scenario plus raw-evidence review. Also confirm that any observable a gate step reads actually exists: the run API does not expose the request-budget receipt.
+
+## 2026-10-28 — A provider PUT clears every model's verification
+
+`PUT /api/uar/providers/{id}` changes the provider configuration digest, so
+`model_verifications` for **all** of that provider's models become empty, not
+only for the models edited. Unverified models disappear from `/v1/models`, and
+explicit `provider/model` selection is refused ("Selected model is disabled,
+unverified, or its configuration changed",
+`src/uar/api/targets.rs:82-83`). Observed when adding the MiMo v2.6 models to
+`liter`. After any provider PUT, re-run
+`POST /api/uar/providers/{id}/test` for every enabled model, with a small
+`output_token_cap`, before running scenarios that select models.
+
+## 2026-10-28 — Repeated gotcha
+The A2UI plan put unit tests and a typecheck into the gate, repeating the 2026-10-27 gotcha "Gate plans must follow the real-path evidence rule" (gotchas.md:2211), which the lead had not read before planning. Root cause: gotchas.md was not read before the subsystem work, as the project rules require. Gate corrected to build -> validate -> owned restart -> BDD + raw-evidence review.

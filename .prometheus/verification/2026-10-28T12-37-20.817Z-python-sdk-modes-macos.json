@@ -1,0 +1,180 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "shipped-python-sdk-unary-and-streamed-completions;the-python-sdk's-unary-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The Python SDK's unary chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 81812873
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for the Python SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/python-sdk-modes.steps.mjs:43"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7268229634
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the shipped Python SDK sends a fresh calculation and then a dependent follow-up with chat",
+            "match": {
+              "location": "scripts/behaviors/steps/python-sdk-modes.steps.mjs:84"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 70051127
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both SDK completions stop with the agent's marker and correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/python-sdk-modes.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 69271584
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9weXRob24tc2RrLW1vZGVzL2Q5NjVkYmRjLWU1NzQtNDE2ZS1hY2NhLTY3MjU0ZTM4YmJkYi5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@python",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "shipped-python-sdk-unary-and-streamed-completions;the-python-sdk's-streamed-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The Python SDK's streamed chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 36830701
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for the Python SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/python-sdk-modes.steps.mjs:43"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8114913811
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "the shipped Python SDK sends a fresh calculation and then a dependent follow-up with stream_chat",
+            "match": {
+              "location": "scripts/behaviors/steps/python-sdk-modes.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 74579943
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both SDK streams deliver incremental text to one stop with correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/python-sdk-modes.steps.mjs:120"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 90189544
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9weXRob24tc2RrLW1vZGVzL2FiN2NiZjc4LTJkMGQtNDE3Yi1iMjUwLWMwOTY0MDk3ODYxNy5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@python",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "shipped-python-sdk-unary-and-streamed-completions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Shipped Python SDK unary and streamed completions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@sdk",
+        "line": 1
+      },
+      {
+        "name": "@python",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/python-sdk-modes.feature"
+  }
+]

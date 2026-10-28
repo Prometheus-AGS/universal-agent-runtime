@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 700,
+  "derivedRevision": 700,
+  "frontier": {
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 588,
+    "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+  },
+  "conflictCount": 0,
+  "phase": "identity-pass-through",
+  "phaseId": "uar-verification-simplification::identity-pass-through",
+  "parentPhase": "uar-verification-simplification",
+  "last_updated": "2026-10-28T10:59:39.603112Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "completionScopes": {
+    "completion": "phase",
+    "runCompletion": "run"
+  },
+  "runCompletion": {
+    "scope": "run",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 144,
+      "total": 170,
+      "status": "BLOCKED"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": null
+}

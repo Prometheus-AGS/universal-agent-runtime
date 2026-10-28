@@ -1,0 +1,287 @@
+{
+  "scenario": "I06-I07-A2A-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "follow_up_contract": "server context via contextId",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+        "metadata": {
+          "title": "Disposable A2A agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "a2a-no-tools-78a78749"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"metadata\":{\"title\":\"Disposable A2A agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2a-no-tools-78a78749\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:09ea0163c8a228e6d5450dc949234fe86603151c93cc993d22096555355b6a9d\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "63babb6b-b1a6-4968-8996-07886c07be83",
+        "method": "message/send",
+        "params": {
+          "message": {
+            "role": "user",
+            "parts": [
+              {
+                "type": "text",
+                "text": "What is (65 multiplied by 34) plus 131?"
+              }
+            ]
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"63babb6b-b1a6-4968-8996-07886c07be83\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:27:59.218631+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]}],\"metadata\":{\"run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "d144a035-a2bd-4c49-8d7c-37b2c66a3648",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"d144a035-a2bd-4c49-8d7c-37b2c66a3648\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:27:59.219610+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]}],\"metadata\":{\"run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\",\"thread_id\":\"16944cd2-f3bb-441e-8dcb-d2725f430f8f\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "e254e7dd-2068-47d5-9398-ced7d955a05c",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"e254e7dd-2068-47d5-9398-ced7d955a05c\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:27:59.219610+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]}],\"metadata\":{\"run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\",\"thread_id\":\"16944cd2-f3bb-441e-8dcb-d2725f430f8f\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "43a0f307-1786-4b23-9e01-f6c029607074",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"43a0f307-1786-4b23-9e01-f6c029607074\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:27:59.219610+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]}],\"metadata\":{\"run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\",\"thread_id\":\"16944cd2-f3bb-441e-8dcb-d2725f430f8f\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "f97ff523-30b6-41bb-8058-2aab23190058",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"f97ff523-30b6-41bb-8058-2aab23190058\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"completed\",\"message\":{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]},\"timestamp\":\"2026-10-28T12:28:02.962297+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]}],\"metadata\":{\"run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\",\"thread_id\":\"16944cd2-f3bb-441e-8dcb-d2725f430f8f\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"5b353d84-48f3-47d9-ac0d-74ffbe259c62\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "6d950eaf-3c6a-47c3-abbb-65730ca7b236",
+        "method": "message/send",
+        "params": {
+          "message": {
+            "role": "user",
+            "parts": [
+              {
+                "type": "text",
+                "text": "Add 36 to your previous answer."
+              }
+            ]
+          },
+          "context_id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"6d950eaf-3c6a-47c3-abbb-65730ca7b236\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:28:03.255910+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 36 to your previous answer.\"}]}],\"metadata\":{\"run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "90e95978-5b4e-4d34-be83-3fb4f55bf2ac",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"90e95978-5b4e-4d34-be83-3fb4f55bf2ac\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:28:03.256705+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 36 to your previous answer.\"}]}],\"metadata\":{\"run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\",\"thread_id\":\"b9a00daf-bed8-438e-8ab7-852846675132\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "b14c9fe2-92c3-484b-8125-aded724dfdef",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"b14c9fe2-92c3-484b-8125-aded724dfdef\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:28:03.256705+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 36 to your previous answer.\"}]}],\"metadata\":{\"run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\",\"thread_id\":\"b9a00daf-bed8-438e-8ab7-852846675132\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "3a28ad0e-2ef1-4c97-b452-234106047394",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"3a28ad0e-2ef1-4c97-b452-234106047394\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:28:03.256705+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 36 to your previous answer.\"}]}],\"metadata\":{\"run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\",\"thread_id\":\"b9a00daf-bed8-438e-8ab7-852846675132\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "e16f8a45-c79d-42b0-b840-a03f1db46956",
+        "method": "tasks/get",
+        "params": {
+          "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"e16f8a45-c79d-42b0-b840-a03f1db46956\",\"result\":{\"id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"context_id\":\"47d3f5cf-db3d-431c-ab24-3d740c6d599d\",\"status\":{\"state\":\"completed\",\"message\":{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>2341 + 36 = 2377.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2377\\n}\\n```\\n\\n2341 + 36 = **2377**.\"}]},\"timestamp\":\"2026-10-28T12:28:06.491367+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (65 multiplied by 34) plus 131?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>Simple arithmetic: 65 × 34 = 2210. 2210 + 131 = 2341.\\n\\nThe response must be a JSON object with keys marker and answer.\\n\\nI don't need to activate a skill. Just answer.\\n\\nWait — should I call activate_skill? The task is a simple arithmetic question. No skill needed. But the tool guidance says skills auto mode. Simple computation doesn't need one.\\n\\nReturn JSON only.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2341\\n}\\n```\\n\\n65 × 34 = 2210, and 2210 + 131 = **2341**.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 36 to your previous answer.\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>2341 + 36 = 2377.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-fe694d15-0478-487d-854f-e1ced377d6b0\\\",\\n  \\\"answer\\\": 2377\\n}\\n```\\n\\n2341 + 36 = **2377**.\"}]}],\"metadata\":{\"run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\",\"thread_id\":\"b9a00daf-bed8-438e-8ab7-852846675132\",\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183\",\"root_run_id\":\"bce0866d-2078-4c90-96f4-694eb5507ab5\"}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-a2a-78a78749-b27b-48ce-b324-99910afeb183",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    2341,
+    2377
+  ],
+  "tasks": [
+    {
+      "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d",
+      "context_id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d",
+      "state": "completed"
+    },
+    {
+      "id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d",
+      "context_id": "47d3f5cf-db3d-431c-ab24-3d740c6d599d",
+      "state": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "legacy-json",
+  "scenario_status": "PASSED",
+  "duration_ms": 8203
+}

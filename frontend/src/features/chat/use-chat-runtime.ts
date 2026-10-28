@@ -10,6 +10,7 @@ import { useThreadTitleStore } from "@/stores/thread-title-store";
 import type { RichMessage, ContentBlock } from "@/types/chat-content";
 import { CHUNK_BUBBLE_VISIBLE, type Chunk } from "@/features/chat/model/chunk";
 import { toChunks } from "@/features/chat/model/to-chunks";
+import { a2uiUserActionLabel } from "@/shared/content/a2ui-user-action";
 import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
 import { useMemoryContext } from "./memory-context";
@@ -24,7 +25,9 @@ function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
 
   if (msg.role === "user") {
     const text = msg.content.filter((b): b is Extract<ContentBlock, { type: "text" }> => b.type === "text").map((b) => b.text).join("");
-    return { role: "user", id: msg.id, content: [{ type: "text", text }], createdAt: toDate(msg.createdAt), attachments: [], metadata: baseMetadata };
+    // A click-started run stores its JSON envelope as the user turn; show a label, never the envelope.
+    const displayText = a2uiUserActionLabel(text) ?? text;
+    return { role: "user", id: msg.id, content: [{ type: "text", text: displayText }], createdAt: toDate(msg.createdAt), attachments: [], metadata: baseMetadata };
   }
   if (msg.role === "system") {
     const text = msg.content.filter((b): b is Extract<ContentBlock, { type: "text" }> => b.type === "text").map((b) => b.text).join("");

@@ -1,0 +1,181 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "native-run-admission-with-legacy-and-official-ag-ui-streams;a-native-run's-default-stream-delivers-legacy-ag-ui-text-and-continues-the-session",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A native run's default stream delivers legacy AG-UI text and continues the session",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 100271868
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for native runs",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:37"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8494132879
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I admit a fresh calculation and then a dependent follow-up as native runs and subscribe to each default stream",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 114250383
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "each legacy run stream delivers incremental text, completes, and answers correctly in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:105"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 100293227
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9uYXRpdmUtcnVuLXN0cmVhbXMvNTRmMzIzOGYtMDBmYy00N2RiLWEyZjAtYWM4NjQ4NDQxNzI0Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "native-run-admission-with-legacy-and-official-ag-ui-streams;a-native-run's-agui_spec-stream-delivers-official-ag-ui-events-and-continues-the-session",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "A native run's agui_spec stream delivers official AG-UI events and continues the session",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 46707245
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for native runs",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:37"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 19342431670
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I admit a fresh calculation and then a dependent follow-up as native runs and subscribe to each agui_spec stream",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1616619,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0 !== 1\n\n    + expected - actual\n\n    -0\n    +1\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/native-run-streams.steps.mjs:131:12)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "each official run stream starts and finishes its run once with correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 117500538
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9uYXRpdmUtcnVuLXN0cmVhbXMvZTljY2IwOWEtNThmYy00NGEwLWIxYmItODc2MWMxMGQ0MjkxLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "native-run-admission-with-legacy-and-official-ag-ui-streams",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Native run admission with legacy and official AG-UI streams",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@streaming",
+        "line": 1
+      },
+      {
+        "name": "@agui",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/native-run-streams.feature"
+  }
+]

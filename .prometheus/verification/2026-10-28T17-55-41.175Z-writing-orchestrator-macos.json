@@ -1,0 +1,150 @@
+[
+  {
+    "description": "  As a user\n  I want the orchestrator to choose a writer from my registered agents\n  So that writing tasks are handled by the writer rather than the mathematics specialist",
+    "elements": [
+      {
+        "description": "",
+        "id": "route-a-writing-request-to-a-saved-writing-specialist;save-a-writer-and-let-intent-classification-route-a-blog-request",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Save a writer and let intent classification route a blog request",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 48072322
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the running UAR contains the saved mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:24"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8820906
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I register a persistent blog and article writing agent",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:39"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 23837681
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the writing agent is saved alongside the mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:79"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14969529012
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I ask the orchestrator to write a community garden blog post",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 296576
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "intent classification selects the writing agent instead of the mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 314070
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "the writing agent returns a blog draft using its saved byline",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:166"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 544052
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJQZXJzaXN0IGEgd3JpdGluZyBhZ2VudCBhbmQgcm91dGUgYSB3cml0aW5nIHRhc2sgYnkgaW50ZW50IiwKICAic3RhdHVzIjogIlBBU1NFRCIsCiAgImNsaWVudF9wbGF0Zm9ybSI6ICJkYXJ3aW4iLAogICJtb2RlbCI6ICJsaXRlci9NaW5pTWF4LU0zIiwKICAid3JpdGVyX2lkIjogIndyaXRpbmctc3BlY2lhbGlzdCIsCiAgIm1hdGhfaWQiOiAibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwKICAiYWdlbnRfcmVjb3JkIjogIi9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudHMvd3JpdGluZy1zcGVjaWFsaXN0Lmpzb24iLAogICJ3cml0ZXJfY3JlYXRlZCI6IGZhbHNlLAogICJ0YXNrIjogIldyaXRlIGEgYmxvZyBwb3N0IG9mIGFwcHJveGltYXRlbHkgMTAwIHRvIDE2MCB3b3JkcyBhYm91dCBob3cgYSBjb21tdW5pdHkgZ2FyZGVuIGhlbHBzIG5laWdoYm9ycyBjb25uZWN0LiBJbmNsdWRlIGEgaGVhZGxpbmUgYW5kIGF0IGxlYXN0IHR3byBzdWJzdGFudGl2ZSBwYXJhZ3JhcGhzLiIsCiAgImFwcHJvdmFsIjogewogICAgImludGVycnVwdF9pZCI6ICIxODg3MzkyYS1mYTVhLTRlNjgtODBiNS04MjljMDJjNjcyNDEiLAogICAgInRvb2wiOiAic3Bhd25fYWdlbnQiLAogICAgImFwcHJvdmVkIjogdHJ1ZSwKICAgICJwYXJlbnRfcnVuX2lkIjogImNlYmJiNTljLWNiZDctNGYxZC1hMDg3LWM4ZTUzMTVlZmMzNCIKICB9LAogICJhcHByb3ZhbF9ldmVudHMiOiBbCiAgICB7CiAgICAgICJ0eXBlIjogIlJVTl9TVEFSVEVEIiwKICAgICAgInRocmVhZElkIjogImIxNjRhOGJhLTM5OTgtNDQ0NC1iYTI4LWI5ODU4MzJiOTkwOCIsCiAgICAgICJydW5JZCI6ICJjZWJiYjU5Yy1jYmQ3LTRmMWQtYTA4Ny1jOGU1MzE1ZWZjMzQiLAogICAgICAicHJvdG9jb2xWZXJzaW9uIjogIjEuMCIKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogIlRPT0xfQ0FMTF9TVEFSVCIsCiAgICAgICJ0b29sQ2FsbElkIjogImZjOWRkYzNjLWI4YWYtNDNhMC05ZjEwLTBhNmE3OGY4MTRiNSIsCiAgICAgICJ0b29sQ2FsbE5hbWUiOiAic3Bhd25fYWdlbnQiCiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJUT09MX0NBTExfQVJHUyIsCiAgICAgICJ0b29sQ2FsbElkIjogImZjOWRkYzNjLWI4YWYtNDNhMC05ZjEwLTBhNmE3OGY4MTRiNSIsCiAgICAgICJkZWx0YSI6ICJ7XCJvcGVyYXRpb25cIjpcInNwYXduX2FnZW50XCIsXCJkZXRhaWxzQXZhaWxhYmxlXCI6ZmFsc2V9IgogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiVE9PTF9DQUxMX0VORCIsCiAgICAgICJ0b29sQ2FsbElkIjogImZjOWRkYzNjLWI4YWYtNDNhMC05ZjEwLTBhNmE3OGY4MTRiNSIKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogIlJVTl9GSU5JU0hFRCIsCiAgICAgICJ0aHJlYWRJZCI6ICJiMTY0YThiYS0zOTk4LTQ0NDQtYmEyOC1iOTg1ODMyYjk5MDgiLAogICAgICAicnVuSWQiOiAiY2ViYmI1OWMtY2JkNy00ZjFkLWEwODctYzhlNTMxNWVmYzM0IiwKICAgICAgIm91dGNvbWUiOiB7CiAgICAgICAgInR5cGUiOiAiaW50ZXJydXB0IiwKICAgICAgICAiaW50ZXJydXB0cyI6IFsKICAgICAgICAgIHsKICAgICAgICAgICAgImlkIjogIjE4ODczOTJhLWZhNWEtNGU2OC04MGI1LTgyOWMwMmM2NzI0MSIsCiAgICAgICAgICAgICJyZWFzb24iOiAidG9vbF9hcHByb3ZhbCIsCiAgICAgICAgICAgICJtZXNzYWdlIjogIkFwcHJvdmUgc3Bhd25fYWdlbnQiLAogICAgICAgICAgICAidG9vbENhbGxJZCI6ICJmYzlkZGMzYy1iOGFmLTQzYTAtOWYxMC0wYTZhNzhmODE0YjUiLAogICAgICAgICAgICAiZXhwaXJlc0F0IjogIjIwMjYtMTAtMjhUMTg6MDA6NDMuOTcxNjI5KzAwOjAwIiwKICAgICAgICAgICAgInJlc3BvbnNlU2NoZW1hIjogewogICAgICAgICAgICAgICJ0eXBlIjogIm9iamVjdCIsCiAgICAgICAgICAgICAgInByb3BlcnRpZXMiOiB7CiAgICAgICAgICAgICAgICAiYXBwcm92ZWQiOiB7CiAgICAgICAgICAgICAgICAgICJ0eXBlIjogImJvb2xlYW4iCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgfSwKICAgICAgICAgICAgICAicmVxdWlyZWQiOiBbCiAgICAgICAgICAgICAgICAiYXBwcm92ZWQiCiAgICAgICAgICAgICAgXSwKICAgICAgICAgICAgICAiYWRkaXRpb25hbFByb3BlcnRpZXMiOiBmYWxzZQogICAgICAgICAgICB9CiAgICAgICAgICB9CiAgICAgICAgXQogICAgICB9CiAgICB9CiAgXSwKICAic2VsZWN0aW9uIjogewogICAgInNvdXJjZUFnZW50SWQiOiAib3JjaGVzdHJhdG9yLWFnZW50IiwKICAgICJhZ2VudCI6IHsKICAgICAgImlkIjogIndyaXRpbmctc3BlY2lhbGlzdCIsCiAgICAgICJ0aXRsZSI6ICJCbG9nIGFuZCBBcnRpY2xlIFdyaXRlciIKICAgIH0sCiAgICAic2VsZWN0ZWRUaHJlYWRJZCI6ICIxNzFhY2M0Ni1jOGJkLTRjMzEtYjNmNS05YTRjNzFiMThiMDYiLAogICAgInNlbGVjdGlvbk1ldGhvZCI6ICJpbnRlbnQiLAogICAgInJvc3RlclJldmlzaW9uIjogImQ2ZTJiNTM2ZGVhNDg3OWYzODUxNDdiMDYwYjAxZDNmNWFhZGE5YmQyNWU1MTY4N2ZjMjUzZDE5NWViMGNjZjAiCiAgfSwKICAiZXZlbnRzIjogWwogICAgewogICAgICAidHlwZSI6ICJSVU5fU1RBUlRFRCIsCiAgICAgICJ0aHJlYWRJZCI6ICJiMTY0YThiYS0zOTk4LTQ0NDQtYmEyOC1iOTg1ODMyYjk5MDgiLAogICAgICAicnVuSWQiOiAiMGQ5Zjk5N2UtZWQwNS00ZjMzLWE5NzAtYTRlNjBkZjgzNjI0IiwKICAgICAgInByb3RvY29sVmVyc2lvbiI6ICIxLjAiCiAgICB9LAogICAgewogICAgICAidHlwZSI6ICJDVVNUT00iLAogICAgICAibmFtZSI6ICJ1YXIuYWdlbnQuc2VsZWN0ZWQiLAogICAgICAidmFsdWUiOiB7CiAgICAgICAgInNvdXJjZUFnZW50SWQiOiAib3JjaGVzdHJhdG9yLWFnZW50IiwKICAgICAgICAiYWdlbnQiOiB7CiAgICAgICAgICAiaWQiOiAid3JpdGluZy1zcGVjaWFsaXN0IiwKICAgICAgICAgICJ0aXRsZSI6ICJCbG9nIGFuZCBBcnRpY2xlIFdyaXRlciIKICAgICAgICB9LAogICAgICAgICJzZWxlY3RlZFRocmVhZElkIjogIjE3MWFjYzQ2LWM4YmQtNGMzMS1iM2Y1LTlhNGM3MWIxOGIwNiIsCiAgICAgICAgInNlbGVjdGlvbk1ldGhvZCI6ICJpbnRlbnQiLAogICAgICAgICJyb3N0ZXJSZXZpc2lvbiI6ICJkNmUyYjUzNmRlYTQ4NzlmMzg1MTQ3YjA2MGIwMWQzZjVhYWRhOWJkMjVlNTE2ODdmYzI1M2QxOTVlYjBjY2YwIgogICAgICB9LAogICAgICAidGhyZWFkSWQiOiAiYjE2NGE4YmEtMzk5OC00NDQ0LWJhMjgtYjk4NTgzMmI5OTA4IiwKICAgICAgInJ1bklkIjogIjBkOWY5OTdlLWVkMDUtNGYzMy1hOTcwLWE0ZTYwZGY4MzYyNCIsCiAgICAgICJhZ2VudElkIjogIm9yY2hlc3RyYXRvci1hZ2VudCIKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogIlRFWFRfTUVTU0FHRV9TVEFSVCIsCiAgICAgICJtZXNzYWdlSWQiOiAiMGQ5Zjk5N2UtZWQwNS00ZjMzLWE5NzAtYTRlNjBkZjgzNjI0OmFzc2lzdGFudCIsCiAgICAgICJyb2xlIjogImFzc2lzdGFudCIKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogIlRFWFRfTUVTU0FHRV9DT05URU5UIiwKICAgICAgIm1lc3NhZ2VJZCI6ICIwZDlmOTk3ZS1lZDA1LTRmMzMtYTk3MC1hNGU2MGRmODM2MjQ6YXNzaXN0YW50IiwKICAgICAgImRlbHRhIjogIlt3cml0aW5nLXNwZWNpYWxpc3RdXG5cbiMgU2l4IEZlZXQgb2YgU29pbCwgYSBOZWlnaGJvcmhvb2QgVW5pdGVkXG5cbkEgY29tbXVuaXR5IGdhcmRlbiBiZWdpbnMgYXMgcmFpc2VkIGJlZHMgYW5kIGJvcnJvd2VkIHRvb2xzLCBidXQgaXQgcXVpZXRseSByZWFycmFuZ2VzIHRoZSBzb2NpYWwgbWFwIG9mIGEgYmxvY2suIFBsb3RzIGFyZSBzbWFsbCwgc28gcGVvcGxlIHdobyB3b3VsZCBuZXZlciBzaGFyZSBhIGJ1aWxkaW5nIGxvYmJ5IGVuZCB1cCBzaGFyaW5nIGEgd2F0ZXJpbmcgY2FuLCBhIGJhZyBvZiBjb21wb3N0LCBhbmQgYmFzaWwgc2VlZHMuIFdpdGhpbiBhIHNlYXNvbiwgYWNxdWFpbnRhbmNlcyBiZWNvbWUgY29sbGFib3JhdG9ycywgYW5kIGNvbGxhYm9yYXRvcnMgYmVjb21lIHNvbWV0aGluZyBjbG9zZXIgdG8gZnJpZW5kcy5cblxuVGhlIHJlYWwgd29yayBvZiBjb25uZWN0aW9uIGhhcHBlbnMgYXQgdGhlIHNoYXJlZCBlZGdlczogdGhlIHRvb2wgc2hlZCwgdGhlIHdhdGVyIHNwaWdvdCwgdGhlIGJlbmNoIHdoZXJlIG11ZGR5IGJvb3RzIGxpbmUgdXAuIFRoZXNlIGxvdy1zdGFrZXMgc3BvdHMgY3JlYXRlIHRoZSBzbWFsbCwgcmVwZWF0ZWQgZW5jb3VudGVycyB0aGF0IHR1cm4gc3RyYW5nZXJzIGludG8gYSBmYW1pbGlhciBmYWNlLiBBbiBvbGRlciBuZWlnaGJvciB0cmFkaW5nIHNxdWFzaCBhZHZpY2Ugd2l0aCBhIHlvdW5nIGZhbWlseSwgYSB0ZWVuYWdlciBlYXJuaW5nIHZvbHVudGVlciBob3Vycywgc29tZW9uZSBhcHBlYXJpbmcgd2l0aCBhIHRhcnAgdGhlIG5pZ2h0IGJlZm9yZSBoYWlsIOKAlCBjb21tdW5pdHkgZ2V0cyBidWlsdCBpbiB0aGUgZ2FwcyBiZXR3ZWVuIHBsYW50aW5nIHNjaGVkdWxlcy5cblxuQnkgbGF0ZSBzdW1tZXIsIHRoZSBnYXJkZW4gcHJvZHVjZXMgbW9yZSB0aGFuIGZvb2QuIEl0IHByb2R1Y2VzIGEgaGFiaXQgb2YgbG9va2luZyB1cCwga25vY2tpbmcsIGFuZCBhc2tpbmcuXG5cbkJ5IFdyZW4gRWRpdG9yICh3cml0ZXItNzZiNTEwNGQpIgogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiVEVYVF9NRVNTQUdFX0VORCIsCiAgICAgICJtZXNzYWdlSWQiOiAiMGQ5Zjk5N2UtZWQwNS00ZjMzLWE5NzAtYTRlNjBkZjgzNjI0OmFzc2lzdGFudCIKICAgIH0sCiAgICB7CiAgICAgICJ0eXBlIjogIlJVTl9GSU5JU0hFRCIsCiAgICAgICJ0aHJlYWRJZCI6ICJiMTY0YThiYS0zOTk4LTQ0NDQtYmEyOC1iOTg1ODMyYjk5MDgiLAogICAgICAicnVuSWQiOiAiMGQ5Zjk5N2UtZWQwNS00ZjMzLWE5NzAtYTRlNjBkZjgzNjI0IiwKICAgICAgIm91dGNvbWUiOiB7CiAgICAgICAgInR5cGUiOiAic3VjY2VzcyIKICAgICAgfQogICAgfQogIF0sCiAgImRyYWZ0IjogIlt3cml0aW5nLXNwZWNpYWxpc3RdXG5cbiMgU2l4IEZlZXQgb2YgU29pbCwgYSBOZWlnaGJvcmhvb2QgVW5pdGVkXG5cbkEgY29tbXVuaXR5IGdhcmRlbiBiZWdpbnMgYXMgcmFpc2VkIGJlZHMgYW5kIGJvcnJvd2VkIHRvb2xzLCBidXQgaXQgcXVpZXRseSByZWFycmFuZ2VzIHRoZSBzb2NpYWwgbWFwIG9mIGEgYmxvY2suIFBsb3RzIGFyZSBzbWFsbCwgc28gcGVvcGxlIHdobyB3b3VsZCBuZXZlciBzaGFyZSBhIGJ1aWxkaW5nIGxvYmJ5IGVuZCB1cCBzaGFyaW5nIGEgd2F0ZXJpbmcgY2FuLCBhIGJhZyBvZiBjb21wb3N0LCBhbmQgYmFzaWwgc2VlZHMuIFdpdGhpbiBhIHNlYXNvbiwgYWNxdWFpbnRhbmNlcyBiZWNvbWUgY29sbGFib3JhdG9ycywgYW5kIGNvbGxhYm9yYXRvcnMgYmVjb21lIHNvbWV0aGluZyBjbG9zZXIgdG8gZnJpZW5kcy5cblxuVGhlIHJlYWwgd29yayBvZiBjb25uZWN0aW9uIGhhcHBlbnMgYXQgdGhlIHNoYXJlZCBlZGdlczogdGhlIHRvb2wgc2hlZCwgdGhlIHdhdGVyIHNwaWdvdCwgdGhlIGJlbmNoIHdoZXJlIG11ZGR5IGJvb3RzIGxpbmUgdXAuIFRoZXNlIGxvdy1zdGFrZXMgc3BvdHMgY3JlYXRlIHRoZSBzbWFsbCwgcmVwZWF0ZWQgZW5jb3VudGVycyB0aGF0IHR1cm4gc3RyYW5nZXJzIGludG8gYSBmYW1pbGlhciBmYWNlLiBBbiBvbGRlciBuZWlnaGJvciB0cmFkaW5nIHNxdWFzaCBhZHZpY2Ugd2l0aCBhIHlvdW5nIGZhbWlseSwgYSB0ZWVuYWdlciBlYXJuaW5nIHZvbHVudGVlciBob3Vycywgc29tZW9uZSBhcHBlYXJpbmcgd2l0aCBhIHRhcnAgdGhlIG5pZ2h0IGJlZm9yZSBoYWlsIOKAlCBjb21tdW5pdHkgZ2V0cyBidWlsdCBpbiB0aGUgZ2FwcyBiZXR3ZWVuIHBsYW50aW5nIHNjaGVkdWxlcy5cblxuQnkgbGF0ZSBzdW1tZXIsIHRoZSBnYXJkZW4gcHJvZHVjZXMgbW9yZSB0aGFuIGZvb2QuIEl0IHByb2R1Y2VzIGEgaGFiaXQgb2YgbG9va2luZyB1cCwga25vY2tpbmcsIGFuZCBhc2tpbmcuXG5cbkJ5IFdyZW4gRWRpdG9yICh3cml0ZXItNzZiNTEwNGQpIiwKICAid29yZF9jb3VudCI6IDE2MiwKICAic2VydmljZV9rZXB0X3J1bm5pbmciOiB0cnVlLAogICJhZ2VudHNfcmV0YWluZWQiOiB0cnVlLAogICJkdXJhdGlvbl9tcyI6IDE1MDUyCn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@writing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "route-a-writing-request-to-a-saved-writing-specialist",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Route a writing request to a saved writing specialist",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@writing",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/writing-orchestrator.feature"
+  }
+]

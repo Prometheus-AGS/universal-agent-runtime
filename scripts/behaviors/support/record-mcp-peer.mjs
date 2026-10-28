@@ -3,6 +3,8 @@
 // or over loopback streamable HTTP (POST /mcp, JSON responses) when PEER_HTTP=1.
 // Tools: record_write (stores one value under a key) and record_read (returns it).
 // State lives in RECORD_FILE; every tools/call is appended to RECORD_LOG.
+// Opt-in DROP_RESPONSE_TOOLS (comma-separated tool names, HTTP mode only) commits the
+// call and then destroys the connection without a response, to simulate a lost reply.
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -22,6 +24,8 @@ const TOOLS = [
   { name: 'record_read', description: 'Read the value stored under a key in the owned record store, with its revision.',
     inputSchema: { type: 'object', properties: { key: { type: 'string', minLength: 1 } }, required: ['key'], additionalProperties: false } },
 ];
+
+const DROPPED = new Set((process.env.DROP_RESPONSE_TOOLS ?? '').split(',').map(name => name.trim()).filter(Boolean));
 
 const load = () => (existsSync(RECORD_FILE) ? JSON.parse(readFileSync(RECORD_FILE, 'utf8')) : {});
 
@@ -77,7 +81,14 @@ if (process.env.PEER_HTTP === '1') {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       const parsed = JSON.parse(body);
-      const responses = (Array.isArray(parsed) ? parsed : [parsed]).map(handle).filter(Boolean);
+      const messages = Array.isArray(parsed) ? parsed : [parsed];
+      const responses = messages.map(handle).filter(Boolean);
+      const drop = messages.find(message => message.method === 'tools/call' && DROPPED.has(message.params?.name));
+      if (drop) {
+        appendFileSync(RECORD_LOG, JSON.stringify({ at: new Date().toISOString(), tool: drop.params.name, response_dropped: true }) + '\n');
+        req.socket.destroy();
+        return;
+      }
       if (responses.length === 0) { res.writeHead(202, { 'Mcp-Session-Id': session }).end(); return; }
       const payload = Array.isArray(parsed) ? responses : responses[0];
       res.writeHead(200, { 'Content-Type': 'application/json', 'Mcp-Session-Id': session }).end(JSON.stringify(payload));

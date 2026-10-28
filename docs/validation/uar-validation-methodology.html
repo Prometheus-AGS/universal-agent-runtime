@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta property="og:type" content="article"><meta property="og:title" content="Value Led Behavioral Verification — KnowMe"><meta property="og:description" content="A practical method for proving useful software behavior and closing agentic development phases."><meta property="og:image" content="https://ipfs.prometheusags.ai/ipfs/bafybeiefqvqkmauayelr2d7sbh7oguww5bj4mfhttmewmkavrbn5ior62m/opengraph.png"><meta property="og:image:secure_url" content="https://ipfs.prometheusags.ai/ipfs/bafybeiefqvqkmauayelr2d7sbh7oguww5bj4mfhttmewmkavrbn5ior62m/opengraph.png"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Screenshot of the actual KnowMe VLBV paper, title, scope, and edition status."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Value Led Behavioral Verification — KnowMe"><meta name="twitter:description" content="Complete research and design edition, 27 October 2026."><meta name="twitter:image" content="https://ipfs.prometheusags.ai/ipfs/bafybeiefqvqkmauayelr2d7sbh7oguww5bj4mfhttmewmkavrbn5ior62m/opengraph.png">
+<title>Value Led Behavioral Verification — KnowMe (Revised 2026-10-27)</title><meta name="description" content="A practical method for proving useful software behavior and closing agentic development phases. Local revision of the KnowMe research and design edition, adding lessons from manual Mac BDD verification of UAR."><meta name="theme-color" content="#0B0F14">
+<link rel="icon" href="assets/knowme.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+<!-- Revision 2026-10-27: the original referenced vendor/htmx, app.js, vendor/alpine and manifest.webmanifest, none of which were downloaded. They are removed so this copy reads locally without JavaScript. The original is preserved unchanged as uar-validation-methodology.original.html. -->
+<style>.revision-note{background:var(--surface);border-left:3px solid var(--ember);border-radius:8px;padding:14px 20px;font-size:15px;line-height:1.7;color:var(--muted)}.revision-note strong{color:var(--ember)}.revision-banner{background:var(--surface);border-left:3px solid var(--ember);border-radius:12px;padding:20px 24px;margin:0 0 32px;font-size:15px}.revision-section>h2,#c33-result>h2{font-size:34px;margin:80px 0 24px;color:var(--text)}@media(max-width:760px){.revision-section>h2,#c33-result>h2{font-size:29px;margin-top:56px}}</style></head>
+<body x-data="reader"><a class="skip" href="#paper">Skip to paper</a>
+<header class="topbar"><a class="brand" href="#top" aria-label="KnowMe paper top"><img src="assets/knowme.svg" alt="" width="42" height="42">Know<span>Me</span></a><span class="edition">Research &amp; design edition · 27 October 2026 · Revised 2026-10-27 (local revision)</span><a class="source-link" href="#revision-2026-10-27">Revision notes ↓</a></header>
+<div class="layout" id="top"><aside id="mobile-contents" :class="{'is-open':menu}"><nav aria-label="Paper contents"><div class="eyebrow">Contents · 19 sections + revision</div><ol><li x-show="matches($el)"><a href="#1-the-problem-this-paper-addresses" @click="menu=false">1 The problem this paper addresses</a></li><li x-show="matches($el)"><a href="#2-what-the-uar-case-shows" @click="menu=false">2 What the UAR case shows</a></li><li x-show="matches($el)"><a href="#3-the-method-in-plain-terms" @click="menu=false">3 The method in plain terms</a></li><li x-show="matches($el)"><a href="#4-a-usable-first-session" @click="menu=false">4 A usable first session</a></li><li x-show="matches($el)"><a href="#5-how-to-recognize-the-method-working" @click="menu=false">5 How to recognize the method working</a></li><li x-show="matches($el)"><a href="#6-architecture-of-the-thin-protocol" @click="menu=false">6 Architecture of the thin protocol</a></li><li x-show="matches($el)"><a href="#7-functional-specification-and-acceptance-traceability" @click="menu=false">7 Functional specification and acceptance traceability</a></li><li x-show="matches($el)"><a href="#8-worked-specification-scenario-oracle-and-closure" @click="menu=false">8 Worked specification scenario oracle and closure</a></li><li x-show="matches($el)"><a href="#9-integration-with-pmpo-kbd-openspec-exit-contracts-and-delivery-cadence" @click="menu=false">9 Integration with PMPO KBD OpenSpec exit contracts and delivery cadence</a></li><li x-show="matches($el)"><a href="#10-a-harness-independent-skill-process" @click="menu=false">10 A harness independent skill process</a></li><li x-show="matches($el)"><a href="#11-minimal-implementation-plan-with-finite-exits" @click="menu=false">11 Minimal implementation plan with finite exits</a></li><li x-show="matches($el)"><a href="#12-prior-art-and-what-this-synthesis-adds" @click="menu=false">12 Prior art and what this synthesis adds</a></li><li x-show="matches($el)"><a href="#13-a-falsifiable-validation-study" @click="menu=false">13 A falsifiable validation study</a></li><li x-show="matches($el)"><a href="#14-alternatives-and-combinations" @click="menu=false">14 Alternatives and combinations</a></li><li x-show="matches($el)"><a href="#15-limitations-and-failure-modes" @click="menu=false">15 Limitations and failure modes</a></li><li x-show="matches($el)"><a href="#16-adoption-recommendation" @click="menu=false">16 Adoption recommendation</a></li><li x-show="matches($el)"><a href="#17-case-evidence-and-provenance" @click="menu=false">17 Case evidence and provenance</a></li><li x-show="matches($el)"><a href="#18-preventing-a-retired-harness-from-returning" @click="menu=false">18 Preventing a retired harness from returning</a></li><li x-show="matches($el)"><a href="#19-compact-operating-checklist" @click="menu=false">19 Compact operating checklist</a></li><li><a href="#20-lessons-from-manual-mac-verification-october-2026">20 Lessons from manual Mac verification (October 2026) — revision</a></li><li><a href="#c33-result">C33 result (Mac) — PASS</a></li></ol><a class="back-top" href="#top">Back to top ↑</a></nav></aside>
+<main id="paper"><div class="paper-kicker">KnowMe / VLBV / 01</div><article><h1 id="value-led-behavioral-verification">Value Led Behavioral Verification</h1>
+<h2 id="a-practical-method-for-proving-useful-software-behavior-and-closing-agentic-development-phases">A practical method for proving useful software behavior and closing agentic development phases</h2>
+<p><strong>KnowMe whitepaper, architecture, functional specification, and implementation plan</strong><br/>
+<strong>Method name:</strong> Value-Led Behavioral Verification, or VLBV<br/>
+<strong>Edition:</strong> Research and design edition, 27 October 2026<br/>
+<strong>Status:</strong> Proposed portable method informed by an ongoing UAR case. The method has not yet undergone a comparative validation study. UAR verification is not declared complete by this paper.<br/>
+<strong>Revision:</strong> Revised 2026-10-27 as a local copy in the UAR repository. Not part of the independently reviewed original edition.</p>
+<blockquote class="revision-banner" id="revision-2026-10-27"><p><strong>Revision note — 2026-10-27.</strong> This copy is based on the original IPFS edition at <a href="https://ipfs.prometheusags.ai/ipfs/bafybeihp44qigr3g5zoalkt3p6xvovaglcuzbsp3l4os5vba26glfz6zya/index.html">ipfs.prometheusags.ai/ipfs/bafybeihp44qigr3g5zoalkt3p6xvovaglcuzbsp3l4os5vba26glfz6zya</a> (provenance and original hashes: <code>docs/validation/DOWNLOAD-PROVENANCE.md</code>). The original text is preserved. The revision (1) removes references to interaction scripts and files that were not downloaded, so the page reads locally without JavaScript; (2) adds short visible <strong>Revised:</strong> notes where later UAR evidence supersedes a statement; (3) adds <a href="#20-lessons-from-manual-mac-verification-october-2026">Section 20</a>, lessons from the manual Mac BDD sequence, each traced to a repository file; and (4) adds an empty <a href="#c33-result">C33 result</a> section. C33 was then run once on Mac on 2026-10-27 and passed on its first attempt; its result is recorded in <a href="#c33-result">the C33 section</a>. Nothing here certifies UAR, a platform, a backend, or the current source tree.</p></blockquote>
+<h2 id="1-the-problem-this-paper-addresses">1 The problem this paper addresses</h2>
+<p>An owner asks an AI coding assistant a simple question: what can I depend on this product to do?</p>
+<p>The assistant answers with build work, repaired fixtures, implementation tasks, a growing test plan, and another list of prerequisites. Some of that work is necessary. Some produces useful evidence. Yet the owner still cannot tell whether a person can complete an ordinary, valuable task with the product. Each attempt to finish reveals more work, and the phase has no stable boundary.</p>
+<p>This is the problem behind Value-Led Behavioral Verification. A complex product can accumulate substantial engineering activity without acquiring an understandable account of what works, for whom, under which conditions, and with what evidence. An agent can be busy and locally competent while selecting the wrong next task. It can also report a narrow technical success as a broader product capability. Neither more automation nor more tests automatically fixes those judgment errors.</p>
+<p>The motivating case is work on the Universal Agent Runtime, or UAR. Its owner reports that two or three attempts to build a general verification harness in advance became prolonged infrastructure exercises. Progress became more useful after the owner took concrete scenarios and manually expressed them as Node.js and Cucumber behavior tests, one behavior at a time. The owner's later clarification identifies the important change: begin with the value a scenario should deliver, prefer the likely real uses, and let what happens determine the next useful scenario. The test syntax made behavior executable; the selection policy made the work relevant. These are owner-reported observations, not a controlled comparison or a finding that every previous attempt produced no evidence. <a href="#17-case-evidence-and-provenance">Case evidence C1–C4</a></p>
+<p>VLBV makes that pattern explicit. Before generation, define the intended value, scope, important constraints, and anticipated meaningful scenarios. Calibrate the assistant's relevance judgments with a few owner-reviewed examples. Generate a value-bearing increment. At the end of that generation phase, verify the resulting behavior through bounded, observable scenarios. Preserve the evidence, use it to choose the next warranted action, and close the phase against its original purpose.</p>
+<p>The timing matters. In the owner's methodology, tests of generated code run <strong>at the end of a phase that produces something of demonstrable value</strong>, not continuously throughout initial code generation. VLBV therefore separates advance acceptance planning from later test execution. A failed phase-end check may justify a defined repair followed by targeted reverification, but the agreed repair implementation must first be complete and any required execution authority renewed. This paper does not rename test-driven development or quietly replace the owner's method with it. <a href="#17-case-evidence-and-provenance">Case evidence C5</a></p>
+<p>The practical claim is modest and testable: a small, value-led verification protocol may help humans and agents reach useful, defensible phase decisions sooner than a process that allows infrastructure, task completion, or a constantly expanding backlog to define success. The protocol is designed to fit an existing assistant, repository, and test runner. It is not a proposal for another universal orchestration platform.</p>
+<h3 id="who-should-use-this-paper">Who should use this paper</h3>
+<p>The primary readers are product owners, technical leads, and engineers working with coding assistants on products whose useful behavior spans several components. A second audience is people building reusable assistant skills. They need a method that survives a change of model or host without pretending that every host supports the same execution, approval, persistence, or observation facilities.</p>
+<p>Sections 2 through 5 explain the case, mechanism, and a procedure that can be used immediately. Sections 6 through 11 define the architecture, contracts, functional requirements, and implementation plan. Sections 12 through 16 examine prior art, evaluation, competing approaches, limitations, and adoption. The appendices provide evidence provenance and reusable templates.</p>
+<h2 id="2-what-the-uar-case-shows">2 What the UAR case shows</h2>
+<h3 id="21-the-owner-wanted-dependable-uses-rather-than-a-completion-narrative">2.1 The owner wanted dependable uses rather than a completion narrative</h3>
+<p>The surrounding UAR history contains a clear demand: completion should be defined by useful tasks with precise, measurable conditions, not by whether an evolving task list is marked complete. On 18 October, the owner also objected that a capability report did not explain which real scenarios were dependable. Prioritization was concrete: remote and embedded SurrealDB behavior mattered for intended uses; PostgreSQL could wait. Those choices describe product value and scope, rather than generic coverage expansion. <a href="#17-case-evidence-and-provenance">C1</a></p>
+<p>The later primary-source investigation identified the actual UAR Verification session and reconstructed its principal chronology. It covered 155 turns through the application reader and structurally traversed the available session record through the cutoff, with targeted examination of relevant interventions, artifacts, and results. It also examined 17 later PASS receipts and directly parsed 11 selected original Cucumber reports, including failures. The investigation did not rerun tests or audit every tool-output character. <a href="#17-case-evidence-and-provenance">C7</a></p>
+<h3 id="22-three-preparation-campaigns-belonged-to-one-evolving-effort">2.2 Three preparation campaigns belonged to one evolving effort</h3>
+<p>The owner's description of two or three failed harness attempts is supported more precisely as <strong>three unsuccessful preparation campaigns within one evolving effort</strong>, rather than three independent harness products.</p>
+<p>The first campaign sought to close a post-lifecycle boundary packet with ten cases, integration work, profile builds, and independent review. Contract and fixture issues were followed by problems involving compilation, startup, executable identity, runtime assertions, and cleanup. Its sixth execution packet still failed overall. It nevertheless recorded five narrow passes, four failures, and one unexercised case. Those passes must retain their credit; they did not establish the genuine user-task suitability the owner wanted. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p>The second campaign rewrote the plan around genuine user outcomes. It expanded to 97 cases across two stores and three repetitions, implying 582 planned rows per server platform before supporting work. Preparation then encountered inventory and resource-ownership failures before user-outcome execution. The third campaign began with independent diagnostics, which produced 15 passes, one failure, and two blocked items, then returned to four-platform preparation and repeated fixture and receipt issues. Those diagnostic results were useful but did not establish the intended user outcomes. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p class="revision-note"><strong>Revised:</strong> the 97-case, two-store, three-repetition plan is no longer the forward denominator. The proposed forward catalog (<code>.prometheus/verification/bdd-validation-catalog.md</code>) defines 102 concrete scenarios. One ID is one Given/When/Then scenario. No Scenario Outline expansion or implicit repetition is hidden in that count. The 97 original IDs remain a separate, overlapping planning view: 28 with partial manual evidence and 69 without matching scenario credit. The two views are not added together. See <a href="#20-lessons-from-manual-mac-verification-october-2026">Section 20</a>.</p>
+<p>The failure mode was not that evidence controls were inherently wrong. Global prerequisites coupled a small useful question to unrelated stores, cases, platforms, and administrative work. Time and call limits bounded individual invocations while amendments allowed the overall finish line to keep moving. In some failures, retained hashes and counts had replaced the actual response content needed to distinguish causes. These observations support a mechanism-level explanation for the delay, not a general rule that all infrastructure or first-failure stops are bad. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<h3 id="23-the-decisive-change-was-choosing-by-likely-value">2.3 The decisive change was choosing by likely value</h3>
+<p>On 26 October, the owner rejected the continued complexity. The assistant selected an available ingestion test; the owner stopped that direction and chose a simple Node.js inference script for a configured default agent. Availability of a test was no longer the reason to run it. A likely real user action was.</p>
+<p>The first useful prompt returned the expected arithmetic answer through the configured real model. Cucumber was explicitly requested after that standalone script. Streaming followed as a distinct adjacent behavior, rather than a routine rerun of the already-supported prompt. The owner then selected a persistent mathematics specialist, a writing specialist, intent routing, grounded knowledge use, and a team combining the specialists. Each step created useful assets or evidence for a later question. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p>The sequence also taught relevance. A second specialist made wrong routing observable. A knowledge document with a distinguishing private test marker and independently calculated answer made grounding harder to fake. A team scenario required real concurrent work and an output consuming both specialists' results; merely creating tasks was insufficient. The task graph was authored by the script, so the result did not establish autonomous project planning. The owner supplied much of this discovery and ordering. The record does not establish an autonomous optimal selector. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p>The team repair briefly returned to the earlier packet-and-approval pattern. The owner reasserted the manual method, narrowed acceptance to the existing useful team BDD, and specified the treatment of externally supplied authentication. This is an important limitation: a small runner or a BDD label did not prevent process drift by itself. Value, scope, and authority still had to govern the work. <a href="#c7-primary-uar-verification-investigation">C7</a> and <a href="#c8-existing-process-and-phase-boundary-investigation">C8</a></p>
+<p class="revision-note"><strong>Revised:</strong> the operator later replaced the packet/signature/inventory method entirely with manual, operator-selected BDD scenarios run one at a time (<code>.prometheus/handoffs/2026-10-27-c33-claude-desktop.md</code>; <code>.prometheus/verification/behavior-status.md</code>). The operator also required that authentication stay outside every functional test. See lessons 20.5 and 20.14.</p>
+<h3 id="24-the-actual-results-demonstrate-why-scope-and-provenance-matter">2.4 The actual results demonstrate why scope and provenance matter</h3>
+<p>The retained examples reveal a range of evidentiary situations:</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Behavior</th>
+<th>Recorded result</th>
+<th>What the evidence supports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Configured prompting</td>
+<td>Real configured-model answer to a simple arithmetic request</td>
+<td>One prompt on the identified native Mac binary, not all current source or platforms</td>
+</tr>
+<tr>
+<td>Persistent specialist</td>
+<td>Initial scenario passed creation, restart, and readback but failed final query parsing; a targeted continuation passed</td>
+<td>Composite evidence for the stated stages; the original complete report remains failed</td>
+</tr>
+<tr>
+<td>Specialist team</td>
+<td>Earlier failures retained; final scenario reported eight passed steps in 74.458 seconds</td>
+<td>Real distinct specialist work and merged output under that authored task graph</td>
+</tr>
+<tr>
+<td>Semantic skill selection</td>
+<td>Initial threshold selected an unrelated skill; a calibrated threshold passed and original configuration was restored</td>
+<td>One calibrated local-embedding configuration, not arbitrary paraphrases or the original default</td>
+</tr>
+<tr>
+<td>Sequential restart</td>
+<td>Initial run recovered null facts; after a durable save/load repair, the later run passed</td>
+<td>One graceful restart on the repaired candidate, not crash safety or all race conditions</td>
+</tr>
+<tr>
+<td>Concurrent restart</td>
+<td>One scenario, six reported steps, 21.43 seconds; server-state interleaving and actual process replacement recorded</td>
+<td>One overlapping pair with both facts recovered, not exhaustive concurrency correctness</td>
+</tr>
+<tr>
+<td>REST setting restart</td>
+<td>One scenario, five reported steps, 13.834 seconds; changed record survived process replacement and original value was restored</td>
+<td>Persistence of one nullable preference, not caching effectiveness or every setting</td>
+</tr>
+</tbody>
+</table></div>
+<p>These records are reported from inspected receipts and selected original reports, not newly reproduced execution. Some reported step counts include cleanup hooks and are not counts of independent product behaviors. The two restart summaries initially seen in screenshots were subsequently corroborated by the primary-source investigation; their evidentiary basis is therefore stronger than the screenshots alone. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p>The concurrent case is especially instructive. Source reviewers rejected client-side stream timing as sufficient proof of concurrent execution. The final record used authoritative server-state observations of overlapping activity. The oracle improved because the team asked what false positive the original observation would allow. That is a transferable lesson, even though one passing interleaving cannot prove freedom from all races. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p>The REST-setting case required no provider call. That was appropriate because the claim concerned persistence of a setting, not whether the provider used caching effectively. The same restraint that demands a real boundary also avoids adding an unrelated boundary when it cannot strengthen the current claim. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<h3 id="25-what-was-learned-and-what-was-not">2.5 What was learned and what was not</h3>
+<p>At the research cutoff, the ledger reported <strong>25 behavior labels across 22 journeys</strong>. One journey accounts for several labels, and some journeys combine initially passing stages with a later targeted continuation. The counts are not independent experiments, a fraction of the older 97-case plan, or whole-release certifications. The evidence also spans different binaries and source states as repairs accumulated. <a href="#c7-primary-uar-verification-investigation">C7</a></p>
+<p>At <strong>00:14:49 UTC on 27 October 2026</strong>, the next selected journey, knowledge-base use after restart, was being authored. No execution or PASS for it was established in the inspected cutoff. The larger canonical phase ledger was not fully reconciled with the later manual results. This paper therefore does not declare the UAR phase complete, certify platform parity, or extend the count to the unfinished journey. <a href="#c7-primary-uar-verification-investigation">C7</a> and <a href="#c8-existing-process-and-phase-boundary-investigation">C8</a></p>
+<p class="revision-note"><strong>Revised:</strong> these counts are a snapshot taken at the research cutoff. After the cutoff, the knowledge-base-after-restart journey (KNOWLEDGE-RESTART-01, label B26) and later knowledge scenarios were recorded as passed on Mac. The audited counts on 2026-10-27 are <strong>35 bounded Mac behavior labels across 32 workflow outcomes</strong>. These are supported by <strong>31 passing BDD scenario reports plus 1 standalone prompt receipt</strong>. B03 is composite evidence (<code>.prometheus/verification/coverage-audit-2026-10-27.md</code>). The UAR phase is still not declared complete, and platform parity is still not certified. See <a href="#2010-count-labels-outcomes-and-reports-separately">20.10</a>.</p>
+<p>The owner also describes assistants later proposing more sensible next tests. The record supports a plausible explanation: concrete examples and corrections made the value-selection policy more explicit. That is compatible with in-context learning and known example-based requirements practices. It does not show permanent model fine-tuning, automatic memory transfer between products, or undocumented changes inside an assistant. A durable skill can preserve reviewed guidance for later use; that is different from changing model weights.</p>
+<p>The case is a strong practical motivation for VLBV and a useful source of failure modes. It remains one observational case. Better scope, better oracles, accumulated repairs, fixture maturity, model availability, and intensive owner guidance all changed together. The comparative effect of the full protocol, its timing rule, and its individual components still requires study.</p>
+<h2 id="3-the-method-in-plain-terms">3 The method in plain terms</h2>
+<p>VLBV is a way to turn a broad intent into a finite decision about useful behavior.</p>
+<p>The unit of planning is a <strong>value-bearing phase</strong>: a bounded increment intended to produce something that a user can recognize as useful. The unit of verification is a <strong>behavior scenario</strong>: a concrete use with known preconditions, an action, observable outcomes, and a defined way to judge them. The unit of progress is an <strong>accepted claim supported by evidence</strong>, rather than a completed tool call or an expanding count of tests.</p>
+<p>The method has two distinct decisions. The first is <strong>what should matter next?</strong> The second is <strong>what would establish that it works?</strong> An assistant can answer the second accurately for an irrelevant behavior. It can also select an important behavior and judge it with an invalid oracle. Both decisions need explicit treatment.</p>
+<h3 id="31-start-with-the-specification-and-anticipate-meaningful-uses">3.1 Start with the specification and anticipate meaningful uses</h3>
+<p>The specification describes the intended actor, outcome, environment, boundaries, and constraints. It should be precise enough to identify meaningful uses before code generation begins, but it need not predict every detail the implementation will reveal.</p>
+<p>For example, “support persistent agent memory” is too broad for a phase exit. “A named test agent can store a fact, restart against the same intended store, and recover that fact without receiving it again” is a candidate value-bearing claim. The latter immediately exposes questions: which agent, which store, what kind of restart, what counts as recovery, and what external service is genuinely required?</p>
+<p>Anticipated scenarios are hypotheses about what will demonstrate the specification. They are not a license to turn every imagined edge case into a mandatory phase obligation. Each should carry a reason it matters, its expected use frequency or a clear “unknown,” any severe risk it addresses, and the decision its result will inform.</p>
+<h3 id="32-calibrate-relevance-before-scaling-execution">3.2 Calibrate relevance before scaling execution</h3>
+<p>A human who understands the product usually has information the assistant lacks: common usage, costly failure modes, previous decisions, and the difference between an enabling dependency and an attractive distraction. VLBV asks the human to make that judgment visible through a small set of positive and negative examples.</p>
+<p>A useful positive example says, “Verify that a stored fact is available after a restart because that is the core persistence promise.” A useful negative example says, “Do not add another database backend to this phase; it does not affect the agreed store and was explicitly deferred.” The negative example teaches a boundary that a list of desired features may not communicate.</p>
+<p>The assistant then proposes a short candidate frontier and explains each candidate's relevance. The owner corrects the ranking and exclusions rather than reviewing an enormous finished suite. The corrected examples become part of the phase contract. This is a proposed calibration process, not a claim that a fixed number of examples reliably teaches every assistant.</p>
+<h3 id="33-prefer-likely-value-while-protecting-mandatory-constraints">3.3 Prefer likely value while protecting mandatory constraints</h3>
+<p>Likely real uses are often good starting points because they establish whether the product does the ordinary thing it exists to do. They also reveal concrete dependencies more quickly than speculative generalization. However, frequency cannot be the only selection rule. An uncommon unauthorized disclosure or destructive recovery failure may matter more than a common convenience.</p>
+<p>VLBV therefore separates <strong>mandatory gates</strong> from <strong>ordinary prioritization</strong>. Authorization, privacy, irreversible effects, integrity, and other agreed critical constraints cannot disappear because a value score is low. Among admissible candidates, selection can consider user value, credible likelihood, information gained, dependency leverage, and cost. If those estimates are qualitative, the method should keep them qualitative. A fabricated probability or an unexplained weighted score makes the judgment less honest, not more rigorous.</p>
+<p>The desired next scenario is the smallest relevant experiment that changes the next decision. Sometimes it is the common happy path. Sometimes a prerequisite must be checked first. Sometimes it is a rare but severe failure because passing the happy path would otherwise create a dangerous impression.</p>
+<h3 id="34-define-the-observation-and-its-oracle-separately">3.4 Define the observation and its oracle separately</h3>
+<p>An <strong>observation</strong> is what the run records: a response, a state transition, a persisted value, a process identity, or an artifact. An <strong>oracle</strong> is the rule that decides whether that observation satisfies the acceptance condition.</p>
+<p>A green step is a conclusion produced by an oracle. It is not a replacement for understanding the oracle. If a step checks only that an HTTP response is successful, it does not establish that the requested value survived a process restart. If an assistant grades its own answer, an independent check may be needed for the claim at issue. If behavior is nondeterministic, a single sample may be useful evidence but inadequate reliability evidence.</p>
+<p>A scenario is ready for execution only when the observer, expected result, tolerance, actual boundary, and failure interpretation are sufficiently clear. Exact assertions are appropriate for exact contracts. Semantic judgments require a documented rubric and, where necessary, human calibration. Neither should be made more complicated than the decision requires.</p>
+<h3 id="35-generate-the-value-bearing-increment-before-executing-tests">3.5 Generate the value bearing increment before executing tests</h3>
+<p>The owner-specific execution policy is explicit: acceptance scenarios and observables are planned in advance, while tests of generated code wait until the generation phase's value-bearing increment exists. This permits the assistant to develop a coherent increment without repeatedly diverting into test maintenance or partial-state checks.</p>
+<p>The tradeoff is also explicit. Delayed execution can allow integration mistakes to accumulate and can make failures more expensive to localize. VLBV controls that risk by keeping phases bounded, specifying dependencies and observation routes in advance, and refusing to equate “generation ended” with “verified.” In domains where law, safety engineering, or organizational policy requires earlier checks, that constraint must be resolved before the phase begins. The protocol is not permission to bypass required controls.</p>
+<p>Readers who prefer continuous testing can reuse the value and evidence contracts with a different declared timing policy. That would be a related variant, not a faithful description of the owner's present practice. The study design in Section 13 treats timing as a variable instead of assuming one schedule is universally best.</p>
+<h3 id="36-adapt-between-bounded-attempts-without-moving-the-goalposts">3.6 Adapt between bounded attempts without moving the goalposts</h3>
+<p>Once phase-end verification begins, the result should change the next action. A failed restart claim may reveal a product defect, a faulty scenario, a missing prerequisite, or inadequate evidence. Each points to different work. Repeating the same command without a changed hypothesis is rarely informative.</p>
+<p>Adaptation applies to the next candidate, diagnostic, or explicitly approved amendment. It does not allow an assistant to weaken a current assertion until the scenario passes. A mistaken acceptance criterion can be corrected, but the old version, reason, authority, and effect on prior evidence must remain visible. That protects against both moving the goalposts and preserving a demonstrably wrong test forever.</p>
+<p>An attempt ends with a finite status: verified within scope, falsified, blocked, inconclusive, budget exhausted, or cancelled. A phase decision then considers the agreed criteria and those attempt results. The phase may close successfully, close with unmet criteria, or pause for a named external dependency. Closing an administrative phase and certifying the software are separate acts.</p>
+<h2 id="4-a-usable-first-session">4 A usable first session</h2>
+<p>A team does not need to implement the architecture in this paper before trying the method. It can begin with one short contract, a few scenario cards, existing execution tools, and a place to retain evidence.</p>
+<h3 id="41-write-the-phase-contract">4.1 Write the phase contract</h3>
+<p>The owner and assistant should be able to complete the following paragraph before generation:</p>
+<blockquote>
+<p>This phase exists so that <strong>[actor]</strong> can <strong>[useful outcome]</strong> in <strong>[supported environment]</strong>. It includes <strong>[specific behaviors]</strong> and excludes <strong>[explicit boundaries]</strong>. We will plan acceptance scenarios before generation and execute tests of the generated increment at <strong>[declared phase-end trigger]</strong>. Success requires <strong>[observable claims and mandatory constraints]</strong>. We will stop or pause when <strong>[finite limits or external conditions]</strong> occur. <strong>[named authority]</strong> may approve a change to this contract.</p>
+</blockquote>
+<p>For an existing product entering a verification-only phase, replace the generation clause with the identity of the candidate already to be evaluated. Do not regenerate or repair the product merely because verification is authorized.</p>
+<p>The first draft should be short enough for the owner to correct. Its purpose is to prevent consequential ambiguity, not to front-load an entire product specification.</p>
+<h3 id="42-calibrate-with-one-useful-and-one-irrelevant-example">4.2 Calibrate with one useful and one irrelevant example</h3>
+<p>Ask the assistant to explain why a candidate matters, what it can establish, and what it cannot establish. Give one clear correction when it proposes irrelevant scope. Preserve the correction as a decision rule rather than merely deleting the unwanted test.</p>
+<p>For example:</p>
+<blockquote>
+<p>Useful now: confirm the configured agent's saved fact survives the defined restart against the intended store. Irrelevant to this phase: demonstrate migration to a different database that the phase explicitly excludes. Still mandatory: do not expose another agent's fact while proving persistence.</p>
+</blockquote>
+<p>Then ask for only a small frontier of candidates. The frontier should make the next decision understandable. It does not need an arbitrary universal size.</p>
+<h3 id="43-prepare-the-first-scenario-without-running-it-early">4.3 Prepare the first scenario without running it early</h3>
+<p>Before the phase-end execution trigger, specify the scenario, its expected observations, and how the actual runner will capture them. Confirm that required access and safe execution routes are known. Planning or inspecting a test definition does not itself run the generated code. If validating readiness would require executing that code, classify it honestly and defer it until the permitted phase. Do not insert builds, linters, compiler probes, smoke tests, or indirect checks under a different name to evade the boundary.</p>
+<p>Prefer existing helpers and test infrastructure. Do not build a generic plugin system to avoid writing a simple local step. If later scenarios reveal repeated operations, extract them when the repeated need is clear.</p>
+<h3 id="44-execute-at-the-authorized-boundary-and-classify-the-result">4.4 Execute at the authorized boundary and classify the result</h3>
+<p>At the end of the value-producing generation phase, bind the scenario to the actual candidate version, environment, provider mode, and execution authority. Run the smallest adequate check. Capture observations before teardown, record what was restored, and distinguish the runner's verdict from the strength of the evidence.</p>
+<p>A product failure is informative. So is a blocked run, if it identifies the exact missing prerequisite rather than expanding the phase indiscriminately. If evidence is insufficient, mark it insufficient. A screenshot of a green summary may support a report about the display while still falling short of a reproducible verification receipt.</p>
+<h3 id="45-choose-the-next-action-and-make-a-closure-decision">4.5 Choose the next action and make a closure decision</h3>
+<p>After each attempt, answer four questions in ordinary language:</p>
+<ol>
+<li>What did this establish, and for exactly which claim?</li>
+<li>What remains uncertain or false?</li>
+<li>Which next action is justified by this result and the phase purpose?</li>
+<li>Does the phase contract already allow us to close or require us to stop?</li>
+</ol>
+<p>The next action might be another scenario, a bounded repair, a request for access, an explicit contract amendment, or closure. It need not be another test. Record unrelated discoveries in a separate future-work list; their existence does not change the current phase's exit criteria.</p>
+<h2 id="5-how-to-recognize-the-method-working">5 How to recognize the method working</h2>
+<p>A useful VLBV session has a different shape from an open-ended harness project. The owner can name a behavior whose evidence became stronger. The assistant can explain why the next behavior matters. The current claim does not change merely because it failed. Evidence from a stub, a different binary, or an earlier environment does not become evidence for the present real system. New ideas are visible without automatically becoming current obligations.</p>
+<p>There are also early signs of drift. The assistant spends most of its effort constructing generalized infrastructure before establishing one relevant claim. A readiness repair becomes a prerequisite for every independent scenario without explanation. Assertions become less demanding after failures. The report lists tasks completed but cannot state which user outcome is now dependable. A supposedly complete phase reopens because the assistant discovered an unrelated improvement.</p>
+<p>These signs are diagnostic prompts, not automatic verdicts. A complex environment may genuinely require substantial setup. A necessary dependency can block several scenarios. The response should be to expose the causal dependency and the phase decision, not to impose a ban on infrastructure. The method succeeds only when it helps the team make those distinctions more accurately and at reasonable cost.</p>
+<h2 id="6-architecture-of-the-thin-protocol">6 Architecture of the thin protocol</h2><figure class="reading-aid"><div class="eyebrow">Visual reading aid · derived from the paper</div><h3>From intended value to a scoped decision</h3><div class="diagram-scroll" tabindex="0"><svg aria-label="Agree and calibrate, complete generation, verify at the authorized phase end, then retain evidence and decide." role="img" style="font-family:Inter,sans-serif" viewbox="0 0 900 176" xmlns="http://www.w3.org/2000/svg"><rect fill="#1C2535" height="104" rx="12" width="198" x="16" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="32" y="83">Agree + calibrate</text><text fill="#A7B0BC" font-size="14" x="32" y="115">Value, scope, scenarios</text><path d="M 220 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="236" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="252" y="83">Complete generation</text><text fill="#A7B0BC" font-size="14" x="252" y="115">The whole agreed increment</text><path d="M 440 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="456" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="472" y="83">Verify at phase end</text><text fill="#A7B0BC" font-size="14" x="472" y="115">Authority + actual boundary</text><path d="M 660 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="676" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="692" y="83">Evidence + decision</text><text fill="#A7B0BC" font-size="14" x="692" y="115">Close, pause, or next phase</text></svg></div><figcaption>The phase contract governs the sequence. A failed check may justify a bounded repair; the agreed repair must be complete before authorized reverification. See Sections 3 and 6.</figcaption></figure>
+<h3 id="61-the-minimum-path">6.1 The minimum path</h3>
+<p>The minimum VLBV path is:</p>
+<p><strong>Agree a value phase → calibrate a few meaningful scenarios → complete generation → run authorized phase-end checks → retain scoped evidence → close or name the blocker → select the next phase.</strong></p>
+<p>A practical pilot needs only a contract, the selected scenarios, execution evidence, and a closure record. These can be sections or fields in existing project artifacts. A separate database, service, dashboard, scheduler, agent swarm, or signature system is not required. A current-evidence index and a recovery checkpoint can also be small fields in those records rather than additional products.</p>
+<p>The architecture separates meaning from execution:</p>
+<pre><code class="language-text">Owner intent and authoritative specification
+                    |
+                    v
+Value phase and reviewed scenario contract
+                    |
+              GENERATION
+       no generated-code test execution
+                    |
+       Complete agreed implementation
+       and establish execution authority
+                    |
+                    v
+          PHASE END VERIFICATION
+                    |
+        Existing project test runner
+          /                    \
+   Product adapter        Observation adapter
+          \                    /
+           Evidence and scoped verdict
+                    |
+       Closure decision and next frontier
+                    |
+       Existing phase system and feedback
+</code></pre>
+<p>The protocol owns the interpretation of the records and transitions. The host owns tool execution and permissions. The project owns product-specific steps and oracles. The existing phase system, where present, remains the authority for canonical phase state.</p>
+<h3 id="62-three-small-adapter-responsibilities">6.2 Three small adapter responsibilities</h3>
+<p>A <strong>host capability adapter</strong> states what the actual environment can do: read and retain artifacts, execute a runner, identify a candidate, observe a job, honor approvals, and recover after interruption. It describes supported, unsupported, and unknown capabilities with their limits. It does not invent a common API for every coding assistant.</p>
+<p>A <strong>product adapter</strong> translates the behavioral scenario into the project's real interfaces. It may be ordinary Cucumber steps, API calls, browser operations, or a documented manual procedure. Restarting a Mac process and restarting a remote service are different implementations of a scenario requirement. Their guarantees must be checked separately.</p>
+<p>An <strong>evidence adapter</strong> captures observations, runner outcomes, and artifact identities. Initially it can be a small wrapper around an existing runner or a reviewed manual capture. A protected runner can later strengthen independence, but a wrapper is not automatically a trusted witness.</p>
+<p>The same code may implement more than one responsibility. The separation is conceptual so that changing a tool does not silently change the claim.</p>
+<h3 id="63-phase-state-and-attempt-state-are-different">6.3 Phase state and attempt state are different</h3>
+<p>The phase lifecycle is:</p>
+<p><code>PLAN → CONTRACT_ADOPTED → GENERATE → IMPLEMENTATION_COMPLETE → VERIFY → DECIDE</code></p>
+<p>A failed verification may lead to an explicitly bounded repair. The complete agreed repair implementation must finish before the authorized reverification boundary. New requirements enter a new phase or a reviewed amendment; the assistant may not create a nominal child phase merely to evade the whole-phase test rule.</p>
+<p>The attempt lifecycle is simpler: prepared, dispatched, observing, and terminal. An attempt can finish while the overall user request remains unresolved. A time limit stops new work under that allowance; it does not transform the outcome into success or erase a pending obligation to monitor an already-running process, preserve evidence, or obtain a decision.</p>
+<p>For a minimal common vocabulary, use <code>PASS</code>, <code>FAIL</code>, <code>BLOCKED</code>, and <code>NOT_EXERCISED</code> for each acceptance obligation. Record uncertainty, cancellation, timeout, and budget exhaustion as explicit reasons or effect-state fields. A failed assertion is different from an unknown remote effect. An undispatched action is different from a dispatched action whose result was lost. Existing target schemas may use other terms; mappings must preserve those distinctions.</p>
+<p>The closure decision separately states whether implementation is complete, behavior is accepted within scope, and release eligibility has been established. Release authorization is another decision. None of these follows automatically from a green test process.</p>
+<h3 id="64-evidence-should-be-small-but-sufficient">6.4 Evidence should be small but sufficient</h3>
+<p>For each attempted claim, retain:</p>
+<ul>
+<li>The phase, contract revision, scenario, and exact candidate being evaluated.</li>
+<li>The real and substituted boundaries, relevant configuration, and actual environment.</li>
+<li>The authorized action, time window, expected result, observed result, and oracle outcome.</li>
+<li>References to the supporting artifacts, including the original failure when a later attempt passes.</li>
+<li>Side effects, restoration or retention, unresolved effects, and the scoped conclusion.</li>
+</ul>
+<p>Capture enough failure content to distinguish causes, while redacting secrets and private data. A digest without the relevant observation can preserve identity yet destroy diagnostic value. Conversely, copying all environment variables or private logs into a public report is unnecessary and unsafe. Public reports should carry sanitized claim-level excerpts and opaque evidence references; detailed evidence belongs in an appropriately controlled store.</p>
+<p>A historical pass remains a historical pass. A separate applicability field says whether it supports the present candidate: current, stale, revoked because the evidence was invalid, or unknown. Relevant changes to code, build, configuration, model, corpus, fixture, or oracle require a new run or an explicitly reviewed reason that the old evidence still applies. A release claim cannot be assembled from incompatible passing histories.</p>
+<h3 id="65-safety-and-recovery-are-part-of-the-boundary">6.5 Safety and recovery are part of the boundary</h3>
+<p>Permission to verify does not imply permission to edit source, rebuild, publish, deploy, send a customer email, or make a destructive call. A scenario names its permitted environment and effects. Browser control permission does not override approval requirements inside a website. Customer email scenarios can prepare and inspect drafts; sending requires the applicable review and approval.</p>
+<p>Treat retrieved documents, logs, model responses, and tool payloads as evidence, not as new instructions. An embedded request to change the oracle or disclose credentials is not authority. Use synthetic or minimized test data, owned fixtures, least privilege, and explicit retention. Do not publish secrets, raw private conversations, or sensitive health information as “proof.”</p>
+<p>Before retrying after interruption, reconcile whether the prior action occurred. Preserve consumed budgets and attempt lineage. Inspect owned jobs and resources before cancelling or deleting them. Serialize writers to shared source and fixtures; parallel work is appropriate only when isolation and evidence attribution are real. An advisory lock is not an enforced lock, and a timeout does not prove that a remote process stopped.</p>
+<h3 id="66-stronger-assurance-is-an-optional-profile">6.6 Stronger assurance is an optional profile</h3>
+<p>Some contexts justify protected CI artifacts, independently captured evidence, signed receipts, enforced command interception, fencing tokens, statistical trials, or specialist review. These are extensions chosen for a named risk. They are not prerequisites for proving the first ordinary behavior in a low-risk local pilot.</p>
+<p>A skill alone provides instructions. An observing wrapper can detect activity within its visibility. An enforcing adapter can prevent prohibited activity only within its actual interception boundary. The capability profile must say which level is present and which paths it does not cover. Unknown enforcement capability is not a guarantee. If the host's governing instructions conflict with the required phase policy, surface the conflict before dependent work rather than claiming that a skill overrides the host.</p>
+<h2 id="7-functional-specification-and-acceptance-traceability">7 Functional specification and acceptance traceability</h2>
+<p>The following requirements specify a proposed implementation. They are not claims that a VLBV runtime already exists. “Core” means required for the minimal method; a profile requirement applies only when the corresponding capability or claim is offered. All executable verification of a generated implementation occurs at its declared phase-end boundary.</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Acceptance evidence and challenge case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VLBV 01</td>
+<td>Core. Every selected scenario identifies its actor, useful outcome, source requirement or explicit assumption, and why it matters now.</td>
+<td>AT 01 presents an attractive but irrelevant test; it is deferred with a reason rather than silently added.</td>
+</tr>
+<tr>
+<td>VLBV 02</td>
+<td>Core. Owner-reviewed positive, rejected or deferred, and rare-critical examples calibrate scenario selection.</td>
+<td>AT 02 uses unseen candidates; review measures relevance, missing assumptions, and critical-risk recognition rather than syntax alone.</td>
+</tr>
+<tr>
+<td>VLBV 03</td>
+<td>Core. A finite phase contract records included value, exclusions, acceptance, authority, limits, and closure meaning before generation.</td>
+<td>AT 03 attempts to add unrelated scope after a failure; the current contract remains unchanged and the proposal is separated.</td>
+</tr>
+<tr>
+<td>VLBV 04</td>
+<td>Core. Generated-code execution waits until the complete agreed value phase ends; prohibited checks cannot be disguised as builds, lint, hooks, or preflight.</td>
+<td>AT 04 challenges the declared guard with an early test-bearing command. Enforcement or advisory limitations are reported honestly; no compliance claim conceals an execution.</td>
+</tr>
+<tr>
+<td>VLBV 05</td>
+<td>Core. Generation completion, behavioral acceptance, release eligibility, and release authorization are separate states.</td>
+<td>AT 05 supplies completed tasks without runtime evidence; no behavioral or release verdict is produced.</td>
+</tr>
+<tr>
+<td>VLBV 06</td>
+<td>Core. Every required outcome has an observable assertion and a known source of expected truth.</td>
+<td>AT 06 removes an assertion and supplies a green process exit; acceptance is refused.</td>
+</tr>
+<tr>
+<td>VLBV 07</td>
+<td>Core. Material oracle families receive an appropriate safe sensitivity challenge at phase end.</td>
+<td>AT 07 deliberately supplies a wrong outcome; the intended assertion fails. A Cucumber step merely returning false must not count as a valid failing assertion.</td>
+</tr>
+<tr>
+<td>VLBV 08</td>
+<td>Core. Real and substituted boundaries are explicit and cannot be silently promoted.</td>
+<td>AT 08 supplies stub evidence for a real-provider claim; the real claim remains unverified.</td>
+</tr>
+<tr>
+<td>VLBV 09</td>
+<td>Core. Receipts identify the tested candidate, contract, oracle, relevant environment, observations, and limitations.</td>
+<td>AT 09 swaps the binary or configuration; a current-candidate pass is rejected until identity is reconciled.</td>
+</tr>
+<tr>
+<td>VLBV 10</td>
+<td>Core. Failures, blocked claims, unexercised obligations, retries, and unknown effects remain visible.</td>
+<td>AT 10 supplies only a final green retry; the missing earlier attempts and denominator prevent an unqualified reliability claim.</td>
+</tr>
+<tr>
+<td>VLBV 11</td>
+<td>Core. Repairs and criterion amendments require appropriate authority and preserve prior versions and outcomes.</td>
+<td>AT 11 weakens an oracle after failure; the system requires a reviewed amendment and new applicable evidence.</td>
+</tr>
+<tr>
+<td>VLBV 12</td>
+<td>Core. Attempt limits stop new work without granting success or abandoning unresolved effects.</td>
+<td>AT 12 exhausts an allowance with a remote job still unknown; the record preserves the obligation and safe next action.</td>
+</tr>
+<tr>
+<td>VLBV 13</td>
+<td>Core. Approvals bind to the actual action and resource; verification cannot authorize unrelated effects.</td>
+<td>AT 13 requests an unapproved publication or send; dependent execution remains blocked.</td>
+</tr>
+<tr>
+<td>VLBV 14</td>
+<td>Core. Required restoration, cleanup, or authorized retention is recorded before unconditional closure.</td>
+<td>AT 14 leaves a changed setting or billable fixture unresolved; the closure report exposes it and withholds the corresponding complete verdict.</td>
+</tr>
+<tr>
+<td>VLBV 15</td>
+<td>Core. Evidence applicability is re-evaluated after a relevant change.</td>
+<td>AT 15 changes an oracle, provider, or persistence component; affected receipts become stale or unknown, not silently current.</td>
+</tr>
+<tr>
+<td>VLBV 16</td>
+<td>Core. The closure report answers what works for whom, under which conditions, with what limits, and what remains.</td>
+<td>AT 16 asks an uninvolved reviewer to recover those answers from the report without reading the conversation.</td>
+</tr>
+<tr>
+<td>VLBV 17</td>
+<td>Capability profile. Asynchronous claims distinguish transport, lifecycle, durable outcome, and unresolved effects.</td>
+<td>AT 17 supplies a success event with no persisted result, or a heartbeat-only stream; neither earns the outcome claim.</td>
+</tr>
+<tr>
+<td>VLBV 18</td>
+<td>Recovery profile. Resume preserves scope, candidate identity, permissions, counters, owned resources, and prior effects.</td>
+<td>AT 18 interrupts after dispatch; recovery reconciles the action before any potentially duplicating retry.</td>
+</tr>
+<tr>
+<td>VLBV 19</td>
+<td>Portability profile. A second named environment preserves the same claim and verdict semantics through a verified capability mapping.</td>
+<td>AT 19 transfers a contract and performs the declared phase-end verification; unsupported capabilities stay explicit.</td>
+</tr>
+<tr>
+<td>VLBV 20</td>
+<td>Integration profile. Existing phase systems retain canonical ownership, native vocabularies, and actual transition rules.</td>
+<td>AT 20 offers a manual PASS while the canonical phase remains incomplete; no automatic completion event or incompatible schema write occurs.</td>
+</tr>
+<tr>
+<td>VLBV 21</td>
+<td>Stochastic profile. Sampling, grading, retries, and stopping rules are declared before results are interpreted.</td>
+<td>AT 21 hides failures or stops opportunistically; the report rejects the resulting reliability interpretation.</td>
+</tr>
+<tr>
+<td>VLBV 22</td>
+<td>Core. Private evidence is minimized, controlled, and sanitized before public reporting.</td>
+<td>AT 22 includes a secret or patient identifier in a candidate artifact; publication is blocked pending removal and review.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The challenge cases are a test plan for the protocol implementation. They are not instructions to introduce faults into production. A minimal pilot can review some obligations manually; it must label manual evidence and cannot claim mechanical enforcement where none exists.</p>
+<p>The Cucumber sensitivity challenge is concrete rather than hypothetical tooling advice: official documentation states that a step succeeds when it does not raise an error; returning false or null does not itself fail the step. Therefore a plausible sentence in a <code>Then</code> block can be green without establishing its intended assertion. <a href="https://cucumber.io/docs/cucumber/api/">Cucumber API reference</a></p>
+<h2 id="8-worked-specification-scenario-oracle-and-closure">8 Worked specification scenario oracle and closure</h2>
+<h3 id="81-a-small-specification-before-generation">8.1 A small specification before generation</h3>
+<p>The following is a <strong>proposed illustrative phase</strong>, not an executed UAR result or an existing API contract:</p>
+<blockquote>
+<p>A test operator can save a preference through the supported settings interface, restart the intended service against the same intended store, and read the same saved preference through a fresh client. The original preference must be restored. The phase concerns one supported configuration and one preference. It does not establish caching effectiveness, crash recovery, other platforms, or all preferences.</p>
+</blockquote>
+<p>The value is straightforward: the operator does not have to reconfigure that setting after the defined restart. The specification produces three acceptance claims: save and read the intended record, retain it across actual process replacement, and restore the original state. The restart must be real enough to exclude a warm in-memory read, while the read must avoid replaying the answer from the test client.</p>
+<p>A likely-use estimate can be “ordinary settings persistence, based on owner judgment; usage frequency not measured.” That is more useful than inventing a numerical probability. A separate critical constraint can prohibit modifying any account or resource outside the isolated test scope.</p>
+<h3 id="82-the-scenario-and-the-false-positive-it-excludes">8.2 The scenario and the false positive it excludes</h3>
+<pre><code class="language-gherkin"># Illustrative specification only. Execute after the agreed value phase ends.
+Scenario: Preserve the selected preference through the defined restart
+  Given an isolated authorized account and its recorded original preference
+  When the operator saves the approved alternative value
+  And the intended service is stopped and replaced against the same store
+  Then a fresh client reads the same saved preference record
+  And the original preference is restored and read back
+</code></pre>
+<p>The step definitions need actual assertions. The first read should capture the saved value and any contract-relevant record fields. Process identity and lifecycle observations must establish replacement rather than a client reconnect. The fresh read must come through the specified product surface. The final assertion must establish restoration, not merely that a cleanup function was called.</p>
+<p>A safe oracle challenge could feed the comparison function a deliberately different record in an isolated fixture and require the specific mismatch. That validates the comparison's sensitivity. It does not replace the real restart scenario. If the claim includes durable storage, a mocked restart cannot support it.</p>
+<h3 id="83-minimal-proposed-contract-shape">8.3 Minimal proposed contract shape</h3>
+<p>This schema sketch is illustrative and must be mapped to an existing project's contract where one exists. The placeholder values are intentionally not executable authority.</p>
+<pre><code class="language-yaml">example_only: true
+phase: EXAMPLE-PREFERENCE-PHASE
+contract_revision: 1
+value: retain one operator preference through the defined restart
+source_requirement: EXAMPLE-SPEC-PREFERENCE
+execution_policy:
+  generated_code_checks: phase_end_only
+  complete_agreed_implementation_required: true
+  execution_authority: required_separately
+selected_scenarios: [EXAMPLE-PREFERENCE-RESTART]
+mandatory_constraints:
+  - mutate only the approved isolated account and owned service
+  - restore the original preference
+exclusions:
+  - caching effectiveness
+  - crash recovery
+  - other settings and platforms
+candidate_identity: '&lt;record actual source, build, configuration, and store&gt;'
+oracles:
+  - saved record equality through the supported fresh-client read
+  - actual process replacement against the same intended store
+  - original preference restored and read back
+limits: '&lt;owner-agreed duration, effects, and repair allowance&gt;'
+closure_authority: '&lt;named role&gt;'
+</code></pre>
+<p>A production record must reject <code>example_only: true</code>, placeholders, missing authority, and unknown candidate identity when those would prevent the claim. The purpose here is to show the minimum information, not to declare a working validation format.</p>
+<h3 id="84-a-sanitized-real-case-receipt-excerpt">8.4 A sanitized real case receipt excerpt</h3>
+<p>The inspected UAR record provides the following bounded example. This is a summary of retained evidence, not a new execution and not the complete private receipt:</p>
+<pre><code class="language-text">Case reference: C7 REST preference restart
+Environment: recorded native Mac candidate and intended store
+Behavior: one nullable preference changed, persisted through process replacement
+Observed report: one scenario, five reported steps, 13.834 seconds, passed
+Restoration: original null value restored
+Provider calls: zero
+Supported claim: persistence of that preference in the exercised configuration
+Excluded: caching effectiveness, crash safety, all settings, other platforms
+Evidence status: original report parsed and receipt inspected; not rerun here
+</code></pre>
+<p>A reusable receipt would also carry the exact private candidate and artifact references under access control. The public excerpt deliberately omits local paths, private conversation identifiers, credentials, and raw logs.</p>
+<h3 id="85-the-closure-packet">8.5 The closure packet</h3>
+<p>The closure packet should be readable without the conversation. It can be a short view over existing records:</p>
+<pre><code class="language-text">Phase and contract revision
+Purpose and included value
+Implementation status
+Each required scenario with result and current evidence reference
+Mandatory constraints and their disposition
+Candidate and environment to which the evidence applies
+Real and substituted boundaries
+First failures and any repair lineage
+Restoration, retained resources, and unresolved effects
+Explicit exclusions and residual limitations
+Decision: accepted within contract, closed unmet, paused, or cancelled
+Release eligibility and release authority stated separately
+Next candidate and why it is relevant, or a clear stop
+</code></pre>
+<p>For the illustrative preference phase, an acceptable conclusion would be: “The selected preference survived the defined restart on this candidate, and its original value was restored. No claim is made about crash recovery or other settings.” If the record cannot establish process replacement, the persistence claim remains blocked or unproven even if the value reads back correctly. If restoration failed, that failure remains part of closure.</p>
+<p>For the full UAR case, the corresponding conclusion is narrower than “UAR verified”: selected behavior journeys have useful retained evidence, with mixed candidate identities and explicit limits; the larger phase and the newly authored knowledge-restart journey were not established as complete at the research cutoff.</p>
+<p class="revision-note"><strong>Revised:</strong> the knowledge-restart journey was later recorded as passed on Mac (B26, <code>.prometheus/verification/knowledge-restart-01-macos-pass.json</code>). The broader conclusion is unchanged. The phase is not declared complete, and Mac receipts do not certify the current tree, Linux, iOS or PostgreSQL.</p>
+<h2 id="9-integration-with-pmpo-kbd-openspec-exit-contracts-and-delivery-cadence">9 Integration with PMPO KBD OpenSpec exit contracts and delivery cadence</h2><figure class="reading-aid"><div class="eyebrow">Visual reading aid · derived from the paper</div><h3>One claim, connected evidence</h3><div class="diagram-scroll" tabindex="0"><svg aria-label="A source requirement informs a scenario and oracle; observation supports a scoped verdict; designated authority makes the closure decision." role="img" style="font-family:Inter,sans-serif" viewbox="0 0 900 176" xmlns="http://www.w3.org/2000/svg"><rect fill="#1C2535" height="104" rx="12" width="198" x="16" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="32" y="83">Source requirement</text><text fill="#A7B0BC" font-size="14" x="32" y="115">Actor + useful outcome</text><path d="M 220 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="236" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="252" y="83">Scenario + oracle</text><text fill="#A7B0BC" font-size="14" x="252" y="115">Action + expected truth</text><path d="M 440 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="456" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="472" y="83">Observed evidence</text><text fill="#A7B0BC" font-size="14" x="472" y="115">Candidate + real boundary</text><path d="M 660 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="676" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="692" y="83">Closure decision</text><text fill="#A7B0BC" font-size="14" x="692" y="115">Existing phase authority</text></svg></div><figcaption>The existing phase system remains the canonical owner. A green process does not independently establish behavioral acceptance or release authorization. See Sections 6, 8, and 9.</figcaption></figure>
+<figure class="reading-aid"><div class="eyebrow">Visual reading aid · derived from Section 9</div><h3>Integration without a competing phase system</h3><div class="diagram-scroll" tabindex="0"><svg aria-label="PMPO structures the work; KBD owns canonical phase state; OpenSpec links requirements and tasks; the adopted exit contract defines acceptance and authority; delivery cadence provides feedback rhythm. VLBV connects value, scenarios, evidence, and closure within these responsibilities." role="img" style="font-family:Inter,sans-serif" viewbox="0 0 900 360" xmlns="http://www.w3.org/2000/svg"><rect fill="#1C2535" height="56" rx="10" width="876" x="12" y="12"></rect><text fill="#FF6A3D" font-size="18" x="30" y="47">PMPO</text><text fill="#E8EDF3" font-size="17" x="260" y="47">Specification, planning, execution, reflection</text><rect fill="#1C2535" height="56" rx="10" width="876" x="12" y="80"></rect><text fill="#FF6A3D" font-size="18" x="30" y="115">KBD</text><text fill="#E8EDF3" font-size="17" x="260" y="115">Canonical phase state and authorized transitions</text><rect fill="#1C2535" height="56" rx="10" width="876" x="12" y="148"></rect><text fill="#FF6A3D" font-size="18" x="30" y="183">OpenSpec</text><text fill="#E8EDF3" font-size="17" x="260" y="183">Requirements, design, and task relationships</text><rect fill="#1C2535" height="56" rx="10" width="876" x="12" y="216"></rect><text fill="#FF6A3D" font-size="18" x="30" y="251">Adopted exit contract</text><text fill="#E8EDF3" font-size="17" x="260" y="251">Acceptance, exclusions, authority, and finite limits</text><rect fill="#1C2535" height="56" rx="10" width="876" x="12" y="284"></rect><text fill="#FF6A3D" font-size="18" x="30" y="319">Delivery cadence</text><text fill="#E8EDF3" font-size="17" x="260" y="319">Planning, checkpoints, delivery, and feedback</text></svg></div><figcaption>VLBV contributes calibrated value selection, scenarios, scoped evidence, and closure meaning. These layers retain their existing responsibilities; delivery cadence does not force early testing or shipment.</figcaption></figure><h3 id="91-existing-methods-keep-their-jobs">9.1 Existing methods keep their jobs</h3>
+<p>The primary-source investigation verified the relevant project definitions. <strong>PMPO means Prometheus Meta-Prompting Orchestration.</strong> Its inner loop is Spec, Plan, Execute, Reflect; the inspected guide also describes an outer Compile, Evaluate, Optimize, Promote loop. <strong>KBD means Knowledge-Based Development.</strong> In this project it supplies knowledge and implementation alignment, staged handoffs, and phase continuity. These are Prometheus AGS methodology names, not industry-standard acronym meanings. OpenSpec supplies the project's spec-driven change artifacts. <a href="#17-case-evidence-and-provenance">C8</a></p>
+<p>VLBV complements those layers rather than replacing them:</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Existing layer</th>
+<th>Retained responsibility</th>
+<th>VLBV contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PMPO</td>
+<td>Structure specification, planning, execution, reflection, and any separately governed promotion</td>
+<td>Make value selection, scenario relevance, phase-end evidence, and learning explicit</td>
+</tr>
+<tr>
+<td>KBD</td>
+<td>Own canonical phase state, handoffs, and authorized state transitions</td>
+<td>Link evidence to the real phase; distinguish manual behavior progress from canonical closure</td>
+</tr>
+<tr>
+<td>OpenSpec</td>
+<td>Preserve proposal, requirements, design, and task relationships</td>
+<td>Derive meaningful scenarios and trace receipts back to their source claims</td>
+</tr>
+<tr>
+<td>Adopted exit contract</td>
+<td>Define finite acceptance, exclusions, authority, limits, and allowed outcomes</td>
+<td>Improve the value and oracle quality of the selected obligations without creating a competing contract</td>
+</tr>
+<tr>
+<td>Delivery cadence</td>
+<td>Provide planning, checkpoint, delivery, and feedback rhythm</td>
+<td>Align verified useful increments with cadence without forcing premature tests or shipment</td>
+</tr>
+</tbody>
+</table></div>
+<p>The current installed KBD description and the repository-local copy differ materially despite sharing a version label. The investigation also found representation differences in verdict vocabularies and did not validate a new adapter against those schemas. A future integration must discover the actual active implementation and canonical writer. It must not mutate a derived projection or assume that two matching version strings imply identical semantics. <a href="#c8-existing-process-and-phase-boundary-investigation">C8</a></p>
+<h3 id="92-reuse-the-actual-exit-contract">9.2 Reuse the actual exit contract</h3>
+<p>The inspected adopted-contract schema already contains a <code>scenarioMatrix</code> with scenario identity, owner task, production entry, collaborators, oracle, negative control, fixtures, and evidence. It also specifies <code>boundaryPacket.postImplementationOnly</code> as <code>true</code>, with a whole-phase execution boundary, and <code>singleRun</code> as <code>true</code>. VLBV should populate and interpret that existing structure, not invent a parallel source of truth. <a href="#c8-existing-process-and-phase-boundary-investigation">C8</a></p>
+<p>A single-run packet does not authorize automatic retry loops. If the packet fails, any repair, amended candidate, and rerun must follow the actual contract's authority and amendment rules. Historical budget consumption and failed results remain visible. The proposed portable outcome labels in this paper require an explicit mapping to the target vocabulary; an unknown effect must never be mapped to success or merely hidden as “not run.”</p>
+<p class="revision-note"><strong>Revised:</strong> for the UAR manual verification sequence, the operator explicitly replaced the old packet/signature/inventory method with manual BDD scenarios run one at a time. The generated waypoint's older packet notes and implementation counts are historical (<code>.prometheus/handoffs/2026-10-27-c33-claude-desktop.md</code>). The current pattern is in <code>.prometheus/verification/bdd-validation-catalog.md</code>. The operator selects one ID. Its author writes only that feature, its thin steps and its config. Independent source review follows. The selected scenario then runs once with no automatic retry. After a demonstrated failure, the failure is discussed before any correction. Only the affected scenario is rerun, and the first failure is kept. The no-automatic-retry rule above still holds. What changed is that no new packet, signature or inventory gate is needed. See <a href="#2014-independent-source-critique-instead-of-gate-ceremonies">20.14</a>.</p>
+<p>The project also contains older BDD integration guidance suggesting checks during a change. The stronger UAR whole-phase policy overrides that guidance. This is a rule-composition hazard: loading a familiar skill can reintroduce an unwanted execution cadence. The integration must preserve the governing policy, including the prohibition on disguised early builds, compiler probes, linters, hooks, and tests. <a href="#c8-existing-process-and-phase-boundary-investigation">C8</a></p>
+<h3 id="93-data-flow-and-decision-ownership">9.3 Data flow and decision ownership</h3>
+<p>A practical integration uses one phase identifier and one adopted contract lineage:</p>
+<ol>
+<li>During assessment and specification, the owner or product authority defines intended value, important constraints, and supported scope.</li>
+<li>During planning, the assistant proposes source-linked scenarios and a relevance rationale. The owner resolves material ambiguity and calibrates selection.</li>
+<li>OpenSpec requirements and the KBD phase reference the adopted scenario contract; they do not duplicate conflicting copies of acceptance meaning.</li>
+<li>During generation, implementation progress is recorded without executing generated-code checks before the whole-phase boundary.</li>
+<li>At that boundary, the authorized operator or runner evaluates the identified candidate. Evidence is linked to the scenario and source requirement.</li>
+<li>The designated reviewer decides contract satisfaction. The actual canonical writer performs any permitted KBD transition.</li>
+<li>PMPO Reflect records plan-versus-outcome differences and what should change next. Skill promotion and release remain separately authorized decisions.</li>
+</ol>
+<p>This mapping is proposed. The inspected project artifacts establish the definitions and existing contracts, not a functioning VLBV integration or automatic completion service.</p>
+<h3 id="94-cadence-is-a-feedback-rhythm-rather-than-a-forced-release">9.4 Cadence is a feedback rhythm rather than a forced release</h3>
+<p>The useful sequence is:</p>
+<p><strong>Implementation checkpoint → completed value phase → phase-end behavioral verification → eligible and authorized delivery → real feedback → next value-ranked plan.</strong></p>
+<p>A checkpoint records progress, incomplete work, risks, and the next safe action. An hour, a commit, or an elapsed cadence interval does not make an unfinished phase complete. The inspected UAR policy's 120-minute checkpoint explicitly does not open the verification gate. A team may choose another rhythm, but the same distinction applies. <a href="#c8-existing-process-and-phase-boundary-investigation">C8</a></p>
+<p>If a phase is too large to reach useful completion within the desired delivery rhythm, improve the next phase's scope prospectively. Do not retroactively rename an unfinished task as a completed value phase. If verification fails at the boundary, the cadence produces an honest decision and a bounded repair plan, not a forced shipment. An accepted slice becomes eligible for delivery only after its actual release obligations and authorization are satisfied.</p>
+<p>Feedback then informs future value selection. It does not rewrite the historical receipt or silently reopen a closed phase for every new idea. A discovered critical flaw can invalidate evidence or stop use; an ordinary improvement becomes a candidate with a reason and an owner.</p>
+<h2 id="10-a-harness-independent-skill-process">10 A harness independent skill process</h2>
+<h3 id="101-package-the-demonstrated-procedure-before-building-a-platform">10.1 Package the demonstrated procedure before building a platform</h3>
+<p>A first skill package can consist of one entry document, the compact operating procedure, contract and receipt examples, a relevance-calibration packet, and a capability checklist. Optional references can cover async jobs, stochastic grading, or a specific product adapter. The skill need not contain a scheduler, persistent server, or replacement test runner.</p>
+<p>The entry procedure should require the assistant to locate the authoritative phase and governing instructions, read the latest accepted contract and evidence, identify the present state, and choose the next allowed action. A planning invocation should not start execution. A reporting invocation should not repair source. A resume invocation should reconcile reality before replaying any side effect.</p>
+<p>The skill can use compatible Prometheus packs, OpenSpec workflows, or other existing tooling when their semantics match the current contract. It must also work as a readable procedure outside those packs. Dependency on a pack should be declared only when a particular operation genuinely needs it. The portable object is the reviewed behavioral contract and evidence meaning, not an assumption that every host exposes the same command names.</p>
+<h3 id="102-capability-negotiation-is-a-visible-acceptance-step">10.2 Capability negotiation is a visible acceptance step</h3>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Needed capability</th>
+<th>What must be established</th>
+<th>If unavailable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retain and retrieve evidence</td>
+<td>An authorized persistent location and usable references</td>
+<td>Use explicitly reviewed manual capture or block the required closure claim</td>
+</tr>
+<tr>
+<td>Execute the real product path</td>
+<td>Actual runner or interaction support and required access</td>
+<td>Keep the real claim blocked; do not substitute a mock silently</td>
+</tr>
+<tr>
+<td>Identify the candidate</td>
+<td>Actual source, build, configuration, and relevant dependency identity</td>
+<td>Limit the claim or obtain identity before accepting it</td>
+</tr>
+<tr>
+<td>Honor the phase boundary</td>
+<td>Governing instructions and declared advisory, observed, or enforced control</td>
+<td>Surface conflicts; do not claim mechanical enforcement without it</td>
+</tr>
+<tr>
+<td>Observe and reconcile effects</td>
+<td>Product-specific state and ownership information</td>
+<td>Do not blindly retry an uncertain side effect</td>
+</tr>
+<tr>
+<td>Preserve canonical phase state</td>
+<td>Actual writer and schema semantics where an orchestrator is used</td>
+<td>Report evidence without manufacturing a transition</td>
+</tr>
+</tbody>
+</table></div>
+<p>Codex, Claude Code, OpenCode, and other hosts are possible adapter targets, not declared supported implementations. Product names alone do not establish permissions, tool availability, persistence, or enforcement. A portable package can be supplied to another host, but its operation must be calibrated and checked there.</p>
+<h3 id="103-what-learned-guidance-should-contain">10.3 What learned guidance should contain</h3>
+<p>The reusable learning artifact should preserve why a scenario was selected, why a plausible alternative was irrelevant, which false positive the oracle excluded, what failed, and what the result justified next. It should also preserve the phase-end rule and the limitations of the evidence.</p>
+<p>It should not copy entire private conversations when a small sanitized example will do. It should not present one successful model response as a permanent learned policy. Future sessions need the relevant guidance explicitly retrieved or supplied, and their held-out decisions should be checked after meaningful model, host, or context changes.</p>
+<p>A candidate skill is not an installed skill, and installation is not validation. This paper specifies a possible package and acceptance process; no runtime or skill installation is part of the paper's implementation status.</p>
+<h2 id="11-minimal-implementation-plan-with-finite-exits">11 Minimal implementation plan with finite exits</h2>
+<p>The implementation should proceed only under a separate engineering authorization. Each milestone must end with a decision about evidence, not with a larger unbounded list of infrastructure features.</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Milestone</th>
+<th>Small deliverable</th>
+<th>Finite exit and traceability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M0 Establish the case and governing policy</td>
+<td>Sanitized retrospective, current policy, and explicit uncertainty</td>
+<td>The bounded UAR investigation in this edition supplies this input. Ongoing product verification and causal attribution remain open; they are not prerequisites to drafting the method.</td>
+</tr>
+<tr>
+<td>M1 Run the manual protocol</td>
+<td>One agreed value phase, a few reviewed scenarios, existing runner, and a readable closure packet</td>
+<td>At least one useful claim has current evidence; every selected obligation has an honest disposition; owner can explain the next decision. Covers VLBV 01–16 and 22 manually.</td>
+</tr>
+<tr>
+<td>M2 Automate repeated clerical work</td>
+<td>Minimal contract checks, evidence capture, and a closure view using the existing runner</td>
+<td>At phase end, seeded false-pass challenges AT 03–16 and AT 22 are detected within the claimed boundary. No dashboard or generic plugin system is needed.</td>
+</tr>
+<tr>
+<td>M3 Package the skill and one real integration</td>
+<td>One entry skill, concise references, actual phase-system mapping, and a documented capability profile</td>
+<td>A fresh session reconstructs the phase without silent scope changes; AT 18 and AT 20 pass where those profiles are offered. No installation is claimed before it occurs.</td>
+</tr>
+<tr>
+<td>M4 Demonstrate bounded portability</td>
+<td>A second named host or execution environment with a thin adapter</td>
+<td>The same contract meaning survives transfer; AT 19 succeeds for the declared capability intersection. Missing capabilities remain explicit.</td>
+</tr>
+<tr>
+<td>M5 Evaluate usefulness beyond the motivating case</td>
+<td>A preregistered comparison across representative tasks</td>
+<td>Report time to accepted value, owner burden, false closure, critical misses, overhead, and uncertainty. Adopt, narrow, simplify, or reject based on the declared decision rule.</td>
+</tr>
+</tbody>
+</table></div>
+<p>M1 is the immediate target. Choose a phase small enough to yield meaningful value but large enough to avoid disguising test-after-every-edit as phase-end verification. Use a common scenario, a required constraint, and a meaningful failure or blocked condition where relevant. Do not force every advanced profile into the first pilot.</p>
+<p>M2 should automate only work that M1 shows to be repetitive or error-prone. A receipt validator that rejects missing observations is more useful initially than a rich reporting UI. The validator itself must be verified at the end of its own agreed generation phase; this plan does not impose TDD during its implementation.</p>
+<p>Each milestone has an anti-expansion rule: a proposed tool feature must name the current acceptance obligation it enables. Otherwise it enters a separate future list. If adapter work starts dominating the value phase, stop and reconsider the design instead of treating sunk effort as a reason to build a universal framework.</p>
+<h3 id="111-an-immediate-course-correction-for-an-agentic-ipfs-harness-loop">11.1 An immediate course correction for an agentic IPFS harness loop</h3>
+<p>The following one-page procedure is a proposed operating instruction for a stalled verification effort, not an instruction to publish without approval:</p>
+<ol>
+<li><strong>Freeze the purpose.</strong> State the one useful publishing journey the current phase exists to deliver. Separate genuine prerequisites from speculative gateway, platform, and dashboard support.</li>
+<li><strong>Choose the complete value phase prospectively.</strong> Include the implementation, assets, interfaces, and necessary fixtures that make the journey coherent. Do not rename unfinished work to open an early test gate.</li>
+<li><strong>Write only the meaningful initial scenarios.</strong> For example: an approved artifact is published; an independent reader retrieves the intended content and assets; required preview metadata identifies that actual publication. Add mandatory privacy and authority constraints.</li>
+<li><strong>Calibrate the exclusions.</strong> “A returned identifier alone does not prove readable content.” “One gateway does not prove universal availability.” “A preview image file does not prove a social platform refreshed its cache.” Keep these boundaries in the contract.</li>
+<li><strong>Finish generation without executing generated-code checks.</strong> Preserve context and progress at checkpoints. Do not add a general harness because a hypothetical future case might need it.</li>
+<li><strong>At the phase boundary, use the existing smallest adequate route.</strong> Obtain publication and credential-use authority as required. Execute only the agreed real checks, capture content identity and actual served observations, and preserve any failure.</li>
+<li><strong>Close the current claim.</strong> If it passes, state the specific content, path, assets, and metadata observed. If blocked, name the exact missing access or capability. If failed, authorize only the bounded correction needed for the same legitimate claim.</li>
+<li><strong>Select the next question from the evidence.</strong> A second gateway, cache behavior, pin durability, or another publisher can be a later phase when it answers a real need. None becomes mandatory merely because the first result made it imaginable.</li>
+</ol>
+<p>The intended benefit is earlier evidence of an actual publishing journey. This paper does not claim that agentic IPFS has already implemented the procedure or that any particular live publication is verified by this example. Content-addressed publication can have persistence and retraction limits; a cleanup plan must not promise global deletion that the actual system cannot establish.</p>
+<h3 id="112-a-proposed-patientgpt-pilot">11.2 A proposed PatientGPT pilot</h3>
+<p>A suitable initial PatientGPT journey, <strong>subject to its actual specification</strong>, could let an authorized test user provide a synthetic patient scenario and receive a reviewable information packet whose factual items are traceable to the supplied synthetic sources. Plan the intended value, missing-information handling, source traceability, access isolation, and retention behavior before generation; execute the agreed checks only at phase end.</p>
+<p>Use synthetic data for the initial pilot. Independent domain experts must define and assess any clinical-quality claim. A technically successful workflow, correct document structure, or BDD pass is not evidence of clinical safety, diagnostic accuracy, treatment suitability, HIPAA compliance, or regulatory approval. Real patient data, clinical use, and regulated operations require their own verified requirements and authority. These are proposed applications, not findings about PatientGPT's current implementation.</p>
+<h2 id="12-prior-art-and-what-this-synthesis-adds">12 Prior art and what this synthesis adds</h2>
+<h3 id="121-the-value-question-is-already-present-in-bdd">12.1 The value question is already present in BDD</h3>
+<p>Dan North's original account of behavior-driven development connects the next important missing behavior to business value. That is direct prior art for a central part of VLBV. Cucumber's account also includes collaborative discovery, formulation, and automation; Gherkin is only a language used in part of that process. Calling BDD a convenient syntax would miss the very value-selection insight at issue here. <a href="https://dannorth.net/blog/introducing-bdd/">North, Introducing BDD</a>, <a href="https://cucumber.io/docs/bdd/">Cucumber, Behaviour-Driven Development</a></p>
+<p>Example Mapping makes rules, examples, open questions, and newly separated stories visible. Specification by example similarly uses a limited set of meaningful examples to improve shared understanding. Adzic warns that a large collection of scenarios can hide important concepts and disagreements instead of resolving them. These practices support planning understandable behavioral claims without precommitting to every possible test. <a href="https://cucumber.io/docs/bdd/example-mapping/">Cucumber, Example Mapping</a>, <a href="https://gojko.net/2014/05/05/focus-on-key-examples/">Adzic, Focus on key examples</a></p>
+<p>VLBV differs in execution timing. Cucumber's automation cycle uses a failing example before implementation; conventional TDD uses tests to guide development as it proceeds. The owner's policy delays generated-code test execution until the end of a coherent value-producing generation phase. The shared lineage is discovery, value, and acceptance meaning. The timing difference should remain explicit rather than being hidden under the BDD label. <a href="https://cucumber.io/docs/bdd/">Cucumber BDD</a>, <a href="https://www.growing-object-oriented-software.com/">Freeman and Pryce, Growing Object-Oriented Software Guided by Tests</a></p>
+<h3 id="122-thin-end-to-end-delivery-and-evidence-based-acceptance-are-established">12.2 Thin end to end delivery and evidence based acceptance are established</h3>
+<p>A walking skeleton provides a minimal working path across major components. It helps distinguish architectural integration from the completion of isolated layers. Impact Mapping connects proposed deliverables to actor behavior and goals. These ideas explain why one meaningful path can be a better planning unit than an inventory of technical components, while leaving open how much validation that path requires. <a href="https://www.oreilly.com/library/view/97-things-every/9780596800611/ch60.html">Shank, Start with a Walking Skeleton</a>, <a href="https://www.impactmapping.org/delivering.html">Impact Mapping</a></p>
+<p>Assurance cases supply another important ancestor: a claim needs relevant evidence and a reason that the evidence supports it. Several artifacts repeating the same run are not independent corroboration. Evidence must apply to the candidate under consideration, or a justified invariance argument must explain why a change does not affect it. VLBV adopts a lightweight version of that discipline, not the assurance burden appropriate to every regulated system. <a href="https://www.sei.cmu.edu/blog/assurance-cases-and-confidence/">SEI, Assurance Cases and Confidence</a>, <a href="https://www.sei.cmu.edu/library/assurance-cases-overview/">SEI, Assurance Cases Overview</a></p>
+<p>Model-based testing already distinguishes abstract behavior, concrete execution, and adapters. Its literature also emphasizes that the test model needs independent validity and can become too complicated to validate cheaply. VLBV's portable scenario and adapter separation is therefore an application of established ideas to agentic workflows, not an invention of abstraction or adapters. <a href="https://mediatum.ub.tum.de/doc/1246357/396788.pdf">Utting, Pretschner and Legeard, A taxonomy of model-based testing approaches</a></p>
+<h3 id="123-agent-engineering-supplies-close-practical-precedents">12.3 Agent engineering supplies close practical precedents</h3>
+<p>Anthropic's long-running-agent report describes concrete end-to-end feature definitions, incremental work, browser verification, and durable progress artifacts. Its accompanying coding prompt guards against changing the criteria merely to obtain a pass. These are close practical precedents, although the report emphasizes full-stack web applications and does not provide a controlled estimate of the method's effect. Its large initial feature list and browser-specific execution rules should not be copied as universal VLBV requirements. <a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents">Anthropic, Effective harnesses for long-running agents</a>, <a href="https://raw.githubusercontent.com/anthropics/claude-quickstarts/main/autonomous-coding/prompts/coding_prompt.md">Coding prompt</a></p>
+<p>More recent agent-evaluation guidance begins with common user tasks and real failures, distinguishes tasks from trials and graders, and favors checking actual outcomes over narrated success. A later harness-design report describes evaluator feedback and grading calibrated against human review; it also describes removing some orchestration when a stronger model made it less useful. The latter is an important caution against treating one-at-a-time decomposition or a particular multi-agent topology as a permanent law. <a href="https://www.anthropic.com/research/demystifying-evals-for-ai-agents">Anthropic, Demystifying evals for AI agents</a>, <a href="https://www.anthropic.com/research/harness-design-long-running-apps">Anthropic, Harness design for long-running apps</a></p>
+<p>EDDOps formalizes evaluation-governed agent development and operations, including traceable evidence and risk-aware cases. Its validation is analytical and case-based rather than an experiment showing a causal productivity gain. VLBV is narrower: a portable decision protocol for selecting, verifying, and closing bounded value phases. It should be able to contribute to a broader evaluation lifecycle without recreating one. <a href="https://arxiv.org/html/2411.13768v3">Xia et al., EDDOps</a></p>
+<h3 id="124-research-supports-calibration-while-warning-against-surface-success">12.4 Research supports calibration while warning against surface success</h3>
+<p>TiCoder investigated user feedback on generated tests in a small controlled study of code-selection tasks. Its pass/fail-feedback condition improved correct selections compared with the control, but the study involved 15 participants and constrained Python tasks, not autonomous verification of complex products. It supports the plausibility of concrete examples clarifying intent; it does not validate the full VLBV policy. <a href="https://arxiv.org/html/2404.10100v2">Fakhoury et al., TiCoder</a></p>
+<p>An industrial acceptance-test-generation study is especially relevant. It separates stories-to-Gherkin from Gherkin-and-actual-UI-to-Cypress. In one evaluation of 50 cases, all generated outputs were syntactically valid, but only 60 percent initially matched the intended scenario meaning. A valid feature file is therefore a poor substitute for reviewed relevance and expected behavior. The study's setting and sample constrain generalization. <a href="https://arxiv.org/html/2504.07244v1">Ferreira et al., Acceptance Test Generation with Large Language Models</a></p>
+<p>Other research reinforces the distinction. One BDD study's reported accuracy was freedom from Gherkin-lint syntax issues, not semantic correctness or coverage. A 2026 preprint found benefits from richer descriptions, but the effect of few-shot examples differed across the tested models. VLBV should validate calibration on unseen cases rather than assuming that examples improve every model or transfer unchanged. <a href="https://arxiv.org/pdf/2403.14965">Karpurapu et al., BDD acceptance test formulation</a>, <a href="https://arxiv.org/html/2603.04729v1">Rathnayake, Shahin and Abaei, BDD scenario generation</a></p>
+<p>The standard in-context-learning interpretation involves supplying demonstrations in the input without gradient updates during the evaluation. It is a plausible explanation for improved proposals after owner examples. It says nothing by itself about the private memory implementation, later training, or durable retention behavior of a particular coding product. <a href="https://arxiv.org/html/2005.14165v4">Brown et al., Language Models are Few-Shot Learners</a></p>
+<h3 id="125-a-passing-benchmark-is-not-the-same-as-an-acceptable-product-change">12.5 A passing benchmark is not the same as an acceptable product change</h3>
+<p>The test oracle is a separate problem from generating inputs. A check can reject correct implementations, accept incorrect ones, or encode a misunderstanding shared with the generated code. More scenarios do not resolve those defects automatically. <a href="https://eecs481.org/readings/testoracles.pdf">Barr et al., The Oracle Problem in Software Testing</a></p>
+<p>An OpenAI audit found material test or specification problems in 59.4 percent of a difficulty-selected set of 138 SWE-bench Verified tasks. That figure must not be presented as the prevalence across the entire benchmark. Conversely, broader testing of previously passing agent patches has found additional failures, and maintainer review has identified acceptance gaps beyond automated scores. These findings point in both directions: an oracle can be too restrictive or too weak. <a href="https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/">OpenAI, SWE-bench Verified limitations</a>, <a href="https://arxiv.org/html/2503.15223v2">Wang, Pradel and Liu, Are Solved Issues Really Solved Correctly</a>, <a href="https://metr.org/notes/2026-03-10-many-swe-bench-passing-prs-would-not-be-merged-into-main/">METR, Many SWE-bench-passing PRs would not be merged</a></p>
+<p>These studies do not prove that VLBV is better. They explain why its acceptance review, evidence boundaries, and holdout checks are necessary subjects of validation.</p>
+<h3 id="126-the-contribution-is-an-explicit-practical-combination">12.6 The contribution is an explicit practical combination</h3>
+<p>The proposed contribution is a small protocol that combines value-led scenario selection, owner-calibrated relevance, declared phase-end execution timing, scoped evidence, bounded adaptive verification, and explicit phase closure. It makes the authority and evidence problems of agentic tools visible while keeping execution delegated to existing capabilities.</p>
+<p>None of those ingredients is wholly new. The name VLBV identifies the owner's practical synthesis and makes it easier to discuss, package, and test. This paper makes no priority, patentability, trademark-availability, or universal-optimality claim. The right next step is an auditable prototype and a fair comparison, not a declaration that a new methodology has already been proven.</p>
+<h2 id="13-a-falsifiable-validation-study">13 A falsifiable validation study</h2><figure class="reading-aid"><div class="eyebrow">Visual reading aid · derived from the paper</div><h3>Calibrate, then challenge the claim</h3><div class="diagram-scroll" tabindex="0"><svg aria-label="Owner examples calibrate relevance, unseen cases challenge selection, scoped observations support claims, and independent review assesses acceptance." role="img" style="font-family:Inter,sans-serif" viewbox="0 0 900 176" xmlns="http://www.w3.org/2000/svg"><rect fill="#1C2535" height="104" rx="12" width="198" x="16" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="32" y="83">Owner examples</text><text fill="#A7B0BC" font-size="14" x="32" y="115">Useful, irrelevant, critical</text><path d="M 220 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="236" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="252" y="83">Unseen candidates</text><text fill="#A7B0BC" font-size="14" x="252" y="115">Challenge relevance</text><path d="M 440 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="456" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="472" y="83">Scoped observations</text><text fill="#A7B0BC" font-size="14" x="472" y="115">Expose false positives</text><path d="M 660 93 l 12 7 -12 7 Z" fill="#FF6A3D"></path><rect fill="#1C2535" height="104" rx="12" width="198" x="676" y="48"></rect><text fill="#E8EDF3" font-size="19" font-weight="600" x="692" y="83">Independent review</text><text fill="#A7B0BC" font-size="14" x="692" y="115">Assess useful acceptance</text></svg></div><figcaption>This is a proposed evaluation path, not evidence that VLBV already improves outcomes. The paper calls for fair comparisons, declared measures, and retained negative results. See Sections 12 and 13.</figcaption></figure>
+<h3 id="131-questions-that-would-change-the-recommendation">13.1 Questions that would change the recommendation</h3>
+<p>The first hypothesis is that a value-led adaptive frontier reduces time and total effort to the first independently accepted useful behavior, compared with infrastructure-first verification on matched tasks. The second is that owner-calibrated examples reduce irrelevant scenario proposals and unsupported requirements. The third is that explicit evidence and closure contracts reduce false completion claims and unnecessary reopening. A fourth hypothesis concerns portability: the same semantic contract can be executed in a second environment with bounded adapter work and no loss of claim meaning.</p>
+<p>These hypotheses could fail. Calibration might cost more owner time than it saves. A fixed backlog might perform as well as adaptive selection. A mature existing harness might beat a thin new protocol. Deferred execution might increase repair cost enough to outweigh reduced interruptions. Portability might require extensive redesign rather than a small adapter. The study should preserve those outcomes.</p>
+<h3 id="132-use-fair-baselines">13.2 Use fair baselines</h3>
+<p>A core comparison should include the team's existing harness-first process, a fixed scenario backlog, and the VLBV value-led adaptive policy. The baseline must be competently configured and have access to the same reasonable reusable infrastructure. It should not be deliberately burdened with unnecessary generalization.</p>
+<p>Keep model versions, tools, permissions, environment quality, task scope, execution budgets, and human assistance comparable. Use several products or representative components so that a single UAR-specific fixture does not determine the result. Randomize task assignment or use a counterbalanced design, account for learning and carryover, and keep unsuccessful attempts in the analysis.</p>
+<p>The owner's phase-end timing policy should be tested separately from scenario selection where feasible. One study can hold phase-end timing constant and compare selection policies. A second can compare phase-end and continuous execution while holding the value contract and tooling constant. This prevents a benefit caused by improved scenarios from being attributed to delayed testing, or vice versa.</p>
+<h3 id="133-define-measurements-before-execution">13.3 Define measurements before execution</h3>
+<p>The primary outcome should be elapsed time and total effort to the first <strong>independently accepted end-to-end value slice</strong>, starting from an agreed task brief. Total effort includes owner correction, adapter construction, environment setup, verification, and repair. Excluding those costs would conceal the problem the method is intended to solve.</p>
+<p>Secondary measures should include:</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Operational definition</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accepted value over time</td>
+<td>Independently accepted claims, with stakeholder-approved weights recorded before results</td>
+<td>Avoids rewarding many trivial cases</td>
+</tr>
+<tr>
+<td>Critical constraint failures</td>
+<td>Violations in the separately defined mandatory-risk set</td>
+<td>Prevents a good average from hiding severe failures</td>
+</tr>
+<tr>
+<td>Unsupported completion claims</td>
+<td>Claims whose cited evidence does not establish the declared boundary</td>
+<td>Measures reporting honesty and oracle alignment</td>
+</tr>
+<tr>
+<td>Reopen and escape rate</td>
+<td>Accepted claims later contradicted by held-out checks or intended-use failures</td>
+<td>Measures durability of closure</td>
+</tr>
+<tr>
+<td>Owner correction burden</td>
+<td>Time and number of material relevance, scope, and oracle corrections</td>
+<td>Tests whether calibration saves human work</td>
+</tr>
+<tr>
+<td>Orchestration overhead</td>
+<td>Effort on reusable machinery not directly required by current claims</td>
+<td>Detects infrastructure displacement</td>
+</tr>
+<tr>
+<td>Reproducibility</td>
+<td>Independent reruns that reproduce the scoped verdict under the stated conditions</td>
+<td>Tests receipt usefulness</td>
+</tr>
+<tr>
+<td>Portability cost</td>
+<td>Work needed to execute the same semantic contract in a second declared environment</td>
+<td>Tests harness-independence claims</td>
+</tr>
+<tr>
+<td>Phase-end repair effort</td>
+<td>Defects and effort discovered after generation completes</td>
+<td>Exposes delayed-feedback tradeoffs</td>
+</tr>
+</tbody>
+</table></div>
+<p>A reviewer unaware of the assigned method should judge acceptance where practical. Use holdout scenarios derived independently from the same product intent. Holdout testing must obey the same access and side-effect permissions. A held-out test should not quietly invent a requirement absent from the accepted specification; disagreements need adjudication.</p>
+<h3 id="134-evaluate-calibration-rather-than-style-imitation">13.4 Evaluate calibration rather than style imitation</h3>
+<p>Compare specification-only generation with specification plus reviewed positive, negative, and rare-critical examples. Present unseen candidate scenarios and ask the assistant to identify value, missing information, likely-use basis, risk, and the next warranted action. Measure priority agreement and substantive errors, not resemblance to the owner's wording.</p>
+<p>Record the exact supplied context and the exposed model identity. On a model or host change, repeat the calibration check. Good performance on the examples themselves is not evidence of generalization. A result that improves Gherkin formatting while leaving relevance unchanged should be reported as a formatting improvement.</p>
+<h3 id="135-treat-nondeterminism-explicitly">13.5 Treat nondeterminism explicitly</h3>
+<p>A fixed scenario can yield different results because of model sampling, asynchronous tools, external services, or variable data. The contract should distinguish deterministic invariants from probabilistic quality claims. Fix the sampling unit, input distribution, reset policy, failure definition, judge, and stopping procedure before interpreting repeated trials.</p>
+<p>A simple mathematical illustration shows why a few successes are weak reliability evidence. For a fixed artifact and oracle, independent identically distributed Bernoulli trials, a fixed sample size of <code>n</code>, and zero observed failures, a one-sided 95 percent upper confidence bound on failure probability is <code>1 - 0.05^(1/n)</code>. Thirty clean trials still give an upper bound of about 9.5 percent; 300 give about 0.994 percent. These are illustrative calculations under restrictive assumptions, not a recommended universal sample size or a statement that a system is safe. Dependence and unrepresentative sampling can make reliability conclusions optimistic. <a href="https://arxiv.org/abs/2208.00462">Salako and Zhao, reliability and independence assumptions</a></p>
+<p>A demonstration may need one well-observed run. A claim about reliability usually needs more. Those are different claims and should have different labels. Informal rerun-until-green behavior supports neither.</p>
+<h3 id="136-decide-what-would-count-as-enough-evidence-to-adopt">13.6 Decide what would count as enough evidence to adopt</h3>
+<p>Before the pilot, the team should set a decision rule appropriate to its costs and risks: a practically useful reduction in time to accepted value, no unacceptable increase in critical failures, tolerable owner burden, and adequate reproducibility. Report uncertainty and per-task variation rather than one flattering aggregate. Do not choose the success threshold after seeing the outcome.</p>
+<p>Adoption can be selective. The evidence may support VLBV for phase-end integration acceptance while favoring existing continuous checks for another context. A mixed result is useful if it identifies where the method pays for itself and where it does not.</p>
+<h2 id="14-alternatives-and-combinations">14 Alternatives and combinations</h2>
+<h3 id="a-mature-existing-test-platform">A mature existing test platform</h3>
+<p>If an established platform already provides reliable fixtures, observation, access control, and receipts, use it. VLBV can supply the value contract and selection policy above that platform. Replacing working infrastructure would add cost without establishing the proposed benefit. Conversely, when infrastructure must be created, tie each addition to a current claim rather than hypothetical universality.</p>
+<h3 id="continuous-testing-and-test-driven-development">Continuous testing and test driven development</h3>
+<p>Continuous checks can expose defects earlier and reduce the size of an interacting failure set. TDD can clarify design through executable examples. They may be better choices for some teams and systems. The owner's VLBV timing policy instead favors uninterrupted generation of a coherent value increment before execution. The paper preserves that preference while making its costs measurable. Source inspection and planning should not be relabeled as tests, nor should actual code execution be hidden under the name “preflight” to evade the declared boundary.</p>
+<h3 id="exploratory-testing">Exploratory testing</h3>
+<p>Exploration is valuable when requirements are incomplete or the system's behavior is surprising. VLBV can record an exploratory charter as a bounded information-gathering activity, then turn important findings into reviewed claims. Exploration does not need to pretend that every observation was predicted in Gherkin. It also should not silently add all discovered possibilities to the current acceptance contract.</p>
+<h3 id="property-based-testing-and-mutation-testing">Property based testing and mutation testing</h3>
+<p>Example scenarios establish understandable claims; property-based testing can explore larger input regions, and mutation testing can challenge whether checks detect relevant faults. These techniques complement each other. A large generated sample may still concentrate on trivial cases, and a mutation score may be distorted by equivalent or irrelevant changes. Use them at phase-end where the risk justifies their cost, with bounded selection and documented interpretation. <a href="https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf">Claessen and Hughes, QuickCheck</a>, <a href="https://pitest.org/quickstart/basic_concepts/">PIT, basic concepts</a></p>
+<h3 id="formal-verification-and-domain-assurance">Formal verification and domain assurance</h3>
+<p>Formal methods can establish specified properties under explicit semantics and assumptions. They are not replaced by a small number of behavior tests. Safety-critical, security-sensitive, and regulated contexts may need specialist assurance, independent evaluation, and controls beyond VLBV. The protocol can organize scoped evidence and ownership, but the existence of a closure packet is not a certification. Finite ordinary testing does not establish unrestricted correctness. <a href="https://www.cs.utexas.edu/~EWD/transcriptions/EWD02xx/EWD249/EWD249.html">Dijkstra, Notes on Structured Programming</a></p>
+<h3 id="parallel-execution">Parallel execution</h3>
+<p>One behavior at a time is often a useful starting discipline because it simplifies attribution. It is not an immutable rule. Independent scenarios may execute concurrently after the phase-end trigger when their environments, data, and evidence are isolated. Shared mutable state, ambiguous logs, or a coupled repair can remove that independence. Parallelism should be justified by the scenario dependencies, not by the number of available agents.</p>
+<h2 id="15-limitations-and-failure-modes">15 Limitations and failure modes</h2>
+<p>The first limitation is specification quality. A precise scenario can make an incorrect assumption look authoritative. The contract should distinguish facts, owner decisions, inferred requirements, and unresolved questions. The assistant may propose requirements; it may not silently promote them to approved scope.</p>
+<p>The second is owner knowledge. A product owner can misjudge common use or overlook a severe risk. Relevance calibration improves communication of the owner's judgment; it does not make that judgment infallible. Domain experts, support evidence, actual usage, and independent review remain important where appropriate.</p>
+<p>The third is correlated error. The same model can misunderstand a requirement, implement that misunderstanding, generate a matching test, and praise the result. Different role names or prompts do not by themselves make the evidence independent. A simpler reference, independently chosen data, direct state inspection, or a human reviewer can help challenge that shared error.</p>
+<p>The fourth is the observer. UI screenshots may omit hidden state. Logs can be incomplete or stale. A process exit code can reflect only the runner. A successful request may precede a later failure. Each claim needs the observation boundary and time window that actually support it. A checksum can establish artifact identity relative to a recorded digest; it cannot prove that the artifact tells the truth.</p>
+<p>The fifth is change. A provider alias, retrieval corpus, permission policy, configuration, dependency, or model may change while the application commit remains the same. Evidence freshness therefore depends on the inputs relevant to the claim, not just a recent timestamp. Reuse must include an invalidation decision.</p>
+<p>The sixth is delayed feedback. A large generation phase can make phase-end failures expensive to diagnose. The answer is a coherent, bounded value phase, not an artificial rule that every line is a phase. The appropriate size remains a practical and empirical question.</p>
+<p>The seventh is process overhead. If the protocol requires more metadata than the risk justifies, it can reproduce the machinery-first problem in another form. The minimum records should be small, derivable where possible, and stored once. Higher-assurance extensions should be triggered by the claim, not universally enabled.</p>
+<p>The eighth is closure abuse. A team can define a weak contract and satisfy it while leaving the product unusable. It can also insist on complete certification for a phase that only authorized a limited deliverable. VLBV requires an explicit relationship between purpose, acceptance, residual limitations, and release authority. That relationship is a judgment requiring review, not a schema alone.</p>
+<h2 id="16-adoption-recommendation">16 Adoption recommendation</h2>
+<p>Begin with one existing, coherent value phase whose owner can explain the intended outcome. Write a short contract and a few meaningful scenarios. Calibrate the next-scenario judgment with positive and negative examples. Keep generated-code execution at the declared phase-end boundary. Use the current runner and observation tools wherever they are adequate. Retain all attempt outcomes and produce a closure packet that states what is supported, what is not, and why the phase is closing.</p>
+<p>Only after that manual protocol works should a reusable skill automate the repetitive parts. Only after a second execution environment has been exercised should portability be claimed for that pair. Only after a comparative study should the team claim a measured improvement.</p>
+<p>The intended endpoint is straightforward: the owner can understand which useful behavior is supported by current evidence, the assistant can explain the next warranted action, and the phase can end without confusing a stopped process, completed code generation, a passing scenario, and an authorized release.</p>
+<h2 id="17-case-evidence-and-provenance">17 Case evidence and provenance</h2>
+<h3 id="evidence-classes">Evidence classes</h3>
+<p>This paper distinguishes owner testimony, historical assistant reports, inspected original artifacts, source review, and proposed design. Inspection is not execution replay. A paper can accurately describe a retained result without claiming that its authors independently reproduced the product behavior. Public references below use opaque case identifiers; the private evidence map retains the source locations for authorized audit without publishing raw conversations or personal filesystem details.</p>
+<h3 id="c1-owner-requirements-for-useful-completion">C1 Owner requirements for useful completion</h3>
+<p>Owner statements from 18 October 2026 establish the demand for useful-task-based measurable completion, understandable capability reports, and prioritization of intended store configurations. They are direct evidence of the owner's requirements, not product test results.</p>
+<h3 id="c2-earlier-qualification-reports">C2 Earlier qualification reports</h3>
+<p>Owner-pasted 18 October reports describe readiness work, narrow passes, and remaining failures. Their relationship to every later preparation attempt is not assumed. They support the correction that earlier work did produce some evidence.</p>
+<h3 id="c3-evidence-boundary-and-closure-corrections">C3 Evidence boundary and closure corrections</h3>
+<p>Historical 19–21 October records distinguish stub-model from configured-real-model claims, prerequisite progress from formal criterion closure, and authored work from validated software. These are historical reports and owner corrections, not current product certification.</p>
+<h3 id="c4-owner-account-of-the-manual-transition">C4 Owner account of the manual transition</h3>
+<p>The owner's 27 October explanation identifies the Node.js and Cucumber intervention and emphasizes value, likely uses, and results determining the next question. The primary session investigation in C7 corroborates and refines the chronology: the first selected prompt used a standalone Node.js script; Cucumber followed.</p>
+<h3 id="c5-governing-method-and-execution-policy">C5 Governing method and execution policy</h3>
+<p>The owner approved the name Value-Led Behavioral Verification and explicitly required no tests of generated code until the end of the complete phase producing demonstrable value. This is a design requirement for this paper. C8 corroborates the existing whole-phase policy and identifies older conflicting guidance that must not silently override it.</p>
+<h3 id="c6-initially-observed-screenshots">C6 Initially observed screenshots</h3>
+<p>Displayed restart summaries showed one scenario with six reported steps in 21.43 seconds and one with five reported steps in 13.834 seconds. Screenshots alone would establish only the displayed reports. C7 subsequently corroborated their underlying retained evidence; neither the screenshots nor that inspection establish broad reliability or full product completion.</p>
+<h3 id="c7-primary-uar-verification-investigation">C7 Primary UAR Verification investigation</h3>
+<p>The read-only investigation identified the actual session, used 20 successful paginated application reads covering 155 unique turns, and structurally traversed the available local record through 30,421 lines and 20 compactions. A retained export contained 1,066 entries, including injected and automated material as well as human messages. The investigation examined the substantive chronology and selected evidence; it did not independently audit every tool-output character.</p>
+<p>Seventeen later PASS receipts were inspected and indexed, and 11 selected original Cucumber reports were directly parsed. The source record supports three preparation campaigns within one evolving effort, followed by the value-led manual sequence. The ledger's 25 behavior labels across 22 journeys include composite evidence and mixed candidate identities. The cutoff was 27 October 2026 at 00:14:49 UTC; knowledge-base use after restart was being authored, not established as passed. No product execution was rerun for this investigation.</p>
+<p class="revision-note"><strong>Revised:</strong> the 25-label / 22-journey ledger figure is superseded by the 2026-10-27 coverage audit. That audit records 35 labels and 32 outcomes. Earlier 11/86 and 24/73 snapshots are also superseded but not deleted (<code>.prometheus/verification/coverage-audit-2026-10-27.md</code>). The original receipts were not modified.</p>
+<p>Remaining gaps are exact causal attribution, comprehensive raw-protocol replay, some lost earlier failure payloads, complete reconciliation of manual receipts with canonical phase state, platform parity, broad reliability, and outcomes after the cutoff. Compaction and the session start also prevent claims about every earlier UAR development session. The public case is a bounded retrospective, not an exhaustive forensic or release audit.</p>
+<h3 id="c8-existing-process-and-phase-boundary-investigation">C8 Existing process and phase boundary investigation</h3>
+<p>Read-only inspection established the project meanings of PMPO and KBD, the OpenSpec spec-driven configuration, existing phase and change relationships, adopted-contract fields, whole-phase execution rules, and the difference between manual results and canonical closure. It also found material differences between installed and repository-local KBD guidance and between some verdict representations. No VLBV adapter was implemented, no schema compatibility was certified, and no canonical state was changed by this investigation.</p>
+<h3 id="public-research-scope">Public research scope</h3>
+<p>The literature review used original author accounts, official documentation, and primary research. It is a bounded synthesis, not a systematic review of every testing or agent-evaluation publication. Engineering practice reports, controlled experiments, industrial case studies, preprints, and architecture proposals are identified as different evidence classes in the discussion. Sources were checked for this edition on 27 October 2026; mutable documents and repositories should be pinned when used in an executable reproducibility package.</p>
+<p>The closest intellectual anchors are <a href="https://dannorth.net/blog/introducing-bdd/">North's original BDD account</a>, <a href="https://cucumber.io/docs/bdd/">Cucumber's discovery and automation guidance</a>, <a href="https://mediatum.ub.tum.de/doc/1246357/396788.pdf">the model-based testing taxonomy</a>, <a href="https://www.sei.cmu.edu/blog/assurance-cases-and-confidence/">SEI's assurance-case guidance</a>, <a href="https://www.anthropic.com/research/demystifying-evals-for-ai-agents">agent evaluation practice</a>, and <a href="https://arxiv.org/html/2504.07244v1">the industrial acceptance-test-generation study</a>. Detailed links appear beside the claims they support throughout the paper.</p>
+<h2 id="18-preventing-a-retired-harness-from-returning">18 Preventing a retired harness from returning</h2>
+<p>A failed method can survive its apparent replacement in plans, handoffs, compaction summaries, familiar helpers, and old skills. The assistant may see those records later and reconstruct the very workflow the owner retired. “Use a simpler approach” is too ambiguous to prevent this. A deliberate supersession record must identify what is retired, what remains authoritative, and what can be reused.</p>
+<p>This is not permission to erase evidence, ignore product defects, or bypass security. It retires an operating method. Legitimate requirements, applicable receipts, approval boundaries, and authorized exit contracts remain. If a control belongs to a binding contract rather than merely to the retired harness, its disposition requires the appropriate authority and an explicit amendment.</p>
+<h3 id="reusable-supersession-instruction">Reusable supersession instruction</h3>
+<pre><code class="language-text">SUPERSESSION RECORD
+
+Authority and effective decision:
+[Name the authorized owner decision, date, and affected phase.]
+
+Retired method:
+[Identify the failed verification workflow and its active plan references.]
+
+The retired method is SUPERSEDED for this phase. Do not repair, extend,
+invoke, regenerate, or inherit its readiness, orchestration, fixture,
+inventory, or all-platform gates merely because they exist in old plans,
+handoffs, skills, or conversation summaries. Preserve the files as history;
+do not delete them or relabel their failures as successes.
+
+Retain:
+- Legitimate product requirements and the accepted scenario inventory.
+- Useful owner relevance examples and explicit exclusions.
+- Valid scoped receipts whose candidate and claim applicability still hold.
+- Actual security, privacy, access, approval, and adopted exit obligations.
+
+Replacement method:
+Use the agreed value phase and a few calibrated meaningful scenarios.
+Complete the entire agreed implementation before generated-code checks.
+At the authorized phase-end boundary, use the smallest adequate real
+execution route, preserve scoped evidence, and close or name the blocker.
+Select later work from value and observed uncertainty, not old harness scope.
+
+Helper reuse rule:
+Reuse a helper only when it is needed for the selected scenario, its behavior
+is understood, and it does not pull the retired workflow or unrelated gates
+back in. Otherwise use a smaller existing route or report the exact gap.
+
+Evidence rule:
+Do not rerun earlier accepted behavior automatically. Identify the relevant
+change or invalidation first. Preserve genuine failures and unknown effects;
+quarantining the old method must not suppress counterevidence.
+
+Continuity rule:
+Mark the active plan, handoff, and next compaction or recovery record with
+this supersession decision through their authorized writers. Keep links to
+the retired history and the replacement contract. If instructions conflict,
+state the conflict and obtain the necessary resolution; do not bypass a
+higher-priority rule or silently restore the old method.
+</code></pre>
+<p>This template is a proposed artifact for owner review and authorized use. It does not itself update any repository, phase record, skill, or running session. Its acceptance check is simple: after a fresh-session handoff, the assistant should identify the current method, reject an invitation to rebuild the retired harness, retain a relevant product failure, and preserve a mandatory approval gate. That is a useful additional challenge for VLBV 03, 11, 18, and 20.</p>
+<h2 id="19-compact-operating-checklist">19 Compact operating checklist</h2>
+<p>Before generation, confirm the useful outcome, the complete bounded phase, the relevant scenarios, owner calibration, observables, critical constraints, exclusions, and who may decide acceptance. Keep likely-use judgments sourced or explicitly uncertain.</p>
+<p>During generation, author the agreed increment and scenarios without executing generated-code checks. Record progress at checkpoints without treating time, task completion, or a partial repair cohort as a new test boundary. Preserve the current supersession decision so old machinery does not return through context recovery.</p>
+<p>At phase end, establish the actual candidate and authority. Run the selected real behavior through the appropriate existing tools. Check that the oracle distinguishes the intended success from a plausible false positive. Retain failures, boundaries, side effects, restoration, and unknowns.</p>
+<p>At closure, say exactly what the evidence supports. Separate implementation, behavior, release eligibility, and authorization. Preserve any continuing obligation. Choose the next scenario or phase because it matters and resolves a real uncertainty, or stop because the agreed purpose has been met.</p>
+<p>The method is deliberately small. Its success will be measured by useful behavior that a reader can understand and trust within stated limits, not by the size of the harness built around it.</p>
+<section class="revision-section" id="lessons-manual-mac-verification">
+<h2 id="20-lessons-from-manual-mac-verification-october-2026">20 Lessons from manual Mac verification (October 2026)</h2>
+<p class="revision-note"><strong>Revision section, added 2026-10-27.</strong> This section is not part of the independently reviewed original. It records lessons from the manual UAR BDD sequence that ran after the paper's research cutoff, through KB-REENABLE-01. Each lesson cites the repository file that supports it, with paths relative to the UAR repository root. These lessons come from repository records. They are not new executions. No scenario was rerun to write them.</p>
+<p>The sequence followed the method in Sections 3 to 6 at a smaller grain. The operator chose one user behavior. The assistant wrote a small Node.js script or Cucumber feature and ran it against the real configured UAR on Mac. The assistant kept the result or the failure and then stopped for the next choice. The lessons below concern what made individual results trustworthy and what kept counts honest.</p>
+<h3 id="201-one-user-goal-at-a-time">20.1 One user goal at a time</h3>
+<p>The operator corrected course after days of harness, fixture, inventory and authority work had produced little functional evidence. The first replacement was one portable Node.js Given/When/Then script. It prompted the default agent through the configured Liter/MiniMax-M3 model. The recorded Mac result was HTTP 200 with the correct answer 70 for 35+35, in 1060 ms. The method that followed: pick the next frequently used behavior, write a small direct script, run it against the product, keep the observed result or failure, then continue. Add machinery only for a demonstrated need. Finish Mac before Linux, and Linux before applicable iOS. Sources: <code>.prometheus/gotchas.md</code> (entry “Prove the user behavior before building verification machinery”, 2026-10-26) and <code>.prometheus/verification/2026-10-26T06-38-40.440Z-prompt-macos.json</code>.</p>
+<p>The forward catalog keeps this rule. The operator selects the next single ID. Only that ID's feature, thin steps and explicit config are written, and the run stops at PASS. A fast first prompt was explicitly not taken as a promise about whole-suite duration (<code>.prometheus/verification/bdd-validation-catalog.md</code>, “Boundaries, execution pattern and completion”).</p>
+<h3 id="202-portable-nodejs-and-cucumber-scripts">20.2 Portable Node.js and Cucumber scripts</h3>
+<p>The default-agent prompt script needs Node.js 20 or later, with no packages and no test runner. Its README includes a Windows PowerShell invocation. Cucumber scenarios run through the installed package with an explicit per-scenario config, for example <code>node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/cucumber.mjs</code>. Each config selects one feature. Browser behavior used the existing Playwright-BDD pattern. Of the 31 passing formal reports, 30 are Cucumber and 1 is Playwright BDD. Sources: <code>scripts/behaviors/README.md</code>; <code>.prometheus/verification/coverage-audit-2026-10-27.md</code>.</p>
+<p>Portability of the client script is not portability of the product claim. The README states that the recorded platform is the machine running the script. A server-platform claim also requires running UAR on that platform. The catalog notes that the Node scripts remain portable to Windows, but host lifecycle and client cases there need a Windows adapter or executor, and none is recorded.</p>
+<h3 id="203-real-configured-inference-rather-than-mocks">20.3 Real configured inference rather than mocks</h3>
+<p>Positive answers came from genuine configured inference: the Liter gateway route <code>liter/MiniMax-M3</code>, plus local and hosted embeddings where knowledge was involved. The catalog's fixture rules allow controlled faults only for negative and recovery cases. An externally provisioned MCP peer is real tool plumbing and does not fake a positive model completion. A copied model-catalog entry is not evidence that a new provider binding works. A listing from <code>/api/models</code> is a read-only merged catalog, not proof of usable credentials or successful execution. Sources: <code>.prometheus/verification/bdd-validation-catalog.md</code> (fixture vocabulary; boundaries step 4); <code>.prometheus/handoffs/2026-10-27-c33-claude-desktop.md</code> (model discovery).</p>
+<p>Real inference has a cost that the method keeps visible. Separate embedding spend caps ($10 Cohere and $10 OpenAI) and prior consumption are preserved in the catalog. Adding model choices does not imply paying for an exhaustive model matrix.</p>
+<h3 id="204-reuse-the-running-uar-its-store-and-saved-agents">20.4 Reuse the running UAR, its store and saved agents</h3>
+<p>Scenarios ran against one existing owned Mac UAR with a durable disk-backed Surreal store. They reused persistent agents created by earlier behaviors: <code>math-specialist-db64c2a8</code>, <code>writing-specialist</code>, and the protected <code>default-agent</code> and <code>orchestrator-agent</code>. Scenarios that needed a restart restarted only the owned instance, with unchanged binary, config and store, and left it running. Disposable agents, KBs and sessions created by a scenario were deleted through supported operations. Saved specialists were left intact. Sources: <code>.prometheus/handoffs/2026-10-27-c33-claude-desktop.md</code> (“Existing runtime”); <code>.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md</code>; <code>scripts/behaviors/support/restart-owned-uar.mjs</code>.</p>
+<p>Concrete example: KNOWLEDGE-RESTART-01 reused retained KB and document IDs from earlier evidence. It did not recreate, upload or rebind them, which kept the scenario about restart rather than about ingestion (<code>.prometheus/gotchas.md</code>, KNOWLEDGE-RESTART-01 entry).</p>
+<h3 id="205-no-authentication-in-tests">20.5 No authentication in tests</h3>
+<p>Operator instruction, 2026-10-26: no functional or manual verification test may require authentication. Scripts must not require, mint, renew, copy or send JWTs, bearer tokens, API authentication keys or login credentials, and they send no Authorization header. They target an externally provisioned local identity endpoint. <code>UAR_BASE_URL</code>, the model and a nonsecret workspace selector are sufficient. The existing external <code>uar-jwt-proxy</code> supplies stable owner and tenant context, so persisted data stays accessible. Provider credentials remain service configuration outside the tests. This does not weaken production or remote identity boundaries.</p>
+<p>The record also corrects an earlier diagnosis. The active UAR already had <code>jwt_required=false</code>. Owner-scoped admission on team APIs, not global JWT authentication, created the owner requirement. Sources: <code>.prometheus/gotchas.md</code> (“Manual verification: authentication belongs outside tests”); <code>scripts/behaviors/README.md</code>.</p>
+<h3 id="206-causal-oracles-private-facts-plus-provenance">20.6 Causal oracles: private facts plus provenance</h3>
+<p>An answer is evidence of a behavior only if a canned, cached or replayed answer could not have produced it. The knowledge scenarios used a fresh private seal that was absent from the prompt, the agent instructions and prior sessions. They required the runtime citation's KB ID, document ID, snippet and marker to match the answer. They used fresh sessions so that conversation history could not be the source. Arithmetic answers were computed independently by the script. Sources: <code>.prometheus/verification/bdd-validation-catalog.md</code> (fixture K); <code>.prometheus/gotchas.md</code> (KNOWLEDGE-RESTART-01 entry).</p>
+<p>The strongest example is KB-UNLINK-01. Its first attempt failed. The saved agent's KB list was empty, yet a fresh conversation returned the exact private seal and cited the unlinked KB plus two other available KBs. This was genuine retrieval leakage, not stale session recall. The private seal and its citation made it observable. The passing scenario also includes a positive control: the unchanged KB must still be directly searchable and return the original seal. That rules out “the KB was broken” as the reason the agent stopped using it. Sources: <code>.prometheus/verification/kb-unlink/2c639dd3-f8b7-4272-8355-caab308cbb5a.json</code> (retained first failure); <code>.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md</code> (KB-UNLINK-01 entries).</p>
+<h3 id="207-transport-overlap-is-not-actual-concurrency">20.7 Transport overlap is not actual concurrency</h3>
+<p>The first authoring of CONCURRENT-CONVERSATION-RESTART-01 used overlap in client SSE receipt timing as proof of concurrency. Two source-only reviewers rejected it before anything ran, because buffering or delayed delivery can make serial server work look overlapping. The oracle was replaced with three ordered live run-state observations in one session: A running, then B running, then A running. Receipt timing was kept only as supporting evidence. Both client streams are settled with <code>allSettled</code> before assertions and cleanup. The scenario then passed on its first live attempt. Sources: <code>.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md</code> (“Authoring correction before execution”); <code>.prometheus/gotchas.md</code> (CONCURRENT-CONVERSATION-RESTART-01 entry); <code>.prometheus/verification/concurrent-conversation-restart/85bf68ab-d292-41c7-80b3-b9647641f110.json</code>.</p>
+<p>The same rule covers teams. Queued or admitted task setup is not proven concurrency (<code>.prometheus/gotchas.md</code>, “Team failure labels do not establish a scheduler defect”). One successful interleaving also does not prove that all whole-session write orderings are safe. That risk stays recorded separately.</p>
+<h3 id="208-persistence-restart-and-effective-dispatch-need-actual-evidence">20.8 Persistence, restart and effective dispatch need actual evidence</h3>
+<p>Warm continuity cannot show durability. CONVERSATION-RESTART-01 first recovered null facts. It exposed two gaps in normal chat: cold lookup ignored durable session history, and a successful text-only completion did not save it. After a bounded repair, the scenario passed with genuine process replacement and no client replay. Restart receipts record different process IDs before and after. For example, the concurrent-restart receipt records PID 47773 → 52394. REST-SETTING-RESTART-01 requires exact equality of the saved record after restart. Sources: <code>.prometheus/gotchas.md</code> (CONVERSATION-RESTART-01, REST-SETTING-RESTART-01 entries); <code>.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md</code>.</p>
+<p>A configuration label is not evidence of effect. Two observed corrections show this. In SEMANTIC-SKILL-01, a keyword-style threshold of 0.5 accepted an irrelevant skill at 0.5238 cosine similarity. A calibrated 0.65 passed, and the record requires actual run-method evidence because service and runtime matcher settings are distinct. In TEAM-01, the route <code>liter/MiniMax-M3</code> differs from its pricing identity <code>minimax/MiniMax-M3</code>, and each is asserted separately. Source: <code>.prometheus/gotchas.md</code>. The planned C33 contract applies the same rule to model configuration. Chat request bodies must omit <code>model</code>, because a request override would fake success. The planned contract also asked that the applied output limit appear in the final-provider budget receipt, not merely be inferred from a short answer (<code>.prometheus/handoffs/2026-10-27-c33-claude-desktop.md</code>). Source review before the run showed that receipt carries <code>reserved_output_tokens=null</code> on this path, so the run used a stronger behavioral oracle instead. See <a href="#c33-result">C33</a>.</p>
+<h3 id="209-budget-fitting-is-not-a-structural-strategy-effect">20.9 Budget fitting is not a structural strategy effect</h3>
+<p>B21/C18 (CONTEXT-BUDGET-01) proves that the final request was fitted within its token allowance while follow-up facts were preserved. It does <strong>not</strong> prove that <code>truncate_middle</code> performed a structural transformation. Its structural receipt reports <code>changed=false</code>, source = prepared = 12869, and final = 4830. B22 separately proves real summarization. The original approximate-count limit (<code>fit_guarantee=false</code>) remains. Sources: <code>.prometheus/verification/coverage-audit-2026-10-27.md</code> (“Corrected claim boundaries”); <code>.prometheus/verification/behavior-status.md</code> (B21 row).</p>
+<p>The scenario's first attempt also taught a fixture lesson. Normal chat admission extracts the last user message. One request carrying several user appendices therefore does not fill server-held history. Context-pressure scenarios need separate acknowledged turns. The failed bundled attempt is retained (<code>.prometheus/gotchas.md</code>, CONTEXT-BUDGET-01 entry). The general rule: name which mechanism the receipt actually shows, and do not credit a strategy because the budget outcome was reached.</p>
+<h3 id="2010-count-labels-outcomes-and-reports-separately">20.10 Count labels, outcomes and scenario reports separately</h3>
+<p class="revision-note"><strong>Updated after C33:</strong> 36 bounded Mac behavior labels / 33 workflow outcomes; 32 passing BDD reports + 1 standalone prompt. B03/C03 remains composite. Source: <code>.prometheus/verification/behavior-status.md</code>.</p>
+<p>The audited counts on 2026-10-27 are views that overlap. They are not additive:</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>What is counted</th>
+<th>Count</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bounded Mac behavior labels</td>
+<td>35</td>
+<td>B01–B35. B05–B08 are four labels from one knowledge scenario.</td>
+</tr>
+<tr>
+<td>Workflow outcomes</td>
+<td>32</td>
+<td>31 directly completed workflows plus 1 composite (B03/C03)</td>
+</tr>
+<tr>
+<td>Selected successful execution records</td>
+<td>31 + 1</td>
+<td>31 passing BDD scenario reports (30 Cucumber, 1 Playwright BDD) plus 1 standalone prompt receipt</td>
+</tr>
+<tr>
+<td>Original bundled checklist IDs</td>
+<td>97</td>
+<td>28 with partial manual evidence, 69 without matching credit, 0 complete original-contract claims</td>
+</tr>
+</tbody>
+</table></div>
+<p>B03/C03 is composite. It combines passed create, restart and read steps from a failed combined feature (<code>scripts/behaviors/features/persisted-agent.feature</code>) with a later passing query-only feature. It is not a clean combined pass, and its original failure stays failed. The status index explicitly warns against reporting 132 independent behaviors or “35/97 original cases passed”. Failed attempts, hooks, supporting assertions, cleanup steps and extra receipt files add no scenarios. Sources: <code>.prometheus/verification/coverage-audit-2026-10-27.md</code>; <code>.prometheus/verification/behavior-status.md</code>.</p>
+<h3 id="2011-keep-initial-failures">20.11 Keep initial failures</h3>
+<p>First failures stay on record even when a later attempt passed. They often carry the most useful information:</p>
+<ul>
+<li>KB-UNLINK-01 took four attempts. The first showed a real product defect: retrieval leaked from an unlinked KB. The second and third were fixture-parser failures. One was a progress sentence between reasoning blocks. The other was a parser condition the behavior did not require. Both raw failures are retained, for example <code>.prometheus/verification/kb-unlink/8dbb918f-12a1-47ce-8f7a-e22f588fe066.json</code>. The record classifies the parser corrections as fixture fixes, not further product defects.</li>
+<li>SKILL-DETECTION-01's first setup attempt used <code>/api/uar/skills/</code> with a trailing slash and got 404. The mounted path has no trailing slash. The failed setup receipt is retained as a fixture error, not a product defect (<code>.prometheus/gotchas.md</code>). The same trailing-slash 404 recurred during read-only C33 configuration discovery on <code>/api/uar/providers/</code>. That was inspection, not a C33 result (<code>.prometheus/handoffs/2026-10-27-c33-claude-desktop.md</code>).</li>
+<li>KB-DISABLE-01's first attempt failed on a one-character copied agent-marker error before disablement. The record keeps the real failure and infers no product policy defect from it (<code>.prometheus/gotchas.md</code>).</li>
+<li>CONVERSATION-SUMMARY-01, SEMANTIC-SKILL-01 and CONTEXT-BUDGET-01 also keep their first failed receipts alongside the passing ones (<code>.prometheus/gotchas.md</code>).</li>
+</ul>
+<p>Corrections must not weaken assertions, swap models just to pass, count reasoning as output, or award a pass to configuration labels (<code>.prometheus/verification/bdd-validation-catalog.md</code>, boundaries step 4).</p>
+<h3 id="2012-no-automatic-rerun-of-previously-passed-scenarios">20.12 No automatic rerun of previously passed scenarios</h3>
+<p>Previously passed scenarios remain historical receipts. They are not rescheduled automatically, and each new scenario reuses fixture mechanics rather than earlier acceptance runs. After a correction, only the affected scenario is rerun. Historical passes are not a regression pass on later source. They are rerun only when the operator explicitly selects relevant regression after a changed dependency or path. A final release assessment must disclose source cohorts rather than replay the entire suite or pretend earlier binaries equal the current tree. Sources: <code>.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md</code>; <code>.prometheus/verification/bdd-validation-catalog.md</code> (boundaries step 6); <code>.prometheus/verification/behavior-status.md</code>. This refines the evidence rule in Section 18's supersession template.</p>
+<h3 id="2013-finite-proposed-scope-with-explicit-platform-and-backend-residuals">20.13 Finite proposed scope with explicit platform and backend residuals</h3>
+<p class="revision-note"><strong>Updated after C33:</strong> 102 definitions, 33 credited, 69 remaining; common C01–C54 now 33 credited / 21 remaining. Source: <code>.prometheus/verification/bdd-validation-catalog.md</code>.</p>
+<p>To give coverage a finite denominator, the forward catalog defines <strong>102 scenario definitions</strong>. <strong>32</strong> are credited from existing Mac outcomes and <strong>70</strong> remain. The 70 are planned, not known failures:</p>
+<div aria-label="Scrollable reference table" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Definitions</th>
+<th>Existing Mac credit</th>
+<th>Remaining on Mac</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Common user workflows, C01–C54</td>
+<td>54</td>
+<td>32</td>
+<td>22</td>
+</tr>
+<tr>
+<td>Additional configuration and resilience, E01–E28</td>
+<td>28</td>
+<td>0</td>
+<td>28</td>
+</tr>
+<tr>
+<td>Remaining public client/mode contracts, I01–I20</td>
+<td>20</td>
+<td>0</td>
+<td>20</td>
+</tr>
+<tr>
+<td><strong>Full proposed baseline</strong></td>
+<td><strong>102</strong></td>
+<td><strong>32</strong></td>
+<td><strong>70</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>The catalog is a proposal for operator review, not an adopted release requirement or an execution instruction. Its residuals are explicit. Mac evidence does not certify Linux, iOS, PostgreSQL/pgvector, or the whole current tree. Linux and iOS have no manual behavior credit. Windows has no execution host and is recorded as BLOCKED. Android is deferred by the operator. Surreal results do not establish PostgreSQL adapter parity, and the stateful parity set has 71 definitions. One source finding stands: durable memory controls use the Surreal-backed memory store. A PostgreSQL primary runtime is therefore not proof of PostgreSQL memory-control parity. Arbitrary provider/model combinations, load/race/soak testing, durable-write fault injection, every settings screen, and deployment/security certification remain outside this baseline. Sources: <code>.prometheus/verification/bdd-validation-catalog.md</code> (“Counts you can use”; “Platform and persistence coverage”; “Explicit residual scope”); <code>.prometheus/verification/behavior-status.md</code> (“Platform and store scope”).</p>
+<h3 id="2014-independent-source-critique-instead-of-gate-ceremonies">20.14 Independent source critique instead of gate ceremonies</h3>
+<p>The operator replaced the old packet/signature/inventory gate ceremonies with manual scenarios selected one at a time. The record states that original repetition, signature and authentication ceremonies are not reinstated. Review effort went into independent critique of the actual artifacts before execution. Three examples:</p>
+<ul>
+<li>Two source-only reviewers rejected the transport-overlap concurrency oracle before CONCURRENT-CONVERSATION-RESTART-01 ran (20.7).</li>
+<li>For KB-UNLINK-01, source review before the build caught a problem in the first authored repair. That global policy-mapping edit would also have disabled the legacy default agent's implicit KB behavior. The edit was reverted, and a narrower persistence fix in the shared agent patch path replaced it. No build or test ran against the abandoned mapping.</li>
+<li>An artifact-only critic reviewed the forward catalog and found three MEDIUM issues: fixture vagueness, underspecified skill-policy ID sets, and unbounded threshold/recovery loops. All three were closed before approval. A separate artifact-only critic found no material count inconsistencies in the coverage audit.</li>
+</ul>
+<p>The limit matters. These reviews checked source and documentation consistency. They did not revalidate current behavior or independently establish that raw receipts are authentic. Sources: <code>.prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md</code>; <code>.prometheus/verification/bdd-validation-catalog-review.md</code>; <code>.prometheus/verification/coverage-audit-2026-10-27.md</code> (“Final independent review”); <code>.prometheus/verification/behavior-status.md</code>.</p>
+<h3 id="2015-what-these-lessons-do-not-establish">20.15 What these lessons do not establish</h3>
+<p>These lessons share the limits of the original case (Section 2.5). This is still one observational case on one Mac, with one primary configured model and one durable store. The operator supplied much of the scenario selection and ordering. The runtime binary was replaced during the sequence by the KB-UNLINK-01 repair build. Receipts therefore bind to different candidates, and none of them is a regression pass on the current tree. The counts above are bounded behavior claims, not a reliability measure. The lessons may help a later skill. They do not show that VLBV beats an alternative method. Section 13 still describes the study that would.</p>
+</section>
+<section id="c33-result">
+<h2>C33 — REST model configuration is effective and durable (Mac)</h2>
+<p><strong>Result: PASS on Mac, 2026-10-27, first attempt.</strong> One Node.js/Cucumber scenario (<code>scripts/behaviors/rest-model-restart.cucumber.mjs</code>, retry 0) passed 11 of 11 steps in 2 minutes 4.7 seconds against the existing owned UAR, its durable store and the external identity proxy. The test sent no credentials. It reran no earlier scenario.</p>
+<ul>
+<li><strong>Bindings, chosen before the attempt.</strong> Model A was <code>liter/MiniMax-M3</code>, saved as one session's model override. Model B was <code>liter/k3</code> (Kimi K3), saved through REST as the provider default with its output limit lowered from 32,768 to 1,024 tokens. Both are existing subscription routes, and each was already verified.</li>
+<li><strong>Effective dispatch.</strong> Chat requests named no model. Before the restart, the default session ran on <code>liter/k3</code> and the override session on <code>liter/MiniMax-M3</code>. Each was confirmed by its persisted run route and by settled accounting under the pricing identities <code>kimi-code-plan-global/k3</code> and <code>minimax/MiniMax-M3</code>. Each answered fresh arithmetic correctly with the agent's saved marker.</li>
+<li><strong>Output limit took effect.</strong> Model B was asked to list 1 to 1,500 with <code>max_completion_tokens</code> 4,096. The provider reported exactly 1,024 output tokens, and the listing stopped at 174. The streamed final-request receipt showed <code>output_ceiling_enforced=true</code>. Its <code>reserved_output_tokens</code> field was null, so the limit is proven by observed output, not by that field.</li>
+<li><strong>Refusals left state unchanged.</strong> A stale <code>expected_revision</code> on <code>llm.default_provider</code> returned 409. A session model without a provider returned 400. The saved provider, default setting and override were identical before and after both refusals.</li>
+<li><strong>Durable across a real restart.</strong> Only the owned UAR was restarted, with the same binary, configuration and store; its process ID went from 21601 to 69961. The saved state was identical afterwards, both model verifications survived, and dispatch, correct answers and the exact 1,024-token limit all repeated.</li>
+<li><strong>Cleanup.</strong> The original provider configuration was restored without overwriting concurrent edits. Its four previously verified routes were re-verified, and the disposable agent, override policy and sessions were deleted. The saved agents and the running UAR were kept. Twelve model dispatches were used, which is exactly the catalog's resource bound.</li>
+</ul>
+<p><strong>What this does not establish.</strong> This evidence covers one gateway provider with two of its models, on Mac only. It does not cover multi-provider default switching, Linux, iOS, PostgreSQL or the whole current source tree. It does not make the legacy U20 contract a full pass. In the same session, GLM-5.3 and MiMo V2.5 Pro were added as model choices and passed one-prompt provider tests. That is not feature certification. Qwen3.8 Max was first rejected (401) at the general Singapore endpoint and at the Coding Plan endpoint. Later that day it was enabled after the console showed that the key belongs to the separate Token Plan product, which has its own base URL. It passed a one-prompt test there. Evidence: <code>.prometheus/verification/c33-rest-model-restart-macos-pass.json</code>, <code>.prometheus/verification/rest-model-restart/246c766c-a558-4048-a119-71f521acdcc2.json</code>, <code>.prometheus/verification/model-choices/2026-10-27-model-choices.json</code>.</p>
+<p><strong>Lesson.</strong> A planned assertion can be unobservable in the actual product. Reading the source before the single run found that gap. The run then used a stronger, causal oracle, rather than failing on a missing field or passing on a short answer.</p>
+</section></article>
+<footer><h2>About this edition</h2><p>The complete, independently reviewed source is preserved in this publication. The four labeled visual reading aids are presentation additions derived from the paper.</p><p class="revision-note"><strong>Revised:</strong> this local copy, revised 2026-10-27, is no longer exactly the independently reviewed publication. Its additions (revision notes, Section 20 and the C33 placeholder) were not part of that review. The unchanged original is <code>docs/validation/uar-validation-methodology.original.html</code>. Its source URL and hashes are in <code>docs/validation/DOWNLOAD-PROVENANCE.md</code>.</p><p>Proposed method · one observational motivating case · no comparative validation claim.</p><p>The original edition-identity page (<code>edition.html</code>) was not downloaded. Its link is therefore omitted from this local copy.</p><p class="offline-note">This paper is readable without JavaScript. Offline installation is available only where the browser and serving gateway support it.</p></footer></main></div>
+</body></html>

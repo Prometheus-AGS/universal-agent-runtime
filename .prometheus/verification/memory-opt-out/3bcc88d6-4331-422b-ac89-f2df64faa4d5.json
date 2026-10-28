@@ -1,0 +1,377 @@
+{
+  "scenario": "E03-MEMORY-OPT-OUT-RESTART",
+  "scope": "opt-out-survives-restart half; retention expiry deferred until genuinely aged data exists",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "conversations": {
+    "tell_first": {
+      "session_id": "185632c3-f72d-4088-9a9d-482f8fdfe495",
+      "memory_context": [],
+      "errors": [],
+      "answer": "No stored context on this locker yet — here's a general-purpose layout you can adapt. I've used your code as the address prefix so the scheme stays consistent if you ever add more lockers (e.g. LOCKER-90D3F2 → LOCKER-41C7B1).\n\n##1. Core principle\n**Zone by access frequency, not by category of object.** People lose things in storage because everything ends up in one \"misc\" pile. Sort by *how often you'll need it*, and let the physical position do the remembering.\n\n## 2. Zone map (assume a ~2–3 m wide unit)\n\n```\n        ┌──────────────────────────────┐\n        │ back wall: tall / flat items │  ← upright, rarely touched\n        │  art boards, frames, suitcases│\n        │ ┌────────┐ ┌────────┐        │\n DOOR →│ │ 01     │ │ 02     │        │  ← FRONT ZONE: daily/weekly\n        │ │ DAILY  │ │ ACTIVE │        │\n        │ └────────┘ └────────┘        │\n        │ shelf 2: 03 04 05 06  (household / tools)\n        │ shelf 3: 07 08 09  (seasonal, lidded bins)\n        │ shelf 4: 10 11     (archive"
+    },
+    "ask_first": {
+      "session_id": "a7a297d4-0b05-4107-8109-0f161861c5ee",
+      "memory_context": [],
+      "errors": [],
+      "answer": "I'll check my memory for this.Your storage locker code is **LOCKER-90D3F2**.\n\n(P.S. You also asked about good ways to organise a storage locker — happy to help with that whenever you'd like.)"
+    },
+    "tell_second": {
+      "session_id": "e252a1e9-3411-48fc-adba-ba3f8a9e39df",
+      "memory_context": [],
+      "errors": [
+        {
+          "kind": "error",
+          "request_id": "48a8b579-286e-43a0-aea7-948e705e2f81",
+          "message": "LLM stream start timed out after 15000 ms",
+          "code": "provider_timeout"
+        }
+      ],
+      "answer": ""
+    }
+  },
+  "restarts": {
+    "enable": {
+      "previous_pid": 44026,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-d44d2b4e-9389-468c-b494-a40afdb283f0.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 45807,
+      "new_process_ready": true
+    },
+    "after_opt_out": {
+      "previous_pid": 45807,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-35b8a4f6-cb2f-4f38-a2ae-ffe7b6b8f66f.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 49479,
+      "new_process_ready": true
+    },
+    "restore": {
+      "previous_pid": 49479,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-3e43be0f-5c54-4755-9e0b-10a55b826fa4.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 51239,
+      "new_process_ready": true
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:49:56.008754000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:56.008754Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:56.088161000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:56.088161Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:49:56.008754000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:56.008754Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:49:56.008754000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:50:32.643835000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:50:32.643835Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:56.088161000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:56.088161Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:49:56.088161000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:50:32.697780000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:50:32.697780Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":7,\"consent_epoch\":4,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-opt-out-agent-3bcc88d6",
+        "metadata": {
+          "title": "Disposable Memory Agent",
+          "description": "Remembers what the user tells it.",
+          "tags": [
+            "memory"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-opt-out-agent-3bcc88d6\",\"metadata\":{\"title\":\"Disposable Memory Agent\",\"description\":\"Remembers what the user tells it.\",\"tags\":[\"memory\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:a53525679d3b23d6f1a9db0c56fbc47c61fdfe8ae6d4e9ce58d9d19e01042a32\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-opt-out-agent-3bcc88d6\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": true,
+        "retention": {
+          "kind": "days",
+          "days": 30
+        }
+      },
+      "status": 200,
+      "response": "{\"enabled\":true,\"retention\":{\"kind\":\"days\",\"days\":30},\"revision\":8,\"consent_epoch\":4,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-392d38ba65ee33724f90a7db0bd9360a610799c77b42cd2b8fb2412f7cb039f0\"}},\"content\":\"By the way, my storage locker code is LOCKER-90D3F2. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.034140001982450485,-0.05740189924836159,-0.0030772157479077578,-0.0659615620970726,0.03758899122476578,-0.02078644186258316,0.0166690144687891,-0.009121852926909924,-0.012217544950544834,-0.027830051258206367,0.010320582427084446,-0.06786036491394043,0.05371518060564995,0.03266505151987076,0.0994362011551857,-0.005203914362937212,0.015170040540397167,0.009192890487611294,-0.10874328017234802,0.043425582349300385,0.002575140679255128,-0.020779745653271675,-0.05717090517282486,-0.021821340546011925,-0.011238046921789646,-0.010178808122873306,-0.06355156749486923,0.014369402080774307,-0.0946214348077774,-0.16880734264850616,-0.011133602820336819,-0.08576274663209915,0.019926443696022034,0.014925170689821243,0.03221071884036064,-0.045445702970027924,0.045004889369010925,0.006025129929184914,-0.08255774527788162,0.04413400590419769,-0.02149156667292118,0.021770749241113663,-0.010793821886181831,-0.005474104080349207,0.016500968486070633,-0.02321205846965313,-0.004726153798401356,-0.015380308032035828,0.05150241777300835,-0.019539041444659233,0.053027041256427765,0.050301410257816315,-0.042298607528209686,0.027078602463006973,-0.04629680514335632,0.06357062608003616,0.013629607856273651,0.029135646298527718,-0.008417597971856594,0.022750413045287132,0.045389819890260696,0.01854577288031578,-0.10030124336481094,0.1127275601029396,0.0916983112692833,0.0032286338973790407,0.04288970306515694,-0.00934009812772274,0.03352060541510582,0.04777519777417183,0.042043883353471756,0.00022791291121393442,-0.02613365463912487,0.10178592801094055,0.025367561727762222,-0.01157072652131319,-0.002926263492554426,-0.008972734212875366,-0.01691129244863987,-0.025641964748501778,-0.08506608754396439,-0.04265235736966133,-0.020917"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":9,\"consent_epoch\":5,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":9,\"consent_epoch\":5,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-392d38ba65ee33724f90a7db0bd9360a610799c77b42cd2b8fb2412f7cb039f0\"}},\"content\":\"By the way, my storage locker code is LOCKER-90D3F2. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.034140001982450485,-0.05740189924836159,-0.0030772157479077578,-0.0659615620970726,0.03758899122476578,-0.02078644186258316,0.0166690144687891,-0.009121852926909924,-0.012217544950544834,-0.027830051258206367,0.010320582427084446,-0.06786036491394043,0.05371518060564995,0.03266505151987076,0.0994362011551857,-0.005203914362937212,0.015170040540397167,0.009192890487611294,-0.10874328017234802,0.043425582349300385,0.002575140679255128,-0.020779745653271675,-0.05717090517282486,-0.021821340546011925,-0.011238046921789646,-0.010178808122873306,-0.06355156749486923,0.014369402080774307,-0.0946214348077774,-0.16880734264850616,-0.011133602820336819,-0.08576274663209915,0.019926443696022034,0.014925170689821243,0.03221071884036064,-0.045445702970027924,0.045004889369010925,0.006025129929184914,-0.08255774527788162,0.04413400590419769,-0.02149156667292118,0.021770749241113663,-0.010793821886181831,-0.005474104080349207,0.016500968486070633,-0.02321205846965313,-0.004726153798401356,-0.015380308032035828,0.05150241777300835,-0.019539041444659233,0.053027041256427765,0.050301410257816315,-0.042298607528209686,0.027078602463006973,-0.04629680514335632,0.06357062608003616,0.013629607856273651,0.029135646298527718,-0.008417597971856594,0.022750413045287132,0.045389819890260696,0.01854577288031578,-0.10030124336481094,0.1127275601029396,0.0916983112692833,0.0032286338973790407,0.04288970306515694,-0.00934009812772274,0.03352060541510582,0.04777519777417183,0.042043883353471756,0.00022791291121393442,-0.02613365463912487,0.10178592801094055,0.025367561727762222,-0.01157072652131319,-0.002926263492554426,-0.008972734212875366,-0.01691129244863987,-0.025641964748501778,-0.08506608754396439,-0.04265235736966133,-0.020917"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/memory/records/memory:capture-392d38ba65ee33724f90a7db0bd9360a610799c77b42cd2b8fb2412f7cb039f0",
+      "status": 200,
+      "response": "{\"id\":\"memory:capture-392d38ba65ee33724f90a7db0bd9360a610799c77b42cd2b8fb2412f7cb039f0\",\"deleted\":true,\"purge\":\"pending\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[]}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":10,\"consent_epoch\":6,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-opt-out-agent-3bcc88d6",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/185632c3-f72d-4088-9a9d-482f8fdfe495",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/a7a297d4-0b05-4107-8109-0f161861c5ee",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/e252a1e9-3411-48fc-adba-ba3f8a9e39df",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:50:32.643835000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:50:32.643835Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": false,
+        "expected_revision": "2026-10-28T13:50:32.643835000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:52:15.767603000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:52:15.767603Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:50:32.697780000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:50:32.697780Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:50:32.697780000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:52:15.807387000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:52:15.807387Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 44026
+  },
+  "original_policy": {
+    "enabled": false,
+    "retention": null,
+    "revision": 7,
+    "consent_epoch": 4,
+    "host_capture_enabled": true
+  },
+  "opt_in": {
+    "enabled": true,
+    "retention": {
+      "kind": "days",
+      "days": 30
+    },
+    "revision": 8,
+    "consent_epoch": 4,
+    "host_capture_enabled": true
+  },
+  "first_captured": [
+    "memory:capture-392d38ba65ee33724f90a7db0bd9360a610799c77b42cd2b8fb2412f7cb039f0"
+  ],
+  "opt_out": {
+    "enabled": false,
+    "retention": null,
+    "revision": 9,
+    "consent_epoch": 5,
+    "host_capture_enabled": true
+  },
+  "policy_after_restart": {
+    "enabled": false,
+    "retention": null,
+    "revision": 9,
+    "consent_epoch": 5,
+    "host_capture_enabled": true
+  },
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 119053
+}

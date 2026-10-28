@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { useThreadUi } from "@/hooks/use-thread-ui";
 import { useUiState } from "@/hooks/use-ui-state";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { a2uiUserActionLabel } from "@/shared/content/a2ui-user-action";
 import type { LocalThread } from "@/types";
 import type { RichMessage } from "@/types/chat-content";
 
@@ -33,7 +34,8 @@ function getLastMessagePreview(messages: RichMessage[] | undefined): string {
   const last = messages[messages.length - 1];
   for (const block of last.content) {
     if (block.type === "text" && block.text.trim()) {
-      const text = block.text.trim();
+      const trimmed = block.text.trim();
+      const text = (last.role === "user" ? a2uiUserActionLabel(trimmed) : null) ?? trimmed;
       return text.length > 50 ? `${text.slice(0, 50)}...` : text;
     }
   }

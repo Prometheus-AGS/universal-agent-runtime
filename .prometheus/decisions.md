@@ -2657,3 +2657,39 @@ Verified only by the C43 run on binary `cc1dbb81`. The hierarchical summarizatio
 - C52 runs on a disposable UAR with its own fresh Surreal 3.3.0 server (pinned binary checked against versions.toml), a copied config with `sessions.persisted_ttl_secs`, and a second identity proxy, because enabling the persisted TTL on the owned store would delete every older session there and its embedded store cannot be aged from the host.
 - The fresh store needs product model verification (POST /api/uar/providers/{provider}/test) before turns.
 - Uncomfortable part: the fixture reuses the owned runtime's environment and proxy identity, so it proves startup and retention for that owner configuration only; PostgreSQL is still unexercised.
+
+## 2026-10-27 — AG-UI/A2UI work re-scoped into three changes
+Decision: replace the single plan with (1) `a2ui-surface-state-patches`, (2) a durable thread-scoped surface store, (3) `agui-a2ui-projection-and-custom-components` rebuilt on them. Rationale: four reviews each found new critical defects rooted in using per-run, 600 s in-memory replay as a thread's source of truth. Change 1 keeps the replay log's message encoding and adds separate reduced-state patches, which leaves the unarchived `a2ui-realtime-backbone` spec, run trace and the two integration tests intact.
+
+## 2026-10-28 — A2UI architecture scope: chat, full applications and personalized morphing
+
+- **Decision (operator):** the A2UI surface architecture (KBD child `a2ui-surface-architecture`) must serve chat-streamed surfaces, full applications built only from A2UI components over AG-UI (target: a specification like the San Saba workspace), and surfaces that morph under personalized real-time conditions.
+- **Rationale:** four revisions of `a2ui-surface-state-patches` failed review because the server tried to mirror a browser reducer; the operator judged this an architectural problem and widened the scope before choosing an architecture.
+- **Consequence:** change 1 revisions are on hold until the architecture decision; options are compared against the widened objectives.
+
+## 2026-10-28 — Pass-through identity with a required trust declaration
+
+- **Decision (operator):** adopt the recommended Q1-Q6 answers in
+  `.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/identity-pass-through-evaluation.md`.
+  1. UAR does no authentication and applies no roles of its own. Every node
+     must declare where validation happens: `trusted-front`, an owner
+     validation hook, or `single-user`.
+  2. The partition key is `(iss, sub)`, with tenant optional.
+  3. Presented tokens are held in memory only. They are forwarded only to
+     destinations the owner opts in, preferably through a token-exchange hook.
+     They are never persisted, and the scrubber stays.
+  4. Existing `v1:k` rows are mapped to the new key; the method is decided in
+     Plan.
+  5. Removed roles are replaced by the admin key and host launch token for
+     host features, and by the owner hook for the rest.
+  6. Local test identities come from a non-secret subject-selector header on
+     the local identity proxy only.
+- **Rationale:**
+  - UAR should not be an identity provider.
+  - It removes the RS256/shared-secret incompatibility (San Saba G12).
+  - It makes many users per node cheap.
+  - The trust declaration prevents a public, multi-user node from accepting
+    asserted identities.
+  - The MCP specification forbids token passthrough, hence the opt-in
+    forwarding.
+- **Next:** KBD child phase `identity-pass-through`, Assess and Plan only.

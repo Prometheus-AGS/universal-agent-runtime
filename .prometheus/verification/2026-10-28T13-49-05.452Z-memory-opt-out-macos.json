@@ -1,0 +1,148 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-memory-opt-out-survives-restart-and-stops-new-capture;after-opting-out-and-a-restart,-a-new-private-fact-is-never-remembered",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "After opting out and a restart, a new private fact is never remembered",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16231332857
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "durable memory with automatic capture is enabled for a disposable agent after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:80"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 34003578890,
+              "error_message": "AssertionError [ERR_ASSERTION]: tell_first must not error\n+ actual - expected\n\n+ [\n+   {\n+     code: 'provider_timeout',\n+     kind: 'error',\n+     message: 'LLM stream start timed out after 15000 ms',\n+     request_id: '28712c0e-1750-4671-95ae-9d7b22ee005c'\n+   }\n+ ]\n- []\n\n    + expected - actual\n\n    -[\n    -  {\n    -    \"code\": \"provider_timeout\"\n    -    \"kind\": \"error\"\n    -    \"message\": \"LLM stream start timed out after 15000 ms\"\n    -    \"request_id\": \"28712c0e-1750-4671-95ae-9d7b22ee005c\"\n    -  }\n    -]\n    +[]\n\n    at say (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/memory-opt-out.steps.mjs:52:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/memory-opt-out.steps.mjs:129:3)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I opt in, tell the agent a private fact, and ask about it in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the agent recalls the fact from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I opt out of memory capture and the runtime restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "my opt-out is still in effect",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:145"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I tell the agent a new private fact and ask about it in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:150"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the new fact was never captured and the agent cannot recall it",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:157"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 25203502742
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tZW1vcnktb3B0LW91dC8wYmJkMzQxNC01NzBkLTRiODQtOWE3Mi1kYWM5NDE5YjJhMzguanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@memory",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-memory-opt-out-survives-restart-and-stops-new-capture",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A memory opt-out survives restart and stops new capture",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@memory",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/memory-opt-out.feature"
+  }
+]

@@ -6,10 +6,44 @@ Prepared 2026-10-27 during `uar-verification-simplification`. This is the concre
 
 | Priority | Concrete scenario definitions | Existing Mac outcome credit | Remaining on Mac |
 |---|---:|---:|---:|
-| Common user workflows, C01–C54 | 54 | 33 | **21** |
-| Additional configuration and resilience, E01–E28 | 28 | 0 | 28 |
-| Remaining public client/mode contracts, I01–I20 | 20 | 0 | 20 |
-| **Full proposed baseline** | **102** | **33** | **69** |
+| Common user workflows, C01–C54 | 54 | 54 | **0** |
+| Additional configuration and resilience, E01–E28 | 28 | 16 | 12 |
+| Remaining public client/mode contracts, I01–I20 | 20 | 11 | 9 |
+| **Full proposed baseline** | **102** | **81** | **21** |
+
+Updated 2026-10-28: the common row now reflects the C-series passes recorded below (it still showed 33). New Mac passes:
+
+| ID | Evidence | Attempts |
+|---|---|---|
+| E11 | [agent-revision-restart](agent-revision-restart/) | 1 |
+| E12 | [kb-delete-restart](kb-delete-restart/) | 2; attempt 1 was a test JSON-parser defect |
+| E28 | [skill-threshold-tie](skill-threshold-tie/) | 3; attempts 1-2 were transport and tool-use test defects |
+| E20 | [skill-classifier-tfidf](skill-classifier-tfidf/) | 1 |
+| E15 | [skill-lexical-semantic](skill-lexical-semantic/) | 6; matching was correct from attempt 2, and later failures were the test's threshold choice, a denied tool call and answer-format strictness |
+| E02 | [context-auto](context-auto/) | 1 |
+| E01 | [context-hierarchical](context-hierarchical/) | 1 |
+| I20, I05 | [anthropic-implicit-default](anthropic-implicit-default/) | 1 |
+| I06, I07 | [a2a-modes](a2a-modes/) | 3; test defects: a cucumber `/` escape, snapshot parsing, and polling for asynchronous legacy send |
+| I01, I02 | [chat-stream-modes](chat-stream-modes/) | 1 |
+| I03, I04 | [native-run-streams](native-run-streams/) | I03: 1; I04: 2, because attempt 1 assumed a cursorless agui_spec subscription would replay RUN_STARTED |
+| I09, I10 | [python-sdk-modes](python-sdk-modes/) | 1; the SDK's own `chat`/`stream_chat` run from `sdks/python/.venv` with no credentials |
+| E13, E14 | [skill-catalog-activation](skill-catalog-activation/) | 3; attempt 1 lacked the fixture's single-agent Cedar permit, attempt 2 left activate_skill's descriptor-required approval unanswered |
+| E25, E27 | [skill-policy-narrowing](skill-policy-narrowing/) | 3; attempts 1-2 were one test defect, an eager response-body read in an assertion message that consumed the stream |
+| E16, E17 | [skill-service-matchers](skill-service-matchers/) | 1 |
+| E10 | [selection-stream-replay](selection-stream-replay/) | 2; attempt 1 expected model calls on the child run, but they are accounted to the orchestrator root run |
+| E08 | [unknown-tool-effect](unknown-tool-effect/) | 1; the run ends `error` by design (fail-closed on an unknown outcome) |
+| E26 | [skill-all-policy](skill-all-policy/) | 1; rewritten to the user outcome on the real installed skill set (operator 2026-10-28), not an isolated {A,B} universe |
+| I19 | [agui-route-a2ui](agui-route-a2ui/) | 3 on binary `50ac01d6…`; attempt 1 lacked `UAR_WORKSPACE_ID`/`UAR_MODEL` in the invocation, attempt 2 read web_core's component `Map` as entries (test defect). Proven: render, two clicks answered with each client-only note, late attach re-renders with no tool call, forged action 422 |
+
+Partly proven on Mac 2026-10-28 (not credited): **E03** opt-out half, [memory-opt-out](memory-opt-out/), attempt 5. Opt-in capture and recall worked, the opt-out survived a restart, and a later fact was never captured. The retention-expiry half waits for genuinely aged data.
+
+Observed product failures (not scenarios): asking the agent to remember something with Auto tools ended in `PROTECTED_HISTORY_OVERFLOW` on a `memory_save` call; the first model call after a UAR restart timed out at stream start (15 s) in 2 of 3 restarts.
+
+I19's earlier FAIL (the route dropped every A2UI event) is superseded by the pass above, after the A2UI activity slice.
+
+Failed on Mac 2026-10-28 (not credited): **E18** service llm matcher, run admission `skill_matching_unavailable`; cause hidden by `manager.rs:5450`. See the session log.
+
+Every attempt is in `.prometheus/session-log.md`. These are the ready queue in `validation-queue-2026-10-28.md`.
 
 Updated 2026-10-27 after C52 passed ([receipt](c52-startup-retention-macos-pass.json)); earlier: C53 passed ([receipt](c53-browser-agent-selection-macos-pass.json)); earlier: C35 passed ([receipt](c35-browser-history-reload-macos-pass.json)); earlier: C54 passed ([receipt](c54-team-recovery-macos-pass.json)); earlier: C36 passed ([receipt](c36-team-follow-up-macos-pass.json)); earlier: C43 passed ([receipt](c43-skill-reattachment-macos-pass.json)); earlier: C49 passed ([receipt](c49-regeneration-resume-macos-pass.json)); earlier: C48 passed ([receipt](c48-embedding-same-dimension-macos-pass.json)); earlier: C42 passed ([receipt](c42-skill-scope-policy-macos-pass.json)); earlier: C46 passed ([receipt](c46-request-overflow-macos-pass.json)); earlier: C45 passed ([receipt](c45-sliding-window-macos-pass.json)); earlier: C44 passed ([receipt](c44-truncate-middle-macos-pass.json)); earlier: C47 passed ([receipt](c47-kb-source-replace-macos-pass.json)); earlier: C40 passed ([receipt](c40-skill-reload-macos-pass.json)); earlier: C41 passed ([receipt](c41-skill-attachment-macos-pass.json)); earlier: C51 passed ([receipt](c51-provider-failure-macos-pass.json)); earlier: C50 passed ([receipt](c50-run-cancellation-macos-pass.json)); earlier: C39 passed ([receipt](c39-memory-lifecycle-macos-pass.json)); earlier: C38 passed ([receipt](c38-mcp-tool-approval-macos-pass.json)); earlier: C37 passed ([receipt](c37-native-tool-approval-macos-pass.json)); earlier: C34 passed on Mac (attempt 5, [receipt](c34-live-roster-routing-macos-pass.json)), following C33 (attempt 1, [receipt](c33-rest-model-restart-macos-pass.json)): there are **53 passing BDD scenario reports plus one standalone prompt receipt**, not 54 clean BDD feature passes. C03 is composite persistence/query evidence; its failed combined run remains failed. C05 holds four existing B labels in one scenario. The bounded behavior labels are now 57 (B36 from C33, B37 from C34, B38 from C37, B39 from C38, B40 from C39, B41 from C50, B42 from C51, B43 from C41, B44 from C40, B45 from C47, B46 from C44, B47 from C45, B48 from C46, B49 from C42, B50 from C48, B51 from C49, B52 from C43, B53 from C36, B54 from C54, B55 from C35, B56 from C53, B57 from C52). The 48 remaining definitions are planned, not 48 known failures, and do not need to run together. Start with the 0 common missing workflows. Extended methods/clients stay visible so a smaller core pass cannot be called full support.
 

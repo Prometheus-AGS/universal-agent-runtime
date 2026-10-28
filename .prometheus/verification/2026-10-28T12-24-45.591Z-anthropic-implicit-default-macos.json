@@ -1,0 +1,180 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "anthropic-messages-without-an-agent-id-use-the-protected-default-agent;a-json-messages-request-with-agent_id-omitted-is-answered-by-the-default-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A JSON Messages request with agent_id omitted is answered by the default agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 754946
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "an Anthropic-compatible request that omits agent_id",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-implicit-default.steps.mjs:75"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6811577060
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a fresh calculation and then a dependent follow-up as JSON Messages requests",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-implicit-default.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 35068751
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both answers are correct and complete and the runs used the default agent",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-implicit-default.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15918415
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hbnRocm9waWMtaW1wbGljaXQtZGVmYXVsdC81MzFmYjhkNy1iY2RkLTQxMTAtOWFiOC1lOTUzNGVmZWJlMzYuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@anthropic",
+            "line": 1
+          },
+          {
+            "name": "@default-agent",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "anthropic-messages-without-an-agent-id-use-the-protected-default-agent;a-streamed-messages-request-with-agent_id-omitted-is-answered-by-the-default-agent",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "A streamed Messages request with agent_id omitted is answered by the default agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 232321
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "an Anthropic-compatible request that omits agent_id",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-implicit-default.steps.mjs:75"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7545202287
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I send a fresh calculation and then a dependent follow-up as streamed Messages requests",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-implicit-default.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 25970896
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both streams deliver incremental text and complete with correct answers from the default agent",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-implicit-default.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 20799456
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hbnRocm9waWMtaW1wbGljaXQtZGVmYXVsdC8yYTAwZjhhZi01M2UzLTQzY2UtODBkOS05MTIwYWM1OTFkZWIuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@anthropic",
+            "line": 1
+          },
+          {
+            "name": "@default-agent",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "anthropic-messages-without-an-agent-id-use-the-protected-default-agent",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Anthropic Messages without an agent id use the protected default agent",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@anthropic",
+        "line": 1
+      },
+      {
+        "name": "@default-agent",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/anthropic-implicit-default.feature"
+  }
+]

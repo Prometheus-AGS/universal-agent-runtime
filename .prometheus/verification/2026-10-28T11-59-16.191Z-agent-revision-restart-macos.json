@@ -1,0 +1,168 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "updated-and-deleted-agent-revisions-survive-restart;a-changed-agent-revision-stays-effective-across-restart-and-a-deleted-agent-stays-gone",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A changed agent revision stays effective across restart and a deleted agent stays gone",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 260888007
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent whose instructions were changed after creation",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:58"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 23766338291
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "UAR restarts with the existing agent store",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:100"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 28045974
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the agent's saved definition is the changed revision",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:104"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9550386582
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "a fresh prompt follows only the changed instructions",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 79540202
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I delete the disposable agent",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:118"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 27082693313
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "UAR restarts with the existing agent store again",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 44428909
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the deleted agent cannot be read or listed after cold startup",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:129"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13059131
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "selecting the deleted agent dispatches no model call",
+            "match": {
+              "location": "scripts/behaviors/steps/agent-revision-restart.steps.mjs:136"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2568595
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudC1yZXZpc2lvbi1yZXN0YXJ0L2Rpc3Bvc2FibGUtcmV2aXNpb24tN2Y3NmIyNWEtNzU3OS00ZDU2LWE1ZTUtZDZjMTI2MTQ4ODNkLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "updated-and-deleted-agent-revisions-survive-restart",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Updated and deleted agent revisions survive restart",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/agent-revision-restart.feature"
+  }
+]

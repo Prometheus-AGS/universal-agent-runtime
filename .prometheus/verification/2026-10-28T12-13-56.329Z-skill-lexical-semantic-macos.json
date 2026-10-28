@@ -1,0 +1,130 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "one-prompt-discriminates-lexical-from-semantic-selection;the-keyword-and-local-embedding-matchers-pick-different-designed-winners-for-the-same-prompt",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The keyword and local-embedding matchers pick different designed winners for the same prompt",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 260083886
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent restricted to a lexical decoy skill and a semantic target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-lexical-semantic.steps.mjs:69"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9998022241
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send the discriminating prompt under keyword matching",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-lexical-semantic.steps.mjs:136"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 388074
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "keyword matching selects the lexical decoy and the answer uses only the decoy's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-lexical-semantic.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 29136483852
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I send the identical prompt under local-embedding matching",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-lexical-semantic.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1239182,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    'delivery-pricing-7c8aa5dc-b1b8-4b9d-98a2-6c55e290bdee',\n+   'orchid-repotting-7c8aa5dc-b1b8-4b9d-98a2-6c55e290bdee'\n  ]\n\n    + expected - actual\n\n     [\n       \"delivery-pricing-7c8aa5dc-b1b8-4b9d-98a2-6c55e290bdee\"\n    -  \"orchid-repotting-7c8aa5dc-b1b8-4b9d-98a2-6c55e290bdee\"\n     ]\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-lexical-semantic.steps.mjs:156:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "semantic matching selects the target and the answer uses only the target's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-lexical-semantic.steps.mjs:154"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 178530130
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1sZXhpY2FsLXNlbWFudGljLzdjOGFhNWRjLWIxYjgtNGI5ZC05OGEyLTZjNTVlMjkwYmRlZS5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@semantic",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "one-prompt-discriminates-lexical-from-semantic-selection",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "One prompt discriminates lexical from semantic selection",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@semantic",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-lexical-semantic.feature"
+  }
+]

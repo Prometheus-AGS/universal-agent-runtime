@@ -1,0 +1,129 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "hierarchical-context-produces-real-summary-tiers;early-and-middle-turns-become-long-term-facts-and-a-mid-term-summary-that-preserve-the-answer",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Early and middle turns become long-term facts and a mid-term summary that preserve the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 89486674
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent using hierarchical context with one short-term turn",
+            "match": {
+              "location": "scripts/behaviors/steps/context-hierarchical.steps.mjs:56"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16299379554
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give an early private fact and then a later working objective in separate turns",
+            "match": {
+              "location": "scripts/behaviors/steps/context-hierarchical.steps.mjs:86"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11165816949
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I ask a follow-up that needs both without repeating them",
+            "match": {
+              "location": "scripts/behaviors/steps/context-hierarchical.steps.mjs:99"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 304867
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "real long-term facts and mid-term summary calls reduced the earlier turns within their budgets",
+            "match": {
+              "location": "scripts/behaviors/steps/context-hierarchical.steps.mjs:108"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 181873
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer still uses both the early fact and the working objective",
+            "match": {
+              "location": "scripts/behaviors/steps/context-hierarchical.steps.mjs:126"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 125722022
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LWhpZXJhcmNoaWNhbC9jN2IzM2Q5OS0wZmQ3LTQwOGItODlmMC05ZjNhZDMwYmJkNjYuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@hierarchical",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "hierarchical-context-produces-real-summary-tiers",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Hierarchical context produces real summary tiers",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@hierarchical",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/context-hierarchical.feature"
+  }
+]

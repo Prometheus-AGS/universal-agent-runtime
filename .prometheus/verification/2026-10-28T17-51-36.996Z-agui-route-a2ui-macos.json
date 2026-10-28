@@ -1,0 +1,202 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "an-ag-ui-app-shows-the-agent's-a2ui-surface-and-the-user's-clicks-reach-the-agent;the-app-shows-the-agent's-surface,-the-user-clicks-it-twice,-and-a-reconnect-still-shows-it",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The app shows the agent's surface, the user clicks it twice, and a reconnect still shows it",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 4540864,
+              "error_message": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(this.workspace && this.model)\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/agui-route-a2ui.steps.mjs:117:10)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent on the dedicated AG-UI route that publishes a ticket surface with a note field and a Confirm button",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a PEM 4.3.0 headless client configured with UAR's catalog ids",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:145"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "the client asks for a fresh ticket surface",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the client renders the surface with the requested heading and a Confirm button",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:162"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "the user enters a note and presses Confirm",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:170"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the agent answers in a new run on the same conversation and its answer contains that note",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:176"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "the user enters a different note and presses Confirm again",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:180"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the agent answers again and its answer contains the second note",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:185"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "a fresh client attaches to the conversation's latest run",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:189"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "that client renders the same surface without the agent running again",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:195"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 14,
+            "name": "an action naming a button the surface never declared is refused",
+            "match": {
+              "location": "scripts/behaviors/steps/agui-route-a2ui.steps.mjs:201"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 176408
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          },
+          {
+            "name": "@a2ui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "an-ag-ui-app-shows-the-agent's-a2ui-surface-and-the-user's-clicks-reach-the-agent",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "An AG-UI app shows the agent's A2UI surface and the user's clicks reach the agent",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agui",
+        "line": 1
+      },
+      {
+        "name": "@a2ui",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/agui-route-a2ui.feature"
+  }
+]
