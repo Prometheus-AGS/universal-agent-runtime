@@ -114,8 +114,8 @@ importers:
         specifier: 3.0.3
         version: 3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
       '@prometheus-ags/prometheus-entity-management':
-        specifier: 3.0.3
-        version: 3.0.3(@ag-ui/core@0.0.59)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
+        specifier: 4.2.0
+        version: 4.2.0(@ag-ui/core@0.0.59)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
       '@prometheus-ags/uar-ui':
         specifier: workspace:*
         version: link:packages/uar-ui
@@ -313,8 +313,8 @@ importers:
         specifier: ^17.9.0
         version: 17.9.0
       happy-dom:
-        specifier: ^20.14.5
-        version: 20.14.6
+        specifier: ^21.0.4
+        version: 21.0.4
       storybook:
         specifier: ^10.6.3
         version: 10.6.3(@types/react@19.2.17)(prettier@3.9.10)(react@19.2.8)
@@ -335,7 +335,7 @@ importers:
         version: 8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/a2ui-core:
     dependencies:
@@ -396,8 +396,8 @@ importers:
         specifier: ^17.9.0
         version: 17.9.0
       happy-dom:
-        specifier: ^20.14.5
-        version: 20.14.6
+        specifier: ^21.0.4
+        version: 21.0.4
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -418,7 +418,7 @@ importers:
         version: 8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/a2ui-lit:
     dependencies:
@@ -439,8 +439,8 @@ importers:
         specifier: ^17.9.0
         version: 17.9.0
       happy-dom:
-        specifier: ^20.14.5
-        version: 20.14.6
+        specifier: ^21.0.4
+        version: 21.0.4
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -449,7 +449,7 @@ importers:
         version: 8.66.0(eslint@10.7.0(jiti@2.7.0)(supports-color@11.0.0))(supports-color@11.0.0)(typescript@5.9.3)
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/a2ui-react:
     dependencies:
@@ -501,8 +501,8 @@ importers:
         specifier: ^17.9.0
         version: 17.9.0
       happy-dom:
-        specifier: ^20.14.5
-        version: 20.14.6
+        specifier: ^21.0.4
+        version: 21.0.4
       svelte-check:
         specifier: ^4.7.7
         version: 4.7.7(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.72.0))(typescript@5.9.3)
@@ -514,7 +514,7 @@ importers:
         version: 8.66.0(eslint@10.7.0(jiti@2.7.0)(supports-color@11.0.0))(supports-color@11.0.0)(typescript@5.9.3)
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/a2ui-uar:
     dependencies:
@@ -586,8 +586,8 @@ importers:
         specifier: ^17.9.0
         version: 17.9.0
       happy-dom:
-        specifier: ^20.14.5
-        version: 20.14.6
+        specifier: ^21.0.4
+        version: 21.0.4
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -602,7 +602,7 @@ importers:
         version: 8.66.0(eslint@10.7.0(jiti@2.7.0)(supports-color@11.0.0))(supports-color@11.0.0)(typescript@5.9.3)
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management:
     devDependencies:
@@ -698,7 +698,7 @@ importers:
         version: 8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.2)
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
       yaml:
         specifier: 2.9.0
         version: 2.9.0
@@ -750,7 +750,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-a2a:
     dependencies:
@@ -769,7 +769,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-alpine:
     devDependencies:
@@ -787,7 +787,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-core:
     dependencies:
@@ -831,7 +831,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-react:
     dependencies:
@@ -897,7 +897,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-svelte:
     devDependencies:
@@ -915,7 +915,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-sync:
     dependencies:
@@ -946,7 +946,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
       ws:
         specifier: 8.21.1
         version: 8.21.1
@@ -971,7 +971,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/entity-graph-web-components:
     dependencies:
@@ -990,7 +990,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   frontend/packages/prometheus-entity-management/packages/prometheus-entity-management:
     dependencies:
@@ -2541,12 +2541,12 @@ packages:
       loro-crdt:
         optional: true
 
-  '@prometheus-ags/prometheus-entity-management@3.0.3':
-    resolution: {integrity: sha512-MHHh69c82pkLKP58KyZPxpWc3zzaMkeTx0U2ZwAizHZ5qYAnUJqQbh/3IRuSuXc0QEW3ESM5mZxyoAc3dIySPg==}
+  '@prometheus-ags/entity-graph-react@4.2.0':
+    resolution: {integrity: sha512-ZRh/6ACuMn/++vN6Hor0maLVwApbwX6SZAb2UnD5xEuOiKDJICvzDcCqhvMEtpUqvk+2veQnwRpb/bhQLT2FvQ==}
     engines: {node: ^22.14.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@ag-ui/core': '>=0.0.30'
-      '@prometheus-ags/entity-graph-core': ^3.0.3
+      '@prometheus-ags/entity-graph-core': ^4.2.0
       '@tauri-apps/plugin-sql': '>=2.0.0'
       loro-crdt: '>=1.0.0'
       react: '>=19.0.0 <20.0.0'
@@ -2558,6 +2558,13 @@ packages:
         optional: true
       loro-crdt:
         optional: true
+
+  '@prometheus-ags/prometheus-entity-management@4.2.0':
+    resolution: {integrity: sha512-nY1+uQ00H5OVx2IBJuHuVM96nsSYnLfMOG8VTiegKyFWOmev81raWDl+X/eJbYlgjm5sRuT2bJg/hOa2Sc5cgQ==}
+    engines: {node: ^22.14.0 || ^24.0.0 || >=26.0.0}
+    peerDependencies:
+      react: '>=19.0.0 <20.0.0'
+      react-dom: '>=19.0.0 <20.0.0'
 
   '@publint/pack@0.1.7':
     resolution: {integrity: sha512-4EDEmvxWtgsCnnVeBvtFIFZtUhPPt1+bA9JrSwU4Sa//6oKtzCSlGGXYJr44OD9aGISymbieJ4mCKHUygUDU+g==}
@@ -5984,8 +5991,8 @@ packages:
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
 
-  happy-dom@20.14.6:
-    resolution: {integrity: sha512-5DDsf4QmEIlRL6NkCv/fxSjYHHkZceL/IaYQdJc2h3G7DRTEai++VTjbfL0LB9geW2VrA3+vrjF3Efx+OTtX0Q==}
+  happy-dom@21.0.4:
+    resolution: {integrity: sha512-tFm+GaLBgo6o0awHnvHaNoraVo27qJ+2tZEtZ+cIa08hXbeitrxAJajLI05hsUy/2/YTKcUjQYzHe5mCcraLBw==}
     engines: {node: '>=20.0.0'}
 
   has-ansi@6.0.2:
@@ -6450,8 +6457,8 @@ packages:
     resolution: {integrity: sha512-37fYHAhL12r1twaEV0PA5TwoIT491eTGGYjhhXxlYNMq3DSkiGZBQ++Jfk5maXj0vq52NRauLtMikBKtbNJs3Q==}
     hasBin: true
 
-  legacy-javascript@0.0.3:
-    resolution: {integrity: sha512-1r6MT4dVaJyXt4G07Cm2cQ0AUaLJdefiEp4SmIAylA++gnEQ82YvmzE58RkM5EP0fk5hROLCslUPGnwIYdZQVA==}
+  legacy-javascript@0.0.4:
+    resolution: {integrity: sha512-UTmeKBVxnfJcpmpOvzzNnLsQT99BXHpPlc/ZKddIRmWmrR0fw6335I3lq4+sJoP60UTbBNaYsGYVPc65YB1x3A==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -10389,7 +10396,7 @@ snapshots:
 
   '@paulirish/trace_engine@0.0.65':
     dependencies:
-      legacy-javascript: 0.0.3
+      legacy-javascript: 0.0.4
       third-party-web: 0.30.0
 
   '@playwright/test@1.62.1':
@@ -10413,24 +10420,38 @@ snapshots:
       - react
       - use-sync-external-store
 
-  '@prometheus-ags/prometheus-entity-management@3.0.3(@ag-ui/core@0.0.59)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))':
+  '@prometheus-ags/entity-graph-react@4.2.0(@ag-ui/core@0.0.59)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))':
     dependencies:
       '@prometheus-ags/entity-graph-core': 3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
-      '@tanstack/react-table': 8.21.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tanstack/react-table': 9.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@tanstack/react-virtual': 3.14.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tanstack/table-core': 9.2.8
       clsx: 2.1.1
       immer: 11.1.15
       lucide-react: 1.32.0(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
       tailwind-merge: 3.6.0
-      zustand: 5.0.14(@types/react@19.2.17)(immer@11.1.15)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
+      zustand: 5.0.15(@types/react@19.2.17)(immer@11.1.15)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
     optionalDependencies:
       '@ag-ui/core': 0.0.59
       '@tauri-apps/plugin-sql': 2.4.0
       loro-crdt: 1.13.9
     transitivePeerDependencies:
       - '@types/react'
+      - use-sync-external-store
+
+  '@prometheus-ags/prometheus-entity-management@4.2.0(@ag-ui/core@0.0.59)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))':
+    dependencies:
+      '@prometheus-ags/entity-graph-react': 4.2.0(@ag-ui/core@0.0.59)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.59)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+    transitivePeerDependencies:
+      - '@ag-ui/core'
+      - '@prometheus-ags/entity-graph-core'
+      - '@tauri-apps/plugin-sql'
+      - '@types/react'
+      - loro-crdt
       - use-sync-external-store
 
   '@publint/pack@0.1.7':
@@ -11624,7 +11645,7 @@ snapshots:
     optionalDependencies:
       '@vitest/browser': 4.1.10(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
       '@vitest/browser-playwright': 4.1.10(playwright@1.64.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
     transitivePeerDependencies:
       - react
 
@@ -11945,7 +11966,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
     optionalDependencies:
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -11978,7 +11999,7 @@ snapshots:
       svelte: 5.57.1(@typescript-eslint/types@8.72.0)
     optionalDependencies:
       vite: 8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   '@testing-library/user-event@14.6.1(@testing-library/dom@10.4.1)':
     dependencies:
@@ -12678,7 +12699,7 @@ snapshots:
       '@vitest/mocker': 4.1.10(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
       playwright: 1.64.1
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -12692,7 +12713,7 @@ snapshots:
       '@vitest/mocker': 4.1.10(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
       playwright: 1.64.1
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -12708,7 +12729,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
       ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
@@ -12726,7 +12747,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
       ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
@@ -12746,7 +12767,7 @@ snapshots:
       obug: 2.1.3
       std-env: 4.2.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
     optionalDependencies:
       '@vitest/browser': 4.1.10(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
 
@@ -12818,7 +12839,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -13021,7 +13042,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.6.5
 
   buffer@6.0.3:
     dependencies:
@@ -13110,7 +13131,7 @@ snapshots:
 
   chrome-launcher@1.2.2(supports-color@10.2.2):
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.6.5
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 2.0.2(supports-color@10.2.2)
@@ -14093,9 +14114,9 @@ snapshots:
 
   hachure-fill@0.5.2: {}
 
-  happy-dom@20.14.6:
+  happy-dom@21.0.4:
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.6.5
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
@@ -14583,7 +14604,7 @@ snapshots:
       lefthook-windows-arm64: 2.2.2
       lefthook-windows-x64: 2.2.2
 
-  legacy-javascript@0.0.3: {}
+  legacy-javascript@0.0.4: {}
 
   levn@0.4.1:
     dependencies:
@@ -16340,7 +16361,7 @@ snapshots:
 
   speedline-core@1.4.3:
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.6.5
       image-ssim: 0.2.0
       jpeg-js: 0.4.4
 
@@ -17054,7 +17075,7 @@ snapshots:
     optionalDependencies:
       vite: 8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)
 
-  vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)):
+  vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.10
       '@vitest/mocker': 4.1.10(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -17082,12 +17103,12 @@ snapshots:
       '@vitest/browser-playwright': 4.1.10(playwright@1.64.1)(vite@8.1.4(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
       '@vitest/coverage-v8': 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
       '@vitest/ui': 4.1.10(vitest@4.1.10)
-      happy-dom: 20.14.6
+      happy-dom: 21.0.4
       jsdom: 30.0.1
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@20.14.6)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)):
+  vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(happy-dom@21.0.4)(jsdom@30.0.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.10
       '@vitest/mocker': 4.1.10(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -17115,7 +17136,7 @@ snapshots:
       '@vitest/browser-playwright': 4.1.10(playwright@1.64.1)(vite@8.1.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
       '@vitest/coverage-v8': 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
       '@vitest/ui': 4.1.10(vitest@4.1.10)
-      happy-dom: 20.14.6
+      happy-dom: 21.0.4
       jsdom: 30.0.1
     transitivePeerDependencies:
       - msw
@@ -17330,6 +17351,13 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
       immer: 11.1.11
+      react: 19.2.8
+      use-sync-external-store: 1.7.0(react@19.2.8)
+
+  zustand@5.0.15(@types/react@19.2.17)(immer@11.1.15)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8)):
+    optionalDependencies:
+      '@types/react': 19.2.17
+      immer: 11.1.15
       react: 19.2.8
       use-sync-external-store: 1.7.0(react@19.2.8)
 
