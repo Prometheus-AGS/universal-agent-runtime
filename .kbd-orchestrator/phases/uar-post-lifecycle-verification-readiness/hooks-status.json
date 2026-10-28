@@ -1,0 +1,1 @@
+{"totalRuns":22,"failedRuns":0,"lastRun":{"ts":"2026-10-26T10:39:54Z","kind":"plan","edge":"after","name":"agent-team-concurrency-repair","hookId":"legacy-plan-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

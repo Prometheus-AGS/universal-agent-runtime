@@ -1,0 +1,45 @@
+# Selection-notice adversarial design review
+
+2026-10-25. Active phase: `uar-post-lifecycle-verification-readiness`, stage `user-outcome-implementation`. Scope: final `handoffs/user-outcome-selection-ui-design.md` and actual source/contracts only. Verification CLOSED. All commands used were source inspection; this document is the only authored file. No production changes or executed verification.
+
+Isolation: fresh native subagent; producer conversation and prior assessment documents were not supplied/read. Producer and judge are native GPT-family agents; exact runtime model identity is not exposed here. This is the disclosed weaker same-family fallback, not cross-model review. The synthesis embedded in the final design was read as part of that artifact, not as independent review evidence.
+
+## WARNING — portable decoding is not the actual restored-chunk boundary
+
+Design lines 33–35 require persisted decoding to force `announce=false` and validate reserved records, but omit `frontend/src/platform/pglite/client.ts` from their explicit implementation surface. `insertMessage` at lines 256–269 serializes `msg.chunks` wholesale. `rowToMessage` at lines 323–345 casts stored JSON to `Chunk[]` and prefers any nonempty stored array over `decodePersistedChatContent` output. Consequently changing only portable conversion and its decoder cannot enforce the design: a live chunk containing `announce=true` survives persistence and bypasses the new converter on restoration. A malformed stored selection chunk also bypasses the proposed well-formed-record boundary.
+
+Falsifying source scenario: finish a message containing a new announcing chunk; `finishStream` snapshots the whole message (`chat-message-store.ts:560–577`), `insertMessage` serializes its chunks, and `rowToMessage` restores that array directly. No runtime claim is made.
+
+Required correction: name both persistence entry and restored-chunk boundaries in the design/ownership map. Explicitly strip transient announcement state before all chunk serialization, and validate/normalize selection chunks with `announce=false` on every history hydration path, including nonempty stored chunks. Validate artifact MIME, payload shape and canonical ID agreement together; malformed selection-shaped content must retain diagnostic visibility without becoming a positive selection notice. Include authored, unrun fixtures for the nonempty stored-chunks path and malformed stored selection, not only portable roundtrip.
+
+## WARNING — the claimed hydration prerequisite is absent in the cited incumbent
+
+Design line 35 says to retain hydration before stream reduction or record a blocker. The current entrypoint does not supply that prerequisite: `frontend/src/features/chat/use-chat-runtime.ts:83–93` starts `loadMessagesFromDb` with `void`, while `chat-message-store.ts:132–138` awaits the database and then replaces the entire thread array. `chat-stream-store.ts:723` begins a stream independently. A late hydration result can overwrite a newly inserted selection/message; reduction before hydration cannot find a persisted semantic ID and can announce replay as new.
+
+Required correction before accepting implementation direction: explicitly choose and own the ordering change instead of treating it as an existing condition. Await a shared thread-history readiness boundary before stream reduction (and define failure handling), or declare this durability/replay outcome blocked. Include the entrypoint in the owned file inventory and author fixtures covering delayed hydration plus concurrent incoming selection. Source inspection establishes the missing synchronization, not the runtime frequency of the race.
+
+## WARNING — immutable `announce=true` does not establish one announcement per acceptance
+
+Design lines 13 and 35 promise one polite live announcement, with `announce=true` assigned once at reduction and duplicates leaving that chunk untouched. The immutable flag remains true for the chunk's entire in-memory lifetime. `frontend/src/features/chat/ui/chunks/rich-data-renderers.tsx:6` creates the renderer from data props; remounting that renderer is independent of message reduction. A status region recreated for the same true flag can announce again even though no event was newly accepted. Persistence sanitation fixes restoration but does not consume the live announcement.
+
+Required correction: distinguish a transient announcement request from a persistent render property. State where accepted live announcement identity is consumed across renderer remounts, or narrow the promise to the semantics actually delivered and defer screen-reader timing to the approved browser gate. A renderer-local one-mount flag alone does not cover remounts. Add an unrun remount case to the planned accessibility coverage. Actual assistive-technology announcement behavior remains unverified.
+
+## Scope and judgment
+
+The event does not imply child completion: `src/uar/runtime/graph/delegation.rs:377–396` emits after spawn succeeds and before awaiting the first turn. Official and legacy payloads are nested consistently in `src/uar/api/agui.rs:650` and `src/uar/api/sse.rs:521–539`; the proposed canonicalization must preserve that nesting. The existing adapter currently normalizes only official-profile payloads (`frontend/src/platform/agui/agui-adapter.ts:219–221`), so the explicit legacy normalization work remains necessary.
+
+No new agent entity store is required merely to render a historical immutable routing event. The design's claim that the message/event domain is already normalized should not certify the incumbent Zustand message store as entity-graph architecture; preserve the narrow existing ownership path without expanding this notice into an unrelated migration.
+
+Direction acceptance is withheld pending the three concrete contract corrections above. No critical defect count or praise quota is imposed. Static review cannot certify persistence durability, live timing, reconnect behavior, visual wrapping or accessibility. No test/build/browser/detector was run. Machine sycophancy screening was deferred under the CLOSED lock; manual screening removed approval language and separates demonstrated source gaps from runtime hypotheses. No score or detector success is claimed.
+
+## Bounded corrective rereview — 2026-10-25
+
+Reviewed only the final design's appended `Adversarial corrections — persistence, hydration and announcements` and the actual source boundaries cited above. The original findings are preserved. This is the one corrective rereview; no production implementation was reviewed or changed.
+
+- **Stored-chunk boundary: resolved in the design.** Correction 1 explicitly owns `frontend/src/platform/pglite/client.ts`, sanitizes `insertMessage`, and validates selection entries in the preferred nonempty `rowToMessage` path. It requires one parser for runtime/persistence, canonical identity agreement, and diagnostic handling for malformed stored selection. This addresses the demonstrated bypass. Implementation must apply that validation before such records can participate in semantic deduplication; an invalid reserved ID alone cannot suppress a later valid notice.
+- **Hydration ordering: resolved in the design.** Correction 2 explicitly awaits shared history loading before optimistic insertion or network dispatch, propagates failure, and prevents both active-stream and late-result overwrite. This directly covers the incumbent `void loadMessagesFromDb`/array-replacement race. The new readiness behavior is planned work rather than a claim that the existing source already provides it.
+- **Announcement consumption: resolved in the design.** Correction 3 replaces immutable rendering-based announcement with an effect-consumed semantic identity surviving component remount, separately updated polite text, and non-announcing restored chunks. The Set contains only transient accessibility mechanics. This addresses the repeated-status-region design gap without duplicating an agent entity. Browser and assistive-technology behavior remains a later empirical question.
+
+No unresolved blocking design finding remains from this bounded review. The corrected direction may proceed to source implementation; this disposition does not certify implementation or user-visible behavior and does not open the operator verification gate. The appended correction explicitly supersedes the earlier announcement/hydration assumptions, so implementers must follow the final section where wording differs.
+
+Limitations unchanged: same-family native fresh-context fallback, not cross-model review; manual report screening only, machine detector deferred under CLOSED; no score invented. No tests, browser, detector, CLI probe, import, build, lint, typecheck, format, service or model/provider call was run. The only change in this rereview is this appended review disposition. Persistence failure recovery, live/replay timing, remount behavior, visual presentation and actual screen-reader announcements remain unverified until the operator authorizes exact gates after whole-phase implementation.

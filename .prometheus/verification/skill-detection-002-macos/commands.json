@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/skill-detection.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 6.112066422996577
+}

@@ -1,0 +1,39 @@
+{
+  "status": "REPAIR005_PREPARED_A6_F6_V6_CLOSED",
+  "identities": {
+    "contractDigest": "8b2557856e30e257dd91e82c6fcb6fa659c663c0e603a8754e36140c7231552d",
+    "inventoryDigest": "9ef107844e009bf977cedd6ebf411cfa3751e815247cf836b8f0288529786b11",
+    "sourcePatchSha256": "28cbb3efd5275230696045a1abb495fedfeb53f1445fc5da92345c607408f1e1",
+    "projectInputCount": 32089,
+    "externalInputCount": 6,
+    "boundInputCount": 32095,
+    "missing": [],
+    "canonicalRevision": 386,
+    "planRevision": 114,
+    "manifestAuthority": "CLOSED"
+  },
+  "budgetAtPresentation": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-005/repair005-budget-at-presentation.json",
+  "repairsAuthored": 5,
+  "proposedRepairCap": 5,
+  "remainingAfterAdoption": 0,
+  "proposedCumulativeCalls": 480,
+  "originalActiveMinuteLimit": 240,
+  "signature": "NOT_CREATED",
+  "adoption": "NOT_RUN",
+  "verification": "NOT_RUN",
+  "publication": "NOT_RUN",
+  "reviews": "Independent acceptance reviews deferred under operator lock",
+  "pendingTasks": [
+    "update-parking-lot-admission/5.1",
+    "update-parking-lot-admission/5.2"
+  ],
+  "actualCommands": "Source/log/Git object and CLI schema/state inspection; source-hash inventory authoring, source/config/spec/docs writes, native plan/task/blocker bookkeeping only. No test/build/lint/format/compiler/import/service/check/review verification or git diff --check.",
+  "guards": "Typed DBretry addresses observed concurrent upload500 and explicit two-upload requirement; unknown commits/transport never retry. Exact owner fence preserves boundary; CASreport names require actual claims. No unrelated guard/feature added.",
+  "causeLimits": "ERROR01originalbody and KBunderlyingcommitcause unrecovered; strict real-path oracles remain; no acceptance inferred.",
+  "canonicalFloorEvidence": {
+    "receipt": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/v1.3.0-execution-005/repair005-canonical-disposition-floor.json",
+    "source": "Supported prometheus kbd phase disposition --id uar-post-lifecycle-verification-readiness --json; canonical state inspection only",
+    "observedConsumptionHighWater": {},
+    "meaning": "Explicit empty map observed, not inferred from missing root-state field; actual later floors must still be honored"
+  }
+}

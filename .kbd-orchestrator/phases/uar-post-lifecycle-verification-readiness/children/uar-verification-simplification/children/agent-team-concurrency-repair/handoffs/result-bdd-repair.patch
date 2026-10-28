@@ -1,0 +1,46 @@
+--- a/scripts/behaviors/steps/math-writing-team.steps.mjs
++++ b/scripts/behaviors/steps/math-writing-team.steps.mjs
+@@ -39,11 +39,22 @@
+   await writeFile(world.record, JSON.stringify(world.evidence, null, 2) + '\n', { mode: 0o600 });
+ }
+ 
++function finalText(value) {
++  const text = typeof value === 'string' ? value : JSON.stringify(value);
++  const final = text.replace(/^(?:\s*<think>[\s\S]*?<\/think>)+\s*/, '').trim();
++  assert.ok(final.length > 0 && !final.includes('<think>'), 'Expected a completed answer outside reasoning blocks');
++  return final;
++}
++
+ function output(value) {
+   if (typeof value !== 'string') return value;
+-  const final = value.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, '').trim();
+-  const fence = /^```(?:json)?\s*\n([\s\S]*?)\n```$/.exec(final);
+-  try { return JSON.parse(fence ? fence[1] : final); } catch { return final; }
++  const final = finalText(value);
++  try { return JSON.parse(final); } catch {
++    // A final JSON answer may be fenced and followed by explanatory prose.
++    const fences = [...final.matchAll(/(?:^|\n)```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```(?=\s|$)/g)];
++    assert.equal(fences.length, 1, 'Expected one unambiguous final JSON answer');
++    return JSON.parse(fences[0][1]);
++  }
+ }
+ 
+ Given('the saved math and writing agents and executable team API are available', async function () {
+@@ -231,7 +242,7 @@
+   const answer = output(this.mathDone.output);
+   assert.equal(answer.specialist, this.marker);
+   assert.equal(answer.answer, this.expected);
+-  const outline = typeof this.outlineDone.output === 'string' ? this.outlineDone.output : JSON.stringify(this.outlineDone.output);
++  const outline = finalText(this.outlineDone.output);
+   assert.ok(outline.includes(this.title) && outline.includes(this.byline));
+   for (const attempt of [this.mathDone, this.outlineDone]) {
+     assert.equal(attempt.effectDisposition, 'confirmed');
+@@ -264,7 +275,7 @@
+   const article = execution.attempts.find(attempt => attempt.taskId === 'article');
+   assert.equal(article.memberId, this.outlineDone.memberId);
+   assert.equal(article.effectDisposition, 'confirmed');
+-  const text = typeof article.output === 'string' ? article.output.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, '').trim() : JSON.stringify(article.output);
++  const text = finalText(article.output);
+   assert.ok(text.includes(String(this.expected)) || text.includes(this.expected.toLocaleString('en-US')));
+   assert.match(text, /litres|liters/i);
+   assert.match(text, /week/i);

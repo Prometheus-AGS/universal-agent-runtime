@@ -1,0 +1,10 @@
+{
+  "item": "CODE",
+  "attempt": 1,
+  "status": "FAIL_SOURCE_ONLY",
+  "source_identity": "sha256:e79f323b0f9de281afc2e13dc78406fe729e96972419c4398ca08698b66fa2f2",
+  "finding": "HTTP aggregate response read can outlive absolute walldeadline under continuous heartbeats",
+  "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/CODE/attempt-1/report.md",
+  "correction_used": false,
+  "runtime_exercised": false
+}

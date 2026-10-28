@@ -1,0 +1,18 @@
+{
+  "updated_at": "2026-10-26T20:40:26.784956-05:00",
+  "platform": "Mac",
+  "method": "Manual BDD; authentication supplied externally, never by test scripts",
+  "base_url": "http://127.0.0.1:60675",
+  "runtime_url": "http://127.0.0.1:53587",
+  "runtime_pid": 21601,
+  "external_identity_pid": 24808,
+  "model": "liter/MiniMax-M3",
+  "workspace_id": "uar-user-outcomes-007-supporting-workspace",
+  "test_credential_variables": [],
+  "current_scenario": "KB-UNLINK-ONE-01",
+  "status": "KB-UNLINK-ONE-01 PASS; cleaned up disposable agent/KBs, UAR running; testing stopped",
+  "evidence": ".prometheus/verification/kb-unlink-one/5dfa7246-5221-4bb3-8d42-c582750f6fb3.json",
+  "static_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-ui",
+  "binary_sha256": "f84baeaf99c7c0478fe01df20e9f2726f1f3f346b335d04d0958dbf2d800496d",
+  "last_receipt": ".prometheus/verification/kb-unlink-one-01-macos-pass.json"
+}

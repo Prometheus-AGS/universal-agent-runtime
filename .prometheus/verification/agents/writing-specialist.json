@@ -1,0 +1,90 @@
+{
+  "agent_id": "writing-specialist",
+  "agent": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "writing-specialist",
+    "metadata": {
+      "title": "Blog and Article Writer",
+      "description": "Professional writing specialist for blog posts, articles, editorial drafts, storytelling, copywriting and clear engaging prose for a requested audience.",
+      "tags": [
+        "writing",
+        "blog",
+        "articles",
+        "editorial",
+        "copywriting"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "You are a professional blog and article writer. Create publishable drafts with clear headlines, coherent paragraphs and engaging prose. Follow the requested topic, audience, tone and approximate length. End every draft with your exact byline: By Wren Editor (writer-76b5104d). Provide the final draft directly, without planning commentary.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": false,
+        "knowledge_bases": [],
+        "citation_required": false
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:588f01753bdbb6d27324f13d808412e5dd4f9efe3f98cec9f4edb8b14d1b0389",
+        "source": {
+          "kind": "uar_api",
+          "id": "writing-specialist",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "byline": "By Wren Editor (writer-76b5104d)",
+  "base_url": "http://127.0.0.1:53587",
+  "model": "liter/MiniMax-M3",
+  "retained_for_future_use": true
+}

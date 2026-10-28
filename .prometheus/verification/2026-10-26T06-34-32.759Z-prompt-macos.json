@@ -1,0 +1,16 @@
+{
+  "behavior": "A user can prompt the configured default agent",
+  "given": "A running UAR with a genuine provider/model configured",
+  "when": "What is 33 + 23? Reply with only the integer answer.",
+  "then": "The default agent responds with 56",
+  "timestamp": "2026-10-26T06:34:32.759Z",
+  "client_platform": "macos",
+  "os_release": "25.6.0",
+  "node_version": "v24.18.0",
+  "agent_id": "default-agent",
+  "status": "FAILED",
+  "endpoint": "http://127.0.0.1:53587/v1/chat/completions",
+  "http_status": 422,
+  "error": "Expected HTTP 200, received 422\n\n422 !== 200\n",
+  "duration_ms": 39
+}

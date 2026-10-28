@@ -1,0 +1,21 @@
+# UAR 1.3.0 dependency/publication handoff
+
+Phase Execute, uar-post-lifecycle-verification-readiness; native revision323/plan106, task5.1. Operator explicitly prioritizes immediate current-source image publication and authorized necessary corrections; latest user adds reqwest/current compatible dependency review. Do not request another publication repair approval. Product acceptance remains CLOSED and independent phase task5.2 is not completed by these dependency reviews.
+
+Published source `774469746fee4de99be41dc1cd231857067e4487` on main and v1.3.0; annotated tag object `6deeb7b0e47460bbde68c9ebcd7e4e2342474d3f`. Previous f870a9c3 preserved as v1.3.0-publication-003 (001/002 retained). Normal hooks passed; atomic retag used expected prior object077144e1fa20b748762a9843f38911320902b708. No image1.3.0 publication yet.
+
+Live deployment: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/40091743841. amd64 job120865665116, arm64 job120865665046; both native Docker build-and-push steps in progress. Existing watcher session93651 writes /private/tmp/uar-v130-deploy-40091743841.watch.log; do not restart workflows while live. Typical prior successful platform builds were43-51minutes; current jobs have not reported failure. If a job fails, retrieve its completed job log, fix observed cause under current operator authority, keep Cargo serialized, preserve source/lease when retagging, rerun only deployment needed.
+
+Local publication build completed exit0 in9m15s:
+`CARGO_TARGET_DIR=target/uar-post-lifecycle-main cargo build --locked --no-default-features --features server-full,postgres-backend --bin universal-agent-runtime`
+Artifact720MiB debug/universal-agent-runtime. Existing warnings: vendor SurrealDB OnceLockExt import, IngestionAdmission missing Debug. No tests ran. Root build session87133 is terminal; no Cargo running.
+
+Corrections: standalone materialized eight Parking Lot manifests; root uses core-only imports, not facade optional backends. All owned reqwest exact0.13.5; MCP alias removed; RMCP3.7, Wasmtime/WASI47.0.4, compatible exact pins and root/SDK lock refresh. SQLx0.9 (pgvector loose range) caused18errors, corrected toshared0.8.6. ZIP9 caused Tesseract build error, corrected8.6. SDK mirrors six patched SurrealDB3.3 lifecycle sources, runtime requirement1.3.0; explicit bundled WebPKI roots preserve Android behavior. Independent code/Rust reviewers resolved their supported findings. webpki-root-certs1.0.11 latest stable confirmed official registry.
+
+Evidence: phase v1.3.0-publication-receipt.json and v1.3.0-publication-repair-003-inventory.json; raw build/update logs in evidence/publication-v1.3.0-004. Dependency review docs/releases/v1.3.0-dependency-review.md includes119 original direct registry crate audit plus new root-bundle review. Rust review artifact and final build-report additions are uncommitted; commit final publication evidence after actual results. Preserve unrelated .codex/config.toml, operator/local memory, submodule untracked files, and older phase work.
+
+Next: observe workflow through both platform pushes and manifest merge. Inspect actual GHCR1.3.0/v1.3.0/latest/sha manifest digests/platforms, record actual results, update release notes (current temp /private/tmp/uar-v1.3.0-publication-notes.md accurately says image running), commit/push requested evidence with normal hooks and skip-ci. Do not count publication build as phase product acceptance or archive/reflect early. Final report pull command and digest only after registry confirmation; dependency updates and local production build passed, SDK/mobile/integration phase acceptance remain pending.
+
+## Completed publication update
+
+The live status above is superseded: run40091743841 completed success on both Linux platforms and manifest merge. Four confirmed tags (1.3.0, v1.3.0, latest, sha-774469746fee4de99be41dc1cd231857067e4487) share indexsha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697. Release notes updated and v1.3.0-publication-004-receipt.json uploaded to release. Canonical324/plan107 records publication complete and verification authority work pending. No further image build/retag is needed. Product gates remain closed; no tests/phase archive/reflection executed. All watcher sessions should now be terminal.

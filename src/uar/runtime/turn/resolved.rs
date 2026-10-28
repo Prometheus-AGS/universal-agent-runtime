@@ -29,6 +29,7 @@ pub struct ResolvedTurn {
     shadow: Option<super::shadow::ShadowReport>,
     client_tools: Option<super::client_tools::ClientToolInput>,
     output_token_cap: Option<u32>,
+    response_format: Option<crate::llm::response_format::ResponseFormat>,
 }
 
 impl ResolvedTurn {
@@ -50,6 +51,7 @@ impl ResolvedTurn {
             shadow: None,
             client_tools: None,
             output_token_cap: None,
+            response_format: None,
         }
     }
 
@@ -59,6 +61,15 @@ impl ResolvedTurn {
     }
 
     pub(crate) fn output_token_cap(&self) -> Option<u32> { self.output_token_cap }
+
+    pub(crate) fn with_response_format(mut self, format: Option<crate::llm::response_format::ResponseFormat>) -> Self {
+        self.response_format = format;
+        self
+    }
+
+    pub(crate) fn response_format(&self) -> Option<&crate::llm::response_format::ResponseFormat> {
+        self.response_format.as_ref()
+    }
 
     pub(crate) fn with_client_tools(mut self, input: Option<super::client_tools::ClientToolInput>) -> Self {
         self.client_tools = input;

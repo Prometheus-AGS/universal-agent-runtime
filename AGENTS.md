@@ -600,3 +600,8 @@ Unit, module-local, mock-only, and filtered function tests do not count as
 completion evidence. Defer broader, specialized, release, and feature-matrix
 checks until the applicable final boundary.
 Read the skill's phase-gated verification reference before the first Cargo command.
+
+## Manual verification: authentication belongs outside tests — 2026-10-26
+Operator instruction: NO functional/manual verification test may require authentication. External infrastructure owns authentication. Test scripts must not require, mint, renew, copy or send JWTs, bearer tokens, API authentication keys, or login credentials. Run behavior scripts against the externally provisioned local identity endpoint; UAR_BASE_URL, model and nonsecret workspace selectors are sufficient. Stable owner context may be provided by the external host/proxy so persisted data remains accessible, but authentication plumbing must never become a test step, scenario, approval or blocker presented to the operator. Do not weaken production/remote identity boundaries or remove unrelated security regression coverage. Preserve actual product assertions. This supersedes earlier manual-fixture JWT instructions and token-expiry gates.
+
+The active UAR already has jwt_required=false; team APIs nevertheless require a verified owner. The existing external uar-jwt-proxy supplies that owner and now preserves tenant context. Tests do not carry credentials. The previous claim that global JWT authentication was enabled was inaccurate; owner-scoped API admission caused the requirement.

@@ -1,0 +1,13 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-10-26T09:40:31Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json",
+    "decision-log.md"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Three candidates: adapt existing filesystem reconciliation and fenced same-attempt settlement, retain member-lane executor; READY to Spec only. Exact served-build error/commit unknown. WARNING: native artifact review only, REST route not attempted under closed provider-probe scope and cross-model identity unverified. No code or runtime gate.",
+  "skipped": false,
+  "skipReason": null
+}

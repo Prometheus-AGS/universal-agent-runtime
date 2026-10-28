@@ -687,7 +687,7 @@ impl Runtime {
     ) -> Result<Option<ConversationPolicyRecord>> {
         self.inner
             .persistence()
-            .load_conversation_policy(conversation_id)
+            .load_conversation_policy(universal_agent_runtime::session::ANONYMOUS_SESSION_OWNER, conversation_id)
             .await
             .map_err(runtime_error)
     }
@@ -702,7 +702,7 @@ impl Runtime {
     pub async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
         self.inner
             .persistence()
-            .delete_conversation_policy(conversation_id)
+            .delete_conversation_policy(universal_agent_runtime::session::ANONYMOUS_SESSION_OWNER, conversation_id)
             .await
             .map_err(runtime_error)
     }
@@ -712,11 +712,12 @@ impl Runtime {
     /// policy after full-precedence resolution and model backfill. Mirrors the
     /// service path's `GET /conversations/{id}/effective-config`.
     #[cfg(feature = "embedded")]
-    pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
+    pub async fn effective_config(&self, conversation_id: &str) -> Result<EffectiveConfig> {
         self.inner
             .run_manager()
             .effective_config(conversation_id)
             .await
+            .map_err(runtime_error)
     }
 
     /// Explicitly start UAR's HTTP server. This is not part of embedded mode

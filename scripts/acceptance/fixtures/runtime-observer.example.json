@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "executable": false,
+  "state_dir_env": "UAR_ACCEPTANCE_STATE_PARENT",
+  "command_seconds": 30,
+  "ready_seconds": 60,
+  "server_binary": "/REPLACE/absolute/frozen/native-server",
+  "server_template": "/REPLACE/absolute/frozen/backend-server-template.json",
+  "source_files": ["/REPLACE/complete/absolute/frozen/source-inventory"],
+  "configuration_files": [
+    "/REPLACE/absolute/frozen/postgres-runtime-observer.json",
+    "/REPLACE/absolute/frozen/surreal-runtime-observer.json",
+    "/REPLACE/absolute/frozen/postgres-server-template.json",
+    "/REPLACE/absolute/frozen/surreal-server-template.json",
+    "/REPLACE/absolute/frozen/startup-observer.json"
+  ],
+  "server_environment_env": {},
+  "approved_genuine_origins": [
+    {"origin": "https://REPLACE_WITH_OPERATOR_APPROVED_ORIGIN", "provider_ids": ["REPLACE_PROVIDER"]}
+  ],
+  "schema_contract": {
+    "postgres_pgvector": {
+      "tables": {
+        "agents": ["id", "data"],
+        "sessions": ["id", "data"],
+        "knowledge_ingestion": ["owner_id", "document_id", "kb_id", "state", "next_attempt_at", "data", "source"],
+        "principal_knowledge_ingestion": ["owner_id", "document_id", "kb_id", "state", "next_attempt_at", "data", "source"]
+      },
+      "migration_sources": ["/REPLACE/every/frozen/top-level/migrations/version_name.sql"]
+    },
+    "surreal_disk": {
+      "tables": {"agents": [], "sessions": [], "knowledge_ingestion": [], "principal_knowledge_ingestion": []}
+    }
+  },
+  "postgres": {
+    "connection_env": "UAR_ACCEPTANCE_POSTGRES_CONNECTION",
+    "schema_scope": "run_sha256_20",
+    "psql_binary": "/REPLACE/absolute/frozen/psql"
+  },
+  "surreal": {
+    "url_env": "UAR_ACCEPTANCE_SURREAL_HTTP_ORIGIN",
+    "username_env": "UAR_ACCEPTANCE_SURREAL_USERNAME",
+    "password_env": "UAR_ACCEPTANCE_SURREAL_PASSWORD",
+    "namespace": "uar_acceptance",
+    "database_scope": "run_sha256_20",
+    "disk_container": {
+      "container_env": "UAR_ACCEPTANCE_OWNED_SCOPE",
+      "docker_binary": "/REPLACE/absolute/frozen/docker",
+      "image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20",
+      "args": ["start", "--log", "warn", "--user", "@env:UAR_ACCEPTANCE_SURREAL_USERNAME@", "--pass", "@env:UAR_ACCEPTANCE_SURREAL_PASSWORD@", "--bind", "0.0.0.0:8000", "rocksdb:/data/runtime.db"]
+    }
+  },
+  "store_lifecycle": {
+    "postgres_pgvector": {},
+    "surreal_disk": {
+      "prepare_argv": [],
+      "cleanup_argv": []
+    }
+  }
+}

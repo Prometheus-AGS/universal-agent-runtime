@@ -1,0 +1,18 @@
+{
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-002.proposed.json",
+    "--reason",
+    "A17 replaces failed never-adopted A16 with contract metadata type ID and required-field corrections only. Preserve source commands predicates effects all prior consumption and limits. A15 remains predecessor; unchanged P16.002 execution requires fresh explicit approval.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n",
+  "classification": "UNSIGNED_MANIFEST_AUTHORING_NOT_ADOPTION_OR_SCHEMA_VALIDATION"
+}

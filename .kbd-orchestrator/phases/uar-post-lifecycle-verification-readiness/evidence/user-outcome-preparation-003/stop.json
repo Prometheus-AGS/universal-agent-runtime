@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-10-25T11:38:17.797244+00:00",
+  "status": "STOPPED_FIRST_FAILURE",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-589e132b",
+  "binding_revision": 11,
+  "contract_digest": "589e132bbff66585d8d67aaee97dfeeeb76d21181353f3fbc942b7e334bb02b9",
+  "source_identity": "sha256:9be55f1940937db4475b976fc204f868c568c3169e911707d005d6abf0338517",
+  "failed_stage": "P0.9",
+  "diagnostic": "examples/user-outcome-acceptance.ts(33,13): error TS18048: 'authorization' is possibly 'undefined'.",
+  "typescript_exit_code": 2,
+  "artifact_producer_exit_code": 2,
+  "attempt_stages": [
+    {
+      "id": "P0.7",
+      "stage": "native",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 589.4963667392731,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/native/native-build.json"
+    },
+    {
+      "id": "P0.8",
+      "stage": "frontend",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "-C",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend",
+        "build"
+      ],
+      "elapsed_seconds": 40.2241792678833,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/frontend/frontend-build.json"
+    },
+    {
+      "id": "P0.9",
+      "stage": "typescript_sdk",
+      "exit_code": 2,
+      "status": "FAIL",
+      "command": [
+        "/Users/gqadonis/.volta/bin/node",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/typescript/lib/tsc.js",
+        "--project",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/tsconfig.examples.json",
+        "--noEmit",
+        "false",
+        "--outDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/.acceptance-artifacts",
+        "--rootDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript"
+      ],
+      "elapsed_seconds": 2.132319927215576,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/typescript_sdk/typescript_sdk-build.json"
+    }
+  ],
+  "later_stages": [
+    {
+      "id": "P0.10",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.11",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "P0.13-build-guest",
+      "status": "NOT_RUN"
+    }
+  ],
+  "carried_materialization_passes": 10,
+  "artifacts": [
+    {
+      "kind": "native_server",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native/debug/universal-agent-runtime",
+      "bytes": 790241144,
+      "sha256": "sha256:944caef21b8906e9217779215f4dd3c7f56f2b4005f0547ddd1c4fd4e6dae0f8",
+      "immutable_snapshot": false
+    },
+    {
+      "kind": "frontend_product_output",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/static",
+      "build_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/frontend/frontend-build.json",
+      "immutable_snapshot": false
+    }
+  ],
+  "immutable_artifact_preparation_complete": false,
+  "product_gate": "CLOSED",
+  "product_tests": 0,
+  "provider_calls": 0,
+  "services_started": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repairs_consumed": 6,
+  "remaining_repairs": 0,
+  "retry_count": 0,
+  "source_changes_during_attempt": 0,
+  "prior_evidence_preserved": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/stop.json"
+  ],
+  "consumption": {
+    "prior_P0_001_seconds": 1.350480196007993,
+    "prior_P0_002_wall_seconds": 1584.103835,
+    "P0_003_wall_seconds_through_producer_finish": 697.491363,
+    "P0_003_producer_seconds": 651.7605744110188,
+    "P0_003_start_carried_max_seconds": 12813,
+    "remaining_carried_P0_seconds": 12115.508637,
+    "all_prior_global_consumption_retained": true,
+    "later_accounting_accrues": true
+  },
+  "next_authority": "No automatic repair/retry; any next correction and renewed execution require explicit operator instruction and new source inventory/signed authority.",
+  "cleanup": "Producer exited; owned child cleanup and build-owner lock release performed by its finally paths. No services or containers started."
+}

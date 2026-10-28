@@ -128,6 +128,7 @@ export function createEmbeddedSseAdapter(
   url: string,
   _options: EmbeddedSseAdapterOptions = {},
 ): RealtimeAdapter {
+  void _options;
   const statusCallbacks = new Set<(status: AdapterStatus) => void>();
   const emitStatus = (status: AdapterStatus) => {
     for (const callback of statusCallbacks) callback(status);

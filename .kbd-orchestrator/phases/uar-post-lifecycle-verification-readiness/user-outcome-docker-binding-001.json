@@ -1,0 +1,11 @@
+{
+  "classification": "CONFIGURATION_SOURCE_SELECTION_NOT_DAEMON_AVAILABILITY",
+  "context_name": "colima",
+  "endpoint": "unix:///Users/gqadonis/.colima/default/docker.sock",
+  "source": {
+    "path": "/Users/gqadonis/.docker/contexts/meta/f24fd3749c1368328e2b149bec149cb6795619f244c5b584e844961215dadd16/meta.json",
+    "sha256": "sha256:bcaeca6f2ba1b38d613d01ee9740a6d460febacee6699d432e5e97e9d3d64221"
+  },
+  "environment_reference": "UAR_FIXTURE_DOCKER_HOST",
+  "live_verified": false
+}

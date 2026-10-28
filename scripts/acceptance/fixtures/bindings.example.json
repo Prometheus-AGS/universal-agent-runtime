@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "example": true,
+  "executable": false,
+  "full_closure_approved": false,
+  "selected_embedding_services": ["cohere"],
+  "proposed_build_argv": null,
+  "private_inputs_config": {"path": null, "sha256": null},
+  "private_inputs": {"inputs": {"path": null, "sha256": null}, "receipt": {"path": null, "sha256": null}},
+  "operator_approval": {"path": null, "sha256": null},
+  "operator_signature": {"path": null, "sha256": null},
+  "installed": {
+    "server_binary": null, "python": null, "node": null, "psql": null, "docker": null,
+    "python_sdk_entry": null, "typescript_sdk_entry": null, "rust_sdk_binary": null,
+    "grpc_test_binary": null, "browser_executable": null, "playwright_entry": null,
+    "video_encoder": null, "classifier_wasm": null
+  },
+  "secret_env": [],
+  "server_environment_env": {},
+  "observer_seconds": null,
+  "maintenance_seconds": null,
+  "ready_seconds": null,
+  "limits": {
+    "wall_seconds": null, "request_seconds": null, "command_seconds": null, "cleanup_seconds": null,
+    "http_requests": null, "response_bytes": null, "total_output_bytes": null, "output_tokens": null
+  },
+  "budget_epoch_id": null,
+  "budget_ledger_parent": null,
+  "budget_state_parent_env": null,
+  "existing_service_environment_env": {},
+  "existing_service_observer": {
+    "schema_version": 1, "executable": false, "uid": null,
+    "tools": {"launchctl": {"path": null, "sha256": null}, "ps": {"path": null, "sha256": null}, "lsof": {"path": null, "sha256": null}},
+    "sources": {"launchagent": {"path": null, "sha256": null}, "launch_script": {"path": null, "sha256": null},
+      "service_config": {"path": null, "sha256": null}, "executable": {"path": null, "sha256": null}},
+    "expected_argv": [], "approved_listener_names": [], "expected_models": [], "expected_alias_patterns": ["openai/*"],
+    "expected_max_retries": 3, "expected_cost_tracking": false, "credential_env_names": [],
+    "limits": {"command_seconds": null, "output_bytes": null, "wall_seconds": null}
+  },
+  "budget_proxy": {
+    "schema_version": 1, "executable": false, "epoch_id": null,
+    "spend_pools": {"cohere": {"limit_microunits": 10000000}, "openai_embeddings": {"limit_microunits": 10000000}, "liter": {"limit_microunits": 0}},
+    "approval_packet": {"path": null, "sha256": null},
+    "approval_signature": {"path": null, "sha256": null},
+    "seed": {"path": null, "sha256": null},
+    "limits": {"model_attempts": null, "embedding_attempts": null, "generated_tokens": null,
+      "cost_microunits": null, "request_bytes": null, "response_bytes": null, "max_in_flight": null, "wall_seconds": null},
+    "upstream_timeout_seconds": null, "ingress_timeout_seconds": null,
+    "bindings": []
+  },
+  "providers": [],
+  "knowledge": {"embedding_spaces": [], "index_seconds": null, "regeneration_seconds": null, "regeneration_documents": null},
+  "memory_budget_binding_id": null,
+  "structured_proxy_budget_hop_approved": false,
+  "orchestrator": {"expected_principal_key": null, "expected_history_owner_key": null, "expected_subject": null},
+  "teams": {
+    "workspace_id": null,
+    "model_binding": {"credentialRef": null, "profile": {"id": "uar.openai-compatible-chat.settings-v1", "revision": 1}, "settingsRevision": null},
+    "storage_ref": null,
+    "reservation": {"tokens": null, "costMicrounits": null, "elapsedSeconds": null},
+    "budget": {"maxTokens": null, "maxCostMicrounits": null, "currency": "USD", "maxElapsedSeconds": null},
+    "case_seconds": null, "foreign_authorization_env": null
+  },
+  "browser": {"static_directory": null, "static_files": []},
+  "capabilities": {
+    "case_seconds": null, "foreign_authorization_env": null, "mcp_server_name": null,
+    "routing_requirements": {"needs_tools": true, "needs_vision": true, "needs_structured_output": true},
+    "structured_binding_model": null, "genuine_proxy_port": null
+  },
+  "budget_vectors": [],
+  "native_configuration": {
+    "security": null, "resilience": null, "runs": null, "sessions": null,
+    "file_processing": null, "vision": null, "intent_classifier": null, "harness": null,
+    "llm": null, "native_tools": null, "memory": null, "a2a": null
+  },
+  "postgres": {"connection_env": null},
+  "postgres_store": {
+    "schema_version": 1, "executable": false, "image": null, "container_pg_port": null,
+    "mount_target": null, "pgdata": null, "docker_environment_env": {},
+    "limits": {"command_seconds": null, "ready_seconds": null, "cleanup_seconds": null,
+      "stop_seconds": null, "total_seconds": null, "output_bytes": null}
+  },
+  "surreal": {
+    "url_env": null, "username_env": null, "password_env": null, "namespace": null,
+    "disk_container": {"image": null, "args": []}
+  },
+  "backends": {
+    "postgres_pgvector": {"profile_id": null, "http_port": null, "grpc_port": null,
+      "state_parent": null, "state_parent_env": null, "runtime_config_env": null, "startup_config_env": null,
+      "headers_env": {"Authorization": null, "x-uar-admin-key": null}},
+    "surreal_disk": {"profile_id": null, "http_port": null, "grpc_port": null, "surreal_http_port": null,
+      "state_parent": null, "state_parent_env": null, "runtime_config_env": null, "startup_config_env": null,
+      "headers_env": {"Authorization": null, "x-uar-admin-key": null}}
+  }
+}

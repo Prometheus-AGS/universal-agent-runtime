@@ -404,6 +404,9 @@ async fn set_default(
 struct TestProviderRequest {
     #[serde(default)]
     model: Option<String>,
+    /// Optional caller ceiling for the real credential/routing probe.
+    #[serde(default)]
+    output_token_cap: Option<u32>,
 }
 
 #[derive(Serialize)]
@@ -504,6 +507,23 @@ async fn test_provider(
         }
     }
 
+    // The probe is real inference too: use the caller's bounded cap, or the
+    // existing response reserve only when the configured model has capacity.
+    let configured_model = provider.models.iter().find(|entry| entry.id == model);
+    let (catalog_provider, catalog_model) = crate::llm::registry::split_model_string_pub(&llm_config.model);
+    let catalog = crate::llm::catalog::ModelCatalog::global().model(&catalog_provider, &catalog_model);
+    let capacity = configured_model.and_then(|entry| entry.context_window).map(u64::from)
+        .or_else(|| catalog.map(|entry| entry.limits.context_window).filter(|limit| *limit > 0));
+    let maximum_output = configured_model.and_then(|entry| entry.max_output_tokens).map(u64::from)
+        .or_else(|| catalog.map(|entry| entry.limits.max_output).filter(|limit| *limit > 0));
+    let mut output_cap = request.output_token_cap.unwrap_or(
+        crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS as u32);
+    if let Some(maximum) = maximum_output { output_cap = output_cap.min(u32::try_from(maximum).unwrap_or(u32::MAX)); }
+    if output_cap == 0 || capacity.is_none_or(|capacity| capacity <= u64::from(output_cap)) {
+        return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse {
+            error: "Provider validation requires known model capacity and a positive bounded output allowance".into(),
+        })));
+    }
     let driver = crate::llm::LiterLlmDriver::new(
         crate::config::build_client_config(&llm_config),
         llm_config.model,
@@ -524,7 +544,7 @@ async fn test_provider(
             "content": "Reply with OK."
         })],
         tools: Vec::new(),
-        output_token_cap: None,
+        output_token_cap: Some(output_cap),
         tool_choice: None,
         parallel_tool_calls: None,
         cache_strategy: None,

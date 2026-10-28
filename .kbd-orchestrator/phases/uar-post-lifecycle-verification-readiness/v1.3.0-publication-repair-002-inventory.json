@@ -1,0 +1,19 @@
+{
+  "kind": "uar.publication-repair-inventory/v1",
+  "baseSource": "84747d9e7ac8048a9b729ed0a908ee6bdcfb74df",
+  "currentSourceTag": "v1.3.0",
+  "currentTagObject": "05d033e4074a473a3b48e548ec87c61c1b4125dd",
+  "observedFailureRun": 40088426990,
+  "observedArmJob": 120855985954,
+  "observedError": "multiple workspace roots found in the same workspace: /src and /src/vendor/git/prometheus-parking-lot-rs",
+  "repair": "Add seven explicit nested Parking Lot crate paths to UAR workspace exclude; retain prior explicit package.workspace declarations; no Rust or lockfile edit",
+  "files": {
+    "Cargo.toml": "8023aa74bb51e954c4124376f1e5ae6040632870075b2f30240c087f7c9abd9c"
+  },
+  "patchSha256": "9753d18e77db2515cf44f4496b60489edc5544cfdf61b1abf1809b64441349f9",
+  "verification": "NOT_RUN_AFTER_REPAIR",
+  "operatorApproval": "PENDING_P2_ROOT_EXCLUSION_CORRECTIVE_PUBLICATION",
+  "publicationRepairNumber": 2,
+  "automaticFurtherRetries": false,
+  "productVerification": "CLOSED"
+}

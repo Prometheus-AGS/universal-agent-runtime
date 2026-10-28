@@ -1,0 +1,1023 @@
+{
+  "classification": "SELECTED_RESOURCE_BYTE_INVENTORY_NOT_EXECUTION",
+  "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest",
+  "tree_sha256": "sha256:fced698a6508bcbd686d49f0ee0f6cf81cd37bde70020c5cbcba0d3e28d747a7",
+  "rows": [
+    {
+      "relative": ".",
+      "kind": "directory"
+    },
+    {
+      "relative": "Cargo.lock",
+      "kind": "file",
+      "sha256": "sha256:fcd6cb9d3f19276f85012fa2098880fc37b79d8a2bdd9c8307064fabb60398e8",
+      "bytes": 2877,
+      "executable": false
+    },
+    {
+      "relative": "Cargo.toml",
+      "kind": "file",
+      "sha256": "sha256:f700beea6a349e1b3dd77be5e288dbeebb6d6da39465643745f70199f25be0c1",
+      "bytes": 662,
+      "executable": false
+    },
+    {
+      "relative": "Cargo.toml.in",
+      "kind": "file",
+      "sha256": "sha256:f700beea6a349e1b3dd77be5e288dbeebb6d6da39465643745f70199f25be0c1",
+      "bytes": 662,
+      "executable": false
+    },
+    {
+      "relative": "README.md",
+      "kind": "file",
+      "sha256": "sha256:7494caf8934ed49de9024e8737028c8e4cb87ba6e5667693633531904f0e7979",
+      "bytes": 6456,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/.rustc_info.json",
+      "kind": "file",
+      "sha256": "sha256:1c25baeebd7e5b24610b125bf47096ce089617581d8e9a6a786141952e174b7c",
+      "bytes": 3700,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/CACHEDIR.TAG",
+      "kind": "file",
+      "sha256": "sha256:6d9d1d216e0f83abc5e5662ca62c92b4f23009466b54fa27321a69acdb778bb2",
+      "bytes": 177,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/.cargo-artifact-lock",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.cargo-build-lock",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.cargo-lock",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_core-e7747ca6bced65fc",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_core-e7747ca6bced65fc/build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:7e35464d8b12d17454757984d2ec8c59c3dae87b3796c11caea7ea6f983adf21",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_core-e7747ca6bced65fc/build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:baae829e96679be26bf695bd6c717c8fb9686ec3c2c538021598791580520841",
+      "bytes": 445,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_core-e7747ca6bced65fc/dep-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_core-e7747ca6bced65fc/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_json-d2911f6bd7c9066a",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_json-d2911f6bd7c9066a/build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:355d31373d93d4a7b34e50d612ec4a90956f201f75469c66e3c128ba08ed1359",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_json-d2911f6bd7c9066a/build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:31c88fe807853485f906a6569de3851eb6126c7eccbf231ff7da0f7f0cadbd9e",
+      "bytes": 540,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_json-d2911f6bd7c9066a/dep-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/serde_json-d2911f6bd7c9066a/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/wit-bindgen-rt-ac4ca30fc4518bf3",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/wit-bindgen-rt-ac4ca30fc4518bf3/build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:c5f07786aed53b3670e5906756250739aab38fe3e6ab6b9bce01e7a1305ccf49",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/wit-bindgen-rt-ac4ca30fc4518bf3/build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:d0da3fee3e150fc22bf08f19a7d902c098a6e8fd73d01ccf8ebebace80734da9",
+      "bytes": 400,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/wit-bindgen-rt-ac4ca30fc4518bf3/dep-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/wit-bindgen-rt-ac4ca30fc4518bf3/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/zmij-c769522ddfcc64b8",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/zmij-c769522ddfcc64b8/build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:cd3766c12f9a9d43c706344e2c05cde46db5b80c56680a38ac1146eda1ea1d2e",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/zmij-c769522ddfcc64b8/build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:75810b2626b276d5b535f3a78b2ccb81ffad875d847fc7283e01abd25c36e21a",
+      "bytes": 379,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/zmij-c769522ddfcc64b8/dep-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/.fingerprint/zmij-c769522ddfcc64b8/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/build",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/build/serde_core-e7747ca6bced65fc",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/build/serde_core-e7747ca6bced65fc/build-script-build",
+      "kind": "file",
+      "sha256": "sha256:3c5c4e6952b920175d2eac081917110bb69b83ef196242dad74a04a5279391b6",
+      "bytes": 404928,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/serde_core-e7747ca6bced65fc/build_script_build-e7747ca6bced65fc",
+      "kind": "file",
+      "sha256": "sha256:3c5c4e6952b920175d2eac081917110bb69b83ef196242dad74a04a5279391b6",
+      "bytes": 404928,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/serde_core-e7747ca6bced65fc/build_script_build-e7747ca6bced65fc.d",
+      "kind": "file",
+      "sha256": "sha256:33b21345c8513ff48dc82f63cd1849dbc5e8b22e65f169d8a647d8859bd9c8e4",
+      "bytes": 692,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/build/serde_json-d2911f6bd7c9066a",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/build/serde_json-d2911f6bd7c9066a/build-script-build",
+      "kind": "file",
+      "sha256": "sha256:abaff6f637ee64a32d4bf50bba357d327d83844a33fde3adade69dcaa7d6f730",
+      "bytes": 331640,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/serde_json-d2911f6bd7c9066a/build_script_build-d2911f6bd7c9066a",
+      "kind": "file",
+      "sha256": "sha256:abaff6f637ee64a32d4bf50bba357d327d83844a33fde3adade69dcaa7d6f730",
+      "bytes": 331640,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/serde_json-d2911f6bd7c9066a/build_script_build-d2911f6bd7c9066a.d",
+      "kind": "file",
+      "sha256": "sha256:0cd6ae4c82fe7666295b287ba72cf92be61cd43688a52f63565ce4fe8f694435",
+      "bytes": 692,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/build/wit-bindgen-rt-ac4ca30fc4518bf3",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/build/wit-bindgen-rt-ac4ca30fc4518bf3/build-script-build",
+      "kind": "file",
+      "sha256": "sha256:19aff185e10092661b36d6d4af6fee4d9f0302dc8045d570b08e2ab70ee05e16",
+      "bytes": 353048,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/wit-bindgen-rt-ac4ca30fc4518bf3/build_script_build-ac4ca30fc4518bf3",
+      "kind": "file",
+      "sha256": "sha256:19aff185e10092661b36d6d4af6fee4d9f0302dc8045d570b08e2ab70ee05e16",
+      "bytes": 353048,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/wit-bindgen-rt-ac4ca30fc4518bf3/build_script_build-ac4ca30fc4518bf3.d",
+      "kind": "file",
+      "sha256": "sha256:e69fbb4c13376c871ffe23f9a4d0c35ee234a4c957dbb68d43f03e01afd34e83",
+      "bytes": 745,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/build/zmij-c769522ddfcc64b8",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/build/zmij-c769522ddfcc64b8/build-script-build",
+      "kind": "file",
+      "sha256": "sha256:2f1b77a7f0ca888e89b75d57dbc607d497684f7406fd7b191df3657bc0cb555b",
+      "bytes": 388208,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/zmij-c769522ddfcc64b8/build_script_build-c769522ddfcc64b8",
+      "kind": "file",
+      "sha256": "sha256:2f1b77a7f0ca888e89b75d57dbc607d497684f7406fd7b191df3657bc0cb555b",
+      "bytes": 388208,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/release/build/zmij-c769522ddfcc64b8/build_script_build-c769522ddfcc64b8.d",
+      "kind": "file",
+      "sha256": "sha256:7eacaed1691bdab4696b9ebf823fa4fff49f458c8fd99e6ac9b7c6a260bd7a15",
+      "bytes": 659,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/release/deps",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/examples",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/release/incremental",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/CACHEDIR.TAG",
+      "kind": "file",
+      "sha256": "sha256:6d9d1d216e0f83abc5e5662ca62c92b4f23009466b54fa27321a69acdb778bb2",
+      "bytes": 177,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.cargo-artifact-lock",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.cargo-build-lock",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.cargo-lock",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/itoa-16bb7a58a1838993",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/itoa-16bb7a58a1838993/dep-lib-itoa",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/itoa-16bb7a58a1838993/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/itoa-16bb7a58a1838993/lib-itoa",
+      "kind": "file",
+      "sha256": "sha256:010ba3077ecf255230eb7e65906eb8e3edb96c78f84db48a1c50b8e9a3ecf53c",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/itoa-16bb7a58a1838993/lib-itoa.json",
+      "kind": "file",
+      "sha256": "sha256:32e6008b7630fb531106fe8a29c0e70697133e96f5340d1aea7049f0f9371347",
+      "bytes": 398,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/memchr-5e07c124672571d1",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/memchr-5e07c124672571d1/dep-lib-memchr",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/memchr-5e07c124672571d1/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/memchr-5e07c124672571d1/lib-memchr",
+      "kind": "file",
+      "sha256": "sha256:0743e459120ff1e3214582176a9ea6704c53f7c99b35d06925f947c5cfa14f3e",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/memchr-5e07c124672571d1/lib-memchr.json",
+      "kind": "file",
+      "sha256": "sha256:9c469556773e28c91a602b7709340dd88e27984c22df163d8f360a33b115bfce",
+      "bytes": 507,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-469b6bdb97b699ab",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-469b6bdb97b699ab/run-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:3b55915c054dea1fcd15bd14842b05fab23adaaa41e8d41ce0db4cd87e86eecc",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-469b6bdb97b699ab/run-build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:dc56b4ff2fd70d0653772a74d571e98e36e6067fe2169a9c6b786b9937752429",
+      "bytes": 356,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-72b34d7e971e2368",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-72b34d7e971e2368/dep-lib-serde_core",
+      "kind": "file",
+      "sha256": "sha256:ed3dfb05dbe93948d3fccdf6edea133cc2926ca0b508b64cb77e94c30ca1126e",
+      "bytes": 99,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-72b34d7e971e2368/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-72b34d7e971e2368/lib-serde_core",
+      "kind": "file",
+      "sha256": "sha256:870dbe1c2c84dd3dfaa12135cf2492859e2e9901ed1a4ef8b9e68f4c93d14669",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_core-72b34d7e971e2368/lib-serde_core.json",
+      "kind": "file",
+      "sha256": "sha256:97ea7d7907bcbf8da70e8e210e68c360be45e9bee6bc49f9117f1c66c744d60a",
+      "bytes": 539,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-a83ddda30303557f",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-a83ddda30303557f/run-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:c049a13b92ba2e04e657cbdb041028935b9cba54fcfdf828698c40c30d37b01a",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-a83ddda30303557f/run-build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:cb87b431fa9efd5e41425315b5152e04138a4a9af5aebd4d6a1e4d1b6f79c69e",
+      "bytes": 355,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-b25b745bcc6338ca",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-b25b745bcc6338ca/dep-lib-serde_json",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-b25b745bcc6338ca/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-b25b745bcc6338ca/lib-serde_json",
+      "kind": "file",
+      "sha256": "sha256:86d4c9a12129e2739f41b109a3e642f0008710c6a67b1eaa25659e26642b705c",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/serde_json-b25b745bcc6338ca/lib-serde_json.json",
+      "kind": "file",
+      "sha256": "sha256:20a7d4c2744613f9653be9b38fd6d96bed002e5ecb9b105eb1cf7be73480285b",
+      "bytes": 864,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/uar-intent-classifier-fixture-e7485e4f938ae137",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/uar-intent-classifier-fixture-e7485e4f938ae137/dep-lib-uar_intent_classifier_fixture",
+      "kind": "file",
+      "sha256": "sha256:8211cf82d63e8d45bd98a07b84ab83279318cce1f49277fe2350ce74f3b4d3cc",
+      "bytes": 51,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/uar-intent-classifier-fixture-e7485e4f938ae137/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/uar-intent-classifier-fixture-e7485e4f938ae137/lib-uar_intent_classifier_fixture",
+      "kind": "file",
+      "sha256": "sha256:95b93ebef1536048f8af33af6b69edd66c256fd3299059b5bad032b6c76530a0",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/uar-intent-classifier-fixture-e7485e4f938ae137/lib-uar_intent_classifier_fixture.json",
+      "kind": "file",
+      "sha256": "sha256:6d47866d6ec4546772754b267b4396ee8252ec9b1395a677300f735f1583f75f",
+      "bytes": 562,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-08569433a8acf8fd",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-08569433a8acf8fd/dep-lib-wit_bindgen_rt",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-08569433a8acf8fd/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-08569433a8acf8fd/lib-wit_bindgen_rt",
+      "kind": "file",
+      "sha256": "sha256:c928211a5e2039c322643f45df0505234c822fbebd70ffd1aedcca3bc8f2be07",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-08569433a8acf8fd/lib-wit_bindgen_rt.json",
+      "kind": "file",
+      "sha256": "sha256:00518ae254b2b0744914f1f768bec66df76872424c358e574e5796591257f707",
+      "bytes": 496,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-d925860e2e72a879",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-d925860e2e72a879/run-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:7e30baf519bce3d68fe8ab122a401e727ea2a396258fbd5a2a5c341cba21bc53",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/wit-bindgen-rt-d925860e2e72a879/run-build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:1b1acc2e1f82d637a3d596984d3ca044ba012dd7e2c6dd3df947a0ab71630438",
+      "bytes": 257,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-7e93bd8bdb9de114",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-7e93bd8bdb9de114/run-build-script-build-script-build",
+      "kind": "file",
+      "sha256": "sha256:7942761341697fa7489a158340d97f1f3932fbfc3656afcd482d6dc468ecebd6",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-7e93bd8bdb9de114/run-build-script-build-script-build.json",
+      "kind": "file",
+      "sha256": "sha256:9394b4aafb20dbfdd800b2a59da4d21a83633c1670e14a488d4fc8696956f0aa",
+      "bytes": 350,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-dfc646e1f8702769",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-dfc646e1f8702769/dep-lib-zmij",
+      "kind": "file",
+      "sha256": "sha256:93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab",
+      "bytes": 14,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-dfc646e1f8702769/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-dfc646e1f8702769/lib-zmij",
+      "kind": "file",
+      "sha256": "sha256:a2aa8794a5eedd9628f5fb366b4217055c6bacea7b0a74bb03754d1c8305764a",
+      "bytes": 16,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/.fingerprint/zmij-dfc646e1f8702769/lib-zmij.json",
+      "kind": "file",
+      "sha256": "sha256:a2d2a3159aabc82c868623510bdc6b6a9f063eeaa53674f2858871c782cb4757",
+      "bytes": 466,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab/out",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab/out/private.rs",
+      "kind": "file",
+      "sha256": "sha256:899563ce84b59b13cd7036e25f7897c1e730906f62a43aff14472d11c4229f34",
+      "bytes": 90,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab/output",
+      "kind": "file",
+      "sha256": "sha256:b05731ace603d330b9a7aaf76b8433df15c3e1b2a3a95f4c644d5f5ed0c82f84",
+      "bytes": 484,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab/root-output",
+      "kind": "file",
+      "sha256": "sha256:cf6b54e7db3e0250b711d8dc4919891ad4eb7a08120edadd6b71d958c664df99",
+      "bytes": 187,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_core-469b6bdb97b699ab/stderr",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_json-a83ddda30303557f",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_json-a83ddda30303557f/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_json-a83ddda30303557f/out",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_json-a83ddda30303557f/output",
+      "kind": "file",
+      "sha256": "sha256:6bb524834a0c0657c682dbb81bc6eeb23ac92c48da502f17ce4455240e5d062b",
+      "bytes": 132,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_json-a83ddda30303557f/root-output",
+      "kind": "file",
+      "sha256": "sha256:87068e915591aa550d73a202969ad1f9ddbf06d6484af7ed75ae953c7217c8b2",
+      "bytes": 187,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/serde_json-a83ddda30303557f/stderr",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879/out",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879/out/libwit_bindgen_cabi_realloc0_41_0.a",
+      "kind": "file",
+      "sha256": "sha256:4f9e8d793926155d7a66a9124bdf7e84dc5c4e2a92f890b8d806bf3519b255e3",
+      "bytes": 412,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879/output",
+      "kind": "file",
+      "sha256": "sha256:1f2de1532b92961e8f931e8c2c3192994c9e30c7772e487f9562fb32104049a7",
+      "bytes": 282,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879/root-output",
+      "kind": "file",
+      "sha256": "sha256:5df39a4f996abb4514158b5a8a687ba8b0e89282034be4509de89aa4afa9b121",
+      "bytes": 191,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/wit-bindgen-rt-d925860e2e72a879/stderr",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/zmij-7e93bd8bdb9de114",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/zmij-7e93bd8bdb9de114/invoked.timestamp",
+      "kind": "file",
+      "sha256": "sha256:5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3",
+      "bytes": 48,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/zmij-7e93bd8bdb9de114/out",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/zmij-7e93bd8bdb9de114/output",
+      "kind": "file",
+      "sha256": "sha256:a5e3cff6ce9bef8de9953b26955fd59a8e5fba552e04b2ec20801ac103338851",
+      "bytes": 206,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/zmij-7e93bd8bdb9de114/root-output",
+      "kind": "file",
+      "sha256": "sha256:54cd949fa3f57fe00ab839f722ba2556fe3d89e9126ddd78723b527f7b187926",
+      "bytes": 181,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/build/zmij-7e93bd8bdb9de114/stderr",
+      "kind": "file",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/itoa-16bb7a58a1838993.d",
+      "kind": "file",
+      "sha256": "sha256:216ed9a565224c7df929013f516538070452cb5f077210cb9cde58bdb76ede35",
+      "bytes": 1314,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libitoa-16bb7a58a1838993.rlib",
+      "kind": "file",
+      "sha256": "sha256:c526f88b870d1a2b79de361d371951f3ef1b1c58cbe5767b1f941a1c2922fb25",
+      "bytes": 73062,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libitoa-16bb7a58a1838993.rmeta",
+      "kind": "file",
+      "sha256": "sha256:7331bd35899024835cbac926e792e62c1cf2625ebee6afd7bd760e9f8828c172",
+      "bytes": 60936,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libmemchr-5e07c124672571d1.rlib",
+      "kind": "file",
+      "sha256": "sha256:b88e5042c7f32879ea2d791d0d82a9a0af7c49d61a7b4d340c98b79ed13b8360",
+      "bytes": 561924,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libmemchr-5e07c124672571d1.rmeta",
+      "kind": "file",
+      "sha256": "sha256:7c1b5d82eab087c5b8477c666897e8213e59a03f5a121a1f19c96371bbff8d2a",
+      "bytes": 519054,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libserde_core-72b34d7e971e2368.rlib",
+      "kind": "file",
+      "sha256": "sha256:de59544ccaaf6399abf8de3d1f6199bafcdc114373d14cb7e7f6a9bb7b7b2938",
+      "bytes": 4838368,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libserde_core-72b34d7e971e2368.rmeta",
+      "kind": "file",
+      "sha256": "sha256:1e30bfa21f8e6a16ca84699915ff55e7647b6f1a6aded6b7569970154dea5c5b",
+      "bytes": 4773403,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libserde_json-b25b745bcc6338ca.rlib",
+      "kind": "file",
+      "sha256": "sha256:71556daa40e46915ab6b615e6cc520a8ee197ce5ec08349aac2e95fd2409c671",
+      "bytes": 1935442,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libserde_json-b25b745bcc6338ca.rmeta",
+      "kind": "file",
+      "sha256": "sha256:a2f1a394711ae68f21d4a2becf8d9a1a0b34177cba3a613e06615c178d94f077",
+      "bytes": 1455594,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libwit_bindgen_rt-08569433a8acf8fd.rlib",
+      "kind": "file",
+      "sha256": "sha256:b4642467fabb5a0ee47edbf3cbf63caaa19173697f35f44ee8d5f596bdb41ad2",
+      "bytes": 10326,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libwit_bindgen_rt-08569433a8acf8fd.rmeta",
+      "kind": "file",
+      "sha256": "sha256:ebd67a1932cc934e85b9e3c0e0a257fba1696b56559d8a0535596775d0f9bbf9",
+      "bytes": 5060,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libzmij-dfc646e1f8702769.rlib",
+      "kind": "file",
+      "sha256": "sha256:c697af46dd296bc015f15706e26e4c186090052222af87e476147e86681d27f8",
+      "bytes": 116438,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/libzmij-dfc646e1f8702769.rmeta",
+      "kind": "file",
+      "sha256": "sha256:12182cf7cfd9948c3414ccdbea2063b7a9bd479e1f000577fc381ea7ed17e613",
+      "bytes": 103587,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/memchr-5e07c124672571d1.d",
+      "kind": "file",
+      "sha256": "sha256:ba16ae1536732b03a0d1d721f1161b56fd1e931dc0fd0b897b2bcb36a53cd831",
+      "bytes": 8417,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/serde_core-72b34d7e971e2368.d",
+      "kind": "file",
+      "sha256": "sha256:a68dac0f5f37eece7b34161f3f4d82f5ad55e0749b98e04ae9379cc99509c4b5",
+      "bytes": 9220,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/serde_json-b25b745bcc6338ca.d",
+      "kind": "file",
+      "sha256": "sha256:bd63f75d2ab0606f605ce0ca60df2dbfc1c8f2f7904673baca823bd292b729a2",
+      "bytes": 7154,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/uar_intent_classifier_fixture.d",
+      "kind": "file",
+      "sha256": "sha256:350a55a16a21ccfdc43913d49b967077e88cabe419bcb35546b3961af2a1a5a4",
+      "bytes": 464,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/uar_intent_classifier_fixture.wasm",
+      "kind": "file",
+      "sha256": "sha256:8b3219784ccaa9f8879cbd12dfa52fae1d39721946af1eef1797ea94d60c7e85",
+      "bytes": 86348,
+      "executable": true
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/wit_bindgen_rt-08569433a8acf8fd.d",
+      "kind": "file",
+      "sha256": "sha256:7e0536851a3e1eca57a420f8149ea03247244d503e8043d2567c3a8282c9492e",
+      "bytes": 1440,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/deps/zmij-dfc646e1f8702769.d",
+      "kind": "file",
+      "sha256": "sha256:e30f86994bfcdeb98e94f821a2cfa7514e6e1d3dca1ee520952c3bfcda7abac5",
+      "bytes": 1306,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/examples",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/incremental",
+      "kind": "directory"
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.d",
+      "kind": "file",
+      "sha256": "sha256:9093ceece2479934224730b0422db6d3e986d531ef371d985dd9e8faa0250bf2",
+      "bytes": 425,
+      "executable": false
+    },
+    {
+      "relative": "cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm",
+      "kind": "file",
+      "sha256": "sha256:08caaeb24fdc2d9bf2a22ad99302e5218dfb365ed13bed5560926c8429678d8c",
+      "bytes": 86827,
+      "executable": false
+    },
+    {
+      "relative": "src",
+      "kind": "directory"
+    },
+    {
+      "relative": "src/bindings.rs",
+      "kind": "file",
+      "sha256": "sha256:c09b675f10fdeddd9a14e476a57fc3d2c264602186515ff56708bf5de96e2fd3",
+      "bytes": 9614,
+      "executable": false
+    },
+    {
+      "relative": "src/lib.rs",
+      "kind": "file",
+      "sha256": "sha256:c0d10abba57a85643560fc5b31fbe73974ad35fae62d5a96f9a2338250b2ddc3",
+      "bytes": 3733,
+      "executable": false
+    },
+    {
+      "relative": "wit",
+      "kind": "directory"
+    },
+    {
+      "relative": "wit/intent-classifier.wit",
+      "kind": "file",
+      "sha256": "sha256:fbbfcea890b1695454afd76d778ee1aa788c93a6eba8e406b285b5aae7ecc380",
+      "bytes": 386,
+      "executable": false
+    }
+  ]
+}

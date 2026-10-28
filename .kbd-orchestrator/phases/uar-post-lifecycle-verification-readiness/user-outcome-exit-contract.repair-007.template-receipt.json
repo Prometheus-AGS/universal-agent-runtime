@@ -1,0 +1,18 @@
+{
+  "classification": "UNSIGNED_TEMPLATE_AUTHORING_NOT_EXECUTION",
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh",
+    "amend-contract",
+    "--phase",
+    "uar-post-lifecycle-verification-readiness",
+    "--contract",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.repair-007.proposed.json",
+    "--reason",
+    "Authorize bounded repair007 for TS18048 with cumulative repair cap6to7, all7consumed/no eighth; retain original epoch, all prior consumption, other limits and USD10 per provider. One corrected P0.004 producer: explicitly approved cached native source-identity rebind after prior PASS, corrected TS emit and4unrun stages; frontend and install passes retained. Serial first failure stop, no further repair/retry/product/service/provider/publication.",
+    "--approver",
+    "travis@tribehealthsolutions.com"
+  ],
+  "exit_code": 0,
+  "stderr": "Sign with: ssh-keygen -Y sign -f <operator-private-key> -n prometheus-kbd-scope-amendment <manifest-file>\n"
+}

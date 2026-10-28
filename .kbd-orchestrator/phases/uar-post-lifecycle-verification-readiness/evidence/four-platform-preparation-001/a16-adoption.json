@@ -1,0 +1,18 @@
+{
+  "command": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-contract-adopt.sh",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.proposed.json",
+    "--supersedes",
+    "contract-adoption-uar-post-lifecycle-verification-readiness-02942ff1",
+    "--amendment",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json",
+    "--signature",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json.sig"
+  ],
+  "exit_code": 5,
+  "stderr": "jq: error (at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.proposed.json:3656): Cannot index string with string (\"implementationComplete\")",
+  "observed_at_utc": "2026-10-25T19:48:15.057476+00:00",
+  "stage": "structural schema evaluation before canonical contract binding",
+  "adopted": false
+}

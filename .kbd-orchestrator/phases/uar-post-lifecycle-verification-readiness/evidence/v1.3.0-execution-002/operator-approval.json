@@ -1,0 +1,8 @@
+{
+  "source": "Direct user response to exact pending A2/F2/V2 question in this task",
+  "answer": "Approve A2 and F2/V2; sign, adopt, run serially",
+  "recordedAt": "2026-10-24T16:09:30.895017+00:00",
+  "inventorySha256": "a0c3e17322b99fc8e282e2c1351ae70a1910a27226da841237c5a565c1847d1d",
+  "contractDigest": "6a6103741503fe6fd74ae1614b2c00f1b6d7dcd5f3666df4b02bd031fb65d5c6",
+  "approvedScope": "Exact A2 public-key SSH-agent signing/adoption and corrective F2/V2 packet002; fixture assertions/effects/ownedcleanup; serial first-failure stop; signed accounting clarification; no publication/preflight/extra repair/retry"
+}

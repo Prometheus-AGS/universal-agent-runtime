@@ -1,7 +1,11 @@
 //! Host-bound graph delegation through the same controls as native agent tools.
 //! Graph data supplies intent, never the caller, root, approval or credentials.
 
+use std::fmt::Write as _;
 use std::sync::Arc;
+
+use serde::Serialize;
+use sha2::{Digest, Sha256};
 
 use crate::llm::{ToolApprovalGate, ToolApprovalResult};
 use crate::uar::runtime::thread::control::{AgentToolContext, AgentTurnOutcome};
@@ -34,6 +38,30 @@ struct GraphCallerHost {
     events: Arc<dyn RuntimeEventSink>,
 }
 
+/// Public catalog metadata available to the intent classifier. Agent prompts
+/// and credentials never become classification metadata.
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct AgentRoutingCandidate {
+    pub(crate) id: String,
+    pub(crate) title: String,
+    pub(crate) description: String,
+    pub(crate) tags: Vec<String>,
+    pub(crate) revision: String,
+}
+
+/// Content-addressed snapshot of this parent's eligible registered agents.
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct AgentRoutingRoster {
+    pub(crate) revision: String,
+    pub(crate) candidates: Vec<AgentRoutingCandidate>,
+}
+
+struct GraphRoutingHost {
+    manager: crate::uar::runtime::manager::RunManager,
+    source_agent_id: String,
+    events: Arc<dyn RuntimeEventSink>,
+}
+
 /// Opaque delegation capability installed by the run host, not deserialized
 /// from graph state. Its controls retain the root-owned thread service.
 pub struct GraphThreadDelegate {
@@ -43,6 +71,7 @@ pub struct GraphThreadDelegate {
     admission: Arc<ToolAdmissionRuntime>,
     descriptor: Arc<ToolDescriptor>,
     caller: Option<GraphCallerHost>,
+    routing: Option<GraphRoutingHost>,
 }
 
 impl std::fmt::Debug for GraphThreadDelegate {
@@ -68,7 +97,59 @@ impl GraphThreadDelegate {
             admission,
             descriptor,
             caller: None,
+            routing: None,
         }
+    }
+
+    /// Install host-owned catalog access independently of optional caller tools.
+    pub(crate) fn with_agent_routing(
+        mut self,
+        manager: crate::uar::runtime::manager::RunManager,
+        source_agent_id: String,
+        events: Arc<dyn RuntimeEventSink>,
+    ) -> Self {
+        self.routing = Some(GraphRoutingHost { manager, source_agent_id, events });
+        self
+    }
+
+    /// Read the current catalog and narrow candidates against captured parent
+    /// authority. Final execution admission remains with the thread service.
+    pub(crate) async fn eligible_local_agents(&self) -> anyhow::Result<AgentRoutingRoster> {
+        let host = self.routing.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("graph_routing_host_missing"))?;
+        anyhow::ensure!(
+            host.source_agent_id == self.controls.scope().caller().artifact_id
+                && self.controls.scope().caller().run_id.as_deref() == Some(self.run_id.as_str()),
+            "graph_routing_host_scope_mismatch"
+        );
+        anyhow::ensure!(
+            self.controls.permits("spawn_agent") && self.controls.permits("wait_agents"),
+            "Graph policy does not authorize child spawning and waiting"
+        );
+        let agents = host.manager.list_registered_agents().await?;
+        let mut candidates = Vec::new();
+        for agent in agents {
+            if agent.id == host.source_agent_id || agent.runtime.entry == "orchestrator"
+                || self.controls.scope().policy().intersect(&agent).is_err()
+            {
+                continue;
+            }
+            candidates.push(AgentRoutingCandidate {
+                revision: agent.content_revision(),
+                id: agent.id,
+                title: agent.metadata.title,
+                description: agent.metadata.description,
+                tags: agent.metadata.tags,
+            });
+        }
+        candidates.sort_by(|left, right| left.id.cmp(&right.id));
+        anyhow::ensure!(!candidates.is_empty(), "graph_routing_roster_empty");
+        let digest = Sha256::digest(serde_json::to_vec(&candidates)?);
+        let mut revision = String::with_capacity(digest.len() * 2);
+        for byte in digest {
+            write!(&mut revision, "{byte:02x}")?;
+        }
+        Ok(AgentRoutingRoster { revision, candidates })
     }
 
     pub(crate) fn with_caller_tools(
@@ -208,6 +289,30 @@ impl GraphThreadDelegate {
         request: AgentSpawnRequest,
         graph_state: serde_json::Value,
     ) -> anyhow::Result<GraphChildOutcome> {
+        self.execute_local_inner(run_id, step, request, graph_state, None).await
+    }
+
+    /// Revalidate the classified roster after approval and before dispatch.
+    /// A catalog mutation rejects this selection rather than choosing a fallback.
+    pub(crate) async fn execute_selected(
+        &self,
+        run_id: &str,
+        step: u32,
+        request: AgentSpawnRequest,
+        graph_state: serde_json::Value,
+        roster_revision: &str,
+    ) -> anyhow::Result<GraphChildOutcome> {
+        self.execute_local_inner(run_id, step, request, graph_state, Some(roster_revision)).await
+    }
+
+    async fn execute_local_inner(
+        &self,
+        run_id: &str,
+        step: u32,
+        request: AgentSpawnRequest,
+        graph_state: serde_json::Value,
+        roster_revision: Option<&str>,
+    ) -> anyhow::Result<GraphChildOutcome> {
         request.validate()?;
         anyhow::ensure!(
             run_id == self.run_id
@@ -231,6 +336,25 @@ impl GraphThreadDelegate {
             "Graph agent controls have no sandbox execution adapter"
         );
         let admitted = self.admit(step, serde_json::to_value(&request)?).await?;
+        let selected = if let Some(expected_revision) = roster_revision {
+            let selection = async {
+                let roster = self.eligible_local_agents().await?;
+                anyhow::ensure!(roster.revision == expected_revision, "graph_routing_roster_changed");
+                let candidate = roster.candidates.into_iter()
+                    .find(|candidate| candidate.id == request.artifact_id)
+                    .ok_or_else(|| anyhow::anyhow!("graph_routing_selection_unavailable"))?;
+                Ok::<_, anyhow::Error>((candidate, roster.revision))
+            }.await;
+            match selection {
+                Ok(selected) => Some(selected),
+                Err(error) => {
+                    self.admission.finish(&admitted, false).await?;
+                    return Err(error);
+                }
+            }
+        } else {
+            None
+        };
         // The same host gate charges the root tool budget. The service then
         // intersects policies and enforces the shared tree/model budget.
         let result = match &self.caller {
@@ -251,11 +375,24 @@ impl GraphThreadDelegate {
             error
         });
         let outcome: anyhow::Result<AgentTurnOutcome> = match result {
-            Ok(child) => self
-                .controls
-                .wait_first_turn(&child.thread_id)
-                .await
-                .map_err(anyhow::Error::from),
+            Ok(child) => {
+                if let Some((candidate, revision)) = selected
+                    && let Some(host) = &self.routing
+                {
+                    // The child is persisted. Publish before waiting or forwarding
+                    // its response; reconnect replays this root event, not spawn.
+                    host.events.emit(NormalizedEvent::AgentSelected {
+                        run_id: self.run_id.clone(),
+                        source_agent_id: host.source_agent_id.clone(),
+                        selected_agent_id: candidate.id,
+                        selected_agent_name: candidate.title,
+                        selected_thread_id: child.thread_id.clone(),
+                        selection_method: "intent".to_owned(),
+                        roster_revision: revision,
+                    }).await;
+                }
+                self.controls.wait_first_turn(&child.thread_id).await.map_err(anyhow::Error::from)
+            }
             Err(error) => Err(error.into()),
         };
         self.admission.finish(&admitted, outcome.is_ok()).await?;

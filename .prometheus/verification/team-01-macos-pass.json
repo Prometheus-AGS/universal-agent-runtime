@@ -1,0 +1,26 @@
+{
+  "scenario": "TEAM-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T15:36:07.372393+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/team.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 8 steps (8 passed); 1m 14.458s",
+  "authentication_supplied_by_test": false,
+  "evidence": ".prometheus/verification/teams/380da082-617f-4369-a8f6-0367e85b74d2.json",
+  "cucumber_report": ".prometheus/verification/manual-team-noauth-003-macos.cucumber.json",
+  "article": ".prometheus/verification/team-01-macos-article.md",
+  "team_id": "6be2f79e-e1be-4d66-aa15-b00fab8d000a",
+  "runtime_pid": 38530,
+  "binary_sha256": "e1fb0a7eda4c2e0e8051dc67b4a69cb3dd5ecb00010bbcf464a71c86ec551d93",
+  "provider": "liter",
+  "model": "MiniMax-M3",
+  "preserved_prior_failures": true,
+  "scope": "One existing math/writing team scenario on Mac; no other platforms or full-suite certification",
+  "manual_sequence_status": "COMPLETE; do not rerun unless operator selects a regression after relevant changes",
+  "next_action": "Await operator-selected next manual scenario"
+}

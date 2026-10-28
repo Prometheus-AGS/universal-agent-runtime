@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "unlink-an-agent-from-knowledge-without-deleting-that-knowledge;unlinking-stops-agent-retrieval-while-the-kb-remains-available",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Unlinking stops agent retrieval while the KB remains available",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1079837663
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent linked to a retained knowledge base containing a private fact",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink.steps.mjs:53"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8978813302
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the linked agent uses the private fact with a matching knowledge citation",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 53512819
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I remove only that knowledge base link from the agent",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink.steps.mjs:126"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 6918127741,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'KNOWLEDGE-0b844696-8080-4271-a76c-c89a14de11c4'\n- null\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/kb-unlink.steps.mjs:145:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the unlinked agent answers without the fact while the knowledge base remains searchable",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-unlink.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 125233503
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi11bmxpbmsvMmM2MzlkZDMtZjhiNy00MjcyLTgzNTUtY2FhYjMwOGNiYjVhLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@kb-unlink",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "unlink-an-agent-from-knowledge-without-deleting-that-knowledge",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Unlink an agent from knowledge without deleting that knowledge",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@kb-unlink",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-unlink.feature"
+  }
+]

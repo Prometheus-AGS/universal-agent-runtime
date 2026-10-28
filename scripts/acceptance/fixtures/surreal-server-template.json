@@ -1,0 +1,22 @@
+{
+  "server": {"host": "127.0.0.1", "port": "@binding:http_port@", "grpc_port": "@binding:grpc_port@", "log_format": "json", "cors_allowed_origins": [], "mcp_shared_transports_enabled": true},
+  "security": "@binding:security@",
+  "resilience": "@binding:resilience@",
+  "runs": "@binding:runs@",
+  "sessions": "@binding:sessions@",
+  "persistence": {"provider": "surreal", "vector_dimension": "@binding:vector_dimension@", "external_cache_enabled": false},
+  "file_processing": "@binding:file_processing@",
+  "vision": "@binding:vision@",
+  "knowledge_bases": {"named": {}},
+  "intent_classifier": "@binding:intent_classifier@",
+  "harness": "@binding:harness@",
+  "llm": "@binding:llm@",
+  "providers": [],
+  "failover": {"enabled": true, "strategy": "priority", "error_threshold": 1, "cooldown_secs": 2, "fallback_models": []},
+  "native_tools": "@binding:native_tools@",
+  "skill_evolution": {"enabled": false},
+  "sycophancy": {"auto_correct": false},
+  "memory": "@binding:memory@",
+  "acp": {"enabled": true, "path": "/acp", "auth_required": true, "session_ttl_secs": 3600},
+  "a2a": "@binding:a2a@"
+}

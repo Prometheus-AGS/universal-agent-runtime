@@ -1,0 +1,90 @@
+{
+  "schema_version": "uar.supporting-input-preparation.v1",
+  "executable": false,
+  "output_version": "008",
+  "output_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/supporting",
+  "epoch_id": "uar-user-outcomes-original-20261024",
+  "source_inventory": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-005.json",
+    "sha256": "sha256:2d624c512d44def8a0e1930107226dea1960519cc44eee6ecee1c650a4be71d8"
+  },
+  "supporting_plan": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-final-001.plan.json",
+    "sha256": "sha256:92792e1060ed8c415ade29a8b46648375cb9f1df7fb8f84011d917aa6c6bab0e"
+  },
+  "preparation_packet": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-003.packet.json",
+    "sha256": "sha256:feae246ef42db63cced121f64723dbf75441b9ea41928470d141b65749cdf3b9"
+  },
+  "templates": {
+    "manifest": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+      "sha256": "sha256:519bd40da1562bb6e87b95d00ebb652b358a795239a9c63d5d17ac5a6c6d70fb"
+    },
+    "config": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+      "sha256": "sha256:71e1f72e802377be6d6382bf013915810112e715d0d5b5d24f2b9b5834fec77d"
+    },
+    "store": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-store-001.draft.json",
+      "sha256": "sha256:f0040bdb987a9cc0f07a17360c5d729380836f783997b4c0a413c98305abe475"
+    }
+  },
+  "documents": {
+    "a": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/a.txt",
+      "sha256": "sha256:8bb0171a3bdb7f10cdcf093fd5b2fa06393e871e13b335cf4c58a9745c7c42c1"
+    },
+    "b": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/b.txt",
+      "sha256": "sha256:149fa383ef33f75a8c15752da065ea01874a917e5e5b62d4402aad7aad8b8286"
+    },
+    "c": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/c.txt",
+      "sha256": "sha256:46cab055cff604d7a8d633727fccdd2f5222e544facae40dfe65db24303905bb"
+    },
+    "d": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/d.txt",
+      "sha256": "sha256:bfa89e752c11b9dcfe0eb0f35ae2a088100e110f4bdac8a47fc99bd3fa5debef"
+    },
+    "e": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-fixtures/documents/e.txt",
+      "sha256": "sha256:d3eb5350667c95c430abf57fb6db7eca973b2b9ce3347409261191778c4ddd2a"
+    }
+  },
+  "private_environment_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/env.json",
+  "private_inputs": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/inputs.json",
+    "sha256": "sha256:027843bea8f345e2381e19e49c5582c2641bab4310f904977683f4ba9ab53ca8"
+  },
+  "private_receipt": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/receipt.json",
+    "sha256": "sha256:3a5ebc5f8b882e1bba8e4fa171a600c94779fbd39199039897f71141b5ffaa88"
+  },
+  "jwt_validity": {
+    "not_before_unix": 1792938392,
+    "expires_unix": 1793024792
+  },
+  "python": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+    "sha256": "sha256:8c53e44bd5619ea4c7f1f44607c491261951a1e4946ec247c8de653fe4a9e912"
+  },
+  "installed_runtime_inputs": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/artifacts/snapshot/preparation.json",
+      "sha256": null
+    }
+  ],
+  "toolchain_environment": {
+    "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8",
+    "CARGO_HOME": "/Users/gqadonis/.cargo",
+    "RUSTUP_HOME": "/Users/gqadonis/.rustup"
+  },
+  "contract_digest": "f625a31047924ef4e3610f070a48c956719fce523452adcf83bb0e19338d5bfe",
+  "preparation_approval": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/supporting-preparation.approval.json",
+    "sha256": null
+  }
+}

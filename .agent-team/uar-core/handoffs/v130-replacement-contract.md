@@ -1,0 +1,49 @@
+# Newly authored UAR1.3.0 replacement contract handoff — 2026-10-24
+
+Phase `uar-post-lifecycle-verification-readiness`, Execute. Verification **CLOSED**. Task `pl-main-boundary-evidence/2.1`; fixture packet has separate owner/task2.2. This is authorized documentation/JSON authoring and source inspection. Others share the checkout; their edits were preserved. Lead owns canonical state, inventory, authority packet, integration and publication. No verification command, review, hash computation, signature operation, service probe or external mutation ran here.
+
+## Delivered artifact
+
+`.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.proposed.json` is a newly authored proposal. It is not recovered historical bytes, adopted, signed, mechanically schema-validated or acceptance evidence. Its digest/stamped revision remain null and implementationComplete remains false pending whole-phase reconciliation. Source/schema inspection informed its fields; no validator ran. Lead-reported publication commit is `3d9253fc09e916d1ba7230c0b363f4631a07ce1e`; it does not certify the local packet or supply its final source identity.
+
+The proposal preserves ten original scenario IDs and source-derived semantics, the trusted-builder COUNT split with standalone-main exact fit UNSUPPORTED, owner/unknown-liability/effect-free-denial controls and exact-row cleanup/awaited teardown. Four additional finite obligations bind the already planned issue426 targets, all six build profiles, independent Rust/code review and seven OpenSpec validations. They add no product capability. Actual commands are copied from the current verification packet. No easy subset or broad certification campaign substitutes for them.
+
+The retained canonical event `b9e3f9a8-9b60-42f5-ab10-8a8fdcc413dc` provides the old ten scenario digests. They are preserved under status.historicalBinding as lineage, not assigned to newly authored rows. Since old row bodies were not recovered, equality cannot be asserted. The supported template must compute actual new row digests and exact diff; expect all ten modified plus four added unless exact computation establishes otherwise. No old evidence carry is claimed. This author did not compute new hashes because the CLOSED lock expressly prohibits hash checks/packet validation without exact-command approval.
+
+## Concrete recommended policy for operator approval
+
+The proposed JSON now selects a concrete recommended policy, pending explicit operator approval of the exact replacement bytes through a fresh signed amendment. Neither policy is already authorized by the old contract.
+
+**BTHREE:** adopt the finite historical-disposition obligation in the original plan. BTHREE-01 PASS means only an accurate completed bounded search/disposition receipt, with exact historical source attribution and evidence limitations. The underlying runtimeOutcome remains NOT_EXERCISED because the specific original c9/B3 archive is absent. Preserve the main runner's output and historical receipts unchanged; author distinct, explicitly labeled disposition evidence rather than rewriting runtime results. This does not assert product runtime PASS or restart a certification campaign. Typed closure requires each bound obligation to have PASS evidence; the signed amendment must expressly adopt this disposition-level meaning. Without that authority, do not use this interpretation.
+
+**Budget:** explicitly adopt a new verification-only accounting epoch starting only after signed replacement adoption AND exact gate approval. It has maximum240 active minutes/240 tool calls/2 repair attempts/3 consecutive no-progress checkpoints, token budget UNKNOWN with time/call fallback and no new external spend. Historical effort remains UNKNOWN separately and is excluded from this *new* allowance only by the explicit signed operator amendment. Do not report historical consumption as zero or claim the epoch accounts for total historical cumulative effort. This is a material budget-semantics change; the existing cumulative contract is not being described as already allowing it.
+
+Lead reports source inspection of typed phase disposition with consumptionHighWater={}: no recorded floors at that observation. This author did not execute a disposition/check command. With an empty canonical floor map this recommended accounting epoch requires no software edit. Preserve actual canonical floors if they change; never lower, reset or conceal them. Any incompatible floor blocks until explicit disposition. Closure budgetConsumption must clearly name and source the approved epoch, retain historical UNKNOWN disclosure, respect canonical floors and block for missing/unknown enforceable epoch consumption. No guessed historical baseline or silent resultingCeilings reset was authored.
+
+**Legacy readiness limitation:** inspected kbd-phase-readiness-check.sh requires phase tasks.json, whereas typed runtime projection emits tasks.md. That helper is not among this packet's proposed/approved commands; adoption and typed closure do not require tasks.json. Canonical typed change/task coordinates are authoritative, including lead-registered authoring tasks2.1/2.2. This is a documented compatibility limitation, not a hard exit blocker. Do not run the old helper, fabricate tasks.json, add canonical tasks, alter sibling tooling or adopt a new capability under this packet.
+
+## Exact supported authority commands — proposed only, do not run
+
+These are sourced from the actual sibling helpers. Working directory must be this UAR repository. The next preparation command computes digests/diff and reads canonical state, so the lead must present it for explicit command approval under the CLOSED lock before executing it. It does not sign or adopt:
+
+```sh
+bash /Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-scope-authority-template.sh amend-contract --phase uar-post-lifecycle-verification-readiness --contract .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.proposed.json --reason "Operator-authorized newly authored UAR1.3.0 replacement preserving scope and historical uncertainty" --approver travis@tribehealthsolutions.com > .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.amendment.json
+```
+
+The recommended BTHREE and verification-only epoch policies are now concretely reflected in proposed bytes. Do not execute until the operator approves this exact preparation command; signing/adoption still require their separate explicit authority. The template prints the exact signing command; the operator selects their existing private key and signs under `prometheus-kbd-scope-amendment`. Do not inspect/generate/copy keys or change allowed signers. Agent-authored approved flags or the historical11df→dab signature cannot authorize this new body.
+
+After operator review/signature and separate exact-command approval for adoption:
+
+```sh
+bash /Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-contract-adopt.sh .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.proposed.json --supersedes contract-adoption-uar-post-lifecycle-verification-readiness-dab4675c --amendment .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.amendment.json --signature .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/replacement-exit-contract.v1.3.0.amendment.json.sig
+```
+
+Previous digest must be `dab4675cd1d2889fbe627cf130ff2875ac2b2ab8c0dde1dddafb9042a648d0cb`; let canonical template/runtime establish actual new digest, path and scenario diff. The helper validates JSON/structure/identity/digests, verifies runtime authority, writes a normalized snapshot and canonical binding/decision and stamps the working file. Therefore it is both verification and canonical mutation, not harmless documentation preparation. Adoption does not open product verification. Neither helper was executed.
+
+## Finite exit and evidence limits
+
+One initial invocation per exact approved gate, serially, single build owner. Stop at first failure and retain later stages NOT_RUN. A corrective edit closes the gate and requires renewed inventory and exact failed/invalidated command approval. Maximum two approved repair attempts, three no-progress checkpoints and one corrective review pass; no automatic retry, prerequisite install, scope increase or new spend. Every required row/safety assertion needs applicable current-source evidence before canonical closure. Then complete tasks5.1/5.2, KBD-owned spec sync/archive, typed phase closure and reflection; stop without starting a successor. Publication is separate lead-owned authorization and supplies no PASS evidence.
+
+Changed files are exactly the proposed replacement JSON and this handoff. No production guard/code was added. Documented safeguards trace to existing trust boundaries and explicit scope: input identity, owner isolation, effect-free denial, liability preservation, scoped destructive cleanup and signed authority.
+
+Source inspection commands used `cat`, `sed`, `rg`, and a bounded journal JSON read. Python JSON composition and heredoc writes authored only the two owned files. Shell write commands exited0. No tests/build/lint/format/typecheck/Cargo/OpenSpec validator/hash/signature/readiness/acceptance/review gate ran; no verification tier earned credit. Unverified: JSON/schema/tool acceptance, exact replacement/scenario digests, signing/adoption, legacy task checker compatibility (not selected for this packet), operator approval and enforcement of the proposed verification-only epoch, final inventory and all product/build/fixture/cleanup behavior. Nothing beyond the requested two artifacts was added.

@@ -1,0 +1,644 @@
+{
+  "schema_version": 1,
+  "status": "A20_P16_005_IOS_KNOWN_FAILURE_SETTLEMENT_PROPOSAL_NOT_EXECUTED",
+  "executable": false,
+  "source_inventory": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-007.json",
+    "sha256": "sha256:57d5d86e7e7e735ff05e2f1bd94b5effa7e447a9bfd5cd5c9fc41f42ebb17f37"
+  },
+  "source_identity": "sha256:fe0d649a16a604bacb57054a5470d05815be56a8b8d0cf87d3b46960f1ddfa94",
+  "scope": {
+    "macos": "PREPARE_AND_LATER_VERIFY",
+    "linux": "PREPARE_AND_LATER_VERIFY",
+    "ios": "SIMULATOR_PREPARE_AND_LATER_VERIFY",
+    "windows": "BLOCKED_NO_EXECUTION_HOST",
+    "android": "DEFERRED_OPERATOR_SCOPE"
+  },
+  "accounting": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-023.json",
+    "sha256": "sha256:c7096c3662ddcee51f8cadcd0df3d159f077bafab7c127a85a6d94b5936af291"
+  },
+  "global_caps": {
+    "calls": 4000,
+    "active_minutes": 2400,
+    "repair_cap": 28,
+    "historical_repairs": 18,
+    "new_fixture_repair_charged_at_entry": 19,
+    "remaining_product_correction_ceiling_after_entry": 9,
+    "embedding_usd": {
+      "cohere": 10,
+      "openai_embeddings": 10,
+      "transfer": false
+    }
+  },
+  "approval_boundary": "A20 signing/adoption and named serial source-only reviews/P16.005 preparation/metadata only after explicit new approval. Separate actual-derived V approval remains required for product execution/live corrections.",
+  "phase_incomplete_items": [
+    "Actual current-source native/SDK/gRPC/image/simulator artifacts",
+    "Actual supporting inputs and signed resource authority",
+    "Actual platform-specific composition, complete installed inventory and final derived adoption"
+  ],
+  "parent_entry_argv": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_platform_inputs.py",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platform-preparation.config.json"
+  ],
+  "serial_commands": {
+    "artifacts": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/artifact-preparation.config.json"
+      ],
+      "timeout_seconds": 7200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true",
+        "UAR_PREP_BASE_HOME": "/Users/gqadonis",
+        "UAR_PREP_BASE_LANG": "en_US.UTF-8",
+        "UAR_PREP_BASE_LC_ALL": "en_US.UTF-8",
+        "UAR_PREP_BASE_PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "UAR_PREP_BASE_TMPDIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/tmp"
+      }
+    },
+    "docker_build": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--iidfile",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/image.iid",
+        "--tag",
+        "uar-issue-426:1.3.0-four-platform-008",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime"
+      ],
+      "timeout_seconds": 7200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "linux_prepare": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/linux_runtime.py",
+        "--prepare",
+        "--config",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/linux-config.json",
+        "--approval",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/linux-approval.json"
+      ],
+      "timeout_seconds": 1200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "ios_prepare": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+        "prepare",
+        "--selection",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/ios-selection.json",
+        "--timeout-seconds",
+        "120",
+        "--udid",
+        "141449FC-5F0C-4317-A6A8-BF749F646E69"
+      ],
+      "timeout_seconds": 120,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "ios_target": {
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/rustup",
+        "target",
+        "add",
+        "@selected-target@",
+        "--toolchain",
+        "nightly-2026-07-18-x86_64-apple-darwin"
+      ],
+      "timeout_seconds": 600,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    },
+    "ios_build": {
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+        "build",
+        "--selection",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/ios-selection.json",
+        "--timeout-seconds",
+        "7200",
+        "--output",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/platforms/ios-artifact",
+        "--source-inventory",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-007.json"
+      ],
+      "timeout_seconds": 7200,
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment": {
+        "PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "CARGO_HOME": "/Users/gqadonis/.cargo",
+        "RUSTUP_HOME": "/Users/gqadonis/.rustup",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-07-18-x86_64-apple-darwin",
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/browsers",
+        "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/native",
+        "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/rust-sdk",
+        "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/cargo/grpc",
+        "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+        "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/python-site",
+        "UAR_PREP_NONINTERACTIVE": "true"
+      }
+    }
+  },
+  "nested_native_commands": [
+    {
+      "approved_packet_stage": "P16.native",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/rustup",
+        "run",
+        "nightly-2026-07-18-x86_64-apple-darwin",
+        "cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_NATIVE_TARGET",
+        "HOME": "UAR_PREP_BASE_HOME",
+        "LANG": "UAR_PREP_BASE_LANG",
+        "LC_ALL": "UAR_PREP_BASE_LC_ALL",
+        "PATH": "UAR_PREP_BASE_PATH",
+        "TMPDIR": "UAR_PREP_BASE_TMPDIR"
+      },
+      "id": "native",
+      "outputs": [
+        {
+          "cargo_kind": "bin",
+          "cargo_target": "universal-agent-runtime",
+          "id": "server"
+        }
+      ],
+      "tool_sha256": "sha256:33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7"
+    },
+    {
+      "approved_packet_stage": "P16.rust_sdk",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/rustup",
+        "run",
+        "nightly-2026-07-18-x86_64-apple-darwin",
+        "cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_RUST_SDK_TARGET",
+        "HOME": "UAR_PREP_BASE_HOME",
+        "LANG": "UAR_PREP_BASE_LANG",
+        "LC_ALL": "UAR_PREP_BASE_LC_ALL",
+        "PATH": "UAR_PREP_BASE_PATH",
+        "TMPDIR": "UAR_PREP_BASE_TMPDIR"
+      },
+      "id": "rust_sdk",
+      "outputs": [
+        {
+          "cargo_kind": "example",
+          "cargo_target": "user_outcome_acceptance",
+          "id": "rust_sdk"
+        }
+      ],
+      "tool_sha256": "sha256:33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7"
+    },
+    {
+      "approved_packet_stage": "P16.grpc",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/rustup",
+        "run",
+        "nightly-2026-07-18-x86_64-apple-darwin",
+        "cargo",
+        "test",
+        "--locked",
+        "--features",
+        "server-full,postgres-backend",
+        "--test",
+        "user_outcome_grpc",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_GRPC_TARGET",
+        "HOME": "UAR_PREP_BASE_HOME",
+        "LANG": "UAR_PREP_BASE_LANG",
+        "LC_ALL": "UAR_PREP_BASE_LC_ALL",
+        "PATH": "UAR_PREP_BASE_PATH",
+        "TMPDIR": "UAR_PREP_BASE_TMPDIR"
+      },
+      "id": "grpc",
+      "outputs": [
+        {
+          "cargo_kind": "test",
+          "cargo_target": "user_outcome_grpc",
+          "id": "grpc"
+        }
+      ],
+      "tool_sha256": "sha256:33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7"
+    }
+  ],
+  "preparation_limits": {
+    "total_seconds": 14400,
+    "artifact_seconds": 7200,
+    "docker_seconds": 7200,
+    "ios_metadata_seconds": 120,
+    "ios_target_seconds": 600,
+    "ios_build_seconds": 7200,
+    "all_clamped_to_remaining_global": true,
+    "output_bytes": 67108864
+  },
+  "target_install": {
+    "argv": [
+      "/Users/gqadonis/.cargo/bin/rustup",
+      "target",
+      "add",
+      "@selected-target@",
+      "--toolchain",
+      "nightly-2026-07-18-x86_64-apple-darwin"
+    ],
+    "only_dynamic_value": {
+      "@selected-target@": "exact selected target in actual ios-selection.json; expected x86_64-apple-ios on this observed Intel host"
+    },
+    "no_toolchain_upgrade": true
+  },
+  "metadata_batches": [
+    {
+      "id": "M16.0",
+      "effects": [
+        "After actual A20 adoption, exclusively create target/uar-user-outcomes-008 mode0700 and configs/private/home/tmp parents, preserving every001..007 output",
+        "Charge fixture repair19 once, retain18 consumed repairs including the operator-authorized iOS known-failed HTTP settlement correction and28 cap; retain all prior counters/overruns/UNKNOWNs and no new idle exclusion",
+        "Reconcile current cumulative accounting and old JWT window; unknown/exhausted allowance or expired inputs stops",
+        "Activate only exact draft executable/approval/projection fields and downward-clamped bounds; seal private config/approval bytes. Never set approval true before real instruction",
+        "Parent artifact_config hash derives from exact activated artifact config; current source007 regular preimage is unchanged. Literal toolchain/cache environment only; no shell/profile sourcing",
+        "Use exact inert005 preparation drafts. Artifact-stage parent environment includes precisely the five UAR_PREP_BASE bindings frozen in this packet; no profile sourcing, ambient credential inheritance or field substitutions at activation."
+      ]
+    },
+    {
+      "id": "M16.1",
+      "effects": [
+        "Run the one exact parent preparation command, serial internal commands, stop first failure and preserve owned partial evidence",
+        "Docker installs/build scripts/network already specified by unchanged Dockerfile are included; no image push/run as product, no existing service modification",
+        "Only explicit pinned Rust simulator target component may be installed. No system-wide package install or toolchain/dependency-version upgrade",
+        "Derive immutable imageID/buildreceipt and exact Linux extraction config/approval only from successful owned iidfile and matching commands"
+      ]
+    },
+    {
+      "id": "M16.2",
+      "effects": [
+        "From successful platform-artifacts.json, author exact supporting config using source007/current native artifact refs and the preserved007 private env/inputs/receipt/config; do not recopy keys or regenerate two product JWTs",
+        "Create only new008/supporting via prepare_supporting_inputs.py; mint exactly three supporting JWTs within the unchanged packet validity; receipt must be last",
+        "Preserve nonregular inventory metadata separately; regular-only hashes and all required executable inputs must bind current source",
+        "No authority signing or composition until every supporting file and inputs-receipt.json exists"
+      ]
+    },
+    {
+      "id": "M16.3",
+      "effects": [
+        "Author fresh008 authority/resource-authority-003.json from original signed resource authority, retaining original epoch/deadline, pools, reservations/history and all ten approved charge/upstream/model documents",
+        "Replace current source/preparation/current-contract/current-accounting refs with actual current receipts; include frozen composition-scope approval and all selected outputs",
+        "The first-use genuine seed may remain zero only if its exact never-started ledger is absent. Existing or unknown ledger state stops; no reset or deleted historical database",
+        "Sign, verify and record only this new resource authority, then author fresh seed003 from actual signature hashes. Preserve old resource/seed files"
+      ]
+    },
+    {
+      "id": "M16.4",
+      "effects": [
+        "Author frozen composition-scope approval for exact output_root008/composed with macos-native and linux-container child outputs, binding preserved private inputs/config, current source, final operator approval and resource authority",
+        "Merge actual native SDK/tool/resource closure manifests and complete regular current sources into fresh platform inventories; replace Linux installed server artifact and native closure manifest with actual extracted ELF/image attestation while retaining host-client closures",
+        "Both platforms share exactly identical budget config content, same ledger/epoch and provider spend caps. Their actual server artifact identities differ and remain separately reported",
+        "Copy explicit97 case prerequisite map, freeze controller/sweep/Linux/iOS helpers and correction authority; allow9 total further targeted product corrections under globalcap, max one per item",
+        "Compose macOS then Linux into exact new outputs with unchanged composer; do not activate or execute V",
+        "Record actual derived receipt/inventories and reconcile task2.9 only if every materialized criterion is met; present separate final V approval with actual hashes",
+        "Prepare inert future suite ios.result_root as exact new target/uar-user-outcomes-008/private/ios-results-001 direct child of private_scope; preserve immutable ios-artifact build products. Do not create the results scope or launch the runner during preparation.",
+        "The later V-only run uses --results plus --collection-control at <private_config_path>.collection.json, carrying actual shared remaining corrections/epoch and frozen helpers; no reset or product execution here.",
+        "Document the optional actual iOS correction authority operation correct-uar-ios-item, max6 items and bounded wait<=3600s under remaining global allowance. Future V must separately approve exact refreshed source/artifact paths, fresh build, same-container owned app installation and exact store baseline restoration; none of these live correction effects is authorized by P16.003.",
+        "Retain all six iOS seed/restore items and11 predicate groups x3; unresolved seed blocks same-repetition restore. Mixed source or changed live helpers require rebind/new packet, never a full-scope PASS."
+      ]
+    }
+  ],
+  "preserved_private": {
+    "inputs": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/inputs.json",
+      "sha256": "sha256:027843bea8f345e2381e19e49c5582c2641bab4310f904977683f4ba9ab53ca8"
+    },
+    "receipt": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/receipt.json",
+      "sha256": "sha256:3a5ebc5f8b882e1bba8e4fa171a600c94779fbd39199039897f71141b5ffaa88"
+    },
+    "config": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private-preparation.config.json",
+      "sha256": "sha256:2fa482d12d5533bae81381b8b875dc9e41d818c547ff38fb049998ff1a77184d"
+    },
+    "environment_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/env.json",
+    "env_contents_not_read_or_hashed": true
+  },
+  "jwt_validity": {
+    "not_before_unix": 1792938392,
+    "expires_unix": 1793024792
+  },
+  "source_review_exceptions": [
+    {
+      "role": "code-reviewer",
+      "history": "none",
+      "input": "Frozen source007 changed artifacts, current requirements and all exact inert005 preparation configs upfront; no generation history. Filesystem source-only inspection; no commands.",
+      "output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-005/code-source-review.md",
+      "commands_allowed": [],
+      "claim": "source-only independent findings, no runtime certification"
+    },
+    {
+      "role": "rust-reviewer",
+      "history": "none",
+      "input": "Frozen source007 changed artifacts, current requirements and all exact inert005 preparation configs upfront; no generation history. Filesystem source-only inspection; no commands.",
+      "output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-005/rust-source-review.md",
+      "commands_allowed": [],
+      "claim": "source-only independent findings, no runtime certification"
+    },
+    {
+      "role": "swift-reviewer",
+      "history": "none",
+      "input": "Frozen source007 changed artifacts, current requirements and all exact inert005 preparation configs upfront; no generation history. Filesystem source-only inspection; no commands.",
+      "output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-005/swift-source-review.md",
+      "commands_allowed": [],
+      "claim": "source-only independent findings, no runtime certification"
+    }
+  ],
+  "automatic_retry": false,
+  "publication": false,
+  "provider_calls": false,
+  "service_start": false,
+  "product_verification": false,
+  "metadataReplacement": {
+    "failed_contract_digest": "d88f31dc84d6de72a94a7be26e224924f08bac0a16e32812f235863992929442",
+    "failed_attempt_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-001/stop.json",
+    "source_unchanged": false,
+    "execution_commands_unchanged": false,
+    "limits_and_consumption_unchanged": true,
+    "failed_signed_packet_preserved": true
+  },
+  "source_repair": {
+    "repair_number": 18,
+    "owner_task": "reengineer-user-outcome-verification/2.27",
+    "status": "IOS_KNOWN_FAILED_HTTP_SOURCE_AUTHORED_NOT_VERIFIED",
+    "operator_instruction": "Fix iOS settlement; refresh approval",
+    "predecessor_contract": "8a72a9cfe68d1c3c565912df5663cce079e4dc88879871a1f96fab1ca480fbf6",
+    "report": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-004/code-source-review.md",
+      "sha256": "sha256:c185fa28dd660a70c6ed0620cde4052f228a5d909cd7cc133a60af12d7ceff20"
+    },
+    "stop": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-004/stop.json",
+      "sha256": "sha256:177e054197febed823c458d4e583883761834838a2644c5370b741b8d7b5d47b"
+    },
+    "handoff": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/ios-known-failure-repair-handoff.md",
+      "sha256": "sha256:1eca8b57cd9e6ca263b09bc7e11978e8c2b10cf163c22941010140cda97e1aa2"
+    },
+    "changed_regular_inputs": [
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/README.md",
+        "before": "sha256:98de3e8e6c0b1aa3b2417637b04f1eb890cbec68fd7d7fd375008b623396e9f0",
+        "after": "sha256:579ec42e4c7647d96a9a086f1364285fcfae192de0a2654a4772f7c9c7665578",
+        "change": "modified"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+        "before": "sha256:79f76f6c4d540161c45e18626394f18c500f23409b849361a75348ccf18d3b29",
+        "after": "sha256:38e19dec0bfb2ca6e89b3f526e1bd30489b854797649b9709c78cea5888433cc",
+        "change": "modified"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_ios_failure_policy.py",
+        "before": "sha256:83773e26c13f27d33b03e0e4bed5dca3c549feebb4445004298d7a16b707fd68",
+        "after": "sha256:e3ab6de8213d326b2133b205a5ca87e44fa57fbce2cff31fb8bd0b315f76afa6",
+        "change": "modified"
+      }
+    ],
+    "settlement": "Known internally consistent non-2xx failed reservations may settle with all reservations retained; pending/UNKNOWN/malformed/wrong binding blocks. Actual successful usage guards retained. A per-invocation failed-model reservation forces item FAIL even with zero-exit XCTest; no refund/reset/redispatch.",
+    "preparation_changes": "source006->007/current helper bytes only; five literal environment bindings, stages, argv, effects and limits retained",
+    "unrun_regression_tests_added": 7,
+    "history_preserved": true,
+    "no_execution_authorized_by_authoring": true
+  },
+  "historical_source_repairs": [
+    {
+      "repair_number": 16,
+      "status": "SOURCE_AUTHORED_NOT_VERIFIED",
+      "operator_instruction": "Fix the iOS runner; prepare refreshed approval",
+      "predecessor_contract": "e4525d25b528cc017ba6639dc610c06188902e0718bf4db786706ad96db4f217",
+      "report": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-001/code-source-review.md",
+        "sha256": "sha256:7fb7b83e63de014a4398138dde84fb2aa079ed855205ccf49209cd7e9e847309"
+      },
+      "stop": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-002/stop.json",
+        "sha256": "sha256:ac20ddeb4776d587d3ae4a221b9cf4212a2c863f39738ecbbf8dd45042afa714"
+      },
+      "handoff": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/ios-failure-policy-repair-handoff.md",
+        "sha256": "sha256:6fdcf5174444a24dd21d17e4f2e7e8f1d286d2c4fc3a36d90bb31b15f90b42e1"
+      },
+      "changed_regular_inputs": [
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/README.md",
+          "before": "sha256:dfe0b2ee855f59b4b69e2963795ec82b984bc5d8520b5becd4667bfd778687a8",
+          "after": "sha256:98de3e8e6c0b1aa3b2417637b04f1eb890cbec68fd7d7fd375008b623396e9f0",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/receipt.schema.json",
+          "before": "sha256:531c82e94ae19e19454c620b9da13b953c30cf9dd27c4a5e598deed999aa6768",
+          "after": "sha256:52b52cae9f5aa2fbdef3742b22c22b45f9085b3493073af126f93505fc80083f",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+          "before": "sha256:7fe98c2a34042e7300736021062243027f331c00a478673c65d6903b533f58b7",
+          "after": "sha256:79f76f6c4d540161c45e18626394f18c500f23409b849361a75348ccf18d3b29",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/platform_suite.README.md",
+          "before": "sha256:20987724e1887e87cf6cf676a7e5454d43e2aaac93fc500e4c2202ec8c84e108",
+          "after": "sha256:dc619ed6ae1ea5f5e12b6c50d72c58555e6709eb2bc05f825fb6c884517a6f14",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/platform_suite.py",
+          "before": "sha256:070aad47fc077ee053d4b0dee271ae5a93538e1938e427b0c632f8730d913197",
+          "after": "sha256:87693f7e999890039ee279db98abfc46ce4ec1918b70b411535b414f86f60893",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_ios_failure_policy.py",
+          "before": null,
+          "after": "sha256:83773e26c13f27d33b03e0e4bed5dca3c549feebb4445004298d7a16b707fd68",
+          "change": "added"
+        }
+      ],
+      "no_retry_or_verification_authorized_by_authoring": true,
+      "preparation_argv_change": "source inventory004 ->005 only; revised helper bytes are frozen by current source; preparation stages/effects/order unchanged",
+      "history_preserved": true
+    },
+    {
+      "repair_number": 17,
+      "owner_task": "reengineer-user-outcome-verification/2.26",
+      "status": "PAIRED_SOURCE_CONFIG_AUTHORED_NOT_VERIFIED",
+      "operator_instruction": "Fix both; prepare refreshed approval",
+      "predecessor_contract": "f625a31047924ef4e3610f070a48c956719fce523452adcf83bb0e19338d5bfe",
+      "report": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-003/code-source-review.md",
+        "sha256": "sha256:d7f083ed5ee35c62f804e40a9bb521fad46f632670e149de7fd1a96bd06944cf"
+      },
+      "stop": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-003/stop.json",
+        "sha256": "sha256:ec0d1fab0e53530d2cb65d52614bdd08f0f470979cbf237f527e5b8b2c1e6cf7"
+      },
+      "handoff": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/server-settlement-repair-handoff.md",
+        "sha256": "sha256:f665594aa7711f80b0dac8d2f3cb43f13e03464fd57b0338bfa6922b108db668"
+      },
+      "environment_repair": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/preparation-environment-repair-004.json",
+        "sha256": "sha256:c5e8a9ac7c12d78bb9a45c26945b51d6ebc8a704c6b63bf257ddd018857e2be8"
+      },
+      "changed_regular_inputs": [
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/failure_sweep.README.md",
+          "before": "sha256:6384188b22f7cacc4fcccd7eaa9c10affaf1ebcc1bf2f8837ed576b755d700e0",
+          "after": "sha256:1534f42f7b49c73cd505919501003b0a7b478f937750aedf45b6c96b5e85b91f",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/failure_sweep.py",
+          "before": "sha256:5c2f329f52790f3eae51a1c606d1ed8cc3a27fe9f0206f903834b4d4c114ee70",
+          "after": "sha256:07dc75de5ff8703c6cb63eae66276999900a7432a1e9996fd00d9774b6158744",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/packet_processes.py",
+          "before": "sha256:254149513b7aa637b2a6da40eb005403cc86064df5da083d9227ca0267b8bd81",
+          "after": "sha256:daf253668256526adb13042fa988c2e555341f43b9abf88e154c2d86fa23ccb6",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_failure_sweep.py",
+          "before": "sha256:4aca30f8897a697696504a92712419e81f9f64f8f676a599171350c275ffda75",
+          "after": "sha256:9da7777f38f67ba11de5798c4502dd5e42eddcf0ed46a08d89490df2998146f0",
+          "change": "modified"
+        },
+        {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_packet_settlement.py",
+          "before": null,
+          "after": "sha256:bc762eec87dcac42f2bf8c1c7bf752117baef76911eb263587e5a02afff89393",
+          "change": "added"
+        }
+      ],
+      "literal_artifact_parent_environment_additions": {
+        "UAR_PREP_BASE_HOME": "/Users/gqadonis",
+        "UAR_PREP_BASE_LANG": "en_US.UTF-8",
+        "UAR_PREP_BASE_LC_ALL": "en_US.UTF-8",
+        "UAR_PREP_BASE_PATH": "/Users/gqadonis/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "UAR_PREP_BASE_TMPDIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-008/tmp"
+      },
+      "settlement": "Read-only source/config/ready/owner/epoch-bound transactional reservation snapshot; wait<=90seconds within original remaining allowances, no redispatch/refund/reset; known failed HTTP may settle, UNKNOWN stops; preserve original terminal and cleanup receipts.",
+      "preparation_changes": "source005->006 and exactly five literal artifact-stage environment bindings; nested argv/stages/effects otherwise unchanged",
+      "unrun_regression_tests_added": 9,
+      "no_execution_authorized_by_authoring": true,
+      "history_preserved": true
+    }
+  ]
+}

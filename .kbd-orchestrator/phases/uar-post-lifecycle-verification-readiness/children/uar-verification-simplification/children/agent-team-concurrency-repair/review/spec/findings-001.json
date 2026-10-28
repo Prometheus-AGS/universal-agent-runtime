@@ -1,0 +1,17 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "unreported-harness-native",
+  "isolation_mode": "harness-native",
+  "producer_model": "unknown",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "verification.md",
+      "claim": "SETTLE-01 could pass uncertainty without exercising idempotent known-terminal persistence.",
+      "evidence": "Original oracle permitted uncertain recovery replay as successful settlement control.",
+      "suggested_fix": "Require conclusively terminal replay, including genuine usage=None outcome, or mark required evidence missing/BLOCKED."
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-26T12:26:50.392782+00:00",
+  "packet": "002",
+  "status": "FAIL",
+  "reviews": "PASS source-only",
+  "frozen_source": "PASS",
+  "build_exit_code": 0,
+  "activation": "PASS; PID46949 left running",
+  "bdd_exit_code": 1,
+  "cucumber": {
+    "scenarios_failed": 1,
+    "steps_passed": 5,
+    "steps_failed": 1,
+    "steps_skipped": 2
+  },
+  "failure": "BDD output parser returned a string; answer.specialist undefined. Actual math output contains correct marker and answer8788 but multiple reasoning blocks, fenced JSON and trailing prose. Writer output contains reasoning without finished outline. Cause of writer incompleteness not established.",
+  "team_id": "2a7b27d0-0751-4211-b6b7-abcfc50fc4fe",
+  "attempts": [
+    {
+      "id": "1df37aaf-1138-4191-9454-4e4df6705900",
+      "run_id": "b9fbc87b-c62d-4bf6-bbb6-30376e49ad22",
+      "task_id": "calculation",
+      "status": "succeeded",
+      "usage": {
+        "tokens": 6522,
+        "costMicrounits": 1873,
+        "elapsedSeconds": 12
+      }
+    },
+    {
+      "id": "44f00dd6-dc48-4017-be8f-e00bf6086574",
+      "run_id": "d6a99187-1cc5-47fe-8f2e-669c36ac9fb7",
+      "task_id": "outline",
+      "status": "succeeded",
+      "usage": {
+        "tokens": 6582,
+        "costMicrounits": 2055,
+        "elapsedSeconds": 22
+      }
+    }
+  ],
+  "committed": {
+    "tokens": 13104,
+    "costMicrounits": 3928,
+    "elapsedSeconds": 34
+  },
+  "reserved": {
+    "tokens": 0,
+    "costMicrounits": 0,
+    "elapsedSeconds": 0
+  },
+  "unverified": [
+    "independent accounting endpoint assertions after failed marker assertion",
+    "completed editorial outline",
+    "dependent article dispatch, context merge and final article"
+  ],
+  "gate": "CLOSED; stop first failure; no repair/retry",
+  "acceptance_credit": 0
+}

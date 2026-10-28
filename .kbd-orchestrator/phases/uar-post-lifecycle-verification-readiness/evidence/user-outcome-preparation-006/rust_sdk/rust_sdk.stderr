@@ -1,0 +1,736 @@
+warning: patch `surrealdb-kvs-rocksdb v3.3.0 (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+warning: unused import: `OnceLockExt`
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs:12:34
+   |
+12 | use crate::{Connect, Connection, OnceLockExt, SessionClone, Surreal};
+   |                                  ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `surrealdb` (lib) generated 1 warning
+   Compiling universal-agent-runtime v1.3.0 (/Users/gqadonis/Projects/prometheus/universal-agent-runtime)
+warning: unused import: `Context`
+ --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/storage.rs:3:14
+  |
+3 | use anyhow::{Context, Result};
+  |              ^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `startup::startup_config`
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/native_skills/mod.rs:29:16
+   |
+29 | pub(crate) use startup::startup_config;
+   |                ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::PrincipalCredentialStore`
+ --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/credentials/maintenance.rs:2:5
+  |
+2 | use super::PrincipalCredentialStore;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `cause`
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/scoped.rs:80:9
+   |
+80 |     for cause in error.chain() {
+   |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_cause`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `secret_value_matches` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/config.rs:645:15
+    |
+645 | pub(crate) fn secret_value_matches(
+    |               ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `prepare_provider_update` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/llm/registry.rs:161:15
+    |
+161 | pub(crate) fn prepare_provider_update(
+    |               ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `inspect_default` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/llm/registry.rs:537:25
+    |
+252 | impl ProviderRegistry {
+    | --------------------- method in this implementation
+...
+537 |     pub(crate) async fn inspect_default<R, F, Fut>(&self, inspect: F) -> R
+    |                         ^^^^^^^^^^^^^^^
+
+warning: method `require_authentication` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/binding_cache.rs:635:19
+    |
+409 | impl McpBindingCache {
+    | -------------------- method in this implementation
+...
+635 |     pub(crate) fn require_authentication(&self, server: &str) {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated functions `notify_durable_change` and `active_for` are never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/interaction.rs:52:19
+   |
+29 | impl McpInteractionChannel {
+   | -------------------------- associated functions in this implementation
+...
+52 |     pub(crate) fn notify_durable_change() {
+   |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+78 |     pub(crate) fn active_for(row: &McpElicitationRecord) -> bool {
+   |                   ^^^^^^^^^^
+
+warning: fields `credential`, `binding`, `cancellation`, `abandoned`, and `peer` are never read
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/interaction.rs:176:5
+    |
+175 | struct PendingAvailability {
+    |        ------------------- fields in this struct
+176 |     credential: Option<super::runtime::RunMcpCredentialLease>,
+    |     ^^^^^^^^^^
+177 |     binding: Option<Arc<super::binding_cache::McpBindingRequest>>,
+    |     ^^^^^^^
+178 |     cancellation: CancellationToken,
+    |     ^^^^^^^^^^^^
+179 |     abandoned: CancellationToken,
+    |     ^^^^^^^^^
+180 |     peer: rmcp::service::Peer<RoleClient>,
+    |     ^^^^
+    |
+    = note: `PendingAvailability` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `available` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/interaction.rs:183:8
+    |
+182 | impl PendingAvailability {
+    | ------------------------ method in this implementation
+183 |     fn available(&self, server: &str) -> bool {
+    |        ^^^^^^^^^
+
+warning: associated function `configured_catalog_from_file` is never used
+    --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/registry.rs:1587:19
+     |
+1352 | impl McpRegistry {
+     | ---------------- associated function in this implementation
+...
+1587 |     pub(crate) fn configured_catalog_from_file(path: &str) -> anyhow::Result<Self> {
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `revoke` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs:342:19
+    |
+325 | impl RunMcpGrantControl {
+    | ----------------------- method in this implementation
+...
+342 |     pub(crate) fn revoke(&self, server: &str) -> bool {
+    |                   ^^^^^^
+
+warning: method `require_authentication` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs:932:19
+    |
+769 | impl McpRuntimeManager {
+    | ---------------------- method in this implementation
+...
+932 |     pub(crate) fn require_authentication(&self, server: &str) {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `subscribe_activity`, `next_idle_expiry`, and `cleanup_bounded` are never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/session/thread.rs:422:19
+    |
+400 | impl SessionStore {
+    | ----------------- methods in this implementation
+...
+422 |     pub(crate) fn subscribe_activity(&self) -> tokio::sync::watch::Receiver<u64> {
+    |                   ^^^^^^^^^^^^^^^^^^
+...
+429 |     pub(crate) fn next_idle_expiry(
+    |                   ^^^^^^^^^^^^^^^^
+...
+597 |     pub(crate) fn cleanup_bounded(
+    |                   ^^^^^^^^^^^^^^^
+
+warning: method `remove` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/a2ui/realtime.rs:133:19
+    |
+126 | impl InMemoryReplayBackbone {
+    | --------------------------- method in this implementation
+...
+133 |     pub(crate) fn remove(&self, run_id: &str) {
+    |                   ^^^^^^
+
+warning: associated function `from_config` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/api/a2a/peer.rs:43:19
+   |
+42 | impl TrustedA2APeers {
+   | -------------------- associated function in this implementation
+43 |     pub(crate) fn from_config(config: &crate::config::A2aConfig) -> Self {
+   |                   ^^^^^^^^^^^
+
+warning: method `reclaim_execution_owner` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/compiler/collaboration/team_execution/ownership.rs:151:25
+    |
+ 21 | impl CollaborationCatalogService {
+    | -------------------------------- method in this implementation
+...
+151 |     pub(crate) async fn reclaim_execution_owner(&self, actor: &str, decision: &str, request: TeamExecutionReclaimRequest) -> Result...
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `days` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/controls.rs:21:19
+   |
+14 | impl Retention {
+   | -------------- method in this implementation
+...
+21 |     pub(crate) fn days(&self) -> Option<u16> {
+   |                   ^^^^
+
+warning: method `initialize_controls` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/controls.rs:115:25
+    |
+ 90 | impl MemoryService {
+    | ------------------ method in this implementation
+...
+115 |     pub(crate) async fn initialize_controls(&self) -> Result<()> { backend::initialize(self).await }
+    |                         ^^^^^^^^^^^^^^^^^^^
+
+warning: function `initialize` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/controls.rs:70:9
+   |
+70 |         initialize(service: &MemoryService) -> ();
+   |         ^^^^^^^^^^
+   |
+   = note: this warning originates in the macro `unsupported` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: struct `ScopedMemoryStorage` is never constructed
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs:24:19
+   |
+24 | pub(crate) struct ScopedMemoryStorage {
+   |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new` and `dispatch` are never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs:30:19
+   |
+29 | impl ScopedMemoryStorage {
+   | ------------------------ associated items in this implementation
+30 |     pub(crate) fn new(inner: Arc<dyn MemoryStorage>, scope: ResourceScope) -> Self {
+   |                   ^^^
+...
+37 |     async fn dispatch<T, F, Fut>(&self, method: &'static str, work: F) -> Result<T>
+   |              ^^^^^^^^
+
+warning: struct `MemoryCompletion` is never constructed
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs:60:8
+   |
+60 | struct MemoryCompletion {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: associated items `new` and `observe_result` are never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs:68:8
+   |
+67 | impl MemoryCompletion {
+   | --------------------- associated items in this implementation
+68 |     fn new(scope: ResourceScope, name: &str, identity: &str) -> Self {
+   |        ^^^
+...
+77 |     fn observe_result<T>(&mut self, result: &Result<T>) {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `transport_outcome_unknown` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs:105:4
+    |
+105 | fn transport_outcome_unknown(_error: &anyhow::Error) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `read_only_memory_operation` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/memory/scoped_storage.rs:111:4
+    |
+111 | fn read_only_memory_operation(name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `query` and `table` are never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/knowledge_namespace.rs:33:19
+   |
+18 | impl KnowledgeNamespace {
+   | ----------------------- methods in this implementation
+...
+33 |     pub(crate) fn query(self, sql: &str) -> String {
+   |                   ^^^^^
+...
+43 |     pub(crate) fn table(self, legacy: &'static str) -> &'static str {
+   |                   ^^^^^
+
+warning: function `reserve` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/accounting.rs:195:15
+    |
+195 | pub(crate) fn reserve(scope: &mut AccountingScope, admission: &CallAdmission) -> anyhow::Result<()> {
+    |               ^^^^^^^
+
+warning: function `observe` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/accounting.rs:219:15
+    |
+219 | pub(crate) fn observe(call: &AccountingCall, usage: &CallUsage) -> anyhow::Result<AccountingCall> {
+    |               ^^^^^^^
+
+warning: function `settle` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/accounting.rs:249:15
+    |
+249 | pub(crate) fn settle(scope: &mut AccountingScope, before: &AccountingCall, after: &AccountingCall) -> anyhow::Result<()> {
+    |               ^^^^^^
+
+warning: function `update` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/accounting.rs:266:15
+    |
+266 | pub(crate) fn update(scope: &AccountingScope, change: &ScopeUpdate) -> anyhow::Result<AccountingScope> {
+    |               ^^^^^^
+
+warning: method `require_restorable_a2a` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/checkpoint_resume.rs:166:19
+    |
+ 56 | impl CheckpointResumeEnvelope {
+    | ----------------------------- method in this implementation
+...
+166 |     pub(crate) fn require_restorable_a2a(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `record_key` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/run_history.rs:34:15
+   |
+34 | pub(crate) fn record_key(run_id: &str) -> String {
+   |               ^^^^^^^^^^
+
+warning: function `event_key` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/persistence/run_history.rs:38:15
+   |
+38 | pub(crate) fn event_key(run_id: &str, event_id: u64) -> String {
+   |               ^^^^^^^^^
+
+warning: function `is_governance_enabled_event` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/realtime/mod.rs:256:15
+    |
+256 | pub(crate) fn is_governance_enabled_event(event: &LiveEvent) -> bool {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `senders` is never read
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/realtime/lifecycle.rs:32:5
+   |
+26 | pub struct BusLifecycle {
+   |            ------------ field in this struct
+...
+32 |     senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>,
+   |     ^^^^^^^
+
+warning: multiple associated items are never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/realtime/lifecycle.rs:49:19
+   |
+48 | impl BusLifecycle {
+   | ----------------- associated items in this implementation
+49 |     pub(crate) fn new(senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>) -> Arc<Self> {
+   |                   ^^^
+...
+62 |     pub(crate) fn spawn(self: &Arc<Self>, work: impl Future<Output = anyhow::Result<()>> + Send + 'static) {
+   |                   ^^^^^
+...
+83 |     pub(crate) fn stop_token(&self) -> CancellationToken { self.stop.clone() }
+   |                   ^^^^^^^^^^
+84 |     pub(crate) fn reconnect_events(&self) -> watch::Receiver<u64> { self.reconnect.subscribe() }
+   |                   ^^^^^^^^^^^^^^^^
+85 |     /// Read the retained reconnect generation for host-side CAS control.
+86 |     pub(crate) fn generation(&self) -> u64 { *self.reconnect.borrow() }
+   |                   ^^^^^^^^^^
+...
+91 |     pub(crate) fn record_failure(&self, failure: impl Into<String>) {
+   |                   ^^^^^^^^^^^^^^
+...
+95 |     pub(crate) fn transition(&self, topic: EntityTopic, generation: u64, ready: bool, reason: Option<String>) {
+   |                   ^^^^^^^^^^
+
+warning: field `artifacts` is never read
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/actor/system.rs:96:16
+   |
+93 | pub struct ActorTurn {
+   |            --------- field in this struct
+...
+96 |     pub(crate) artifacts: crate::uar::runtime::thread::artifacts::RunArtifactCollector,
+   |                ^^^^^^^^^
+
+warning: methods `persistence`, `run_usage`, `run_manager`, `spawn_governed_session`, and `spawn_a2a_session` are never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/actor/system.rs:240:19
+    |
+238 | impl ActorCollaboration {
+    | ----------------------- methods in this implementation
+239 |     /// Host persistence for transport correlation; this is not a kernel capability.
+240 |     pub(crate) fn persistence(&self) -> anyhow::Result<Arc<dyn PersistenceLayer>> {
+    |                   ^^^^^^^^^^^
+...
+244 |     pub(crate) fn run_usage(
+    |                   ^^^^^^^^^
+...
+254 |     pub(crate) fn run_manager(&self) -> &Arc<RunManager> {
+    |                   ^^^^^^^^^^^
+...
+324 |     pub(crate) async fn spawn_governed_session(
+    |                         ^^^^^^^^^^^^^^^^^^^^^^
+...
+359 |     pub(crate) async fn spawn_a2a_session(
+    |                         ^^^^^^^^^^^^^^^^^
+
+warning: method `attach_representation_grant` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/instance/representation.rs:18:25
+   |
+15 | impl AgentInstanceController {
+   | ---------------------------- method in this implementation
+...
+18 |     pub(crate) async fn attach_representation_grant(
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PendingApprovalView` is never constructed
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs:87:19
+   |
+87 | pub(crate) struct PendingApprovalView {
+   |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: fields `caller_handoff_confirmation`, `started_at`, and `last_detached_at` are never read
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs:458:5
+    |
+456 | struct RunStreamState {
+    |        -------------- fields in this struct
+457 |     run: Run,
+458 |     caller_handoff_confirmation: Arc<Mutex<()>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+478 |     started_at: Instant,
+    |     ^^^^^^^^^^
+479 |     terminal_at: Option<Instant>,
+480 |     last_detached_at: Option<Instant>,
+    |     ^^^^^^^^^^^^^^^^
+    |
+    = note: `RunStreamState` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `tag_matcher`, `intent_classifier`, `run_retention`, and `session_retention` are never read
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs:739:5
+    |
+715 | pub struct RunManager {
+    |            ---------- fields in this struct
+...
+739 |     tag_matcher: Arc<crate::uar::runtime::matching::TagMatcher>,
+    |     ^^^^^^^^^^^
+740 |     /// Intent classifier for skill matching
+741 |     intent_classifier: Arc<dyn IntentClassifier>,
+    |     ^^^^^^^^^^^^^^^^^
+...
+844 |     run_retention: RunsConfig,
+    |     ^^^^^^^^^^^^^
+845 |     session_retention: SessionsConfig,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `RunManager` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+    --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/manager.rs:1380:19
+     |
+1089 | impl RunManager {
+     | --------------- methods in this implementation
+...
+1380 |     pub(crate) fn with_retention_config(
+     |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+1395 |     pub(crate) fn spawn_retention_sweeper(self: &Arc<Self>, shutdown: CancellationToken) {
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^
+...
+1454 |     async fn next_retention_due(&self) -> Option<tokio::time::Instant> {
+     |              ^^^^^^^^^^^^^^^^^^
+...
+1515 |     async fn sweep_retained_state(&self) {
+     |              ^^^^^^^^^^^^^^^^^^^^
+...
+1703 |     pub(crate) async fn authorize_run_skill_roles(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1740 |     pub(crate) fn with_a2a_config(mut self, config: &crate::config::A2aConfig) -> Self {
+     |                   ^^^^^^^^^^^^^^^
+...
+1904 |     pub(crate) fn with_mcp_runtime(
+     |                   ^^^^^^^^^^^^^^^^
+...
+2058 |     pub(crate) async fn invalidate_mcp_server(&self, server: &str) {
+     |                         ^^^^^^^^^^^^^^^^^^^^^
+...
+2394 |     pub(crate) async fn resolve_approval_record(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^
+...
+2400 |     pub(crate) async fn approval_records_for_context(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2408 |     pub(crate) async fn approval_records_for_owner(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2416 |     pub(crate) async fn approval_recovery_record(&self,
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2423 |     pub(crate) async fn finish_recovered_approval(&self,
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2428 |     pub(crate) async fn deny_recovered_approval(&self,
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^
+...
+2434 |     pub(crate) async fn pending_approval_for_user(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2468 |     pub(crate) async fn approval_root_run_id(&self, run_id: &str) -> Option<String> {
+     |                         ^^^^^^^^^^^^^^^^^^^^
+...
+2565 |     pub(crate) async fn invalidate_representation_grant(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2626 |     pub(crate) async fn revoke_run_mcp_grant_for_context(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+2705 |     pub(crate) fn runtime_epoch(&self) -> &str { &self.tool_runtime_epoch }
+     |                   ^^^^^^^^^^^^^
+...
+3351 |     pub(crate) async fn execute_bound_request_with_run_id(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+3368 |     pub(crate) async fn execute_checkpoint_approval(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+3380 |     pub(crate) async fn execute_checkpoint_a2a_with_run_id(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+3391 |     async fn execute_checkpoint_admitted(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+9106 |     pub(crate) async fn presentation_run_for_user(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+9202 |     pub(crate) async fn list_runs_for_context(
+     |                         ^^^^^^^^^^^^^^^^^^^^^
+...
+9246 |     pub(crate) async fn settled_run_status_for_context(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+9254 |     pub(crate) async fn settled_run_status(&self, run_id: &str) -> Option<RunStatus> {
+     |                         ^^^^^^^^^^^^^^^^^^
+...
+9272 |     pub(crate) async fn caller_handoff_confirmation_lock(
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `inspect_descriptors` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/native_skill.rs:553:25
+    |
+387 | impl NativeSkillRegistry {
+    | ------------------------ method in this implementation
+...
+553 |     pub(crate) async fn inspect_descriptors<R>(
+    |                         ^^^^^^^^^^^^^^^^^^^
+
+warning: function `startup_config` is never used
+ --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/native_skills/startup.rs:7:21
+  |
+7 | pub(crate) async fn startup_config(
+  |                     ^^^^^^^^^^^^^^
+
+warning: methods `register_checked`, `register_checked_batch_without_embeddings`, `list_persisted`, and `list_for_deployment` are never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/registry.rs:86:25
+    |
+ 39 | impl SkillRegistry {
+    | ------------------ methods in this implementation
+...
+ 86 |     pub(crate) async fn register_checked(&mut self, skill: Skill) -> anyhow::Result<()> {
+    |                         ^^^^^^^^^^^^^^^^
+...
+116 |     pub(crate) async fn register_checked_batch_without_embeddings(
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+184 |     pub(crate) async fn list_persisted(&self) -> anyhow::Result<Vec<Skill>> {
+    |                         ^^^^^^^^^^^^^^
+...
+299 |     pub(crate) fn list_for_deployment(&self) -> Vec<Skill> {
+    |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: method `assess` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/reviewed_coverage.rs:44:25
+   |
+42 | impl ReviewSession {
+   | ------------------ method in this implementation
+43 |     /// No request field or persisted Skill row contributes a trust root.
+44 |     pub(crate) async fn assess(
+   |                         ^^^^^^
+
+warning: struct `AgentSkillReconciliationReport` is never constructed
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/service.rs:151:19
+    |
+151 | pub(crate) struct AgentSkillReconciliationReport {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `match_skills_scoped` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/service.rs:189:25
+    |
+188 | impl SkillMatchingSnapshot {
+    | -------------------------- method in this implementation
+189 |     pub(crate) async fn match_skills_scoped(
+    |                         ^^^^^^^^^^^^^^^^^^^
+
+warning: methods `reconcile_config_skills` and `reconcile_standard_agent_skills` are never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/service.rs:339:25
+    |
+238 | impl SkillService {
+    | ----------------- methods in this implementation
+...
+339 |     pub(crate) async fn reconcile_config_skills(&self) -> anyhow::Result<()> {
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^
+...
+432 |     pub(crate) async fn reconcile_standard_agent_skills(
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `owner_id` is never read
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approvals.rs:60:5
+   |
+58 | struct RootLane {
+   |        -------- field in this struct
+59 |     run_id: String,
+60 |     owner_id: String,
+   |     ^^^^^^^^
+
+warning: method `pending` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approvals.rs:138:19
+    |
+ 80 | impl ApprovalBroker {
+    | ------------------- method in this implementation
+...
+138 |     pub(crate) fn pending(
+    |                   ^^^^^^^
+
+warning: method `records` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approvals/records.rs:63:25
+   |
+17 | impl ApprovalBroker {
+   | ------------------- method in this implementation
+...
+63 |     pub(crate) async fn records(
+   |                         ^^^^^^^
+
+warning: function `protected_call` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approvals/recovery.rs:44:15
+   |
+44 | pub(crate) fn protected_call(record: &ApprovalRecord, envelope: &CheckpointResumeEnvelope) -> anyhow::Result<ApprovalCheckpoint> {
+   |               ^^^^^^^^^^^^^^
+
+warning: methods `recovery_record` and `deny_recovered` are never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/approvals/recovery.rs:153:25
+    |
+152 | impl ApprovalBroker {
+    | ------------------- methods in this implementation
+153 |     pub(crate) async fn recovery_record(&self, owner: &str, run: &str, id: &str,
+    |                         ^^^^^^^^^^^^^^^
+...
+165 |     pub(crate) async fn deny_recovered(&self, record: &ApprovalRecord) -> anyhow::Result<bool> {
+    |                         ^^^^^^^^^^^^^^
+
+warning: method `is_settled` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/thread/graph_host.rs:81:19
+   |
+78 | impl GraphRootSupervisor {
+   | ------------------------ method in this implementation
+...
+81 |     pub(crate) fn is_settled(&self, run_id: &str) -> bool {
+   |                   ^^^^^^^^^^
+
+warning: method `invalidate_representation_grant` is never used
+ --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/team_execution/representation.rs:5:25
+  |
+4 | impl TeamExecutionRuntime {
+  | ------------------------- method in this implementation
+5 |     pub(crate) async fn invalidate_representation_grant(
+  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `run_mcp_grants` is never read
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/turn/bindings.rs:126:16
+    |
+100 | pub(crate) struct RunDelegationBindings {
+    |                   --------------------- field in this struct
+...
+126 |     pub(crate) run_mcp_grants: Option<crate::mcp::runtime::RunMcpGrantControl>,
+    |                ^^^^^^^^^^^^^^
+
+warning: method `accepts_renewal` is never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/turn/host/mod.rs:46:19
+   |
+43 | impl HostMcpGrantMarker {
+   | ----------------------- method in this implementation
+...
+46 |     pub(crate) fn accepts_renewal(&self, renewed: &Self) -> bool {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: method `scrubber` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/turn/host/credentials.rs:206:19
+    |
+ 71 | impl RunCredentials {
+    | ------------------- method in this implementation
+...
+206 |     pub(crate) fn scrubber(&self) -> super::RunSecretScrubber {
+    |                   ^^^^^^^^
+
+warning: method `grant_markers` is never used
+   --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/turn/host/mcp.rs:233:19
+    |
+144 | impl RunMcpServers {
+    | ------------------ method in this implementation
+...
+233 |     pub(crate) fn grant_markers(&self) -> Vec<super::HostMcpGrantMarker> {
+    |                   ^^^^^^^^^^^^^
+
+warning: associated items `bearer`, `api_key`, and `extend` are never used
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/credential_capture.rs:11:19
+   |
+10 | impl AuthenticatedCredentialCapture {
+   | ----------------------------------- associated items in this implementation
+11 |     pub(crate) fn bearer(token: &str) -> Self {
+   |                   ^^^^^^
+...
+18 |     pub(crate) fn api_key(key: &str) -> Self {
+   |                   ^^^^^^^
+...
+22 |     pub(crate) fn extend(&mut self, other: Self) {
+   |                   ^^^^^^
+
+warning: variant `Unclassified` is never constructed
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/security/claims.rs:46:52
+   |
+46 | pub(in crate::uar::security) enum CredentialKind { Unclassified, Issuer, ApiKey }
+   |                                   --------------   ^^^^^^^^^^^^
+   |                                   |
+   |                                   variant in this enum
+   |
+   = note: `CredentialKind` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: methods `invalidate_model_verification` and `record_model_verification` are never used
+    --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/settings/manager.rs:1068:25
+     |
+ 134 | impl SettingsManager {
+     | -------------------- methods in this implementation
+...
+1068 |     pub(crate) async fn invalidate_model_verification(&self, key: &str) -> Result<()> {
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1076 |     pub(crate) async fn record_model_verification(&self, key: &str, data: Value) -> Result<()> {
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> /Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/rag/ingestion_admission.rs:15:1
+   |
+15 | / pub struct IngestionAdmission<T: Parkable> {
+16 | |     dispatcher: Dispatcher<T>,
+17 | |     closed: Mutex<bool>,
+18 | | }
+   | |_^
+   |
+   = note: requested on the command line with `-W missing-debug-implementations`
+
+warning: `universal-agent-runtime` (lib) generated 67 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 4 suggestions)
+   Compiling universal-agent-runtime-sdk v1.0.0 (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5m 06s

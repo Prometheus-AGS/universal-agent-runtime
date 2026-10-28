@@ -4,7 +4,7 @@ export type ChunkKind =
   | "text" | "markdown"
   | "reasoning" | "thinking"
   | "tool-call" | "tool-approval" | "tool-denied"
-  | "skill-activation"
+  | "skill-activation" | "agent-selection"
   | "memory-recall" | "memory-mutation" | "memory-update"
   | "citation" | "rag-citations"
   | "context-update"
@@ -60,6 +60,19 @@ export interface SkillActivationChunk extends ChunkBase {
   threshold?: number;
   status: "active" | "complete";
 }
+/** Immutable host routing metadata, distinct from an agent completion. */
+export interface AgentSelectionChunk extends ChunkBase {
+  kind: "agent-selection";
+  sourceAgentId: string;
+  agentId: string;
+  agentName: string;
+  selectedThreadId: string;
+  selectionMethod: string;
+  rosterRevision: string;
+  sourceEventId?: string;
+  /** Transient accessibility request. Never restored from stored data. */
+  announce?: boolean;
+}
 export interface MemoryRecallChunk extends ChunkBase {
   kind: "memory-recall";
   items: Array<{ id: string; content: string; type: "episodic" | "semantic" | "procedural" | "preference"; importance?: number; score?: number; pinned?: boolean }>;
@@ -106,14 +119,14 @@ export interface RawChunk extends ChunkBase { kind: "raw"; type: string; payload
 export type Chunk =
   | TextChunk | MarkdownChunk | ReasoningChunk | ThinkingChunk
   | ToolCallChunk | ToolApprovalChunk | ToolDeniedChunk
-  | SkillActivationChunk | MemoryRecallChunk | MemoryMutationChunk | MemoryUpdateChunk
+  | SkillActivationChunk | AgentSelectionChunk | MemoryRecallChunk | MemoryMutationChunk | MemoryUpdateChunk
   | CitationChunk | RagCitationsChunk | ContextUpdateChunk
   | A2uiDisplayChunk | A2uiInputChunk | ArtifactChunk
   | ImageChunk | VideoChunk | FileChunk | DividerChunk
   | StateSnapshotChunk | StateDeltaChunk | StepChunk | UsageChunk | ErrorChunk | RawChunk;
 
 export type ChunkRendererName =
-  | "text" | "reasoning" | "tool" | "approval" | "denied" | "skill" | "memory"
+  | "text" | "reasoning" | "tool" | "approval" | "denied" | "skill" | "agent" | "memory"
   | "citation" | "context" | "a2ui" | "artifact" | "media" | "divider"
   | "usage" | "error" | "hidden";
 
@@ -122,7 +135,7 @@ export type ChunkTraceDisposition = "segment" | "row" | "tick" | "inspector" | "
 export const CHUNK_PHASE = {
   text: "generate", markdown: "generate", reasoning: "reasoning", thinking: "reasoning",
   "tool-call": "tool", "tool-approval": "tool", "tool-denied": "tool",
-  "skill-activation": "skill", "memory-recall": "memory", "memory-mutation": "memory", "memory-update": "memory",
+  "skill-activation": "skill", "agent-selection": "context", "memory-recall": "memory", "memory-mutation": "memory", "memory-update": "memory",
   citation: "retrieval", "rag-citations": "retrieval", "context-update": "context",
   "a2ui-display": null, "a2ui-input": null, artifact: null, image: null, video: null, file: null, divider: null,
   "state-snapshot": "context", "state-delta": "context", step: null, usage: null, error: null, raw: null,
@@ -131,7 +144,7 @@ export const CHUNK_PHASE = {
 export const CHUNK_BUBBLE_VISIBLE = {
   text: true, markdown: true, reasoning: true, thinking: true,
   "tool-call": true, "tool-approval": true, "tool-denied": true,
-  "skill-activation": true, "memory-recall": true, "memory-mutation": true, "memory-update": true,
+  "skill-activation": true, "agent-selection": true, "memory-recall": true, "memory-mutation": true, "memory-update": true,
   citation: true, "rag-citations": true, "context-update": true,
   "a2ui-display": true, "a2ui-input": true, artifact: true, image: true, video: true, file: true, divider: true,
   "state-snapshot": false, "state-delta": false, step: false, usage: true, error: true, raw: false,
@@ -139,7 +152,7 @@ export const CHUNK_BUBBLE_VISIBLE = {
 
 export const CHUNK_RENDERER = {
   text: "text", markdown: "text", reasoning: "reasoning", thinking: "reasoning",
-  "tool-call": "tool", "tool-approval": "approval", "tool-denied": "denied", "skill-activation": "skill",
+  "tool-call": "tool", "tool-approval": "approval", "tool-denied": "denied", "skill-activation": "skill", "agent-selection": "agent",
   "memory-recall": "memory", "memory-mutation": "memory", "memory-update": "memory",
   citation: "citation", "rag-citations": "citation", "context-update": "context",
   "a2ui-display": "a2ui", "a2ui-input": "a2ui", artifact: "artifact",
@@ -149,7 +162,7 @@ export const CHUNK_RENDERER = {
 
 export const CHUNK_TRACE = {
   text: "segment", markdown: "segment", reasoning: "segment", thinking: "segment",
-  "tool-call": "row", "tool-approval": "row", "tool-denied": "row", "skill-activation": "segment",
+  "tool-call": "row", "tool-approval": "row", "tool-denied": "row", "skill-activation": "segment", "agent-selection": "segment",
   "memory-recall": "segment", "memory-mutation": "segment", "memory-update": "segment",
   citation: "segment", "rag-citations": "segment", "context-update": "segment",
   "a2ui-display": "row", "a2ui-input": "row", artifact: "row",

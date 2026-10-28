@@ -1,0 +1,21 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/knowledge.cucumber.mjs"
+  ],
+  "exit_code": 1,
+  "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T08-19-29.660Z-knowledge-macos.json",
+  "base_url": "http://127.0.0.1:53587",
+  "pid": 26523,
+  "binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+  "binary_sha256": "25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c",
+  "built_source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "model": "liter/MiniMax-M3",
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai": 0
+  },
+  "keep_running": true
+}

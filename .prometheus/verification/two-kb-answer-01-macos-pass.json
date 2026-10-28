@@ -1,0 +1,112 @@
+{
+  "scenario": "TWO-KB-ANSWER-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:29:35.070003-05:00",
+  "attempt": 1,
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/two-kb-answer.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 8.488s",
+  "gherkin_steps": 4,
+  "evidence_hooks": 1,
+  "evidence": ".prometheus/verification/two-kb-answer/625e39bd-f856-4a3a-a575-d6982e3c33b9.json",
+  "cucumber_report": ".prometheus/verification/two-kb-answer-001-macos/cucumber.json",
+  "agent_id": "disposable-two-kb-625e39bd-f856-4a3a-a575-d6982e3c33b9",
+  "sources": [
+    {
+      "name": "amber",
+      "units": 233,
+      "seal": "AMBER-cacebdd9-eed1-434e-9cd8-fbaaf1a64c62",
+      "kb_id": "a8f5e9a4-2bb9-4917-a635-d03b5ca282fa",
+      "document_id": "8acd2110-4153-4cc0-a6cf-c2b064456160",
+      "cleaned_up": true
+    },
+    {
+      "name": "cobalt",
+      "units": 864,
+      "seal": "COBALT-e788f76c-9f40-4e50-88d9-016a36431f25",
+      "kb_id": "e6b3da97-892d-4937-bb74-7feb191e32c3",
+      "document_id": "e92318d0-6006-46f0-afd8-e830aa89d65a",
+      "cleaned_up": true
+    }
+  ],
+  "persisted_selection": {
+    "ids": [
+      "a8f5e9a4-2bb9-4917-a635-d03b5ca282fa",
+      "e6b3da97-892d-4937-bb74-7feb191e32c3"
+    ],
+    "mode": "selected"
+  },
+  "answer": {
+    "agent_marker": "AGENT-f4c039f7-da9d-484a-b4d3-d1fa9293d729",
+    "amber": {
+      "units": 233,
+      "seal": "AMBER-cacebdd9-eed1-434e-9cd8-fbaaf1a64c62",
+      "citation": "[1]"
+    },
+    "cobalt": {
+      "units": 864,
+      "seal": "COBALT-e788f76c-9f40-4e50-88d9-016a36431f25",
+      "citation": "[2]"
+    },
+    "total": 1097
+  },
+  "matched_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "424e3e52-c54b-b9f6-b6c7-91acb7ee0a2b",
+      "document_id": "8acd2110-4153-4cc0-a6cf-c2b064456160",
+      "knowledge_base_id": "a8f5e9a4-2bb9-4917-a635-d03b5ca282fa",
+      "document_name": "amber-inventory.txt",
+      "relevance_score": 0.8517071604728699,
+      "snippet": "For project inventory-project-625e39bd-f856-4a3a-a575-d6982e3c33b9, the amber inventory has 233 units. Its private source seal is AMBER-cacebdd9-eed1-434e-9cd8-fbaaf1a64c62. This inventory note is the authoritative source for amber only.\n"
+    },
+    {
+      "marker": 2,
+      "chunk_id": "5975e14c-cd90-19eb-6f63-e8155e3d1cc7",
+      "document_id": "e92318d0-6006-46f0-afd8-e830aa89d65a",
+      "knowledge_base_id": "e6b3da97-892d-4937-bb74-7feb191e32c3",
+      "document_name": "cobalt-inventory.txt",
+      "relevance_score": 0.8461853265762329,
+      "snippet": "For project inventory-project-625e39bd-f856-4a3a-a575-d6982e3c33b9, the cobalt inventory has 864 units. Its private source seal is COBALT-e788f76c-9f40-4e50-88d9-016a36431f25. This inventory note is the authoritative source for cobalt only."
+    }
+  ],
+  "distinct_cited_kbs": 2,
+  "session_id": "5f60fb22-d959-4165-8749-687a2803ee48",
+  "run_id": "d0cc764f-3c0f-40a9-84f1-0aca080c0ba7",
+  "kb_and_document_snapshots_unchanged": true,
+  "private_facts_absent_from_question_and_instructions": true,
+  "agent_deleted_during_cleanup": true,
+  "embedding_space": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "authentication_supplied_by_test": false,
+  "history_replayed": false,
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "global_configuration_changes": false,
+  "restart": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "runtime_pid": 21601,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/two-kb-answer.cucumber.mjs": "e0f0c5cf34b3d4f5a261239216a0cff8307136a0eb98a3a0ae5a20aeeed854c4",
+    "scripts/behaviors/features/two-kb-answer.feature": "1b43dd8ca44a5c3e1a236ad20f13fe81e28784c6fe9b602b45b9f0960c6b084d",
+    "scripts/behaviors/steps/two-kb-answer.steps.mjs": "a5735b30f479ad6042163cf82df49a51cb3186ce57d1506d46b5c06d149f5898"
+  },
+  "source_review": "Independent code and JavaScript artifact-only reviewers found no blockers; no separate executable checks.",
+  "scope": "One small two-KB synthesis on Mac, not arbitrary-corpus recall or all policy/backend/platform combinations.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

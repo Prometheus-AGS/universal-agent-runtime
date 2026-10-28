@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/context-budget.cucumber.mjs"
+  ],
+  "exit_code": 1,
+  "duration_seconds": 4.603673820965923
+}

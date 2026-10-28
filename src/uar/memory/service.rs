@@ -3,34 +3,47 @@
 //! Wraps the surreal-memory `MemoryStorage` trait implementation with UAR-level
 //! scope enforcement, error handling, and logging. All callers should use this
 //! struct rather than accessing `SurrealStorage` directly.
+//! Construction and concrete database capabilities require `surreal-backend`.
 
 use anyhow::{Context, Result};
+#[cfg(feature = "surreal-backend")]
 use futures::{FutureExt, Stream};
+#[cfg(feature = "surreal-backend")]
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(feature = "surreal-backend")]
 use std::panic::AssertUnwindSafe;
+#[cfg(feature = "surreal-backend")]
 use std::task::{Context as TaskContext, Poll};
+#[cfg(feature = "surreal-backend")]
 use surrealdb::{Surreal, engine::any::Any};
+#[cfg(feature = "surreal-backend")]
 use surrealdb::engine::any;
+#[cfg(feature = "surreal-backend")]
 use surrealdb::opt::auth::Root;
 use surreal_memory::{
-    EmbeddingProvider, EmbeddingService, Memory, MemoryHistory, MemoryScope, MemoryType,
-    SurrealStorage,
+    Memory, MemoryHistory, MemoryScope, MemoryType,
     entity::{Entity, KnowledgeGraph, Relation, SemanticSearchResult},
     mindmap::{MindMap, MindMapEdge, MindMapNode},
-    storage::{
-        MemoryStorage,
-        surreal::{SurrealConfig, SurrealLifecycleMode, SurrealMode},
-    },
+    storage::MemoryStorage,
     task_stream::{ContextWindow, TaskStream},
+};
+#[cfg(feature = "surreal-backend")]
+use surreal_memory::{
+    EmbeddingProvider, EmbeddingService, SurrealStorage,
+    storage::surreal::{SurrealConfig, SurrealLifecycleMode, SurrealMode},
 };
 
 use crate::config::MemoryConfig;
+#[cfg(feature = "surreal-backend")]
 use crate::uar::persistence::providers::surreal::SurrealEndpoint;
-use crate::uar::runtime::lifecycle::{OperationLease, ResourceOwnership, ResourceScope};
+use crate::uar::runtime::lifecycle::{OperationLease, ResourceScope};
+#[cfg(feature = "surreal-backend")]
+use crate::uar::runtime::lifecycle::ResourceOwnership;
 use crate::uar::security::claims::{CredentialPrincipal, UserContext};
 use super::owned::OwnedMemory;
+#[cfg(feature = "surreal-backend")]
 use super::scoped_storage::ScopedMemoryStorage;
 
 use super::workflow_mirror::{
@@ -41,14 +54,19 @@ use super::workflow_mirror::{
 #[derive(Clone)]
 pub struct MemoryService {
     pub(crate) storage: Arc<dyn MemoryStorage>,
+    #[cfg(feature = "surreal-backend")]
     surreal_storage: Arc<SurrealStorage>,
     pub(crate) config: MemoryConfig,
+    #[cfg(feature = "surreal-backend")]
     pub(crate) embeddings: Arc<dyn EmbeddingService>,
     ownership: MemoryStorageOwnership,
+    #[cfg(feature = "surreal-backend")]
     owned_client: Option<Surreal<Any>>,
     scope_open: Arc<AtomicBool>,
     lifecycle_scope: ResourceScope,
+    #[cfg(feature = "surreal-backend")]
     close_started: Arc<AtomicBool>,
+    #[cfg(feature = "surreal-backend")]
     close_result: tokio::sync::watch::Sender<Option<MemoryCloseReport>>,
     memory_changes: tokio::sync::watch::Sender<u64>,
 }
@@ -74,6 +92,7 @@ pub struct MemoryCloseReport {
 /// The caller owns every stream it obtains and must close each stream before
 /// the memory scope is released.
 #[derive(Clone)]
+#[cfg(feature = "surreal-backend")]
 pub struct MemorySubscriptionClient {
     db: Surreal<Any>,
     scope_open: Arc<AtomicBool>,
@@ -86,11 +105,13 @@ pub struct MemorySubscriptionClient {
 /// SDK's command acknowledgement. Dropping the stream transfers that close to
 /// a retained runtime task; it never releases the parent lease merely because
 /// the caller stopped observing notifications.
+#[cfg(feature = "surreal-backend")]
 pub struct MemoryLiveStream {
     stream: Option<surrealdb::method::Stream<Vec<surrealdb::types::Value>>>,
     lease: Option<OperationLease>,
 }
 
+#[cfg(feature = "surreal-backend")]
 impl std::fmt::Debug for MemorySubscriptionClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MemorySubscriptionClient")
@@ -99,6 +120,7 @@ impl std::fmt::Debug for MemorySubscriptionClient {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 impl std::fmt::Debug for MemoryLiveStream {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MemoryLiveStream")
@@ -108,6 +130,7 @@ impl std::fmt::Debug for MemoryLiveStream {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 struct PendingMemoryLiveClose {
     operation_id: String,
     stream: Option<surrealdb::method::Stream<Vec<surrealdb::types::Value>>>,
@@ -117,6 +140,7 @@ struct PendingMemoryLiveClose {
     rescue_on_drop: bool,
 }
 
+#[cfg(feature = "surreal-backend")]
 impl PendingMemoryLiveClose {
     fn new(
         stream: surrealdb::method::Stream<Vec<surrealdb::types::Value>>,
@@ -187,6 +211,7 @@ impl PendingMemoryLiveClose {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 impl Drop for PendingMemoryLiveClose {
     fn drop(&mut self) {
         match (self.stream.take(), self.lease.take()) {
@@ -230,6 +255,7 @@ impl Drop for PendingMemoryLiveClose {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 impl MemoryLiveStream {
     fn new(
         stream: surrealdb::method::Stream<Vec<surrealdb::types::Value>>,
@@ -256,6 +282,7 @@ impl MemoryLiveStream {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 impl Stream for MemoryLiveStream {
     type Item = <surrealdb::method::Stream<Vec<surrealdb::types::Value>> as Stream>::Item;
 
@@ -271,6 +298,7 @@ impl Stream for MemoryLiveStream {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 impl Drop for MemoryLiveStream {
     fn drop(&mut self) {
         match (self.stream.take(), self.lease.take()) {
@@ -284,6 +312,7 @@ impl Drop for MemoryLiveStream {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 impl MemorySubscriptionClient {
     /// Register a live stream for the memory table in the memory store.
     pub async fn subscribe_memory(&self) -> Result<MemoryLiveStream> {
@@ -375,7 +404,32 @@ impl std::fmt::Debug for MemoryService {
 }
 
 impl MemoryService {
+    /// Refuse construction when this profile has no concrete memory backend.
+    #[cfg(not(feature = "surreal-backend"))]
+    pub async fn new(config: MemoryConfig) -> Result<Self> {
+        let _ = config;
+        anyhow::bail!("Memory service construction requires surreal-backend")
+    }
+
+    /// Borrowing requires the concrete backend that owns the source client.
+    #[cfg(not(feature = "surreal-backend"))]
+    pub async fn borrowed_scope(&self) -> Result<Self> {
+        anyhow::bail!("Borrowed memory scopes require surreal-backend")
+    }
+
+    /// Preserve the host finalizer contract without inventing a backend receipt.
+    #[cfg(not(feature = "surreal-backend"))]
+    pub async fn close_scope(&self) -> MemoryCloseReport {
+        MemoryCloseReport {
+            ownership: self.ownership,
+            scope_released: false,
+            engine_close_acknowledged: false,
+            failure: Some("Memory scope closure requires surreal-backend".to_string()),
+        }
+    }
+
     /// Initialise the service by connecting to (or creating) the embedded SurrealDB store.
+    #[cfg(feature = "surreal-backend")]
     pub async fn new(config: MemoryConfig) -> Result<Self> {
         tracing::info!(
             db_path = %config.db_path,
@@ -500,6 +554,7 @@ impl MemoryService {
     /// is delivered to host lifecycle registration or its SDK shutdown
     /// acknowledgement completes. A canceled constructor waiter cannot strand
     /// an initialized embedded store between those states.
+    #[cfg(feature = "surreal-backend")]
     async fn initialize_owned_retained(
         config: MemoryConfig,
         embeddings: Arc<dyn EmbeddingService>,
@@ -550,6 +605,7 @@ impl MemoryService {
         })?
     }
 
+    #[cfg(feature = "surreal-backend")]
     async fn build_owned_service(
         config: MemoryConfig,
         embeddings: Arc<dyn EmbeddingService>,
@@ -611,6 +667,7 @@ impl MemoryService {
     /// The caller supplies an already authenticated, namespace-selected client
     /// and owns its reconnection and final engine close. Closing this facade
     /// prevents further memory access without invalidating the host client.
+    #[cfg(feature = "surreal-backend")]
     pub async fn from_host_connection(
         config: MemoryConfig,
         db: Surreal<Any>,
@@ -622,6 +679,7 @@ impl MemoryService {
     /// Initialize a borrowed facade independently of the caller's wait. Its
     /// cleanup closes only the facade's host-managed storage scope, never the
     /// database engine retained by the embedding host.
+    #[cfg(feature = "surreal-backend")]
     async fn initialize_borrowed_retained(
         config: MemoryConfig,
         db: Surreal<Any>,
@@ -657,6 +715,7 @@ impl MemoryService {
         })?
     }
 
+    #[cfg(feature = "surreal-backend")]
     async fn build_borrowed_service(
         config: MemoryConfig,
         db: Surreal<Any>,
@@ -701,6 +760,7 @@ impl MemoryService {
 
     /// Create an independently admitted facade that borrows this service's
     /// database client. Releasing it never closes the source service or engine.
+    #[cfg(feature = "surreal-backend")]
     pub async fn borrowed_scope(&self) -> Result<Self> {
         self.ensure_scope_open()?;
         let _operation = self.admit_operation("borrowed_scope")?;
@@ -720,6 +780,7 @@ impl MemoryService {
     /// Request exactly one authenticated reconnect of this facade's retained
     /// SDK router. The caller supplies the observed generation so a stale
     /// controller cannot replace a newer transport.
+    #[cfg(feature = "surreal-backend")]
     pub(crate) async fn reconnect(&self, expected_generation: u64) -> Result<u64> {
         self.ensure_scope_open()?;
         let _operation = self.admit_operation("memory_transport_reconnect")?;
@@ -732,6 +793,7 @@ impl MemoryService {
     /// Read the SDK-retained transport generation without opening admission.
     /// The trusted host uses this for compare-and-swap reconnect control.
     #[allow(dead_code)] // Retained for trusted-host reconnect compare-and-swap control.
+    #[cfg(feature = "surreal-backend")]
     pub(crate) fn transport_generation(&self) -> Result<u64> {
         self.memory_db()?
             .transport_generation()
@@ -739,6 +801,7 @@ impl MemoryService {
             .context("memory transport generation unavailable")
     }
 
+    #[cfg(feature = "surreal-backend")]
     pub(super) fn memory_db(&self) -> Result<Surreal<Any>> {
         self.ensure_scope_open()?;
         self.surreal_storage
@@ -746,6 +809,7 @@ impl MemoryService {
             .context("Memory lifecycle scope has no live Surreal storage client")
     }
 
+    #[cfg(feature = "surreal-backend")]
     pub(super) fn raw_surreal_storage(&self) -> Result<Arc<SurrealStorage>> {
         self.ensure_scope_open()?;
         Ok(Arc::clone(&self.surreal_storage))
@@ -765,6 +829,7 @@ impl MemoryService {
     /// Create a scoped subscription client for the separately owned memory
     /// database. This client is admission-checked and table-scoped so callers
     /// cannot retain a general-purpose raw handle past memory shutdown.
+    #[cfg(feature = "surreal-backend")]
     pub fn subscription_client(&self) -> Result<MemorySubscriptionClient> {
         self.ensure_scope_open()?;
         let db = self
@@ -782,6 +847,7 @@ impl MemoryService {
     ///
     /// The first-party storage adapter calls the SDK close contract only for a
     /// UAR-owned engine. A borrowed client remains usable to its host.
+    #[cfg(feature = "surreal-backend")]
     pub async fn close_scope(&self) -> MemoryCloseReport {
         if self.close_started
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
@@ -1411,6 +1477,7 @@ impl MemoryService {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 async fn shutdown_failed_owned_memory_client(
     db: &Surreal<Any>,
     error: anyhow::Error,
@@ -1423,6 +1490,7 @@ async fn shutdown_failed_owned_memory_client(
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 async fn close_undelivered_memory_service(service: MemoryService) {
     let report = service.close_scope().await;
     if let Some(error) = report.failure {
@@ -1434,6 +1502,7 @@ async fn close_undelivered_memory_service(service: MemoryService) {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 async fn close_memory_resources(
     lifecycle_scope: ResourceScope,
     storage: Arc<SurrealStorage>,

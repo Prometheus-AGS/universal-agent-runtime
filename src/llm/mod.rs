@@ -29,6 +29,7 @@ pub mod orchestrator;
 pub mod prompt_dialect;
 pub mod provider_error;
 pub mod registry;
+pub mod response_format;
 pub mod router;
 pub(crate) mod team_failure;
 pub mod team_profile;

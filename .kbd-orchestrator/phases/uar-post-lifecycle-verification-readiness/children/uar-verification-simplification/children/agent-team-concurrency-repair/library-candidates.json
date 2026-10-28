@@ -1,0 +1,152 @@
+{
+  "phase": "agent-team-concurrency-repair",
+  "generated_at": "2026-10-26T09:39:20Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier_1": 2,
+      "tier_2": 2,
+      "tier_3": 0,
+      "tier_4": 1
+    }
+  },
+  "gaps_addressed": [
+    "G1-filesystem-skill-admission",
+    "G2-ambiguous-catalog-settlement",
+    "G3-real-overlap-and-merge"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Existing UAR filesystem skill reconciliation and typed selection errors",
+      "kind": "pattern",
+      "registry": "none",
+      "fit_for_gap": "G1: align startup registration with durable selection requirements and expose redacted cause categories",
+      "verdict": "adapt",
+      "maintenance": {
+        "source": "current checkout; served-artifact equivalence not established"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "local:src/server.rs:1749-1771",
+          "claim": "Server registers filesystem-skills-* providers."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:src/uar/runtime/skills/service.rs:302-345,432-440",
+          "claim": "Initialization loads provider results without persistence; reconciliation searches fs-skills and agent-skills IDs."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:src/uar/runtime/skills/registry.rs:130-153,274-278",
+          "claim": "Loaded entries remain memory-only; matching snapshot refuses registered IDs absent from durable skills."
+        }
+      ],
+      "risks": [
+        "Retained boot counts strongly support but do not prove the exact later StorageMissing branch.",
+        "Persisting skill bodies can overwrite API-owned/configured metadata unless source precedence and scoped selection are retained.",
+        "Do not bypass reconciliation globally or silently disable skills."
+      ],
+      "decision_rationale": "Adapt current startup/selection mechanisms rather than add a discovery library. Readiness R1/R2 needs source alignment and precise diagnostics; runtime code is required, exact served-build root cause remains conditional."
+    },
+    {
+      "id": "cand-002",
+      "name": "Pinned SurrealDB response errors plus UAR fenced CAS and same-attempt settlement reconciliation",
+      "kind": "pattern",
+      "repo_url": "https://github.com/surrealdb/surrealdb",
+      "registry": "crates",
+      "fit_for_gap": "G2: classify query/result failures and reconcile an original terminal attempt without model/tool replay",
+      "verdict": "adapt",
+      "maintenance": {
+        "pinned_version": "3.3.0 with repository lifecycle patches",
+        "registry_health": "Not queried; no dependency change proposed"
+      },
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/surrealdb/surrealdb/blob/main/src/method/query.rs",
+          "claim": "Context7 exposes check/take_errors; local pinned query.rs independently confirms these APIs. Main-branch examples are not a version-equivalence claim."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/query.rs:704-753",
+          "claim": "Pinned response supports statement error inspection before result extraction."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:src/uar/persistence/providers/ingestion_records/surreal.rs:50-77",
+          "claim": "Existing UAR retries only typed rolled-back transaction conflicts, bounded; transport/unknown outcomes are returned."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:src/uar/persistence/providers/agui_runs/surreal.rs:38-66",
+          "claim": "Existing CAS pattern rereads exact predicate and preserves inconclusive errors."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://github.com/surrealdb/surrealdb/issues/7472",
+          "claim": "Upstream issue distinguishes statement-query error handling from commit error flattening; it does not diagnose this run."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://github.com/surrealdb/surrealdb/issues/7428",
+          "claim": "Upstream issue discusses typed conflict identification; text matching is not an adequate basis for automatic replay."
+        }
+      ],
+      "risks": [
+        "Recorded take(0) error could be statement failure or decoding; it does not prove rollback or commit.",
+        "Existing boolean CAS and Storage(error.to_string()) erase useful distinctions.",
+        "A duplicate no-usage settlement can increment usage_revision; convergence needs a stable same-outcome receipt/no-op decision.",
+        "Do not reuse ingestion retry timing/cap without an explicit phase bound; do not release unknown reservations."
+      ],
+      "decision_rationale": "Reuse pinned SDK and existing UAR patterns; no upgrade or new storage service. R3 requires typed outcome distinction, fenced receipt comparison and bounded settlement-only reconciliation, hence runtime code. Diagnostic evidence must select exact failure branch."
+    },
+    {
+      "id": "cand-003",
+      "name": "Existing Tokio member lanes, bounded task execution and output-artifact dependency graph",
+      "kind": "pattern",
+      "registry": "none",
+      "fit_for_gap": "G3: preserve team concurrency design and prove actual overlapping specialists plus dependent merge",
+      "verdict": "adopt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "local:src/uar/runtime/team_execution/controller.rs:207-229,313-329",
+          "claim": "Lane key includes member ID; distinct members use distinct mutex lanes and worker tasks under shared active permits."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:src/uar/compiler/collaboration/team_execution/context.rs:90-164",
+          "claim": "Selected attributed output artifacts are handed to task context."
+        },
+        {
+          "tier": 1,
+          "source_url": "local:scripts/behaviors/steps/math-writing-team.steps.mjs",
+          "claim": "Existing BDD observes live runs and requires both completed artifact IDs in final writer context."
+        }
+      ],
+      "risks": [
+        "Permitted concurrency is not observed successful overlap.",
+        "Fast completion can make sequential snapshots miss a short real overlap.",
+        "A new executor/event bus would expand scope without fixing the identified admission gap."
+      ],
+      "decision_rationale": "Retain the implemented executor, not a new framework. R4 needs no replacement runtime architecture; real-path acceptance still depends on admission/settlement fixes and exact authorization."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "Align actual filesystem provider reconciliation with durable skill selection, retain ownership/source precedence and safely categorized failure evidence.",
+      "why_no_candidate": "Current application source must enforce its own provider IDs, stored-skill invariants and precedence; a new discovery package cannot supply that policy."
+    },
+    {
+      "need": "Define and implement stable same-attempt terminal settlement receipts and safe reconciliation for confirmed/ambiguous CAS results.",
+      "why_no_candidate": "Pinned SDK APIs reveal errors, but application attempt fences, effect/accounting certainty and duplicate receipts are UAR-specific."
+    },
+    {
+      "need": "Bind repaired-source artifact to the existing math/writing BDD and capture real overlap/merged output without re-running unrelated accepted behaviors.",
+      "why_no_candidate": "No library can replace the required actual product evidence; keep the portable script and improve only demonstrated evidence gaps."
+    }
+  ]
+}

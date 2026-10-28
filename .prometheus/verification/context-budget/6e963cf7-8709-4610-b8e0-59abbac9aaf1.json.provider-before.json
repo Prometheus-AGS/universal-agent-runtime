@@ -1,0 +1,36 @@
+{
+  "id": "liter",
+  "display_name": "Configured Liter gateway",
+  "base_url": "http://127.0.0.1:4000/v1",
+  "protocol": "chat",
+  "default_model": "MiniMax-M3",
+  "models": [
+    {
+      "id": "MiniMax-M3",
+      "pricing_identity": {
+        "provider_id": "minimax",
+        "model_id": "MiniMax-M3"
+      },
+      "execution_profile": {
+        "profile": {
+          "id": "uar.openai-compatible-chat.settings-v1",
+          "revision": 1
+        },
+        "settingsRevision": 1,
+        "reasoning": {
+          "mode": "off"
+        }
+      },
+      "display_name": null,
+      "context_window": 1048576,
+      "supports_vision": false,
+      "supports_tools": true,
+      "supports_reasoning": false,
+      "supports_structured_output": false,
+      "supports_streaming": true,
+      "max_output_tokens": 64000,
+      "enabled": true
+    }
+  ],
+  "enabled": true
+}

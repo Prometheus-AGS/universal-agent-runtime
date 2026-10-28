@@ -1,0 +1,277 @@
+{
+  "base": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-fixture-proposal-003/bindings.pending.json",
+  "build_receipt": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native-build-receipt.json",
+    "sha256": "sha256:d6c4c0ba459eff56c8e994feeb294c6e5487417e04b19f30bd357cca6a789e32"
+  },
+  "composition_output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed",
+  "draft": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-bindings-final-001.draft.json",
+  "frozen_preparation": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/preparation.json",
+    "sha256": "sha256:80d491ad67d09e2a98492bb413bd153438cc17d9f10879d48506fb23e8bb31a9"
+  },
+  "gate": "CLOSED",
+  "helper_executed": false,
+  "installed_artifact": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "sha256": "sha256:25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c"
+  },
+  "intended_final": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-bindings-final-001.json",
+  "invariants": {
+    "cohere_only": true,
+    "contract_calls_cap": 4000,
+    "contract_minutes_cap": 2400,
+    "new_provider_or_model_allowed": false,
+    "preserve_all_declared_ports": {
+      "alternate_proxy": 49422,
+      "cohere_embedding_proxy": 49424,
+      "negative_401_peer": 49426,
+      "postgres": 49403,
+      "postgres_grpc": 49402,
+      "postgres_http": 49401,
+      "primary_proxy": 49421,
+      "structured_metadata": 49425,
+      "structured_proxy": 49423,
+      "surreal": 49413,
+      "surreal_grpc": 49412,
+      "surreal_http": 49411
+    },
+    "preserve_all_limits_and_budget_vectors": true,
+    "preserve_original_epoch": "uar-user-outcomes-original-20261024",
+    "preserve_prior_consumption_and_unknowns": true,
+    "repair_budget_consumed": 9,
+    "repair_budget_limit": 9,
+    "reset_allowed": false,
+    "spend_pool_limits_microunits": {
+      "cohere": 10000000,
+      "liter": 0,
+      "openai_embeddings": 10000000
+    }
+  },
+  "meaning": "Typed authoring instructions for the lead; not an accepted API schema, callable helper or executable template",
+  "nonblocking_empty_values": {
+    "/existing_service_environment_env": "observer reads no credential values",
+    "/native_configuration/a2a/trusted_peers": "source explicit empty trust default",
+    "/native_configuration/file_processing/allowed_mime_types": "source all-supported default",
+    "/postgres_store/docker_environment_env": "no ambient Docker override declared",
+    "/server_environment_env": "no undeclared environment override"
+  },
+  "packet_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "remaining_unverified": [
+    "helper admission/runtime compatibility",
+    "all private/generated/resource/adoption outputs",
+    "static byte identities",
+    "actual existing-service uid/executable/live identity",
+    "all model/embedding availability and native acceptance behavior"
+  ],
+  "resolved_source_choices": [
+    {
+      "from": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/preparation.json",
+      "rule": "Copy actual P0.006 metadata and matching native-build-receipt command; retain sealed006 paths, no rebuild/recopy",
+      "targets": [
+        "/installed",
+        "/installed_artifact",
+        "/proposed_build_argv",
+        "/producer_outputs/artifact_preparation_fragment"
+      ]
+    },
+    {
+      "rule": "Lead fixture profile labels identify distinct adapters; runtime marker binds exact selected profile_id",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/observers_runtime.py",
+      "targets": [
+        "/backends/postgres_pgvector/profile_id",
+        "/backends/surreal_disk/profile_id"
+      ],
+      "values": [
+        "uar-acceptance-postgres_pgvector",
+        "uar-acceptance-surreal_disk"
+      ]
+    },
+    {
+      "rule": "Exact named aliases from generator only; generated values never written to bindings",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_private_inputs.py",
+      "targets": [
+        "/backends/*/headers_env",
+        "/backends/*/*_env",
+        "/postgres/*_env",
+        "/surreal/*_env",
+        "/capabilities/foreign_authorization_env"
+      ]
+    },
+    {
+      "rule": "Retain uar_acceptance and exact daemon start/log/user/pass/bind/disk argv; substitute generator aliases for fixture credential refs; existing digest-pinned image unchanged",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/runtime-observer.example.json",
+      "targets": [
+        "/surreal/namespace",
+        "/surreal/disk_container/args"
+      ]
+    },
+    {
+      "rule": "Keep []: source documents empty as all supported MIME types, not a missing slot",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/config.rs",
+      "targets": [
+        "/native_configuration/file_processing/allowed_mime_types"
+      ]
+    },
+    {
+      "rule": "Keep [] default trust list; no remote peer or authority invented",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/config.rs",
+      "targets": [
+        "/native_configuration/a2a/trusted_peers"
+      ]
+    },
+    {
+      "rule": "Reference same protected prepared raw ingress key; existing whole-leaf api_key reference remains",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/rag/embeddings/openai.rs",
+      "targets": [
+        "/native_configuration/llm/embedding/api_key_env"
+      ],
+      "value": "UAR_FIXTURE_INGRESS_RAW_KEY"
+    },
+    {
+      "rule": "Exact tool paths;30sec/1MiB/120sec bounds; exact3credential names; *:4000 selection follows documented0.0.0.0 default without host override, requires explicit authority and future real observation",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/observers_service.README.md",
+      "targets": [
+        "/existing_service_observer/tools/*/path",
+        "/existing_service_observer/limits",
+        "/existing_service_observer/credential_env_names",
+        "/existing_service_observer/approved_listener_names"
+      ]
+    },
+    {
+      "rule": "Captured P0.006 static tree and enumerated asset names only, no digest recomputation or availability check; index remains required final inventory file",
+      "source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/static/payload",
+      "targets": [
+        "/browser/static_directory",
+        "/browser/static_files/*/url",
+        "/browser/static_files/*/path"
+      ]
+    }
+  ],
+  "schema_version": "uar.bindings-materialization-recipe.v1",
+  "secret_values_read": false,
+  "slots": [
+    {
+      "kind": "approved-file-reference",
+      "rule": "path is proposed final private config; if lead chooses another path, explicitly replace before sealing",
+      "source": "actual exact approved private preparer configuration bytes",
+      "targets": [
+        "/private_inputs_config/sha256"
+      ],
+      "value_type": "sha256:<64lowerhex>"
+    },
+    {
+      "kind": "generated-private-references",
+      "rule": "Bind actual config digest, original epoch and target007/composed; never read env.json for composition",
+      "source": "one explicitly approved preparer redacted receipt plus privately written inputs.json/receipt.json",
+      "targets": [
+        "/private_inputs/inputs",
+        "/private_inputs/receipt"
+      ],
+      "value_type": "{path:absolute,sha256:sha256:<64lowerhex>}"
+    },
+    {
+      "kind": "composer-owned-prepared-overrides",
+      "rule": "Composer applies these overrides from matched private config/input/receipt refs; nulls in inert draft are intentional until actual inputs exist",
+      "source": "actual inputs.json fields /orchestrator,/primary/workspace_id,/scope_root",
+      "targets": [
+        "/orchestrator",
+        "/teams/workspace_id",
+        "/backends/postgres_pgvector/state_parent",
+        "/backends/surreal_disk/state_parent",
+        "/budget_ledger_parent"
+      ],
+      "value_type": "source-derived owner object or absolute private path"
+    },
+    {
+      "kind": "lead-existing-service-provenance",
+      "rule": "exact expected argv=[actual resolved executable path,api,--config,actual selected service config path]; observer and every authority share identical source refs; no source profiles/secret values read by this writer",
+      "source": "lead approved existing-service provenance metadata",
+      "targets": [
+        "/existing_service_observer/uid",
+        "/existing_service_observer/sources/executable",
+        "/existing_service_observer/expected_argv",
+        "/existing_service_observer/sources/{launchagent,launch_script,service_config}/sha256",
+        "/existing_service_observer/tools/*/sha256",
+        "/confirmed_existing_service",
+        "/budget_proxy/bindings/{0,1,2}/upstream_authority"
+      ],
+      "value_type": "integer uid, frozen refs and argv array"
+    },
+    {
+      "kind": "captured-static-byte-seal",
+      "rule": "Seal entire static directory including index and non-assets into final inventory; join each asset URL row to same exact path/digest; no build or browser invocation",
+      "source": "already captured snapshot/static/payload files, under specifically approved metadata sealing",
+      "targets": [
+        "/browser/static_files/*/sha256"
+      ],
+      "value_type": "sha256:<64lowerhex>"
+    },
+    {
+      "kind": "lead-operator-authority",
+      "rule": "Never fill arbitrary hashes or infer cryptographic adoption from a boolean; full retry/fallback-chain ceilings and separate pools retained",
+      "source": "lead authored operator-authorized resource/charge/hosted-source documents and registered signer outputs",
+      "targets": [
+        "/operator_approval",
+        "/operator_signature",
+        "/budget_proxy/approval_packet",
+        "/budget_proxy/approval_signature",
+        "/budget_proxy/bindings/*/charge_approval",
+        "/knowledge/embedding_spaces/*/source_approval",
+        "/knowledge/embedding_spaces/*/model_source_identity",
+        "/allowances"
+      ],
+      "value_type": "exact frozen authority references plus typed approved allowances"
+    },
+    {
+      "kind": "original-epoch-accounting-seed",
+      "rule": "No zero/default/reset; unresolved reservations block; seed binds actual resource packet/signature identities after signing",
+      "source": "actual reconciled seed with all6counters, all3pool counters, fixed original timestamps and nonempty prior evidence",
+      "targets": [
+        "/budget_proxy/seed"
+      ],
+      "value_type": "{path:absolute,sha256:sha256:<64lowerhex>}"
+    },
+    {
+      "kind": "final-inventory-reference",
+      "rule": "Final inventory excludes its own hash, env.json and later derived adoption; final bindings reference is informational, not a self hash",
+      "source": "new additive final inventory with source010 denominator + P0.006 manifests/rows + static/private/authority/accounting inputs",
+      "targets": [
+        "/final_inventory/sha256"
+      ],
+      "value_type": "sha256:<64lowerhex>"
+    },
+    {
+      "kind": "explicit-activation-after-approval",
+      "rule": "Draft flags stay false/true/false; do not execute inert draft or flip admission flags as a substitute for authority",
+      "source": "named operator composition authority after actual refs and full closure exist",
+      "targets": [
+        "/executable",
+        "/example",
+        "/full_closure_approved",
+        "/existing_service_observer/executable",
+        "/postgres_store/executable",
+        "/budget_proxy/executable",
+        "/structured_proxy_budget_hop_approved"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "kind": "nested-inert-provenance-flags",
+      "rule": "Observer sources.executable is now a proper pending file ref, not the proposal inert boolean; no unrelated informational flags grant authority",
+      "source": "lead exact provenance/resource authority",
+      "targets": [
+        "/existing_service_observer/sources/executable",
+        "/billing_proposal/*/operator_approved",
+        "/confirmed_existing_service/approval",
+        "/budget_proxy/bindings/{0,1,2}/upstream_authority/operator_approved"
+      ],
+      "value_type": "actual exact frozen reference or explicitly approved authority boolean"
+    }
+  ],
+  "source_edits": false,
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "status": "INERT_METADATA_RECIPE_NOT_EXECUTION_OR_ADOPTION_AUTHORITY",
+  "verification_executed": false
+}

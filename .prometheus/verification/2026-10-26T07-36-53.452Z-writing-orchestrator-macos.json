@@ -1,0 +1,151 @@
+[
+  {
+    "description": "  As a user\n  I want the orchestrator to choose a writer from my registered agents\n  So that writing tasks are handled by the writer rather than the mathematics specialist",
+    "elements": [
+      {
+        "description": "",
+        "id": "route-a-writing-request-to-a-saved-writing-specialist;save-a-writer-and-let-intent-classification-route-a-blog-request",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Save a writer and let intent classification route a blog request",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40838419
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the running UAR contains the saved mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:25"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7086893
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I register a persistent blog and article writing agent",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:40"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18525533
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the writing agent is saved alongside the mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:80"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 4703361041,
+              "error_message": "AssertionError [ERR_ASSERTION]: {\"type\":\"RUN_ERROR\",\"code\":\"\",\"message\":\"AgentNode 'selected-agent' failed: Graph delegation denied: Tool 'spawn_agent' is denied by governance policy\"}\n    + expected - actual\n\n    -false\n    +true\n\n    at drain (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/writing-orchestrator.steps.mjs:111:14)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/writing-orchestrator.steps.mjs:114:97)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I ask the orchestrator to write a community garden blog post",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "intent classification selects the writing agent instead of the mathematics specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:120"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "the writing agent returns a blog draft using its saved byline",
+            "match": {
+              "location": "scripts/behaviors/steps/writing-orchestrator.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 429779
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJQZXJzaXN0IGEgd3JpdGluZyBhZ2VudCBhbmQgcm91dGUgYSB3cml0aW5nIHRhc2sgYnkgaW50ZW50IiwKICAic3RhdHVzIjogIkZBSUxFRCIsCiAgImNsaWVudF9wbGF0Zm9ybSI6ICJkYXJ3aW4iLAogICJtb2RlbCI6ICJsaXRlci9NaW5pTWF4LU0zIiwKICAid3JpdGVyX2lkIjogIndyaXRpbmctc3BlY2lhbGlzdCIsCiAgIm1hdGhfaWQiOiAibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwKICAiYWdlbnRfcmVjb3JkIjogIi9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudHMvd3JpdGluZy1zcGVjaWFsaXN0Lmpzb24iLAogICJ3cml0ZXJfY3JlYXRlZCI6IGZhbHNlLAogICJ0YXNrIjogIldyaXRlIGEgYmxvZyBwb3N0IG9mIGFwcHJveGltYXRlbHkgMTAwIHRvIDE2MCB3b3JkcyBhYm91dCBob3cgYSBjb21tdW5pdHkgZ2FyZGVuIGhlbHBzIG5laWdoYm9ycyBjb25uZWN0LiBJbmNsdWRlIGEgaGVhZGxpbmUgYW5kIGF0IGxlYXN0IHR3byBzdWJzdGFudGl2ZSBwYXJhZ3JhcGhzLiIsCiAgImV2ZW50cyI6IFsKICAgIHsKICAgICAgInR5cGUiOiAiUlVOX1NUQVJURUQiLAogICAgICAidGhyZWFkSWQiOiAiOTc4OTU3MDctNTE0Mi00YzdiLTkzYjQtNzc1NmM4NzdhYTVmIiwKICAgICAgInJ1bklkIjogIjc1NWU2MjRjLTQ0YTMtNDI3MC05Y2M3LTQ4YzA4N2M0OGM5OSIsCiAgICAgICJwcm90b2NvbFZlcnNpb24iOiAiMS4wIgogICAgfSwKICAgIHsKICAgICAgInR5cGUiOiAiUlVOX0VSUk9SIiwKICAgICAgImNvZGUiOiAiIiwKICAgICAgIm1lc3NhZ2UiOiAiQWdlbnROb2RlICdzZWxlY3RlZC1hZ2VudCcgZmFpbGVkOiBHcmFwaCBkZWxlZ2F0aW9uIGRlbmllZDogVG9vbCAnc3Bhd25fYWdlbnQnIGlzIGRlbmllZCBieSBnb3Zlcm5hbmNlIHBvbGljeSIKICAgIH0KICBdLAogICJzZXJ2aWNlX2tlcHRfcnVubmluZyI6IHRydWUsCiAgImFnZW50c19yZXRhaW5lZCI6IHRydWUsCiAgImR1cmF0aW9uX21zIjogNDc3Mwp9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@writing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "route-a-writing-request-to-a-saved-writing-specialist",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Route a writing request to a saved writing specialist",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@writing",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/writing-orchestrator.feature"
+  }
+]

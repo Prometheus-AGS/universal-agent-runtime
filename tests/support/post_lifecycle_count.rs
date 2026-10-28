@@ -141,8 +141,10 @@ async fn cases(base: &str, captures: &Captures) -> Result<Value> {
     // key or read/copy an existing provider credential to make this case pass.
     let config = liter_llm::ClientConfigBuilder::new("")
         .base_url(base.to_owned()).max_retries(0).build();
-    let driver = Arc::new(LiterLlmDriver::new(config, SYNTHETIC_EXACT_MODEL.into(), Some(false))?
-        .with_endpoint_profile(endpoint(base))?);
+    // Use the exact-profile constructor: the generic model-hint constructor
+    // strips its own provider prefix, changing the body counted by this profile.
+    let driver = Arc::new(LiterLlmDriver::from_endpoint_profile(
+        config, Some(false), endpoint(base))?);
     let arguments = "{\"path\":\"owned-fixture\",\"text\":\"λ\\r\\nkeep\"}";
     let result = "{\"owned\":true,\"bytes\":[0,13,10,255]}";
     let tools = vec![json!({"type":"function","function":{"name":"count_fixture_tool",

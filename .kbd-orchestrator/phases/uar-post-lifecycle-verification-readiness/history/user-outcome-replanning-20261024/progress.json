@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 395,
+  "derivedRevision": 395,
+  "frontier": {
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 283,
+    "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+  },
+  "conflictCount": 0,
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "phaseId": "uar-post-lifecycle-verification-readiness",
+  "parentPhase": null,
+  "last_updated": "2026-10-25T04:50:02.438617Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 8,
+  "changes_completed": 6,
+  "implementation_total": 8,
+  "implementation_completed": 6,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 6,
+      "total": 8,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "completionScopes": {
+    "completion": "phase",
+    "runCompletion": "run"
+  },
+  "runCompletion": {
+    "scope": "run",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 144,
+      "total": 168,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "pl-main-budget-reconciliation",
+      "title": "Terminal liability reconciliation",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 3,
+      "tasks_done": 3,
+      "last_task_completed": "Document failure and restart outcomes with scenario bindings",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-compatible-budget-errors",
+      "title": "Compatible refusal classification and delivery",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 2,
+      "tasks_done": 2,
+      "last_task_completed": "Implement the reviewed compatible OpenAI terminal budget-error contract",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-destination-budget-contract",
+      "title": "Destination trust decision and contract wiring",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 2,
+      "tasks_done": 2,
+      "last_task_completed": "Wire reviewed preparations reserve and tool-inclusive trim accounting",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-persistence-discriminators",
+      "title": "Main persistence CAS and historical evidence discriminators",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 3,
+      "tasks_done": 3,
+      "last_task_completed": "Record finite B3 archive search and conditional-repair dispositions",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "pl-main-boundary-evidence",
+      "title": "Candidate-bound production integration and receipt packet",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 15,
+      "tasks_done": 15,
+      "last_task_completed": "Author explicitly requested main identity repair003 and prepare amendment adding exactly one bounded repair plus refreshed inventory; no verification",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "update-parking-lot-admission",
+      "title": "Issue426 pinned Parking Lot upgrade with bounded owned ingestion and UAR1.3.0",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 10,
+      "tasks_done": 8,
+      "last_task_completed": "Collect handoffs and reconcile inventory remaining work and proposed gates",
+      "next_task_pending": "Operator-gated finite integration and supported-profile builds",
+      "blockers": []
+    },
+    {
+      "id": "reengineer-user-outcome-verification",
+      "title": "Reengineer verification around reliable user outcomes",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
+      "tasks_total": 1,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "Assess production workflows and current proof gaps",
+      "blockers": []
+    },
+    {
+      "id": "openai-client-tools",
+      "title": "Caller-executed tools across OpenAI AG-UI Anthropic A2A ACP",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 48,
+      "tasks_done": 48,
+      "last_task_completed": "Preserve A2A completion ownership across observer cancellation and rejected admission",
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

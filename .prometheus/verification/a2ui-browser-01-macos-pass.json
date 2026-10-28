@@ -1,0 +1,52 @@
+{
+  "scenario": "A2UI-BROWSER-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T22:53:58.936068+00:00",
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "--config",
+    "scripts/behaviors/a2ui-browser.config.mjs"
+  ],
+  "observed_output": "1 passed (28.4s); selected test 25.4s; all 5 Gherkin steps and cleanup passed",
+  "attempt": 7,
+  "configured_model": "liter/MiniMax-M3",
+  "fresh_input": 606,
+  "answer": {
+    "marker": "BROWSER-f7e9cbbe-9fba-41b5-9c2d-bd670df6c7ed",
+    "result": 625
+  },
+  "source_run_id": "777d695e-2204-4346-bff3-84627af09abe",
+  "continuation_run_id": "9f07cd64-2b89-4aa4-b709-eaeb45a51b6b",
+  "action_status": 202,
+  "evidence": ".prometheus/verification/a2ui-browser-007-macos/evidence.json",
+  "cucumber_report": ".prometheus/verification/a2ui-browser-007-macos/cucumber.json",
+  "playwright_report": ".prometheus/verification/a2ui-browser-007-macos/playwright.json",
+  "screenshots": [
+    ".prometheus/verification/a2ui-browser-007-macos/rendered-surface.png",
+    ".prometheus/verification/a2ui-browser-007-macos/continued-answer.png"
+  ],
+  "prior_attempts": [
+    ".prometheus/verification/a2ui-browser-001-macos",
+    ".prometheus/verification/a2ui-browser-002-macos",
+    ".prometheus/verification/a2ui-browser-003-macos",
+    ".prometheus/verification/a2ui-browser-004-macos",
+    ".prometheus/verification/a2ui-browser-005-macos",
+    ".prometheus/verification/a2ui-browser-006-macos"
+  ],
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "disposable_agent_deleted": true,
+  "runtime_pid": 78802,
+  "binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "service_kept_running": true,
+  "source_sha256": {
+    "scripts/behaviors/a2ui-browser.config.mjs": "150266f5cbf39202907871f6e29c23c3aad92a4c175f4cf0f7801bf686ab10d8",
+    "scripts/behaviors/features/a2ui-browser.feature": "70c6764cc3331b1f9e59b9c8296f8f15daa32f9ce397a40a600ad90d424ea4c0",
+    "scripts/behaviors/browser/a2ui-browser.steps.mjs": "a3411a596c92244379ce430f7a8de81f40b00054c9da1acf3f3054188abee461",
+    "src/uar/runtime/native_skills/a2ui_render.rs": "22ef8defe879c14ac5f7e8dddb99977348f6df6370486b34f5a5aeff0dc2743f"
+  },
+  "scope": "Chrome on Mac: genuine native-tool A2UI publication via browser chat/agui_spec, visible controls, actual click action with fresh bound value, successful distinct agent continuation and exact answer in assistant DOM. No all-catalog/component/browser/platform or repeat-reliability claim. Screenshot viewport does not show the final answer despite its verified DOM presence.",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

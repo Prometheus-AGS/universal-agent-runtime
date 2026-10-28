@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "example": true,
+  "executable": false,
+  "status": "PARTIAL_EXISTING_SERVICE_BINDINGS_NOT_EXECUTION_AUTHORITY",
+  "full_closure_approved": false,
+  "selected_embedding_services": [
+    "cohere"
+  ],
+  "native_policy_source": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/native-policy.local-draft.json",
+  "producer_outputs": {
+    "artifact_preparation_fragment": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/artifacts/snapshot/preparation.json",
+      "sha256": null,
+      "producer": "scripts/acceptance/prepare_artifacts.py under its own exact approved config",
+      "consumed_fields": [
+        "source_identity",
+        "source_files",
+        "installed",
+        "installed_artifact",
+        "build_receipt",
+        "closures"
+      ],
+      "adoption": "Lead merges actual successful output fragment into final inventory/bindings; this is not an executable ready marker"
+    },
+    "private_preparation_config_source": "scripts/acceptance/fixtures/private-inputs.local-draft.json",
+    "private_preparation_outputs": {
+      "scope_derivation": "private_scope_parent/uar_fixture_inputs_ + sha256(preserved original epoch_id)[:20]",
+      "files": [
+        "inputs.json",
+        "receipt.json",
+        "env.json"
+      ],
+      "adoption": "Actual nonsecret inputs/receipt refs enter final inventory; sensitive env.json is loaded only in parent memory under approval"
+    },
+    "remaining_dynamic_slots": [
+      "actual preserved epoch and reconciled seed",
+      "future validity timestamps",
+      "actual source/artifact/tool/resource digests",
+      "successful immutable build closure outputs",
+      "signed authority/charge/preparation projections",
+      "actual static asset path identities"
+    ]
+  },
+  "packet_recipe": {
+    "root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001",
+    "private_scope_parent": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/private",
+    "artifacts_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/artifacts",
+    "composition_output_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/composed",
+    "ports": {
+      "postgres_http": 49401,
+      "postgres_grpc": 49402,
+      "postgres": 49403,
+      "surreal_http": 49411,
+      "surreal_grpc": 49412,
+      "surreal": 49413,
+      "primary_proxy": 49421,
+      "alternate_proxy": 49422,
+      "structured_proxy": 49423,
+      "cohere_embedding_proxy": 49424,
+      "structured_metadata": 49425,
+      "negative_401_peer": 49426
+    },
+    "epoch_and_consumption": "Preserve existing adopted epoch and all consumed/reserved state; no new zero seed or reset",
+    "directory_effects": "Future approved producer creates exclusive directories; no directories created by this draft",
+    "native_build_features": [
+      "server-full",
+      "postgres-backend"
+    ],
+    "surreal_image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20",
+    "postgres_image": "pgvector/pgvector:pg17@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d",
+    "postgres_image_source": "https://hub.docker.com/v2/repositories/pgvector/pgvector/tags/pg17",
+    "postgres_image_pending": "Official tag metadata supplied by lead; actual local image availability unverified; no implicit pull"
+  },
+  "installed": {
+    "python": "/Users/gqadonis/miniconda3/bin/python3",
+    "node": "/Users/gqadonis/.volta/bin/node",
+    "docker": "/usr/local/bin/docker",
+    "psql": "/usr/local/pgsql/bin/psql"
+  },
+  "installed_path_status": "Lead source-resolved candidates only; exact copied artifact closures remain pending producer outputs",
+  "model_role_recipe": {
+    "primary": {
+      "provider_id": "fixture-primary",
+      "wire_model": "gpt-5.4",
+      "budget_binding_id": "liter-primary",
+      "listen_port": 49421
+    },
+    "alternate": {
+      "provider_id": "fixture-alternate",
+      "wire_model": "k3",
+      "budget_binding_id": "liter-alternate",
+      "listen_port": 49422
+    },
+    "structured": {
+      "provider_id": "fixture-structured",
+      "wire_model": "gpt-5.4",
+      "budget_binding_id": "liter-structured",
+      "listen_port": 49423
+    },
+    "upstream_url": "http://localhost:4000/v1/chat/completions",
+    "upstream_key_env": "LITER_LLM_MASTER_KEY",
+    "header_prefixes": {
+      "Authorization": "Bearer "
+    },
+    "ingress_key_env": "UAR_FIXTURE_INGRESS_RAW_KEY",
+    "ingress_authorization_prefix": "Bearer ",
+    "max_output_tokens_per_attempt": 4096,
+    "spend_pool": "liter"
+  },
+  "embedding_wire_recipe": {
+    "id": "cohere-embeddings",
+    "kind": "embedding",
+    "spend_pool": "cohere",
+    "listen_port": 49424,
+    "request_path": "/v1/embeddings",
+    "model_path": "/model",
+    "upstream_url": "https://api.cohere.ai/compatibility/v1/embeddings",
+    "allowed_models": [
+      "embed-multilingual-v3.0",
+      "embed-english-v3.0",
+      "embed-english-light-v3.0"
+    ],
+    "headers_env": {
+      "Authorization": "COHERE_API_KEY"
+    },
+    "header_prefixes": {
+      "Authorization": "Bearer "
+    },
+    "ingress_authorization_env": "UAR_FIXTURE_INGRESS_RAW_KEY",
+    "ingress_authorization_prefix": "Bearer ",
+    "approved_charge_ceiling_microunits": 5000,
+    "charge_ceiling_pending": "Proposed only: 96 textual inputs times 512 billable tokens at operator USD0.10/million, rounded up to USD0.005; actual batch/type guard plus explicit context/no-extra-charge assumption and exact charge adoption required; not exact tokenizer or invoice proof"
+  },
+  "memory_budget_binding_id": "cohere-embeddings",
+  "budget_epoch_id": "uar-user-outcomes-original-20261024",
+  "budget_state_parent_env": "UAR_FIXTURE_PACKET_STATE_PARENT",
+  "observer_seconds": 120,
+  "maintenance_seconds": 90,
+  "ready_seconds": 120,
+  "limits": {
+    "wall_seconds": 86400,
+    "request_seconds": 120,
+    "command_seconds": 180,
+    "cleanup_seconds": 180,
+    "http_requests": 200000,
+    "response_bytes": 10485760,
+    "total_output_bytes": 268435456,
+    "output_tokens": 1000
+  },
+  "limits_status": "Lead finite proposal only; not adopted execution authority or affordability proof",
+  "budget_proxy": {
+    "schema_version": 1,
+    "executable": false,
+    "epoch_id": "uar-user-outcomes-original-20261024",
+    "seed": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-budget-seed.proposed.json",
+      "sha256": null
+    },
+    "spend_pools": {
+      "cohere": {
+        "limit_microunits": 10000000
+      },
+      "openai_embeddings": {
+        "limit_microunits": 10000000
+      },
+      "liter": {
+        "limit_microunits": 0
+      }
+    },
+    "limits": {
+      "model_attempts": 6000,
+      "embedding_attempts": 20000,
+      "generated_tokens": 2000000,
+      "cost_microunits": 20000000,
+      "request_bytes": 2147483648,
+      "response_bytes": 4294967296,
+      "max_in_flight": 4,
+      "wall_seconds": 259200
+    },
+    "upstream_timeout_seconds": 120,
+    "ingress_timeout_seconds": 30,
+    "bindings": []
+  },
+  "budget_epoch_provenance": {
+    "original_started_utc": "2026-10-24T13:38:17.685447Z",
+    "original_deadline_utc": "2026-10-27T13:38:17.685447Z",
+    "reset_allowed": false,
+    "prior_genuine_provider_traffic": "Lead must reconcile domain-specific actual prior genuine calls and unknowns; controlled peer traffic is not genuine-provider consumption"
+  },
+  "binding_request_limits": {
+    "max_request_bytes": 1048576,
+    "max_response_bytes": 8388608
+  },
+  "capabilities": {
+    "case_seconds": 300,
+    "mcp_server_name": "acceptance-tools"
+  },
+  "teams": {
+    "case_seconds": 600
+  },
+  "postgres_store": {
+    "schema_version": 1,
+    "executable": false,
+    "container_pg_port": 5432,
+    "mount_target": "/var/lib/postgresql/data",
+    "pgdata": "/var/lib/postgresql/data/pgdata",
+    "docker_environment_env": {},
+    "limits": {
+      "command_seconds": 30,
+      "ready_seconds": 60,
+      "cleanup_seconds": 30,
+      "stop_seconds": 10,
+      "total_seconds": 110,
+      "output_bytes": 1048576
+    }
+  },
+  "confirmed_existing_service": {
+    "service_id": "ai.prometheus.liter-llm-api",
+    "base_url": "http://localhost:4000/v1",
+    "credential_env": "LITER_LLM_MASTER_KEY",
+    "launchagent": {
+      "path": "/Users/gqadonis/Library/LaunchAgents/ai.prometheus.liter-llm-api.plist",
+      "sha256": null
+    },
+    "launch_script": {
+      "path": "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/liter-llm-api-launch.sh",
+      "sha256": null
+    },
+    "service_config": {
+      "path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
+      "sha256": null
+    },
+    "observed_by": "lead source inspection of existing LaunchAgent, launch wrapper and TOML; no service/model probe",
+    "bearer_header_prefix_required": "Bearer ",
+    "approval": null
+  },
+  "confirmed_model_aliases": [
+    {
+      "alias": "gpt-5.4",
+      "context_window": 1050000,
+      "max_output_tokens": 128000,
+      "configured_route": "openai/gpt-5.4",
+      "configured_upstream": "http://localhost:8181/v1",
+      "static_catalog_source": "vendor/git/liter-llm/schemas/catalog.json",
+      "catalog_capabilities": {
+        "vision": true,
+        "function_calling": true,
+        "structured_output": true,
+        "reasoning": true
+      },
+      "live_capabilities_verified": false
+    },
+    {
+      "alias": "k3",
+      "context_window": 1048576,
+      "max_output_tokens": 131072,
+      "configured_route": "moonshot/k3",
+      "configured_upstream": "https://api.kimi.com/coding/v1",
+      "static_catalog_source": "vendor/git/liter-llm/schemas/catalog.json#kimi-code-plan-cn/k3",
+      "catalog_capabilities": {
+        "vision": true,
+        "function_calling": true,
+        "structured_output": true,
+        "reasoning": true
+      },
+      "live_capabilities_verified": false
+    },
+    {
+      "alias": "MiniMax-M3",
+      "configured_route": "minimax/MiniMax-M3",
+      "configured_upstream": "https://api.minimax.io/v1",
+      "static_catalog_source": "vendor/git/liter-llm/schemas/catalog.json",
+      "catalog_capabilities": {
+        "vision": true,
+        "function_calling": true,
+        "structured_output": false
+      },
+      "live_capabilities_verified": false
+    }
+  ],
+  "model_upstream_constraint": "All acceptance model bindings must forward through the existing Liter service on port4000; configured provider upstreams are provenance only and must not become bypass routes.",
+  "confirmed_embedding_source": {
+    "profile_path_metadata_only": "/Users/gqadonis/.bash_profile",
+    "credential_env": "COHERE_API_KEY",
+    "configured_model_env": "COHERE_EMBEDDING_MODEL",
+    "configured_model": "embed-multilingual-v3.0",
+    "configured_url_env": "COHERE_EMBEDDING_URL",
+    "configured_url": "https://api.cohere.ai/compatibility/v1",
+    "profile_update": "Lead applied only the explicitly requested URL line207; key/model preserved; no sourcing or service/network probe",
+    "api": "OpenAI compatibility; request base plus /embeddings; send_dimensions=false",
+    "official_source": "https://docs.cohere.com/v2/docs/compatibility-api",
+    "dimension_source": "https://docs.cohere.com/v2/docs/cohere-embed"
+  },
+  "knowledge": {
+    "index_seconds": 120,
+    "regeneration_seconds": 300,
+    "regeneration_documents": 3,
+    "embedding_spaces": [
+      {
+        "kind": "genuine",
+        "synthetic": false,
+        "fingerprint": {
+          "backend": "openai",
+          "model": "embed-multilingual-v3.0",
+          "dimension": 1024
+        },
+        "source_kind": "approved_hosted_endpoint",
+        "endpoint": "https://api.cohere.ai/compatibility/v1",
+        "model_source_identity": null,
+        "source_approval": {
+          "path": null,
+          "sha256": null
+        },
+        "budget_binding_id": "cohere-embeddings",
+        "live_availability_verified": false
+      },
+      {
+        "kind": "genuine",
+        "synthetic": false,
+        "fingerprint": {
+          "backend": "openai",
+          "model": "embed-english-v3.0",
+          "dimension": 1024
+        },
+        "source_kind": "approved_hosted_endpoint",
+        "endpoint": "https://api.cohere.ai/compatibility/v1",
+        "model_source_identity": null,
+        "source_approval": {
+          "path": null,
+          "sha256": null
+        },
+        "budget_binding_id": "cohere-embeddings",
+        "live_availability_verified": false
+      },
+      {
+        "kind": "genuine",
+        "synthetic": false,
+        "fingerprint": {
+          "backend": "openai",
+          "model": "embed-english-light-v3.0",
+          "dimension": 384
+        },
+        "source_kind": "approved_hosted_endpoint",
+        "endpoint": "https://api.cohere.ai/compatibility/v1",
+        "model_source_identity": null,
+        "source_approval": {
+          "path": null,
+          "sha256": null
+        },
+        "budget_binding_id": "cohere-embeddings",
+        "live_availability_verified": false
+      }
+    ]
+  },
+  "embedding_selection_status": "SOURCE_CONFIRMED_COMPATIBILITY_BINDINGS_PENDING_APPROVAL_AND_REAL_AVAILABILITY",
+  "native_configuration": {
+    "sycophancy": {
+      "auto_correct": false
+    },
+    "llm": {
+      "embedding": {
+        "backend": "openai",
+        "model": "embed-multilingual-v3.0",
+        "vector_dimension": 1024,
+        "send_dimensions": false,
+        "api_key_env": null,
+        "api_key": "@env:UAR_FIXTURE_INGRESS_RAW_KEY@",
+        "base_url": "http://127.0.0.1:49424/v1"
+      }
+    },
+    "memory": {
+      "embedding_api": "openai",
+      "embedding_provider": "openai",
+      "embedding_model": "embed-english-v3.0",
+      "embedding_dim": 1024
+    }
+  },
+  "known_role_output_caps": {
+    "primary_default": 1000,
+    "classifier": 2048,
+    "summary": 4096,
+    "proxy_per_attempt_required": 4096
+  },
+  "allowances": null,
+  "billing_proposal": {
+    "operator_attestation": "Subscriptions; no incremental charge",
+    "attestation_source": "verbatim explicit operator billing fact supplied by lead; no execution or signature approval",
+    "liter_models": {
+      "billing": "subscriptions",
+      "incremental_charge": "none",
+      "proposed_charge_ceiling_microunits_per_model_attempt": 0,
+      "scope": "existing configured Liter subscription models including their internal retry chain",
+      "operator_approved": false
+    },
+    "cohere": {
+      "operator_attestation": "Production/pay-as-you-go",
+      "billing": "separate charged embedding service; zero charge is not inferred",
+      "tariff_source_pending": false,
+      "tariff_authority": "Direct operator-supplied Cohere v3 text tariff; no provider invoice verification",
+      "usd_per_million_input_tokens": 0.1,
+      "per_request_ceiling_pending": true,
+      "operator_approved": false,
+      "spend_ceiling_authorized_usd": 10,
+      "ceiling_authority": "Direct operator instruction: up to $10 Cohere"
+    },
+    "execution_authorized": false,
+    "pricing_or_signatures_generated": false,
+    "openai_embeddings": {
+      "credential_env": "OPENAI_API_KEY",
+      "credential_source": "/Users/gqadonis/.bash_profile",
+      "spend_ceiling_authorized_usd": 10,
+      "ceiling_authority": "Direct operator instruction: up to $10 OpenAI embeddings",
+      "selected": false,
+      "allocation_status": "Unused separate allowance; no OpenAI model binding or third-key copying required",
+      "operator_approved": false
+    },
+    "combined_embedding_ceiling_usd": 20,
+    "provider_ceilings_transferable": false,
+    "scope": "Operator-approved per-provider spending ceilings for the replacement packet; no execution, signature or fixture adoption"
+  },
+  "operator_approval": null,
+  "operator_signature": null,
+  "final_inventory": null,
+  "installed_artifact": null,
+  "unresolved": [
+    "actual A/B/C embedding availability, signed source approval identity and one exact shared Cohere compatibility budget listener",
+    "final installed native, SDK, browser, encoder, Python, Node, psql and Docker paths and complete byte closures",
+    "approved real per-binding charge ceilings and complete reconciled prior-consumption/unknown-reservation inventory",
+    "exact approved forwarding epoch packet/signature/charge/service-authority inputs",
+    "owned backend/packet state parents, listener ports, authenticated principal expectations and team credential/storage references",
+    "whole-phase approved customer build receipt and final source/artifact/configuration identities",
+    "Exact OpenAI embedding binding/private credential preparation if selected; separate Cohere and OpenAI cumulative $10 admission ceilings, no transfers or resets",
+    "Runner per-message bound10MiB deliberately covers frozen8.4MB protected-overflow JSON below mounted10MiB limit; actual host refusal remains required."
+  ]
+}

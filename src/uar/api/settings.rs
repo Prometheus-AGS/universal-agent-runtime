@@ -32,7 +32,7 @@ pub struct SettingsApiState {
     pub settings_mutation_auth_required: bool,
     pub settings_admin_key: Option<secrecy::SecretString>,
     /// Live embedding handle + the boot embedding config (source of the
-    /// fields that are not settings-mutable: api_key, base_url, dimensions).
+    /// fields that are not settings-mutable: api_key, base_url, batch size).
     /// Present whenever the server was built with vector retrieval support.
     pub embedding_backend:
         Option<Arc<crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend>>,
@@ -694,7 +694,21 @@ async fn get_embedding_provenance(
     let Some(handle) = state.embedding_backend.as_ref() else {
         return Ok(Json(json!({ "status": "no_live_handle" })));
     };
-    let fp = handle.fingerprint();
+    let backend = handle.pin();
+    let fp = backend.fingerprint();
+    // Status crosses the operator-facing boundary: endpoint credentials and
+    // query tokens must never appear in a provenance response.
+    let endpoint = backend.endpoint().and_then(|raw| {
+        let mut url = reqwest::Url::parse(raw).ok()?;
+        if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
+            return None;
+        }
+        url.set_username("").ok()?;
+        url.set_password(None).ok()?;
+        url.set_query(None);
+        url.set_fragment(None);
+        Some(url.to_string())
+    });
     Ok(Json(json!({
         "status": "serving",
         "space": {
@@ -702,7 +716,8 @@ async fn get_embedding_provenance(
             "model": fp.model,
             "dimension": fp.dimension,
         },
-        "provenance": handle.provenance().map(|p| json!({
+        "endpoint": endpoint,
+        "provenance": backend.provenance().map(|p| json!({
             "source_dir": p.source_dir,
             "asset_manifest_sha256": p.asset_manifest_sha256,
         })),
@@ -877,7 +892,7 @@ fn restart_required_activation(key: &str) -> Option<&'static str> {
 }
 
 /// Candidate embedding config for validation/activation: boot config supplies
-/// the non-mutable fields (api_key, base_url, dimension, batch size,
+/// the non-mutable fields (api_key, base_url, batch size,
 /// models_dir); persisted rows supply the mutable ones unless a proposal
 /// overrides them.
 async fn candidate_embedding_config(
@@ -885,6 +900,8 @@ async fn candidate_embedding_config(
     mgr: &SettingsManager,
     proposed_backend: Option<&str>,
     proposed_model: Option<&str>,
+    proposed_dimension: Option<usize>,
+    proposed_send_dimensions: Option<bool>,
 ) -> Option<crate::uar::rag::embeddings::EmbeddingConfig> {
     let base = state.embedding_base_config.clone()?;
     let mut candidate = base.clone();
@@ -908,7 +925,28 @@ async fn candidate_embedding_config(
             .filter(|v| !v.trim().is_empty())
             .unwrap_or_else(|| base.model.clone()),
     };
+    candidate.vector_dimension = match proposed_dimension {
+        Some(dimension) => dimension,
+        None => mgr.get_typed::<usize>("llm.embedding.vector_dimension").await.ok().flatten()
+            .unwrap_or(base.vector_dimension),
+    };
+    candidate.send_dimensions = match proposed_send_dimensions {
+        Some(value) => value,
+        None => mgr.get_typed::<bool>("llm.embedding.send_dimensions").await.ok().flatten()
+            .unwrap_or(base.send_dimensions),
+    };
     Some(candidate)
+}
+
+fn embedding_dimension(value: &Value) -> Result<usize, ApiError> {
+    value.as_u64().and_then(|value| usize::try_from(value).ok()).filter(|value| (1..=16000).contains(value))
+        .ok_or_else(|| ApiError::Validation { key: "llm.embedding.vector_dimension".to_string(),
+            message: "embedding dimension must be an integer between 1 and 16000".to_string() })
+}
+
+fn embedding_send_dimensions(value: &Value) -> Result<bool, ApiError> {
+    value.as_bool().ok_or_else(|| ApiError::Validation { key: "llm.embedding.send_dimensions".to_string(),
+        message: "send_dimensions must be a boolean".to_string() })
 }
 
 /// Validate a proposed `llm.embedding.*` mutation BEFORE anything persists:
@@ -919,8 +957,10 @@ async fn prevalidate_embedding_mutation(
     mgr: &SettingsManager,
     proposed_backend: Option<&str>,
     proposed_model: Option<&str>,
+    proposed_dimension: Option<usize>,
+    proposed_send_dimensions: Option<bool>,
 ) -> Result<(), ApiError> {
-    if proposed_backend.is_none() && proposed_model.is_none() {
+    if proposed_backend.is_none() && proposed_model.is_none() && proposed_dimension.is_none() && proposed_send_dimensions.is_none() {
         return Ok(());
     }
     if state.embedding_failover.is_some() {
@@ -930,7 +970,7 @@ async fn prevalidate_embedding_mutation(
         });
     }
     let Some(candidate) =
-        candidate_embedding_config(state, mgr, proposed_backend, proposed_model).await
+        candidate_embedding_config(state, mgr, proposed_backend, proposed_model, proposed_dimension, proposed_send_dimensions).await
     else {
         // This build has no swappable embedding support; nothing to validate.
         return Ok(());
@@ -957,6 +997,10 @@ fn ensure_backend_honors_candidate(
     candidate: &crate::uar::rag::embeddings::EmbeddingConfig,
     built: &dyn crate::uar::rag::embeddings::EmbeddingBackend,
 ) -> Result<(), ApiError> {
+    if !(1..=16000).contains(&candidate.vector_dimension) || built.vector_dimension() != candidate.vector_dimension {
+        return Err(ApiError::Validation { key: "llm.embedding.vector_dimension".to_string(),
+            message: "embedding backend does not honor the supported candidate vector dimension".to_string() });
+    }
     if built.backend_name() != candidate.backend {
         return Err(ApiError::Validation {
             key: "llm.embedding.backend".to_string(),
@@ -995,14 +1039,14 @@ async fn activate_embedding_if_touched(
 ) -> Option<&'static str> {
     if !touched_keys
         .iter()
-        .any(|k| matches!(k.as_str(), "llm.embedding.backend" | "llm.embedding.model"))
+        .any(|k| matches!(k.as_str(), "llm.embedding.backend" | "llm.embedding.model" | "llm.embedding.vector_dimension" | "llm.embedding.send_dimensions"))
     {
         return None;
     }
     let Some(handle) = state.embedding_backend.as_ref() else {
         return Some("persisted_restart_required");
     };
-    let candidate = candidate_embedding_config(state, mgr, None, None).await?;
+    let candidate = candidate_embedding_config(state, mgr, None, None, None, None).await?;
     match crate::uar::rag::embeddings::build_backend(&candidate) {
         Ok(backend) => {
             let (name, model, dimension) = (
@@ -1050,10 +1094,16 @@ async fn update_setting(
     }
     match key.as_str() {
         "llm.embedding.backend" => {
-            prevalidate_embedding_mutation(&state, mgr, payload.value.as_str(), None).await?
+            prevalidate_embedding_mutation(&state, mgr, payload.value.as_str(), None, None, None).await?
         }
         "llm.embedding.model" => {
-            prevalidate_embedding_mutation(&state, mgr, None, payload.value.as_str()).await?
+            prevalidate_embedding_mutation(&state, mgr, None, payload.value.as_str(), None, None).await?
+        }
+        "llm.embedding.vector_dimension" => {
+            prevalidate_embedding_mutation(&state, mgr, None, None, Some(embedding_dimension(&payload.value)?), None).await?
+        }
+        "llm.embedding.send_dimensions" => {
+            prevalidate_embedding_mutation(&state, mgr, None, None, None, Some(embedding_send_dimensions(&payload.value)?)).await?
         }
         _ => {}
     }
@@ -1096,26 +1146,21 @@ async fn reset_setting(
         return Err(error);
     }
     if state.embedding_failover.is_some()
-        && matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model")
+        && matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model" | "llm.embedding.vector_dimension" | "llm.embedding.send_dimensions")
     {
         return Err(ApiError::Validation {
             key,
             message: "the configured local failover pair owns the active embedding space; reset requires a validated restart configuration".to_string(),
         });
     }
-    if matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model")
+    if matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model" | "llm.embedding.vector_dimension" | "llm.embedding.send_dimensions")
         && let Some(base) = state.embedding_base_config.clone()
     {
-        crate::uar::rag::embeddings::build_backend(&base).map_err(|error| {
-            ApiError::Validation {
-                key: key.clone(),
-                message: format!(
-                    "reset target (the config-derived default embedding backend) cannot be built: \
-                     {error}; nothing was reset and the active backend is unchanged"
-                ),
-            }
-        })
-        .and_then(|built| ensure_backend_honors_candidate(&base, built.as_ref()))?;
+        prevalidate_embedding_mutation(&state, mgr,
+            (key == "llm.embedding.backend").then_some(base.backend.as_str()),
+            (key == "llm.embedding.model").then_some(base.model.as_str()),
+            (key == "llm.embedding.vector_dimension").then_some(base.vector_dimension),
+            (key == "llm.embedding.send_dimensions").then_some(base.send_dimensions)).await?;
     }
     let expected = headers
         .get("if-match")
@@ -1270,6 +1315,8 @@ async fn update_namespace(
     // the whole request before anything persists.
     let mut proposed_backend: Option<&str> = None;
     let mut proposed_model: Option<&str> = None;
+    let mut proposed_dimension: Option<usize> = None;
+    let mut proposed_send_dimensions: Option<bool> = None;
     for (field, value) in &payload.data {
         let key = format!("{type_key}.{field}");
         if let Some(error) = rejected_unsupported(&key) {
@@ -1278,10 +1325,12 @@ async fn update_namespace(
         match key.as_str() {
             "llm.embedding.backend" => proposed_backend = value.as_str(),
             "llm.embedding.model" => proposed_model = value.as_str(),
+            "llm.embedding.vector_dimension" => proposed_dimension = Some(embedding_dimension(value)?),
+            "llm.embedding.send_dimensions" => proposed_send_dimensions = Some(embedding_send_dimensions(value)?),
             _ => {}
         }
     }
-    prevalidate_embedding_mutation(&state, mgr, proposed_backend, proposed_model).await?;
+    prevalidate_embedding_mutation(&state, mgr, proposed_backend, proposed_model, proposed_dimension, proposed_send_dimensions).await?;
 
     let mut touched_keys: Vec<String> = Vec::new();
 
@@ -1332,7 +1381,7 @@ async fn update_namespace(
     if let Some(activation) = activate_embedding_if_touched(&state, mgr, &touched_keys).await {
         for key in touched_keys
             .iter()
-            .filter(|k| matches!(k.as_str(), "llm.embedding.backend" | "llm.embedding.model"))
+            .filter(|k| matches!(k.as_str(), "llm.embedding.backend" | "llm.embedding.model" | "llm.embedding.vector_dimension" | "llm.embedding.send_dimensions"))
         {
             activation_map.insert(key.clone(), json!(activation));
         }

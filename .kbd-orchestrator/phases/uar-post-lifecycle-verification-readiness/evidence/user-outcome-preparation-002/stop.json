@@ -1,0 +1,188 @@
+{
+  "timestamp": "2026-10-25T10:54:44.823425+00:00",
+  "status": "STOPPED_FIRST_FAILURE",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-fddca102",
+  "binding_revision": 10,
+  "failed_stage": "P0.7",
+  "failed_command": [
+    "/Users/gqadonis/.cargo/bin/cargo",
+    "build",
+    "--locked",
+    "--bin",
+    "universal-agent-runtime",
+    "--features",
+    "server-full,postgres-backend",
+    "--message-format=json-render-diagnostics"
+  ],
+  "native_exit_code": 101,
+  "artifact_producer_exit_code": 2,
+  "compiler_errors": [
+    {
+      "message": "error[E0425]: cannot find type `EmbeddingFingerprint` in module `crate::uar::rag::embeddings`",
+      "locations": [
+        {
+          "file": "src/uar/persistence/scoped.rs",
+          "line": 905,
+          "column": 47
+        }
+      ]
+    },
+    {
+      "message": "error[E0425]: cannot find type `EmbeddingFingerprint` in module `crate::uar::rag::embeddings`",
+      "locations": [
+        {
+          "file": "src/uar/persistence/scoped.rs",
+          "line": 918,
+          "column": 46
+        }
+      ]
+    },
+    {
+      "message": "error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>>: LowerHex` is not satisfied",
+      "locations": [
+        {
+          "file": "src/llm/liter_driver.rs",
+          "line": 727,
+          "column": 53
+        }
+      ]
+    }
+  ],
+  "preparation_stages": [
+    {
+      "id": "P0.1",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.2",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.3",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.4",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.5-pull",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.5",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.python-dependencies",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.python-sdk",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.6-pull",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.6",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "P0.7",
+      "status": "FAIL",
+      "exit_code": 101
+    },
+    {
+      "id": "P0.8",
+      "status": "NOT_RUN",
+      "exit_code": null
+    },
+    {
+      "id": "P0.9",
+      "status": "NOT_RUN",
+      "exit_code": null
+    },
+    {
+      "id": "P0.10",
+      "status": "NOT_RUN",
+      "exit_code": null
+    },
+    {
+      "id": "P0.11",
+      "status": "NOT_RUN",
+      "exit_code": null
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "status": "NOT_RUN",
+      "exit_code": null
+    },
+    {
+      "id": "P0.13-build-guest",
+      "status": "NOT_RUN",
+      "exit_code": null
+    }
+  ],
+  "passed_materialization_stages": 10,
+  "unrun_later_stages": 6,
+  "noninteractive_correction": "OBSERVED_PASS_P0.1_CI_TRUE",
+  "consumption": {
+    "prior_failed_attempt_seconds": 1.350480196007993,
+    "corrected_attempt_execution_start": "2026-10-25T10:23:14.307193+00:00",
+    "corrected_attempt_first_failure_finish": "2026-10-25T10:49:38.411028+00:00",
+    "corrected_attempt_wall_seconds_through_failure": 1584.103835,
+    "native_child_seconds": 592.8044838905334,
+    "artifact_producer_seconds": 601.8141762269952,
+    "original_total_limit_seconds": 14400,
+    "corrected_attempt_ceiling_after_prior_deduction": 14398,
+    "remaining_under_tightened_ceiling_seconds": 12813.896165,
+    "no_time_or_call_reset": true
+  },
+  "retry_count_within_corrected_attempt": 0,
+  "corrective_source_edits": 0,
+  "provider_calls": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "product_tests": 0,
+  "services_started": 0,
+  "product_gate": "CLOSED",
+  "immutable_artifact_preparation_complete": false,
+  "owned_state_retained": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002",
+  "logs": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/native-build/producer-failed.json",
+      "sha256": "87ac7a52ed27d3b40e1368181df33098f28dabefbe40a13c4f3a0992857749c5",
+      "bytes": 193
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/native-build/stderr.log",
+      "sha256": "e0de2df52c147680c0a95719da197a3bce7aefd2b194fc0007017b936318c409",
+      "bytes": 36701
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/native-build/stdout.log",
+      "sha256": "1c160306c8735ab83e24e554515378432a5354e26d2cb03387956e8f021bc264",
+      "bytes": 1251707
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/native-build/receipt.json",
+      "sha256": "c8dcd51db670585d2a279b2e2886cd2c5faf772796c0041aa423c5e9ab2414ce",
+      "bytes": 1209
+    }
+  ],
+  "next_authority": "Explicit scoped corrective instruction and renewed source inventory/authority required; no remaining automatic repair or retry authority"
+}

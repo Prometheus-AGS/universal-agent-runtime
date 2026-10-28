@@ -1,0 +1,122 @@
+{
+  "scope": "Publication repair and operator-requested compatible dependency upgrade only; not whole-phase acceptance inventory",
+  "sourceCommit": "774469746fee4de99be41dc1cd231857067e4487",
+  "tagObject": "6deeb7b0e47460bbde68c9ebcd7e4e2342474d3f",
+  "runId": 40091743841,
+  "productionImplementation": "COMPLETE_FOR_PUBLICATION_CORRECTIONS",
+  "productAcceptance": "CLOSED_PENDING_SEPARATE_AUTHORITY",
+  "files": [
+    {
+      "path": ".agent-team/uar-core/handoffs/v130-publication-standalone-fix.md",
+      "sha256": "8310fddb73169b2310c347ee1258febb0fedc85c11e7a124bbb6e6b650cde32a"
+    },
+    {
+      "path": ".agent-team/uar-core/handoffs/v130-reqwest-migration.md",
+      "sha256": "0423e1f2f3b9a2dbf0f4bf69865539c6e258e93aa809e705f2e644726e4d870e"
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/v1.3.0/dependency-publication-code-review.md",
+      "sha256": "8f6be69f71ddc7220c8acc320c73f331a5e987f9e7e637d4ff0cb35b762d3257"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "a0ee4af664e163186cbe7a3d4ff4bb15c1430c07f7e98d098111323b32690a64"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "87ae7e988f25cbe2303dd2d1e0da05151b0de5e0f43323736fed0b047d30a00b"
+    },
+    {
+      "path": "docs/releases/v1.3.0-dependency-review.md",
+      "sha256": "7778c4d7b720b6f46955766bea4f901787d1872ee4c569895377c3dd229c1dc8"
+    },
+    {
+      "path": "sdks/rust/Cargo.lock",
+      "sha256": "ae80e1b692e43e8fab6b56475c43be137b966b1c62c7f30f67790c002e14c3f9"
+    },
+    {
+      "path": "sdks/rust/Cargo.toml",
+      "sha256": "96809a49f2482879ad4f36a6c925b879d8dbb4f475b08db6872c96f91893d6d7"
+    },
+    {
+      "path": "sdks/rust/src/client.rs",
+      "sha256": "3ae06919222dc10b5bf0d5f3ff879878aa57ca30e25649f11ce75ef33070e6ff"
+    },
+    {
+      "path": "src/mcp/config.rs",
+      "sha256": "f706a7f721fb97be493840e80fc9b175cf3cc09af6d748ea50069394c1be1d1a"
+    },
+    {
+      "path": "src/mcp/registry.rs",
+      "sha256": "565a37a7f43451f3af2e86b67d4c98bc11d9d99a302056ac4b0cf880effe7efd"
+    },
+    {
+      "path": "src/mcp/runtime.rs",
+      "sha256": "5309b17279e7a171d377f780aac4350675318b4b1a5336c872e76bd15068a172"
+    },
+    {
+      "path": "src/uar/rag/ingestion_worker.rs",
+      "sha256": "876516728d0a7b429e3bced026e25a22b4b51751982b6cb2a4020c68c612ab5e"
+    },
+    {
+      "path": "src/uar/runtime/supervisor.rs",
+      "sha256": "5a65eb5cd9e8e233f280408708e275ddd6c8dad20129a802dfc92cd95672950a"
+    },
+    {
+      "path": "tests/ingestion_admission.rs",
+      "sha256": "bb1cbfd526c95bf95c8d1ac1028f348f3e074639c5d6fab9a7a109ef621ffeae"
+    },
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "sha256": "1cde32c8013a82634ffd05a5551d3d6771c356d03f877a454491868110dfec90"
+    },
+    {
+      "path": "tools/mcp-server-fetch/Cargo.toml",
+      "sha256": "aa030581e92dd1efc6df911e5168822ff320bcab3a65e7c4754d1d08b55fde36"
+    },
+    {
+      "path": "tools/uar-jwt-proxy/Cargo.toml",
+      "sha256": "5fcbe56007d67fcb16cc97b4ebcb53eca33ae5629458496c23b36433e83452c7"
+    },
+    {
+      "path": "vendor/git/README.md",
+      "sha256": "39bc0de97ed135da74b8585e928935382337a65661ce49a9f923e246ffd8aa4e"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/Cargo.toml",
+      "sha256": "809e1fb72c8c466703841ec0734bc4dd9d56013c25eddcb3b46bed3352cec882"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core/Cargo.toml",
+      "sha256": "868e7fe87a7cb1ef7ffc544c3afca63b5f912a1aa50e4df45f7701b17a761b57"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-embedded/Cargo.toml",
+      "sha256": "a1bd7f7a57c4edb9d132fb6d449cb51a3c33556c6c753744c8f934a78a7bc67c"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-ffi/Cargo.toml",
+      "sha256": "cff37f010d05758a6903dcff40adfcfccb9865c0ff6f1e6c965ff3176458541c"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-iggy/Cargo.toml",
+      "sha256": "80084f5fe727fd46487a5f8b1b01f967e6acadb7f0e80aa5f84f98ef91b001ff"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-pg/Cargo.toml",
+      "sha256": "794cbbc81e01cf7324d9f6ebf27fa1f802265a5cfe5ddb3fc2c8c19b755ed513"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-runtime-tokio/Cargo.toml",
+      "sha256": "5959d30404f62903863132ac6cc317fdff8bf5ce704667f9426209009b0c99a8"
+    },
+    {
+      "path": "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-wasm/Cargo.toml",
+      "sha256": "fed852dc3356a3074dd317bfdf186169321eb6ac128e79edee4a7ca786a05be2"
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "b52990c49ad860e2f3af7465ac992e0d9582a1d9939e51e8d473218abd953df2"
+    }
+  ]
+}

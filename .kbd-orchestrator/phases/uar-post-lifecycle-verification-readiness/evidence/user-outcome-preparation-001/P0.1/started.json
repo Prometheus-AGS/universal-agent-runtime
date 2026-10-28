@@ -1,0 +1,21 @@
+{
+  "id": "P0.1",
+  "argv": [
+    "/Users/gqadonis/.volta/bin/pnpm",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "pid": 72290,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR"
+  ],
+  "started": "2026-10-25T09:55:07.781265+00:00",
+  "stage_seconds": 7200,
+  "max_output_bytes": 67108864
+}

@@ -1,0 +1,108 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "combine-facts-from-two-linked-knowledge-bases;an-agent-uses-both-kbs-to-answer-a-combined-inventory-question",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "An agent uses both KBs to answer a combined inventory question",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1686136300
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and two indexed knowledge bases with separate private facts",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 41597176
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I link both knowledge bases to the agent",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6533341396
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I ask for the two inventories and their combined total in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 27213767
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the answer combines both private facts with a matching citation for each knowledge base",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:131"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 161077889
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90d28ta2ItYW5zd2VyLzYyNWUzOWJkLWY4NTYtNGEzYS1hNTc1LWQ2OTgyZTNjMzNiOS5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@two-kb-answer",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "combine-facts-from-two-linked-knowledge-bases",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Combine facts from two linked knowledge bases",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@two-kb-answer",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/two-kb-answer.feature"
+  }
+]

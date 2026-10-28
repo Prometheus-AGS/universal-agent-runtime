@@ -1,5 +1,6 @@
 import { assertNever, type ContentBlock } from "./content-block";
 import type { Chunk, MemoryMutationChunk, ToolCallChunk } from "./chunk";
+import { AGENT_SELECTION_MIME, selectionArtifact } from "./agent-selection";
 
 export interface ChunkProjectionContext {
   messageId: string;
@@ -94,6 +95,13 @@ export function toChunks(blocks: readonly ContentBlock[], context: ChunkProjecti
         chunks.push({ ...base, kind: "skill-activation", skillId: block.name, skillName: block.name, status: block.status === "active" ? "active" : "complete" });
         return;
       case "artifact":
+        if (block.kind === AGENT_SELECTION_MIME) {
+          const selection = selectionArtifact(block.id, block.content, base);
+          if (selection) {
+            chunks.push(selection);
+            return;
+          }
+        }
         chunks.push({ ...base, kind: "artifact", artifactId: block.id, title: block.title, mime: block.kind, content: block.content });
         return;
       case "image":

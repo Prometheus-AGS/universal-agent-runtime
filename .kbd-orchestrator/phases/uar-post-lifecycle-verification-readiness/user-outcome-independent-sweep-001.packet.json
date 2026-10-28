@@ -1,0 +1,501 @@
+{
+  "schema_version": 1,
+  "status": "A15_PROPOSED_NOT_APPROVED_NOT_EXECUTED",
+  "kind": "independent-diagnostic-sweep",
+  "created_at": "2026-10-25T15:50:12.427999+00:00",
+  "source_identity_at_start": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-010.json",
+  "current_authority": "A14 binding16 cb7b76fe3ba7127bb91c2dfb5bd57641a862a15039817582ff89f7f96bc098ce",
+  "output_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001",
+  "evidence_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001",
+  "failure_log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-verification-results.jsonl",
+  "counts": {
+    "profile_builds": 6,
+    "spec_checks": 8,
+    "source_reviews": 2,
+    "review_screens": 2,
+    "independent_items": 18,
+    "prior_failed_fixture_items": 1
+  },
+  "commands": [
+    {
+      "id": "S5",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "minimal",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "timeout_seconds": 1800,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S6",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "server-full",
+        "--bin",
+        "universal-agent-runtime"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "timeout_seconds": 1800,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S7",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "timeout_seconds": 1800,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S8",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-apple-ios"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "timeout_seconds": 1800,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S9",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--no-default-features",
+        "--features",
+        "embedded-mobile",
+        "--lib",
+        "--target",
+        "aarch64-linux-android"
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "timeout_seconds": 1800,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S10",
+      "argv": [
+        "docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--tag",
+        "uar-issue-426:1.3.0",
+        "."
+      ],
+      "effects": "Separate serial gate; retain artifact identity before later overwrite. Local build only, no push/run/deploy.",
+      "timeout_seconds": 1800,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      },
+      "local_docker_effects": "local linux/amd64 image build tag uar-issue-426:1.3.0; Dockerfile/build scripts and dependency/container registry network, no push/run/publish/deploy; no images deleted"
+    },
+    {
+      "id": "S12",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/reviews/whole-phase-rust-review.md",
+        "--strictness",
+        "standard"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      },
+      "depends_on": "corresponding actual source-review report only; missing report BLOCKED"
+    },
+    {
+      "id": "S13",
+      "argv": [
+        "prometheus",
+        "sycophancy",
+        "detect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/reviews/whole-phase-code-review.md",
+        "--strictness",
+        "standard"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      },
+      "depends_on": "corresponding actual source-review report only; missing report BLOCKED"
+    },
+    {
+      "id": "S14",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-budget-reconciliation"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S15",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-compatible-budget-errors"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S16",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-destination-budget-contract"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S17",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-persistence-discriminators"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S18",
+      "argv": [
+        "openspec",
+        "validate",
+        "pl-main-boundary-evidence"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S19",
+      "argv": [
+        "openspec",
+        "validate",
+        "openai-client-tools"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S20",
+      "argv": [
+        "openspec",
+        "validate",
+        "update-parking-lot-admission"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    },
+    {
+      "id": "S21",
+      "argv": [
+        "openspec",
+        "validate",
+        "reengineer-user-outcome-verification"
+      ],
+      "timeout_seconds": 120,
+      "attempt_limit": 2,
+      "targeted_correction_limit": 1,
+      "after_unresolved_failure": "record FAIL_AFTER_ONE_CORRECTION then continue independent items",
+      "environment": {
+        "inherit": "only retained P0 toolchain PATH/LANG/LC_ALL/CARGO_HOME/RUSTUP_HOME",
+        "HOME": "/Users/gqadonis",
+        "CARGO_TARGET_DIR": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/cargo",
+        "DOCKER_HOST": "unix:///Users/gqadonis/.colima/default/docker.sock",
+        "provider_secrets": "none"
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "id": "RUST",
+      "role": "rust-reviewer",
+      "fresh_context": true,
+      "generation_history": false,
+      "input": "current source/diff/contracts and actual available build/spec receipts only; disclose blocked runtime acceptance",
+      "output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/reviews/whole-phase-rust-review.md",
+      "no_check_commands": true,
+      "one_correction_and_one_fresh_review": true
+    },
+    {
+      "id": "CODE",
+      "role": "code-reviewer",
+      "fresh_context": true,
+      "generation_history": false,
+      "input": "current source/diff/contracts and actual available build/spec receipts only; source review of React/TS/Python/security with no runtime claims",
+      "output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/reviews/whole-phase-code-review.md",
+      "no_check_commands": true,
+      "one_correction_and_one_fresh_review": true
+    }
+  ],
+  "order": [
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9",
+    "S10",
+    "S14",
+    "S15",
+    "S16",
+    "S17",
+    "S18",
+    "S19",
+    "S20",
+    "S21",
+    "RUST",
+    "CODE",
+    "S12",
+    "S13"
+  ],
+  "policy": {
+    "PASS": "retain receipt/artifact/source identity; continue",
+    "FAIL": "diagnose observed failure, apply at most one minimal relevant correction, refresh inventory, rerun same item once",
+    "FAIL_AFTER_ONE_CORRECTION": "append log and backlog, continue independent items; no second fix/retry",
+    "BLOCKED": "missing approved prerequisite, no PASS or synthetic product failure; continue independent items",
+    "invalid_or_unavailable_fix": "log reason and continue; do not guess APIs, widen scope or weaken acceptance",
+    "safety_or_exhaustion": "stop only on unknown/exhausted global allowance or unresolved process/credential/authority boundary; preserve results",
+    "passing_earlier_source": "retain historical PASS with source binding; never imply later edits are covered"
+  },
+  "repair_authority": {
+    "historical_consumed": 10,
+    "additional_item_slots": 18,
+    "proposed_cumulative_cap": 28,
+    "per_item": 1,
+    "fixture_additional_slots": 0,
+    "charge_on_correction_start": true,
+    "no_second_correction": true,
+    "item_identity_stable_across_source_updates": true,
+    "no_per_failure_approval_loop_after_this_exact_scope_approval": true,
+    "allowed": "minimum repository source/config/lock/acceptance defect directly causing named item failure; preserve product/spec semantics and pinned dependency choices",
+    "excluded": "publishing/pushing/merging, shared service/credential changes, upstream key copying, toolchain/system installs, new dependency-version upgrades, bypassing tests/checks/policies or changing acceptance to manufacture PASS"
+  },
+  "source_refresh": {
+    "argv_template": [
+      "/Users/gqadonis/miniconda3/bin/python3",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/source_inventory.py",
+      "--output",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/<ITEM>/source-after-one-correction.json"
+    ],
+    "meaning": "named metadata inventory operation, no verification; source changes close previous source claim, renew exact item instruction under this signed bounded policy before only its same-command rerun",
+    "records": "before/after source identity, patch, root cause, repair ordinal, exact repeated command, actual output; no product gate opening from this exception"
+  },
+  "metadata_effects": [
+    "Create exclusive evidence/output roots0700, no prior attempt overwritten; separate item/attempt directories and append-only ledger.",
+    "Run every named item serially; no two writers per Cargo target; no extra standalone preflight/version/probe/check commands.",
+    "Load only named P0 toolchain fields and nonsecret local Docker endpoint; no fixture env/API keys/provider calls. Preserve all old targets/scopes.",
+    "Capture bounded stdout/stderr and exit per attempt, artifact metadata/SHA for produced binary/library/image-build result without new Docker inspect/run. Copy completed local build artifacts before later overwrite, record missing artifacts honestly.",
+    "Source-only targeted implementation fixes are authorized in named item slots after actual failure; no speculative fix. Fresh source inventory and recorded same-item instruction precede one rerun; no repeated permission request per defect within this signed scope.",
+    "Source reviews are isolated artifacts only; no reviewer may execute tests/builds/probes. Required specialized code review for any correction is source-only and confined to correction artifacts; no hidden verification commands.",
+    "Every failed/unavailable/blocked item gets log row and backlog entry. Final table reports PASS, PASS_AFTER_ONE_CORRECTION, FAIL, FAIL_AFTER_ONE_CORRECTION,BLOCKED,NOT_RUN and source identity. No acceptance/archive/reflection while failures/blockers remain."
+  ],
+  "limits": {
+    "calls_cumulative": 4000,
+    "active_minutes_cumulative": 2400,
+    "repair_cap_proposed": 28,
+    "per_command_output_bytes": 1048576,
+    "sweep_seconds_max": 28800,
+    "further_clamp": "all original remaining global/resource ceilings including setup/signing/repair time; no idle exclusions/reset",
+    "cohere_usd": 10,
+    "openai_embeddings_usd": 10,
+    "provider_calls": 0,
+    "service_startups": 0,
+    "publication": false,
+    "retry_limit_per_item": 1,
+    "correction_limit_per_item": 1
+  },
+  "implementation_boundary_exception": {
+    "unfinished": [
+      "task2.9 supporting fixture manifest/resource002/derived inventory/composition/final activation"
+    ],
+    "reason": "independent compilation/spec/source diagnostics can expose additional defects without those fixtures; source inspection cannot establish real compiler/spec checker outcomes",
+    "proves": "only named independent outcomes on their recorded source snapshot",
+    "does_not_prove": "97user scenarios/582rows, main runtime acceptance, Issue426 remote integration, backend parity, full reliability or release suitability"
+  },
+  "blocked": [
+    {
+      "group": "fixture-preparation",
+      "status": "FAIL_AFTER_ONE_CORRECTION",
+      "reason": "M1.002 null digest nonregular-source binding; no additional correction"
+    },
+    {
+      "group": "97user cases/582rows",
+      "status": "BLOCKED",
+      "reason": "composed fixture absent"
+    },
+    {
+      "group": "10main acceptance scenarios",
+      "status": "BLOCKED",
+      "reason": "supporting manifest/receipt incomplete"
+    },
+    {
+      "group": "4Issue426 integration targets",
+      "status": "BLOCKED",
+      "reason": "approved isolated store/supporting fixture incomplete; no shared store fallback or silently omitted remote tests"
+    }
+  ],
+  "gate": "CLOSED_PENDING_EXACT_A15_INSTRUCTION",
+  "approval_required": true
+}

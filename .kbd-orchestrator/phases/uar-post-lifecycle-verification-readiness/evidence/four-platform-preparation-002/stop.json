@@ -1,0 +1,28 @@
+{
+  "status": "STOPPED_FIRST_FAILURE_NO_RETRY",
+  "recorded_at": "2026-10-25T20:29:09.899763+00:00",
+  "failed_step": "A17_CODE_SOURCE_REVIEW",
+  "verdict": "FAIL_SOURCE_ONLY",
+  "contract_digest": "e4525d25b528cc017ba6639dc610c06188902e0718bf4db786706ad96db4f217",
+  "binding_revision": 18,
+  "source_identity": "sha256:580f7196999aa00b78e211a9894424b0d8c4074acf07fbafb483d00592e8673f",
+  "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-001/code-source-review.md",
+  "finding": "iOS runner lacks authorized per-item correction/rerun and continuation of independent items after a failed invocation.",
+  "signature": "SUCCEEDED",
+  "adoption": "SUCCEEDED",
+  "rust_review": "NOT_RUN",
+  "swift_review": "NOT_RUN",
+  "preparation": "NOT_RUN",
+  "target_install": "NOT_RUN",
+  "product_verification": "CLOSED",
+  "runtime": "NOT_EXERCISED",
+  "provider_calls_this_attempt": 0,
+  "embedding_spend_this_attempt_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repair_floor": 15,
+  "repair16_charged": false,
+  "all_prior_consumption_retained": true,
+  "next": "Discuss bounded iOS verification-runner correction versus backlog before any repair or retry."
+}

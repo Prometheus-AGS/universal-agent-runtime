@@ -1,0 +1,7 @@
+{
+  "command": "python3 - <<'PY_SOURCE'\nimport hashlib, json, os\nfrom pathlib import Path\np = Path('.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/uar-verification-simplification/children/agent-team-concurrency-repair')\nmanifest = json.loads((p / 'source-manifest-002.json').read_text())\ncurrent = set()\nfor entry in manifest['roots']:\n    path = Path(entry)\n    if path.is_file():\n        current.add(str(path))\n    elif path.is_dir():\n        for folder, directories, names in os.walk(path):\n            directories[:] = sorted(d for d in directories if d not in manifest['excluded_directory_names'])\n            current.update(str(Path(folder) / name) for name in names if (Path(folder) / name).is_file() and name != '.DS_Store')\nassert current == {row['path'] for row in manifest['files']}, 'Source input membership changed'\nfor row in manifest['files']:\n    assert hashlib.sha256(Path(row['path']).read_bytes()).hexdigest() == row['sha256'], row['path']\nprint('Frozen source inputs match')\nPY_SOURCE\n",
+  "exit_code": 0,
+  "stdout": "Frozen source inputs match\n",
+  "stderr": "",
+  "at": "2026-10-26T12:18:41.523211+00:00"
+}

@@ -1,0 +1,299 @@
+{
+  "schema_version": 1,
+  "status": "PROPOSED_A14_P1_002_NOT_APPROVED_NOT_EXECUTED",
+  "executable": false,
+  "classification": "BOUNDED_METADATA_PREPARATION_CORRECTION_ONLY",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-010.json",
+  "preparation_manifest": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/preparation.json",
+    "sha256": "sha256:80d491ad67d09e2a98492bb413bd153438cc17d9f10879d48506fb23e8bb31a9"
+  },
+  "carry_forward": {
+    "original_packet": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-p1-packet-001.json",
+      "sha256": "sha256:2024c52b52b7b49bb0e9a43c5938c4ee99e622f0b506d397d7e9babf53090514"
+    },
+    "stop": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/stop.json",
+      "sha256": "sha256:b4648cfe5e2feee4f9f772ece95b2aa8f029bb64cfa14cd83239dbe1e39ae8ab"
+    },
+    "partial_inventory": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-private-p1-002-inventory.json",
+      "sha256": "sha256:5cb235249f82122319e084460ad393c9626e45fb4c0c9f66a8a8c3cd56b64ba6"
+    },
+    "working_bindings": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/bindings.materializing.json",
+      "sha256": "sha256:764611c8f8930e3876fa045971b9946f3b534904843d9425d5963b8854d4a3a4"
+    },
+    "all_old_inputs": [
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-private-inputs-001.draft.json",
+        "sha256": "sha256:d68b725a4682ddc8a053c9dc8f7e67dc3c28029050aaed859ecda99f5b1ceeda"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-bindings-final-001.draft.json",
+        "sha256": "sha256:ce8485894b16801b968825b18086d6e10b695399ff7db2c4b32866d455331913"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-bindings-final-001.recipe.json",
+        "sha256": "sha256:d9c6aee0457cff843e0d1cc2927c95cad7d35c6929ec3db97c26ece0c3e51184"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-budget-seed.final-001.draft.json",
+        "sha256": "sha256:61ee5bddd75ae08fcd1b93a79c377bda1de8567a9130af43799642fd04e2ef8f"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-resource-authority-001.draft.json",
+        "sha256": "sha256:dcbb790748be90b973cef5cc78f2fcd77abd84266c57697ff8db08b508bf32ba"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-seed-disposition-001.json",
+        "sha256": "sha256:3a133809587f6649a387c46fea145fdd55cea9a37415c19b59a2039e5f1e2ff0"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-resource-documents-001.draft.json",
+        "sha256": "sha256:d74d7268247143451ae237ebbd42ca0a1b2a817d8fb07f6cbb8aa53faf027bed"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-service-provenance-001.json",
+        "sha256": "sha256:fe9eb17db426a22df30bb52be061a7d5e3b8f85598a1d09fc1596c8367cee2ff"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-docker-binding-001.json",
+        "sha256": "sha256:fb3d43e8a739b0d0c37cb73fa2a38971e4ec3cbb10f07489e27c091074c427d8"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-environment-nonsecret-001.draft.json",
+        "sha256": "sha256:e481a75a7f883a512ef875362e3d262fff8038ccc49090856d3ccdaae180598a"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-static-inventory-001.json",
+        "sha256": "sha256:93487d4547ff1f5f99f0b6443f3666e94e3400dbd8f7760101a035971d6cd933"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-final-001.plan.json",
+        "sha256": "sha256:92792e1060ed8c415ade29a8b46648375cb9f1df7fb8f84011d917aa6c6bab0e"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-manifest-001.draft.json",
+        "sha256": "sha256:519bd40da1562bb6e87b95d00ebb652b358a795239a9c63d5d17ac5a6c6d70fb"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-config-001.draft.json",
+        "sha256": "sha256:71e1f72e802377be6d6382bf013915810112e715d0d5b5d24f2b9b5834fec77d"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-supporting-store-001.draft.json",
+        "sha256": "sha256:f0040bdb987a9cc0f07a17360c5d729380836f783997b4c0a413c98305abe475"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-installed-inventory-001.json",
+        "sha256": "sha256:cff15caba1752df457237cbb5d2158250538f5d0860a7deaec87067fd8215556"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-012.json",
+        "sha256": "sha256:9f6eb63fc14dafd0fb6c852a18b96daee740c6da00a56bab5cf6a2065072ebbf"
+      }
+    ],
+    "existing_private_preparer_pass": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-001/P1.1.json",
+      "sha256": "sha256:5e7f99a7cae097bb4384d64b30e8a9429ea9b472c33232f41edbd1c6c24c9882"
+    },
+    "no_repeat_private_preparer_or_successful_P0": true
+  },
+  "paths": {
+    "root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007",
+    "scope_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533",
+    "ledger_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/packet/uar_budget_5d3ed9f4d4218e05b533",
+    "composed": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed",
+    "authority": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority"
+  },
+  "new_resource_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority-002.json",
+  "new_seed_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/budget-seed-002.json",
+  "evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-private-preparation-002",
+  "sole_fixture_writer": "lead",
+  "commands": [
+    {
+      "id": "P1.002.1",
+      "argv": [
+        "ssh-keygen",
+        "-Y",
+        "sign",
+        "-f",
+        "/Users/gqadonis/.ssh/id_ed25519.pub",
+        "-n",
+        "prometheus-kbd-scope-amendment",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority-002.json"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "timeout_seconds": 120
+    },
+    {
+      "id": "P1.002.2",
+      "argv": [
+        "ssh-keygen",
+        "-Y",
+        "verify",
+        "-f",
+        "/Users/gqadonis/.config/prometheus/kbd-scope-allowed-signers",
+        "-I",
+        "travis@tribehealthsolutions.com",
+        "-n",
+        "prometheus-kbd-scope-amendment",
+        "-s",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority-002.json.sig"
+      ],
+      "stdin_file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/authority/resource-authority-002.json",
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "timeout_seconds": 120
+    },
+    {
+      "id": "P1.002.3",
+      "argv": [
+        "prometheus",
+        "kbd",
+        "decision",
+        "record",
+        "--command-id",
+        "uo-p1-resource-adoption-002",
+        "--id",
+        "user-outcome-resource-adoption-002",
+        "--summary",
+        "ACTUAL_RESOURCE_HASH_AND_SIGNATURE_HASH_SUBSTITUTED_BY_DECLARED_SEAL_RULE"
+      ],
+      "summary_rule": "Exact text: Signed resource authority <actual_packet_sha256> signature <actual_signature_sha256> source28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018; A14 repair10 bounded P1.002, first-start genuine counters0 only, all global and legacy history retained, product V CLOSED.",
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "timeout_seconds": 120
+    },
+    {
+      "id": "P1.002.4",
+      "argv": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/compose_fixture.py",
+        "--bindings",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/bindings.final.json",
+        "--inventory",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/inventory.final.json",
+        "--output",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/composed",
+        "--compose"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "timeout_seconds": 900
+    }
+  ],
+  "metadata_steps": [
+    {
+      "id": "M0.002",
+      "owner": "lead only",
+      "effects": [
+        "Before any token generation, name the lead as the sole writer of target007/supporting and all continuation outputs. No delegated fixture writers or concurrent metadata mutations. Planning teammates are read-only outside their handoff documents.",
+        "Within this named metadata step assert the existing supporting parent is exactly the M0-owned absolute path in frozen partial inventory: real directory, not symlink, current uid501,mode0700,entries empty. Reuse ONLY this parent, do not mkdir it. Unexpected ownership/mode/content stops; do not repair/remove/rename/adopt arbitrary contents. This assertion is explicitly included, not a standalone preflight.",
+        "Freeze/compare retained nonsecret/config byte identities in partial inventory and source010/build receipt; inspect only named original env ownership/mode, do not recopy keys or run private preparer. Stop on drift.",
+        "Exclusively create evidence/user-outcome-private-preparation-002 and supporting childdirs declared by existing plan (documents/store/home/tmp/evidence)0700 after parent admission, then exclusive0600files. Do not recreate007/private/generated/composed or delete/overwrite any original output.",
+        "Charge bounded repair10 once at metadata entry after actual A14 adoption. Enforce remaining original P1 ceiling1445seconds minus all new signing/setup/metadata, remaining original P0 ceiling9592seconds and global remaining; no fresh time/call/spend allowance. Capture current accounting before commands within metadata envelope."
+      ]
+    },
+    {
+      "id": "M1.002",
+      "owner": "lead only",
+      "effects": [
+        "Read only the existing newly prepared target007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/env.json in host memory and matched inputs/receipt. Do not read ~/.bash_profile or secrets.env again. Preserve two ordinary product JWTs and selected keys unchanged.",
+        "Mint exactly three replacement supporting JWTs once under existing generated HS256 key, selected subjects/roles and identical issuer/audience/tenant/iat/nbf/exp. These replace the three discarded in-memory tokens from failed001. Six cumulative mint operations are explicitly disclosed; exactly three supporting tokens persist. No remint/retry/validity extension.",
+        "Materialize every supporting env/config/store/doc/manifest/receipt using the frozen field-level recipes. Separate supporting env contains no upstream keys,0600under0700. Keep manifest executable/implementationComplete/readyToRun/cleanupAuthorized false and Vrefs pending. Complete all supporting metadata before proceeding.",
+        "Seal source010 plus actual supporting config/store/docs/ownerrefs in manifest boundInputs, excluding manifest itself and later authority/output selfreferences. Use sealed Python closure, current A14 contract digest, exact known tooling baseline; no old A6 authority.",
+        "Record supporting materialization receipt only after all files exist; record stage-complete handoff to lead. If incomplete or any failure, do not proceed to resource authoring/signing. No helper/product import, probe or service."
+      ]
+    },
+    {
+      "id": "M2.002",
+      "owner": "lead only",
+      "effects": [
+        "After M1.002 has completed, author exclusive authority/resource-authority-002.json. Preserve original resource-authority.json/.sig, old seed and working bindings unchanged as historical partial outputs.",
+        "Carry forward ten unchanged approved charge/upstream/hosted-source documents, existing private config/approval/inputs/receipt and original first-use disposition under explicit A14 authority. Bind new A14 adoption/operator approval,current accounting014 floor plus actual later consumption,supporting receipt,retained source010/P0.006 artifact refs. Do not treat old partial packet as full P1 acceptance.",
+        "New authority global repair cap10 with9historical plus current10charged, remaining0; all other original ceilings/epoch/spend pools unchanged. Preserve discarded-token and order-deviation receipts. Omit future signature/seed/final fixture hashes from new signed preimage.",
+        "No signature/verification/adoption command until all metadata above is complete and recorded. Commands P1.002.1 then .2 then .3 are serial, stop first failure; summary substitutes only actual two64-hex hashes."
+      ]
+    },
+    {
+      "id": "M3.002",
+      "owner": "lead only",
+      "effects": [
+        "After P1.002.3 succeeds, exclusive sealed/budget-seed-002.json binds new resourcepacket and signature while preserving all counters/pools/original timestamps/prior evidence. Never start,initialize,reset or reuse a genuine ledger. First-use0 remains confined to never-started forwarding scope; global/legacy consumption retained.",
+        "Author exclusive bindings.final.json from existing bindings.materializing.json with only current resource/signature/seed002 refs,actual prepared/supporting/charge/source refs,original admitted booleans, final inventory pointer and truthful pending-finalV annotations. Keep source/model/ports/limits unchanged; repair allowance10 fully consumed.",
+        "Author exclusive inventory.final.json: exactsource010denominator+12P0.006closures/manifests+567staticfiles+actual nonsecret/private config/resource/seed/authority/supporting config/docs/receipt refs. Exclude env.json, supporting.env.json, inventory selfhash, bindings selfhash and later derived receipt/signature. No selfreference or stale build identities.",
+        "Then invoke the unchanged composer exactly once as P1.002.4. No preparer rerun, rebuild, standalone inventory check or broader gate."
+      ]
+    },
+    {
+      "id": "M4.002",
+      "owner": "lead only",
+      "effects": [
+        "Only after compose succeeds retain actual generated fixture/adoption/derived receipt and whole-phase installed/source/config inventory. Readonlyseal nonsecret selected inputs, secrets remain0600; preserve all attempts. No final derived signature or product V.",
+        "Reconcile canonical2.9 only if every implementation item is materialized; otherwise retain incomplete. Present actual remaining derived adoption/supporting activation/exact final V packet for separate approval. No archive/reflection/validation claim."
+      ]
+    }
+  ],
+  "order": [
+    "A14sign/adopt",
+    "M0.002",
+    "M1.002",
+    "M2.002",
+    "P1.002.1",
+    "P1.002.2",
+    "P1.002.3",
+    "M3.002",
+    "P1.002.4",
+    "M4.002"
+  ],
+  "limits": {
+    "total_seconds": 1445,
+    "inherited_remaining_preparation_seconds": 9592,
+    "output_bytes_per_command": 1048576,
+    "file_bytes_max": 17179869184,
+    "aggregate_tree_bytes_max": 137438953472,
+    "file_count_max": 1000000,
+    "first_failure_stop": true,
+    "automatic_retry": false,
+    "additional_repairs": 1,
+    "tool_calls_cumulative": 4000,
+    "active_minutes_cumulative": 2400,
+    "repair_cap": 10,
+    "repairs_consumed": "10 after M0.002 entry;9 currently",
+    "cohere_usd": 10,
+    "openai_embeddings_usd": 10,
+    "transfer": false,
+    "provider_calls": false,
+    "service_starts": false,
+    "product_verification": false,
+    "publication": false,
+    "original_P1_total_seconds": 1800,
+    "prior_P1_consumed_seconds": 354.230021238327,
+    "historical_repairs_consumed": 9,
+    "bounded_repair_number": 10,
+    "remaining_after_bounded_attempt": 0
+  },
+  "jwt_validity": {
+    "not_before_unix": 1792938392,
+    "expires_unix": 1793024792
+  },
+  "future_runner_wall_seconds": 43200,
+  "replacement_supporting_JWTs": 3,
+  "discarded_prior_supporting_JWTs": 3,
+  "product_user_JWTs_retained": 2,
+  "new_key_copies": 0,
+  "current_accounting": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-014.json",
+    "sha256": "sha256:96a5566403b4116eb72df13edbf71a1e4019689a7703dc54ae9ca449721eb1c5"
+  },
+  "current_floor": {
+    "calls": 2738,
+    "active_minutes": 1359.1758011833333,
+    "repairs": 9,
+    "cutoff": "2026-10-25T15:19:07.717518+00:00",
+    "later_activity_accrues": true
+  },
+  "uncomfortable": "Previous order deviation and discarded token work remain history. Supporting config and complete composition still unproven. This proposal authorizes nothing until signed/adopted and explicitly instructed; no product suitability claim.",
+  "final_V": "Separate actual derived inventory/adoption and explicit exact V instruction remain required."
+}

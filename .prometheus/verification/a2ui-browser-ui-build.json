@@ -1,0 +1,10 @@
+{
+  "command": "pnpm -C frontend build --outDir ../target/manual-a2ui-browser-ui",
+  "exit_code": 0,
+  "observed": "10410 modules transformed; built in 3.91s",
+  "warnings": "PGlite dependency direct eval warnings",
+  "previous_static_backup": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-static-before",
+  "built_static": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-ui",
+  "old_index_sha256": "a73b0275064de5a56329377fda574420d8a9ac3278991c995cd1bd1bedd08dc6",
+  "new_index_sha256": "2443bc77809da286cdbc81e55dd3f1f2fb2c5e8e80f266281a804bc1e8427bd2"
+}

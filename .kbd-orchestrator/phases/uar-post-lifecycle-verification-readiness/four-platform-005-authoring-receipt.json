@@ -1,0 +1,36 @@
+{
+  "classification": "AUTHORIZED_IOS_SOURCE_AND_METADATA_AUTHORING_ONLY",
+  "timestamp": "2026-10-25T22:10:33.239106+00:00",
+  "source_inventory_command": "python3 scripts/acceptance/source_inventory.py --output /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-007.json",
+  "source_inventory_output": {
+    "source_identity": "sha256:fe0d649a16a604bacb57054a5470d05815be56a8b8d0cf87d3b46960f1ddfa94",
+    "regular_files": 29045,
+    "nonregular_entries": 195,
+    "gate": "CLOSED"
+  },
+  "unsigned_template_exit": 0,
+  "amendment_sha256": "sha256:09d2cf84a3d02646ab8f426d963206762ba3c5132f51afb74e603925003de2a3",
+  "scenario_changes": {
+    "added": [],
+    "modified": [],
+    "removed": []
+  },
+  "contract_digest": "226c146c49d33504282c91d5bb7bd37c10238e00cc9e65b9b5da21ee89c79049",
+  "packet_sha256": "sha256:e8c9de9a0e4091e34b6df429bf15a2e605119ab12ddbdbf60b2657281e085bd2",
+  "current_binding": "A19 binding20 remains",
+  "new_signature": "NOT_CREATED",
+  "new_adoption": "NOT_RUN",
+  "source_reviews": "NOT_RUN",
+  "tests_builds_imports_probes": "NOT_RUN",
+  "preparation": "NOT_RUN",
+  "provider_calls": 0,
+  "embedding_spend_this_authoring_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repair_floor": 18,
+  "fixture19_charged": false,
+  "guards_trace_to": "A19 source-proven rejection of known failed HTTP and failed-completion false-PASS risk; actual known-terminal evidence/binding checks at trusted host boundary",
+  "unrequested_changes": "NONE",
+  "remaining_unverified": "Changed source syntax/behavior, seven new tests and full nested simulator path; actual runtime accounting/cleanup and prepared artifacts/user outcomes"
+}

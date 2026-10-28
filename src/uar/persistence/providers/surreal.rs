@@ -976,6 +976,16 @@ impl PersistenceLayer for SurrealDbProvider {
     async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
     async fn publish_ingestion(&self, job: &IngestionJob, publication: &IngestionPublication) -> Result<()> { ingestion_records::publish(self, job, publication).await }
     async fn reconcile_ingestion(&self) -> Result<()> { ingestion_records::reconcile(self).await }
+    async fn begin_knowledge_regeneration(&self, owner: &str, kb: &str,
+        target: &crate::uar::domain::knowledge::EmbeddingFingerprint)
+        -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+        ingestion_records::begin_regeneration(self, owner, kb, target).await
+    }
+    async fn search_knowledge_scoped_in_space(&self, owner: &str, ids: &[&str], query: &[f32],
+        limit: usize, min_score: f32, space: &crate::uar::domain::knowledge::EmbeddingFingerprint)
+        -> Result<Vec<KnowledgeMatch>> {
+        ingestion_records::search_in_space(self, owner, Some(ids), query, limit, min_score, Some(space)).await
+    }
 
     fn supports_durable_approvals(&self) -> bool { self.durable_instances }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
@@ -2496,13 +2506,10 @@ impl PersistenceLayer for SurrealDbProvider {
 
     // Knowledge Base Management
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
-        let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
-        self.save_tenant_record(namespace.table("knowledge_bases"), &kb.owner_id, &kb.id, kb)
-            .await
+        ingestion_records::save_kb(self, kb).await
     }
 
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
-        let namespace = KnowledgeNamespace::for_owner(&chunk.owner_id)?;
         if self
             .get_knowledge_base(&chunk.owner_id, &chunk.kb_id)
             .await?
@@ -2518,12 +2525,7 @@ impl PersistenceLayer for SurrealDbProvider {
         {
             anyhow::bail!("knowledge document is not accessible to chunk owner");
         }
-        self.save_tenant_record(
-            namespace.table("knowledge_chunks"),
-            &chunk.owner_id,
-            &chunk.id.to_string(),
-            chunk,
-        )
+        ingestion_records::save_member(self, "knowledge_chunks", &chunk.owner_id, &chunk.kb_id, &chunk.id.to_string(), chunk)
         .await
     }
 
@@ -2534,37 +2536,7 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let mut response = self
-            .db
-            .query(namespace.query("SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id"))
-            .bind(("owner_id", owner_id.to_string()))
-            .await?;
-        let chunks_raw: Vec<surrealdb::types::Value> = response.take(0)?;
-        let chunks_raw = chunks_raw
-            .into_iter()
-            .map(surreal_to_json)
-            .collect::<Result<Vec<_>>>()?;
-        let chunks: Vec<KnowledgeChunk> = from_db_vec(restore_tenant_record_ids(chunks_raw))?;
-        warn_zero_norm_chunks(&chunks);
-
-        let mut matches: Vec<KnowledgeMatch> = chunks
-            .into_iter()
-            .map(|c| {
-                let score = cosine_similarity(&c.embedding, query_vec);
-                KnowledgeMatch { chunk: c, score }
-            })
-            .filter(|m| m.score >= min_score)
-            .collect();
-
-        matches.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        matches.truncate(limit);
-
-        Ok(matches)
+        ingestion_records::search_in_space(self, owner_id, None, query_vec, limit, min_score, None).await
     }
 
     // Agent Persistence
@@ -2720,52 +2692,7 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        if kb_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        // Query with kb_id filter
-        let kb_ids_vec: Vec<String> = kb_ids.iter().copied().map(str::to_string).collect();
-        let sql = "SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id AND kb_id IN $kb_ids";
-        let mut res = self
-            .db
-            .query(namespace.query(sql))
-            .bind(("owner_id", owner_id.to_string()))
-            .bind(("kb_ids", kb_ids_vec))
-            .await?;
-        let chunks_raw: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
-            if e.to_string().contains("does not exist") {
-                Ok(vec![])
-            } else {
-                Err(anyhow::anyhow!(e))
-            }
-        })?;
-        let chunks_json: Vec<serde_json::Value> = chunks_raw
-            .into_iter()
-            .map(surreal_to_json)
-            .collect::<Result<_>>()?;
-        let chunks: Vec<KnowledgeChunk> = from_db_vec(restore_tenant_record_ids(chunks_json))?;
-        warn_zero_norm_chunks(&chunks);
-
-        // In-memory cosine similarity
-        let mut matches: Vec<KnowledgeMatch> = chunks
-            .into_iter()
-            .map(|c| {
-                let score = cosine_similarity(&c.embedding, query_vec);
-                KnowledgeMatch { chunk: c, score }
-            })
-            .filter(|m| m.score >= min_score)
-            .collect();
-
-        matches.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        matches.truncate(limit);
-
-        Ok(matches)
+        ingestion_records::search_in_space(self, owner_id, Some(kb_ids), query_vec, limit, min_score, None).await
     }
 
     // =========================================================================
@@ -2773,7 +2700,6 @@ impl PersistenceLayer for SurrealDbProvider {
     // =========================================================================
 
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
-        let namespace = KnowledgeNamespace::for_owner(&doc.owner_id)?;
         if self
             .get_knowledge_base(&doc.owner_id, &doc.kb_id)
             .await?
@@ -2781,7 +2707,7 @@ impl PersistenceLayer for SurrealDbProvider {
         {
             anyhow::bail!("knowledge base is not accessible to document owner");
         }
-        self.save_tenant_record(namespace.table("knowledge_documents"), &doc.owner_id, &doc.id, doc)
+        ingestion_records::save_member(self, "knowledge_documents", &doc.owner_id, &doc.kb_id, &doc.id, doc)
             .await
     }
 

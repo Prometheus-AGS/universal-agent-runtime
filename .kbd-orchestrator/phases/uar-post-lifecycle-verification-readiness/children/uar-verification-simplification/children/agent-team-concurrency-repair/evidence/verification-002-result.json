@@ -1,0 +1,61 @@
+{
+  "status": "FAIL",
+  "recorded_at": "2026-10-26T11:41:02.994802+00:00",
+  "scope": "TEAM-01 only; no scenario accepted",
+  "review": {
+    "code": "PASS; nonblocking loopback embedding wording caveat",
+    "rust": "PASS bounded source critique; incidental historical gotchas context disclosed",
+    "javascript": "PASS"
+  },
+  "source_binding": "PASS: Frozen source inputs match",
+  "build": {
+    "command": "CARGO_TARGET_DIR=target/uar-team-concurrency-repair cargo build --locked --no-default-features --features server-full --bin universal-agent-runtime",
+    "started_at": "2026-10-26T11:22:43.106937+00:00",
+    "ended_at": "2026-10-26T11:36:48.667652+00:00",
+    "duration_seconds": 845.484513139003,
+    "exit_code": 0,
+    "artifact": "target/uar-team-concurrency-repair/debug/universal-agent-runtime"
+  },
+  "activation": {
+    "pid": 10715,
+    "base_url": "http://127.0.0.1:53587",
+    "model": "liter/MiniMax-M3",
+    "provider_url": "http://127.0.0.1:4000/v1",
+    "binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-team-concurrency-repair/debug/universal-agent-runtime",
+    "binary_sha256": "52166084b84f7a8df6578131194423e917dc7894feb742138006d58ba8468d16",
+    "built_source_identity": "sha256:72030618fe645a0f5327c9e4904be4f71acaa3ed64c924888fbc77e5d67385a7",
+    "config": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-team-repair-001.log",
+    "platform": "macos",
+    "keep_running": true,
+    "retained_agent_id": "math-specialist-db64c2a8",
+    "retained_writer_id": "writing-specialist",
+    "service_instance_id": "uar-macos-behaviors",
+    "source_manifest_sha256": "72030618fe645a0f5327c9e4904be4f71acaa3ed64c924888fbc77e5d67385a7",
+    "backup": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/store.before-team-repair-001",
+    "status": "ready"
+  },
+  "bdd": {
+    "command": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs",
+    "exit_code": 1,
+    "duration_seconds": 5.193,
+    "scenarios": {
+      "passed": 0,
+      "failed": 1
+    },
+    "cucumber_steps": {
+      "passed": 5,
+      "failed": 1,
+      "skipped": 2
+    },
+    "step_count_note": "Five passed includes After evidence hook. Four behavioral steps passed; live run-state overlap is not successful concurrent inference.",
+    "report": ".prometheus/verification/team-repair-001-macos.cucumber.json",
+    "team_id": "dd46f6a1-2b10-48be-95e9-954bf20aa176",
+    "failed_at": "both specialists produce their own successful results",
+    "cause": "TEAM_EXECUTION_BUDGET_FAILED / accounting_budget_exhausted: catalog_context_and_output reservation1512000 > configured turn/session token limit32768. Both specialist admissions refused before inference.",
+    "article": "NOT_EXERCISED; dependent steps skipped"
+  },
+  "stop": "No repair or retry. Candidate UAR PID10715 left running with retained agents/store; no accepted archive or child exit.",
+  "source_manifest_sha256": "72030618fe645a0f5327c9e4904be4f71acaa3ed64c924888fbc77e5d67385a7",
+  "no_new_scope": "No extra scenarios, production edits, dependency changes or fixes during verification."
+}

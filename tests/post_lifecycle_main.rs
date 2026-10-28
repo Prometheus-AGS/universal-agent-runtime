@@ -18,7 +18,7 @@ use futures::StreamExt;
 #[path = "support/post_lifecycle_store.rs"]
 mod post_lifecycle_store;
 #[cfg(feature = "surreal-backend")]
-use universal_agent_runtime::uar::persistence::{PersistenceLayer,
+use universal_agent_runtime::uar::persistence::{DurableStoreEligibility, PersistenceLayer,
     providers::surreal::SurrealDbProvider,
     accounting::{CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity, ScopeLimits}};
 
@@ -112,6 +112,13 @@ impl Boundary {
         if name == "main" {
             let built = std::env::var("UAR_BOUNDARY_BUILT_SHA256").map_err(|_| "built_hash_missing")?;
             let candidate = std::env::var("UAR_MAIN_CANDIDATE").map_err(|_| "candidate_path_missing")?;
+            save(&self.evidence.join(format!("main-build-boot-identity-{launch}.json")), &json!({
+                "process":name, "launch":launch,
+                "expectedCandidatePath":candidate, "observedArgv0":argv[0],
+                "expectedBuiltSha256":built, "observedBootSha256":actual_hash,
+                "pathMatches":argv[0] == candidate, "sha256Matches":actual_hash == built,
+                "outcome":if argv[0] == candidate && actual_hash == built { "PASS" } else { "BLOCKED" }
+            }))?;
             if argv[0] != candidate || actual_hash != built { return Err("main_build_boot_identity_mismatch".into()); }
         } else if spec["sha256"].as_str() != Some(actual_hash.as_str()) {
             return Err("peer_identity_mismatch".into());
@@ -157,15 +164,19 @@ impl Boundary {
             match process.child.try_wait() {
                 Ok(Some(status)) => {
                     self.events.push(json!({"kind":"exit","process":name,"launch":process.launch,
-                        "signalExit":signal_status.code(),"exitCode":status.code(),"success":status.success()}));
+                        "pid":pid,"signalExit":signal_status.code(),"signalSuccess":signal_status.success(),
+                        "exitCode":status.code(),"exitStatus":status.to_string(),"success":status.success()}));
                     return if status.success() { Ok(()) } else { Err("process_nonzero_teardown".into()) };
                 }
                 Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(25)),
                 _ => {
                     let _ = process.child.kill();
-                    let exit = process.child.wait().ok().and_then(|status| status.code());
+                    let exit = process.child.wait().ok();
                     self.events.push(json!({"kind":"exit","process":name,"launch":process.launch,
-                        "exitCode":exit,"outcome":"BLOCKED","reason":"graceful_exit_unconfirmed"}));
+                        "pid":pid,"signalExit":signal_status.code(),"signalSuccess":signal_status.success(),
+                        "exitCode":exit.as_ref().and_then(|status|status.code()),
+                        "exitStatus":exit.as_ref().map(ToString::to_string),
+                        "outcome":"BLOCKED","reason":"graceful_exit_unconfirmed"}));
                     return Err("graceful_exit_unconfirmed".into());
                 }
             }
@@ -254,7 +265,8 @@ impl Boundary {
         let password = std::env::var(field(spec, "passwordEnv")?).map_err(|_| "existing_store_password_unavailable")?;
         let provider = SurrealDbProvider::new(endpoint, Some(&user), Some(&password), Some(namespace), Some(database))
             .await.map_err(|_| "store_connect_failed")?;
-        if !provider.durable_store_eligibility().permits_durable_work() {
+        if !matches!(provider.durable_store_eligibility(),
+            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested) {
             let report = provider.close_scope().await;
             self.events.push(json!({"kind":"store_close","scopeReleased":report.scope_released}));
             return Err("store_durability_unproven_no_mode_substitution".into());
@@ -323,6 +335,7 @@ impl Boundary {
         for assertion in assertions {
             let assertion = expand(assertion,&self.variables)?;
             let kind = field(&assertion,"kind")?;
+            let mut observed_count = None;
             let good = match kind {
                 "json_equals" => value.pointer(field(&assertion,"pointer")?) == assertion.get("value"),
                 "json_array_length" => value.pointer(field(&assertion,"pointer")?).and_then(Value::as_array)
@@ -330,23 +343,45 @@ impl Boundary {
                 "contains_json" => contains(value,&assertion["value"]),
                 "excludes_json" => !contains(value,&assertion["value"]),
                 "text_count" => { let needle=field(&assertion,"text")?;
-                    !needle.is_empty() && Some(text.matches(needle).count() as u64) == assertion["count"].as_u64() },
+                    let count = text.matches(needle).count() as u64;
+                    observed_count = Some(count);
+                    !needle.is_empty() && Some(count) == assertion["count"].as_u64() },
                 "sse_object_count" => {
                     let expected=assertion["match"].as_object().ok_or("sse_match_missing")?;
                     let count=text.lines().filter_map(|line| line.strip_prefix("data:")).filter_map(|data|
                         serde_json::from_str::<Value>(data.trim()).ok()).filter(|packet|
                         expected.iter().all(|(pointer,wanted)| packet.pointer(pointer)==Some(wanted))).count();
+                    observed_count = Some(count as u64);
                     Some(count as u64)==assertion["count"].as_u64()
                 }
                 _ => return Err("unsupported_assertion".into()),
             };
-            self.events.push(json!({"kind":"assertion","assertionKind":kind,"control":step["control"],"matched":good}));
+            self.events.push(json!({"kind":"assertion","assertionKind":kind,"control":step["control"],
+                "matched":good,"observedCount":observed_count,"expectedCount":assertion.get("count")}));
             if !good { return Err(format!("assertion_mismatch:{kind}")); }
         }
         Ok(())
     }
 
-    async fn step(&mut self, step: &Value) -> Result<()> {
+    fn startup_process_running(&mut self, name: &str) -> Result<()> {
+        let process = self.processes.get_mut(name).ok_or("startup_process_not_owned")?;
+        match process.child.try_wait() {
+            Ok(None) => Ok(()),
+            Ok(Some(status)) => {
+                self.events.push(json!({"kind":"startup_process_exit","process":name,
+                    "launch":process.launch,"pid":process.child.id(),"exitCode":status.code(),
+                    "exitStatus":status.to_string(),"success":status.success()}));
+                Err("startup_process_exited".into())
+            }
+            Err(error) => {
+                self.events.push(json!({"kind":"startup_process_wait_error","process":name,
+                    "launch":process.launch,"pid":process.child.id(),"error":error.to_string()}));
+                Err("startup_process_wait_failed".into())
+            }
+        }
+    }
+
+    async fn step(&mut self, step: &Value, setup: bool) -> Result<()> {
         let action = field(step, "action")?;
         match action {
             #[cfg(feature = "surreal-backend")]
@@ -397,9 +432,41 @@ impl Boundary {
                 if attempts == 0 || attempts > 30 { return Err("poll_attempts_exceed_bound".into()); }
                 let expected=expand(&step["value"],&self.variables)?;
                 let pointer=expand(&step["pointer"],&self.variables)?;
+                let startup_retry = step["startupTransportRetry"].as_bool() == Some(true);
+                let startup_request = if startup_retry { expand(&step["request"], &self.variables)? } else { Value::Null };
+                let startup_target = if startup_request["target"].as_str() == Some("peer") { "peer" } else { "main" };
+                if startup_retry {
+                    // A scenario restart has the same connection-refused window
+                    // as setup. Keep retry limited to its owned main health GET.
+                    let restarted_main_health = startup_target == "main"
+                        && startup_request["path"].as_str() == Some("/health")
+                        && self.launches.get("main").copied().unwrap_or(0) > 1;
+                    if startup_request["method"].as_str() != Some("GET")
+                        || (!setup && !restarted_main_health) {
+                        return Err("startup_transport_retry_requires_setup_or_restart_health_get".into());
+                    }
+                    if !self.processes.contains_key(startup_target) { return Err("startup_process_not_owned".into()); }
+                }
                 let mut last = "poll_condition_unobserved".to_owned();
-                for _ in 0..attempts {
-                    let (status, _, value) = self.request(&step["request"]).await?;
+                for attempt in 1..=attempts {
+                    if startup_retry { self.startup_process_running(startup_target)?; }
+                    let response = self.request(&step["request"]).await;
+                    if startup_retry {
+                        if let Err(error) = &response {
+                            self.events.push(json!({"kind":"startup_poll_error","process":startup_target,
+                                "attempt":attempt,"attempts":attempts,"control":step["control"],"reason":error}));
+                        }
+                        self.startup_process_running(startup_target)?;
+                    }
+                    let (status, _, value) = match response {
+                        Ok(response) => response,
+                        Err(error) if startup_retry && error == "request_transport_failed" => {
+                            last = error;
+                            tokio::time::sleep(Duration::from_millis(1000)).await;
+                            continue;
+                        }
+                        Err(error) => return Err(error),
+                    };
                     self.events.push(json!({"kind":"poll","status":status,"control":step["control"],
                         "observedState":value["status"],"errorMessageSha256":value["error_message"].as_str().map(|text|hash(text.as_bytes()))}));
                     if value["status"]=="failed" { return Err("assertion_mismatch:typed_ingestion_failure_see_poll_receipt".into()); }
@@ -458,7 +525,7 @@ async fn post_lifecycle_main_boundary() {
     let setup_steps = boundary.manifest["setupSteps"].as_array().cloned().unwrap_or_default();
     let mut setup_error = None;
     for step in &setup_steps {
-        if let Err(error) = boundary.step(step).await { setup_error = Some(error); break; }
+        if let Err(error) = boundary.step(step, true).await { setup_error = Some(error); break; }
     }
     for id in IDS {
         if let Some(error) = &setup_error {
@@ -502,12 +569,26 @@ async fn post_lifecycle_main_boundary() {
         } else {
             let mut observed = Vec::new();
             for step in steps.into_iter().flatten() {
-                if let Err(error) = boundary.step(step).await {
+                let event_start = boundary.events.len();
+                if let Err(error) = boundary.step(step, false).await {
                     outcome = if error.contains("mismatch") { "FAIL" } else { "BLOCKED" };
                     reason = error;
                     break;
                 }
                 if let Some(control) = step["control"].as_str() { observed.push(control.to_owned()); }
+                if step["action"] == "cas_fixture" {
+                    for report in &boundary.events[event_start..] {
+                        if report["outcome"] != "PASS" { continue; }
+                        for (claim, control) in [
+                            ("actualRequiredOrderingsObserved", "both_exact_row_orderings"),
+                            ("actualUnrelatedConflictPreserved", "unrelated_storage_error_preserved"),
+                        ] {
+                            if report["claims"][claim] == true {
+                                observed.push(control.to_owned());
+                            }
+                        }
+                    }
+                }
             }
             if outcome == "PASS" && controls.into_iter().flatten().any(|name| !observed.iter().any(|seen| Some(seen.as_str()) == name.as_str())) {
                 outcome = "BLOCKED"; reason = "required_control_not_observed".into();
@@ -517,8 +598,20 @@ async fn post_lifecycle_main_boundary() {
     }
     let cleanup_steps=boundary.manifest["cleanupSteps"].as_array().cloned().unwrap_or_default();
     let mut cleanup_failures=Vec::new();
-    for step in &cleanup_steps { if let Err(error)=boundary.step(step).await { cleanup_failures.push(json!(error)); } }
+    for step in &cleanup_steps {
+        // A failed peer setup cannot have created any main-owned HTTP resources.
+        // Launch history keeps cleanup mandatory after even a failed main boot.
+        if boundary.launches.get("main").copied().unwrap_or(0) == 0
+            && step["action"].as_str() == Some("request")
+            && step["target"].as_str() != Some("peer") {
+            boundary.events.push(json!({"kind":"cleanup_step","outcome":"NOT_APPLICABLE",
+                "reason":"main_never_launched","method":step["method"],"path":step["path"],"target":"main"}));
+            continue;
+        }
+        if let Err(error)=boundary.step(step, false).await { cleanup_failures.push(json!(error)); }
+    }
     let mut teardown = boundary.cleanup();
+    if let Some(error) = &setup_error { teardown["setupFailure"]=json!(error); }
     #[cfg(feature = "surreal-backend")]
     if let Some(store)=boundary.store.take() {
         for identity in &boundary.accounting_calls {

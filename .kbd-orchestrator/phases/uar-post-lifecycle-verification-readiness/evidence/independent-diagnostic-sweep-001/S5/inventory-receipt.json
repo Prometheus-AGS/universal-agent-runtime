@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/Users/gqadonis/miniconda3/bin/python3",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/source_inventory.py",
+    "--output",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/S5/source-after-one-correction.json"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/source_inventory.py\", line 106, in <module>\n    main()\n  File \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/source_inventory.py\", line 71, in main\n    raise ValueError(\"inventory requires a new exact file under the active phase\")\nValueError: inventory requires a new exact file under the active phase\n"
+}

@@ -1,0 +1,137 @@
+--- a/tests/post_lifecycle_main.rs
++++ b/tests/post_lifecycle_main.rs
+@@ -335,6 +335,7 @@
+         for assertion in assertions {
+             let assertion = expand(assertion,&self.variables)?;
+             let kind = field(&assertion,"kind")?;
++            let mut observed_count = None;
+             let good = match kind {
+                 "json_equals" => value.pointer(field(&assertion,"pointer")?) == assertion.get("value"),
+                 "json_array_length" => value.pointer(field(&assertion,"pointer")?).and_then(Value::as_array)
+@@ -342,17 +343,21 @@
+                 "contains_json" => contains(value,&assertion["value"]),
+                 "excludes_json" => !contains(value,&assertion["value"]),
+                 "text_count" => { let needle=field(&assertion,"text")?;
+-                    !needle.is_empty() && Some(text.matches(needle).count() as u64) == assertion["count"].as_u64() },
++                    let count = text.matches(needle).count() as u64;
++                    observed_count = Some(count);
++                    !needle.is_empty() && Some(count) == assertion["count"].as_u64() },
+                 "sse_object_count" => {
+                     let expected=assertion["match"].as_object().ok_or("sse_match_missing")?;
+                     let count=text.lines().filter_map(|line| line.strip_prefix("data:")).filter_map(|data|
+                         serde_json::from_str::<Value>(data.trim()).ok()).filter(|packet|
+                         expected.iter().all(|(pointer,wanted)| packet.pointer(pointer)==Some(wanted))).count();
++                    observed_count = Some(count as u64);
+                     Some(count as u64)==assertion["count"].as_u64()
+                 }
+                 _ => return Err("unsupported_assertion".into()),
+             };
+-            self.events.push(json!({"kind":"assertion","assertionKind":kind,"control":step["control"],"matched":good}));
++            self.events.push(json!({"kind":"assertion","assertionKind":kind,"control":step["control"],
++                "matched":good,"observedCount":observed_count,"expectedCount":assertion.get("count")}));
+             if !good { return Err(format!("assertion_mismatch:{kind}")); }
+         }
+         Ok(())
+@@ -564,12 +569,26 @@
+         } else {
+             let mut observed = Vec::new();
+             for step in steps.into_iter().flatten() {
++                let event_start = boundary.events.len();
+                 if let Err(error) = boundary.step(step, false).await {
+                     outcome = if error.contains("mismatch") { "FAIL" } else { "BLOCKED" };
+                     reason = error;
+                     break;
+                 }
+                 if let Some(control) = step["control"].as_str() { observed.push(control.to_owned()); }
++                if step["action"] == "cas_fixture" {
++                    for report in &boundary.events[event_start..] {
++                        if report["outcome"] != "PASS" { continue; }
++                        for (claim, control) in [
++                            ("actualRequiredOrderingsObserved", "both_exact_row_orderings"),
++                            ("actualUnrelatedConflictPreserved", "unrelated_storage_error_preserved"),
++                        ] {
++                            if report["claims"][claim] == true {
++                                observed.push(control.to_owned());
++                            }
++                        }
++                    }
++                }
+             }
+             if outcome == "PASS" && controls.into_iter().flatten().any(|name| !observed.iter().any(|seen| Some(seen.as_str()) == name.as_str())) {
+                 outcome = "BLOCKED"; reason = "required_control_not_observed".into();
+--- a/tests/support/post_lifecycle_store.rs
++++ b/tests/support/post_lifecycle_store.rs
+@@ -365,7 +365,9 @@
+ /// the caller. The durable record owner must match the existing manifest owner
+ /// before any related event row can enter the cleanup ownership inventory.
+ pub async fn history_cleanup_rows(manifest: &Value, run_ids: &[String]) -> Result<Vec<Value>> {
+-    let expected_owner = text(&manifest["fixtureVariables"],"ownerStorageKey")?;
++    // Durable run history uses ActorOwner::presentation_owner_key, while
++    // accounting and CAS use the distinct credential-principal storage key.
++    let expected_owner = text(&manifest["fixtureVariables"],"historyOwnerKey")?;
+     let db = raw_client(manifest).await?;
+     let work = async {
+         let mut owned = Vec::new();
+--- a/src/uar/runtime/manager.rs
++++ b/src/uar/runtime/manager.rs
+@@ -6003,6 +6003,8 @@
+                 }
+                 let code = if is_team_attempt {
+                     team_error.unwrap_or("TEAM_PROVIDER_REQUEST_REJECTED")
++                } else if stage == "budget_admission" {
++                    category
+                 } else {
+                     "orchestrator_start_failed"
+                 };
+--- a/src/uar/persistence/providers/ingestion_records/surreal.rs
++++ b/src/uar/persistence/providers/ingestion_records/surreal.rs
+@@ -28,7 +28,12 @@
+         if message.contains("uar_ingestion_revoked") { return Err(IngestionStoreError::Revoked.into()); }
+         if message.contains("uar_ingestion_kb_missing") { return Err(IngestionStoreError::MissingKnowledgeBase.into()); }
+     }
+-    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) { return Err(error.into()); }
++    // A failed COMMIT marks earlier statement slots NotExecuted. Preserve the
++    // actual cause rather than returning one of those cancellation wrappers.
++    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, error)| (
++        matches!(error.query_details(), Some(surrealdb::types::QueryError::NotExecuted | surrealdb::types::QueryError::Cancelled)),
++        *index,
++    )) { return Err(error.into()); }
+     Ok(())
+ }
+ 
+@@ -37,7 +42,10 @@
+     anyhow::ensure!(document.status == DocumentStatus::Pending && document.chunk_count == 0, "new upload must be pending");
+     let job = IngestionJob::new(document)?;
+     let namespace = job.namespace;
+-    check(store.db.query(namespace.query("BEGIN TRANSACTION;
++    let mut attempt = 0;
++    loop {
++    attempt += 1;
++    let result = check(store.db.query(namespace.query("BEGIN TRANSACTION;
+         LET $kb = (SELECT * FROM knowledge_bases WHERE owner_id=$owner AND (logical_id=$kb_id OR id=type::record('knowledge_bases',$kb_id)))[0];
+         IF $kb = NONE { THROW 'uar_ingestion_kb_missing'; };
+         UPDATE $kb.id SET updated_at=$now;
+@@ -50,8 +58,21 @@
+         .bind(("payload", serde_json::json!({"owner_id": job.owner_id, "document_id": job.document_id,
+             "kb_id": job.kb_id, "state": "pending", "next_attempt_at": job.next_attempt_at,
+             "data": serde_json::to_string(&job)?, "source": source})))
+-        .await?)?;
+-    Ok(job)
++        .await?);
++    match result {
++        Ok(()) => return Ok(job),
++        Err(error) if attempt < 3 && error.chain().any(|cause| {
++            cause.downcast_ref::<surrealdb::Error>().is_some_and(|error|
++                matches!(error.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)))
++        }) => {
++            // Concurrent uploads touch the same KB fence. Retry only a typed
++            // rolled-back conflict, reusing this job/document and source bytes.
++            // Unknown commits, transport failures and other errors are not retried.
++            tokio::time::sleep(std::time::Duration::from_millis(25)).await;
++        }
++        Err(error) => return Err(error),
++    }
++    }
+ }
+ 
+ pub(super) async fn discover(store: &SurrealDbProvider, limit: usize) -> Result<Vec<IngestionJob>> {

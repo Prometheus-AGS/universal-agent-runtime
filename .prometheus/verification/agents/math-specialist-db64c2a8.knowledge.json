@@ -1,0 +1,91 @@
+{
+  "agent_id": "math-specialist-db64c2a8",
+  "agent": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "math-specialist-db64c2a8",
+    "metadata": {
+      "title": "Mathematics Specialist",
+      "description": "Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.",
+      "tags": [
+        "mathematics",
+        "arithmetic",
+        "calculations"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": true,
+        "knowledge_bases": [
+          "f572fa5d-7e48-43e9-bf60-d3e8e9a9405e",
+          "58c0e39f-43e0-47a9-b699-7dea5d82417f"
+        ],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "knowledge_base_id": "58c0e39f-43e0-47a9-b699-7dea5d82417f",
+  "document_id": "35f6bbe7-5804-4253-b0d1-c77642365757",
+  "evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json",
+  "retained_for_future_use": true
+}

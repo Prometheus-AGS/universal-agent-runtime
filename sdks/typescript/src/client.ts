@@ -50,11 +50,11 @@ export class UarClient {
 
   readonly chat = {
     complete: (request: ChatRequest) => this.request("/api/chat/completion", schemas.chatCompletionSchema, {
-      method: "POST", body: { messages: request.messages, model: request.model, temperature: request.temperature, tools: request.tools },
+      method: "POST", body: { messages: request.messages, model: request.model, agent_id: request.agentId, temperature: request.temperature, tools: request.tools },
       headers: request.sessionId ? { "x-uar-session-id": request.sessionId } : undefined,
     }),
     stream: (request: ChatRequest, options?: StreamOptions) => this.stream("/api/chat/completion", {
-      method: "POST", body: { messages: request.messages, model: request.model, temperature: request.temperature, tools: request.tools, stream: true },
+      method: "POST", body: { messages: request.messages, model: request.model, agent_id: request.agentId, temperature: request.temperature, tools: request.tools, stream: true },
       headers: request.sessionId ? { "x-uar-session-id": request.sessionId } : undefined,
     }, options),
     structured: async <T>(request: ChatRequest, schema: ZodType<T>): Promise<T> => {

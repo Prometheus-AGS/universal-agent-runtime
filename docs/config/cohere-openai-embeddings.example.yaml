@@ -1,0 +1,18 @@
+# Source example only: no endpoint/model availability or paid call was verified.
+# Existing credentials remain an environment reference. Use the same explicit
+# settings for each selected embedding model; changing model/dimension requires
+# the existing KB regeneration contract, even when two widths are equal.
+llm:
+  embedding:
+    backend: openai
+    base_url: https://api.cohere.ai/compatibility/v1
+    api_key_env: COHERE_API_KEY
+    model: embed-english-v3.0
+    vector_dimension: 1024
+    # Cohere's OpenAI compatibility API does not support dimensions.
+    # The expected returned width remains 1024; no padding/truncation occurs.
+    send_dimensions: false
+    batch_size: 32
+# Other documented model/width pairs for separately selected configurations:
+# embed-multilingual-v3.0: 1024
+# embed-english-light-v3.0: 384

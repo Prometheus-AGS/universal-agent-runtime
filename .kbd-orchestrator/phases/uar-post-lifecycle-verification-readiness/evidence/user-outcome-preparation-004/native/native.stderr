@@ -1,0 +1,45 @@
+warning: unused import: `OnceLockExt`
+  --> vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0/src/method/mod.rs:12:34
+   |
+12 | use crate::{Connect, Connection, OnceLockExt, SessionClone, Surreal};
+   |                                  ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `surrealdb` (lib) generated 1 warning
+warning: fields `tag_matcher` and `intent_classifier` are never read
+   --> src/uar/runtime/manager.rs:739:5
+    |
+715 | pub struct RunManager {
+    |            ---------- fields in this struct
+...
+739 |     tag_matcher: Arc<crate::uar::runtime::matching::TagMatcher>,
+    |     ^^^^^^^^^^^
+740 |     /// Intent classifier for skill matching
+741 |     intent_classifier: Arc<dyn IntentClassifier>,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `RunManager` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `match_skills_scoped` is never used
+   --> src/uar/runtime/skills/service.rs:189:25
+    |
+188 | impl SkillMatchingSnapshot {
+    | -------------------------- method in this implementation
+189 |     pub(crate) async fn match_skills_scoped(
+    |                         ^^^^^^^^^^^^^^^^^^^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/uar/rag/ingestion_admission.rs:15:1
+   |
+15 | / pub struct IngestionAdmission<T: Parkable> {
+16 | |     dispatcher: Dispatcher<T>,
+17 | |     closed: Mutex<bool>,
+18 | | }
+   | |_^
+   |
+   = note: requested on the command line with `-W missing-debug-implementations`
+
+warning: `universal-agent-runtime` (lib) generated 3 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.25s

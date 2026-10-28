@@ -1,0 +1,135 @@
+--- a/src/uar/runtime/cost_budget.rs
++++ b/src/uar/runtime/cost_budget.rs
+@@ -18,6 +18,22 @@
+ 
+ use crate::uar::api::a2a::contract::{UarUsageGrant, UarUsageReceipt};
+ use crate::uar::runtime::thread::policy_intersection::ThreadBudgets;
++
++/// The trusted team host allocates this maximum response slice before granting
++/// the remaining finite envelope to the request input allowance.
++pub(crate) const TEAM_MAX_OUTPUT_TOKENS: u64 = 64_000;
++
++/// Split a trusted team allocation into independently finite input and output
++/// allowances without treating either as a measured provider token count.
++pub(crate) fn team_token_allocation(total: u64) -> anyhow::Result<(u64, u64)> {
++    let output = TEAM_MAX_OUTPUT_TOKENS.min(total / 2);
++    let input = total
++        .checked_sub(output)
++        .ok_or_else(|| anyhow::anyhow!("team token allocation overflows"))?;
++    anyhow::ensure!(input > 0 && output > 0,
++        "team token allocation must leave nonzero input and output allowances");
++    Ok((input, output))
++}
+ 
+ /// Closed, field-free storage classification for admission diagnostics; never exposes error text.
+ fn storage_error_kind(error: &anyhow::Error) -> &'static str {
+@@ -1804,12 +1820,24 @@
+     async fn begin_call(&self, model: &str, request: &crate::llm::LlmRequest) -> anyhow::Result<Option<DurableCall>> {
+         self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Model).await?;
+         let Some(durable) = &self.durable else { return Ok(None); };
+-        let (input, output) = if request.budget_contract.is_some() {
++        let (input, output, reservation_source) = if request.budget_contract.is_some() {
+             let (input,output) = crate::llm::liter_driver::request_budget_bound(&request.budget_contract.as_ref().ok_or(AccountingError::Unresolved)?.destination_model,request)?;
+-            (Some(input),Some(output))
++            (Some(input),Some(output), "final_wire_contract")
++        } else if let Some(remote) = self.remote.as_ref()
++            .filter(|remote| remote.accounting_id.starts_with("team-budget:")) {
++            let total = remote.grant.max_total_tokens
++                .ok_or_else(|| anyhow::anyhow!("team token allocation is missing"))?;
++            let (input, allocated_output) = team_token_allocation(total)?;
++            let output = u64::from(request.output_token_cap
++                .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?);
++            anyhow::ensure!(output <= allocated_output,
++                "team request output token cap exceeds its host allocation");
++            // The host chooses this finite split; it is not a measured provider
++            // input count and therefore does not qualify a settings-only route.
++            (Some(input), Some(output), "team_host_input_allowance_and_output_cap")
+         } else {
+             let info = model.split_once('/').and_then(|(provider,model)| crate::llm::catalog::ModelCatalog::global().model(provider,model));
+-            (info.map(|m| m.limits.context_window).filter(|v| *v > 0), info.map(|m| m.limits.max_output).filter(|v| *v > 0))
++            (info.map(|m| m.limits.context_window).filter(|v| *v > 0), info.map(|m| m.limits.max_output).filter(|v| *v > 0), "catalog_context_and_output")
+         };
+         let tokens = input.zip(output).and_then(|(input,output)| input.checked_add(output));
+         let cost = input.zip(output).and_then(|(input,output)| {
+@@ -1840,7 +1868,7 @@
+                     storage_error_kind = storage_error_kind(&error),
+                     storage_error_detail = storage_error_detail(&error),
+                     diagnostic_reference = %reference,
+-                    reservation_source = if request.budget_contract.is_some() { "final_wire_contract" } else { "catalog_context_and_output" },
++                    reservation_source,
+                     reserved_tokens = ?tokens,
+                     configured_turn_token_limit = ?self.limits.max_tokens_per_turn,
+                     configured_session_token_limit = ?self.limits.max_tokens_per_session,
+--- a/src/uar/runtime/team_execution/execution.rs
++++ b/src/uar/runtime/team_execution/execution.rs
+@@ -282,6 +282,10 @@
+         if let Some(binding) = request.collaboration_binding.as_mut() {
+             binding.team_instructions = guidance;
+         }
++        let (_, output_token_cap) = crate::uar::runtime::cost_budget::team_token_allocation(
++            attempt.reservation.tokens,
++        )?;
++        request.output_token_cap = Some(u32::try_from(output_token_cap)?);
+         request.session_id = Some(format!("team-attempt:{}", attempt.id));
+         request.host_budget_constraint = Some(ThreadBudgets {
+             max_tokens_per_turn: Some(attempt.reservation.tokens),
+--- a/src/uar/runtime/manager.rs
++++ b/src/uar/runtime/manager.rs
+@@ -6461,11 +6461,22 @@
+         let model_context_window = destination_budget_contract.as_ref()
+             .and_then(|contract| usize::try_from(contract.limits.context_tokens).ok())
+             .or(estimated_context_window);
++        let team_input_allowance = is_team_attempt.then(|| {
++            host_usage_grant.as_ref()
++                .filter(|grant| grant.accounting_id.starts_with("team-budget:"))
++                .and_then(|grant| grant.grant.max_total_tokens)
++                .and_then(|total| crate::uar::runtime::cost_budget::team_token_allocation(total).ok())
++                .and_then(|(input, _)| usize::try_from(input).ok())
++        }).flatten();
+         // Native/team callers can omit an explicit output cap. Bind the same
+         // finite response reserve already withheld from their known context;
+         // never infer an output allowance from the legacy unknown-window estimate.
+         let bounded_output = (|| -> anyhow::Result<u32> {
+             let capacity = model_context_window.ok_or_else(|| anyhow::anyhow!("output_capacity_unknown"))?;
++            if is_team_attempt {
++                anyhow::ensure!(team_input_allowance.is_some(),
++                    "team_input_allowance_unavailable");
++            }
+             let mut cap = match output_token_cap {
+                 Some(cap) => cap,
+                 None => match &destination_budget_contract {
+@@ -6481,6 +6492,10 @@
+                     .model(&catalog_provider, &catalog_model_id)
+                     .and_then(|model| u32::try_from(model.limits.max_output).ok()).filter(|limit| *limit > 0));
+             if let Some(maximum) = maximum { cap = cap.min(maximum); }
++            if is_team_attempt {
++                anyhow::ensure!(u64::from(cap) <= crate::uar::runtime::cost_budget::TEAM_MAX_OUTPUT_TOKENS,
++                    "team output token cap exceeds its host allocation");
++            }
+             anyhow::ensure!(cap > 0 && capacity > cap as usize, "output_capacity_insufficient");
+             Ok(cap)
+         })();
+@@ -6638,7 +6653,9 @@
+         let context_input_allowance = match &destination_budget_contract {
+             Some(contract) => crate::uar::runtime::context::budget::input_allowance_for_limits(&contract.limits)
+                 .ok().and_then(|allowance| usize::try_from(allowance).ok()).unwrap_or(0),
+-            None => context_limit.saturating_sub(output_token_cap.unwrap_or(0) as usize),
++            None => team_input_allowance.unwrap_or_else(|| {
++                context_limit.saturating_sub(output_token_cap.unwrap_or(0) as usize)
++            }).min(context_limit.saturating_sub(output_token_cap.unwrap_or(0) as usize)),
+         };
+         let mut world_contributor = world_state.contributor(plan.restore_checkpoint).await;
+         let world_reserved_tokens = match world_contributor
+@@ -6786,8 +6803,12 @@
+         // Withhold any larger explicit caller cap here as well; this does not
+         // turn the model-window estimate into an exact final-wire guarantee.
+         let response_aware_context_limit = if destination_budget_contract.is_none() {
++            if let Some(input_allowance) = team_input_allowance {
++                context_input_allowance.min(input_allowance)
++            } else {
+             context_limit.saturating_sub((output_token_cap.unwrap_or(0) as usize)
+                 .saturating_sub(crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS))
++            }
+         } else { context_limit };
+         let request_context_limit = response_aware_context_limit.saturating_sub(tool_reserved_tokens);
+         let legacy_eligible_prose = crate::uar::runtime::context::reduce::canonical_prose_spans(&messages);

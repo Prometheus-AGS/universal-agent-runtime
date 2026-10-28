@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-10-25T11:25:42.725496+00:00",
+  "human_answer": "Approve A9 and corrected P0.003",
+  "contract_digest": "589e132bbff66585d8d67aaee97dfeeeb76d21181353f3fbc942b7e334bb02b9",
+  "source_identity": "sha256:9be55f1940937db4475b976fc204f868c568c3169e911707d005d6abf0338517",
+  "scope": "Named SSH-agent signature/adoption; one serial P0.003 producer invocation, stop first failure; no product V/services/provider/publication; preserve all prior consumption and caps."
+}

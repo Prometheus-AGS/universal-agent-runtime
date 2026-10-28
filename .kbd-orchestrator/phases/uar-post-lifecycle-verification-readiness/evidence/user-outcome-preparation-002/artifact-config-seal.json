@@ -1,0 +1,116 @@
+{
+  "operation": "A8-authorized deterministic artifact config/approval sealing",
+  "operator_approval": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/operator-approval.json",
+  "contract_digest": "fddca102edb4a2eaa38dab39fafd653011cad00f7a225fd1af1398dc47b09ae6",
+  "config": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/artifact-preparation.config.json",
+    "sha256": "sha256:7d801fe36d8fba297db4fc40a72b145ce63dc9f1b179872f4316cd88e2e63b85"
+  },
+  "approval": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/artifact-preparation.approval.json",
+    "sha256": "sha256:a031c9708dda306c3289395bd5e1331e27746786fce940eb2c76cb3bd8665ebf"
+  },
+  "source_identity": "sha256:7e2655915ee4ab9e40f4b566e9615988659ab2a930337bb6ff0cfda93fb81610",
+  "remaining_execution_seconds": 13416,
+  "stage_commands": [
+    {
+      "stage": "native",
+      "approved_packet_stage": "P0.7",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ]
+    },
+    {
+      "stage": "frontend",
+      "approved_packet_stage": "P0.8",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "-C",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend",
+        "build"
+      ]
+    },
+    {
+      "stage": "typescript_sdk",
+      "approved_packet_stage": "P0.9",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/node",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/typescript/lib/tsc.js",
+        "--project",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/tsconfig.examples.json",
+        "--noEmit",
+        "false",
+        "--outDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/.acceptance-artifacts",
+        "--rootDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript"
+      ]
+    },
+    {
+      "stage": "rust_sdk",
+      "approved_packet_stage": "P0.10",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ]
+    },
+    {
+      "stage": "grpc",
+      "approved_packet_stage": "P0.11",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "test",
+        "--locked",
+        "--features",
+        "server-full,postgres-backend",
+        "--test",
+        "user_outcome_grpc",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ]
+    },
+    {
+      "stage": "guest_lock",
+      "approved_packet_stage": "P0.12-resolve-guest",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "generate-lockfile",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/Cargo.toml"
+      ]
+    },
+    {
+      "stage": "guest_component",
+      "approved_packet_stage": "P0.13-build-guest",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo-component",
+        "component",
+        "build",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/Cargo.toml",
+        "--locked",
+        "--release",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--target-dir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target"
+      ]
+    }
+  ],
+  "gRPC_binding": "Use exact Cargo-emitted file as its own nonoverlapping tree; native runtime resource tree is included in the gRPC closure. No guessed harness hash.",
+  "product_gate": "CLOSED",
+  "provider_calls": 0
+}

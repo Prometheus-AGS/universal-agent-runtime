@@ -1,0 +1,1137 @@
+{
+  "scenario": "SEMANTIC-SKILL-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+        "description": "Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.",
+        "triggers": {
+          "keywords": [
+            "freight tariff",
+            "consignment valuation"
+          ],
+          "semantic": "Calculate the total price to dispatch packages to a recipient."
+        },
+        "prompt_overlay": "For delivery charges, multiply the box count by 11 and add 74. Return only JSON with marker \"PARCEL-f12daa87-e9a5-48a4-9f2d-ec99aba62011\" and numeric quote. This is the private pricing recipe; do not substitute general shipping rates."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"title\":\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"description\":\"Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"freight tariff\",\"consignment valuation\"],\"semantic\":\"Calculate the total price to dispatch packages to a recipient.\"},\"preferred_tools\":[],\"prompt_overlay\":\"For delivery charges, multiply the box count by 11 and add 74. Return only JSON with marker \\\"PARCEL-f12daa87-e9a5-48a4-9f2d-ec99aba62011\\\" and numeric quote. This is the private pricing recipe; do not substitute general shipping rates.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1",
+        "description": "Schedule garden watering.",
+        "triggers": {
+          "keywords": [
+            "garden watering"
+          ]
+        },
+        "prompt_overlay": "For garden watering requests, return only JSON {\"marker\":\"GARDEN-ONLY\",\"litres\":12}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"title\":\"garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"description\":\"Schedule garden watering.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"garden watering\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"For garden watering requests, return only JSON {\\\"marker\\\":\\\"GARDEN-ONLY\\\",\\\"litres\\\":12}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1",
+        "metadata": {
+          "title": "Disposable service assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Help with the requested task using relevant available skills. Follow the selected skill instructions and return its requested answer format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+                "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1"
+              ],
+              "denied_ids": []
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"metadata\":{\"title\":\"Disposable service assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Help with the requested task using relevant available skills. Follow the selected skill instructions and return its requested answer format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:1f81d232c8d83e72f3b3d46f42f2abb815864eae060d7038c1c79be4bd6b2e12\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1\"],\"denied_ids\":[]}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/skills/config",
+      "request": {
+        "engine": "service",
+        "algorithm": "local_embedding",
+        "threshold": 0.65,
+        "margin_threshold": 0.05,
+        "top_k": 3,
+        "model_name": null
+      },
+      "status": 200,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"local_embedding\",\"threshold\":0.65,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1",
+        "model": "liter/MiniMax-M3",
+        "session_id": "22d783f7-dcf2-4c68-a99c-7cff46ee1d5c",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 64000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "How much should I charge to send 26 boxes to a customer? Please work out the delivery fee."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"skills\\\":\\\"Skills · selected · 2 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selected · 14 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\"},\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.skill.activated\",\"value\":{\"skill\":{\"id\":\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"title\":\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\"},\"selectionMethod\":\"implicit\"},\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"e68d078c21aa2ccd1915435b4307970a0bc60eff61eeb5f0c5a182001bae0ff0\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"c4cbfca1e8dc78527f0be0eae61b7e64997c4aa58d34e092a3a521efcf2a3a2f\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5b452847038f6337d17d3a2d3c29a25903f13262cfb58221a5949c9c0848dc82\\\"},{\\\"id\\\":\\\"skill.delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"5fb2bb7fba3f8d082ac0216b3dd69d33104636c7ef61379b4afd7ec43fb0a30d\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"03f9321d63585bf9bab06c55df097ba7a20ef171069b7198cde3a80b5ffdb923\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"b84efa147ea6acd693b1bc980cc2a89ccde7a39e1ea69d82c7004dc22845cb4f\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":8,\\\"by_section\\\":{\\\"active_skills\\\":1,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":2,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":4316,\\\"rendered_characters\\\":4312,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[\\\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\\\"],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"e68d078c21aa2ccd1915435b4307970a0bc60eff61eeb5f0c5a182001bae0ff0\",\"fragment_count\":8},\"sourceRunId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\"},\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"input\":{\"agentId\":\"disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\"},\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"run_id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"agent_id\":\"disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"status\":\"running\",\"started_at\":\"2026-10-26T23:05:30.557888+00:00\",\"updated_at\":\"2026-10-26T23:05:30.557896+00:00\"}\nid: 5:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"conversation_id\":\"22d783f7-dcf2-4c68-a99c-7cff46ee1d5c\",\"status\":\"running\"}}],\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e-1\",\"run_id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-26T23:05:30.590528+00:00\"}\nid: 7:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"7147872f6a90d6cac5da202ae9d7a6f3b6e95859b031be574e0f0be4c6ab5040\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"c4cbfca1e8dc78527f0be0eae61b7e64997c4aa58d34e092a3a521efcf2a3a2f\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5b452847038f6337d17d3a2d3c29a25903f13262cfb58221a5949c9c0848dc82\\\"},{\\\"id\\\":\\\"skill.delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"5fb2bb7fba3f8d082ac0216b3dd69d33104636c7ef61379b4afd7ec43fb0a30d\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"03f9321d63585bf9bab06c55df097ba7a20ef171069b7198cde3a80b5ffdb923\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"b84efa147ea6acd693b1bc980cc2a89ccde7a39e1ea69d82c7004dc22845cb4f\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":8,\\\"by_section\\\":{\\\"active_skills\\\":1,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":2,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":4127,\\\"rendered_characters\\\":4123,\\\"context_window_tokens\\\":985576},\\\"selected_skills\\\":[\\\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\\\"],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\"},\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-619eb8f0-67fd-40ef-a07a-0bab05b0168e-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\"},\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":3156,\\\"serialized_bytes\\\":13652,\\\"serialized_sha256\\\":\\\"6f6ac25692d5447fa8a2c90eb172918cde14ef88ec0dd3832a2fc884bac7bb40\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\"},\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"role\":\"assistant\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"11:0\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"<think>Th\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e skill is already\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" active: delivery-pricing skill says multiply\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" box count by 11 and add \",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"74. Return only JSON with marker\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" \\\"PARCEL-f12daa87\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"-e9a5-48a4\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"-9f2d-ec99ab\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"a62011\\\" and numeric quote.\\n\\n26\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" *\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" 11 =\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" 286 +\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" 74 = 360.\\n\\nReturn\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" JSON\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" with marker and quot\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e. The instruction says \\\"Return only\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" JSON with marker ... and numeric quot\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e.\\\" So I should output\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" JSON only.\\n\\nLet me produc\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"29:8\",\"sequence\":464}\nid: 29:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e JSON lik\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"30:8\",\"sequence\":480}\nid: 30:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e {\\\"marker\\\":\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"31:8\",\"sequence\":496}\nid: 31:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" \\\"PARCEL-f12\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"32:8\",\"sequence\":512}\nid: 32:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"daa87-e9a5-\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"33:8\",\"sequence\":528}\nid: 33:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"48a4-9f2d\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"34:8\",\"sequence\":544}\nid: 34:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"-ec99aba62011\\\", \\\"quot\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"35:8\",\"sequence\":560}\nid: 35:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e\\\": 360}.\\n\\nShould I activate th\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"36:8\",\"sequence\":576}\nid: 36:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e skill? It's already active in activ\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"37:8\",\"sequence\":592}\nid: 37:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e_skills. The activat\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"38:8\",\"sequence\":608}\nid: 38:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e_skill tool is available. Th\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"39:8\",\"sequence\":624}\nid: 39:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e skill content\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"40:8\",\"sequence\":640}\nid: 40:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" is already loaded. I'll just answer\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"41:8\",\"sequence\":656}\nid: 41:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\".\\n\\nTh\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"42:8\",\"sequence\":672}\nid: 42:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"e answer\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"43:8\",\"sequence\":688}\nid: 43:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" must\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"44:8\",\"sequence\":704}\nid: 44:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" be only JSON. Let\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"45:8\",\"sequence\":720}\nid: 45:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" me output just\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"46:8\",\"sequence\":736}\nid: 46:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" the JSON.\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"47:8\",\"sequence\":752}\nid: 47:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"</think>\\n\\n{\\\"\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"48:8\",\"sequence\":768}\nid: 48:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"marker\\\": \\\"PARCEL-f12d\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"49:8\",\"sequence\":784}\nid: 49:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"aa87-e9a5-48\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"50:8\",\"sequence\":800}\nid: 50:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"a4-9f2d-e\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"51:8\",\"sequence\":816}\nid: 51:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\"c99aba62011\\\", \\\"quote\\\":\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"52:8\",\"sequence\":832}\nid: 52:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"delta\":\" 360}\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"53:8\",\"sequence\":848}\nid: 53:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"eventId\":\"54:8\",\"sequence\":864}\nid: 54:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"55:0\",\"sequence\":880}\nid: 55:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"runId\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"result\":{\"usage\":{\"inputTokens\":3881,\"outputTokens\":227,\"totalTokens\":4108,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"55:8\",\"sequence\":880}\nid: 55:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"run_id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"status\":\"completed\",\"input_tokens\":3881,\"output_tokens\":227,\"total_tokens\":4108,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-26T23:05:32.732826+00:00\"}\nid: 55:2:3\n\n",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "status": 200,
+      "response": "{\"run_id\":\"619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"agent_id\":\"disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"conversation_id\":\"22d783f7-dcf2-4c68-a99c-7cff46ee1d5c\",\"status\":\"done\",\"agent_revision\":\"sha256:1f81d232c8d83e72f3b3d46f42f2abb815864eae060d7038c1c79be4bd6b2e12\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"selected\",\"ids\":[\"a2ui_render\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.local_embedding\",\"effective_method\":\"skill_service.local_embedding\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.6499999761581421,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"score\":0.7354971766471863,\"accepted\":true}]},\"activated_skills\":[\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:678e966a4b1e758b604918d43e6b68b58803e7587f080abe48acca4dece820db\",\"prepared_sha256\":\"sha256:678e966a4b1e758b604918d43e6b68b58803e7587f080abe48acca4dece820db\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":607,\"prepared_tokens\":607,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:678e966a4b1e758b604918d43e6b68b58803e7587f080abe48acca4dece820db\",\"final_messages\":2,\"final_tokens\":607,\"input_allowance\":982304,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1046695,\"reserve_tokens\":1000,\"request_input_limit\":1045695,\"history_tokens\":995,\"request_tokens\":1127,\"rendered_tokens\":129,\"rendered_sha256\":\"sha256:bc849124bb1e8615c7e5c2ff1f4580563895df1b18b02770c2a3e69c9f185ea8\",\"fragments\":[{\"fragment_id\":\"skill.delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"skill_id\":\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"original_body_tokens\":99,\"retained_body_tokens\":99,\"original_body_sha256\":\"sha256:a7f3968f90b8046c4f94e5cf407ea8e6f94aa675711163f4c550d6ebe81aa18f\",\"retained_body_sha256\":\"sha256:a7f3968f90b8046c4f94e5cf407ea8e6f94aa675711163f4c550d6ebe81aa18f\",\"original_rendered_tokens\":129,\"retained_rendered_tokens\":129,\"original_rendered_sha256\":\"sha256:bc849124bb1e8615c7e5c2ff1f4580563895df1b18b02770c2a3e69c9f185ea8\",\"retained_rendered_sha256\":\"sha256:bc849124bb1e8615c7e5c2ff1f4580563895df1b18b02770c2a3e69c9f185ea8\",\"retained\":true,\"truncated\":false}]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"local_embedding\",\"threshold\":0.65,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/skills/config",
+      "request": {
+        "engine": "service",
+        "algorithm": "keyword",
+        "threshold": 0.5,
+        "margin_threshold": 0.05,
+        "top_k": 3,
+        "model_name": null
+      },
+      "status": 200,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "matching_config": {
+    "engine": "service",
+    "algorithm": "keyword",
+    "threshold": 0.5,
+    "margin_threshold": 0.05,
+    "top_k": 3,
+    "model_name": null
+  },
+  "agent_id": "disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1",
+  "skill_id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+  "decoy_id": "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1",
+  "model": "liter/MiniMax-M3",
+  "expected": {
+    "marker": "PARCEL-f12daa87-e9a5-48a4-9f2d-ec99aba62011",
+    "quote": 360
+  },
+  "keyword_controls": [
+    {
+      "skill_id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "keywords": [
+        "freight tariff",
+        "consignment valuation"
+      ],
+      "matched_keywords": [],
+      "derived_keyword_score": 0
+    },
+    {
+      "skill_id": "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "keywords": [
+        "garden watering"
+      ],
+      "matched_keywords": [],
+      "derived_keyword_score": 0
+    }
+  ],
+  "events": [
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+        "artifactType": "effective_run_policy",
+        "title": "Effective run policy",
+        "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-619eb8f0-67fd-40ef-a07a-0bab05b0168e\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"skills\":\"Skills · selected · 2 available · agent scope\",\"tools\":\"Tools · selected · 14 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+        "language": "a2ui",
+        "metadata": {
+          "profile": "uar.a2ui/1",
+          "protocol_version": "v0.9.1",
+          "catalog_id": "urn:uar:a2ui:catalog:1",
+          "version": 1,
+          "warnings": []
+        },
+        "sourceRunId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e"
+      },
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "1:8",
+      "sequence": 16
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "running",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": false,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "2:8",
+      "sequence": 32
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.skill.activated",
+      "value": {
+        "skill": {
+          "id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+          "title": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1"
+        },
+        "selectionMethod": "implicit"
+      },
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "3:8",
+      "sequence": 48
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "turn-manifest-619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+        "artifactType": "turn_manifest",
+        "title": "Turn manifest",
+        "content": "{\"schema_version\":1,\"manifest_hash\":\"e68d078c21aa2ccd1915435b4307970a0bc60eff61eeb5f0c5a182001bae0ff0\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"c4cbfca1e8dc78527f0be0eae61b7e64997c4aa58d34e092a3a521efcf2a3a2f\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"5b452847038f6337d17d3a2d3c29a25903f13262cfb58221a5949c9c0848dc82\"},{\"id\":\"skill.delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"section\":\"active_skills\",\"source\":\"skill:delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"5fb2bb7fba3f8d082ac0216b3dd69d33104636c7ef61379b4afd7ec43fb0a30d\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"03f9321d63585bf9bab06c55df097ba7a20ef171069b7198cde3a80b5ffdb923\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"b84efa147ea6acd693b1bc980cc2a89ccde7a39e1ea69d82c7004dc22845cb4f\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":8,\"by_section\":{\"active_skills\":1,\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":2,\"system\":1}},\"budgets\":{\"rendered_bytes\":4316,\"rendered_characters\":4312,\"context_window_tokens\":1048576},\"selected_skills\":[\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}",
+        "language": "json",
+        "metadata": {
+          "schema_version": 1,
+          "manifest_hash": "e68d078c21aa2ccd1915435b4307970a0bc60eff61eeb5f0c5a182001bae0ff0",
+          "fragment_count": 8
+        },
+        "sourceRunId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e"
+      },
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "4:8",
+      "sequence": 64
+    },
+    {
+      "type": "RUN_STARTED",
+      "profile": "uar.agui/1",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "input": {
+        "agentId": "disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1"
+      },
+      "eventId": "5:8",
+      "sequence": 80
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "replace",
+          "path": "/run",
+          "value": {
+            "run_id": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+            "conversation_id": "22d783f7-dcf2-4c68-a99c-7cff46ee1d5c",
+            "status": "running"
+          }
+        }
+      ],
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "6:8",
+      "sequence": 96
+    },
+    {
+      "type": "STEP_STARTED",
+      "profile": "uar.agui/1",
+      "stepId": "step-1",
+      "stepName": "step-1",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "7:8",
+      "sequence": 112
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.turn:resolved_step",
+        "artifactType": "provider_event",
+        "title": "resolved_step",
+        "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"7147872f6a90d6cac5da202ae9d7a6f3b6e95859b031be574e0f0be4c6ab5040\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"715d226926f6bedcd9c6b332fec875ffdffebd243f372be628d681a73294a3d4\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"c4cbfca1e8dc78527f0be0eae61b7e64997c4aa58d34e092a3a521efcf2a3a2f\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"5b452847038f6337d17d3a2d3c29a25903f13262cfb58221a5949c9c0848dc82\"},{\"id\":\"skill.delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"section\":\"active_skills\",\"source\":\"skill:delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"reclaimable\",\"content_hash\":\"5fb2bb7fba3f8d082ac0216b3dd69d33104636c7ef61379b4afd7ec43fb0a30d\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"03f9321d63585bf9bab06c55df097ba7a20ef171069b7198cde3a80b5ffdb923\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"b84efa147ea6acd693b1bc980cc2a89ccde7a39e1ea69d82c7004dc22845cb4f\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":8,\"by_section\":{\"active_skills\":1,\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":2,\"system\":1}},\"budgets\":{\"rendered_bytes\":4127,\"rendered_characters\":4123,\"context_window_tokens\":985576},\"selected_skills\":[\"delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1\"],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e"
+      },
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "8:8",
+      "sequence": 128
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "attempt-manifest-619eb8f0-67fd-40ef-a07a-0bab05b0168e-MiniMax-M3",
+        "artifactType": "attempt_manifest",
+        "title": "Provider attempt manifest",
+        "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+        "language": "json",
+        "metadata": {
+          "source": "uar.request",
+          "budgeting_label": "legacy_unbudgeted"
+        },
+        "sourceRunId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e"
+      },
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "9:8",
+      "sequence": 144
+    },
+    {
+      "type": "CUSTOM",
+      "profile": "uar.agui/1",
+      "name": "uar.artifact.available",
+      "value": {
+        "artifactId": "uar.request:budget_receipt",
+        "artifactType": "provider_event",
+        "title": "budget_receipt",
+        "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":3156,\"serialized_bytes\":13652,\"serialized_sha256\":\"6f6ac25692d5447fa8a2c90eb172918cde14ef88ec0dd3832a2fc884bac7bb40\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+        "language": "json",
+        "metadata": {
+          "source": "external_llm_driver"
+        },
+        "sourceRunId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e"
+      },
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "10:8",
+      "sequence": 160
+    },
+    {
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "role": "assistant",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "type": "TEXT_MESSAGE_START",
+      "profile": "uar.agui/1",
+      "eventId": "11:0",
+      "sequence": 176
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "<think>Th",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "11:8",
+      "sequence": 176
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e skill is already",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "12:8",
+      "sequence": 192
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " active: delivery-pricing skill says multiply",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "13:8",
+      "sequence": 208
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " box count by 11 and add ",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "14:8",
+      "sequence": 224
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "74. Return only JSON with marker",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "15:8",
+      "sequence": 240
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " \"PARCEL-f12daa87",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "16:8",
+      "sequence": 256
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "-e9a5-48a4",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "17:8",
+      "sequence": 272
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "-9f2d-ec99ab",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "18:8",
+      "sequence": 288
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "a62011\" and numeric quote.\n\n26",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "19:8",
+      "sequence": 304
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " *",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "20:8",
+      "sequence": 320
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " 11 =",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "21:8",
+      "sequence": 336
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " 286 +",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "22:8",
+      "sequence": 352
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " 74 = 360.\n\nReturn",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "23:8",
+      "sequence": 368
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " JSON",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "24:8",
+      "sequence": 384
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " with marker and quot",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "25:8",
+      "sequence": 400
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e. The instruction says \"Return only",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "26:8",
+      "sequence": 416
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " JSON with marker ... and numeric quot",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "27:8",
+      "sequence": 432
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e.\" So I should output",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "28:8",
+      "sequence": 448
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " JSON only.\n\nLet me produc",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "29:8",
+      "sequence": 464
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e JSON lik",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "30:8",
+      "sequence": 480
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e {\"marker\":",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "31:8",
+      "sequence": 496
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " \"PARCEL-f12",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "32:8",
+      "sequence": 512
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "daa87-e9a5-",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "33:8",
+      "sequence": 528
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "48a4-9f2d",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "34:8",
+      "sequence": 544
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "-ec99aba62011\", \"quot",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "35:8",
+      "sequence": 560
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e\": 360}.\n\nShould I activate th",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "36:8",
+      "sequence": 576
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e skill? It's already active in activ",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "37:8",
+      "sequence": 592
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e_skills. The activat",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "38:8",
+      "sequence": 608
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e_skill tool is available. Th",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "39:8",
+      "sequence": 624
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e skill content",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "40:8",
+      "sequence": 640
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " is already loaded. I'll just answer",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "41:8",
+      "sequence": 656
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": ".\n\nTh",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "42:8",
+      "sequence": 672
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "e answer",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "43:8",
+      "sequence": 688
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " must",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "44:8",
+      "sequence": 704
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " be only JSON. Let",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "45:8",
+      "sequence": 720
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " me output just",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "46:8",
+      "sequence": 736
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " the JSON.",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "47:8",
+      "sequence": 752
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "</think>\n\n{\"",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "48:8",
+      "sequence": 768
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "marker\": \"PARCEL-f12d",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "49:8",
+      "sequence": 784
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "aa87-e9a5-48",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "50:8",
+      "sequence": 800
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "a4-9f2d-e",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "51:8",
+      "sequence": 816
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": "c99aba62011\", \"quote\":",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "52:8",
+      "sequence": 832
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "profile": "uar.agui/1",
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "delta": " 360}",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "53:8",
+      "sequence": 848
+    },
+    {
+      "type": "STATE_DELTA",
+      "profile": "uar.agui/1",
+      "delta": [
+        {
+          "op": "add",
+          "path": "/presentation",
+          "value": {
+            "version": 1,
+            "requested_mode": null,
+            "effective_mode": "legacy",
+            "admission_fallback_reason": null,
+            "fallback_reason": null,
+            "run_outcome": "finished",
+            "eligible_templates": [],
+            "published_templates": [],
+            "surface_published": false,
+            "generation_failed": false,
+            "receipt_status": "available",
+            "client_display": "unconfirmed"
+          }
+        }
+      ],
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "eventId": "54:8",
+      "sequence": 864
+    },
+    {
+      "messageId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e:assistant",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "type": "TEXT_MESSAGE_END",
+      "profile": "uar.agui/1",
+      "eventId": "55:0",
+      "sequence": 880
+    },
+    {
+      "type": "RUN_FINISHED",
+      "profile": "uar.agui/1",
+      "threadId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "runId": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+      "result": {
+        "usage": {
+          "inputTokens": 3881,
+          "outputTokens": 227,
+          "totalTokens": 4108,
+          "costUsdEstimate": null,
+          "model": "MiniMax-M3"
+        }
+      },
+      "eventId": "55:8",
+      "sequence": 880
+    }
+  ],
+  "run_id": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+  "run_inspection": {
+    "run_id": "619eb8f0-67fd-40ef-a07a-0bab05b0168e",
+    "agent_id": "disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1",
+    "conversation_id": "22d783f7-dcf2-4c68-a99c-7cff46ee1d5c",
+    "status": "done",
+    "agent_revision": "sha256:1f81d232c8d83e72f3b3d46f42f2abb815864eae060d7038c1c79be4bd6b2e12",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-semantic-skill-1740f52e-a229-416c-a3f4-9f7243f259e1",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "selected",
+        "ids": [
+          "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+          "garden-watering-1740f52e-a229-416c-a3f4-9f7243f259e1"
+        ],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "selected",
+        "ids": [
+          "a2ui_render",
+          "native__memory_capture_policy",
+          "native__memory_delete_by_id",
+          "native__memory_history",
+          "native__memory_list",
+          "native__memory_recall",
+          "native__memory_save",
+          "native__memory_update_by_id",
+          "native_echo",
+          "native_system_info",
+          "uar_compile",
+          "uar_session_check_completeness",
+          "uar_session_compile",
+          "uar_session_update_section"
+        ],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "auto",
+        "ids": [],
+        "source": "legacy"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "legacy"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "legacy",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.local_embedding",
+      "effective_method": "skill_service.local_embedding",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.6499999761581421,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": [
+        {
+          "skill_id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+          "score": 0.7354971766471863,
+          "accepted": true
+        }
+      ]
+    },
+    "activated_skills": [
+      "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1"
+    ],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "sliding_window",
+        "max_messages": 20
+      },
+      "source_sha256": "sha256:678e966a4b1e758b604918d43e6b68b58803e7587f080abe48acca4dece820db",
+      "prepared_sha256": "sha256:678e966a4b1e758b604918d43e6b68b58803e7587f080abe48acca4dece820db",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 607,
+      "prepared_tokens": 607,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:678e966a4b1e758b604918d43e6b68b58803e7587f080abe48acca4dece820db",
+      "final_messages": 2,
+      "final_tokens": 607,
+      "input_allowance": 982304,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1046695,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1045695,
+        "history_tokens": 995,
+        "request_tokens": 1127,
+        "rendered_tokens": 129,
+        "rendered_sha256": "sha256:bc849124bb1e8615c7e5c2ff1f4580563895df1b18b02770c2a3e69c9f185ea8",
+        "fragments": [
+          {
+            "fragment_id": "skill.delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+            "skill_id": "delivery-pricing-1740f52e-a229-416c-a3f4-9f7243f259e1",
+            "original_body_tokens": 99,
+            "retained_body_tokens": 99,
+            "original_body_sha256": "sha256:a7f3968f90b8046c4f94e5cf407ea8e6f94aa675711163f4c550d6ebe81aa18f",
+            "retained_body_sha256": "sha256:a7f3968f90b8046c4f94e5cf407ea8e6f94aa675711163f4c550d6ebe81aa18f",
+            "original_rendered_tokens": 129,
+            "retained_rendered_tokens": 129,
+            "original_rendered_sha256": "sha256:bc849124bb1e8615c7e5c2ff1f4580563895df1b18b02770c2a3e69c9f185ea8",
+            "retained_rendered_sha256": "sha256:bc849124bb1e8615c7e5c2ff1f4580563895df1b18b02770c2a3e69c9f185ea8",
+            "retained": true,
+            "truncated": false
+          }
+        ]
+      }
+    }
+  },
+  "answer": {
+    "marker": "PARCEL-f12daa87-e9a5-48a4-9f2d-ec99aba62011",
+    "quote": 360
+  },
+  "result": "VERIFIED",
+  "matching_config_restored": true,
+  "cleanup_errors": [],
+  "disposable_resources_deleted": true,
+  "status": "PASSED",
+  "duration_ms": 17348
+}

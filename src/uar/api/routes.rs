@@ -74,6 +74,8 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct CreateRunRequest {
+    #[serde(default)]
+    pub(crate) response_format: Option<crate::llm::response_format::ResponseFormat>,
     /// Constructed by authenticated protocol adapters, never from raw JSON.
     #[serde(skip)]
     pub(crate) client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
@@ -135,11 +137,17 @@ struct RunInspection {
     presentation_selection: Option<serde_json::Value>,
     host_resources: Option<serde_json::Value>,
     effective_service_binding: Option<serde_json::Value>,
+    skill_matching: Option<serde_json::Value>,
+    activated_skills: Option<serde_json::Value>,
+    context_reduction: Option<serde_json::Value>,
 }
 
 impl From<crate::uar::domain::runs::Run> for RunInspection {
     fn from(run: crate::uar::domain::runs::Run) -> Self {
         Self {
+            skill_matching: run.context.get("skill_matching").cloned(),
+            activated_skills: run.context.get("activated_skills").cloned(),
+            context_reduction: run.context.get("context_reduction").cloned(),
             run_id: run.run_id,
             agent_id: run.agent_id,
             conversation_id: run.conversation_id,
@@ -515,6 +523,7 @@ pub(crate) async fn admit_run(
     credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
+        response_format,
         client_tools,
         artifact,
         agent_id,
@@ -532,6 +541,11 @@ pub(crate) async fn admit_run(
         skill_attachments,
         presentation_negotiation,
     } = req;
+    if let Some(format) = &response_format {
+        format.validate().map_err(|error| RunApiError {
+            status: StatusCode::BAD_REQUEST, code: "invalid_response_format", message: error.to_string(),
+        })?;
+    }
     let admitted_service_binding = if let Some(expectation) = service_placement.as_ref() {
         if expectation.binding_id.is_some()
             && expectation.binding_id.as_deref() != deployment_binding_id.as_deref()
@@ -650,6 +664,7 @@ pub(crate) async fn admit_run(
         request.target_selection = Some(serde_json::json!(target));
     }
     request = request.with_credential_capture(credential_capture);
+    request.response_format = response_format;
     let response_service_binding = admitted_service_binding.clone();
     if let Some(admitted) = admitted_service_binding {
         if let Some(bound) = request.service_binding.as_ref() {

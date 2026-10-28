@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--bin",
+    "universal-agent-runtime"
+  ],
+  "CARGO_TARGET_DIR": "target/uar-team-concurrency-repair",
+  "exit_code": 0,
+  "duration_seconds": 147.92751822102582
+}

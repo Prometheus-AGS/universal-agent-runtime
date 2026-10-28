@@ -1,0 +1,8 @@
+{
+  "previous_pid": 67744,
+  "pid": 78802,
+  "binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-a2ui-browser-002.log",
+  "static_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-ui",
+  "store_preserved": true
+}

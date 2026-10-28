@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { acquireChatStream, ownsChatStream, type ChatStreamLease } from "@/platform/entities/a2ui-actions/stream-ownership";
 
 import {
   postChatCompletion,
@@ -675,11 +676,24 @@ interface ChatStreamActions {
     threadId: string,
     payload: UarChatPayload,
     callbacks?: StreamCallbacks,
+    continuation?: { runId: string; lease: ChatStreamLease },
   ) => Promise<void>;
+  attachContinuation: (threadId: string, runId: string, lease: ChatStreamLease) => Promise<void>;
   cancelStream: () => void;
 }
 
 export const useChatStreamStore = create<ChatStreamActions>(() => ({
+  attachContinuation: async (threadId, runId, lease) => {
+    if (!ownsChatStream(lease)) throw new Error("Continuation stream ownership is unavailable");
+    await new Promise<void>((resolve, reject) => {
+      void useChatStreamStore.getState().startStream(threadId, { message: "" }, {
+        onComplete: resolve, onError: reject,
+      }, { runId, lease }).catch(reject);
+    });
+    const message = useChatMessageStore.getState().messagesByThread[threadId]?.find((row) =>
+      row.role === "assistant" && row.chunks?.some((chunk) => chunk.runId === runId));
+    if (message) await getDbInstance().insertMessage(threadId, JSON.parse(JSON.stringify(message)));
+  },
   cancelStream: () => {
     // Request explicit server-side cancellation (deterministic, immediate) in
     // addition to aborting the local stream. The abort alone would also cancel
@@ -697,9 +711,31 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
     threadId: string,
     payload: UarChatPayload,
     callbacks?: StreamCallbacks,
+    continuation?: { runId: string; lease: ChatStreamLease },
   ): Promise<void> => {
-    useChatStreamStore.getState().cancelStream();
+    let lease: ChatStreamLease;
+    try {
+      if (continuation && !ownsChatStream(continuation.lease)) throw new Error("Continuation stream ownership is unavailable");
+      lease = continuation?.lease ?? acquireChatStream();
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error("Another response is active. Wait for it to finish.");
+      if (!continuation) useChatMessageStore.getState().setStreamError(threadId, failure.message);
+      callbacks?.onError?.(failure);
+      return;
+    }
+    try {
+    if (!continuation) useChatStreamStore.getState().cancelStream();
 
+    try {
+      await useChatMessageStore.getState().loadMessagesFromDb(threadId);
+    } catch {
+      const error = new Error("Conversation history could not be loaded; no request was sent.");
+      useChatMessageStore.getState().setStreamError(threadId, error.message);
+      callbacks?.onError?.(error);
+      return;
+    }
+
+    if (!continuation) {
     const userMsgId = `user-${Date.now()}`;
     // Build user message content: text + any image attachments for in-thread display
     const imageBlocks = (payload.attachments ?? [])
@@ -716,7 +752,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       },
     ]);
 
-    const runId = `run-${Date.now()}`;
+    }
+    const runId = continuation?.runId ?? `run-${Date.now()}`;
     const pendingArgs = new Map<string, string>();
     const a2uiAccumulator = new A2uiStreamAccumulator();
     const aguiAdapter = new UarAguiAdapter();
@@ -754,11 +791,9 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       }, retryPolicy.streamStartTimeoutMs);
 
       try {
-        const res = await postChatCompletion(
-          requestBody,
-          threadId,
-          controller.signal,
-        );
+        const res = continuation
+          ? await resumeRunStream(continuation.runId, 0, controller.signal)
+          : await postChatCompletion(requestBody, threadId, controller.signal);
 
         if (!res.ok) {
           const body = await res.text().catch(() => "(no response body)");
@@ -772,7 +807,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         if (!res.body) throw new Error("Response body is null");
 
         // Capture the server-assigned run id so the stop action can cancel it.
-        serverRunIdRef = res.headers.get("x-uar-run-id");
+        serverRunIdRef = continuation?.runId ?? res.headers.get("x-uar-run-id");
         runPersistence = new RunEventPersistence(getDbInstance(), {
           threadId,
           fallbackRunId:
@@ -1003,6 +1038,11 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   callbacks?.onError?.(new Error(detail));
                   return;
                 }
+                case "agui.agent.selected": {
+                  const chunk = adapted.runtimeChunk;
+                  if (chunk?.kind === "agent-selection") store.addRuntimeChunk(threadId, durableRunId, chunk);
+                  break;
+                }
                 case "agui.skill.activated": {
                   const e = agui as AguiSkillActivated;
                   store.addSkillActivation(threadId, runId, {
@@ -1100,7 +1140,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                       artifactType: e.artifact_type,
                       title: e.title,
                       language: e.language,
-                      metadata: e.metadata,
+                      metadata: { ...e.metadata, source_run_id: durableRunId },
                     },
                     result: e.content,
                     status: "complete",
@@ -1139,6 +1179,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                           metadata: {
                             profile: current.profile,
                             protocol_version: current.version,
+                            source_run_id: durableRunId,
                           },
                           ...validationArgs,
                         },
@@ -1194,7 +1235,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   useAgentStatusStore.getState().setIdle();
                   if (!adapted.eventRow) await finalizeRunPersistence(runPersistence, "cancelled");
                   releaseRunPersistence(runPersistence);
-                  callbacks?.onComplete?.();
+                  if (continuation) callbacks?.onError?.(new Error("The response was interrupted."));
+                  else callbacks?.onComplete?.();
                   return;
                 }
                 case "agui.done": {
@@ -1227,7 +1269,9 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   useAgentStatusStore.getState().setIdle();
                   if (!adapted.eventRow || !persistenceHealthy) await finalizeRunPersistence(runPersistence, "finished");
                   releaseRunPersistence(runPersistence);
-                  callbacks?.onComplete?.();
+                  if (continuation && (!runPersistence || !persistenceHealthy || adapted.eventRow?.type !== "RUN_FINISHED"
+                    || adapted.eventRow.runId !== continuation.runId)) callbacks?.onError?.(new Error("The response could not be saved."));
+                  else callbacks?.onComplete?.();
                   return;
                 }
                 default:
@@ -1251,6 +1295,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           }
 
           if (event === "message" && data === "[DONE]") {
+            if (continuation) throw new Error("The response ended without a successful native terminal.");
             clearTimeout(streamStartTimer);
             await finalizeRunPersistence(runPersistence, "finished");
             useChatMessageStore.getState().finishStream(threadId);
@@ -1265,6 +1310,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         }
 
         clearTimeout(streamStartTimer);
+        if (continuation) throw new Error("The response ended without a successful terminal.");
         await finalizeRunPersistence(runPersistence, "finished");
         useChatMessageStore.getState().finishStream(threadId);
         releaseRunPersistence(runPersistence);
@@ -1276,6 +1322,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           await finalizeRunPersistence(runPersistence, "cancelled");
           useChatMessageStore.getState().finishStream(threadId);
           releaseRunPersistence(runPersistence);
+          if (continuation) callbacks?.onError?.(new Error("The response was interrupted."));
           return;
         }
         const normalizedError = streamStartTimedOut
@@ -1321,6 +1368,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           } catch (sleepErr) {
             if ((sleepErr as Error).name === "AbortError") {
               useChatMessageStore.getState().finishStream(threadId);
+              if (continuation) callbacks?.onError?.(new Error("The response was interrupted."));
               return;
             }
           }
@@ -1356,5 +1404,6 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         return;
       }
     }
+    } finally { if (!continuation) lease.release(); }
   },
 }));

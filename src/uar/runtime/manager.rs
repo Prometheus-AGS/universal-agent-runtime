@@ -53,7 +53,8 @@ mod presentation_history_tests;
 /// the same host-reviewed final-wire budget used by ordinary model attempts.
 struct DestinationBudgetDriver {
     inner: Arc<dyn LlmDriver>,
-    contract: crate::uar::runtime::context::budget::RequestBudgetContract,
+    contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
+    output_token_cap: u32,
 }
 
 #[async_trait::async_trait]
@@ -62,13 +63,20 @@ impl LlmDriver for DestinationBudgetDriver {
         &self,
         mut request: crate::llm::LlmRequest,
     ) -> anyhow::Result<crate::llm::ExternalDriverStream> {
-        if let Some(existing) = &request.budget_contract {
-            anyhow::ensure!(
-                existing == &self.contract,
-                "Graph request conflicts with its captured destination budget"
-            );
+        if let Some(contract) = &self.contract {
+            if let Some(existing) = &request.budget_contract {
+                anyhow::ensure!(
+                    existing == contract,
+                    "Graph request conflicts with its captured destination budget"
+                );
+            }
+            request.budget_contract = Some(contract.clone());
         }
-        request.budget_contract = Some(self.contract.clone());
+        request.output_token_cap = Some(
+            request
+                .output_token_cap
+                .map_or(self.output_token_cap, |cap| cap.min(self.output_token_cap)),
+        );
         self.inner.stream(request).await
     }
 }
@@ -498,6 +506,22 @@ struct RunEventEmitter {
 }
 
 impl RunEventEmitter {
+    /// A preparation refusal is not a serialized final request or exact fit proof.
+    async fn record_budget_refusal(&self, code: &str, candidate: &serde_json::Value) {
+        if !matches!(code, "context_overflow" | "protected_history_overflow") {
+            return;
+        }
+        let mut receipt = candidate.clone();
+        receipt["outcome"] = serde_json::json!("protected_overflow");
+        receipt["failure_code"] = serde_json::json!(code);
+        if let Some(runs) = self.runs.upgrade()
+            && let Some(state) = runs.write().await.get_mut(&self.run_id)
+            && let Some(context) = state.run.context.as_object_mut()
+        {
+            context.insert("request_budget".into(), receipt);
+        }
+    }
+
     async fn emit(&self, mut event: NormalizedEvent) {
         let mut projection = self.admission_projection.lock().await;
         let Some(projected) = projection.project_or_stage(event) else {
@@ -554,7 +578,7 @@ impl crate::uar::domain::events::RuntimeEventSink for RunEventEmitter {
 
 struct ChatRagSearchBackend<'a> {
     persistence: &'a dyn crate::uar::persistence::PersistenceLayer,
-    vector_matcher: &'a crate::uar::runtime::matching::VectorMatcher,
+    embedding: Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend>,
     owner_id: &'a str,
     kb_ids: &'a [String],
 }
@@ -569,14 +593,17 @@ impl RetrievalBackend for ChatRagSearchBackend<'_> {
     ) -> anyhow::Result<Vec<crate::uar::domain::knowledge::KnowledgeMatch>> {
         // Same backend as ingestion (`llm.embedding`); see the KB search route.
         // Pinned once so a concurrent backend swap cannot interleave.
-        let query_vec = self
-            .vector_matcher
-            .pin_embedding()
-            .embed_one(sub_query)
-            .await?;
+        let query_vec = self.embedding.embed_one(sub_query).await?;
         let kb_id_refs = self.kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
         self.persistence
-            .search_knowledge_scoped(self.owner_id, &kb_id_refs, &query_vec, limit, min_score)
+            .search_knowledge_scoped_in_space(
+                self.owner_id,
+                &kb_id_refs,
+                &query_vec,
+                limit,
+                min_score,
+                &self.embedding.fingerprint(),
+            )
             .await
     }
 }
@@ -610,6 +637,7 @@ fn checkpoint_request_identity(
         "user_id": request.user_id,
         "session_id": request.session_id,
         "input": request.input,
+        "response_format": request.response_format,
         "state": serde_json::to_value(&resume.state)?,
         "history": serde_json::to_value(&resume.history)?,
         "authorization": resume.authorization_digest,
@@ -764,6 +792,7 @@ pub struct RunManager {
     sessions: SessionStore,
     skills: Arc<RwLock<SkillRegistry>>,
     vector_matcher: Arc<crate::uar::runtime::matching::VectorMatcher>,
+    local_skill_matcher: Option<Arc<crate::uar::runtime::matching::VectorMatcher>>,
     tag_matcher: Arc<crate::uar::runtime::matching::TagMatcher>,
     /// Intent classifier for skill matching
     intent_classifier: Arc<dyn IntentClassifier>,
@@ -1364,6 +1393,7 @@ impl RunManager {
             sessions,
             skills,
             vector_matcher,
+            local_skill_matcher: None,
             tag_matcher,
             intent_classifier,
             classifier_config,
@@ -1663,7 +1693,13 @@ impl RunManager {
 
         let idle_timeout = (self.session_retention.idle_timeout_secs > 0)
             .then(|| Duration::from_secs(self.session_retention.idle_timeout_secs));
-        if idle_timeout.is_none() && self.session_retention.max_retained == 0 {
+        if idle_timeout.is_none()
+            && self.session_retention.max_retained == 0
+            && self
+                .session_retention
+                .persisted_ttl_secs
+                .is_none_or(|ttl| ttl == 0)
+        {
             return;
         }
         let protected = {
@@ -1709,15 +1745,20 @@ impl RunManager {
                     match persistence.list_expired_sessions(cutoff).await {
                         Ok(expired) => {
                             for (owner_id, session_id) in &expired {
-                                if let Err(error) =
-                                    persistence.delete_session(owner_id, session_id).await
-                                {
-                                    tracing::warn!(
+                                match persistence.delete_session(owner_id, session_id).await {
+                                    Err(error) => tracing::warn!(
                                         %error, %owner_id, %session_id,
                                         "failed to delete expired persisted session"
-                                    );
-                                } else {
-                                    self.sessions.remove_for_user(session_id, owner_id);
+                                    ),
+                                    Ok(deleted) => {
+                                        self.sessions.remove_for_user(session_id, owner_id);
+                                        if deleted {
+                                            tracing::info!(
+                                                %owner_id, %session_id,
+                                                "persisted session purged by TTL sweep"
+                                            );
+                                        }
+                                    }
                                 }
                             }
                             if !expired.is_empty() {
@@ -1965,6 +2006,15 @@ impl RunManager {
         admission: Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>,
     ) -> Self {
         self.host_tool_admission = admission;
+        self
+    }
+
+    /// Supply a host-owned local-only matcher without changing hosted RAG routing.
+    pub fn with_local_skill_matcher(
+        mut self,
+        matcher: Option<Arc<crate::uar::runtime::matching::VectorMatcher>>,
+    ) -> Self {
+        self.local_skill_matcher = matcher;
         self
     }
 
@@ -3431,6 +3481,7 @@ impl RunManager {
             seed_history: Vec::new(),
             client_tools: None,
             output_token_cap: None,
+            response_format: None,
             host_history: None,
             reasoning_effort: None,
             checkpoint_resume: Some(crate::uar::runtime::turn::CheckpointResume {
@@ -4100,6 +4151,23 @@ impl RunManager {
         if self.root_cancellation.is_cancelled() {
             return run_id;
         }
+        if let Some(format) = &request.response_format {
+            if format.validate().is_err() {
+                self.record_host_admission_failure(
+                    &request,
+                    &run_id,
+                    "invalid_response_format",
+                    "The requested response format is invalid or unsupported",
+                )
+                .await;
+                return run_id;
+            }
+            if format.is_structured() && self.uses_agent_graph(&request.artifact) {
+                self.record_host_admission_failure(&request, &run_id, "structured_graph_unsupported",
+                    "Structured output requires a direct agent target; graph delegation does not inherit output contracts").await;
+                return run_id;
+            }
+        }
         let recovered_approval = if request.checkpoint_resume.is_some() {
             let permit = self.checkpoint_resume_admitted.lock().await.remove(&run_id);
             if permit
@@ -4163,6 +4231,7 @@ impl RunManager {
             seed_history,
             client_tools,
             output_token_cap,
+            response_format,
             mut host_history,
             reasoning_effort,
             checkpoint_resume,
@@ -4619,7 +4688,41 @@ impl RunManager {
             }
         };
         let retained_session = if let Some(id) = session_id {
-            self.sessions.get_or_create_for_user(&id, &session_owner)
+            // A process restart clears the local cache, not the conversation.
+            // Load through the same owner partition before staging this turn.
+            let saved = if self.sessions.get_for_user(&id, &session_owner).is_none() {
+                if let Some(db) = &self.persistence {
+                    match db.load_session(&session_owner, &id).await {
+                        Ok(saved) => saved,
+                        Err(error) => {
+                            tracing::warn!(%error, "Failed to restore conversation");
+                            emitter
+                                .emit(NormalizedEvent::Error {
+                                    run_id: run_id.clone(),
+                                    code: "session_restore_failed".into(),
+                                    message: "Stored conversation could not be loaded".into(),
+                                })
+                                .await;
+                            emitter
+                                .emit(NormalizedEvent::RunDone {
+                                    run_id: run_id.clone(),
+                                })
+                                .await;
+                            return run_id;
+                        }
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let retained = self.sessions.get_or_create_for_user(&id, &session_owner);
+            if let Some(saved) = saved {
+                // A concurrent request may already have warmed this session.
+                retained.seed_if_empty(&saved.messages());
+            }
+            retained
         } else {
             self.sessions.create_for_user(&session_owner)
         };
@@ -4688,7 +4791,7 @@ impl RunManager {
         if collaboration_binding
             .as_ref()
             .is_some_and(|binding| binding.team_attempt.is_some())
-            && crate::uar::api::capabilities::team_execution_b_enabled()
+            && crate::uar::domain::execution_capabilities::team_execution_b_enabled()
         {
             attempt_native_tools.extend(
                 crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
@@ -5404,7 +5507,8 @@ impl RunManager {
         {
             let mut kb_ids = Vec::new();
             let mut kb_configs: Vec<crate::uar::domain::knowledge::KbConfig> = Vec::new();
-            let active_space = self.vector_matcher.embedding_fingerprint();
+            let rag_embedding = self.vector_matcher.pin_embedding();
+            let active_space = rag_embedding.fingerprint();
             let mut space_mismatches: Vec<crate::uar::domain::knowledge::EmbeddingSpaceMismatch> =
                 Vec::new();
             for id_or_name in &effective_policy.knowledge_bases.ids {
@@ -5424,6 +5528,14 @@ impl RunManager {
                 if let Some(kb) = resolved
                     && !kb_ids.contains(&kb.id)
                 {
+                    if kb.regeneration_unavailable() {
+                        emitter.emit(NormalizedEvent::RagDiagnostic {
+                            run_id: run_id.clone(),
+                            code: "knowledge_regeneration_incomplete".into(),
+                            message: format!("Knowledge base '{}' is unavailable until regeneration completes", kb.id),
+                        }).await;
+                        continue;
+                    }
                     match kb.ensure_embedding_space(&active_space) {
                         Ok(()) => {
                             kb_configs.push(kb.config.clone());
@@ -5463,7 +5575,7 @@ impl RunManager {
             } else {
                 let backend = ChatRagSearchBackend {
                     persistence: db.as_ref(),
-                    vector_matcher: self.vector_matcher.as_ref(),
+                    embedding: Arc::clone(&rag_embedding),
                     owner_id: &session_owner,
                     kb_ids: &kb_ids,
                 };
@@ -5535,7 +5647,12 @@ impl RunManager {
             .await
             {
                 Ok(bindings) => Arc::new(bindings),
-                Err(_) => {
+                Err(error) => {
+                    tracing::warn!(
+                        run_id = %run_id,
+                        error = %error,
+                        "skill selection snapshot is unavailable"
+                    );
                     if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                         state.run.status = RunStatus::Error;
                     }
@@ -5556,75 +5673,291 @@ impl RunManager {
                 }
             },
         };
-        let (candidates, skill_selection_method, threshold, margin, top_k) = if let Some(matching) =
-            &skill_bindings.matching
-        {
-            let config = &matching.config;
-            let result = matching
-                .match_skills_scoped(&routing_input, Some(&artifact.id), Some(session.id()))
-                .await;
-            (
-                result.candidates,
-                format!("skill_service.{:?}", config.algorithm).to_lowercase(),
-                config.threshold,
-                config.margin_threshold,
-                config.top_k,
-            )
+        let is_team_attempt = collaboration_binding
+            .as_ref()
+            .is_some_and(|binding| binding.team_attempt.is_some());
+        // Auxiliary ranking precedes skill model preferences. Its client has its
+        // own credential capture, while every role shares this root accounting.
+        let shared_model_budget_result = if let Some(bindings) = &inherited {
+            Ok(bindings.models.budget().clone())
         } else {
-            let registry = skill_bindings.registry.read().await;
-            let (candidates, method) = match self
-                .intent_classifier
-                .classify(&routing_input, &[], &registry)
-                .await
-            {
-                Ok(result) => (
-                    result
-                        .scores
-                        .into_iter()
-                        .filter_map(|score| {
-                            score.skill.map(|skill| SkillCandidate {
-                                skill,
-                                score: score.score,
-                            })
-                        })
-                        .collect::<Vec<_>>(),
-                    format!("legacy_classifier.{:?}", self.classifier_config.backend)
-                        .to_lowercase(),
-                ),
-                Err(_) => {
-                    tracing::warn!("Intent classification failed; scoring fallback candidates");
-                    let mut candidates = HashMap::<String, SkillCandidate>::new();
-                    for matcher in [
-                        self.tag_matcher.as_ref()
-                            as &dyn crate::uar::domain::matching::SkillMatcher,
-                        self.vector_matcher.as_ref()
-                            as &dyn crate::uar::domain::matching::SkillMatcher,
-                    ] {
-                        if let Ok(matches) = matcher.match_skills(&routing_input, &registry).await {
-                            for candidate in matches {
-                                let entry = candidates.entry(candidate.skill_id).or_insert(
-                                    SkillCandidate {
-                                        skill: candidate.skill,
-                                        score: candidate.score,
-                                    },
-                                );
-                                entry.score = entry.score.max(candidate.score);
+            // This artifact's session ceiling belongs to the captured root session,
+            // not the aggregate spend of every session using the same agent.
+            let model_budget =
+                crate::uar::runtime::thread::policy_intersection::ThreadBudgets::from_artifact(
+                    &artifact,
+                )
+                .map_err(anyhow::Error::from)
+                .and_then(|limits| {
+                    crate::uar::runtime::cost_budget::ModelCallBudget::for_run(
+                        self.cost_budget.clone(),
+                        run_id.clone(),
+                        session.id().to_string(),
+                        artifact.id.clone(),
+                        run_cancellation.clone(),
+                        limits,
+                        host_usage_grant.clone(),
+                        execution_started_at,
+                    )
+                });
+
+            let model_budget = match model_budget {
+                Ok(budget)
+                    if self.llm_config.cost_tracking
+                        || budget.has_configured_limits()
+                        || (self
+                            .persistence
+                            .as_ref()
+                            .is_some_and(|store| store.supports_durable_accounting())
+                            && verified_owner
+                                .as_ref()
+                                .and_then(|owner| owner.credential_principal())
+                                .is_some()) =>
+                {
+                    budget
+                        .with_durable_accounting(self.persistence.clone(), verified_owner.as_ref())
+                        .await
+                }
+                Ok(budget) => Ok(budget),
+                Err(error) => Err(error),
+            };
+
+            let model_budget = match (
+                model_budget,
+                client_tools
+                    .as_ref()
+                    .and_then(|input| input.budget_snapshot.as_ref()),
+            ) {
+                (Ok(budget), Some(snapshot)) => match verified_owner.as_ref() {
+                    Some(owner) => budget.restore_client_handoff(snapshot, owner).await,
+                    None => Err(anyhow::anyhow!("client_tools_require_authenticated_owner")),
+                },
+                (budget, None) => budget,
+                (Err(error), Some(_)) => Err(error),
+            };
+
+            model_budget
+        };
+        let shared_model_budget = match shared_model_budget_result {
+            Ok(budget) => budget,
+            Err(_) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "budget_admission_failed".into(),
+                        message: "Run accounting unavailable".into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
+        let matching_result = async {
+            use crate::uar::runtime::skills::service::{SkillMatchingAlgorithm, SkillMatchingEngine};
+            use crate::uar::runtime::matching::intent::ClassifierBackend;
+            let engine = match &self.settings_manager {
+                Some(settings) => settings.skill_matching_engine_for_admission().await?,
+                None => skill_bindings.matching.as_ref().map_or(
+                    SkillMatchingEngine::IntentClassifier, |matching| matching.config.engine),
+            };
+            let service_config = skill_bindings.matching.as_ref().map(|matching| &matching.config);
+            let needs_llm = match engine {
+                SkillMatchingEngine::Service => service_config
+                    .ok_or_else(|| anyhow::anyhow!("skill_service_resource_required"))?.algorithm == SkillMatchingAlgorithm::Llm,
+                SkillMatchingEngine::IntentClassifier => self.classifier_config.backend == ClassifierBackend::Llm,
+            };
+            let requested_model = if needs_llm {
+                service_config.and_then(|config| config.model_name.clone())
+                    .filter(|model| !model.trim().is_empty())
+            } else { None };
+            let auxiliary = if needs_llm {
+                let bindings = if let Some(inherited) = &inherited {
+                    inherited.models.for_policy(&inherited.policy)?
+                } else {
+                    let mut config = self.llm_config.clone();
+                    if let Some(route) = &effective_policy.model {
+                        config.model = format!("{}/{}", route.provider_id, route.model_id);
+                        config.resolved_provider_id = Some(route.provider_id.clone());
+                    } else if !artifact.policy.provider.default.model.trim().is_empty() {
+                        config.model = format!("{}/{}", artifact.policy.provider.default.provider,
+                            artifact.policy.provider.default.model);
+                        config.resolved_provider_id = Some(artifact.policy.provider.default.provider.clone());
+                    }
+                    if let Some(model) = &requested_model {
+                        let (provider, _) = crate::llm::registry::split_model_string_pub(&qualified_model_name(&config));
+                        config.model = if model.contains('/') { model.clone() } else { format!("{provider}/{model}") };
+                        let (selected_provider, _) = crate::llm::registry::split_model_string_pub(&config.model);
+                        config.resolved_provider_id = Some(selected_provider);
+                    }
+                    if config.model.trim().is_empty()
+                        && let Some(registry) = &self.provider_registry
+                        && let Some((provider, model)) = registry.default_model().await {
+                        config.model = format!("{provider}/{model}");
+                    }
+                    let (provider, model) = crate::llm::registry::split_model_string_pub(&qualified_model_name(&config));
+                    if let Some(registry) = &self.provider_registry {
+                        let routed = registry.resolve_to_llm_config(&provider, &model).await
+                            .ok_or_else(|| anyhow::anyhow!("auxiliary_model_unavailable"))?;
+                        config = apply_routed_connection(config, routed);
+                    }
+                    if let Some(credentials) = &run_credentials {
+                        config = credentials.config_for(&provider, Some(&model), config)?;
+                    }
+                    config.resolved_provider_id = Some(provider.clone());
+                    let mut profiles = BTreeMap::new();
+                    let mut pricing_models = BTreeMap::new();
+                    if is_team_attempt {
+                        anyhow::ensure!(reasoning_effort.is_none(), "TEAM_REASONING_UNSUPPORTED");
+                        let registry = self.provider_registry.as_deref()
+                            .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                        let binding = collaboration_binding.as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                        for admitted in &binding.receipt.resolved_models {
+                            let effective: crate::uar::domain::team_execution::EffectiveTeamModelReceipt =
+                                serde_json::from_value(admitted["effectiveModel"].clone())
+                                    .map_err(|_| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                            let profile = registry.capture_team_endpoint_profile(&effective).await?;
+                            if let Some(price) = effective.pricing_identity {
+                                pricing_models.insert(profile.qualified_model.clone(),
+                                    format!("{}/{}", price.provider_id, price.model_id));
                             }
+                            profiles.insert(profile.qualified_model.clone(), profile);
+                        }
+                        let profile = profiles.get(&format!("{provider}/{model}"))
+                            .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
+                        config.model.clone_from(&profile.qualified_model);
+                        config.catalog_pricing_model = pricing_models.get(&profile.qualified_model).cloned();
+                    }
+                    let (config, decision) = resolve_credential_binding(config,
+                        self.credential_policy.as_ref(), self.provider_service.as_ref(),
+                        principal_for_creds.as_ref(), session_id_for_creds.as_deref(),
+                        Some(artifact.id.as_str()), run_credentials.is_some()).await?;
+                    let mut failover = self.failover_config.clone();
+                    failover.enabled = false;
+                    failover.fallback_models.clear();
+                    crate::uar::runtime::turn::bindings::RunModelBindings::capture(
+                        config, None, decision, BTreeMap::new(), failover, None,
+                        shared_model_budget.clone(), run_credentials.as_ref(),
+                        profiles, pricing_models, &mut emitter.secret_scrubber).await?
+                };
+                let model = match requested_model.as_deref() {
+                    Some(model) => bindings.auxiliary_model(model)?,
+                    None => qualified_model_name(bindings.config()),
+                };
+                let driver = bindings.auxiliary(&model)?;
+                let exact = self.destination_preparations.as_ref()
+                    .and_then(|preparations| preparations.budget_contract(&model)).cloned();
+                let (provider, model_id) = crate::llm::registry::split_model_string_pub(&model);
+                let configured = if let Some(registry) = &self.provider_registry {
+                    registry.models(&provider).await.and_then(|models| models.into_iter()
+                        .find(|entry| entry.id == model_id).and_then(|entry| entry.context_window))
+                        .map(|window| window as usize)
+                } else { None };
+                let capacity = run_credentials.as_ref().and_then(|credentials|
+                    credentials.context_window_for(&provider, &model_id)).or(configured)
+                    .or_else(|| crate::llm::catalog::ModelCatalog::global().model(&provider, &model_id)
+                        .map(|entry| entry.limits.context_window as usize).filter(|window| *window > 0));
+                let allowance = match exact {
+                    Some(contract) => crate::uar::runtime::context::budget::AuxiliaryRequestAllowance::Exact(contract),
+                    None => {
+                        let capacity = capacity.ok_or_else(|| anyhow::anyhow!("auxiliary_capacity_unknown"))?;
+                        anyhow::ensure!(capacity > 2304, "auxiliary_capacity_insufficient");
+                        crate::uar::runtime::context::budget::AuxiliaryRequestAllowance::Estimated {
+                            destination_model: model.clone(), input_allowance: capacity - 2048,
+                            output_ceiling: 2048, reserve_tokens: 256,
+                            counting_revision: "host-plaintext-estimate-v1".into(),
                         }
                     }
-                    (
-                        candidates.into_values().collect(),
-                        "legacy_fallback.tag_vector_hybrid".to_string(),
-                    )
+                };
+                Some((driver, model, allowance))
+            } else { None };
+            let effective_model = auxiliary.as_ref().map(|(_, model, _)| model.clone());
+            let (candidates, method, threshold, margin, top_k) = match engine {
+                SkillMatchingEngine::Service => {
+                    let matching = skill_bindings.matching.as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("skill_service_resource_required"))?;
+                    let config = &matching.config;
+                    let result = matching.match_skills_scoped_checked(&routing_input,
+                        Some(&artifact.id), Some(session.id()), auxiliary.as_ref()
+                            .map(|(driver, model, allowance)| (driver.as_ref(), model.as_str(), allowance))).await?;
+                    (result.candidates, format!("skill_service.{}", match config.algorithm {
+                        SkillMatchingAlgorithm::Keyword => "keyword", SkillMatchingAlgorithm::Embedding => "embedding",
+                        SkillMatchingAlgorithm::LocalEmbedding => "local_embedding", SkillMatchingAlgorithm::Hybrid => "hybrid",
+                        SkillMatchingAlgorithm::Llm => "llm",
+                    }),
+                        config.threshold, config.margin_threshold, config.top_k)
+                }
+                SkillMatchingEngine::IntentClassifier => {
+                    let registry = skill_bindings.registry.read().await.clone();
+                    let result = if let Some((driver, model, allowance)) = &auxiliary {
+                        let skills = registry.list().into_iter().filter(|skill|
+                            effective_policy.skills.ids.contains(&skill.skill_id)
+                                && skill.enabled_for(Some(&artifact.id), Some(session.id()))).collect::<Vec<_>>();
+                        crate::uar::runtime::matching::intent::classify_skills_with_driver(
+                            &routing_input, &[], &skills, driver.as_ref(), model, allowance).await?
+                    } else {
+                        let pinned_vector = if self.classifier_config.backend == ClassifierBackend::LocalEmbedding {
+                            let matcher = self.local_skill_matcher.as_ref()
+                                .ok_or_else(|| anyhow::anyhow!("local_embedding_classifier_resource_required"))?;
+                            Some(Arc::new(crate::uar::runtime::matching::vector::VectorMatcher::new(
+                                Arc::new(crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+                                    matcher.pin_embedding())), self.classifier_config.accept_threshold)))
+                        } else {
+                            None
+                        };
+                        let classifier = crate::uar::runtime::matching::intent::create_classifier_with_resources(
+                            &self.classifier_config, pinned_vector, None);
+                        classifier.rebuild_index(&registry).await?;
+                        classifier.classify(&routing_input, &[], &registry).await?
+                    };
+                    (result.scores.into_iter().filter_map(|score| score.skill.map(|skill|
+                        SkillCandidate { skill, score: score.score })).collect(),
+                        format!("legacy_classifier.{:?}", self.classifier_config.backend).to_lowercase(),
+                        self.classifier_config.accept_threshold, self.classifier_config.margin_threshold,
+                        self.classifier_config.topk)
                 }
             };
-            (
-                candidates,
-                method,
-                self.classifier_config.accept_threshold,
-                self.classifier_config.margin_threshold,
-                self.classifier_config.topk,
-            )
+            Ok::<_, anyhow::Error>((candidates, method, threshold, margin, top_k, requested_model, effective_model))
+        }.await;
+        let (
+            candidates,
+            skill_selection_method,
+            threshold,
+            margin,
+            top_k,
+            matching_requested_model,
+            matching_effective_model,
+        ) = match matching_result {
+            Ok(result) => result,
+            Err(_) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "skill_matching_unavailable".into(),
+                        message:
+                            "Selected skill matching method or governed resource is unavailable"
+                                .into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
         };
         let allowed_skill_ids = effective_policy.skills.ids.iter().collect::<HashSet<_>>();
         let candidates = {
@@ -5657,6 +5990,15 @@ impl RunManager {
         if let Some(state) = self.active_runs.write().await.get_mut(&run_id)
             && let Some(context) = state.run.context.as_object_mut()
         {
+            context.insert("skill_matching".into(), serde_json::json!({
+                "requested_method": skill_selection_method, "effective_method": skill_selection_method,
+                "requested_model": matching_requested_model, "effective_model": matching_effective_model,
+                "threshold": threshold, "margin": margin, "top_k": top_k,
+                "candidates": skill_match_result.candidates.iter().map(|candidate| serde_json::json!({
+                    "skill_id": candidate.skill.skill_id, "score": candidate.score,
+                    "accepted": suggested_skill_ids.contains(&candidate.skill.skill_id),
+                })).collect::<Vec<_>>()
+            }));
             context.insert(
                 "skill_candidates".to_string(),
                 serde_json::json!(
@@ -5865,11 +6207,9 @@ impl RunManager {
         let register_turn_tools = async {
             if effective_policy.tools.mode != SelectionMode::None {
                 if let Some(binding) = &collaboration_binding {
-                    if let Some(attempt) = binding
-                        .team_attempt
-                        .as_ref()
-                        .filter(|_| crate::uar::api::capabilities::team_execution_b_enabled())
-                    {
+                    if let Some(attempt) = binding.team_attempt.as_ref().filter(|_| {
+                        crate::uar::domain::execution_capabilities::team_execution_b_enabled()
+                    }) {
                         crate::uar::runtime::native_skills::team_tools::register(
                             &native_skills,
                             crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
@@ -6011,9 +6351,6 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
-        let is_team_attempt = collaboration_binding
-            .as_ref()
-            .is_some_and(|binding| binding.team_attempt.is_some());
         let policy_llm_config = if inherited.is_none()
             && let Some(ref registry) = self.provider_registry
         {
@@ -6357,60 +6694,7 @@ impl RunManager {
                 None
             };
 
-            // This artifact's session ceiling belongs to the captured root session,
-            // not the aggregate spend of every session using the same agent.
-            let model_budget =
-                crate::uar::runtime::thread::policy_intersection::ThreadBudgets::from_artifact(
-                    &artifact,
-                )
-                .map_err(anyhow::Error::from)
-                .and_then(|limits| {
-                    crate::uar::runtime::cost_budget::ModelCallBudget::for_run(
-                        self.cost_budget.clone(),
-                        run_id.clone(),
-                        session.id().to_string(),
-                        artifact.id.clone(),
-                        run_cancellation.clone(),
-                        limits,
-                        host_usage_grant.clone(),
-                        execution_started_at,
-                    )
-                });
-
-            let model_budget = match model_budget {
-                Ok(budget)
-                    if run_llm_config.cost_tracking
-                        || budget.has_configured_limits()
-                        || (self
-                            .persistence
-                            .as_ref()
-                            .is_some_and(|store| store.supports_durable_accounting())
-                            && verified_owner
-                                .as_ref()
-                                .and_then(|owner| owner.credential_principal())
-                                .is_some()) =>
-                {
-                    budget
-                        .with_durable_accounting(self.persistence.clone(), verified_owner.as_ref())
-                        .await
-                }
-                Ok(budget) => Ok(budget),
-                Err(error) => Err(error),
-            };
-
-            let model_budget = match (
-                model_budget,
-                client_tools
-                    .as_ref()
-                    .and_then(|input| input.budget_snapshot.as_ref()),
-            ) {
-                (Ok(budget), Some(snapshot)) => match verified_owner.as_ref() {
-                    Some(owner) => budget.restore_client_handoff(snapshot, owner).await,
-                    None => Err(anyhow::anyhow!("client_tools_require_authenticated_owner")),
-                },
-                (budget, None) => budget,
-                (Err(error), Some(_)) => Err(error),
-            };
+            let model_budget = Ok::<_, anyhow::Error>(shared_model_budget.clone());
 
             let fallback_credential_decisions = async {
                 let mut decisions = std::collections::BTreeMap::new();
@@ -6531,6 +6815,8 @@ impl RunManager {
                 }
                 let code = if is_team_attempt {
                     team_error.unwrap_or("TEAM_PROVIDER_REQUEST_REJECTED")
+                } else if stage == "budget_admission" {
+                    category
                 } else {
                     "orchestrator_start_failed"
                 };
@@ -6806,17 +7092,19 @@ impl RunManager {
         };
         let (catalog_provider, catalog_model_id) =
             crate::llm::registry::split_model_string_pub(&qualified_model);
-        let configured_window = if let Some(registry) = &self.provider_registry {
+        let configured_model = if let Some(registry) = &self.provider_registry {
             registry.models(&catalog_provider).await.and_then(|models| {
                 models
                     .into_iter()
                     .find(|model| model.id == catalog_model_id)
-                    .and_then(|model| model.context_window)
-                    .map(|window| window as usize)
             })
         } else {
             None
         };
+        let configured_window = configured_model
+            .as_ref()
+            .and_then(|model| model.context_window)
+            .map(|window| window as usize);
         let host_window = run_credentials.as_ref().and_then(|credentials| {
             credentials.context_window_for(&catalog_provider, &catalog_model_id)
         });
@@ -6850,6 +7138,89 @@ impl RunManager {
             .as_ref()
             .and_then(|contract| usize::try_from(contract.limits.context_tokens).ok())
             .or(estimated_context_window);
+        let team_input_allowance = is_team_attempt
+            .then(|| {
+                host_usage_grant
+                    .as_ref()
+                    .filter(|grant| grant.accounting_id.starts_with("team-budget:"))
+                    .and_then(|grant| grant.grant.max_total_tokens)
+                    .and_then(|total| {
+                        crate::uar::runtime::cost_budget::team_token_allocation(total).ok()
+                    })
+                    .and_then(|(input, _)| usize::try_from(input).ok())
+            })
+            .flatten();
+        // Native/team callers can omit an explicit output cap. Bind the same
+        // finite response reserve already withheld from their known context;
+        // never infer an output allowance from the legacy unknown-window estimate.
+        let bounded_output = (|| -> anyhow::Result<u32> {
+            let capacity =
+                model_context_window.ok_or_else(|| anyhow::anyhow!("output_capacity_unknown"))?;
+            if is_team_attempt {
+                anyhow::ensure!(
+                    team_input_allowance.is_some(),
+                    "team_input_allowance_unavailable"
+                );
+            }
+            let mut cap = match output_token_cap {
+                Some(cap) => cap,
+                None => match &destination_budget_contract {
+                    Some(contract) => u32::try_from(contract.limits.output_tokens)?,
+                    None => crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS as u32,
+                },
+            };
+            if let Some(contract) = &destination_budget_contract {
+                cap = cap.min(u32::try_from(contract.limits.output_tokens)?);
+            }
+            let maximum = configured_model
+                .as_ref()
+                .and_then(|model| model.max_output_tokens)
+                .or_else(|| {
+                    crate::llm::catalog::ModelCatalog::global()
+                        .model(&catalog_provider, &catalog_model_id)
+                        .and_then(|model| u32::try_from(model.limits.max_output).ok())
+                        .filter(|limit| *limit > 0)
+                });
+            if let Some(maximum) = maximum {
+                cap = cap.min(maximum);
+            }
+            if is_team_attempt {
+                anyhow::ensure!(
+                    u64::from(cap) <= crate::uar::runtime::cost_budget::TEAM_MAX_OUTPUT_TOKENS,
+                    "team output token cap exceeds its host allocation"
+                );
+            }
+            anyhow::ensure!(
+                cap > 0 && capacity > cap as usize,
+                "output_capacity_insufficient"
+            );
+            Ok(cap)
+        })();
+        let output_token_cap = match bounded_output {
+            Ok(cap) => Some(cap),
+            Err(_) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                activation_context.lock().await.record_outcomes(false);
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "output_budget_unavailable".into(),
+                        message:
+                            "Selected model has no known capacity for a finite output reservation"
+                                .into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
         let catalog_entries = eligible_skills
             .iter()
             .map(|skill| {
@@ -6924,7 +7295,7 @@ impl RunManager {
         }
 
         // Message-count context strategy followed by model-token budgeting.
-        let (effective_strategy, context_model) = {
+        let (mut effective_strategy, context_model) = {
             let effective_context_tokens =
                 model_context_window.map(|window| (window as f64 * 0.7) as u32);
             (
@@ -6935,16 +7306,89 @@ impl RunManager {
                 qualified_model.clone(),
             )
         };
-        let summarization_driver: Option<Arc<dyn crate::llm::LlmDriver>> = match &effective_strategy
-        {
-            crate::uar::context::ContextStrategy::Summarize { .. }
-            | crate::uar::context::ContextStrategy::Hierarchical { .. } => {
-                // `primary()` is the run's captured BudgetedModelDriver. Summary
-                // requests therefore share root request/token/cost, deadline,
-                // and cancellation accounting with ordinary model calls.
-                Some(model_bindings.primary())
+        let summary_binding_result = async {
+            use crate::uar::runtime::context::budget::AuxiliaryRequestAllowance;
+            let requested = match &effective_strategy {
+                crate::uar::context::ContextStrategy::Summarize { model, .. } => model.as_deref(),
+                crate::uar::context::ContextStrategy::Hierarchical { .. } => None,
+                _ => return Ok::<_, anyhow::Error>((None, None)),
+            };
+            let model = match requested {
+                Some(requested) => model_bindings.auxiliary_model(requested)?,
+                None => qualified_model.clone(),
+            };
+            let driver = model_bindings.auxiliary(&model)?;
+            let exact = self
+                .destination_preparations
+                .as_ref()
+                .and_then(|preparations| preparations.budget_contract(&model))
+                .cloned();
+            let (provider, model_id) = crate::llm::registry::split_model_string_pub(&model);
+            let configured = if let Some(registry) = &self.provider_registry {
+                registry
+                    .models(&provider)
+                    .await
+                    .and_then(|models| {
+                        models
+                            .into_iter()
+                            .find(|entry| entry.id == model_id)
+                            .and_then(|entry| entry.context_window)
+                    })
+                    .map(|window| window as usize)
+            } else {
+                None
+            };
+            let capacity = run_credentials
+                .as_ref()
+                .and_then(|credentials| credentials.context_window_for(&provider, &model_id))
+                .or(configured)
+                .or_else(|| {
+                    crate::llm::catalog::ModelCatalog::global()
+                        .model(&provider, &model_id)
+                        .map(|entry| entry.limits.context_window as usize)
+                        .filter(|window| *window > 0)
+                });
+            let allowance = match exact {
+                Some(contract) => AuxiliaryRequestAllowance::Exact(contract),
+                None => {
+                    let capacity =
+                        capacity.ok_or_else(|| anyhow::anyhow!("auxiliary_capacity_unknown"))?;
+                    anyhow::ensure!(capacity > 4352, "auxiliary_capacity_insufficient");
+                    AuxiliaryRequestAllowance::Estimated {
+                        destination_model: model.clone(),
+                        input_allowance: capacity - 4096,
+                        output_ceiling: 4096,
+                        reserve_tokens: 256,
+                        counting_revision: "host-plaintext-estimate-v1".into(),
+                    }
+                }
+            };
+            if let crate::uar::context::ContextStrategy::Summarize {
+                model: selected, ..
+            } = &mut effective_strategy
+            {
+                *selected = Some(model);
             }
-            _ => None,
+            Ok((Some(driver), Some(allowance)))
+        }
+        .await;
+        let (summarization_driver, summary_auxiliary_allowance) = match summary_binding_result {
+            Ok(binding) => binding,
+            Err(_) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                activation_context.lock().await.record_outcomes(false);
+                emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(), code: "summary_binding_unavailable".into(),
+                    message: "Selected summary model has no permitted captured binding or known capacity".into() }).await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
         };
         // One reduction path: structural trimming, then the token budget, then
         // tool-call normalization, with the system message pinned throughout
@@ -6958,8 +7402,11 @@ impl RunManager {
                     .and_then(|allowance| usize::try_from(allowance).ok())
                     .unwrap_or(0)
             }
-            None => context_limit
-                .saturating_sub(crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS),
+            None => team_input_allowance
+                .unwrap_or_else(|| {
+                    context_limit.saturating_sub(output_token_cap.unwrap_or(0) as usize)
+                })
+                .min(context_limit.saturating_sub(output_token_cap.unwrap_or(0) as usize)),
         };
         let mut world_contributor = world_state.contributor(plan.restore_checkpoint).await;
         let world_reserved_tokens = match world_contributor
@@ -7061,6 +7508,16 @@ impl RunManager {
                 &definitions,
             )
         };
+        let preparation_budget_receipt = serde_json::json!({
+            "schema_version":"uar.request-budget.v1", "representation":"protected_preparation_candidate",
+            "serialized_request":false, "count_quality":"approximate", "counting_revision":"model-message-and-tool-estimate-v1",
+            "counted_input_tokens":crate::uar::runtime::context::token_service::TokenService::count_messages(&context_model, &messages)
+                .saturating_add(tool_reserved_tokens).saturating_add(world_reserved_tokens),
+            "input_allowance":context_input_allowance,
+            "reserved_output_tokens":destination_budget_contract.as_ref().map(|contract| contract.limits.output_tokens)
+                .unwrap_or(i64::from(output_token_cap.unwrap_or(0))),
+            "tools_included":true, "instructions_included":true, "fit_guarantee":false,
+        });
         let history_context_limit =
             match crate::uar::runtime::context::reduce::reserve_fixed_input_tokens(
                 context_input_allowance,
@@ -7069,6 +7526,9 @@ impl RunManager {
             ) {
                 Ok(limit) => limit,
                 Err(error) => {
+                    emitter
+                        .record_budget_refusal(error.code(), &preparation_budget_receipt)
+                        .await;
                     if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                         state.run.status = RunStatus::Error;
                     }
@@ -7092,21 +7552,43 @@ impl RunManager {
         // The window less the admission-time tool cost, for first-turn skill
         // reattachment and the graph request driver. The orchestrator's own
         // steps use the unreduced window and count their actual tools.
-        let request_context_limit = context_limit.saturating_sub(tool_reserved_tokens);
+        // Per-step estimated reducers withhold the standard response reserve.
+        // Withhold any larger explicit caller cap here as well; this does not
+        // turn the model-window estimate into an exact final-wire guarantee.
+        let response_aware_context_limit = if destination_budget_contract.is_none() {
+            if let Some(input_allowance) = team_input_allowance {
+                context_input_allowance.min(input_allowance)
+            } else {
+                context_limit.saturating_sub(
+                    (output_token_cap.unwrap_or(0) as usize).saturating_sub(
+                        crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS,
+                    ),
+                )
+            }
+        } else {
+            context_limit
+        };
+        let request_context_limit =
+            response_aware_context_limit.saturating_sub(tool_reserved_tokens);
+        let legacy_eligible_prose =
+            crate::uar::runtime::context::reduce::canonical_prose_spans(&messages);
+        let typed_eligible_prose =
+            crate::uar::runtime::context::reduce::canonical_prose_spans(&unrendered_history);
         let legacy_reduction = if harness_config.mode != crate::config::HarnessMode::Typed {
-            match crate::uar::runtime::context::reduce::reduce_history_with_input_allowance(
+            match crate::uar::runtime::context::reduce::reduce_history_with_input_allowance_and_auxiliary(
                 messages,
                 &effective_strategy,
                 &context_model,
                 history_context_limit,
                 summarization_driver.as_deref(),
-                destination_budget_contract.as_ref(),
-                &[],
+                summary_auxiliary_allowance.as_ref(),
+                &legacy_eligible_prose,
             )
             .await
             {
                 Ok(reduction) => Some(reduction),
                 Err(error) => {
+                    emitter.record_budget_refusal(error.code(), &preparation_budget_receipt).await;
                     if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                         state.run.status = RunStatus::Error;
                     }
@@ -7177,13 +7659,9 @@ impl RunManager {
                     options: render_options,
                     skill_budget: harness_config.skill_reattachment,
                     driver: summarization_driver.clone(),
-                    // An explicit destination contract is also required for a
-                    // summary call; absent host marks still protect all prose.
-                    summary_budget_contract: destination_budget_contract.clone(),
-                    // Session/checkpoint messages currently carry no durable
-                    // prose-eligibility metadata. Unknown content is protected
-                    // until the trusted host supplies explicit marks.
-                    eligible_prose: Vec::new(),
+                    summary_budget_contract: None,
+                    summary_auxiliary_allowance: summary_auxiliary_allowance.clone(),
+                    eligible_prose: typed_eligible_prose.clone(),
                 },
                 tool_reserved_tokens,
             );
@@ -7213,6 +7691,9 @@ impl RunManager {
                         }
                         _ => ("turn_assembly_rejected", error.to_string()),
                     };
+                    emitter
+                        .record_budget_refusal(code, &preparation_budget_receipt)
+                        .await;
                     emitter
                         .emit(NormalizedEvent::Error {
                             run_id: run_id.clone(),
@@ -7275,6 +7756,27 @@ impl RunManager {
             } else {
                 unreachable!("harness mode selects a legacy or typed assembly")
             };
+        if let Some(state) = self.active_runs.write().await.get_mut(&run_id)
+            && let Some(context) = state.run.context.as_object_mut()
+        {
+            context.insert(
+                "activated_skills".into(),
+                serde_json::json!(
+                    active_for_manifest
+                        .iter()
+                        .map(|entry| entry.skill.skill_id.clone())
+                        .collect::<Vec<_>>()
+                ),
+            );
+            if let Some(receipt) = &reduce_report.structural_receipt {
+                context.insert("context_reduction".into(), receipt.clone());
+                if harness_config.mode == crate::config::HarnessMode::Typed
+                    && let Some(attachment) = receipt.get("skill_reattachment")
+                {
+                    context.insert("skill_reattachment".into(), attachment.clone());
+                }
+            }
+        }
         if let Some(update) = &world_update {
             world_state.commit(update).await;
         }
@@ -7299,8 +7801,8 @@ impl RunManager {
         // Create per-run Orchestrator.
 
         if harness_config.mode != crate::config::HarnessMode::Typed {
-            let (_, bounded_skill_fragments) =
-                crate::uar::runtime::skills::retention::reattach_skills(
+            let (_, bounded_skill_fragments, receipt) =
+                crate::uar::runtime::skills::retention::reattach_skills_with_receipt(
                     &messages,
                     &active_for_manifest,
                     &context_model,
@@ -7312,6 +7814,11 @@ impl RunManager {
                     },
                 );
             prompt_fragments.extend(bounded_skill_fragments);
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id)
+                && let Some(context) = state.run.context.as_object_mut()
+            {
+                context.insert("skill_reattachment".into(), serde_json::json!(receipt));
+            }
         }
         if let Some(binding) = collaboration_binding
             .as_ref()
@@ -7436,7 +7943,8 @@ impl RunManager {
             .with_verified_owner(verified_owner.clone())
             .with_presentations(Arc::clone(&presentation_snapshot))
             .with_client_tools(client_tools.clone())
-            .with_output_token_cap(output_token_cap),
+            .with_output_token_cap(output_token_cap)
+            .with_response_format(response_format.clone()),
         );
         let shadow_turn = if harness_config.mode == crate::config::HarnessMode::Shadow {
             typed_assembly.as_ref().map(|assembled| {
@@ -7452,7 +7960,8 @@ impl RunManager {
                         .with_verified_owner(verified_owner.clone())
                         .with_presentations(Arc::clone(&presentation_snapshot))
                         .with_client_tools(client_tools.clone())
-                        .with_output_token_cap(output_token_cap),
+                        .with_output_token_cap(output_token_cap)
+                        .with_response_format(response_format.clone()),
                     ),
                     assembled.history.clone(),
                 )
@@ -7460,13 +7969,11 @@ impl RunManager {
         } else {
             None
         };
-        let primary_driver_for_graph: Arc<dyn LlmDriver> = match &destination_budget_contract {
-            Some(contract) => Arc::new(DestinationBudgetDriver {
-                inner: model_bindings.primary(),
-                contract: contract.clone(),
-            }),
-            None => model_bindings.primary(),
-        };
+        let primary_driver_for_graph: Arc<dyn LlmDriver> = Arc::new(DestinationBudgetDriver {
+            inner: model_bindings.primary(),
+            contract: destination_budget_contract.clone(),
+            output_token_cap: output_token_cap.unwrap_or(0),
+        });
 
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).
@@ -7628,7 +8135,7 @@ impl RunManager {
                     context_model.clone(),
                     // No tool cost here: the orchestrator withholds each step's
                     // actual tool definitions itself.
-                    context_limit,
+                    response_aware_context_limit,
                     harness_config.skill_reattachment,
                 )
                 .with_cache_strategy(
@@ -7901,6 +8408,11 @@ impl RunManager {
                             Arc::clone(&budget_gate),
                             Arc::clone(&tool_admission),
                             descriptor,
+                        )
+                        .with_agent_routing(
+                            self.clone(),
+                            artifact.id.clone(),
+                            Arc::new(emitter.clone()),
                         );
                     if let (Some(input), Some(store), Some(owner)) = (
                         client_tools
@@ -8301,7 +8813,14 @@ impl RunManager {
                 } else if final_state.get::<bool>("_client_tool_handoff") != Some(true)
                     && let Some(route) = final_state.get::<String>("_route")
                 {
-                    let output_key = format!("_agent_output_{route}");
+                    let output_key = if final_state
+                        .get::<String>("_agent_roster_revision")
+                        .is_some()
+                    {
+                        "_agent_output_selected-agent".to_string()
+                    } else {
+                        format!("_agent_output_{route}")
+                    };
                     match final_state.get::<String>(&output_key) {
                         Some(output) => {
                             let attributed_output = emitter
@@ -8556,6 +9075,54 @@ impl RunManager {
                                 None => break,
                             },
                         };
+                        if let crate::normalized::NormalizedEvent::Custom {
+                            source,
+                            event_name,
+                            payload,
+                        } = &base_event
+                            && source == "uar.request"
+                            && event_name == "budget_receipt"
+                        {
+                            let mut receipt = payload.clone();
+                            if payload
+                                .get("destination_model")
+                                .and_then(serde_json::Value::as_str)
+                                == Some(run_model.as_str())
+                            {
+                                receipt["input_allowance"] =
+                                    serde_json::json!(context_input_allowance);
+                                if receipt
+                                    .get("reserved_output_tokens")
+                                    .is_none_or(serde_json::Value::is_null)
+                                {
+                                    receipt["reserved_output_tokens"] = preparation_budget_receipt
+                                        ["reserved_output_tokens"]
+                                        .clone();
+                                }
+                                let within = receipt
+                                    .get("counted_input_tokens")
+                                    .and_then(serde_json::Value::as_u64)
+                                    .is_some_and(|tokens| tokens <= context_input_allowance as u64);
+                                receipt["outcome"] = serde_json::json!(if within {
+                                    "within_allowance"
+                                } else {
+                                    "exceeds_estimated_allowance"
+                                });
+                            }
+                            if let Some(state) =
+                                runs_for_completion.write().await.get_mut(&execute_run_id)
+                                && let Some(context) = state.run.context.as_object_mut()
+                            {
+                                if let Some(receipts) = context
+                                    .entry("request_budgets".to_owned())
+                                    .or_insert_with(|| serde_json::json!([]))
+                                    .as_array_mut()
+                                {
+                                    receipts.push(receipt.clone());
+                                }
+                                context.insert("request_budget".into(), receipt);
+                            }
+                        }
                         if let crate::normalized::NormalizedEvent::Custom {
                             source,
                             event_name,
@@ -9104,7 +9671,38 @@ impl RunManager {
                 }
             }
 
+            // A successful text-only turn must be durable before its terminal
+            // event. Otherwise a restart silently loses both user and answer.
+            if !run_cancelled
+                && !run_failed
+                && let Some(db) = &persistence_for_run
+                && let Err(error) = db.save_session(&execution_session).await
+            {
+                run_failed = true;
+                tracing::warn!(%error, run_id = %execute_run_id, "Failed to persist completed conversation");
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: execute_run_id.clone(),
+                        code: "session_persist_failed".into(),
+                        message: "Completed conversation could not be saved".into(),
+                    })
+                    .await;
+            }
+
+            let completed_active_skills = activation_context
+                .lock()
+                .await
+                .active()
+                .into_iter()
+                .map(|entry| entry.skill.skill_id)
+                .collect::<Vec<_>>();
             if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
+                if let Some(context) = state.run.context.as_object_mut() {
+                    context.insert(
+                        "activated_skills".into(),
+                        serde_json::json!(completed_active_skills),
+                    );
+                }
                 state.run.status = if run_cancelled {
                     RunStatus::Cancelled
                 } else if run_failed {

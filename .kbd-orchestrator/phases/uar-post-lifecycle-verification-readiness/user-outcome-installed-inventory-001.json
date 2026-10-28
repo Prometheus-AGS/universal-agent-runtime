@@ -1,0 +1,142 @@
+{
+  "classification": "ACTUAL_INSTALLED_ARTIFACT_INVENTORY_NOT_RUNTIME_ACCEPTANCE",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-source-010.json",
+  "preparation_manifest": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/preparation.json",
+    "sha256": "sha256:80d491ad67d09e2a98492bb413bd153438cc17d9f10879d48506fb23e8bb31a9"
+  },
+  "installed_artifact": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "sha256": "sha256:25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c"
+  },
+  "native_receipt": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native-build-receipt.json",
+    "sha256": "sha256:d6c4c0ba459eff56c8e994feeb294c6e5487417e04b19f30bd357cca6a789e32"
+  },
+  "closures": {
+    "browser": {
+      "complete": true,
+      "file_count": 359,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/browser-closure.json",
+        "sha256": "sha256:ac9b80009d724b231bad57894d0705d9a945e3ff363ad229855c5d860ad6bd53"
+      }
+    },
+    "classifier_wasm": {
+      "complete": true,
+      "file_count": 120,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/classifier_wasm-closure.json",
+        "sha256": "sha256:ed5bf2fe37a69565f7b3f169a5472b139a0f89d83e2a19842d0fec5ddb42e583"
+      }
+    },
+    "grpc": {
+      "complete": true,
+      "file_count": 19315,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/grpc-closure.json",
+        "sha256": "sha256:614549b8004acb73aef9e70bc59e87d6297e77c85f8c38b62e1752f502b05679"
+      }
+    },
+    "local_embedding_assets": {
+      "complete": true,
+      "file_count": 6,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/local_embedding_assets-closure.json",
+        "sha256": "sha256:f516ba196af751952b7099ac587e095a1870a7ced8e44e8dc1d9cf449e0a4383"
+      }
+    },
+    "native": {
+      "complete": true,
+      "file_count": 19314,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native-closure.json",
+        "sha256": "sha256:d552268095d34a6a540838c6036ff1f9ae545b397fff743356ad862d397253f2"
+      }
+    },
+    "node": {
+      "complete": true,
+      "file_count": 112,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/node-closure.json",
+        "sha256": "sha256:8327472c6bf9938819c49ecec7b39f19625d686183a4d112c3a0723e225862fb"
+      }
+    },
+    "playwright": {
+      "complete": true,
+      "file_count": 304,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/playwright-closure.json",
+        "sha256": "sha256:689e3d932a3d840a6fe2738d369c6d965da00d7cffa3499c7e1c9dd352079bf7"
+      }
+    },
+    "python": {
+      "complete": true,
+      "file_count": 1679,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python-closure.json",
+        "sha256": "sha256:ada8988c3a52b2b5beb7f5667bc143726f96a7c86ef5b27bc028650577f49490"
+      }
+    },
+    "python_sdk": {
+      "complete": true,
+      "file_count": 1693,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_sdk-closure.json",
+        "sha256": "sha256:aaf65212aa760ac5a9c7b3a4554b8dca37981043834447b8bb5189f600e5c59a"
+      }
+    },
+    "rust_sdk": {
+      "complete": true,
+      "file_count": 10808,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/rust_sdk-closure.json",
+        "sha256": "sha256:fff3fc7ba8195fa6fb39a88615016e8ada99c3e528155bcada491d5d12001948"
+      }
+    },
+    "typescript_sdk": {
+      "complete": true,
+      "file_count": 6334,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/typescript_sdk-closure.json",
+        "sha256": "sha256:3cdf09acf4572d50eefc508c0c36f9b41e618aada4bc1c51c1c3237aba82f225"
+      }
+    },
+    "video_encoder": {
+      "complete": true,
+      "file_count": 359,
+      "manifest": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/video_encoder-closure.json",
+        "sha256": "sha256:64a5470065804d009f60d6f649d1a3abdda5d4ed38c280ac88ed90806dedf103"
+      }
+    }
+  },
+  "installed": {
+    "browser_executable": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/browsers/payload/chromium_headless_shell-1234/chrome-headless-shell-mac-x64/chrome-headless-shell",
+    "classifier_wasm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/classifier_wasm/payload/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm",
+    "docker": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/docker",
+    "grpc_test_binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/grpc/payload",
+    "node": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/node",
+    "playwright_entry": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/playwright_test/payload/@playwright/test/index.mjs",
+    "psql": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/psql",
+    "python": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+    "python_sdk_entry": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_sdk/payload/examples/user_outcome_acceptance.py",
+    "rust_sdk_binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/rust_sdk/payload/examples/user_outcome_acceptance",
+    "server_binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "typescript_sdk_entry": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/typescript_sdk/payload/.acceptance-artifacts/examples/user-outcome-acceptance.js",
+    "video_encoder": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/browsers/payload/ffmpeg-1011/ffmpeg-mac"
+  },
+  "os_baseline": {
+    "description": "Current macOS kernel/system loader/frameworks and existing host native loader ABI; selected resource trees and their link targets are captured, not every host byte. No cross-machine portability claim.",
+    "excluded": true
+  },
+  "remaining": [
+    "actual approved private inputs and resource/accounting seed",
+    "final deterministic fixture composition and derived-input authority",
+    "fresh whole-phase implementation-complete inventory plus exact V approval"
+  ],
+  "product_gate": "CLOSED",
+  "current_contract": "e0fcc5da5fd74178f2783bcf1e47c1c0f21a41591c9e0349f910a8b901bbe00c"
+}

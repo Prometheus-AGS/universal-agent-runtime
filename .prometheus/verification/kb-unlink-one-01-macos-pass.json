@@ -1,0 +1,53 @@
+{
+  "scenario": "KB-UNLINK-ONE-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T20:40:26.784956-05:00",
+  "attempt": 2,
+  "command": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-unlink-one.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 22.672s",
+  "evidence": ".prometheus/verification/kb-unlink-one/5dfa7246-5221-4bb3-8d42-c582750f6fb3.json",
+  "cucumber_report": ".prometheus/verification/kb-unlink-one-002-macos/cucumber.json",
+  "retained_failure": ".prometheus/verification/kb-unlink-one-001-macos",
+  "answer": {
+    "agent_marker": "AGENT-21536b94-bc4f-4c37-832e-ab5319ebecd6",
+    "amber": {
+      "units": 350,
+      "seal": "AMBER-36c571e3-1341-4776-bf44-f76c454c5682",
+      "citation": "[1]"
+    },
+    "cobalt": null,
+    "total": null
+  },
+  "matched_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "05209559-7335-e854-d065-6790c2036410",
+      "document_id": "a936a611-925c-4949-8e2d-997ebf9199fc",
+      "knowledge_base_id": "ed20a558-0e75-44b3-97e5-329fd451a58a",
+      "document_name": "amber-inventory.txt",
+      "relevance_score": 0.8507029414176941,
+      "snippet": "For project inventory-project-5dfa7246-5221-4bb3-8d42-c582750f6fb3, the amber inventory has 350 units. Its private source seal is AMBER-36c571e3-1341-4776-bf44-f76c454c5682. This inventory note is the authoritative source for amber only.\n"
+    }
+  ],
+  "both_kbs_remain_searchable": true,
+  "both_kb_document_snapshots_unchanged": true,
+  "removed_fact_absent": true,
+  "source_ids": [
+    "ed20a558-0e75-44b3-97e5-329fd451a58a",
+    "87e86e23-06fd-4a63-8d70-0437fbd8612a"
+  ],
+  "cleanup_complete": true,
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "restart": false,
+  "service_kept_running": true,
+  "runtime_pid": 21601,
+  "authentication_supplied_by_test": false,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "scope": "One fresh-session unlink-one-of-two behavior on Mac; no claim about already-retained conversation knowledge or other backends/platforms."
+}

@@ -1,0 +1,116 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "conversation-summarization-preserves-key-facts;recall-booking-details-after-actual-summarization",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Recall booking details after actual summarization",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 68630089
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent using conversation summarization",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-summary.steps.mjs:58"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1792721238
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I provide booking facts within a lengthy conversation turn",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-summary.steps.mjs:91"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8467782154
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I ask a follow-up without repeating the booking facts",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-summary.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5909244
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "a genuine summary replaces the fact-bearing turn and preserves the answer",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-summary.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 68446259
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb252ZXJzYXRpb24tc3VtbWFyeS9jNTQzNzFiOS0xM2NmLTQ1ODYtOWUyZS1kNjBhZTdjYjJkOWIuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@summarization",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "conversation-summarization-preserves-key-facts",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Conversation summarization preserves key facts",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@summarization",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/conversation-summary.feature"
+  }
+]

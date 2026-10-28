@@ -1,0 +1,378 @@
+{
+  "checkpoint": "2026-10-26T00:29:25.516986+00:00",
+  "position": {
+    "schemaVersion": "5",
+    "generatedBy": "kbd-runtime",
+    "projectionContractVersion": 2,
+    "sourceRevision": 579,
+    "derivedRevision": 579,
+    "frontier": {
+      "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 467,
+      "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+    },
+    "conflictCount": 0,
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "path": [
+      "uar-post-lifecycle-verification-readiness"
+    ],
+    "phaseIds": [
+      "uar-post-lifecycle-verification-readiness"
+    ],
+    "activePhaseId": "uar-post-lifecycle-verification-readiness",
+    "activePhase": "uar-post-lifecycle-verification-readiness",
+    "phase": "uar-post-lifecycle-verification-readiness",
+    "parentPhase": null,
+    "childPointer": null,
+    "change": "reengineer-user-outcome-verification",
+    "currentTask": "2.9",
+    "status": "ready",
+    "lifecycle": "ready",
+    "stageId": "user-outcome-implementation",
+    "stageStatus": "IN_PROGRESS",
+    "completionMetric": "implementation",
+    "implementationCompleted": 144,
+    "implementationTotal": 168,
+    "planRevision": 162,
+    "revision": 579,
+    "exactNextCommand": "Discuss narrow metadata correction versus backlog: inert007 artifact source_files wrongly includes195 nonregular entries and inventory006 regular_files uses29240 instead of29045. Source009 unchanged; A22 binding23 signed/adopted, current review never triggered, all P16 commands NOT_RUN. No correction/retry authorized. Preserve all consumption/limits; repair20 consumed, fixture21 uncharged; USD10 each. Product V CLOSED.",
+    "nextChange": "reengineer-user-outcome-verification",
+    "nextTask": "2.9",
+    "updatedAt": "2026-10-26T00:29:25.369802Z"
+  },
+  "gate": "CLOSED",
+  "full_implementation_boundary_reached": false,
+  "source_authoring_handoffs_collected": true,
+  "remaining_canonical_tasks": [
+    {
+      "change": "reengineer-user-outcome-verification",
+      "id": "2.9",
+      "title": "Freeze full implementation inventory and prepare actual signed authority and exact packet",
+      "status": "in_progress"
+    },
+    {
+      "change": "reengineer-user-outcome-verification",
+      "id": "3.1",
+      "title": "Execute approved user-outcome packet serially with first-failure stop",
+      "status": "pending"
+    },
+    {
+      "change": "reengineer-user-outcome-verification",
+      "id": "3.2",
+      "title": "Complete independent runtime evidence Rust review and supplemental gates",
+      "status": "pending"
+    },
+    {
+      "change": "reengineer-user-outcome-verification",
+      "id": "3.3",
+      "title": "Complete canonical acceptance archive and reflection only after all exit criteria",
+      "status": "pending"
+    },
+    {
+      "change": "update-parking-lot-admission",
+      "id": "5.1",
+      "title": "Operator-gated finite integration and supported-profile builds",
+      "status": "pending"
+    },
+    {
+      "change": "update-parking-lot-admission",
+      "id": "5.2",
+      "title": "Operator-gated independent artifact-only code review",
+      "status": "pending"
+    }
+  ],
+  "active_writers": {},
+  "source_snapshot": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-009.json",
+    "sha256": "sha256:37cd5be46a71b8ba970559a53755bcb0d04d87b005854b21e224c1fd6f948deb"
+  },
+  "fixture_proposal": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-fixture-proposal-003/proposal.json",
+  "planned_cases": 97,
+  "planned_rows": 582,
+  "amendment": {
+    "status": "A22_SIGNED_ADOPTED_BINDING23",
+    "manifest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-007.amendment.json",
+    "contract_digest": "31fb611d89ee969c717e28bd0195e557c9770f158fe5e1d898b092b7ded68326"
+  },
+  "accounting": {
+    "evidence": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-031.json",
+      "sha256": "sha256:3491e258be2baf6d3b0cb201abdedec507b28876b2b937e5a2c63e4ab947a093"
+    },
+    "cutoff": "2026-10-26T00:28:57.581291+00:00",
+    "calls": 3903,
+    "active_minutes_upper_bound": 1909.0068640666666,
+    "repair_floor": 20,
+    "later_closing_activity_accrues": true
+  },
+  "embedding_caps_usd": {
+    "cohere": 10,
+    "openai_embeddings": 10,
+    "transferable": false,
+    "openai_selected": false
+  },
+  "actual_operations": "A22 signature/adoption exit0 binding23. Partial approved data relay exposed29240 draft source_files versus29045 regular entries; root stopped/interrupted relay before current critic trigger. Old source008 verdict remains historical. No new review verdict, Rust/Swift review, preparation command, repair/retry, build/test/service/provider/publication.",
+  "next": "Discuss narrow metadata correction versus backlog: inert007 artifact source_files wrongly includes195 nonregular entries and inventory006 regular_files uses29240 instead of29045. Source009 unchanged; A22 binding23 signed/adopted, current review never triggered, all P16 commands NOT_RUN. No correction/retry authorized. Preserve all consumption/limits; repair20 consumed, fixture21 uncharged; USD10 each. Product V CLOSED.",
+  "stop_rules": "First failure/no automatic repair or retry. No publication. All14 predecessor obligations retained; no archive/reflection before exit criteria.",
+  "approved_exception": {
+    "status": "A15_INDEPENDENT_SWEEP_COMPLETE_NOT_PHASE_ACCEPTANCE",
+    "counts": {
+      "PASS": 15,
+      "FAIL": 1,
+      "BLOCKED": 2
+    },
+    "items": 18,
+    "repair_floor": 15,
+    "repair_cap": 28,
+    "further_finalized_item_corrections": 0,
+    "active_exec_session": null,
+    "product_V": "CLOSED",
+    "source_identity": "sha256:5c78708d57b1949d96002628a001ca6e52a299dc8530f3a9c75ea1d1681ad5eb"
+  },
+  "current_adopted_contract": {
+    "digest": "31fb611d89ee969c717e28bd0195e557c9770f158fe5e1d898b092b7ded68326",
+    "binding_revision": 23,
+    "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-007/a22-adoption.json"
+  },
+  "corrected_packet": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-007-approvals.md",
+  "installed_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-installed-inventory-001.json",
+  "proposed_amendment": {
+    "status": "A22_PROPOSED_UNSIGNED_NOT_ADOPTED",
+    "manifest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform-007.amendment.json",
+    "contract_digest": "31fb611d89ee969c717e28bd0195e557c9770f158fe5e1d898b092b7ded68326"
+  },
+  "diagnostic_results": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-independent-sweep-001-results.json",
+  "platform_scope_revision": {
+    "operator_direction_date": "2026-10-25",
+    "included": [
+      "macos",
+      "linux",
+      "windows",
+      "ios"
+    ],
+    "deferred": [
+      "android"
+    ],
+    "first_priority": "Certify existing pinned Parking Lot 0.4.0 UAR integration before broad functional verification",
+    "plan": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-parking-lot-priority-plan.md",
+    "authority": "Scope instruction recorded; replacement exact execution packet not yet signed/adopted",
+    "historical_results_unchanged": true,
+    "source_assessment": "Root/SDK locks and vendored manifests already select0.4.0; historical Issue426 inventories still describe0.3.0 and must be superseded by a fresh source-bound inventory, preserving originals."
+  },
+  "source_identity": "sha256:4ace47fbfffc400f775f2fc5b3b0ace29e3e41fcf46cb877d54319b271d2ea52",
+  "four_platform_delivery": {
+    "source_inventory": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-004.json",
+      "sha256": "sha256:768427ad0347fd42dd548a9177288209c27e5ad08db3d7e5567defc4dc2a9d1b"
+    },
+    "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-whole-phase-inventory.json",
+    "approval": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-approvals.md",
+    "amendment": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.four-platform.amendment.json",
+    "proposed_contract": "d88f31dc84d6de72a94a7be26e224924f08bac0a16e32812f235863992929442",
+    "status": "A17_ADOPTED_STOPPED_SOURCE_REVIEW",
+    "preparation": "NOT_RUN",
+    "source_review": "FAIL_SOURCE_ONLY",
+    "runtime": "NOT_EXERCISED",
+    "published_parking_lot_commit": "53682521cb2a7a49c06e046c826890d9e11b6bfe",
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-002/stop.json"
+  },
+  "four_platform_metadata_replacement": {
+    "classification": "METADATA_ONLY_REPLACEMENT_PREPARATION_COMPLETE_NOT_EXECUTED",
+    "contract_digest": "e4525d25b528cc017ba6639dc610c06188902e0718bf4db786706ad96db4f217",
+    "source_identity": "sha256:580f7196999aa00b78e211a9894424b0d8c4074acf07fbafb483d00592e8673f",
+    "packet_sha256": "8f971047212e838a3d046c89234496c14e885b6ccbc4831c57b21e7745af0653",
+    "approval_document": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-002-approvals.md",
+    "failed_A16_preserved": true,
+    "current_adopted_contract": "02942ff1e5adafd5316183b09e8fea103238388efea8ccfba346e8d4760d2cc3",
+    "signature": "CREATED",
+    "adoption": "SUCCEEDED_BINDING18",
+    "source_review": "FAIL_SOURCE_ONLY",
+    "preparation": "NOT_RUN",
+    "repair_floor": 15,
+    "repair16_charged": false,
+    "all_previous_consumption_retained": true,
+    "embedding_caps_usd_each": 10,
+    "next": "Discuss bounded iOS verification-runner correction versus backlog before any repair or retry.",
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-002/stop.json"
+  },
+  "ios_failure_policy_repair": {
+    "status": "SOURCE_AUTHORED_UNVERIFIED",
+    "repair_number": 16,
+    "handoff": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/ios-failure-policy-repair-handoff.md",
+      "sha256": "sha256:6fdcf5174444a24dd21d17e4f2e7e8f1d286d2c4fc3a36d90bb31b15f90b42e1"
+    },
+    "whole_phase_inventory": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-whole-phase-inventory-002.json",
+      "sha256": "sha256:fb640ce9757b22f803714bee6b4afafe4a61e8b0a370c3ce7884326c009398cd"
+    },
+    "approval_document": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-003-approvals.md",
+    "packet": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-003.packet.json",
+      "sha256": "sha256:feae246ef42db63cced121f64723dbf75441b9ea41928470d141b65749cdf3b9"
+    },
+    "source_delta_files": 6,
+    "unrun_regression_tests": 5,
+    "reviews": "BLOCKED_SOURCE_ONLY_SERVER_COLLECTION_SETTLEMENT",
+    "fixture17_charged": false,
+    "all_prior_consumption_retained": true,
+    "current_adopted_contract": "A17 binding18 remains; source edit closes execution authority",
+    "product_V": "CLOSED",
+    "signature": "CREATED",
+    "adoption": "SUCCEEDED_BINDING19",
+    "preparation": "NOT_RUN",
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-003/stop.json"
+  },
+  "server_settlement_environment_repair": {
+    "status": "SOURCE_CONFIG_AUTHORED_UNVERIFIED",
+    "repair_number": 17,
+    "handoff": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/server-settlement-repair-handoff.md",
+      "sha256": "sha256:f665594aa7711f80b0dac8d2f3cb43f13e03464fd57b0338bfa6922b108db668"
+    },
+    "environment": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/preparation-environment-repair-004.json",
+      "sha256": "sha256:c5e8a9ac7c12d78bb9a45c26945b51d6ebc8a704c6b63bf257ddd018857e2be8"
+    },
+    "whole_phase_inventory": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-whole-phase-inventory-003.json",
+      "sha256": "sha256:d091a3a1542ed6351492ab614a4e51cbc3ee48060dcfa0fca6f8a4be04ae8325"
+    },
+    "packet": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-004.packet.json",
+      "sha256": "sha256:de73086c493372e50e7ce1cf2deb6ece16c101a07ee87d50fd413c6c45835593"
+    },
+    "approval_document": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-004-approvals.md",
+    "changed_source_files": 5,
+    "literal_environment_bindings_added": 5,
+    "new_unrun_regression_tests": 9,
+    "reviews": "BLOCKED_SOURCE_ONLY_IOS_KNOWN_FAILED_HTTP_SETTLEMENT",
+    "fixture18_charged": false,
+    "remaining_product_correction_ceiling_after_entry": 10,
+    "all_prior_consumption_and_limits_retained": true,
+    "current_adopted_contract": "A18 binding19 remains; source edits close execution authority",
+    "product_V": "CLOSED",
+    "signature": "CREATED",
+    "adoption": "SUCCEEDED_BINDING20",
+    "preparation": "NOT_RUN",
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-004/stop.json"
+  },
+  "ios_known_failed_settlement_repair": {
+    "status": "SOURCE_AUTHORED_UNVERIFIED",
+    "repair_number": 18,
+    "handoff": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/ios-known-failure-repair-handoff.md",
+      "sha256": "sha256:1eca8b57cd9e6ca263b09bc7e11978e8c2b10cf163c22941010140cda97e1aa2"
+    },
+    "whole_phase_inventory": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-whole-phase-inventory-004.json",
+      "sha256": "sha256:96946e5fb3bb0dfe4fecae6bbc325304c2df222829206a4856d659910d1b1f4b"
+    },
+    "packet": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-005.packet.json",
+      "sha256": "sha256:e8c9de9a0e4091e34b6df429bf15a2e605119ab12ddbdbf60b2657281e085bd2"
+    },
+    "approval_document": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-005-approvals.md",
+    "changed_source_files": 3,
+    "new_unrun_regression_tests": 7,
+    "source_reviews": "BLOCKED_SOURCE_ONLY_SERVER_MALFORMED_TERMINAL_RECEIPTS",
+    "fixture19_charged": false,
+    "remaining_product_correction_ceiling_after_entry": 9,
+    "all_prior_consumption_and_limits_retained": true,
+    "current_adopted_contract": "A19 binding20 remains; source edits close execution authority",
+    "product_V": "CLOSED",
+    "signature": "CREATED",
+    "adoption": "SUCCEEDED_BINDING21",
+    "preparation": "NOT_RUN",
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-005/stop.json"
+  },
+  "shared_terminal_validation_repair": {
+    "status": "SOURCE_AUTHORED_UNVERIFIED",
+    "repair_number": 19,
+    "handoff": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/shared-terminal-validation-handoff.md",
+      "sha256": "sha256:7f1ceaf2c445db4c03f86e2a4c3fb46372dd42738d456f6f42014055c7e2c94d"
+    },
+    "whole_phase_inventory": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-whole-phase-inventory-005.json",
+      "sha256": "sha256:8d6025e31f137b07c86bffc22917b69fe6721e6303e40bc5e9b3813b4ee0a1e3"
+    },
+    "packet": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-preparation-006.packet.json",
+      "sha256": "sha256:ae6fb1051bfb7a00c15747be98e6f475ab9644c6f4997f3bc05018628d2b4601"
+    },
+    "approval_document": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-006-approvals.md",
+    "changed_source_files": 7,
+    "new_unrun_regression_test_methods": 6,
+    "source_reviews": "BLOCK_SOURCE_ONLY_IOS_SETTLEMENT_DEADLINE",
+    "fixture20_charged": false,
+    "remaining_product_correction_ceiling_after_entry": 8,
+    "all_prior_consumption_and_limits_retained": true,
+    "current_adopted_contract": "A20 binding21 remains; source edits close execution authority",
+    "product_V": "CLOSED",
+    "signature": "CREATED",
+    "adoption": "SUCCEEDED_BINDING22",
+    "preparation": "NOT_RUN",
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/stop.continuation-001.json"
+  },
+  "same_packet_continuation_001": {
+    "operator_answer": "Approve one same-packet continuation",
+    "approval": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/continuation-001-approval.json",
+    "source_and_contract_unchanged": true,
+    "transport": "data-only host relay; critic receives current text only; host saves report verbatim",
+    "source_review": "BLOCK_SOURCE_ONLY_REQUIRED_MEDIUM_TIMING",
+    "runtime": "NOT_EXERCISED",
+    "fixture20_charged": false,
+    "all_prior_consumption_and_limits_retained": true,
+    "stop_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/stop.continuation-001.json",
+    "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/code-source-review.md",
+    "source_review_context_id": "/root/a21_artifact_relay/code_source_critic"
+  },
+  "review_reuse_proposed": {
+    "status": "PROPOSED_NOT_EXECUTED",
+    "code_critic_context": "/root/a21_artifact_relay/code_source_critic",
+    "retained_source": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-008.json",
+      "sha256": "sha256:d4fb83d677dda47fbc5fe1c2d5ffd0387f796a63bdb7ffef6b2faebb43838e0b"
+    },
+    "retained_review": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-006/code-source-review.md",
+      "sha256": "sha256:3edc6aa457c3c47c264c2f8c41634e49e84cfae482d50ff6478d6a60b21d2a23"
+    },
+    "current_source": {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-009.json",
+      "sha256": "sha256:37cd5be46a71b8ba970559a53755bcb0d04d87b005854b21e224c1fd6f948deb"
+    },
+    "replace_in_full": [
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/README.md",
+        "before": "sha256:ab39036b185d606ff1933f573043d940dbac53c6dc50acc47f3c08fe9554c78b",
+        "after": "sha256:5b3fdf62d152b9b7d4bf2bc68c7e9f9948a405258dbada5263062e0bd9222fb9",
+        "change": "modified"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+        "before": "sha256:2bb460a3beb5e86f7b5a31c5bab6481b2103a4193fd3d6ba766db492fcf4a8fe",
+        "after": "sha256:37d5a15c03011220871c21aef0cbb6882637fc993440830ac17eeec33dd195b5",
+        "change": "modified"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_ios_failure_policy.py",
+        "before": "sha256:4feee6145be97ee817ec09dc75c2cefe81cb2364f6bce960acea1199a00bc164",
+        "after": "sha256:5b7e794a6c61cf62aabef12a55f7b3649c853326b0340043efb62828f83ac0c1",
+        "change": "modified"
+      }
+    ],
+    "unchanged_artifact_text_only": true,
+    "new_current_source_verdict_required": true,
+    "no_acceptance_credit_transferred": true,
+    "no_producer_history": true,
+    "specialist_reviews": "Fresh isolated Rust then Swift after code clears",
+    "transport": "Lead-relayed current artifact text; reviewers run no commands; lead saves reports verbatim",
+    "context_unavailable": "STOP; no implicit fresh full relay",
+    "limitation": "Retained context is not fresh replication; native same-family isolation is weaker than cross-model review",
+    "current_config_metadata_and_requirements_in_full": true,
+    "bulk_list_projection": "Retain the declared source_files/Cargo.lock projection limitation from the source008 review: supply current counts/identities and every changed or relevant helper/package row, all other current config fields in full. No claim that all29045 inventory rows or unrelated Cargo.lock packages were reviewed."
+  },
+  "current_stop": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/four-platform-preparation-007/stop.json"
+}

@@ -38,17 +38,27 @@ pub(super) async fn list(store: &SurrealDbProvider, owner: &str, agent: &str, th
 pub(super) async fn transition(store: &SurrealDbProvider, before: &AguiRunBinding, after: &AguiRunBinding) -> anyhow::Result<bool> {
     anyhow::ensure!(store.durable_instances, "durable_agui_unsupported");
     before.validate_transition(after)?;
+    let before_data = serde_json::to_string(before)?;
     let response = store.db.query("UPDATE type::record('agui_runs',$key) SET data=$after WHERE data=$before RETURN VALUE data")
-        .bind(("key",before.storage_key())).bind(("before",serde_json::to_string(before)?)).bind(("after",serde_json::to_string(after)?)).await?;
-    // A concurrent writer that commits the same row first makes this implicit transaction fail at COMMIT with the
-    // typed `QueryError::TransactionConflict` (surrealdb-types 3.3.0 error.rs:924; surrealkv `TransactionWriteConflict`
-    // -> kvs `TransactionConflict`, surrealdb-kvs-surrealkv 3.3.0 lib.rs:37; executor.rs:1469/1944 keep the kind).
-    // That is a lost compare-and-swap, not a failure: report `false` so the caller reloads. Any other error stays fatal.
+        .bind(("key",before.storage_key())).bind(("before",before_data.clone())).bind(("after",serde_json::to_string(after)?)).await?;
     let mut response = match response.check() {
         Ok(response) => response,
         Err(error) if matches!(error.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)) => {
-            tracing::debug!(kind = "TransactionConflict", "AG-UI run transition lost a write race; reporting compare-and-swap miss");
-            return Ok(false);
+            // A transaction conflict can concern another row touched by a schema event.
+            // Only an observed mismatch of this UPDATE's exact predicate is a CAS miss.
+            // This later read does not identify the cause of the original conflict.
+            let current = async {
+                let mut response = store.db.query("SELECT VALUE data FROM type::record('agui_runs',$key)")
+                    .bind(("key",before.storage_key())).await?.check()?;
+                let rows: Vec<String> = response.take(0)?;
+                Ok::<_, anyhow::Error>(rows)
+            }.await;
+            if matches!(current, Ok(ref rows) if rows.is_empty() || (rows.len() == 1 && rows[0] != before_data)) {
+                tracing::debug!(kind = "TransactionConflict", "AG-UI run predicate no longer matches; reporting compare-and-swap miss");
+                return Ok(false);
+            }
+            // An unchanged target or an inconclusive read retains the original typed error.
+            return Err(error.into());
         }
         Err(error) => return Err(error.into()),
     };

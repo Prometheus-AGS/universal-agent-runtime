@@ -1,0 +1,13 @@
+# Billing evidence and outstanding authority
+
+Verification CLOSED; no provider request or charge authorized.
+
+The operator explicitly reports Liter model access as “Subscriptions; no incremental charge” and Cohere as “Production/pay-as-you-go”. Preserve these as separate scopes. The existing gateway retry setting is3; one owned forwarding admission counts a UAR-to-gateway request, not every internal provider attempt.
+
+Cohere states embeddings are billed on tokens embedded: https://docs.cohere.com/docs/how-does-cohere-pricing-work . Its referenced current pricing page, https://cohere.com/pricing , exposes current Model Vault instance pricing in the retrieved content, but no verified V3 per-token tariff for these exact production API bindings. A source lookup found third-party V3 prices; those are not adopted as primary billing authority.
+
+The proposed aggregate embedding allowance remains USD10, unapproved. A truthful worst-case reservation requires a current account/applicable tariff or explicit independently established conservative charge bound for the exact request limits. A provider usage receipt alone cannot establish dollar cost without that rate. Unknown reservations remain held; do not silently refund or claim actual billed spend. Absence of verified pricing is an unresolved execution input, not permission to call the service for discovery.
+
+Operator update: approves at most USD10 Cohere and USD10 OpenAI embeddings, combined USD20 with independent nontransferable caps. OPENAI_API_KEY is referenced from ~/.bash_profile; no secret value was read/copied. This supersedes the earlier unapproved USD10 proposal above, not the historical signed receipts or consumption. These caps are maximum exposure, not spending targets. Exact packet/signing/adoption remain pending; no provider call ran. Establish reservation assumptions in preparation without asking again for account room or a spending ceiling.
+
+Operator provides current direct-API Coherev3 English/Multilingual/light text rate USD0.10 per1M input tokens (USD0.00000010/token). Adopt this as operator-supplied rate evidence for the selected models, with no independent-pricing-verification claim. Supplied third-party references: https://www.eesel.ai/blog/cohere-embed-5-pricing , https://developer.puter.com/tutorials/cohere-api-pricing/ , https://www.costbench.com/software/embedding-apis/cohere-embed/ . Other supplied model/image/rerank rates are outside the selected fixture. OpenAI allocation remains unused in this packet. No further account-room or tariff question is needed; exact charge-ceiling assumptions are part of final approval.

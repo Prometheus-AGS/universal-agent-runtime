@@ -2069,3 +2069,117 @@ Gate015 mixed-crash seed incorrectly searched the initial provider request for t
 
 ## 2026-10-23 — Native success is not delivered-image acceptance
 Nativegate017 passed but published1.2.2 image001 failed94/95 at AG-UI handoff acknowledgment. Exact call IDs proved another source run had disagreeing confirmation observers; the old generic warning hid the inner operation. Keep fixed-stage diagnostics without replacing original errors, serialize cooperating source-run acknowledgments and test the actual digest. Published1.2.3 image002 then passed all finite groups. The precise original inner error and any upstream cause remain unproven.
+
+
+## 2026-10-24 — retain built candidate across later compilation
+
+Packet003 recorded successful BUILD then refused main_build_boot_identity_mismatch beforemainlaunch; declared/resolved paths agree bysourceinspection. Runner previously bound a mutableCargooutput before TEST. Exacthistoricalupdater/differinghashwasunretained and remainsunproven. Explicitrepair003 now snapshotsdeclaredBUILDbytes privately/exclusively beforeTEST and compares strictexpectedpath/SHAoneveryboot, recordingcomparedvaluesbeforefailure. Never fixidentitybyacceptingthecurrentpost-testhash or skippingguard. Sourceauthoringonly; repairnotyetcompiled/run, A4signature/adoption/executionpending.
+
+## 2026-10-24 — packet004 fixture and CAS discrimination
+
+Packet004 reached both retained main boots with matching identity, superseding the prior repair003 unexercised note for those two comparisons only. Restart health polling lacked the explicit bounded transport retry used at setup; HISTORY selected an agent skipped by earlier ERROR setup failure. KB collection POST needs the mounted slashless path. COUNT synthetic fixture used a generic model-hint constructor that strips its provider prefix while receipt counted the qualified wire model; exact-profile constructor preserves the declared alias. CAS production mapped every typed transaction conflict to a miss, including unchanged-target unrelated contention. Repair004 retains the error unless a later exact-key read observes predicate mismatch; this is not causal proof of the original conflict. Launch order alone cannot establish database winner order; require actual directions/readback and block missing coverage. These repairs are SOURCE ONLY; no current verification. Cumulative tool allowance is shared with descendants and preparation; earlier240-call limit overran at243 before stop bookkeeping. Operator subsequently authorized320cumulative retaining that incident and all consumption.
+
+## 2026-10-24 — packet005 source-backed diagnosis and masking
+
+A response hash can identify an exact known source literal without service access: concurrentuploadE54bytes SHA2ce39899c748af28c53d8d74ba6df55f4081eab4bd51cb688c1c88e4dd0aa9e1 matches The query was not executed due to a failed transaction in the pinned executor. This proves wrapper masking, not the underlying original commit cause. Preserve real checked failure before cancellation wrappers; only proven typed rolled-back conflicts may use bounded atomic attempts, never unknown commits/transport. Durable history owner is presentation_owner_key, distinct from credentialprincipal storage_key; never bypass ownerfence. CAS collaboratorPASS needs actual claims exported into every required control name. ERROR02model is verifiedmodelselector; registered agent uses agent_id. Early budget-binding category was computed then collapsed to generic orchestrator_start_failed; repair preserves closed-class publiccategory. All repair005changes SOURCE ONLY, no acceptance. Operator-idle accounting must bind exact terminalwait/directreply and zero descendant dispatches, preserve historicalupperbounds/allactualwork/floors and require explicit proposed signature; it is not a timecapincrease.
+
+
+## 2026-10-25 — legacy AG-UI sequence fallback cannot order official frames
+Source inspection of the shipped dual-stream adapter found a missing legacy sequence represented by Number.MAX_SAFE_INTEGER and then assigned to the official ordering watermark. That suppresses all subsequent finite official sequence values. Only actual wire sequences now advance the ordering watermark; legacy event-ID dedup remains. Selected-child notices additionally use stable child-thread identity across live and persisted content. Tests are authored but unexecuted under CLOSED; this is a source finding and fix, not a replay acceptance result.
+
+2026-10-25: Locked entity core3.0.3 can resolve local-first ready while retaining a corrupt-snapshot hydration error. Awaiting ready alone must not enable durable A2UI action admission. Bootstrap now checks declared status/error before sync/persistence; source-only regression authored. Source: official entity-graph-core3.0.3 package/dist/index.mjs, recorded in locked-API handoff. Installed4.2.0 links cannot certify locked3.0.3. No verification ran.
+
+2026-10-25: Selected LocalEmbedding could inherit hosted RAG backend through server vector_matcher/manager classifier resource. Dedicated strict BGE matcher, own lifecycle, scoped candidates and pinned local provenance now separate local strategy from Cohere KB embeddings. Source-only, real no-hosted-call/ranking/lifecycle proof pending. Classifier guest ABI differs from generic skill.wasm; new exact guest template needed. Source inventory must exclude specifically emitted SDK.acceptance-artifacts from source preimage while freezing those bytes as installed outputs.
+
+2026-10-25: SDK example activated runtime host/in-memory features while newly added HTTP collaboration/delegation adapters and pure execution flags leaked through server-only API modules; memory also directly referenced optional Surreal types. Retained P0.005 reported63compileerrors. Repair009 gates adapters/concrete memory plumbing and shares execution flags through domain with stable API reexports. No profile has compiled since repair. surreal-memory remains transitively database-dependent; host persistence is not a generic memory backend. Never claim a database-free graph or invent memory close acknowledgment when backend is unavailable.
+
+
+## 2026-10-25 — A15 inventory and iOS FP16 diagnostics
+Source inventories contain regular rows plus symlink/deletion rows with nullable digests; never treat all files rows as regular. The deferred fixture writer failed on this and remains failed after one correction. source_inventory.py requires its output parent to equal the active phase, so author canonical snapshots there and retain identical per-item evidence bytes. S5 used its one environment correction but was left blocked by the originally proposed nested inventory path; no compiler result or additional S5 retry claimed.
+
+S8 iOS build returned11fullfp16 assembly errors from gemm-common0.19.0 vector helpers. Same-version local patch adds function-local fp16 target features to four unsafe helpers; existing guarded NeonFp16 dispatch and baseline fallback remain unchanged. Root patch/lock metadata changed, no dependency upgrade/globalCPUflag. Independent source-only correction review passed; device behavior remains unverified, and the single S8 rerun is pending. Upstream context: https://github.com/zed-industries/zed/issues/57770 and https://github.com/huggingface/candle/issues/494 . Earlier S6/S7 PASS source010 does not certify patched source c6963d648f9961315d62c8a975da6501f64c2dd5f60f69b21aac3612a701c500 .
+
+
+2026-10-25 Four-platform preparation must install only the explicitly approved x86_64-apple-ios component under pinned nightly2026-07-18 on this Intel Mac; ARM iOS cross-build success cannot satisfy simulator linking. Linux DockerCLI exit is not container shutdown, image env persistence defaults must be scrubbed, and a hostalias DNS declaration does not prove macOS127 listener reachability. Separate platform fixtures cannot reuse an exclusive configured-service receipt or reset the shared budget owner/epoch.
+
+
+2026-10-25T19:48:15.057476+00:00 Scope-authority amendment-template generation does not validate the adopted-contract schema. A16 template/signature succeeded but adoption failed because status had been replaced by a string; required status.implementationComplete must remain boolean inside an object. Also preserve boundaryPacket.singleRun=true and numeric scenario suffixes/required fields. Diagnose from adoption-source schema; never claim template success established adoptability.
+
+
+2026-10-25T21:56:32.998626+00:00 UAR acceptance collection: exact runtime/store cleanup does not settle packet-owned provider forwarding. The proxy deliberately drains upstream after downstream cancellation. Require same-epoch read-only known settlement before another attempt/independent dispatch; retain failures, pending/UNKNOWN reservations and actual cumulative counters. Known terminal HTTP401 may settle with full reservation retained; exact known ceiling saturation is settlement, while subsequent dispatch remains governed by admission. Parent literal process environments must explicitly bind every child UAR_PREP_BASE reference; do not repair missing values by sourcing profiles/inheriting credentials. Paired repair17 is source-only/unverified; A19/P16.004 approval remains pending.
+
+
+## A22 iOS deadline repair authored — 2026-10-26T00:21:14.027350+00:00
+Operator approved Fix guard; prepare efficient packet. Worker handoff collected: runner/README/regression file frozen; five new methods unrun. Source009 sha256:85a26d5002f0fd26a5d150b1dcf2e75cd260e0baa5dd0fe7e741702b5318574f; 29045 regular/195 nonregular; source task2.29 complete, derived2.9/2.23 incomplete. Contract 31fb611d89ee969c717e28bd0195e557c9770f158fe5e1d898b092b7ded68326; approval four-platform-007-approvals.md. A21 remains adopted binding22. Repair20 consumed, fixture21 uncharged, seven later slots; all original consumption/limits and USD10 each caps retained. Account030 3851 calls / 1898.56183585 conservative active minutes; later activity accrues. Proposed retained isolated artifact-only critic context and explicit bulk-list projection require fresh approval and a new verdict. No signing/adoption/review/check/build/service/provider/publication. Source inventory and unsigned amendment-template generation are metadata authoring only. Gate CLOSED; no phase acceptance or reflection.
+
+
+## A22 stopped on lead metadata projection error — 2026-10-26T00:29:25.520456+00:00
+A22 signed/adopted binding23 exit0, retained under evidence/four-platform-preparation-007. During approved host artifact relay, draft source_files count29240 exposed lead authoring projection of all inventory files instead of29045 regular rows;195 are189symlink/6missing metadata. Whole-phase inventory006 regular_files also incorrectly reads29240. Source009 remains unchanged. Lead stopped/interrupted relay before new critic trigger; no new code verdict, Rust/Swift review or P16 command. No provider/product/build/test operation and no correction/retry. Repair20 remains consumed, fixture21 uncharged. Account031 3903 calls/1909.0068640666666 conservative active minutes; all original4000/2400/28 ceilings and USD10 each retained, later activity accrues. Exact stop evidence/four-platform-preparation-007/stop.json. Discuss narrow two-field/list metadata correction, preserved failed packet and renewed amendment versus backlog; no source edit is needed. Product gate CLOSED.
+
+
+## 2026-10-26 — Prove the user behavior before building verification machinery
+Operator correction: days of harness, fixture, inventory and authority work had produced little functional evidence. One portable Node.js Given/When/Then script actually prompted the default agent through the configured real Liter/MiniMax-M3 model and recorded Mac VERIFIED (HTTP200, correct70 for35+35,1060ms). Use that as the default method: pick the next frequently used behavior, write a small direct script, execute against the product, retain the observed result or failure, then continue. Finish Mac before Linux before applicable iOS. Reuse setup/scripts; introduce additional machinery only for a demonstrated need. Preserve real spending/authorization/owned-cleanup boundaries and exact-scope reporting. Do not use a fast first prompt to promise an unsupported whole-suite duration. This feedback did not request another test.
+
+## 2026-10-26 — Team failure labels do not establish a scheduler defect
+
+Both recorded math/writer runs returned generic skill_selection_unavailable. Current source masks selection snapshot errors that may be storage read/decoding failures or registered IDs missing from durable rows. A separate catalog CAS result extraction error does not establish whether an update committed. Preserve the actual typed cause and durable receipts before choosing a repair; never relabel queued/admitted task setup as proven concurrency or infer safe replay from an old running/reserved-unknown snapshot. Source-only assessment: canonical child assessment.md; no new reproduction or repair.
+
+## 2026-10-26 — Settlement replay acceptance must reach settlement
+
+An honest uncertain disposition and replaying a cached recovery-command response do not prove idempotent terminal persistence. The bounded team repair Spec requires two separately identified authorized terminal reconciliation requests for the same original outcome, then exact-command replay, with unchanged usage revision/artifacts/reservation and no new agent dispatch. A genuine confirmed-terminal unknown-usage fixture is required to cover usage=None; missing proof is BLOCKED, never an uncertainty-based pass. This was caught by independent whole-change artifact review before implementation; no runtime evidence is claimed.
+
+## Manual verification: authentication belongs outside tests — 2026-10-26
+Operator instruction: NO functional/manual verification test may require authentication. External infrastructure owns authentication. Test scripts must not require, mint, renew, copy or send JWTs, bearer tokens, API authentication keys, or login credentials. Run behavior scripts against the externally provisioned local identity endpoint; UAR_BASE_URL, model and nonsecret workspace selectors are sufficient. Stable owner context may be provided by the external host/proxy so persisted data remains accessible, but authentication plumbing must never become a test step, scenario, approval or blocker presented to the operator. Do not weaken production/remote identity boundaries or remove unrelated security regression coverage. Preserve actual product assertions. This supersedes earlier manual-fixture JWT instructions and token-expiry gates.
+
+The active UAR already has jwt_required=false; team APIs nevertheless require a verified owner. The existing external uar-jwt-proxy supplies that owner and now preserves tenant context. Tests do not carry credentials. The previous claim that global JWT authentication was enabled was inaccurate; owner-scoped API admission caused the requirement.
+
+## 2026-10-26 — Team model accounting uses catalog identity
+A selected gateway route such as liter/MiniMax-M3 is distinct from its admitted pricing identity minimax/MiniMax-M3. Assert the requested route separately and compare accounting against the captured pricingIdentity; do not weaken settlement/usage assertions or substitute a different model. Repeated model calls must shrink actual output reservations against remaining durable tokens rather than reserve the initial full envelope again. TEAM-01 passed after these corrections; evidence team-01-macos-pass.json.
+
+
+## A2UI-01 — 2026-10-26T22:03:54.157007+00:00
+The chat endpoint agui_spec stream multiplexes runtime.* side-channel metadata, including runtime.run after RUN_FINISHED. Preserve it separately and validate the trailing completed run identity; do not mistake it for a second AG-UI terminal or weaken surface-publication assertions. Separately, src/uar/api/agui.rs Projector currently omits StatePatch/ArtifactDisplay; the dedicated AG-UI agent route remains an A2UI projection gap (source evidence only), while chat/completions agui_spec publication has now passed. No production repair undertaken in this response-only scenario.
+
+
+## A2UI-BROWSER-01 — 2026-10-26T22:53:58.936068+00:00
+A2UI browser render requires urn:uar:a2ui:catalog:1. Backend parser accepted it but a2ui_render tool schema only advertised the basic URL, which the browser rejected. Native schema now allows both; fixture selects the UAR catalog. Existing basic example does not establish frontend support. The owned UAR may serve an older global static bundle; use an explicit UAR_STATIC_DIR pointing to the current frontend build without modifying global static. Use exact native JSON component arrays; retain model tool-format failures.
+
+
+## SKILL-DETECTION-01 — 2026-10-26T22:59:32.061584+00:00
+Skill CRUD collection endpoint is /api/uar/skills without a trailing slash on the mounted runtime. /api/uar/skills/ returned404 in first SKILL-DETECTION-01 attempt. Corrected fixture path; no product defect or production repair. Retain that failed setup receipt.
+
+
+## SEMANTIC-SKILL-01 — 2026-10-26T23:06:34.193261+00:00
+Do not assume keyword threshold0.5 transfers to local cosine similarity. SEMANTIC-SKILL-01 observed delivery0.7421 and irrelevant gardening0.5238, both accepted at0.5. An explicitly configured0.65 threshold passed the same scenario. This is one calibrated example, not general threshold validation; keep the failed receipt. Service embedding top-k precedes agent-policy filtering, so unrelated catalog entries can affect candidates. Service config engine and runtime admission engine are distinct settings; require actual run method evidence.
+
+
+## CONTEXT-BUDGET-01 — 2026-10-26T23:28:14.185251+00:00
+Normal chat admission extracts the last user message, so a single request containing several user appendices does not populate server-held history with all appendices. Use separate acknowledged turns for context-pressure BDD. CONTEXT-BUDGET-01 preserves the failed bundled attempt and passing separate-turn attempt. Provider configuration changes invalidate model-operation receipts; changing/restoring a temporary context_window requires refreshing that receipt while preserving all credential fields by omission.
+
+
+## CONVERSATION-SUMMARY-01 — 2026-10-26T23:33:52.413377+00:00
+Summarization run receipts resolve strategy.model:null to the actual route. Their input_sha256 hashes raw serialized request messages with role/content insertion order in this build, not sorted-key canonical JSON. Match that source-backed representation; do not discard the exact fact-source binding to make a test pass. CONVERSATION-SUMMARY-01 preserved the first fixture failure and passed after correcting those expectations.
+
+
+## CONVERSATION-RESTART-01 — 2026-10-26T23:52:44.642458+00:00
+CONVERSATION-RESTART-01 exposed two normal-chat gaps: cold lookup ignored durable session history and successful text-only completion did not save it. Warm continuity alone cannot detect this. The repaired scenario passes with genuine process replacement and no client replay. Source review separately flagged whole-session write ordering and non-atomic cold cache creation for concurrent same-session calls; not exercised/fixed by this sequential pass.
+
+
+## CONCURRENT-CONVERSATION-RESTART-01 — 2026-10-27T00:01:47.877656+00:00
+Concurrent BDD authoring initially used client SSE receipt overlap; source review caught that buffering can fake server concurrency. Corrected before execution to three ordered live run snapshots. CONCURRENT-CONVERSATION-RESTART-01 passed first live attempt. Both requests must settle before failure cleanup; use allSettled rather than early rejection. Preserve possible whole-session write-ordering risk separately from the one observed successful interleaving.
+
+
+## REST-SETTING-RESTART-01 — 2026-10-27T00:07:31.794289+00:00
+For user-settings REST restoration, omitted prompt_caching_enabled preserves current state whereas explicit null clears the override. Restoring the preference legitimately changes updated_at; compare the original semantic preference fields during cleanup, but require exact saved-record equality during post-restart persistence assertion.
+
+
+## KNOWLEDGE-RESTART-01 — 2026-10-27T00:18:28.588039+00:00
+For saved-KB restart tests, reuse retained KB/document IDs from historical evidence instead of recreating/uploading/rebinding. A fresh session and no seal in instructions/request avoid replay as an answer source; match runtime citation KB/document/snippet/marker to the answer. KNOWLEDGE-RESTART-01 passed with local FastEmbed index unchanged; this is not a regeneration test.
+
+## Embedding model regeneration — 2026-10-26T19:40:34.981660-05:00
+
+Per-KB descriptive fields alone do not change the active embedder. Change the global backend/model/dimension, require incompatible old-index409, then call regeneration against retained source and confirm the new indexed fingerprint and same-document retrieval. KNOWLEDGE-REGENERATION-01 passed FastEmbed384→OpenAI1536 on Mac. Keep provider credentials outside BDD imports and environment. A live-PID-only restart cannot recover a failed temporary startup; opt-in recovery now requires same-invocation validated ownership context, but that failure path remains unexercised.
+
+## Empty KB list is not implicit unlink intent — 2026-10-26T20:07:08.758403-05:00
+
+KB-UNLINK-01 first run revealed enabled+emptylist resolvedAuto and retrievedunlinked/unrelatedKBs. Explicit link/enabled PATCH now persists selected/none under uar.run_policy. Do not globally change legacyempty mapping: builtindefaults dependonit. The passingtest keepsKBenabled and verifies retainedKBdirectretrieval. Modelresponses may includeprogress/explanation around exactlyoneJSONblock; parseoutsidecompletedreasoning and avoid unrequested JSON-only framing assertions.

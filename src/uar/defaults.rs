@@ -29,10 +29,8 @@ pub fn default_agent() -> AgentArtifact {
                 // and `resolve_requested_model`'s empty-model fallback)
                 // instead of pinning a specific model here. A hardcoded model
                 // name goes stale the moment a provider's catalog changes
-                // (e.g. renamed/deprecated), and `seed_builtin_agents` re-seeds
-                // this value on every server restart, silently undoing any
-                // runtime override — so pin nothing rather than pin
-                // something wrong.
+                // (e.g. renamed/deprecated). Startup preserves persisted
+                // operator selections; fresh seeds inherit the registry.
                 default: ProviderSelection {
                     provider: String::new(),
                     model: String::new(),
@@ -87,7 +85,7 @@ pub fn orchestrator_agent() -> AgentArtifact {
     agent.id = "orchestrator-agent".to_string();
     agent.metadata.title = "Orchestrator".to_string();
     agent.metadata.description =
-        "Routes complex tasks to a general-purpose or Rust-review sub-agent and returns the delegated contribution."
+        "Classifies requests against the current registered agent roster and returns the selected agent's contribution."
             .to_string();
     agent.metadata.tags = vec![
         "orchestration".to_string(),
@@ -98,7 +96,7 @@ pub fn orchestrator_agent() -> AgentArtifact {
     agent.prompt.system = "You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution."
         .to_string();
     agent.prompt.instructions = vec![
-        "Use rust-reviewer for Rust implementation and safety review; use general-purpose for other work."
+        "Select the best eligible registered agent for the user's intent. Use the current roster rather than a fixed specialist list."
             .to_string(),
     ];
     // A wildcard makes tools eligible; it is not explicit spawn authorization.
@@ -159,29 +157,21 @@ pub(crate) fn compiler_agent() -> AgentArtifact {
 }
 
 pub(crate) fn orchestrator_graph() -> crate::uar::runtime::graph::AgentGraph {
-    use crate::uar::runtime::graph::{AgentGraph, AgentNode, GraphState, RouterNode};
+    use crate::uar::runtime::graph::{AgentGraph, AgentNode, RouterNode};
+    use crate::uar::runtime::thread::spawn::HistoryForkMode;
 
     AgentGraph::builder("router")
-        .add_node(RouterNode::new(
-            "router",
-            "Route Rust implementation, correctness, or safety questions to rust-reviewer. Route all other questions to general-purpose.",
-            vec!["general-purpose".to_string(), "rust-reviewer".to_string()],
-        ))
-        .add_node(AgentNode::new("general-purpose", "general-purpose"))
-        .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
-        .add_conditional_edge("router", |state: &GraphState| {
-            state
-                .get::<String>("_route")
-                .unwrap_or_else(|| "general-purpose".to_string())
-        })
+        .add_node(RouterNode::for_registered_agents("router"))
+        .add_node(AgentNode::selected_local("selected-agent")
+            .with_history_fork(HistoryForkMode::Full))
+        .add_edge("router", "selected-agent")
         .build()
 }
 
 /// Seeds built-in agents into the persistence layer at startup.
 ///
-/// The assistant and orchestrator are refreshed by idempotent upserts so system
-/// updates apply. Specialist defaults are inserted only when absent, preserving
-/// operator-registered artifacts under those names. Because agents are persisted, the realtime
+/// Defaults are inserted only when absent, preserving operator-edited prompts,
+/// policies and metadata on warm startup. Because agents are persisted, the realtime
 /// entity bus will re-emit them after any `Agent` ChangeSet, making them
 /// reliably visible in the admin list and chat selector without relying on the
 /// `ensure_builtin_agent` shim.
@@ -190,22 +180,9 @@ pub(crate) fn orchestrator_graph() -> crate::uar::runtime::graph::AgentGraph {
 pub async fn seed_builtin_agents(
     persistence: &dyn crate::uar::persistence::PersistenceLayer,
 ) -> anyhow::Result<()> {
-    for agent in
-        [default_agent(), orchestrator_agent()].map(|agent| agent.with_catalog_metadata("builtin"))
-    {
-        let id = agent.id.clone();
-        match crate::uar::domain::agent_store::upsert_agent(persistence, &agent).await {
-            Ok(()) => {
-                tracing::info!(agent_id = %id, "Built-in agent seeded/refreshed");
-            }
-            Err(e) => {
-                tracing::warn!(agent_id = %id, error = ?e, "Failed to seed built-in agent — continuing");
-            }
-        }
-    }
-    // These names previously existed only in graph routing. Preserve any
-    // operator-registered specialist that already owns one of the IDs.
     for agent in [
+        default_agent(),
+        orchestrator_agent(),
         general_purpose_agent(),
         rust_reviewer_agent(),
         compiler_agent(),
@@ -214,6 +191,7 @@ pub async fn seed_builtin_agents(
     {
         if persistence.load_agent(&agent.id).await?.is_none() {
             crate::uar::domain::agent_store::upsert_agent(persistence, &agent).await?;
+            tracing::info!(agent_id = %agent.id, "Built-in agent seeded");
         }
     }
     Ok(())
@@ -275,6 +253,7 @@ pub async fn ensure_default_knowledge_base(
             retrieval_min_score: None,
             retrieval_top_k: None,
             indexed_embedding: None,
+                regeneration: None,
         }
     } else {
         KbConfig::default()

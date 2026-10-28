@@ -1,0 +1,17 @@
+# PROPOSED only: no healthcheck, shared service, operator .env or restart policy.
+name: uar-post-lifecycle-v130-001
+services:
+  store:
+    image: surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20
+    container_name: uar-post-lifecycle-v130-001-store
+    ports:
+      - "127.0.0.1:49312:8000"
+    command:
+      - start
+      - --log=warn
+      - --user=root
+      - --pass=uar-post-lifecycle-v130-001-public-fixture-store
+      - --bind=0.0.0.0:8000
+      - rocksdb:/data/surreal.db
+    volumes:
+      - ../../../../target/uar-post-lifecycle-v130-001/store:/data

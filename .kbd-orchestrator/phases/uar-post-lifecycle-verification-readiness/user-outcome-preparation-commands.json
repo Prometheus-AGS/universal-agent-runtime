@@ -1,0 +1,409 @@
+{
+  "schema_version": 1,
+  "status": "P0_PROPOSAL_NOT_APPROVED_NOT_EXECUTED",
+  "executable": false,
+  "verification_gate": "CLOSED",
+  "phase": "uar-post-lifecycle-verification-readiness",
+  "policy": {
+    "serial": true,
+    "first_failure_stop": true,
+    "automatic_retry": false,
+    "source_fixes": false,
+    "lockfile_changes": false,
+    "service_start": false,
+    "image_pull": true,
+    "test_execution": false,
+    "model_request": false
+  },
+  "baseline_environment": "Explicit reviewed toolchain-only environment references in final config; no login/profile sourcing or implicit provider credential inheritance. Per-command environment_env below adds exact supplied references.",
+  "environment_reference_values": {
+    "UAR_PREP_BROWSER_ROOT": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/browsers",
+    "UAR_PREP_NATIVE_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/cargo/native",
+    "UAR_PREP_RUST_SDK_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/cargo/rust-sdk",
+    "UAR_PREP_GRPC_TARGET": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/cargo/grpc",
+    "UAR_PREP_CARGO": "/Users/gqadonis/.cargo/bin/cargo",
+    "UAR_PREP_PYTHON_SITE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/python-site"
+  },
+  "shared_build_owner_lock": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/build-owner.lock",
+  "artifact_output_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/artifacts",
+  "commands": [
+    {
+      "id": "P0.1",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "install",
+        "--frozen-lockfile",
+        "--ignore-scripts"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "mutate checkout node_modules from root lock; registry/cache network",
+        "no lockfile rewrite; no package lifecycle scripts"
+      ]
+    },
+    {
+      "id": "P0.2",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/npm",
+        "--prefix",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript",
+        "ci",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "replace SDK node_modules from independent package-lock; registry/cache network",
+        "no lockfile rewrite; no lifecycle/audit/fund operation"
+      ]
+    },
+    {
+      "id": "P0.3",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "rebuild",
+        "esbuild"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "explicit esbuild native lifecycle build/install; bundled native version check",
+        "no general dependency rebuild",
+        "Runs once as the explicitly named lifecycle exception; no conditional metadata probe or build-failure retry"
+      ]
+    },
+    {
+      "id": "P0.4",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "exec",
+        "playwright",
+        "install",
+        "chromium"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "UAR_PREP_BROWSER_ROOT"
+      },
+      "effects": [
+        "download Chromium and Playwright-required browser/ffmpeg artifacts into exact owned browser root",
+        "no browser launch; no OS dependency installation"
+      ]
+    },
+    {
+      "id": "P0.5-pull",
+      "argv": [
+        "/usr/local/bin/docker",
+        "pull",
+        "pgvector/pgvector:pg17@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "Fetch only this exact immutable datastore image into local cache; no container, publication or shared-service mutation"
+      ]
+    },
+    {
+      "id": "P0.5",
+      "argv": [
+        "/usr/local/bin/docker",
+        "image",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "pgvector/pgvector:pg17@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "local image metadata read; no pull/container/service"
+      ]
+    },
+    {
+      "id": "P0.python-dependencies",
+      "argv": [
+        "/Users/gqadonis/miniconda3/bin/python3",
+        "-m",
+        "pip",
+        "install",
+        "--disable-pip-version-check",
+        "--no-cache-dir",
+        "--no-compile",
+        "--no-warn-conflicts",
+        "--no-deps",
+        "--only-binary=:all:",
+        "--require-hashes",
+        "--target",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/python-site",
+        "--report",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/python-dependencies-install.json",
+        "-r",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/python-locked-requirements.txt"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "Install only17 exact SDK/runtime/backend packages with actual uv.lock wheel hashes into new owned python-site; no dependency solver or standalone pip check",
+        "Network PyPI/wheel fetches and installer wheel/hash/metadata admission are explicitly part of this installation exception"
+      ]
+    },
+    {
+      "id": "P0.python-sdk",
+      "argv": [
+        "/Users/gqadonis/miniconda3/bin/python3",
+        "-m",
+        "pip",
+        "install",
+        "--disable-pip-version-check",
+        "--no-cache-dir",
+        "--no-compile",
+        "--no-warn-conflicts",
+        "--no-index",
+        "--no-deps",
+        "--no-build-isolation",
+        "--target",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/python-site",
+        "--report",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/python-sdk-install.json",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/python-sdk-source"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "PYTHONPATH": "UAR_PREP_PYTHON_SITE"
+      },
+      "effects": [
+        "Build/install actual SDK from exact private copy of pyproject/README/src/examples/uv.lock; no repository egg-info or source mutation",
+        "Explicit hatchling metadata/wheel hooks and installer validation; no tests/import smoke/probes/audit"
+      ]
+    },
+    {
+      "id": "P0.6-pull",
+      "argv": [
+        "/usr/local/bin/docker",
+        "pull",
+        "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "Fetch only this exact immutable datastore image into local cache; no container, publication or shared-service mutation"
+      ]
+    },
+    {
+      "id": "P0.6",
+      "argv": [
+        "/usr/local/bin/docker",
+        "image",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "local image metadata read; no pull/container/service"
+      ]
+    },
+    {
+      "id": "P0.7",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_NATIVE_TARGET"
+      },
+      "effects": [
+        "native build and build scripts; Cargo dependency/cache network if required",
+        "Cargo JSON selects actual server bin; native target isolated from later Cargo commands"
+      ]
+    },
+    {
+      "id": "P0.8",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/pnpm",
+        "-C",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend",
+        "build"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "Vite product build; empties and rewrites repository/static",
+        "no test/lint/typecheck script wrapper"
+      ]
+    },
+    {
+      "id": "P0.9",
+      "argv": [
+        "/Users/gqadonis/.volta/bin/node",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/typescript/lib/tsc.js",
+        "--project",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/tsconfig.examples.json",
+        "--noEmit",
+        "false",
+        "--outDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/.acceptance-artifacts",
+        "--rootDir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript",
+      "environment_env": {},
+      "effects": [
+        "explicit compiler/emit exception; emits example and src JavaScript/declarations",
+        "Node entry .acceptance-artifacts/examples/user-outcome-acceptance.js; preserve SDK type:module package.json and node_modules"
+      ]
+    },
+    {
+      "id": "P0.10",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_RUST_SDK_TARGET"
+      },
+      "effects": [
+        "compile SDK example and build dependencies; do not run it",
+        "Cargo JSON selects example executable; independent SDK lock"
+      ]
+    },
+    {
+      "id": "P0.11",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "test",
+        "--locked",
+        "--features",
+        "server-full,postgres-backend",
+        "--test",
+        "user_outcome_grpc",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO_TARGET_DIR": "UAR_PREP_GRPC_TARGET"
+      },
+      "effects": [
+        "explicit no-run test-harness compiler exception and build scripts",
+        "Cargo JSON selects user_outcome_grpc executable; no test execution"
+      ]
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "generate-lockfile",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/classifier-guest/Cargo.toml"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {},
+      "effects": [
+        "Resolve exact-direct-pinned guest dependencies into only the new private generated Cargo.lock; no repository source or product lock mutation",
+        "Private Cargo.toml/src/WIT copied from frozen guest templates before this stage"
+      ]
+    },
+    {
+      "id": "P0.13-build-guest",
+      "argv": [
+        "/Users/gqadonis/.cargo/bin/cargo-component",
+        "component",
+        "build",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/classifier-guest/Cargo.toml",
+        "--locked",
+        "--release",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--target-dir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/classifier-guest/cargo-target"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "environment_env": {
+        "CARGO": "UAR_PREP_CARGO"
+      },
+      "environment_absent": [
+        "RUSTUP_TOOLCHAIN"
+      ],
+      "effects": [
+        "Compile/componentize current eligible-skill keyword classifier; emit private generated bindings and component",
+        "Explicit internal rustc --print sysroot and installed wasm32-wasip1 prerequisite inspection; missing target fails, no automatic rustup install",
+        "bindings.format=false prevents implicit rustfmt; no component instantiation or UAR strategy test"
+      ],
+      "expected_output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm"
+    }
+  ],
+  "postinstall_metadata_assembly": {
+    "effects": [
+      "author actual private artifact config from final source denominator and actual installed tool/resource bytes",
+      "compute approved selected tree hashes and exact tool hashes; record baseline OS exclusions",
+      "write no current balance/provider discovery assertion",
+      "After P0.1-P0.6 materialization, author actual config and invoke prepare_artifacts once for P0.7-P0.13; do not run those build stages independently or rerun them"
+    ],
+    "product_tests": false,
+    "execution_status": "Future explicitly approved deterministic metadata assembly; not performed now"
+  },
+  "artifact_program_future_invocation": {
+    "argv": [
+      "/Users/gqadonis/miniconda3/bin/python3",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_artifacts.py",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/artifact-preparation.config.json"
+    ],
+    "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+    "config_ready": false,
+    "config_sha256": null,
+    "runnable_claim": false,
+    "expected_fragment": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-001/artifacts/snapshot/preparation.json",
+    "execution": "Final config must contain approved build/guest-resolution stages so each listed build executes once, inside producer; no separate build then implicit rerun. Producer config must use isolated native/grpc/SDK targets."
+  },
+  "pending": [
+    "actual final source inventory and exact byte-bound approval",
+    "postinstall exact tool hashes, selected tree roots/hashes and installed entry mappings",
+    "actual successful source-bound artifact receipts and closure capture",
+    "P0 parent directory creation/ownership must be explicitly adopted as preparation metadata effect",
+    "final private config/toolchain-only environment and finite command/output/tree bounds",
+    "later derived fixture/resource/signature adoption and V approval remain separate"
+  ],
+  "preparation_bounds": {
+    "total_seconds": 14400,
+    "stage_seconds": 7200,
+    "output_bytes": 67108864,
+    "file_count": 1000000,
+    "file_bytes": 17179869184,
+    "tree_bytes": 137438953472
+  },
+  "preparation_metadata_effects": [
+    "Create exact new packet parent and private subdirectories mode0700 without adopting/replacing an existing packet",
+    "Preserve prior static output under this private parent before frontend command empties static; do not delete original evidence",
+    "Record filesystem toolchain/installed package/resource metadata and hash declared selected trees after installs; no executable availability/import/version probe outside named lifecycle",
+    "Hold one common build owner while artifact producer serializes P0.7-P0.11 and snapshots before verification profiles",
+    "Write exact raw logs/status/artifact manifests privately; stop at first failure, no automatic repair/retry",
+    "Copy only frozen intent-classifier-guest templates into exact new private generated guest root; generated bindings/guest locks are derived fixture inputs captured in snapshot, not repository source edits",
+    "Copy frozen Python SDK project inputs to exclusive python-sdk-source; use exact locked Python3.12 wheel-hash requirements; snapshot installed private python-site plus interpreter/stdlib/native roots and set runtime PYTHONPATH to the immutable copied site, not mutable preparation prefix"
+  ],
+  "local_embedding_assets": {
+    "source_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/matching/models",
+    "runtime_binding": "models.models_dir points to actual frozen copied model tree; hosted RAG stays independently configured",
+    "download": false
+  }
+}

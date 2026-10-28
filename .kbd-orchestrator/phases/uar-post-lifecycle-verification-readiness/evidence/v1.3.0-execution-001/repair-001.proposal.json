@@ -1,0 +1,26 @@
+{
+  "status": "PROPOSED_NOT_APPLIED_NOT_VERIFIED",
+  "patchSha256": "a781dc5c8fa6fd62d12378a1ead0947cdc2a6e8a6ce874a6a3509ccb744bec8a",
+  "files": [
+    {
+      "path": "tests/support/post_lifecycle_store.rs",
+      "beforeSha256": "529536a6a1be006f5cd728891178618d717cdf9d73eb07e68d51ececb1eafbb3",
+      "proposedSha256": "3d304c9f16898e4f018580bddde88d84065d0f23802fa8f346e843962d2ec119"
+    },
+    {
+      "path": "tests/post_lifecycle_main.rs",
+      "beforeSha256": "c7fd8193fd927d0027cadd8f2d07c01bc7d825f585e620d63938a3ba88685c23",
+      "proposedSha256": "119a3d75ea4b6d593e8e9afe78c38113efeaa098c9780cb0508afbfbd32286a5"
+    },
+    {
+      "path": "tools/seed-minimax-verification/main.rs",
+      "beforeSha256": "04ca8fd599bc8fe576888b09228e7c685f11961e94124c7755b1614961d6d94c",
+      "proposedSha256": "6957deca33ec83db7a0667c24edf31b09aa41664a82ff6e4f72441b5ed7efb86"
+    }
+  ],
+  "repairsExecuted": 0,
+  "proposedRepairNumber": 1,
+  "maxRepairs": 2,
+  "productionApiChanges": false,
+  "verificationRun": false
+}

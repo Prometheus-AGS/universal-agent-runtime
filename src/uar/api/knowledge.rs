@@ -18,7 +18,7 @@ use std::{convert::Infallible, sync::Arc};
 use crate::uar::{
     domain::knowledge::{
         DocumentStatus, EmbeddingSpaceMismatch, KbConfig, KnowledgeBase, KnowledgeDocument,
-        KnowledgeMatch, MAX_RETRIEVAL_TOP_K,
+        KnowledgeMatch, KnowledgeRegeneration, MAX_RETRIEVAL_TOP_K,
     },
     persistence::PersistenceLayer,
     rag::{
@@ -100,6 +100,8 @@ pub struct KbConfigResponse {
     pub chunk_strategy: String,
     pub retrieval_min_score: Option<f32>,
     pub retrieval_top_k: Option<usize>,
+    pub indexed_embedding: Option<crate::uar::domain::knowledge::EmbeddingFingerprint>,
+    pub regeneration: Option<KnowledgeRegeneration>,
 }
 
 #[derive(Debug, Serialize)]
@@ -184,6 +186,7 @@ pub fn build_router() -> Router<Arc<KnowledgeApiState>> {
             get(stream_ingestion_job),
         )
         .route("/{id}/documents/{doc_id}/retry", post(retry_ingestion))
+        .route("/{id}/regeneration", get(get_regeneration).post(begin_regeneration))
         // Search
         .route("/{id}/search", post(search_knowledge_base))
 }
@@ -261,7 +264,7 @@ async fn create_knowledge_base(
         .persistence
         .save_knowledge_base(&kb)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(ingestion_api_error)?;
 
     tracing::info!("Created knowledge base: {} ({})", kb.name, kb.id);
     Ok((StatusCode::CREATED, Json(kb_to_response(kb, 0))))
@@ -310,6 +313,9 @@ async fn update_knowledge_base(
             format!("Knowledge base '{id}' not found"),
         ))?;
 
+    if kb.regeneration_unavailable() {
+        return Err((StatusCode::CONFLICT, "Knowledge regeneration is incomplete".to_string()));
+    }
     // Apply updates
     if let Some(name) = req.name {
         // Check uniqueness
@@ -339,7 +345,7 @@ async fn update_knowledge_base(
         .persistence
         .save_knowledge_base(&kb)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(ingestion_api_error)?;
 
     let count = state
         .persistence
@@ -516,6 +522,12 @@ async fn get_document(
 }
 
 fn ingestion_api_error(error: anyhow::Error) -> (StatusCode, String) {
+    if let Some(cause) = error.downcast_ref::<crate::uar::rag::regeneration::RegenerationError>() {
+        return (match cause {
+            crate::uar::rag::regeneration::RegenerationError::Conflict => StatusCode::CONFLICT,
+            crate::uar::rag::regeneration::RegenerationError::SourceMissing => StatusCode::UNPROCESSABLE_ENTITY,
+        }, cause.to_string());
+    }
     let code = match error.downcast_ref::<IngestionStoreError>() {
         Some(IngestionStoreError::Unsupported) => StatusCode::SERVICE_UNAVAILABLE,
         Some(IngestionStoreError::MissingKnowledgeBase) => StatusCode::NOT_FOUND,
@@ -694,6 +706,9 @@ async fn retry_ingestion(
     let before = state.persistence.get_ingestion_job(&owner_key, &doc_id).await
         .map_err(ingestion_api_error)?.filter(|job| job.kb_id == kb_id)
         .ok_or((StatusCode::NOT_FOUND, "Durable ingestion job not found; reupload required".to_string()))?;
+    if before.regeneration.is_some() {
+        return Err((StatusCode::CONFLICT, "Retry the knowledge base regeneration action".to_string()));
+    }
     if !matches!(before.state, IngestionState::Failed | IngestionState::Retryable) {
         return Err((StatusCode::CONFLICT, "Only failed or retryable ingestion can be retried".to_string()));
     }
@@ -735,24 +750,56 @@ async fn delete_document(
         .persistence
         .delete_document(&owner_key, &doc_id)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(ingestion_api_error)?;
 
     tracing::info!("Deleted document: {doc_id} from KB {kb_id}");
     Ok(StatusCode::NO_CONTENT)
 }
 
 // =============================================================================
-// Search Handler
+// Regeneration and Search Handlers
 // =============================================================================
+
+async fn get_regeneration(
+    State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>, Path(id): Path<String>,
+) -> Result<Json<Option<KnowledgeRegeneration>>, (StatusCode, String)> {
+    let owner = user.session_owner_key().map_err(|_| (StatusCode::UNAUTHORIZED, "Owner authority unavailable".to_string()))?;
+    let kb = state.persistence.get_knowledge_base(&owner, &id).await.map_err(ingestion_api_error)?
+        .ok_or((StatusCode::NOT_FOUND, "Knowledge base not found".to_string()))?;
+    Ok(Json(kb.config.regeneration))
+}
+
+async fn begin_regeneration(
+    State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>, Path(id): Path<String>,
+) -> Result<(StatusCode, Json<KnowledgeRegeneration>), (StatusCode, String)> {
+    let owner = user.session_owner_key().map_err(|_| (StatusCode::UNAUTHORIZED, "Owner authority unavailable".to_string()))?;
+    let pool = state.ingestion_pool.as_ref().ok_or((StatusCode::SERVICE_UNAVAILABLE,
+        "Durable ingestion worker is unavailable".to_string()))?;
+    if !state.persistence.durable_store_eligibility().permits_durable_work()
+        || !state.persistence.supports_durable_ingestion() {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "Durable ingestion storage is unavailable".to_string()));
+    }
+    let target = state.vector_matcher.embedding_fingerprint();
+    let cohort = state.persistence.begin_knowledge_regeneration(&owner, &id, &target).await.map_err(|error| {
+        if let Some(cause) = error.downcast_ref::<crate::uar::rag::regeneration::RegenerationError>() {
+            (match cause { crate::uar::rag::regeneration::RegenerationError::Conflict => StatusCode::CONFLICT,
+                crate::uar::rag::regeneration::RegenerationError::SourceMissing => StatusCode::UNPROCESSABLE_ENTITY }, cause.to_string())
+        } else { ingestion_api_error(error) }
+    })?;
+    pool.notify_committed();
+    Ok((StatusCode::ACCEPTED, Json(cohort)))
+}
 
 /// Adapts `(PersistenceLayer, VectorMatcher)` to [`RetrievalBackend`] so
 /// [`RagRetrievalPipeline`] (CH-11 rag-hardening) can run one search per
 /// decomposed sub-query without depending on either concrete type.
 struct KbSearchBackend<'a> {
     persistence: &'a dyn PersistenceLayer,
-    vector_matcher: &'a VectorMatcher,
     owner_id: &'a str,
     kb_id: &'a str,
+    embedding: Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend>,
 }
 
 #[async_trait::async_trait]
@@ -767,13 +814,14 @@ impl RetrievalBackend for KbSearchBackend<'_> {
         // the skill-matching facade, which is disabled without `local-models`.
         // The pin is one coherent snapshot; a mid-request backend swap cannot
         // interleave into this sub-query.
-        let query_vec = self
-            .vector_matcher
-            .pin_embedding()
-            .embed_one(sub_query)
-            .await?;
+        let kb = self.persistence.get_knowledge_base(self.owner_id, self.kb_id).await?
+            .ok_or_else(|| anyhow::anyhow!("knowledge base is unavailable"))?;
+        anyhow::ensure!(!kb.regeneration_unavailable(), "knowledge regeneration is incomplete");
+        kb.ensure_embedding_space(&self.embedding.fingerprint())?;
+        let query_vec = self.embedding.embed_one(sub_query).await?;
         self.persistence
-            .search_knowledge_scoped(self.owner_id, &[self.kb_id], &query_vec, limit, min_score)
+            .search_knowledge_scoped_in_space(self.owner_id, &[self.kb_id], &query_vec, limit, min_score,
+                &self.embedding.fingerprint())
             .await
     }
 }
@@ -809,7 +857,12 @@ async fn search_knowledge_base(
 
     // Comparing vectors from different embedding spaces yields meaningless
     // scores that fall under `min_score`, i.e. a silent empty result.
-    kb.ensure_embedding_space(&state.vector_matcher.embedding_fingerprint())
+    if kb.regeneration_unavailable() {
+        return Err((StatusCode::CONFLICT, Json(json!({"error": {"code": "knowledge_regeneration_incomplete",
+            "kb_id": kb_id, "regeneration": kb.config.regeneration}}))).into_response());
+    }
+    let embedding = state.vector_matcher.pin_embedding();
+    kb.ensure_embedding_space(&embedding.fingerprint())
         .map_err(embedding_mismatch_response)?;
 
     tracing::debug!(
@@ -821,9 +874,9 @@ async fn search_knowledge_base(
 
     let backend = KbSearchBackend {
         persistence: state.persistence.as_ref(),
-        vector_matcher: state.vector_matcher.as_ref(),
         owner_id: owner_key.as_str(),
         kb_id: kb_id.as_str(),
+        embedding,
     };
     let matches = RagRetrievalPipeline::new()
         .retrieve(&backend, &kb_id, &req.query, req.limit, req.min_score)
@@ -880,6 +933,8 @@ fn kb_to_response(kb: KnowledgeBase, document_count: usize) -> KnowledgeBaseResp
             chunk_strategy: format!("{:?}", kb.config.chunk_strategy),
             retrieval_min_score: kb.config.retrieval_min_score,
             retrieval_top_k: kb.config.retrieval_top_k,
+            indexed_embedding: kb.config.indexed_embedding,
+            regeneration: kb.config.regeneration,
         },
         created_at: kb.created_at,
         updated_at: kb.updated_at,
@@ -943,6 +998,7 @@ fn build_kb_config(req: Option<KbConfigRequest>) -> KbConfig {
             retrieval_min_score: cfg.retrieval_min_score,
             retrieval_top_k: cfg.retrieval_top_k,
             indexed_embedding: None,
+            regeneration: None,
         },
         None => KbConfig::default(),
     }

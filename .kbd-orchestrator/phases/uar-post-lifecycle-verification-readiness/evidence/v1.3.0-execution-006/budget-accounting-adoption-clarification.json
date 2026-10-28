@@ -1,0 +1,9 @@
+{
+  "classification": "Clarification of inherited preparation fields in launch audit; no changed time/calls/epoch",
+  "effectiveAuthority": "Actual A6adoption8b255785 binding8",
+  "effectiveIdleExclusionsSeconds": {
+    "originalSigned": 5213.007,
+    "additionalA6ExactNine": 5686.477
+  },
+  "note": "budget-at-launch.json inherited some proposed-prefixed metadata from preparation. Its activeMinutesUpperBound already applies actual signed A6exclusions; proposed historical fields are not current authority. budget-at-stop.json provides clean current accounting. All prior upper-bound estimates and calls retained."
+}

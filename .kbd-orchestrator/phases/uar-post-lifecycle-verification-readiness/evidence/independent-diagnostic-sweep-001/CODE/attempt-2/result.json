@@ -1,0 +1,13 @@
+{
+  "item": "CODE",
+  "attempt": 2,
+  "status": "PASS_AFTER_ONE_CORRECTION_SOURCE_ONLY",
+  "repair_ordinal": 15,
+  "source_identity": "sha256:5c78708d57b1949d96002628a001ca6e52a299dc8530f3a9c75ea1d1681ad5eb",
+  "report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/independent-diagnostic-sweep-001/CODE/attempt-2/report.md",
+  "report_sha256": "f67d756d9eb2207bba5af2d13285bfc5a62be0efca3f6a494ffe64036274c240",
+  "selected_final_report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-diagnostic-sweep-001/reviews/whole-phase-code-review.md",
+  "correction_used": true,
+  "runtime_exercised": false,
+  "native_same_family_fallback": true
+}

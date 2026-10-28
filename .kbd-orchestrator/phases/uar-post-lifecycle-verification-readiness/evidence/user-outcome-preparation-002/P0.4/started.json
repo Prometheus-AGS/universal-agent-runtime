@@ -1,0 +1,24 @@
+{
+  "id": "P0.4",
+  "argv": [
+    "/Users/gqadonis/.volta/bin/pnpm",
+    "exec",
+    "playwright",
+    "install",
+    "chromium"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "pid": 32784,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "PLAYWRIGHT_BROWSERS_PATH",
+    "TMPDIR"
+  ],
+  "CI_inherited": false,
+  "started": "2026-10-25T10:26:35.591863+00:00",
+  "stage_seconds": 7200,
+  "remaining_packet_seconds": 14196.790712146001
+}

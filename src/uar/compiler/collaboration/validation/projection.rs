@@ -28,11 +28,11 @@ pub(super) fn conversion_diagnostics(
         .flatten()
         .filter_map(Value::as_str)
     {
-        if !(crate::uar::api::capabilities::workflow_execution_enabled()
+        if !(crate::uar::domain::execution_capabilities::workflow_execution_enabled()
             && capability == crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY)
             && !SUPPORTED_INSTALL_CAPABILITIES.contains(&capability)
-            && !(crate::uar::api::capabilities::team_execution_b_enabled()
-                && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES
+            && !(crate::uar::domain::execution_capabilities::team_execution_b_enabled()
+                && crate::uar::domain::execution_capabilities::TEAM_EXECUTION_B_CAPABILITIES
                     .contains(&capability))
         {
             diagnostics.push(ConversionDiagnostic {
@@ -52,7 +52,7 @@ pub(super) fn conversion_diagnostics(
             && serde_json::from_value::<crate::uar::runtime::team_execution::host::TeamHostSelection>(extension.clone())
                 .is_ok_and(|selection| selection.valid()) { continue; }
         if name == crate::uar::domain::workflow_execution::WORKFLOW_EXTENSION
-            && crate::uar::api::capabilities::workflow_execution_enabled()
+            && crate::uar::domain::execution_capabilities::workflow_execution_enabled()
             && serde_json::from_str::<Value>(include_str!("../../../../../docs/agents/collaboration/workflow-execution/1.0.0/extension.schema.json"))
                 .ok().and_then(|schema|jsonschema::validator_for(&schema).ok()).is_some_and(|validator|validator.is_valid(extension)) {
             continue;

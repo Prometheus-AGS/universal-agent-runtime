@@ -1,0 +1,498 @@
+{
+  "source_evidence": ".prometheus/verification/teams/72860111-231c-49ec-a973-e0a4e53f2a63.json",
+  "execution": {
+    "status": 200,
+    "body": {
+      "attempts": [
+        {
+          "id": "285108f8-4cfe-4ff6-8b3b-3a8d9fba052a",
+          "runId": "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc",
+          "rootId": "fed11fb5-5002-4122-9d61-a220ad81d170",
+          "approvalScopeId": "fed11fb5-5002-4122-9d61-a220ad81d170",
+          "queueSequence": 51,
+          "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "workspaceId": "uar-user-outcomes-007-supporting-workspace",
+          "teamId": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+          "taskId": "calculation",
+          "memberId": "d893d451-78d9-411f-b800-2b396b4f9a5f",
+          "memberRevision": 1,
+          "ownershipEpoch": 1,
+          "bindingRevision": 1,
+          "executionEpoch": 1,
+          "executionFence": {
+            "catalogId": "uar-collaboration-catalog",
+            "serviceInstanceId": "uar-macos-behaviors",
+            "incarnationId": "a8ea9953-01e2-4211-9c6b-62e8fcd5fbdc",
+            "epoch": 9
+          },
+          "effectiveModels": [
+            {
+              "route": {
+                "providerId": "liter",
+                "modelId": "MiniMax-M3"
+              },
+              "wireModelAlias": "MiniMax-M3",
+              "pricingIdentity": {
+                "providerId": "minimax",
+                "modelId": "MiniMax-M3",
+                "catalogRevision": "sha256:e130ac672622113f8282cf5b062e123eed276aa915a14f16ce657dd98ac85da2"
+              },
+              "endpointKind": "openai-compatible-chat",
+              "profile": {
+                "id": "uar.openai-compatible-chat.settings-v1",
+                "revision": 1
+              },
+              "settingsRevision": 1,
+              "requestedReasoning": {
+                "mode": "off"
+              },
+              "effectiveReasoning": {
+                "mode": "off"
+              },
+              "support": "validated",
+              "supportEvidenceRef": "team-profile-4810af29b9097c6a2ad615c6ce20db8aec5c6417ca63b7411f7eaf092064ea53",
+              "limits": {
+                "source": "unknown"
+              },
+              "fit": {
+                "mode": "settings-only",
+                "guaranteedFit": false,
+                "reason": "count-or-framing-unqualified"
+              }
+            }
+          ],
+          "effectDisposition": "confirmed",
+          "accountingState": "reserved-unknown",
+          "status": "running",
+          "executionOutcome": null,
+          "reservation": {
+            "tokens": 32768,
+            "costMicrounits": 1000000,
+            "elapsedSeconds": 120
+          },
+          "contextArtifactIds": [],
+          "usage": null,
+          "usageRevision": 0,
+          "output": null,
+          "stateReason": null,
+          "createdAt": "2026-10-26T08:49:34.237329Z",
+          "updatedAt": "2026-10-26T08:49:34.540783Z"
+        },
+        {
+          "id": "cd1fab2f-da6c-4d1b-9285-5739982c3592",
+          "runId": "92c146d4-f719-4892-9e58-6e0a1edc09ed",
+          "rootId": "f769b33f-fb29-4ed3-a137-9cad190ef36c",
+          "approvalScopeId": "f769b33f-fb29-4ed3-a137-9cad190ef36c",
+          "queueSequence": 53,
+          "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "workspaceId": "uar-user-outcomes-007-supporting-workspace",
+          "teamId": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+          "taskId": "outline",
+          "memberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+          "memberRevision": 1,
+          "ownershipEpoch": 1,
+          "bindingRevision": 1,
+          "executionEpoch": 1,
+          "executionFence": {
+            "catalogId": "uar-collaboration-catalog",
+            "serviceInstanceId": "uar-macos-behaviors",
+            "incarnationId": "a8ea9953-01e2-4211-9c6b-62e8fcd5fbdc",
+            "epoch": 9
+          },
+          "effectiveModels": [
+            {
+              "route": {
+                "providerId": "liter",
+                "modelId": "MiniMax-M3"
+              },
+              "wireModelAlias": "MiniMax-M3",
+              "pricingIdentity": {
+                "providerId": "minimax",
+                "modelId": "MiniMax-M3",
+                "catalogRevision": "sha256:e130ac672622113f8282cf5b062e123eed276aa915a14f16ce657dd98ac85da2"
+              },
+              "endpointKind": "openai-compatible-chat",
+              "profile": {
+                "id": "uar.openai-compatible-chat.settings-v1",
+                "revision": 1
+              },
+              "settingsRevision": 1,
+              "requestedReasoning": {
+                "mode": "off"
+              },
+              "effectiveReasoning": {
+                "mode": "off"
+              },
+              "support": "validated",
+              "supportEvidenceRef": "team-profile-4810af29b9097c6a2ad615c6ce20db8aec5c6417ca63b7411f7eaf092064ea53",
+              "limits": {
+                "source": "unknown"
+              },
+              "fit": {
+                "mode": "settings-only",
+                "guaranteedFit": false,
+                "reason": "count-or-framing-unqualified"
+              }
+            }
+          ],
+          "effectDisposition": "confirmed",
+          "accountingState": "settled",
+          "status": "failed",
+          "executionOutcome": "failed",
+          "reservation": {
+            "tokens": 32768,
+            "costMicrounits": 1000000,
+            "elapsedSeconds": 120
+          },
+          "contextArtifactIds": [],
+          "usage": {
+            "tokens": 0,
+            "costMicrounits": 0,
+            "elapsedSeconds": 1
+          },
+          "usageRevision": 1,
+          "output": null,
+          "stateReason": "skill_selection_unavailable",
+          "createdAt": "2026-10-26T08:49:34.694615Z",
+          "updatedAt": "2026-10-26T08:49:35.757531Z"
+        }
+      ],
+      "committed": {
+        "tokens": 0,
+        "costMicrounits": 0,
+        "elapsedSeconds": 1
+      },
+      "reserved": {
+        "tokens": 32768,
+        "costMicrounits": 1000000,
+        "elapsedSeconds": 120
+      },
+      "uncertainAttempts": [],
+      "commandReceipts": [],
+      "waits": [],
+      "continuations": [],
+      "contextReceipts": [
+        {
+          "authority": {
+            "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+            "workspaceId": "uar-user-outcomes-007-supporting-workspace",
+            "teamId": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+            "taskId": "calculation",
+            "memberId": "d893d451-78d9-411f-b800-2b396b4f9a5f",
+            "attemptId": "285108f8-4cfe-4ff6-8b3b-3a8d9fba052a",
+            "runId": "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc",
+            "taskOwnershipEpoch": 1,
+            "memberRevision": 1,
+            "binding": {
+              "id": "urn:uar:math-writing:72860111-231c-49ec-a973-e0a4e53f2a63:binding",
+              "revision": 1
+            },
+            "executionFence": {
+              "catalogId": "uar-collaboration-catalog",
+              "serviceInstanceId": "uar-macos-behaviors",
+              "incarnationId": "a8ea9953-01e2-4211-9c6b-62e8fcd5fbdc",
+              "epoch": 9
+            }
+          },
+          "rootId": "fed11fb5-5002-4122-9d61-a220ad81d170",
+          "approvalScopeId": "fed11fb5-5002-4122-9d61-a220ad81d170",
+          "teamInstructions": {
+            "revision": 1,
+            "digest": "sha256:eb841d04a4bfc9c0fea20b14192056392615374efc26f170c45eea7253f7b8b0",
+            "text": "Complete the assigned taskInput.request directly. Use your saved specialist instructions. Do not call tools or delegate: the host already created the project task graph. The writer receives selected artifacts as task data; for the final article integrate both completed math and outline outputs, never guess a missing result. Do not reveal planning or reasoning."
+          },
+          "instructionOrder": [
+            "host-policy",
+            "team-instructions",
+            "member-instructions",
+            "task-instructions"
+          ],
+          "self": {
+            "memberId": "d893d451-78d9-411f-b800-2b396b4f9a5f",
+            "role": "math",
+            "label": "math",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send"
+            ]
+          },
+          "coordinatorMemberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+          "roster": [
+            {
+              "memberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+              "role": "writer",
+              "label": "writer",
+              "safeCapabilities": [
+                "team_roster",
+                "team_send",
+                "team_delegate",
+                "team_wait"
+              ]
+            },
+            {
+              "memberId": "d893d451-78d9-411f-b800-2b396b4f9a5f",
+              "role": "math",
+              "label": "math",
+              "safeCapabilities": [
+                "team_roster",
+                "team_send"
+              ]
+            }
+          ],
+          "authorizationRevision": 53,
+          "selections": [
+            {
+              "sourceId": "calculation",
+              "sourceKind": "task-input",
+              "disposition": "selected",
+              "originalBytes": 202,
+              "selectedBytes": 202,
+              "truncated": false
+            },
+            {
+              "sourceId": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+              "sourceKind": "team-input",
+              "disposition": "selected",
+              "originalBytes": 94,
+              "selectedBytes": 94,
+              "truncated": false
+            }
+          ],
+          "targetOutcomes": [],
+          "targetOutcomeDataTrust": "untrusted-attributed-data",
+          "contextBudgetTokens": 32768,
+          "countQuality": "unknown"
+        },
+        {
+          "authority": {
+            "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+            "workspaceId": "uar-user-outcomes-007-supporting-workspace",
+            "teamId": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+            "taskId": "outline",
+            "memberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+            "attemptId": "cd1fab2f-da6c-4d1b-9285-5739982c3592",
+            "runId": "92c146d4-f719-4892-9e58-6e0a1edc09ed",
+            "taskOwnershipEpoch": 1,
+            "memberRevision": 1,
+            "binding": {
+              "id": "urn:uar:math-writing:72860111-231c-49ec-a973-e0a4e53f2a63:binding",
+              "revision": 1
+            },
+            "executionFence": {
+              "catalogId": "uar-collaboration-catalog",
+              "serviceInstanceId": "uar-macos-behaviors",
+              "incarnationId": "a8ea9953-01e2-4211-9c6b-62e8fcd5fbdc",
+              "epoch": 9
+            }
+          },
+          "rootId": "f769b33f-fb29-4ed3-a137-9cad190ef36c",
+          "approvalScopeId": "f769b33f-fb29-4ed3-a137-9cad190ef36c",
+          "teamInstructions": {
+            "revision": 1,
+            "digest": "sha256:eb841d04a4bfc9c0fea20b14192056392615374efc26f170c45eea7253f7b8b0",
+            "text": "Complete the assigned taskInput.request directly. Use your saved specialist instructions. Do not call tools or delegate: the host already created the project task graph. The writer receives selected artifacts as task data; for the final article integrate both completed math and outline outputs, never guess a missing result. Do not reveal planning or reasoning."
+          },
+          "instructionOrder": [
+            "host-policy",
+            "team-instructions",
+            "member-instructions",
+            "task-instructions"
+          ],
+          "self": {
+            "memberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+            "role": "writer",
+            "label": "writer",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send",
+              "team_delegate",
+              "team_wait"
+            ]
+          },
+          "coordinatorMemberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+          "roster": [
+            {
+              "memberId": "7fce108e-c8da-4b19-b691-80417c8f9b36",
+              "role": "writer",
+              "label": "writer",
+              "safeCapabilities": [
+                "team_roster",
+                "team_send",
+                "team_delegate",
+                "team_wait"
+              ]
+            },
+            {
+              "memberId": "d893d451-78d9-411f-b800-2b396b4f9a5f",
+              "role": "math",
+              "label": "math",
+              "safeCapabilities": [
+                "team_roster",
+                "team_send"
+              ]
+            }
+          ],
+          "authorizationRevision": 55,
+          "selections": [
+            {
+              "sourceId": "outline",
+              "sourceKind": "task-input",
+              "disposition": "selected",
+              "originalBytes": 350,
+              "selectedBytes": 350,
+              "truncated": false
+            },
+            {
+              "sourceId": "6e73a96b-1c1b-4e60-8d24-e7fa0ca98c32",
+              "sourceKind": "team-input",
+              "disposition": "selected",
+              "originalBytes": 94,
+              "selectedBytes": 94,
+              "truncated": false
+            }
+          ],
+          "targetOutcomes": [],
+          "targetOutcomeDataTrust": "untrusted-attributed-data",
+          "contextBudgetTokens": 32768,
+          "countQuality": "unknown"
+        }
+      ],
+      "budget": {
+        "currency": "USD",
+        "maxCostMicrounits": 3000000,
+        "maxElapsedSeconds": 360,
+        "maxTokens": 98304
+      },
+      "limits": {
+        "concurrentTurns": 2,
+        "maxDepth": 1,
+        "maxMembers": 2,
+        "maxPendingTasks": 8
+      }
+    }
+  },
+  "runs": {
+    "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc": {
+      "status": 200,
+      "body": {
+        "version": 1,
+        "runId": "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc",
+        "after": 0,
+        "cursor": 3,
+        "retention": "process-local-bounded",
+        "firstAvailableEventId": 1,
+        "gapReason": null,
+        "events": [
+          {
+            "eventId": 1,
+            "eventName": "agui.state.patch",
+            "data": {
+              "kind": "state",
+              "phase": "patch",
+              "request_id": "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc",
+              "patch": [
+                {
+                  "op": "add",
+                  "path": "/presentation",
+                  "value": {
+                    "version": 1,
+                    "requested_mode": null,
+                    "effective_mode": "legacy",
+                    "admission_fallback_reason": null,
+                    "fallback_reason": null,
+                    "run_outcome": "failed",
+                    "eligible_templates": [],
+                    "published_templates": [],
+                    "surface_published": false,
+                    "generation_failed": false,
+                    "receipt_status": "available",
+                    "client_display": "unconfirmed"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "eventId": 2,
+            "eventName": "agui.error",
+            "data": {
+              "kind": "error",
+              "request_id": "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc",
+              "message": "Run admission failed before protected content publication",
+              "code": "skill_selection_unavailable"
+            }
+          },
+          {
+            "eventId": 3,
+            "eventName": "agui.done",
+            "data": {
+              "kind": "done",
+              "request_id": "414193e0-50e2-4ec0-a7e2-ac1bd436b6cc"
+            }
+          }
+        ]
+      }
+    },
+    "92c146d4-f719-4892-9e58-6e0a1edc09ed": {
+      "status": 200,
+      "body": {
+        "version": 1,
+        "runId": "92c146d4-f719-4892-9e58-6e0a1edc09ed",
+        "after": 0,
+        "cursor": 3,
+        "retention": "process-local-bounded",
+        "firstAvailableEventId": 1,
+        "gapReason": null,
+        "events": [
+          {
+            "eventId": 1,
+            "eventName": "agui.state.patch",
+            "data": {
+              "kind": "state",
+              "phase": "patch",
+              "request_id": "92c146d4-f719-4892-9e58-6e0a1edc09ed",
+              "patch": [
+                {
+                  "op": "add",
+                  "path": "/presentation",
+                  "value": {
+                    "version": 1,
+                    "requested_mode": null,
+                    "effective_mode": "legacy",
+                    "admission_fallback_reason": null,
+                    "fallback_reason": null,
+                    "run_outcome": "failed",
+                    "eligible_templates": [],
+                    "published_templates": [],
+                    "surface_published": false,
+                    "generation_failed": false,
+                    "receipt_status": "available",
+                    "client_display": "unconfirmed"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "eventId": 2,
+            "eventName": "agui.error",
+            "data": {
+              "kind": "error",
+              "request_id": "92c146d4-f719-4892-9e58-6e0a1edc09ed",
+              "message": "Run admission failed before protected content publication",
+              "code": "skill_selection_unavailable"
+            }
+          },
+          {
+            "eventId": 3,
+            "eventName": "agui.done",
+            "data": {
+              "kind": "done",
+              "request_id": "92c146d4-f719-4892-9e58-6e0a1edc09ed"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -49,6 +49,7 @@ type Clock = () => number;
 function customPhase(name: unknown): RunPhase | null {
   if (typeof name !== "string") return null;
   if (name === "uar.context.updated") return "context";
+  if (name === "uar.agent.selected") return "context";
   if (name === "uar.skill.activated") return "skill";
   if (name.startsWith("uar.memory.")) return "memory";
   if (name === "uar.citation.added" || name === "uar.rag_citations") return "retrieval";

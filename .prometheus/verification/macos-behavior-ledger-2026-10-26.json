@@ -1,0 +1,562 @@
+{
+  "date": "2026-10-26",
+  "method": "Read existing source/manifests and saved receipts only; no API, service or verification execution",
+  "platform": "macos",
+  "artifact_sha256": "25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c",
+  "built_source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "accepted_behavior_count": 8,
+  "accepted_journey_count": 5,
+  "counting_note": "Eight agreed behavior labels across five user journeys; extra assertions below map coverage without inflating this count. Agent journey uses retained initial creation/restart pass plus targeted query continuation, not a wholly passing initial report.",
+  "behaviors": [
+    {
+      "id": "B01",
+      "behavior": "Prompt configured default agent",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U01",
+        "U05"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-38-40.440Z-prompt-macos.json"
+      ]
+    },
+    {
+      "id": "B02",
+      "behavior": "Receive a useful incremental streamed answer",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U05"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-56-36.601Z-streaming-macos.json"
+      ]
+    },
+    {
+      "id": "B03",
+      "behavior": "Create, persist and query a custom mathematics agent",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U03"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.verified.json"
+      ]
+    },
+    {
+      "id": "B04",
+      "behavior": "Persist a writing specialist and route a writing request to it by intent",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U03",
+        "U06"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/writing-specialist.verified.json"
+      ]
+    },
+    {
+      "id": "B05",
+      "behavior": "Create a knowledge base",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U14"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "id": "B06",
+      "behavior": "Add and genuinely index a document in a knowledge base",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U14"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "id": "B07",
+      "behavior": "Persist a knowledge-base reference on an existing agent",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U03",
+        "U14"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "id": "B08",
+      "behavior": "Answer using retrieved KB content with matching source provenance",
+      "status": "VERIFIED_FOR_RECORDED_MAC_ARTIFACT",
+      "legacy_families": [
+        "U14"
+      ],
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    }
+  ],
+  "legacy_manifest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/scenarios.json",
+  "legacy_case_count": 97,
+  "observed_subset_case_count": 11,
+  "legacy_cases": [
+    {
+      "legacy_case_id": "U01.configured-prompt",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Useful genuine configured-model prompt",
+      "remaining": "Legacy repeated/backend configuration/correlation contract not fully re-executed",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-38-40.440Z-prompt-macos.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U02.session-continuation",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U03.custom-agent",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Create/read/list, restart/reload, distinctive saved instructions; later PATCH/read KB binding",
+      "remaining": "Custom deletion and complete revision/update lifecycle not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.verified.json",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/writing-specialist.verified.json",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U04.protected-agents",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U20.effective-configuration",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Supporting setup persisted/activated FastEmbed settings; live provenance and real ingestion agree",
+      "remaining": "Second chat-model precedence, failed-write controls and config reload after restart not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U21.startup-maintenance",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Actual UAR restart followed by retained agent reload/use",
+      "remaining": "Empty-store seed uniqueness, named maintenance, migrations/idempotence and preservation of all operator settings not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.verified.json",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/writing-specialist.verified.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U06.live-roster-intent",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Two registered specialists; intent selects writer rather than math; selected writer executes",
+      "remaining": "Roster update/removal, ambiguous/unmatched intent and changed-roster rerouting not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/writing-specialist.verified.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U07.official-agui-selection-replay",
+      "status": "OBSERVED_SUBSET",
+      "observed": "AG-UI selected-agent event precedes answer; correlated thread/run and successful terminal",
+      "remaining": "Browser rendering, reconnect/replay and follow-up continuity not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/writing-specialist.verified.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U05.chat.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.openai.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.openai.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.agui.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.agui.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.dual.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.dual.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.agui_spec.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.chat.agui_spec.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.json.default",
+      "status": "OBSERVED_SUBSET",
+      "observed": "OpenAI-compatible nonstream default-agent response",
+      "remaining": "Two-turn context recall and complete original repetition/backend predicates not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-38-40.440Z-prompt-macos.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U05.openai.json.custom",
+      "status": "OBSERVED_SUBSET",
+      "observed": "OpenAI-compatible nonstream saved custom-agent response",
+      "remaining": "Two-turn context recall, custom deletion and complete original parity predicates not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.verified.json",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U05.openai.openai.default",
+      "status": "OBSERVED_SUBSET",
+      "observed": "OpenAI streaming content chunks, useful assembly, stop and DONE",
+      "remaining": "Two-turn context recall and complete original repetition/backend predicates not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-56-36.601Z-streaming-macos.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U05.openai.openai.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.agui.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.agui.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.dual.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.dual.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.agui_spec.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.openai.agui_spec.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.native.agui.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.native.agui.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.native.agui_spec.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.native.agui_spec.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.anthropic.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.anthropic.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.anthropic.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.anthropic.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.a2a_legacy.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.a2a_legacy.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.a2a_v1.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.a2a_v1.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.a2a_v1.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.a2a_v1.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.acp.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.acp.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.acp.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.acp.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.anthropic.json.implicit",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.anthropic.stream.implicit",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.python_sdk.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.python_sdk.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.python_sdk.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.python_sdk.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.typescript_sdk.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.typescript_sdk.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.typescript_sdk.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.typescript_sdk.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.rust_sdk.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.rust_sdk.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.rust_sdk.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.rust_sdk.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_legacy.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_legacy.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_legacy.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_legacy.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_v1.json.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_v1.json.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_v1.stream.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U05.grpc_v1.stream.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U08.installed-standard-a2ui-action",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U24.shipped-ui.default",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U24.shipped-ui.custom",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U24.shipped-ui.orchestrator",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U09.skill-discovery-scope",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U10.skill-matching-strategies",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U11.skill-activation-governance",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U11.bounded-skill-reattachment",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U12.context-strategy-effects",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U13.whole-request-budget",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U14.knowledge-lifecycle",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Create/upload/index, persisted binding, real retrieval, grounded answer with exact KB/document/seal citation",
+      "remaining": "Document update/deletion, retained-vs-deleted facts, KB deletion and lifecycle recovery not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U15.embedding-regeneration",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U16.knowledge-adapter-contract",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U17.team-dependencies",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U18.team-multicall-context",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U19.team-cancel-recovery",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U22.native-tool-approval",
+      "status": "OBSERVED_SUBSET",
+      "observed": "Normal spawn_agent interrupt, explicit approval, AG-UI resume, selected writer result and successful terminal",
+      "remaining": "Approval denial/nonexecution, cancellation, unknown effects and broader native tool lifecycle not exercised",
+      "evidence": [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/writing-specialist.verified.json"
+      ]
+    },
+    {
+      "legacy_case_id": "U22.mcp-tool-approval",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U23.owner-isolation",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U23.failure-honesty",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U23.unknown-tool-effect",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.memory-lifecycle",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.memory-consent",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.formats-vision",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.routing-capabilities",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.lexical-semantic-disagreement",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.context-threshold-restart",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U22.skill-activation-count-limit",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    },
+    {
+      "legacy_case_id": "U25.protected-multimodal-context",
+      "status": "NO_CREDIT_FROM_THESE_FIVE_BEHAVIORS"
+    }
+  ],
+  "limitations": [
+    "No full 97-case completion count inferred from these journeys",
+    "Only disk-backed Surreal runtime exercised; Postgres parity not certified",
+    "No Linux/iOS/Windows/Android credit",
+    "Historical passes are retained evidence, not permanent immunity from relevant regression testing after changes",
+    "No A2UI rendered interaction, multi-turn context, team concurrency, skill strategies or embedding regeneration credit"
+  ]
+}

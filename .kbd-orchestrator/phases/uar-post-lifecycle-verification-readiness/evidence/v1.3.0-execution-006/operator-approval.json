@@ -1,0 +1,8 @@
+{
+  "recordedAt": "2026-10-24T18:58:31.497115+00:00",
+  "operatorStatement": "Approve A6 and F6/V6; sign, adopt, run serially",
+  "exactApprovalPacket": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-repair-005-approvals.md",
+  "contractDigest": "8b2557856e30e257dd91e82c6fcb6fa659c663c0e603a8754e36140c7231552d",
+  "sourceInventoryDigest": "9ef107844e009bf977cedd6ebf411cfa3751e815247cf836b8f0288529786b11",
+  "scope": "Exact A6/F6/V6 packet006; cap5/cumulative480calls; nine exact additional zero-dispatch waits5686.477sec; original epoch240active-minute/allpriorconsumption/floors/14obligations retained; no sixthrepair/automaticverificationretry/publication/extra preflight"
+}

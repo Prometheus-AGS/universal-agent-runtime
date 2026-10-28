@@ -1,0 +1,24 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[\n  {\n    \"name\": \"UAR-1.3.0-A15-independent-sweep-2026-10-25\",\n    \"entityType\": \"verification_diagnostic_run\",\n    \"observations\": [\n      \"A15 independent sweep disposition: 18 items, 15 passed including corrective source reviews, Android failed after one correction, minimal profile blocked before compilation, Docker blocked by 1800-second cold-build timeout with cancellation acknowledged. This is not full product validation.\",\n      \"Fixture preparation separately failed after its single authorized correction; 97 user scenarios / 582 backend repetitions, main runtime acceptance, and fixture-dependent Issue426 integration remain blocked and unexercised.\",\n      \"Source corrections: same-version gemm-common0.19 local FP16 helper annotations (iOS rerun passed); exact uar.request/budget_receipt tolerance in auxiliary skill classification and context summarization; bounded absolute POSIX main-thread HTTP read deadline in acceptance core. Last two corrections have source-only review, not runtime proof.\",\n      \"Final source identity sha256:5c78708d57b1949d96002628a001ca6e52a299dc8530f3a9c75ea1d1681ad5eb. Earlier build/spec passes bind older snapshots; no current-source full acceptance, archive, or phase reflection. Source-review judges were fresh-context same-family native fallback.\",\n      \"Operator policy: passing item needs no action; failed item gets at most one targeted correction and same-item rerun, then unresolved failure is logged and independent items continue. Repair floor15/cap28 and all prior epoch/4000calls/2400minutes/independent USD10 embedding caps retained; no product provider requests or embedding charges in A15.\",\n      \"Canonical phase uar-post-lifecycle-verification-readiness task2.9 remains incomplete. Source inventories include nonregular null digests; consume only regular rows for source-build denominators. Inventory producer requires canonical output directly under active phase.\"\n    ]\n  }\n]"
+    }
+  ],
+  "structuredContent": {
+    "entities": [
+      {
+        "name": "UAR-1.3.0-A15-independent-sweep-2026-10-25",
+        "entityType": "verification_diagnostic_run",
+        "observations": [
+          "A15 independent sweep disposition: 18 items, 15 passed including corrective source reviews, Android failed after one correction, minimal profile blocked before compilation, Docker blocked by 1800-second cold-build timeout with cancellation acknowledged. This is not full product validation.",
+          "Fixture preparation separately failed after its single authorized correction; 97 user scenarios / 582 backend repetitions, main runtime acceptance, and fixture-dependent Issue426 integration remain blocked and unexercised.",
+          "Source corrections: same-version gemm-common0.19 local FP16 helper annotations (iOS rerun passed); exact uar.request/budget_receipt tolerance in auxiliary skill classification and context summarization; bounded absolute POSIX main-thread HTTP read deadline in acceptance core. Last two corrections have source-only review, not runtime proof.",
+          "Final source identity sha256:5c78708d57b1949d96002628a001ca6e52a299dc8530f3a9c75ea1d1681ad5eb. Earlier build/spec passes bind older snapshots; no current-source full acceptance, archive, or phase reflection. Source-review judges were fresh-context same-family native fallback.",
+          "Operator policy: passing item needs no action; failed item gets at most one targeted correction and same-item rerun, then unresolved failure is logged and independent items continue. Repair floor15/cap28 and all prior epoch/4000calls/2400minutes/independent USD10 embedding caps retained; no product provider requests or embedding charges in A15.",
+          "Canonical phase uar-post-lifecycle-verification-readiness task2.9 remains incomplete. Source inventories include nonregular null digests; consume only regular rows for source-build denominators. Inventory producer requires canonical output directly under active phase."
+        ]
+      }
+    ]
+  }
+}

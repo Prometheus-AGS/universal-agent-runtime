@@ -523,6 +523,23 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 ))
             }
         }
+        NormalizedEvent::AgentSelected {
+            run_id, source_agent_id, selected_agent_id, selected_agent_name,
+            selected_thread_id, selection_method, roster_revision,
+        } => Some((
+            "agui.agent.selected",
+            serde_json::json!({
+                "kind": "custom", "request_id": run_id,
+                "name": "uar.agent.selected",
+                "value": {
+                    "sourceAgentId": source_agent_id,
+                    "agent": { "id": selected_agent_id, "title": selected_agent_name },
+                    "selectedThreadId": selected_thread_id,
+                    "selectionMethod": selection_method,
+                    "rosterRevision": roster_revision,
+                }
+            }),
+        )),
         NormalizedEvent::SkillActivated {
             run_id,
             skill_id,

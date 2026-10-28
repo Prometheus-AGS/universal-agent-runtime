@@ -1,0 +1,162 @@
+{
+  "scenario": "AGUI-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "AG-UI 1.0 saved-agent SSE",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/ag-ui/agents/math-specialist-db64c2a8",
+      "request": {
+        "threadId": "71e2a7b3-2e61-4dbf-ad9f-0fee8786c972",
+        "runId": "8f4552c1-ec95-492a-871d-1a182d97c889",
+        "protocolVersion": "1.0",
+        "tools": [],
+        "context": [],
+        "messages": [
+          {
+            "id": "15d9ea7c-b230-4a1c-bfe7-30840466bfd4",
+            "role": "user",
+            "content": "What is (71 multiplied by 25) plus 398? Follow your saved specialist/answer JSON instructions."
+          }
+        ],
+        "forwardedProps": {
+          "uar": {
+            "model": "liter/MiniMax-M3"
+          }
+        }
+      },
+      "response": "id: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:0:0\ndata: {\"type\":\"RUN_STARTED\",\"threadId\":\"71e2a7b3-2e61-4dbf-ad9f-0fee8786c972\",\"runId\":\"8f4552c1-ec95-492a-871d-1a182d97c889\",\"protocolVersion\":\"1.0\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:11:1\ndata: {\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"role\":\"assistant\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:11:2\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"<think>Th\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:12:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"e question i\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:13:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"s ordinary arithmetic: (\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:14:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"71 × 25) + 398\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:15:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\" = 1775 + 398 =\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:16:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\" 2173.\\n\\nReturn only JSON\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:17:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\" with specialist and answer.\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:18:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"</think>\\n\\n```\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:19:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"json\\n{\\n  \\\"specialist\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:20:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"\\\": \\\"MATH-ce9324\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:21:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"ee-0\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:22:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"d63-471\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:23:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"4-982f\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:24:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"-f099\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:25:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"e8c8f378\\\",\\n  \\\"\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:26:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\",\"delta\":\"answer\\\": 2173\\n}\\n```\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:28:90\ndata: {\"type\":\"TEXT_MESSAGE_END\",\"messageId\":\"8f4552c1-ec95-492a-871d-1a182d97c889:assistant\"}\n\nid: 2ef153bda6ac737d8a540d87b48e89defb7a0c01731de472d97548c2375a87ea:28:100\ndata: {\"type\":\"RUN_FINISHED\",\"threadId\":\"71e2a7b3-2e61-4dbf-ad9f-0fee8786c972\",\"runId\":\"8f4552c1-ec95-492a-871d-1a182d97c889\",\"outcome\":{\"type\":\"success\"}}\n\n",
+      "status": 200,
+      "content_type": "text/event-stream"
+    }
+  ],
+  "events": [
+    {
+      "type": "RUN_STARTED",
+      "threadId": "71e2a7b3-2e61-4dbf-ad9f-0fee8786c972",
+      "runId": "8f4552c1-ec95-492a-871d-1a182d97c889",
+      "protocolVersion": "1.0"
+    },
+    {
+      "type": "TEXT_MESSAGE_START",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "role": "assistant"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "<think>Th"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "e question i"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "s ordinary arithmetic: ("
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "71 × 25) + 398"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": " = 1775 + 398 ="
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": " 2173.\n\nReturn only JSON"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": " with specialist and answer."
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "</think>\n\n```"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "json\n{\n  \"specialist"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "\": \"MATH-ce9324"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "ee-0"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "d63-471"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "4-982f"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "-f099"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "e8c8f378\",\n  \""
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant",
+      "delta": "answer\": 2173\n}\n```"
+    },
+    {
+      "type": "TEXT_MESSAGE_END",
+      "messageId": "8f4552c1-ec95-492a-871d-1a182d97c889:assistant"
+    },
+    {
+      "type": "RUN_FINISHED",
+      "threadId": "71e2a7b3-2e61-4dbf-ad9f-0fee8786c972",
+      "runId": "8f4552c1-ec95-492a-871d-1a182d97c889",
+      "outcome": {
+        "type": "success"
+      }
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 2173
+  },
+  "thread_id": "71e2a7b3-2e61-4dbf-ad9f-0fee8786c972",
+  "run_id": "8f4552c1-ec95-492a-871d-1a182d97c889",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 2173
+  },
+  "content_fragments": 16,
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 6984
+}

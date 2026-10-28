@@ -1,0 +1,182 @@
+{
+  "timestamp": "2026-10-25T13:58:46.975615+00:00",
+  "status": "PREPARATION_PASS_PRODUCT_GATE_CLOSED",
+  "adoption": "contract-adoption-uar-post-lifecycle-verification-readiness-e0fcc5da",
+  "binding_revision": 14,
+  "contract_digest": "e0fcc5da5fd74178f2783bcf1e47c1c0f21a41591c9e0349f910a8b901bbe00c",
+  "source_identity": "sha256:28137dc46cbb05aa9169f93b46232ea6aafc8d3f04e7c841274e4bbf4d109018",
+  "attempt_stages": [
+    {
+      "id": "P0.7",
+      "stage": "native",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--bin",
+        "universal-agent-runtime",
+        "--features",
+        "server-full,postgres-backend",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 178.1413290500641,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-006/native/native-build.json"
+    },
+    {
+      "id": "P0.10",
+      "stage": "rust_sdk",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "build",
+        "--locked",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+        "--example",
+        "user_outcome_acceptance",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 306.43862199783325,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-006/rust_sdk/rust_sdk-build.json"
+    },
+    {
+      "id": "P0.11",
+      "stage": "grpc",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "test",
+        "--locked",
+        "--features",
+        "server-full,postgres-backend",
+        "--test",
+        "user_outcome_grpc",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "elapsed_seconds": 888.2072701454163,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-006/grpc/grpc-build.json"
+    },
+    {
+      "id": "P0.12-resolve-guest",
+      "stage": "guest_lock",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo",
+        "generate-lockfile",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/Cargo.toml"
+      ],
+      "elapsed_seconds": 0.2811558246612549,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-006/guest_lock/guest_lock-build.json"
+    },
+    {
+      "id": "P0.13-build-guest",
+      "stage": "guest_component",
+      "exit_code": 0,
+      "status": "PASS",
+      "command": [
+        "/Users/gqadonis/.cargo/bin/cargo-component",
+        "component",
+        "build",
+        "--manifest-path",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/Cargo.toml",
+        "--locked",
+        "--release",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--target-dir",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target"
+      ],
+      "elapsed_seconds": 8.69060492515564,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-006/guest_component/guest_component-build.json"
+    }
+  ],
+  "original_preparation_steps_passed": 17,
+  "original_preparation_steps_total": 17,
+  "carried_materialization_passes": 10,
+  "carried_frontend_pass": true,
+  "carried_typescript_pass": true,
+  "artifact_manifest": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/preparation.json",
+    "sha256": "sha256:80d491ad67d09e2a98492bb413bd153438cc17d9f10879d48506fb23e8bb31a9"
+  },
+  "installed_artifact": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "sha256": "sha256:25151ae66312e41c99060971645b2414b28817669a164f064cd59d3b0576828c"
+  },
+  "build_receipt": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native-build-receipt.json",
+    "sha256": "sha256:d6c4c0ba459eff56c8e994feeb294c6e5487417e04b19f30bd357cca6a789e32"
+  },
+  "closure_groups": [
+    "browser",
+    "classifier_wasm",
+    "grpc",
+    "local_embedding_assets",
+    "native",
+    "node",
+    "playwright",
+    "python",
+    "python_sdk",
+    "rust_sdk",
+    "typescript_sdk",
+    "video_encoder"
+  ],
+  "installed": {
+    "browser_executable": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/browsers/payload/chromium_headless_shell-1234/chrome-headless-shell-mac-x64/chrome-headless-shell",
+    "classifier_wasm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/classifier_wasm/payload/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm",
+    "docker": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/docker",
+    "grpc_test_binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/grpc/payload",
+    "node": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/node",
+    "playwright_entry": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/playwright_test/payload/@playwright/test/index.mjs",
+    "psql": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/host_tools/payload/bin/psql",
+    "python": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_runtime/payload/bin/python3.12",
+    "python_sdk_entry": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/python_sdk/payload/examples/user_outcome_acceptance.py",
+    "rust_sdk_binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/rust_sdk/payload/examples/user_outcome_acceptance",
+    "server_binary": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/native/payload/universal-agent-runtime",
+    "typescript_sdk_entry": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/typescript_sdk/payload/.acceptance-artifacts/examples/user-outcome-acceptance.js",
+    "video_encoder": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-006/artifacts/snapshot/browsers/payload/ffmpeg-1011/ffmpeg-mac"
+  },
+  "immutable_artifact_preparation_complete": true,
+  "final_private_fixture_complete": false,
+  "full_phase_implementation_boundary_reached": false,
+  "product_gate": "CLOSED",
+  "product_scenarios_passed": 0,
+  "product_scenarios_total": 97,
+  "planned_product_rows": 582,
+  "product_tests": 0,
+  "provider_calls": 0,
+  "services_started": 0,
+  "embedding_spend_usd": {
+    "cohere": 0,
+    "openai_embeddings": 0
+  },
+  "repairs_consumed": 9,
+  "remaining_repairs": 0,
+  "retry_count": 0,
+  "source_changes_during_attempt": 0,
+  "prior_evidence_preserved": [
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-001/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-003/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-004/stop.json",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-005/stop.json"
+  ],
+  "consumption": {
+    "prior_accounting": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-010.json",
+    "P0_006_wall_seconds_through_producer_finish": 1827.246477,
+    "P0_006_producer_seconds": 1809.5739805919875,
+    "P0_006_start_carried_max_seconds": 11775,
+    "remaining_carried_P0_seconds": 9947.753523,
+    "all_prior_consumption_retained": true,
+    "later_activity_accrues": true
+  },
+  "next_authority": "Finish actual private fixture/resource seed authority and derived-input inventory; present exact final operator commands/approval. Product V still closed; no further repair/retry/publication.",
+  "cleanup": "Producer exited and released owned process/owner lock. Immutable snapshot/evidence retained; no services or containers started."
+}

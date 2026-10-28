@@ -1,0 +1,11 @@
+--- a/target/prompt-macos-hbitxj2c/config.json
++++ b/target/prompt-macos-hbitxj2c/config.json
+@@ -91,7 +91,7 @@
+             "model_id": "MiniMax-M3"
+           },
+           "context_window": 1048576,
+-          "max_output_tokens": 512,
++          "max_output_tokens": 64000,
+           "supports_tools": true,
+           "supports_streaming": true,
+           "enabled": true

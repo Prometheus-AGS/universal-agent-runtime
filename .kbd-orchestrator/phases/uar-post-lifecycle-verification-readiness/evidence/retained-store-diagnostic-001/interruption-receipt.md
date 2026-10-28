@@ -1,0 +1,5 @@
+# Retained-store diagnostic: failed, no usable query evidence
+
+The operator approved the exact read-only packet006 diagnostic. The store start exited 0. The query returned an asynchronous shell session (35352). The lead incorrectly performed owned stop/down before awaiting that query; both cleanup commands exited 0. The subsequent session read reported exit 1 with urllib.error.URLError, connection refused (Errno 61). The service was therefore removed while the query was still active. This is a fixture orchestration error, not evidence about the earlier runtime or knowledge-base cause.
+
+No diagnostic retry, test, build, provider invocation, database mutation or product repair followed. No usable SELECT result or acceptance credit is claimed. The owned container/network were removed by the recorded cleanup; retained disk/evidence were preserved. This receipt records the already observed outputs; it runs no service status probe. Missing KB job records cannot establish the deleted failure cause. Earlier approval and consumption receipts remain unchanged.

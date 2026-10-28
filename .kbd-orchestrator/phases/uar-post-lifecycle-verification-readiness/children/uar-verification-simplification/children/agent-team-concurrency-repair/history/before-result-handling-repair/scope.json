@@ -1,0 +1,28 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/uar-verification-simplification/children/agent-team-concurrency-repair/**",
+    "openspec/changes/repair-agent-team-concurrent-operation/**",
+    ".prometheus/session-log.md",
+    ".prometheus/decisions.md",
+    "src/server.rs",
+    "src/uar/runtime/skills/service.rs",
+    "src/uar/runtime/skills/registry.rs",
+    "src/uar/runtime/skills/service/selection.rs",
+    "src/uar/runtime/manager.rs",
+    "src/uar/compiler/collaboration/storage.rs",
+    "src/uar/compiler/collaboration/service.rs",
+    "src/uar/compiler/collaboration/team_execution/settlement.rs",
+    "src/uar/runtime/team_execution/execution.rs",
+    "src/uar/runtime/team_execution/controller.rs",
+    "scripts/behaviors/team.cucumber.mjs",
+    "scripts/behaviors/features/math-writing-team.feature",
+    "scripts/behaviors/steps/math-writing-team.steps.mjs",
+    "src/uar/runtime/cost_budget.rs",
+    "src/llm/liter_driver.rs",
+    "src/llm/mod.rs",
+    "src/llm/team_profile.rs"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "User-authorized token-reservation follow-up task1.5; response cap64000; source-only, gate CLOSED, no retry."
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "concurrent-conversation-turns-survive-restart;recall-facts-from-both-overlapping-turns-after-restarting-uar",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Recall facts from both overlapping turns after restarting UAR",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 480720759
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and a fresh conversation for overlapping turns",
+            "match": {
+              "location": "scripts/behaviors/steps/concurrent-conversation-restart.steps.mjs:78"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4348205658
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send two fact-bearing turns concurrently in that conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/concurrent-conversation-restart.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12918587487
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "UAR restarts after both concurrent turns finish",
+            "match": {
+              "location": "scripts/behaviors/steps/concurrent-conversation-restart.steps.mjs:177"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3183446339
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "I ask for both sets of facts without replaying either turn",
+            "match": {
+              "location": "scripts/behaviors/steps/concurrent-conversation-restart.steps.mjs:184"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5317329
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the answer retains the facts from both concurrent turns",
+            "match": {
+              "location": "scripts/behaviors/steps/concurrent-conversation-restart.steps.mjs:192"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 65332039
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb25jdXJyZW50LWNvbnZlcnNhdGlvbi1yZXN0YXJ0Lzg1YmY2OGFiLWQyOTItNDFjNy04MGIzLWI5NjQ3NjQxZjExMC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@conversation",
+            "line": 1
+          },
+          {
+            "name": "@concurrency",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "concurrent-conversation-turns-survive-restart",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Concurrent conversation turns survive restart",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@conversation",
+        "line": 1
+      },
+      {
+        "name": "@concurrency",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/concurrent-conversation-restart.feature"
+  }
+]

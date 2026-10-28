@@ -1,0 +1,199 @@
+--- a/src/uar/api/mod.rs
++++ b/src/uar/api/mod.rs
+@@ -28,7 +28,9 @@
+ pub mod auth;
+ #[cfg(feature = "server")]
+ pub mod capabilities;
++#[cfg(feature = "server")]
+ pub mod delegation_grants;
++#[cfg(feature = "server")]
+ pub mod collaboration;
+ #[cfg(feature = "server")]
+ pub mod compiler;
+--- a/src/uar/api/capabilities.rs
++++ b/src/uar/api/capabilities.rs
+@@ -25,13 +25,12 @@
+ 
+ /// AG-UI profile revision of the runs stream.
+ pub const AGUI_PROFILE_REVISION: u32 = 1;
+-// C10 customer feedback requires the existing classify/draft interpreter in the normal profile.
+-// Availability still requires team execution ownership; publication requires separate approval.
+-pub const WORKFLOW_EXECUTION_QUALIFIED: bool = true;
+-pub fn workflow_execution_enabled() -> bool {
+-    WORKFLOW_EXECUTION_QUALIFIED
+-        || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
+-}
++pub use crate::uar::domain::execution_capabilities::{
++    TEAM_EXECUTION_B_CAPABILITIES, TEAM_EXECUTION_B_QUALIFICATION_RECEIPT,
++    TEAM_EXECUTION_B_QUALIFIED, TEAM_EXECUTION_PROFILE, WORKFLOW_EXECUTION_QUALIFIED,
++    team_execution_b_enabled, team_execution_profile_stage, workflow_execution_enabled,
++};
++
+ #[derive(Debug, Serialize)]
+ #[serde(rename_all = "camelCase")]
+ pub struct WorkflowExecutionCapability {
+@@ -41,27 +40,6 @@
+     pub available: bool,
+     pub qualified: bool,
+ }
+-pub const TEAM_EXECUTION_PROFILE: &str = "urn:prometheus:uar:team-execution:0.1.0";
+-pub const TEAM_EXECUTION_B_CAPABILITIES: [&str; 3] = [
+-    "team_execution_peer_tools_v1",
+-    "team_execution_shared_instructions_v1",
+-    "team_execution_continuations_v1",
+-];
+-/// Operated-source Gate B receipt in agent-fabric-convergence, committed at ad2ad1617.
+-pub const TEAM_EXECUTION_B_QUALIFIED: bool = true;
+-pub const TEAM_EXECUTION_B_QUALIFICATION_RECEIPT: Option<&str> =
+-    Some("sha256:5a96786980812effbd79661290e51dee2ec1cde524854566d588eab934d1a058");
+-pub fn team_execution_profile_stage() -> &'static str {
+-    match std::env::var("UAR_TEAM_EXECUTION_PROFILE_STAGE").as_deref() {
+-        Ok("operation") => "operation",
+-        _ if TEAM_EXECUTION_B_QUALIFIED => "qualified",
+-        _ => "unqualified",
+-    }
+-}
+-pub fn team_execution_b_enabled() -> bool {
+-    team_execution_profile_stage() != "unqualified"
+-}
+-
+ /// Closed capability vocabulary (design Decision 12 of
+ /// `sidecar-launch-security`). A name may be advertised only once the owning
+ /// change lands its behaviour.
+--- a/src/uar/domain/mod.rs
++++ b/src/uar/domain/mod.rs
+@@ -3,6 +3,7 @@
+ pub mod artifact;
+ pub mod context;
+ pub mod events;
++pub mod execution_capabilities;
+ pub mod graph;
+ pub mod knowledge;
+ pub mod matching;
+--- /dev/null
++++ b/src/uar/domain/execution_capabilities.rs
+@@ -0,0 +1,32 @@
++//! Transport-free workflow and team execution capability policy.
++//! Shared by runtime/compiler admission and server capability discovery.
++
++// C10 customer feedback requires the existing classify/draft interpreter in the normal profile.
++// Availability still requires team execution ownership; publication requires separate approval.
++pub const WORKFLOW_EXECUTION_QUALIFIED: bool = true;
++pub fn workflow_execution_enabled() -> bool {
++    WORKFLOW_EXECUTION_QUALIFIED
++        || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
++}
++
++pub const TEAM_EXECUTION_PROFILE: &str = "urn:prometheus:uar:team-execution:0.1.0";
++pub const TEAM_EXECUTION_B_CAPABILITIES: [&str; 3] = [
++    "team_execution_peer_tools_v1",
++    "team_execution_shared_instructions_v1",
++    "team_execution_continuations_v1",
++];
++/// Operated-source Gate B receipt in agent-fabric-convergence, committed at ad2ad1617.
++pub const TEAM_EXECUTION_B_QUALIFIED: bool = true;
++pub const TEAM_EXECUTION_B_QUALIFICATION_RECEIPT: Option<&str> =
++    Some("sha256:5a96786980812effbd79661290e51dee2ec1cde524854566d588eab934d1a058");
++pub fn team_execution_profile_stage() -> &'static str {
++    match std::env::var("UAR_TEAM_EXECUTION_PROFILE_STAGE").as_deref() {
++        Ok("operation") => "operation",
++        _ if TEAM_EXECUTION_B_QUALIFIED => "qualified",
++        _ => "unqualified",
++    }
++}
++pub fn team_execution_b_enabled() -> bool {
++    team_execution_profile_stage() != "unqualified"
++}
++
+--- a/src/uar/compiler/collaboration/validation/projection.rs
++++ b/src/uar/compiler/collaboration/validation/projection.rs
+@@ -28,11 +28,11 @@
+         .flatten()
+         .filter_map(Value::as_str)
+     {
+-        if !(crate::uar::api::capabilities::workflow_execution_enabled()
++        if !(crate::uar::domain::execution_capabilities::workflow_execution_enabled()
+             && capability == crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY)
+             && !SUPPORTED_INSTALL_CAPABILITIES.contains(&capability)
+-            && !(crate::uar::api::capabilities::team_execution_b_enabled()
+-                && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES
++            && !(crate::uar::domain::execution_capabilities::team_execution_b_enabled()
++                && crate::uar::domain::execution_capabilities::TEAM_EXECUTION_B_CAPABILITIES
+                     .contains(&capability))
+         {
+             diagnostics.push(ConversionDiagnostic {
+@@ -52,7 +52,7 @@
+             && serde_json::from_value::<crate::uar::runtime::team_execution::host::TeamHostSelection>(extension.clone())
+                 .is_ok_and(|selection| selection.valid()) { continue; }
+         if name == crate::uar::domain::workflow_execution::WORKFLOW_EXTENSION
+-            && crate::uar::api::capabilities::workflow_execution_enabled()
++            && crate::uar::domain::execution_capabilities::workflow_execution_enabled()
+             && serde_json::from_str::<Value>(include_str!("../../../../../docs/agents/collaboration/workflow-execution/1.0.0/extension.schema.json"))
+                 .ok().and_then(|schema|jsonschema::validator_for(&schema).ok()).is_some_and(|validator|validator.is_valid(extension)) {
+             continue;
+--- a/src/uar/compiler/collaboration/workflow_execution/mod.rs
++++ b/src/uar/compiler/collaboration/workflow_execution/mod.rs
+@@ -176,7 +176,7 @@
+             return Ok(None);
+         };
+         authority(&state, run)?;
+-        if !crate::uar::api::capabilities::workflow_execution_enabled() {
++        if !crate::uar::domain::execution_capabilities::workflow_execution_enabled() {
+             return Err(conflict("WORKFLOW_CAPABILITY_UNSUPPORTED"));
+         }
+         if !matches!(run.status.as_str(), "ready" | "running") {
+--- a/src/uar/compiler/collaboration/workflow_execution/progression.rs
++++ b/src/uar/compiler/collaboration/workflow_execution/progression.rs
+@@ -70,7 +70,7 @@
+         &self,
+         owner: &str,
+     ) -> Result<Vec<TeamExecutionAttempt>, CollaborationError> {
+-        if !crate::uar::api::capabilities::workflow_execution_enabled() {
++        if !crate::uar::domain::execution_capabilities::workflow_execution_enabled() {
+             return Ok(Vec::new());
+         }
+         let ids = self
+--- a/src/uar/compiler/collaboration/workflow_execution/start.rs
++++ b/src/uar/compiler/collaboration/workflow_execution/start.rs
+@@ -49,8 +49,8 @@
+                         WORKFLOW_CAPABILITY
+                             | "collaboration_definition_packages_v1"
+                             | "collaboration_definition_packages_v2"
+-                    ) && !(crate::uar::api::capabilities::team_execution_b_enabled()
+-                        && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES
++                    ) && !(crate::uar::domain::execution_capabilities::team_execution_b_enabled()
++                        && crate::uar::domain::execution_capabilities::TEAM_EXECUTION_B_CAPABILITIES
+                             .contains(&capability))
+                 })
+             {
+--- a/src/uar/compiler/collaboration/team_execution/resolution.rs
++++ b/src/uar/compiler/collaboration/team_execution/resolution.rs
+@@ -171,7 +171,7 @@
+                 "TEAM_CAPABILITY_UNSUPPORTED".into(),
+             ));
+         }
+-        if crate::uar::api::capabilities::team_execution_b_enabled() {
++        if crate::uar::domain::execution_capabilities::team_execution_b_enabled() {
+             tool_ids.extend(
+                 ["team_roster", "team_send", "team_delegate", "team_wait"]
+                     .into_iter()
+--- a/src/uar/runtime/manager.rs
++++ b/src/uar/runtime/manager.rs
+@@ -4350,7 +4350,7 @@
+         if collaboration_binding
+             .as_ref()
+             .is_some_and(|binding| binding.team_attempt.is_some())
+-            && crate::uar::api::capabilities::team_execution_b_enabled()
++            && crate::uar::domain::execution_capabilities::team_execution_b_enabled()
+         {
+             attempt_native_tools.extend(
+                 crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+@@ -5636,7 +5636,7 @@
+                     if let Some(attempt) = binding
+                         .team_attempt
+                         .as_ref()
+-                        .filter(|_| crate::uar::api::capabilities::team_execution_b_enabled())
++                        .filter(|_| crate::uar::domain::execution_capabilities::team_execution_b_enabled())
+                     {
+                         crate::uar::runtime::native_skills::team_tools::register(
+                             &native_skills,

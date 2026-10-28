@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "/Users/gqadonis/miniconda3/bin/python3",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/source_inventory.py",
+    "--output",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-sweep-CODE-source-001.json"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"inventory\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-sweep-CODE-source-001.json\", \"source_identity\": \"sha256:5c78708d57b1949d96002628a001ca6e52a299dc8530f3a9c75ea1d1681ad5eb\", \"regular_files\": 29019, \"unresolved_entries\": 195, \"gate\": \"CLOSED\"}\n",
+  "stderr": "",
+  "canonical_output": "directphase; identicalevidencecopy"
+}

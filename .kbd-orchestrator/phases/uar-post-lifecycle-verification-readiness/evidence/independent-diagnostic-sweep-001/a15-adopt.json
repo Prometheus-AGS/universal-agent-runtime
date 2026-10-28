@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "bash",
+    "/Users/gqadonis/Projects/prometheus/prometheus-skill-system/shared/scripts/kbd-contract-adopt.sh",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.independent-sweep.proposed.json",
+    "--supersedes",
+    "contract-adoption-uar-post-lifecycle-verification-readiness-cb7b76fe",
+    "--amendment",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.independent-sweep.amendment.json",
+    "--signature",
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.independent-sweep.amendment.json.sig"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 9.060372829437256,
+  "stdout": "ADOPTED path=.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-exit-contract.independent-sweep.proposed.json sha256=02942ff1e5adafd5316183b09e8fea103238388efea8ccfba346e8d4760d2cc3 planRevision=140 decision=contract-adoption-uar-post-lifecycle-verification-readiness-02942ff1 bound=revision-17 supersedes=contract-adoption-uar-post-lifecycle-verification-readiness-cb7b76fe\n",
+  "stderr": ""
+}

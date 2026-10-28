@@ -1,0 +1,1 @@
+Superseded by the operator on 2026-10-26: only fix the existing agent-team concurrency bug and demonstrate the existing math/writing BDD. Extra ADMIT/SETTLE scenarios, old-attempt recovery API, terminal-fixture campaign and expanded exit requirements are not active scope. These drafts were never adopted or executed. Historical failures remain intact.

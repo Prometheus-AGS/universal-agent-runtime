@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "repetitions": 3,
+  "host": "actual installed simulator XCTest app linking the SDK embedded-mobile staticlib",
+  "positive_driver": "LiterLlmDriver through existing approved host budget proxy",
+  "positive_persistence": "existing SurrealDbProvider with owned app-container surrealkv directory",
+  "predicates": {
+    "useful_prompt_and_stream": {"first_json":{"subtotal":42,"currency":"USD"},"terminal":"RunDone","error_events":0,"event_ids":"unique strictly increasing"},
+    "default_agent_fresh_challenge": {"agent_id":"default-agent","seed_after_protected_deletion_refusal":true,"restore_after_actual_relaunch":true,"nonce":"new UUID per phase/repetition; restore differs from seed","operands":"fresh host random integers: operand10..999, multiplier2..9, increment1..99","expected_json":{"nonce":"exact fresh nonce","result":"host-computed operand*multiplier+increment"},"exact_json_equality":true,"terminal":"RunDone","error_events":0,"receipts":"save operands, nonce, expected, run_id and real canonical events in both seed and restore"},
+    "two_call_continuity": {"second_json":{"total":50,"currency":"USD"},"prior_subtotal_in_second_prompt":false},
+    "restart": {"actual_distinct_processes":true,"same_store":true,"persisted_agent_prompt_and_metadata_equal":true,"persisted_setting_max_messages":16,"persisted_history_events_equal":true},
+    "protected_agents": {"ids":["default-agent","orchestrator-agent"],"deletion_refused":true,"readback_survives":true},
+    "live_roster": {"catalog_write_after_startup":true,"selected_agent":"ios-invoice-<repetition>","event":"AgentSelected","json":{"subtotal":36,"currency":"USD"}},
+    "effective_skill": {"event":"SkillActivated","exact_skill":"ios-tax-<repetition>","first_json":{"tax":20,"total":100},"later_json":{"tax":10,"total":50}},
+    "context_budget": {"strategy":"sliding_window","max_messages":2,"changed":true,"source_messages_greater_than_prepared":true,"protected_groups_preserved":true,"final_tokens_no_greater_than_input_allowance":true},
+    "cancellation": {"acknowledged":true,"terminal":"Cancelled","error_events":0},
+    "shutdown": {"runtime_released":true,"runtime_failures":[],"unresolved":[],"store_released":true,"engine_acknowledged":true,"store_failure":null},
+    "budget": {"same_epoch":true,"reset":false,"new_completed_real_forwarding":true,"unknown_accounting_allowed":false,"all_cumulative_counters_within_approved_limits":true}
+  }
+}

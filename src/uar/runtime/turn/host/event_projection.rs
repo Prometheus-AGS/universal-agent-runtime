@@ -222,6 +222,9 @@ impl RunSecretScrubber {
             }
             MemoryMutation { content, .. } => *content = self.scrub(content),
             SkillActivated { title, .. } => *title = self.scrub(title),
+            AgentSelected { selected_agent_name, .. } => {
+                *selected_agent_name = self.scrub(selected_agent_name);
+            }
             SycophancyFlagged {
                 classifications, ..
             } => {

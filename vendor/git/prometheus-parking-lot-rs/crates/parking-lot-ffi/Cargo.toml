@@ -7,7 +7,7 @@ categories = ["api-bindings"]
 # Application-side artifact (a cdylib/staticlib that ships inside an app), not a library
 # crate to depend on from crates.io: not published (cr-44, docs/adr/0001-workspace-split.md).
 publish = false
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Prometheus AI Team"]
@@ -22,8 +22,8 @@ name = "parking_lot_ffi"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [dependencies]
-prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.3.0" }
-prometheus-parking-lot-embedded = { path = "../parking-lot-embedded", version = "0.3.0" }
+prometheus-parking-lot-core = { path = "../parking-lot-core", version = "0.4.0" }
+prometheus-parking-lot-embedded = { path = "../parking-lot-embedded", version = "0.4.0" }
 serde = { version = "1", features = ["derive"] }
 # The embedded store spawns blocking work onto tokio, so exported futures must run on a
 # tokio runtime; this crate owns one (src/runtime.rs).
@@ -31,13 +31,13 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 uniffi = { version = "0.32", default-features = false }
 
 [dev-dependencies]
-tempfile = "3.14"
+tempfile = { version = "3.14" }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
 
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(parking_lot_loom)', 'cfg(parking_lot_negative_control, values(any()))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(parking_lot_loom)", "cfg(parking_lot_negative_control, values(any()))"] }
 
 [lints.clippy]
 all = "warn"

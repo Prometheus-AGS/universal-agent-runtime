@@ -1,0 +1,23 @@
+--- a/scripts/behaviors/steps/math-writing-team.steps.mjs
++++ b/scripts/behaviors/steps/math-writing-team.steps.mjs
+@@ -118,8 +118,7 @@
+     ownerId: this.caps.bindingOwnerId, workspaceId: process.env.UAR_WORKSPACE_ID,
+     runtimeInstanceId: this.caps.instance.id, revision: 1,
+     modelBindings: [{ requestedAlias: 'project-model', providerId: process.env.UAR_MODEL.slice(0, split),
+-      modelId: process.env.UAR_MODEL.slice(split + 1), credentialRef: 'protected-credential://uar-acceptance/fixture-primary',
+-      profile: { id: 'uar.openai-compatible-chat.settings-v1', revision: 1 }, settingsRevision: 1 }],
++      modelId: process.env.UAR_MODEL.slice(split + 1), credentialRef: 'protected-credential://uar-acceptance/fixture-primary' }],
+     skillBindings: [], contextGrants: [], representationGrantRefs: [], effectiveLimits: limits, effectiveBudget: budget,
+     storage: { backend: this.caps.catalogStorage.backend, connectionRef: 'protected-connection://uar-acceptance/catalog', durableTransactions: true } });
+   finalize(binding);
+@@ -178,6 +177,10 @@
+   this.mathAttempt = await admit(this, 'calculation');
+   this.writerAttempt = await admit(this, 'outline');
+   this.evidence.independent_attempts = [this.mathAttempt, this.writerAttempt];
++  // Admission resolves the current registry settings and returns their capture.
++  // Do not pin a guessed settings revision in the deployment binding.
++  this.evidence.effective_model_settings = [this.mathAttempt, this.writerAttempt]
++    .map(attempt => ({ attempt_id: attempt.id, models: attempt.effectiveModels }));
+   await retain(this);
+   assert.notEqual(this.mathAttempt.rootId, this.writerAttempt.rootId);
+   assert.notEqual(this.mathAttempt.memberId, this.writerAttempt.memberId);

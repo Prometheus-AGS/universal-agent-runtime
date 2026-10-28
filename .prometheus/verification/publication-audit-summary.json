@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-26T15:41:51.455566+00:00",
+  "npm_audit": "ENOLOCK; pnpm project",
+  "pnpm_audit_exit_code": 1,
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 12,
+      "moderate": 24,
+      "high": 31,
+      "critical": 4
+    },
+    "dependencies": 532,
+    "devDependencies": 1033,
+    "optionalDependencies": 193,
+    "totalDependencies": 1566
+  },
+  "scope": "Dependency audit only; no fixes or functional reruns"
+}

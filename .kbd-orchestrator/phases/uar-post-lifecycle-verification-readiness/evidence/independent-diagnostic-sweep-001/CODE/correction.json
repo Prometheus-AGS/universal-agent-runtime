@@ -1,0 +1,13 @@
+{
+  "item": "CODE",
+  "repair_ordinal": 15,
+  "started_at": "2026-10-25T17:52:15.633953+00:00",
+  "scope": [
+    "scripts/acceptance/core.py"
+  ],
+  "observed_source_failure": "stalled/heartbeat bodyread can exceedwallbudgetanddelaycleanup",
+  "correction": "scopedabsolutePOSIXmainthreadalarm acrossopen/header/body, boundedread1,partialredactedprefixmetadata;unsupportedtimer/threadblocks, no clobberexistingtimer",
+  "new_guard_basis": "observed streamdeadline defect and real process-timer ownership boundary",
+  "runtime_check_added": false,
+  "second_correction_allowed": false
+}

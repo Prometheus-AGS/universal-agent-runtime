@@ -2356,3 +2356,209 @@ Treat localUAR1.3.0 as a fresh candidate, with original ten-scenario main bounda
 ## 2026-10-24 — UAR 1.3.0 finite verification exit preparation
 
 Phase uar-post-lifecycle-verification-readiness remains Execute, canonical revision299/plan100, gate CLOSED. Added proposed v1.3.0-exit-contract.md: finite required main/#426/profile/review/spec evidence, first-failure stop, preserved consumed-budget uncertainty, bounded repairs and renewed exact approval after edits. Source-only team recovery found signed COUNT metadata without contract body and historical1.2.3 embedded SurrealKV fixture incompatible with the main WebSocket-store boundary. No token values copied, service probe, test, build, validator, review or other verification ran. No acceptance, archive or reflection claimed. Remaining input: actual contract restoration/reviewed amendment and permitted isolated store/config/owner references.
+
+
+## 2026-10-24 — concrete 1.3.0 recovery packet and publication results
+
+Phase remains Execute, productverificationCLOSED. User authorized new replacement exitcontract and isolatedlocalfixture and source/imagepublicationfirst. Tagged/published3d9253fcv1.3.0; bothnativeimagebuilds40087378392failedbeforecompilation on nested workspaceinheritance. Prepared sevenmanifest workspace ../.. repair+provenance. Operator explicitly approvednormalhookscommit84747d9e, preservedoriginalv1.3.0-publication-001, leasedatomiccorrectionofonlynewv1.3.0; exactdeployrun40088426990running, noPASSclaim. Policy/commitlinthooks passed; initialpnpm auto-installattempt abortedbeforevalidator, laterauto-install-disabledruns passedwithoutbypass. No producttests/supportedacceptance/reviews ran.
+
+ReplacementJSON andconcreteloopbackdiskstore/main/peer/publicsyntheticauthconfig authoredwithboundedteamhandoffs. ExactA/F/V approvals inphase v1.3.0-unblock-approvals.md; no signing/trustrootmutation/adoption/fixturelaunch. ProposedB3finite dispositionpreservesruntimeNOT_EXERCISED; newverification-only240min/240calls/2repairs/3noprogress epoch requiresfreshsignedoperatorapproval; historicaleffortUNKNOWN, canonicalfloorspreserved. Canonical313/plan102,72/74authoringrowscomplete,5.1/5.2pending. No archive/reflection/phaseacceptance.
+
+
+## 2026-10-24 — first corrective publication failed; finite next approval
+
+Exact approved corrective run40088426990 ended failure onbothnativearchitectures beforecompilation: multipleworkspace roots /src andvendoredParkingLot. Merge skipped; no1.3.0image published. Logs retainedunderphase evidence/publication-v1.3.0-002. Prepared rootCargo.toml seven exactnestedcrate workspaceexclusions, onefilepatch9753d18e77db2515cf44f4496b60489edc5544cfdf61b1abf1809b64441349f9. No newbuild/checkorpublicationrerun. P2 exactcommit/backup-publication-002/leasedretag/oneworkflowrun approvalrequested; priorPdoesnotauthorizeit. ProductgateCLOSED. Canonical320/plan104,73/75authoredrowscomplete,5.1/5.2pending. Aauthoritypolicy approvalalsopending; no trustrootmutation, signing, adoption, fixturelaunch, producttestsorindependentreview. No livepublicationprocessremains.
+
+
+## 2026-10-24 — approved P2 publication and conditional A
+
+Operator expressly approved one-fileP2 rootworkspaceexclusion repair and A contractpolicies/publickeyregistration/template/adoption aftersuccessfulimagepublicationandactualsignature. P2 commitf870a9c3 passednormalpolicy0.69s/commitlint1.06s; backedup84747d9e asv1.3.0-publication-002; atomicleasedv1.3.0/sourcepushsucceeded. Exactdeployment40089259036running, observedbotharchitecturejobsBuildandpushbydigest. Nooutcomeclaim. Aconditionalnotexecuted; nosigning/trustregistration/adoption/fixturelaunch/producttests/review. F/VstillCLOSED. Anyfurtherpublicationfailurestops. Canonical322/plan105.
+
+## 2026-10-24 — publication dependency compatibility
+
+Operator prioritized immediate UAR 1.3.0 image publication and requested current compatible reqwest/dependencies. Publication source77446974 converges owned clients on reqwest0.13.5 and preserves explicit controller private-CA trust and SDK bundled roots. Standalone Parking Lot manifests remove nested workspace ambiguity; runtime consumes only its core. Compatible lock refresh needed explicit ZIP8.6 and SQLx0.8.6 holds after observed compiler errors; latest satisfying a broad transitive range was not API compatible. SDK mirrors six lifecycle source patches. Product acceptance remains closed. GH deployment40091743841 is running; no image publication claimed yet.
+
+## 2026-10-24 — UAR 1.3.0 publication completed
+
+Supersedes the historical publication-stop and build-running states above. Operator explicitly prioritized immediate publication and compatible dependency updates. Source774469746fee4de99be41dc1cd231857067e4487 is tagged v1.3.0; prior f870 source preserved as v1.3.0-publication-003. Deployment40091743841 passed native amd64 and arm64 release builds plus manifest merge. Registry inspection confirmed1.3.0/v1.3.0/latest/sha-774469746fee4de99be41dc1cd231857067e4487 share indexsha256:f67a36f1a6fb886379c6947f605a88945a94481c8b3c4e1d998b9b481cea0697. Local server-full/PostgreSQL build passed in9m15s, two existing warnings retained. No product tests or SDK/mobile build claims. reqwest0.13.5, compatible lock refresh, standalone Parking Lot core and preserved TLS boundaries are independently source reviewed. Publication receipt attached to GitHub release. Canonical324/plan107 records completed publication, with product gates closed, task5.1/5.2 and signed verification authority pending. No phase archive/reflection.
+
+## 2026-10-24 — published UAR1.3 verification authority prepared
+
+Execute against published774469746fee4de99be41dc1cd231857067e4487. Canonical337/plan109; native76/78, OpenSpec81/83, acceptance5.1/review5.2 pending. Reconciled final vendor/dependency source tasks2.5/2.6 and authored five missing required spec deltas as2.7. Source-only critique's spec/command findings corrected in one rereview; no acceptance credit. Two stale authoring before-start blockers disposed while preserving original receipts; no after-hook or runtime PASS.
+
+Prior A public-key registration and exact canonical template executed after publication. Actual unsigned amendment proposes contract d00c3c5bd3057ad70ce7324efb6d4476066271081f87833ed811f2929e521551 from olddab4675c:4added,10modified,0removed. No private-key read, signature or adoption. Final source inventory 770fd322db7b4d4ec4209755d3698101d04fcc0f78ee1d649f0eedaa7aa4aa7a, bound manifest CLOSED. Mutable memory/projections and self-referential/derivative outputs are excluded; nested imported assets/symlink pins carry no readiness claim. Exact fixture F and serial V command packets prepared locally. No product test/compiler/validator/service/screening or commit/hooks ran. Next: actual operator signature, prior-approved adoption and exact inventory-bound F/V instruction. No archive, phase closure or reflection claimed.
+
+
+## 2026-10-24 — repair001 authored; corrective authority unsigned
+
+Applied exactly operator-approved three-file patcha781dc5c... as repair1of2. All original14obligations retained. New packet uses append-onlymain002evidence and distinct repairedlocalcandidate; published77446974/tag/image untouched. Native347/plan110,77/79native versus82/84OpenSpec; only5.1/5.2pending. New proposed contract6a6103741503fe6fd74ae1614b2c00f1b6d7dcd5f3666df4b02bd031fb65d5c6 /inventorya0c3e17322b99fc8e282e2c1351ae70a1910a27226da841237c5a565c1847d1d. Explicit fresh signed accounting clarification counts emittedhostdispatches once and proposes source-evidenced human-wait idle exclusion; no new epoch/limit/reset. No signature/adoption/gates/review/publication executed; A2/F2V2pending in coverpacket. Reason: original exact integration command failed seven actual compilererrors before runtime; signed source/command identity and fullscope must remain honest.
+
+
+## 2026-10-24 — final fixture repair002 and unsigned authority
+
+Direct operator instruction authorized final repair2of2. Driver now retries connection transport failure only for owned setupGETpolls within existingbounds, retains childexit/errors and richstopreceipts, skips mainHTTPcleanup only when mainneverlaunched. Newmanifest binds peeroutputs to003, preserves001/002. No Python/runtimeAPI/dependency edit or scenario/exit waiver. All14obligations retained, no repair allowance remains. Native357/plan111,78/80 versus83/85OpenSpec;5.1/5.2pending. Frozeninventory1aa17473c08d241abc4afc9b5d7677d325ea35b0d847c700e82553b5b9d34025; proposedcontract5bc85ab9074eb0d950fb88d72dede1bde6d8b03c0a62c634a57c7b693e48513a. No tests/builds/automatedreview/services/sign/adopt/publication duringauthoring. A3/F3V3mustbeexplicit; originalepoch/limits and signed6aaccounting retained. Reason: observed packet002 startup/cleanup failure must be corrected without another automaticloop or falsegracefulPASS.
+
+
+## 2026-10-24 — explicit identity repair003 and proposed one-repair increase
+
+Operator directly requested fix and amendment for one extra boundedrepair after cap2consumed. Solewriter runner/driver now retain an exclusive BUILD snapshot beforeTEST and strict samepath/SHA bootcheck with comparedvalues; lead binds004privateartifact and docs. No runtimeAPI/dependency/identityweakening. Cumulative sourcepatchc1aa5b88...; inventoryd1002cebf542eed02aa63f2d403a768942b30fc5c46217529baef49dfebb5051; proposedcontractf99c0e44b0a1994560453211c6528b247d6ed88030602d0f0a94470c644eea72. Native367/plan112,79/81 vs84/86. Proposed cap2to3 records3applied/0remaining, actualsignedcap2untiladopt. Originalepoch/time/calls/floors/all14criteria retained. No gate/sign/adopt/publication. Reason: actual mainidentityrefusal onmutablebuildoutput requires stable declaredcandidate; exacthistoricalupdaterunproven, do notreplaceexpectedhashafterTEST.
+
+## 2026-10-25 — User-outcome verification reengineering
+
+Operator directs another KBD Assess→Analyze→Plan before further repair/signing/verification. Adopt planning based on useful genuine configured inference through supported interfaces, durable/protected agents, current-roster orchestrator intent routing with AG-UI selection streaming, effective skills/context, KB regeneration, both stores, team context, REST config and startup. Planning artifacts and native tasks are in phase uar-post-lifecycle-verification-readiness/change reengineer-user-outcome-verification. Earlier source documents preserved; old A6 authority/failed receipts/consumption not reset. Proposed new limits remain unsigned; expanded implementation and runtime work pending. Rationale: protocol/build/synthetic success does not establish users completing designed tasks.
+
+## 2026-10-25 — Parking Lot0.4.0 joins current source boundary
+
+Operator requests upgrade while user-outcome implementation continues. Add canonical task2.10 and make whole-phase inventory depend on it. Use actual official0.4.0 source identity/provenance, not relabel0.3 bytes or remove working standalone workspace adaptation. A tag/release is not inferred from a version declared on main. All product verification stays CLOSED until complete phase implementation and renewed exact approval.
+
+## 2026-10-25 — Effective matching and honest auxiliary counts
+
+Source tracing found two selectable matching surfaces and a synthetic-only exact request contract. Add explicit service(default)/intent_classifier engine authority, preserve strict exact preflight, and use a separate host-owned known-capacity estimated allowance for genuine classifier/summary calls through existing governed drivers. Approximate is never relabeled exact. Rationale: real selected feature effects must work without fabricating a supported wire/token contract. Actual model/strategy/count-quality receipts and future real-path cases remain required. No runtime verification or authority adoption implied.
+
+
+## 2026-10-25 — user-outcome implementation remains separate from acceptance
+The operator authorized the reviewed verification redesign implementation and Parking Lot0.4.0. Adopt the exact upstream source snapshot f24382acd7ba818204e32f4449e9c9c37c52558d, standalone core-only Cargo adaptation, and handle returned rejected descriptors through durable ingestion failure outside dispatcher locks. Do not call the untagged snapshot a published release. Current source work also restores real roster selection, durable KB regeneration, effective strategies, structured direct output and installed UI action paths. None is a runtime PASS. Keep all old failures/consumption, all14 predecessor obligations and the CLOSED gate; final fixture composition, budget enforcement, source inventory and new exact approval remain required.
+
+
+## 2026-10-25 — operator corrected Cohere OpenAI compatibility configuration
+The operator supplied ~/.bash_profile COHERE_API_KEY/COHERE_EMBEDDING_MODEL/COHERE_EMBEDDING_URL references and explicitly requested correcting the URL. Changed only line207 from native https://api.cohere.com/v1/embed to documented OpenAI base https://api.cohere.ai/compatibility/v1; key/model preserved, no profile sourced or inference probe. This supersedes the immediately prior proposed native-Cohere fixture adapter. Official compatibility docs exclude dimensions, so the owned OpenAI embedding fixture needs explicit send_dimensions=false with actual returned-vector dimension validation retained. Key values never copied. Model baseline remains embed-multilingual-v3.0, with documented different-model/same-dimension and changed-dimension regeneration witnesses pending actual approved execution. Source: https://docs.cohere.com/v2/docs/compatibility-api ; model dimensions: https://docs.cohere.com/v2/docs/cohere-embed . Gate CLOSED.
+
+
+## 2026-10-25 — existing Liter billing fact
+The operator explicitly confirmed existing Liter model bindings are covered by subscriptions with no incremental charge. Use that attestation as the proposed zero-incremental model charge basis, including the configured gateway retry chain. This is not execution, signature or spending approval. Cohere embedding charges remain separate under the proposed bounded envelope; do not infer its tier from the API key. All request/token/history limits and the CLOSED gate remain.
+
+
+2026-10-25T18:11:39.316110+00:00 A15sweepcomplete18items:15PASS,1AndroidFAILafteronecorrection,2BLOCKED(minimalorchestration,Dockertimeout). FixtureseparateFAILafteronecorrection,97cases/582rows/main/Issue426NOT_EXERCISED. SourceFP16patchcompilediOS; auxreceiptandHTTPdeadline correctionsonlysource-reviewed. Finalsource5c78708d57b1949d96002628a001ca6e52a299dc8530f3a9c75ea1d1681ad5eb; priorPASSsnapshots retained, notcurrentreleaseacceptance. Repairs15/cap28; no furthercorrectioneligibleforfinalizeditems. ProductembeddingUSD0each/capsUSD10each. MemoryKGentityrecorded. Results user-outcome-independent-sweep-001-results.md/json, allfailuresledger; canonical2.9incomplete/noarchive/reflection/publication.
+
+
+2026-10-25 operator decision: defer Android and its missing-target-OpenSSL repair until macOS/Linux/Windows/iOS functional results. Prioritize existing pinned Parking Lot0.4.0 integration certification before the broad sweep. Preserve historical A15 failures, all consumption and separate USD10 embedding caps. Version strings/builds cannot substitute for runtime outcomes; Windows executor and iOS runtime harness remain unresolved. Scope plan: .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-parking-lot-priority-plan.md. No verification executed.
+
+
+2026-10-25 Official upstream lookup corrected the earlier same-version provenance assumption: published Parking Lotv0.4.0 targets53682521, annotatedtag943c62d. Official14commitcompare changes only unexported release/assurance tooling; retained production export matches. Updated versions/vendor/release documentation without registry graph changes. Source evidence parking-lot-040-release-source-inspection.json. No upstream workflow was triggered or counted as UAR validation.
+
+
+2026-10-25 A17 metadata-only replacement authored after operator instruction “Fix metadata now; prepare replacement.” A16 signed failure preserved, A15 still adopted. New status/IDs/required-field representations follow inspected adoption writer/schema; unchanged predicates/argv/source/limits/consumption. New approval four-platform-002-approvals.md; no validation/signing/adoption retry or verification. Repair floor15, product gate CLOSED.
+
+
+2026-10-25T22:30:31.797315+00:00 UAR fixture terminal admission uses one pure validator in existing budget_proxy.py for server/iOS. Rationale: A19/A20 source reviews exposed drift in known-failed-state and timestamp/digest evidence checks. Preserve stronger caller-owned reservation, response, epoch and accounting bounds; sharing does not refund/reset/dispatch or imply useful completion. Operator authorized repair19 authoring only; all behavior and six added tests unverified, A21/P16.006 approval pending.
+
+
+## Verification redesign child phase — 2026-10-26T06:07:45.008756+00:00
+Operator requested simplify/redesign everything in a child phase after repeated parent preparation failures. Canonical child uar-verification-simplification created/activated under uar-post-lifecycle-verification-readiness. Assess/Analyze/Plan and isolated artifact-only design critique completed, source inspection only. Proposed one coverage registry, workflow-local fixtures, independent serial cells and append-only result log; retain25families/14obligations and all historical failures/consumption. ParentA22binding23 held, source009 unchanged, no A23 repair/sign/review continuation. No production/policy edit, test/build/import/service/provider/publication. Original ceilings and USD10/provider retained. Implementation2.1-2.6 pending; gate CLOSED. Canonical pending-to-complete transition was rejected during planning metadata update, then recorded through supported in-progress→complete; this was not a verification command/failure.
+
+2026-10-26T07:19:20.634969+00:00 Operator wants long-lived UAR between behavior tests; restart only for fixes or explicit restart tests. Native UAR stays athttp://127.0.0.1:53587 PID10704, same disk store. Saved Mathematics Specialistmath-specialist-db64c2a8 created and survived restart. Original query failed parsing provider reasoning wrapper; targeted continuation strictly checked final JSON, saved marker and correct sum:1scenario/4steps passed, exit0. Combined evidence/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.verified.json; prior failures retained. Agent retained for later second-agent/orchestrator test; neither ran. Previous verified behaviors not repeated.
+
+## 2026-10-26 — Separate behavior counts from legacy bundled-case coverage
+
+Decision: maintain the operator-agreed eight behavior labels across five passing/continued Mac journeys and separately map captured assertions to original case IDs. Reason: one KB journey proves four requested operations, while one original lifecycle case bundles many unrun operations. Eleven overlapping legacy cases are OBSERVED_SUBSET, not eleven whole-case passes. Count evidence once and retain scope, remaining predicates and failed attempts. Source of truth for this reconciliation: .prometheus/verification/macos-behavior-ledger-2026-10-26.json.
+
+2026-10-26: Operator corrected agent-team-concurrency-repair scope to only the existing failed math/writing team BDD. Finalized one change/four pending tasks; sole TEAM-01 requires genuine overlap and correctly merged article. Removed expanded acceptance/recovery-API requirements from active plan/specs; retained old drafts and all actual failures. Bound the single-scenario child contract, wrote identity-bound Plan handoff, no source repair/build/test/service action. Return to manual verification after actual child acceptance/reflection/exit.
+
+## 2026-10-26 — scoped team concurrency repair
+
+Keep existing member execution lanes and one existing TEAM-01 BDD. Source evidence shows filesystem provider-name mismatch before execution and unchecked catalog statement errors during settlement; neither justifies a scheduler replacement or recovery API. Use a typed conflict plus changed generation for a normal CAS miss, preserving unknown effects. Remove the BDD's guessed settings revision and retain the actual admission receipt. Runtime success requires the real overlapping specialist outputs and merged article.
+
+## 2026-10-26 — TEAM-01 explicit response cap and allocation
+
+Observed real admission reserved model catalog capacity1,512,000tokens against32,768per-turn/session. Operator requested a maximum64,000-token response. Correct the trusted team path to honor a finite output ceiling and explicit input allowance:128,000per attempt (64,000input +64,000output),384,000for three attempts. Preserve cost/time ceilings, exact-contract handling, actual usage, unknown liability and settings-only/no-fit status. Estimated input sizing is not exact provider tokenization; this limitation remains visible. No provider/count qualification campaign or new scenario is introduced.
+
+2026-10-26 — TEAM-01 result handling: the retained model maximum512 silently narrowed the host64000response cap; preserve the min-limit implementation and correct only the fixture value. Reuse the already-built unchanged Rust binary, binding old build identity separately from the new config/BDD manifest. Parse actual final JSON without accepting reasoning as successful editorial output. Retained provider finish_reason is absent; no verified-success claim until the same BDD passes.
+
+## Manual verification: authentication belongs outside tests — 2026-10-26
+Operator instruction: NO functional/manual verification test may require authentication. External infrastructure owns authentication. Test scripts must not require, mint, renew, copy or send JWTs, bearer tokens, API authentication keys, or login credentials. Run behavior scripts against the externally provisioned local identity endpoint; UAR_BASE_URL, model and nonsecret workspace selectors are sufficient. Stable owner context may be provided by the external host/proxy so persisted data remains accessible, but authentication plumbing must never become a test step, scenario, approval or blocker presented to the operator. Do not weaken production/remote identity boundaries or remove unrelated security regression coverage. Preserve actual product assertions. This supersedes earlier manual-fixture JWT instructions and token-expiry gates.
+
+The active UAR already has jwt_required=false; team APIs nevertheless require a verified owner. The existing external uar-jwt-proxy supplies that owner and now preserves tenant context. Tests do not carry credentials. The previous claim that global JWT authentication was enabled was inaccurate; owner-scoped API admission caused the requirement.
+
+## 2026-10-26 — Retain TEAM-01 as complete
+Operator accepted TEAM-01 PASS and requested commit, push and PR before the next manual step. Mark the selected Mac behavior complete and reuse its saved evidence; do not schedule another run during this manual sequence. Evidence is historical for the recorded binary/source; a later relevant change may justify an operator-selected regression rather than erase this pass. Operator selected publishing accumulated UAR implementation plus manual evidence. No new scenario or retest is authorized by this publication step.
+
+## 2026-10-26 — Conversation continuity complete
+CONTINUITY-01 passed the operator-selected warm two-turn saved-math workflow on Mac. Reuse its saved evidence; do not repeat within the manual sequence. Follow-up-only payloads preserve server-owned context as the thing being tested. This does not claim long-term cross-session memory or persistence after restart.
+
+## 2026-10-26 — Built-in deletion protection complete on Mac
+PROTECTED-AGENTS-01 passed for default-agent and orchestrator-agent. Require the specific built-in protection refusal plus unchanged definitions, not just any403. Reuse saved evidence and do not rerun within the manual sequence without operator direction. No inference is needed for this behavior.
+
+## 2026-10-26 — Disposable agent lifecycle complete on Mac
+AGENT-LIFECYCLE-01 passed instruction-update behavioral verification and deletion. Fresh sessions and random markers known only to saved instructions distinguish a real persisted change from conversation carryover or client hinting. Preserve both attempts; reuse the pass rather than rerunning within the manual sequence without operator direction. The generated agents were deleted; established math/writing/default/orchestrator agents were not modified.
+
+## 2026-10-26 — Anthropic-compatible saved-agent prompting complete on Mac
+ANTHROPIC-01 passed the operator-selected nonstreaming Messages workflow with the real existing Liter/MiniMax-M3 binding. Saved-agent identity and independently computed answer prove the selected useful behavior. Preserve this receipt and do not rerun within the manual sequence without direction. Streaming, complete protocol conformance and upstream Anthropic-hosted inference are separate claims not made here.
+
+## 2026-10-26 — A2A saved-agent prompting complete on Mac
+A2A-01 passed the selected nonstreaming A2A v1 SendMessage workflow for the saved math agent. Retain and reuse its evidence; no repeat in the manual sequence without direction. This does not claim streaming, task continuation/cancellation, legacy A2A, all protocol options or another platform.
+
+
+## ACP-01 — 2026-10-26T21:53:39.400247+00:00
+ACP-01 is complete for the manual Mac sequence. Accept one saved-agent ACP prompt with correct final answer and correlated successful terminal/status; do not inflate this into full protocol, continuation, tools or other-platform certification. No automatic rerun. Preserve raw evidence and independent USD10/provider embedding limits; this run made no embedding request.
+
+
+## AGUI-01 — 2026-10-26T21:57:28.834998+00:00
+AGUI-01 is complete for the manual Mac sequence. Accept the selected direct saved-agent streamed prompt with independently correct answer and correlated success; this does not certify browser rendering, A2UI, reconnect/replay or full protocol conformance. No automatic rerun. Existing USD10/provider embedding caps unchanged; no embedding request in this scenario.
+
+
+## A2UI-01 — 2026-10-26T22:03:54.157007+00:00
+A2UI-01 complete for manual Mac sequence, scoped to /v1/chat/completions stream_mode agui_spec and genuine published response. Browser display/actions and dedicated AG-UI agent-route A2UI are not claimed. No automatic rerun. Existing USD10/provider embedding caps unchanged; scenario makes no embedding request.
+
+
+## A2UI-BROWSER-01 — 2026-10-26T22:53:58.936068+00:00
+Use one isolated Playwright-BDD scenario for real A2UI browser actions, retaining Cucumber reporting and the manual sequence. Supply a valid explicit surface template, but require actual model/native-tool publication, fresh input generated after render, real click POST, distinct successful continuation, and independent exact answer. This avoids conflating unconstrained component design with action delivery. Selected workflow passed; no general repeat-reliability claim.
+
+
+## SKILL-DETECTION-01 — 2026-10-26T22:59:32.061584+00:00
+Skill-use evidence combines a task-only prompt, random recipe and marker stored only in the skill, exact run matching/activation records, streamed implicit activation, and independently computed answer. This prevents a generic correct answer from being misreported as detected skill use. Certify only current keyword strategy; do not infer other strategies.
+
+
+## SEMANTIC-SKILL-01 — 2026-10-26T23:06:34.193261+00:00
+Record semantic detection separately from keyword detection. Require no exact trigger matches, actual local_embedding method/activation evidence, and private skill recipe/marker use. Temporarily configure semantic threshold0.65, preserve0.5 failure, restore original settings after the test. Do not claim all matching strategies or default-threshold suitability from this one pass.
+
+
+## CONTEXT-BUDGET-01 — 2026-10-26T23:28:14.185251+00:00
+Context-budget acceptance requires actual source tokens above input allowance, fewer final messages/tokens within allowance, final serialized request receipt, reported provider usage within reserve, and correct recall of random earlier facts absent from new prompt/assistant acknowledgements. Keep-first/latest passed at8192context with2048output reserve. Counts are explicitly approximate, not exact-tokenizer certification; do not expand the claim to summarization or other strategies.
+
+
+## CONVERSATION-SUMMARY-01 — 2026-10-26T23:33:52.413377+00:00
+Summarization acceptance requires completed summary-model calls bound by digest to the actual fact-bearing source turn, changed/prepared context with compression, and correct random facts/derived answer in a separate follow-up without replay. Strategy labels or recall alone do not prove summarization. One warm Mac case passed; no claim of arbitrary or repeated fact retention.
+
+
+## CONVERSATION-RESTART-01 — 2026-10-26T23:52:44.642458+00:00
+For the selected restart behavior, save successful host conversations before terminal completion and load owner-scoped history on a cold session lookup. Keep the BDD strict and preserve the initial null-recall failure. Accept only sequential graceful Mac restart; do not infer crash/reboot or concurrent durability. No broader verification or auth work.
+
+
+## CONCURRENT-CONVERSATION-RESTART-01 — 2026-10-27T00:01:47.877656+00:00
+For concurrent-turn evidence, require server live-state bracketing A-running→B-running→A-running; separate SSE receive-time intervals alone permit false positives. Keep stream timing only as support. The selected real interleaving passed; do not infer exhaustive persistence ordering safety. Stop after selected PASS.
+
+
+## REST-SETTING-RESTART-01 — 2026-10-27T00:07:31.794289+00:00
+REST restart verification uses the reversible per-user prompt_caching_enabled preference. PUT only this field; preserve preferred_scope; null means inherit and is restored explicitly. Full-record equality after actual same-store process replacement proves this stored-preference behavior. Do not infer prompt-caching effectiveness or all-settings durability.
+
+
+## KNOWLEDGE-RESTART-01 — 2026-10-27T00:18:28.588039+00:00
+Retained-KB restart acceptance uses the existing saved math agent and document, snapshots binding/index identity, and requires an actual retrieved-document citation plus a seal unavailable in current agent instructions or the fresh request. Correct arithmetic alone is not a knowledge-use oracle. Keep unchanged-space persistence separate from embedding regeneration.
+
+## Embedding BDD credential boundary — 2026-10-26T19:40:34.981660-05:00
+
+Operator required credentials outside the test. Use a separate host launcher to provision upstream provider configuration and restore it in finally; Cucumber receives only a nonsecret environment. Product steps exercise settings/regeneration/retrieval through mounted APIs. This supersedes the initial imported host-provisioning draft. One selected live scenario passed; no wider verification implied.
+
+## Document deletion oracle — 2026-10-26T19:44:56.458617-05:00
+
+Use a retained control in the same disposableKB and identical before/after query. Empty search alone cannot prove selective deletion. KNOWLEDGE-DOCUMENT-DELETE-01 passed with positive retained retrieval plus deletedGET404 and survivingKBstate; no broader deletion claims.
+
+## Linked knowledge deletion scope — 2026-10-26T19:49:08.234441-05:00
+
+Keep consumer agent definition/reference unchanged across KBdeletion and ask identical prompt in a freshsession. Require genuine predeletion citation, useful independent arithmetic afterward, null unavailable knowledge and no runtime citations. Do not conflate deleting the retrieval source with erasing already-revealed facts from old history. LINKED-KB-DELETE-01 passed on Mac.
+
+## Explicit KB unlink intent — 2026-10-26T20:07:08.758403-05:00
+
+Preserve legacy empty-list default behavior, but deliberate shared agentPATCH link/enabled edits persist selected/none in uar.run_policy. Preserve unrelated fields and deniedIDs; samepatch explicitKBpolicy wins. This fixes observed KB-UNLINK-01 leakage without globally changing default-agent eligibility. One Mac scenario passed; otherpolicycombinations remainunverified.
+
+## Relink acceptance boundary — 2026-10-26T20:13:44.785282-05:00
+
+Use unlink as prerequisite RESTstate setup, not another inference/acceptance run. Certify only restoration: sameKBID and explicitselection, fresh privatefact answer with matching runtimecitation, unchanged KB/doc. KB-RELINK-01 passed firstattempt onMac; no broaderpolicyclaims.
+
+## Two-KB answer acceptance — 2026-10-26T20:29:35.070003-05:00
+
+Require a private fact and matching provenance from each distinct source, plus a result calculated from both. Counting two citations alone would not prove both facts were used. TWO-KB-ANSWER-01 passed on Mac; one bounded synthesis, no general retrieval-quality claim.
+
+## 2026-10-26T20:40:26.784956-05:00 — Maintain explicit behavior denominators
+
+Keep `.prometheus/verification/behavior-status.md` as the full status index, mapping manual Mac receipts to all97 legacy scenario IDs without adding overlapping counts or reopening obsolete verification ceremonies. Current33behavior/30journey passes remain valid scoped evidence; incomplete legacy predicates remain explicit.

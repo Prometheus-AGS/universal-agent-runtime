@@ -1,0 +1,13 @@
+{
+  "id": "P0.python-sdk",
+  "status": "PASS",
+  "exit_code": 0,
+  "reason": null,
+  "started": "2026-10-25T10:27:14.001206+00:00",
+  "finished": "2026-10-25T10:27:15.558365+00:00",
+  "elapsed_seconds": 1.5572025139990728,
+  "output_bytes": 944,
+  "stdout": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.python-sdk/stdout.log",
+  "stderr": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/evidence/user-outcome-preparation-002/P0.python-sdk/stderr.log",
+  "product_gate": "CLOSED"
+}

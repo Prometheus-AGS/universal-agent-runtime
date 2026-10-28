@@ -8,4 +8,5 @@ pub mod ingestion_worker;
 pub mod ingestion_admission;
 pub mod pipeline;
 pub mod retrieval;
+pub mod regeneration;
 pub mod verification;

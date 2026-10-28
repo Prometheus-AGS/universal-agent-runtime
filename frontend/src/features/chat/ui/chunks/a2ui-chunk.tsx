@@ -7,6 +7,8 @@ function record(value: unknown): Record<string, unknown> {
 
 export function A2uiChunkView({ chunk }: { chunk: A2uiDisplayChunk | A2uiInputChunk }) {
   const payload = record(chunk.payload);
+  const metadata = record(payload.metadata);
+  const sourceRunId = typeof metadata.source_run_id === "string" ? metadata.source_run_id : chunk.runId;
   if (chunk.kind === "a2ui-input") {
     return (
       <A2uiInputBlock
@@ -23,6 +25,7 @@ export function A2uiChunkView({ chunk }: { chunk: A2uiDisplayChunk | A2uiInputCh
   }
   return (
     <A2uiDisplayBlock
+      runId={sourceRunId}
       artifactType={chunk.component}
       title={typeof payload.title === "string" ? payload.title : "Generated surface"}
       content={typeof payload.content === "string" ? payload.content : JSON.stringify(payload)}

@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 156,
+  "task": {
+    "action": "complete",
+    "id": "v130-lead-packet",
+    "owner": "uar-lead",
+    "expectedTaskRevision": 1,
+    "evidence": [
+      ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/execution.md",
+      ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-implementation-inventory.md",
+      ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/v1.3.0-verification-packet.md"
+    ],
+    "remaining": []
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "classification": "WHOLE_PHASE_SOURCE_AUTHORING_INVENTORY_DERIVED_INPUTS_PENDING",
+  "source_inventory": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/four-platform-source-005.json",
+    "sha256": "sha256:2d624c512d44def8a0e1930107226dea1960519cc44eee6ecee1c650a4be71d8"
+  },
+  "source_identity": "sha256:c32a2b5dc153a28511c2c4e76ac88b4a8acbdaf2dfaa9d935a934982a8eeae0c",
+  "regular_files": 29044,
+  "nonregular_entries": 195,
+  "position": {
+    "schemaVersion": "5",
+    "generatedBy": "kbd-runtime",
+    "projectionContractVersion": 2,
+    "sourceRevision": 545,
+    "derivedRevision": 545,
+    "frontier": {
+      "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 433,
+      "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
+    },
+    "conflictCount": 0,
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
+    "path": [
+      "uar-post-lifecycle-verification-readiness"
+    ],
+    "phaseIds": [
+      "uar-post-lifecycle-verification-readiness"
+    ],
+    "activePhaseId": "uar-post-lifecycle-verification-readiness",
+    "activePhase": "uar-post-lifecycle-verification-readiness",
+    "phase": "uar-post-lifecycle-verification-readiness",
+    "parentPhase": null,
+    "childPointer": null,
+    "change": "reengineer-user-outcome-verification",
+    "currentTask": "2.9",
+    "status": "ready",
+    "lifecycle": "ready",
+    "stageId": "user-outcome-implementation",
+    "stageStatus": "IN_PROGRESS",
+    "completionMetric": "implementation",
+    "implementationCompleted": 144,
+    "implementationTotal": 168,
+    "planRevision": 150,
+    "revision": 545,
+    "exactNextCommand": "Implement iOS per-item correction/rerun and independent continuation in owned runner/suite files; refresh source inventory and A18 proposal before any review, signing, preparation or verification. Preserve original consumption and all limits, including independent USD10 embedding caps.",
+    "nextChange": "reengineer-user-outcome-verification",
+    "nextTask": "2.9",
+    "updatedAt": "2026-10-25T20:39:17.669374Z"
+  },
+  "gate": "CLOSED",
+  "full_implementation_boundary_reached": false,
+  "changed_regular_inputs_since_A15": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/docs/releases/v1.3.0-parking-lot.md",
+      "before": "sha256:586378341b8a6214093319ab9d629113185ea958cc686a8deb9f150a20734056",
+      "after": "sha256:ab3d2712fdcd6976da63f779e222da70dd53ac223d3238b2e07c2ba26846a51f",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/docs/user-outcome-verification.md",
+      "before": "sha256:01621780c053a28cc1af1ec8df8ed94934cb906cb3e38f9c99a3b8ae2fa1b4df",
+      "after": "sha256:543c4e792052bf2aa4580c3310175b38cc4b0e0a4189b9fe9b3973451ac0ec41",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/budget_proxy.py",
+      "before": "sha256:f392fff404d5d002a396eca5245c6dd106a23469ae100b0135803a499c3086db",
+      "after": "sha256:01f9d13180a150654b6fc6c96919e2bac1e99536dd8cd9d3c7d74fbf90c020b5",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/cases_capabilities.py",
+      "before": "sha256:dd9b60639c6ffb3a0d5973703554698d1ea20c05b7716b1c5d86709d6690b174",
+      "after": "sha256:8f0b7ed89a2f700246e52aa6f6a57601ccfb6e7fb2098362b8230ceed884951c",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/compose_fixture.py",
+      "before": "sha256:0873f35f9c5cdba114ab20afa30d1465687ee7fcfecc575c6b3a624364b042e2",
+      "after": "sha256:4a445c582e23ebaa9e44b3dbce12df277ca66e2cdb3510a8a81cdf7a5f9f5d5d",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/core.py",
+      "before": "sha256:64538dd9e10400104cafe4267b9d33d022a060740fe0e4a17033c86292b74c61",
+      "after": "sha256:3a53673bd424f8d41d606588b0a106c88ea96bb29c3347b2f77a3421820412e9",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/failure_sweep.README.md",
+      "before": null,
+      "after": "sha256:6384188b22f7cacc4fcccd7eaa9c10affaf1ebcc1bf2f8837ed576b755d700e0",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/failure_sweep.py",
+      "before": null,
+      "after": "sha256:5c2f329f52790f3eae51a1c606d1ed8cc3a27fe9f0206f903834b4d4c114ee70",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/Acceptance.xcodeproj/project.pbxproj",
+      "before": null,
+      "after": "sha256:d686c476b0a2f9d746ce6aea9f65988e8f86f0a8a18e13c25d3cb6405da35eb1",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/Acceptance.xcodeproj/xcshareddata/xcschemes/UARAcceptance.xcscheme",
+      "before": null,
+      "after": "sha256:85d2d719fef54b04ff1f1d8d916765f7b3e400229ffad7dfca41f77eca934139",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/Host/App.swift",
+      "before": null,
+      "after": "sha256:8cd1a00d5eb22586ccc78ab88d4c1847798841b54c858cb201e450bdb7ee905f",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/Host/Bridge.h",
+      "before": null,
+      "after": "sha256:a86ba75e8c851c6dc8331929d45de0a95dc7a759d73e9e699f9ad7a433299b47",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/Host/Info.plist",
+      "before": null,
+      "after": "sha256:db6957db7388a6b5619eb2e62b436d07a015fcf968a05bbf559d1b12f92acbe2",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/README.md",
+      "before": null,
+      "after": "sha256:98de3e8e6c0b1aa3b2417637b04f1eb890cbec68fd7d7fd375008b623396e9f0",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/Tests/EmbeddedAcceptance.swift",
+      "before": null,
+      "after": "sha256:120ee8563712a2a040e18d0fb38efccc2ca1a4e741720821ab1da3ebe7f34040",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/policies/acceptance.cedar",
+      "before": null,
+      "after": "sha256:6cd582f09fcb30cc421cd956f015ab186ba551975c853ab634228a3edc23cd72",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/private-config.schema.json",
+      "before": null,
+      "after": "sha256:dc08a016d3ebd21df672894f565455a533ce0f90d98be7bfdb1fa27565aa7496",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/receipt.schema.json",
+      "before": null,
+      "after": "sha256:52b52cae9f5aa2fbdef3742b22c22b45f9085b3493073af126f93505fc80083f",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+      "before": null,
+      "after": "sha256:79f76f6c4d540161c45e18626394f18c500f23409b849361a75348ccf18d3b29",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/rust/lib.rs",
+      "before": null,
+      "after": "sha256:f66fb15d508e6207194f9ad5e3024867376338fcf697e4e9171b2f4d4ebea32e",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/scenarios.json",
+      "before": null,
+      "after": "sha256:9cc7420dde05eb8a83adb3a089ef066aefd19bc51df08d577bc155f9f67b1cd8",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/linux_runtime.README.md",
+      "before": null,
+      "after": "sha256:29b93703a857d5e3e4081df42eeb9b8fe3e78f6adcc8011e07c1d56754a1b026",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/linux_runtime.py",
+      "before": null,
+      "after": "sha256:4a6b882dcc08eb5e823f1e56bfe3d10fc1e523eef002a76dcc59e8c0e88c7d28",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/observers_runtime.py",
+      "before": "sha256:4496ac030ff5599746f776352a5e12c67f5443a923d331cf5df009fd8415cb63",
+      "after": "sha256:8fb507ad766080edd2063007d852dbb60da6ebb17d1165dd9378afad3a05c680",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/platform_suite.README.md",
+      "before": null,
+      "after": "sha256:dc619ed6ae1ea5f5e12b6c50d72c58555e6709eb2bc05f825fb6c884517a6f14",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/platform_suite.py",
+      "before": null,
+      "after": "sha256:87693f7e999890039ee279db98abfc46ce4ec1918b70b411535b414f86f60893",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_platform_inputs.README.md",
+      "before": null,
+      "after": "sha256:93c76ce1c144d0f64294899579c3bfb5bb650d9c67d8b09af188d1248d4b100d",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_platform_inputs.py",
+      "before": null,
+      "after": "sha256:8cb63990830bca8d8580cd43e771b9f22fd08fa38015e23ea751ac525bb9968a",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_supporting_inputs.README.md",
+      "before": null,
+      "after": "sha256:40cf8e8bfd1e45a454a44bdcb535373b227807d5fc8831161fbdc243233a9f29",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/prepare_supporting_inputs.py",
+      "before": null,
+      "after": "sha256:737c6b39ef66b6c3169abb18b26ecfd1b58fca90314569f566cdce89b3f759c0",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_failure_sweep.py",
+      "before": null,
+      "after": "sha256:4aca30f8897a697696504a92712419e81f9f64f8f676a599171350c275ffda75",
+      "change": "added"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tools_fixture.py",
+      "before": "sha256:7f224ef8c3061c2a15ce3fa5815ee3301afa08cedf46f2698932ee86d73e7827",
+      "after": "sha256:01f3bd429bf0ae5d3d35f2530afc487e9422fc165ce2aeaa644da13cee3bc8eb",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/user_outcomes.py",
+      "before": "sha256:7418e38ada151ae54587858be7be2f82bac851caad08edefbd4b7532c41d3ca2",
+      "after": "sha256:c817cbfefd1031c595f4b39d480b0c8ceee0816ffe78a569e367e1417ea205fe",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.lock",
+      "before": "sha256:6bed587ee451e31d3c2002ec9247e24af16f9f2fd0d9de6e4fcc854fbeadf791",
+      "after": "sha256:bc554980937a8ec8689fa45fbdd6355fd647913c9e4fbec78e3760a2bc2a4acf",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/Cargo.toml",
+      "before": "sha256:96809a49f2482879ad4f36a6c925b879d8dbb4f475b08db6872c96f91893d6d7",
+      "after": "sha256:d97ee808095d99ef223e722cd131426dd035d309bef4a0aaa17d31667f5bead7",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/rust/src/runtime.rs",
+      "before": "sha256:2909a83dbaa121b10ad3c31b6b58260bcce026c6cae4272482bf4931c5ee23b2",
+      "after": "sha256:de35bc5deb6e48d710178eeb90364f3a800d4dd7984d24dbffe8cab0828c56e6",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/README.md",
+      "before": "sha256:c45e44c0f51d487f83808801235639edc596982b38f223dc5b3730f3e7a44244",
+      "after": "sha256:05777a8c078db561078089d74a8a4748339cea4980ae1e6677977452c2dbe466",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/versions.toml",
+      "before": "sha256:eb8ad920466a884f34f570ca7470884a9a022227b8cebe4c064e585e3719004c",
+      "after": "sha256:e18ef32b63846afc49182c65e8dff609a22b4ef6619e9762a2fbbe6bb2020375",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_ios_failure_policy.py",
+      "before": null,
+      "after": "sha256:83773e26c13f27d33b03e0e4bed5dca3c549feebb4445004298d7a16b707fd68",
+      "change": "added"
+    }
+  ],
+  "source_tasks_completed": [
+    "2.20",
+    "2.21",
+    "2.22",
+    "2.24",
+    "2.25"
+  ],
+  "remaining_implementation_tasks": {
+    "2.9": "Actual current-source fixture/artifact/authority materialization and whole-phase inventory",
+    "2.23": "Actual derived preparation and final V approvals; source packet proposed"
+  },
+  "reviews": "A17 source004 code review FAIL_SOURCE_ONLY, preserved. Current source005 reviews NOT_RUN; no source/runtime PASS.",
+  "source_preparation": "NOT_RUN",
+  "runtime": "NOT_EXERCISED",
+  "platforms": {
+    "macos": "SOURCE_AUTHORED_PREPARATION_REQUIRED",
+    "linux": "SOURCE_AUTHORED_IMAGE_BUILD_AND_ROUTE_EVIDENCE_REQUIRED",
+    "ios": "SOURCE_AUTHORED_SIMULATOR_TARGET_BUILD_AND_RUNTIME_REQUIRED",
+    "windows": "BLOCKED_NO_EXECUTION_HOST",
+    "android": "DEFERRED_OPERATOR_SCOPE"
+  },
+  "history_preserved": [
+    "A15 18items/15PASS/1FAIL/2BLOCKED",
+    "fixture failure after its single correction",
+    "all001..007 outputs and signatures",
+    "all14 predecessor obligations and97cases",
+    "original epoch and all consumption/UNKNOWNs",
+    "A17 actual signature/adoption binding18 and stopped first source review; authored repair16 not runtime acceptance"
+  ],
+  "caps": {
+    "calls": 4000,
+    "active_minutes": 2400,
+    "repair_cap": 28,
+    "repairs_consumed_before_proposed_preparation": 16,
+    "embedding_usd_each": 10,
+    "pool_transfer": false,
+    "next_fixture_repair_at_entry": 17,
+    "remaining_product_correction_ceiling_after_entry": 11
+  },
+  "no_new_verification_claims": true,
+  "source_authoring_handoff": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/ios-failure-policy-repair-handoff.md",
+    "sha256": "sha256:6fdcf5174444a24dd21d17e4f2e7e8f1d286d2c4fc3a36d90bb31b15f90b42e1"
+  },
+  "changed_regular_inputs_since_A17": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/README.md",
+      "before": "sha256:dfe0b2ee855f59b4b69e2963795ec82b984bc5d8520b5becd4667bfd778687a8",
+      "after": "sha256:98de3e8e6c0b1aa3b2417637b04f1eb890cbec68fd7d7fd375008b623396e9f0",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/receipt.schema.json",
+      "before": "sha256:531c82e94ae19e19454c620b9da13b953c30cf9dd27c4a5e598deed999aa6768",
+      "after": "sha256:52b52cae9f5aa2fbdef3742b22c22b45f9085b3493073af126f93505fc80083f",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/ios/runner.py",
+      "before": "sha256:7fe98c2a34042e7300736021062243027f331c00a478673c65d6903b533f58b7",
+      "after": "sha256:79f76f6c4d540161c45e18626394f18c500f23409b849361a75348ccf18d3b29",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/platform_suite.README.md",
+      "before": "sha256:20987724e1887e87cf6cf676a7e5454d43e2aaac93fc500e4c2202ec8c84e108",
+      "after": "sha256:dc619ed6ae1ea5f5e12b6c50d72c58555e6709eb2bc05f825fb6c884517a6f14",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/platform_suite.py",
+      "before": "sha256:070aad47fc077ee053d4b0dee271ae5a93538e1938e427b0c632f8730d913197",
+      "after": "sha256:87693f7e999890039ee279db98abfc46ce4ec1918b70b411535b414f86f60893",
+      "change": "modified"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/tests/test_ios_failure_policy.py",
+      "before": null,
+      "after": "sha256:83773e26c13f27d33b03e0e4bed5dca3c549feebb4445004298d7a16b707fd68",
+      "change": "added"
+    }
+  ],
+  "current_consumption": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-019.json",
+    "sha256": "sha256:cb1767fbc416658982bf3020ec884eda727a15bad9c9bf451930d43ab3c57e6e"
+  }
+}

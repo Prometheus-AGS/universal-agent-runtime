@@ -1,0 +1,19 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-10-26T10:01:38Z",
+  "outputs": [
+    "spec.md",
+    "adopted-contract.json",
+    "fixture-inputs.json",
+    "openspec/changes/repair-agent-team-concurrent-operation/proposal.md",
+    "openspec/changes/repair-agent-team-concurrent-operation/specs/skill-governance/spec.md",
+    "openspec/changes/repair-agent-team-concurrent-operation/specs/durable-team-execution/spec.md",
+    "openspec/changes/repair-agent-team-concurrent-operation/design.md",
+    "openspec/changes/repair-agent-team-concurrent-operation/tasks.md",
+    "openspec/changes/repair-agent-team-concurrent-operation/verification.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "One OpenSpec change repair-agent-team-concurrent-operation;7 pending tasks; ADMIT-01/TEAM-01/SETTLE-01 finite matrix. Draft contract NOT ADOPTED; fixture/startup/source/budget binding remains Plan. Round1 critical acceptance gap corrected; final review PASS with isolation wording warning corrected and carried. WARNING: native artifact review only, exact cross-model identity unverified; schema/product checks unrun. READY to Plan, no implementation or gate approval.",
+  "skipped": false,
+  "skipReason": null
+}

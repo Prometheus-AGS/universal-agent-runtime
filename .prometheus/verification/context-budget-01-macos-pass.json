@@ -1,0 +1,89 @@
+{
+  "scenario": "CONTEXT-BUDGET-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T23:28:14.185251+00:00",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/context-budget.cucumber.mjs"
+  ],
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed); 0m 18.413s",
+  "gherkin_steps": 5,
+  "cleanup_hooks": 1,
+  "attempt": 2,
+  "window_tokens": 8192,
+  "reserved_output_tokens": 2048,
+  "strategy": {
+    "type": "truncate_middle",
+    "keep_first": 1,
+    "keep_last": 1000
+  },
+  "reduction": {
+    "source_tokens": 12869,
+    "final_tokens": 4830,
+    "input_allowance": 5879,
+    "source_messages": 22,
+    "final_messages": 14,
+    "source_sha256": "sha256:10ed15cc6430db5f2d0843787ad776227d817ef3139742db97649772e15203c4",
+    "final_sha256": "sha256:9cdc615ce854ec14d1cb0b673fb9f869964e678a8fb162864f23c268d01f4c4f"
+  },
+  "request_budget_receipts": [
+    {
+      "schema_version": "uar.request-budget.v1",
+      "representation": "final_provider_request",
+      "destination_model": "MiniMax-M3",
+      "serialized_request": true,
+      "count_quality": "approximate",
+      "counting_revision": "approximate-cl100k-json-v1",
+      "counted_input_tokens": 5339,
+      "serialized_bytes": 20512,
+      "serialized_sha256": "995f87569fb9cbf3c23ad47872b95d3c6c455e96a740e23b738a5534558286ac",
+      "tools_included": true,
+      "instructions_included": true,
+      "fit_guarantee": false,
+      "reserved_output_tokens": null,
+      "output_ceiling_enforced": true
+    }
+  ],
+  "provider_usage": {
+    "inputTokens": 4689,
+    "outputTokens": 94,
+    "totalTokens": 4783,
+    "costUsdEstimate": null,
+    "model": "MiniMax-M3"
+  },
+  "answer": {
+    "reference": "REF-756a619e-a5ec-4b5e-b229-c70d8a4354c5",
+    "total": 906
+  },
+  "initial_run_id": "f1b1d7c6-32a9-4410-8c79-d451c769ec47",
+  "filler_run_ids": [
+    "21ef8cc0-ed0e-43c1-84ab-d34129ba9f5c",
+    "35ec0140-7b29-42a7-bea0-6b3307aca50c",
+    "9112f9d6-9ef3-47e2-84d8-f11e1f86cc66"
+  ],
+  "follow_up_run_id": "2d40fdc3-c0ec-4f17-be5f-2d13ba2743fd",
+  "configured_model": "liter/MiniMax-M3",
+  "evidence": ".prometheus/verification/context-budget/6e963cf7-8709-4610-b8e0-59abbac9aaf1.json",
+  "cucumber_report": ".prometheus/verification/context-budget-002-macos/cucumber.json",
+  "prior_failure": ".prometheus/verification/context-budget-001-macos/cucumber.json",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "previous_scenarios_rerun": false,
+  "provider_config_restored": true,
+  "original_model_ready": true,
+  "disposable_agent_deleted": true,
+  "service_kept_running": true,
+  "runtime_pid": 78802,
+  "binary_sha256": "f98c1536cba5364bc7fbb78d0182d619a7b9e340f2c8b07bf2e9a9f793021917",
+  "production_changes": false,
+  "source_sha256": {
+    "scripts/behaviors/context-budget.cucumber.mjs": "6b505104e317db3981399afc268981fa1605c36302c66c93cdbd6aea4dfead5b",
+    "scripts/behaviors/features/context-budget.feature": "9d7a655a8c210d769f0a0e0b45b4fd621175aade5a6dfc8638598a851efb3e51",
+    "scripts/behaviors/steps/context-budget.steps.mjs": "1557fe84feb5efafac99e06e2fa474f6daf566043cef9029290374a7655602d9"
+  },
+  "scope": "One Mac keep-first/latest budget reduction and follow-up recall. UAR counts are approximate, corroborated by reported provider usage; no exact-tokenizer, summarization, other-strategy, restart or platform claim.",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

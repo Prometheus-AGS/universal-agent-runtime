@@ -1,0 +1,209 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "scripts/behaviors/a2ui-browser.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/a2ui-browser.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 240000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/a2ui-browser.feature.spec.js",
+      "file": "features/a2ui-browser.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Interact with a real A2UI response in the browser",
+          "file": "features/a2ui-browser.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A rendered calculator sends fresh input back to its agent",
+              "ok": false,
+              "tags": [
+                "ui",
+                "a2ui"
+              ],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 135226,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\nExpected: visible\nTimeout: 120000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\nExpected: visible\nTimeout: 120000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\u001b[22m\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:131:72)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:58:48\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:22)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:57:19\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5",
+                        "location": {
+                          "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                          "column": 72,
+                          "line": 131
+                        },
+                        "snippet": "   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:131\n\n  129 | Then('the browser displays the generated input and action button', async ({ page, scenario: s }) => {\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n> 131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n      |                                                                        ^\n  132 |   await expect(s.surface).toContainText('Parcel calculator');\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                            "column": 72,
+                            "line": 131
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\nExpected: visible\nTimeout: 120000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\u001b[22m\n\n\n   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:131\n\n  129 | Then('the browser displays the generated input and action button', async ({ page, scenario: s }) => {\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n> 131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n      |                                                                        ^\n  132 |   await expect(s.surface).toContainText('Parcel calculator');\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:131:72)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:58:48\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:22)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:57:19\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a disposable A2UI calculator agent is selected in the browser",
+                          "duration": 3753
+                        },
+                        {
+                          "title": "When I ask the agent to render its calculator",
+                          "duration": 9176
+                        },
+                        {
+                          "title": "Then the browser displays the generated input and action button",
+                          "duration": 120017,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\nExpected: visible\nTimeout: 120000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\nExpected: visible\nTimeout: 120000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 120000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'A2UI display artifact', exact: true }).locator('[data-a2ui-surface-state=\"ready\"]')\u001b[22m\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs:131:72)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:58:48\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:22)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:57:19\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-generated/features/a2ui-browser.feature.spec.js:9:5",
+                            "location": {
+                              "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                              "column": 72,
+                              "line": 131
+                            },
+                            "snippet": "   at ../../scripts/behaviors/browser/a2ui-browser.steps.mjs:131\n\n  129 | Then('the browser displays the generated input and action button', async ({ page, scenario: s }) => {\n  130 |   s.surface = page.getByRole('region', { name: 'A2UI display artifact', exact: true });\n> 131 |   await expect(s.surface.locator('[data-a2ui-surface-state=\"ready\"]')).toBeVisible();\n      |                                                                        ^\n  132 |   await expect(s.surface).toContainText('Parcel calculator');\n  133 |   await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toBeVisible();\n  134 |   await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeVisible();"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-10-26T22:43:37.995Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/a2ui-browser-005-macos/artifacts/features-a2ui-browser.feat-21a44-esh-input-back-to-its-agent/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/a2ui-browser.steps.mjs",
+                        "column": 72,
+                        "line": 131
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "6c64d9d2cbbc223e7752-4839765a6cdc1c8cb9b2",
+              "file": "features/a2ui-browser.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-26T22:43:37.316Z",
+    "duration": 138903.944,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

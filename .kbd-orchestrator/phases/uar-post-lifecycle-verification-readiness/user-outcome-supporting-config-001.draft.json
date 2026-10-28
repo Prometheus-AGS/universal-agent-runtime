@@ -1,0 +1,118 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 49310,
+    "grpc_port": 49313,
+    "cors_allowed_origins": [],
+    "mcp_shared_transports_enabled": false,
+    "ingest_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/ingest"
+  },
+  "security": {
+    "deployment_profile": "trusted_local",
+    "jwt_required": true,
+    "jwt_algorithm": "HS256",
+    "jwt_secret": null,
+    "jwt_issuer": null,
+    "jwt_audience": null,
+    "jwt_validate_nbf": true,
+    "settings_mutation_auth_required": true,
+    "settings_admin_key": null,
+    "trusted_host_principals": [
+      {
+        "issuer": null,
+        "subject": "uar-supporting-host-007",
+        "tenant_id": null,
+        "host_id": "uar-user-outcomes-007-supporting-host"
+      }
+    ],
+    "workspace_authorities": [
+      {
+        "issuer": null,
+        "subject": "uar-supporting-owner-007",
+        "tenant_id": null,
+        "workspace_id": "uar-user-outcomes-007-supporting-workspace"
+      },
+      {
+        "issuer": null,
+        "subject": "uar-supporting-other-007",
+        "tenant_id": null,
+        "workspace_id": "uar-user-outcomes-007-supporting-workspace"
+      },
+      {
+        "issuer": null,
+        "subject": "uar-supporting-host-007",
+        "tenant_id": null,
+        "workspace_id": "uar-user-outcomes-007-supporting-workspace"
+      }
+    ]
+  },
+  "persistence": {
+    "provider": "surreal",
+    "database_url": "ws://127.0.0.1:49312",
+    "surreal_ns": "uar_post_lifecycle_user_outcomes_007_supporting",
+    "surreal_db": "uar_post_lifecycle_user_outcomes_007_supporting",
+    "surreal_user": null,
+    "surreal_pass": null,
+    "vector_dimension": 384,
+    "external_cache_enabled": false
+  },
+  "memory": {
+    "enabled": false,
+    "db_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/memory.db"
+  },
+  "llm": {
+    "model": "fixture/gpt-4o-mini",
+    "base_url": "http://127.0.0.1:49311/v1",
+    "api_key": "local-fixture-only",
+    "protocol": "chat",
+    "max_retries": 0,
+    "timeout_secs": 90,
+    "embedding": {
+      "backend": "openai",
+      "model": "text-embedding-3-small",
+      "base_url": "http://127.0.0.1:49311/v1",
+      "api_key": "local-fixture-only",
+      "vector_dimension": 384,
+      "models_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/supporting/models"
+    }
+  },
+  "providers": [
+    {
+      "id": "fixture",
+      "display_name": "Isolated post-lifecycle loopback fixture",
+      "base_url": "http://127.0.0.1:49311/v1",
+      "protocol": "chat",
+      "api_key": "local-fixture-only",
+      "default_model": "gpt-4o-mini",
+      "enabled": true,
+      "models": [
+        {
+          "id": "gpt-4o-mini",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "supports_tools": true,
+          "supports_streaming": true,
+          "enabled": true
+        }
+      ]
+    }
+  ],
+  "native_tools": {
+    "file_tools_enabled": false,
+    "web_fetch_enabled": false,
+    "terminal_exec_enabled": false,
+    "session_search_enabled": false
+  },
+  "acp": {
+    "enabled": true,
+    "path": "/acp",
+    "auth_required": true
+  },
+  "resilience": {
+    "rate_limit_enabled": true,
+    "requests_per_second": 200.0,
+    "burst_size": 400.0
+  }
+}

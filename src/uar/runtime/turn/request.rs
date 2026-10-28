@@ -131,6 +131,8 @@ pub struct RunExecutionRequest {
     pub client_tools: Option<super::client_tools::ClientToolInput>,
     /// Restriction-only per-response output ceiling admitted by protocol ingress.
     pub(crate) output_token_cap: Option<u32>,
+    /// Caller output constraints; never inherited by private helper calls.
+    pub(crate) response_format: Option<crate::llm::response_format::ResponseFormat>,
     /// Validated host history for a cold sidecar session.
     pub(crate) host_history: Option<Vec<Message>>,
     /// Host-selected reasoning override for this run and local children.
@@ -189,6 +191,7 @@ impl RunExecutionRequest {
             seed_history: Vec::new(),
             client_tools: None,
             output_token_cap: None,
+            response_format: None,
             host_history: None,
             reasoning_effort: None,
             checkpoint_resume: None,

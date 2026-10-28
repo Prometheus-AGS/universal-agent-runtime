@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "status": "INERT_FIRST_START_SEED_DRAFT_NOT_ADOPTED",
+  "executable": false,
+  "epoch_id": "uar-user-outcomes-original-20261024",
+  "prior_epoch_id": "uar-user-outcomes-original-20261024",
+  "approval_packet_sha256": null,
+  "approval_signature_sha256": null,
+  "prior_consumption_evidence": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/seed-disposition.json",
+      "sha256": null
+    }
+  ],
+  "unresolved_reservations": [],
+  "consumed": {
+    "model_attempts": 0,
+    "embedding_attempts": 0,
+    "generated_tokens": 0,
+    "cost_microunits": 0,
+    "request_bytes": 0,
+    "response_bytes": 0
+  },
+  "spend_pool_consumed_microunits": {
+    "cohere": 0,
+    "openai_embeddings": 0,
+    "liter": 0
+  },
+  "epoch_started_unix": 1792849097,
+  "deadline_unix": 1793108297,
+  "draft_semantics": {
+    "zero_scope": "Only never-used owned genuine forwarding; requires explicit signed first-start disposition",
+    "timestamp_projection": "Floor both original fractional UTC timestamps to integer Unix seconds; interval259200seconds; deadline0.685447seconds earlier, no extension",
+    "original_epoch_utc": "2026-10-24T13:38:17.685447Z",
+    "original_deadline_utc": "2026-10-27T13:38:17.685447Z",
+    "host_epoch_reset": false,
+    "legacy_history": "Retain source disposition and all original UNKNOWNs separately",
+    "existing_state_policy": "Stop if new007 root/parents exist; never reset/reuse/delete existing state",
+    "proposed_final_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/sealed/budget-seed.json",
+    "ledger_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-007/private/uar_fixture_inputs_5d3ed9f4d4218e05b533/packet/uar_budget_5d3ed9f4d4218e05b533"
+  },
+  "remaining_dynamic_slots": [
+    "Adopted resource packet SHA256",
+    "Actual detached signature SHA256",
+    "Final private disposition path/digest plus frozen receipt closure",
+    "Signed first-use scope and integer timestamp disposition",
+    "Current original global accounting and final source inventory; no new zero global seed"
+  ],
+  "current_global_accounting": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/user-outcome-accounting-012.json",
+    "sha256": "sha256:9f6eb63fc14dafd0fb6c852a18b96daee740c6da00a56bab5cf6a2065072ebbf"
+  },
+  "current_global_floor": {
+    "host_calls": 2684,
+    "active_minutes_upper_bound": 1334.8438981000002,
+    "repairs_consumed": 9,
+    "cutoff": "2026-10-25T14:54:47.803333+00:00",
+    "later_activity_accrues": true
+  }
+}

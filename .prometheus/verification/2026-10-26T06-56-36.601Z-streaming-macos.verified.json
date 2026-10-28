@@ -1,0 +1,17 @@
+{
+  "behavior": "Default agent streams a complete useful answer",
+  "status": "VERIFIED",
+  "platform": "macos",
+  "model": "liter/MiniMax-M3",
+  "scenarios_passed": 1,
+  "steps_passed": 6,
+  "content_events": 3,
+  "answer": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20",
+  "finish_reason": "stop",
+  "done_marker": true,
+  "duration_ms": 2552,
+  "cucumber_report": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-56-36.601Z-streaming-macos.json",
+  "runtime_evidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/2026-10-26T06-56-36.601Z-streaming-macos.runtime.json",
+  "plain_prompt_repeated": false,
+  "stopped_after_pass": true
+}

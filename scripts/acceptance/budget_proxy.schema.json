@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Operator adopted acceptance packet budget forwarding configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "executable",
+    "epoch_id",
+    "ledger_root",
+    "approval_packet",
+    "approval_signature",
+    "seed",
+    "spend_pools",
+    "limits",
+    "upstream_timeout_seconds",
+    "ingress_timeout_seconds",
+    "bindings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "executable": {
+      "const": true
+    },
+    "epoch_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "ledger_root": {
+      "$ref": "#/$defs/absolute"
+    },
+    "approval_packet": {
+      "$ref": "#/$defs/reference"
+    },
+    "approval_signature": {
+      "$ref": "#/$defs/reference"
+    },
+    "seed": {
+      "$ref": "#/$defs/reference"
+    },
+    "spend_pools": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cohere", "openai_embeddings", "liter"],
+      "properties": {
+        "cohere": {"$ref": "#/$defs/paidPool"},
+        "openai_embeddings": {"$ref": "#/$defs/paidPool"},
+        "liter": {
+          "type": "object", "additionalProperties": false, "required": ["limit_microunits"],
+          "properties": {"limit_microunits": {"const": 0}}
+        }
+      }
+    },
+    "upstream_timeout_seconds": {
+      "$ref": "#/$defs/positive"
+    },
+    "ingress_timeout_seconds": {
+      "$ref": "#/$defs/positive"
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_attempts",
+        "embedding_attempts",
+        "generated_tokens",
+        "cost_microunits",
+        "request_bytes",
+        "response_bytes",
+        "max_in_flight",
+        "wall_seconds"
+      ],
+      "properties": {
+        "model_attempts": {
+          "$ref": "#/$defs/nonnegative"
+        },
+        "embedding_attempts": {
+          "$ref": "#/$defs/nonnegative"
+        },
+        "generated_tokens": {
+          "$ref": "#/$defs/nonnegative"
+        },
+        "cost_microunits": {
+          "type": "integer", "minimum": 0, "maximum": 20000000
+        },
+        "request_bytes": {
+          "$ref": "#/$defs/nonnegative"
+        },
+        "response_bytes": {
+          "$ref": "#/$defs/nonnegative"
+        },
+        "max_in_flight": {
+          "$ref": "#/$defs/positive"
+        },
+        "wall_seconds": {
+          "$ref": "#/$defs/positive"
+        }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/binding"
+      }
+    }
+  },
+  "$defs": {
+    "paidPool": {
+      "type": "object", "additionalProperties": false, "required": ["limit_microunits"],
+      "properties": {"limit_microunits": {"type": "integer", "minimum": 0, "maximum": 10000000}}
+    },
+    "positive": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nonnegative": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "absolute": {
+      "type": "string",
+      "pattern": "^/",
+      "minLength": 2
+    },
+    "environment": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/absolute"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "spend_pool",
+        "listen_port",
+        "request_path",
+        "upstream_url",
+        "model_path",
+        "allowed_models",
+        "max_request_bytes",
+        "max_response_bytes",
+        "approved_charge_ceiling_microunits",
+        "charge_approval",
+        "headers_env",
+        "ingress_authorization_env"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "model",
+            "embedding"
+          ]
+        },
+        "spend_pool": {"enum": ["cohere", "openai_embeddings", "liter"]},
+        "listen_port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        },
+        "request_path": {
+          "type": "string",
+          "pattern": "^/[^?#]*$"
+        },
+        "upstream_url": {
+          "type": "string",
+          "pattern": "^(https://|http://(127\\.0\\.0\\.1|localhost):4000/v1/(chat/completions|embeddings)$)",
+          "description": "Exact credential-free HTTPS endpoint, or explicitly approved existing Liter service with upstream_authority provenance."
+        },
+        "upstream_authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "service_id",
+            "operator_approved",
+            "endpoint_url",
+            "launchagent",
+            "launch_script",
+            "service_config",
+            "approval"
+          ],
+          "properties": {
+            "kind": {
+              "const": "existing-service-loopback"
+            },
+            "service_id": {
+              "const": "ai.prometheus.liter-llm-api"
+            },
+            "operator_approved": {
+              "const": true
+            },
+            "endpoint_url": {
+              "type": "string",
+              "pattern": "^http://(127\\.0\\.0\\.1|localhost):4000/v1/(chat/completions|embeddings)$"
+            },
+            "launchagent": {
+              "$ref": "#/$defs/reference"
+            },
+            "launch_script": {
+              "$ref": "#/$defs/reference"
+            },
+            "service_config": {
+              "$ref": "#/$defs/reference"
+            },
+            "approval": {
+              "$ref": "#/$defs/reference"
+            }
+          }
+        },
+        "model_path": {
+          "const": "/model"
+        },
+        "allowed_models": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "max_request_bytes": {
+          "$ref": "#/$defs/positive"
+        },
+        "max_response_bytes": {
+          "$ref": "#/$defs/positive"
+        },
+        "approved_charge_ceiling_microunits": {
+          "$ref": "#/$defs/nonnegative"
+        },
+        "charge_approval": {
+          "$ref": "#/$defs/reference"
+        },
+        "headers_env": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/environment"
+          }
+        },
+        "header_prefixes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Authorization": {
+              "const": "Bearer "
+            }
+          }
+        },
+        "ingress_authorization_env": {
+          "$ref": "#/$defs/environment"
+        },
+        "output_token_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/[^~]+$"
+          }
+        },
+        "max_output_tokens_per_attempt": {
+          "$ref": "#/$defs/positive"
+        },
+        "ingress_authorization_prefix": {
+          "type": "string",
+          "enum": [
+            "",
+            "Bearer "
+          ],
+          "default": "",
+          "description": "Explicit prefix for the named ingress environment value. Bearer mode binds a raw API key; empty preserves a full-header reference."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "model"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "output_token_paths",
+              "max_output_tokens_per_attempt"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

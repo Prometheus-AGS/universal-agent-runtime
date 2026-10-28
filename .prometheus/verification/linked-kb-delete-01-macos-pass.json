@@ -1,0 +1,83 @@
+{
+  "scenario": "LINKED-KB-DELETE-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "recorded_at": "2026-10-26T19:49:08.234441-05:00",
+  "attempt": 1,
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/linked-kb-delete.cucumber.mjs"
+  ],
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 14.145s",
+  "gherkin_steps": 4,
+  "evidence_hooks": 1,
+  "evidence": ".prometheus/verification/linked-kb-delete/0b7b8c88-89a7-4876-a053-802ae1ddb57b.json",
+  "cucumber_report": ".prometheus/verification/linked-kb-delete-001-macos/cucumber.json",
+  "agent_id": "disposable-kb-delete-0b7b8c88-89a7-4876-a053-802ae1ddb57b",
+  "knowledge_base_id": "c7e3c691-6228-413d-9b86-8bcaa14ed50f",
+  "document_id": "8dcb673a-2229-49b2-8099-8a35016c4c34",
+  "agent_definition_unchanged_after_kb_deletion": true,
+  "kb_reference_retained_until_agent_cleanup": true,
+  "before_answer": {
+    "agent_marker": "AGENT-ee444507-a559-4801-9370-d4d65eb4d45a",
+    "sum": 476,
+    "knowledge_seal": "KNOWLEDGE-60aee089-8c64-4803-b3a9-1da31671f1cc",
+    "citation": "[1]"
+  },
+  "after_answer": {
+    "agent_marker": "AGENT-ee444507-a559-4801-9370-d4d65eb4d45a",
+    "sum": 476,
+    "knowledge_seal": null,
+    "citation": null
+  },
+  "before_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "ce941cc2-474a-47dd-036c-c28854849a48",
+      "document_id": "8dcb673a-2229-49b2-8099-8a35016c4c34",
+      "knowledge_base_id": "c7e3c691-6228-413d-9b86-8bcaa14ed50f",
+      "document_name": "laboratory-profile.txt",
+      "relevance_score": 0.9152737855911255,
+      "snippet": "Laboratory profile lab-profile-0b7b8c88-89a7-4876-a053-802ae1ddb57b has the private retrieval seal KNOWLEDGE-60aee089-8c64-4803-b3a9-1da31671f1cc. This exact seal is available only in this laboratory knowledge document.\n"
+    }
+  ],
+  "after_citations": [],
+  "before_session": "6a938f91-be8a-4830-a117-b4429e27c982",
+  "after_session": "f24e3626-7338-4e95-ac18-7712e300defe",
+  "before_run_id": "2ac7c5bb-130b-4aa9-bfbf-144c8f85a275",
+  "after_run_id": "e610983b-aec9-4e03-a15e-5ee1847c5743",
+  "same_question_fresh_session": true,
+  "deleted_seal_absent_from_completion_and_events": true,
+  "agent_deleted": true,
+  "knowledge_base_deleted": true,
+  "embedding_space": {
+    "backend": "fastembed",
+    "model": "bge-small-en-v1.5",
+    "dimension": 384
+  },
+  "authentication_supplied_by_test": false,
+  "history_replayed": false,
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "configuration_changes": false,
+  "restart": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "runtime_pid": 97354,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/linked-kb-delete.cucumber.mjs": "7d8657076c1041452d444164a6f870ebaca0925283a67d33c824cbfc4081aff5",
+    "scripts/behaviors/features/linked-kb-delete.feature": "8340607d45bded992b9e6d2b3f1918906b357e6cb2e137da788f8504adc1ee94",
+    "scripts/behaviors/steps/linked-kb-delete.steps.mjs": "ad5fd065117471f193bc75d4e79eb709c6d0f0f2709389336d04368d76ce0ecf"
+  },
+  "source_review": "Code and JavaScript artifact-only source reviewers found no blockers; no separate executable checks.",
+  "scope": "Fresh-session genuine agent inference after linked KB deletion. Not erasure of facts already present in old conversation history, concurrent deletion or all backends/platforms.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md",
+  "manual_sequence_status": "COMPLETE; stopped for operator direction"
+}

@@ -1,0 +1,20 @@
+{
+  "command": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team.cucumber.mjs",
+  "exit_code": 1,
+  "started_at": "2026-10-26T15:18:57.879834+00:00",
+  "ended_at": "2026-10-26T15:19:17.449898+00:00",
+  "elapsed_seconds": 19.570183623000048,
+  "test_environment_variable_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR",
+    "UAR_BASE_URL",
+    "UAR_CUCUMBER_REPORT",
+    "UAR_MODEL",
+    "UAR_WORKSPACE_ID"
+  ],
+  "authentication_supplied_by_test": false,
+  "report": ".prometheus/verification/manual-team-noauth-001-macos.cucumber.json"
+}

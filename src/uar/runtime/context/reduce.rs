@@ -19,8 +19,9 @@
 
 use crate::llm::{LlmDriver, Message};
 use crate::uar::context::{
-    ContextStrategy as DeclaredStrategy, split_pinned_system, trim_history_with_marked_prose,
+    ContextStrategy as DeclaredStrategy, split_pinned_system,
 };
+use crate::uar::context::strategy::trim_history_with_marked_prose_receipt_with_allowance;
 use crate::uar::domain::context::{
     ContextAction, ContextConfig, ContextStrategy as BudgetStrategy,
 };
@@ -29,6 +30,39 @@ use super::manager::ContextManager;
 use super::normalize::{HistoryValidationError, NormalizeReport, normalize_history};
 use super::summarizer::HostMarkedProseSpan;
 use super::token_service::TokenService;
+
+/// Mark only canonical plain dialogue as reducible prose. Input includes the
+/// optional pinned system message; returned offsets exclude that message, as
+/// required by the structural summarizer. No content heuristic grants authority.
+#[must_use]
+pub fn canonical_prose_spans(messages: &[Message]) -> Vec<HostMarkedProseSpan> {
+    let offset = usize::from(messages.first().is_some_and(|message|
+        message.role == crate::llm::MessageRole::System));
+    let history = &messages[offset..];
+    let eligible = |message: &Message| matches!(message.role,
+        crate::llm::MessageRole::User | crate::llm::MessageRole::Assistant)
+        && message.tool_call_id.is_none()
+        && message.tool_calls.as_ref().is_none_or(Vec::is_empty)
+        && matches!(&message.content, crate::llm::MessageContent::Text { content }
+            if !content.trim().is_empty());
+    let mut spans = Vec::new();
+    let mut index = 0;
+    while index < history.len() {
+        if !eligible(&history[index]) {
+            index += 1;
+            continue;
+        }
+        let start = index;
+        index += 1;
+        while index < history.len() && eligible(&history[index])
+            && history[index].role == history[start].role
+        {
+            index += 1;
+        }
+        spans.push(HostMarkedProseSpan::new(format!("canonical-prose-{start}-{index}"), start, index));
+    }
+    spans
+}
 
 #[derive(Debug)]
 struct ProtectedGroup {
@@ -153,6 +187,9 @@ pub struct ReduceReport {
     pub context_action: Option<ContextAction>,
     /// Counts from lossless history validation.
     pub normalize: NormalizeReport,
+    /// Body-free observed structural reduction receipt. Digests identify exact
+    /// input/output messages; labels alone never establish a summary occurred.
+    pub structural_receipt: Option<serde_json::Value>,
 }
 
 /// Map the operator-declared strategy onto the token-budget stage's strategy.
@@ -199,14 +236,15 @@ fn budget_config(declared: &DeclaredStrategy, context_limit: usize) -> ContextCo
     // Leave room for the response; the budget stage subtracts its own buffer
     // when `max_tokens` is unset, so set it explicitly for determinism.
     config.max_tokens = Some(context_limit.saturating_sub(1_000));
-    if let DeclaredStrategy::Summarize {
-        summary_max_tokens,
-        model,
-        ..
-    } = declared
-    {
-        config.summary_budget = Some(*summary_max_tokens);
-        config.summarization_model.clone_from(model);
+    match declared {
+        DeclaredStrategy::Summarize { summary_max_tokens, model, .. } => {
+            config.summary_budget = Some(*summary_max_tokens);
+            config.summarization_model.clone_from(model);
+        }
+        DeclaredStrategy::Hierarchical { mid_term_summary_tokens, long_term_facts_tokens, .. } => {
+            config.summary_budget = Some(mid_term_summary_tokens.saturating_add(*long_term_facts_tokens));
+        }
+        _ => {}
     }
     config
 }
@@ -369,33 +407,82 @@ pub async fn reduce_history_with_input_allowance(
     request_budget_contract: Option<&super::budget::RequestBudgetContract>,
     eligible_prose: &[HostMarkedProseSpan],
 ) -> Result<(Vec<Message>, ReduceReport), ReduceHistoryError> {
+    let allowance = request_budget_contract.cloned().map(super::budget::AuxiliaryRequestAllowance::Exact);
+    reduce_history_with_input_allowance_and_auxiliary(messages, declared, model, input_allowance,
+        driver, allowance.as_ref(), eligible_prose).await
+}
+
+/// Reduce with a distinct captured allowance for auxiliary model requests.
+pub async fn reduce_history_with_input_allowance_and_auxiliary(
+    messages: Vec<Message>,
+    declared: &DeclaredStrategy,
+    model: &str,
+    input_allowance: usize,
+    driver: Option<&dyn LlmDriver>,
+    auxiliary_allowance: Option<&super::budget::AuxiliaryRequestAllowance>,
+    eligible_prose: &[HostMarkedProseSpan],
+) -> Result<(Vec<Message>, ReduceReport), ReduceHistoryError> {
     let original_history = serde_json::json!(&messages);
+    let original_tokens = TokenService::count_messages(model, &messages);
+    let original_message_count = messages.len();
     let normalize = normalize_history(&messages)?;
     let protected = protected_groups(&messages);
     let (system, history) = split_pinned_system(messages);
 
     // Stage 1, structural: message-count trimming and LLM summarization.
-    let after_structural = trim_history_with_marked_prose(
+    let structural = trim_history_with_marked_prose_receipt_with_allowance(
         system,
         history,
         declared,
         driver,
         model,
-        request_budget_contract,
+        auxiliary_allowance,
         eligible_prose,
     )
     .await;
+    let after_structural = structural.messages;
+    let structural_action = (original_history != serde_json::json!(&after_structural)).then(|| ContextAction {
+        strategy: budget_strategy_for(declared),
+        messages_removed: original_message_count.saturating_sub(after_structural.len()),
+        tokens_saved: original_tokens.saturating_sub(TokenService::count_messages(model, &after_structural)),
+        was_applied: true,
+        summary_generated: matches!(declared, DeclaredStrategy::Summarize { .. } | DeclaredStrategy::Hierarchical { .. }),
+    });
+    let mut structural_receipt = serde_json::json!({
+        "schema_version": 1,
+        "requested_strategy": declared,
+        "source_sha256": format!("sha256:{}", crate::uar::runtime::checkpoint::raw_digest(&original_history)),
+        "prepared_sha256": format!("sha256:{}", crate::uar::runtime::checkpoint::raw_digest(&after_structural)),
+        "source_messages": original_message_count,
+        "prepared_messages": after_structural.len(),
+        "source_tokens": original_tokens,
+        "prepared_tokens": TokenService::count_messages(model, &after_structural),
+        "eligible_spans": eligible_prose.len(),
+        "changed": structural_action.is_some(),
+        "summary_generated": structural_action.as_ref().is_some_and(|action| action.summary_generated),
+        "tier_calls": structural.tier_receipts,
+    });
 
     // Stage 2, token budget: enforce the model's window. The manager preserves
     // system messages itself, so the pinned message can travel with the list.
     let mut config = budget_config(declared, input_allowance);
     config.max_tokens = Some(input_allowance);
     let manager = ContextManager::for_model(config, model);
-    let (after_budget, context_action) = manager
+    let (after_budget, mut context_action) = manager
         // Structural summarization has already consumed the marks. Generated
         // summaries do not inherit eligibility implicitly and cannot recurse.
         .apply_with_marked_prose(after_structural, input_allowance, driver, None, &[])
         .await;
+    if let Some(structural) = structural_action {
+        match &mut context_action {
+            Some(action) => {
+                action.messages_removed = original_message_count.saturating_sub(after_budget.len());
+                action.tokens_saved = original_tokens.saturating_sub(TokenService::count_messages(model, &after_budget));
+                action.summary_generated |= structural.summary_generated;
+            }
+            None => context_action = Some(structural),
+        }
+    }
 
     // Stage 3: reducers may not remove, alter, or reorder protected records.
     // Returning the error leaves the caller's canonical source untouched.
@@ -409,6 +496,13 @@ pub async fn reduce_history_with_input_allowance(
             input_allowance,
         });
     }
+    structural_receipt["final_sha256"] = format!("sha256:{}",
+        crate::uar::runtime::checkpoint::raw_digest(&final_messages)).into();
+    structural_receipt["final_messages"] = final_messages.len().into();
+    structural_receipt["final_tokens"] = required_tokens.into();
+    structural_receipt["input_allowance"] = input_allowance.into();
+    structural_receipt["protected_groups"] = protected.len().into();
+    structural_receipt["protected_groups_preserved"] = true.into();
 
     let history_rewritten = original_history != serde_json::json!(&final_messages);
     Ok((
@@ -417,6 +511,7 @@ pub async fn reduce_history_with_input_allowance(
             history_rewritten,
             context_action,
             normalize,
+            structural_receipt: Some(structural_receipt),
         },
     ))
 }

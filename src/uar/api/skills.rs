@@ -417,13 +417,25 @@ async fn match_skills(
         Ok(snapshot) => snapshot,
         Err(error) => return selection_failure(error),
     };
+    if snapshot.config.engine == crate::uar::runtime::skills::service::SkillMatchingEngine::IntentClassifier {
+        return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
+            "error": "classifier_preview_binding_required", "outcome": "rejected"
+        }))).into_response();
+    }
     let matched = snapshot
-        .match_skills_scoped(
+        .match_skills_scoped_checked(
             &params.q,
             params.agent_id.as_deref(),
             params.conversation_id.as_deref(),
+            None,
         )
         .await;
+    let matched = match matched {
+        Ok(matched) => matched,
+        Err(_) => return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
+            "error": "skill_matching_unavailable", "outcome": "rejected"
+        }))).into_response(),
+    };
     Json(
         matched
             .accepted_skills()

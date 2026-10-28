@@ -134,7 +134,7 @@ impl ProviderRegistry {
             settings_revision: effective.settings_revision.to_string(),
             transform: EndpointRequestTransform::OpenAiCompatibleChatV1,
             allowed_request_fields: ["model", "messages", "stream", "stream_options", "tools",
-                "tool_choice", "parallel_tool_calls"].into_iter().map(str::to_owned).collect(),
+                "tool_choice", "parallel_tool_calls", "max_completion_tokens"].into_iter().map(str::to_owned).collect(),
             output_ceiling: None,
         })
     }

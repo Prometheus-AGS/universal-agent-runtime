@@ -555,6 +555,10 @@ impl IngestionWorkerPool {
         self: &Arc<Self>, dispatched: &mut Dispatched<Descriptor>,
         active: &mut HashMap<String, MailboxKey>, admitted: &mut std::collections::HashSet<String>,
     ) {
+        for (descriptor, error) in dispatched.rejected.drain(..) {
+            admitted.remove(&descriptor.payload.storage_key());
+            self.executor.persist_failure(&descriptor.payload, &TaskError::executor(error)).await;
+        }
         for descriptor in dispatched.expired.drain(..) {
             admitted.remove(&descriptor.payload.storage_key());
             self.executor.persist_failure(&descriptor.payload, &TaskError::DeadlineExpired).await;

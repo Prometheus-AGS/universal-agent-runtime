@@ -4,6 +4,7 @@ exclude = [
   "crates/prometheus-skill-system",
   ".claude/worktrees",
   "vendor/crates/esaxx-rs",
+  "vendor/patches/gemm-common-0.19.0",
   "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0",
   "vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0",
   "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0",
@@ -30,6 +31,9 @@ exclude = [
 resolver = "2"
 
 [patch.crates-io]
+# AArch64 FP16 assembly helpers must declare their instruction precondition.
+# Keep the 0.19.0 source and runtime dispatch; do not raise the CPU baseline.
+gemm-common = { path = "vendor/patches/gemm-common-0.19.0" }
 # esaxx-rs 0.1.10 forces /MT while the Windows OCR and ONNX dependencies use
 # /MD. The local source copy applies upstream PR #19's one-line runtime fix so
 # the production sidecar links against one MSVC runtime.
@@ -140,6 +144,12 @@ harness = false
 [[test]]
 name = "test_a2a_grpc"
 path = "tests/test_a2a_grpc.rs"
+required-features = ["a2a-transport"]
+
+# Installed-host user outcomes use generated A2A clients and an externally owned host.
+[[test]]
+name = "user_outcome_grpc"
+path = "tests/user_outcome_grpc.rs"
 required-features = ["a2a-transport"]
 
 # JWKS ES256/RS256 verification is observed through the A2A gRPC auth path.
@@ -596,7 +606,7 @@ lopdf = { version = "=0.44.0", optional = true, default-features = false }
 # together, then update Cargo.lock under the phase's verification boundary.
 # UAR owns execution and uses only the runtime-free admission core. The facade's
 # optional backends are not part of UAR's dependency graph.
-prometheus-parking-lot-core = { path = "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core" }
+prometheus-parking-lot-core = { path = "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core", version = "0.4.0" }
 num_cpus = "1.16"
 
 # Graph algorithms for community detection (Leiden)

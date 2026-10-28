@@ -1,0 +1,24 @@
+{
+  "id": "P0.6",
+  "argv": [
+    "/usr/local/bin/docker",
+    "image",
+    "inspect",
+    "--format",
+    "{{json .}}",
+    "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "pid": 33574,
+  "environment_names": [
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR"
+  ],
+  "CI_inherited": false,
+  "started": "2026-10-25T10:27:16.191345+00:00",
+  "stage_seconds": 7200,
+  "remaining_packet_seconds": 14156.190408281982
+}

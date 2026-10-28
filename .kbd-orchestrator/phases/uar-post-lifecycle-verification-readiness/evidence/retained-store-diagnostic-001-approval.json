@@ -1,0 +1,10 @@
+{
+  "operatorStatement": "Approve exact read-only diagnostic",
+  "packet": ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/packet006-retained-store-diagnostic-approval.md",
+  "budgetAtLaunch": {
+    "calls": 413,
+    "activeMinutes": 194.41947481666674,
+    "cutoff": "2026-10-24T19:54:22.337936+00:00"
+  },
+  "scope": "Owned store up; exact owner-scoped SELECT batch; private capture; owned stop/down. No tests/builds/main/model calls/database mutation/repair/retry/publication/extra preflight."
+}
