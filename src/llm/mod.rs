@@ -23,6 +23,7 @@ pub mod capability_registry;
 pub mod catalog;
 pub mod external_driver;
 pub mod health;
+pub(crate) mod inline_reasoning;
 pub mod liter_driver;
 pub mod mock_driver;
 pub mod orchestrator;

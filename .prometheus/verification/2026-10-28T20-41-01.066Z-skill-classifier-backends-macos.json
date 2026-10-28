@@ -1,0 +1,442 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-rules-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 12,
+        "name": "The rules classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 185471077
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 91643079
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the rules backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8522471927
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 960770,
+              "error_message": "AssertionError [ERR_ASSERTION]: No substitute backend\n+ actual - expected\n\n+ 'legacy_classifier.tfidf'\n- 'legacy_classifier.rules'\n                     ^\n\n    + expected - actual\n\n    -legacy_classifier.tfidf\n    +legacy_classifier.rules\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:112:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 232422349
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzLzNjYjRiYTJkLWQ1MDMtNDlkYy1iMWE5LWJlYjk3Y2Q4ZDc5Zi5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-hybrid-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 13,
+        "name": "The hybrid classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 146831785
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 88755728
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the hybrid backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3712290941
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 251387,
+              "error_message": "AssertionError [ERR_ASSERTION]: No substitute backend\n+ actual - expected\n\n+ 'legacy_classifier.tfidf'\n- 'legacy_classifier.hybrid'\n                     ^\n\n    + expected - actual\n\n    -legacy_classifier.tfidf\n    +legacy_classifier.hybrid\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:112:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 330046669
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzLzhmZGY0YzJiLWNhODMtNDY5MS1hMzQ4LTdmZTY3MjFhMzIzMi5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-localembedding-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 14,
+        "name": "The localembedding classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 176690930
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 91437579
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the localembedding backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4648846347
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 309043,
+              "error_message": "AssertionError [ERR_ASSERTION]: No substitute backend\n+ actual - expected\n\n+ 'legacy_classifier.tfidf'\n- 'legacy_classifier.localembedding'\n                     ^\n\n    + expected - actual\n\n    -legacy_classifier.tfidf\n    +legacy_classifier.localembedding\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:112:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 339014982
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzL2NkYWRmNmYzLTgzZGQtNGUzOC04YTIzLWExODRlMzRkYTRjMy5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-llm-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 15,
+        "name": "The llm classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 205522080
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 126910272
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the llm backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4364415311
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 182472,
+              "error_message": "AssertionError [ERR_ASSERTION]: No substitute backend\n+ actual - expected\n\n+ 'legacy_classifier.tfidf'\n- 'legacy_classifier.llm'\n                     ^\n\n    + expected - actual\n\n    -legacy_classifier.tfidf\n    +legacy_classifier.llm\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:112:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 278888038
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzLzU4YzIwNGEwLTE4NzgtNDI2Mi05YjU5LWU1NWU3MmY5MzhhMi5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "each-intent-classifier-backend-selects-and-uses-a-skill",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Each intent-classifier backend selects and uses a skill",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@settings",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-classifier-backends.feature"
+  }
+]

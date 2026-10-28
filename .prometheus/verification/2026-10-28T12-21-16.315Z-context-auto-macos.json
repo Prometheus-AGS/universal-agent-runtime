@@ -1,0 +1,116 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "auto-context-resolves-for-the-selected-model;auto-resolves-to-the-documented-strategy-for-the-model-window-and-keeps-the-recent-fact",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Auto resolves to the documented strategy for the model window and keeps the recent fact",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 87469944
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent using the auto context strategy on a model with a known context window",
+            "match": {
+              "location": "scripts/behaviors/steps/context-auto.steps.mjs:42"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10419148338
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I continue a seeded conversation longer than the resolved message budget",
+            "match": {
+              "location": "scripts/behaviors/steps/context-auto.steps.mjs:77"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 151235
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the reduction receipt shows the strategy the documented rule derives from that window",
+            "match": {
+              "location": "scripts/behaviors/steps/context-auto.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 70792
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the answer uses the recent fact and cannot see the oldest one",
+            "match": {
+              "location": "scripts/behaviors/steps/context-auto.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 138426887
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LWF1dG8vM2ViY2NmZjgtNjczMC00ZTNiLTk2NzctZTlmYmZkZjI0MTFmLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@auto",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "auto-context-resolves-for-the-selected-model",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Auto context resolves for the selected model",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@auto",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/context-auto.feature"
+  }
+]

@@ -1,0 +1,785 @@
+{
+  "scenario": "C38-MCP-TOOL-APPROVAL-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "requests": {
+    "approved": {
+      "label": "approved",
+      "task": "Store the value ORCHID-BC051E79 under the key note-2a19df06 with record_write. Then read the key note-2a19df06 back with record_read and tell me the exact value and revision that record_read returned.",
+      "approved": true,
+      "session_id": "fd74034a-1482-4346-abfb-008971ffce99",
+      "approvals": [
+        {
+          "approval_id": "e43657ef-d38c-4405-ba30-3c8f53aa98d9",
+          "tool": "c38rec2a19df06__record_write",
+          "approved": true
+        },
+        {
+          "approval_id": "cb1a3963-1020-4dab-a15d-b0da1558bd01",
+          "tool": "c38rec2a19df06__record_read",
+          "approved": true
+        }
+      ],
+      "statuses": [
+        "running",
+        "done"
+      ],
+      "run_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+      "event_names": [
+        "agui.artifact",
+        "agui.state.patch",
+        "agui.mcp.state",
+        "agui.stream.start",
+        "agui.message.delta",
+        "agui.tool_call.delta",
+        "agui.tool_call.complete",
+        "agui.tool_call.approval_required",
+        "agui.tool_result",
+        "agui.done"
+      ],
+      "status": "done",
+      "tool_events": [
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "call_index": 0,
+            "id": "call_01a17e16985c7744a875bfdc",
+            "delta": {
+              "arguments": "\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.complete",
+          "data": {
+            "kind": "tool_call",
+            "phase": "complete",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "call_index": 0,
+            "id": "call_01a17e16985c7744a875bfdc",
+            "name": "c38rec2a19df06__record_write",
+            "arguments_json": "{\"key\":\"note-2a19df06\",\"value\":\"ORCHID-BC051E79\"}"
+          }
+        },
+        {
+          "name": "agui.tool_call.approval_required",
+          "data": {
+            "kind": "tool_call",
+            "phase": "approval_required",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "approval_id": "e43657ef-d38c-4405-ba30-3c8f53aa98d9",
+            "admission_id": "ce092ca3-1444-4be0-a81d-db939e93eed7",
+            "call_index": 0,
+            "id": "call_01a17e16985c7744a875bfdc",
+            "name": "c38rec2a19df06__record_write",
+            "arguments_json": "{\"operation\":\"c38rec2a19df06__record_write\",\"detailsAvailable\":false}",
+            "risk_reason": "Tool 'c38rec2a19df06__record_write' requires approval under its descriptor"
+          }
+        },
+        {
+          "name": "agui.tool_result",
+          "data": {
+            "kind": "tool_result",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "call_index": 0,
+            "id": "call_01a17e16985c7744a875bfdc",
+            "name": "c38rec2a19df06__record_write",
+            "content": "{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"stored\\\":true,\\\"key\\\":\\\"note-2a19df06\\\",\\\"revision\\\":1}\"}],\"isError\":false}",
+            "success": true
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "call_index": 0,
+            "id": "call_01a17e16a058705c83cd4e63",
+            "delta": {
+              "arguments": "\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.complete",
+          "data": {
+            "kind": "tool_call",
+            "phase": "complete",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "call_index": 0,
+            "id": "call_01a17e16a058705c83cd4e63",
+            "name": "c38rec2a19df06__record_read",
+            "arguments_json": "{\"key\":\"note-2a19df06\"}"
+          }
+        },
+        {
+          "name": "agui.tool_call.approval_required",
+          "data": {
+            "kind": "tool_call",
+            "phase": "approval_required",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "approval_id": "cb1a3963-1020-4dab-a15d-b0da1558bd01",
+            "admission_id": "f9693cf1-beef-4843-9ba2-24ddca4b295e",
+            "call_index": 0,
+            "id": "call_01a17e16a058705c83cd4e63",
+            "name": "c38rec2a19df06__record_read",
+            "arguments_json": "{\"operation\":\"c38rec2a19df06__record_read\",\"detailsAvailable\":false}",
+            "risk_reason": "Tool 'c38rec2a19df06__record_read' requires approval under its descriptor"
+          }
+        },
+        {
+          "name": "agui.tool_result",
+          "data": {
+            "kind": "tool_result",
+            "request_id": "a0930331-c134-4213-a88d-ba71df1458a2",
+            "call_index": 0,
+            "id": "call_01a17e16a058705c83cd4e63",
+            "name": "c38rec2a19df06__record_read",
+            "content": "{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"found\\\":true,\\\"key\\\":\\\"note-2a19df06\\\",\\\"value\\\":\\\"ORCHID-BC051E79\\\",\\\"revision\\\":1}\"}],\"isError\":false}",
+            "success": true
+          }
+        }
+      ],
+      "answer": "I'll write the value first, then read it back.\n\nBoth operations completed successfully.\n\n**`record_write`** returned: `{\"stored\":true,\"key\":\"note-2a19df06\",\"revision\":1}`\n\n**`record_read`** returned exactly:\n- **Value:** `ORCHID-BC051E79`\n- **Revision:** `1`\n\nThe full read payload was `{\"found\":true,\"key\":\"note-2a19df06\",\"value\":\"ORCHID-BC051E79\",\"revision\":1}`.",
+      "peer_records_after": {
+        "note-2a19df06": {
+          "value": "ORCHID-BC051E79",
+          "revision": 1
+        }
+      },
+      "peer_log_after": [
+        {
+          "at": "2026-10-27T15:59:33.079Z",
+          "tool": "record_write",
+          "arguments": {
+            "key": "note-2a19df06",
+            "value": "ORCHID-BC051E79"
+          },
+          "result": {
+            "stored": true,
+            "key": "note-2a19df06",
+            "revision": 1
+          }
+        },
+        {
+          "at": "2026-10-27T15:59:35.157Z",
+          "tool": "record_read",
+          "arguments": {
+            "key": "note-2a19df06"
+          },
+          "result": {
+            "found": true,
+            "key": "note-2a19df06",
+            "value": "ORCHID-BC051E79",
+            "revision": 1
+          }
+        }
+      ]
+    },
+    "denied": {
+      "label": "denied",
+      "task": "Store the value CACTUS-09135F90 under the key note-2a19df06 with record_write and tell me the revision it returns.",
+      "approved": false,
+      "session_id": "5f1f647b-57b5-4f36-9542-35d8930589d8",
+      "approvals": [
+        {
+          "approval_id": "eba0c782-e11d-4744-b43e-dd8c312f7178",
+          "tool": "c38rec2a19df06__record_write",
+          "approved": false
+        }
+      ],
+      "statuses": [
+        "running",
+        "done"
+      ],
+      "run_id": "54cd5290-d287-407e-8299-1dc19189fd93",
+      "event_names": [
+        "agui.artifact",
+        "agui.state.patch",
+        "agui.mcp.state",
+        "agui.stream.start",
+        "agui.message.delta",
+        "agui.tool_call.delta",
+        "agui.tool_call.complete",
+        "agui.tool_call.approval_required",
+        "agui.tool_result",
+        "agui.done"
+      ],
+      "status": "done",
+      "tool_events": [
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "54cd5290-d287-407e-8299-1dc19189fd93",
+            "call_index": 0,
+            "id": "call_CBfBqOsjZRvumFvIKmZwXbCS",
+            "delta": {
+              "arguments": "\"{\\\"key\\\": \\\"note-2a19df06\\\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.complete",
+          "data": {
+            "kind": "tool_call",
+            "phase": "complete",
+            "request_id": "54cd5290-d287-407e-8299-1dc19189fd93",
+            "call_index": 0,
+            "id": "call_CBfBqOsjZRvumFvIKmZwXbCS",
+            "name": "c38rec2a19df06__record_write",
+            "arguments_json": "{\"key\":\"note-2a19df06\",\"value\":\"CACTUS-09135F90\"}"
+          }
+        },
+        {
+          "name": "agui.tool_call.approval_required",
+          "data": {
+            "kind": "tool_call",
+            "phase": "approval_required",
+            "request_id": "54cd5290-d287-407e-8299-1dc19189fd93",
+            "approval_id": "eba0c782-e11d-4744-b43e-dd8c312f7178",
+            "admission_id": "aa8b5368-de32-4636-99b3-f4c0b0b4eeca",
+            "call_index": 0,
+            "id": "call_CBfBqOsjZRvumFvIKmZwXbCS",
+            "name": "c38rec2a19df06__record_write",
+            "arguments_json": "{\"operation\":\"c38rec2a19df06__record_write\",\"detailsAvailable\":false}",
+            "risk_reason": "Tool 'c38rec2a19df06__record_write' requires approval under its descriptor"
+          }
+        },
+        {
+          "name": "agui.tool_result",
+          "data": {
+            "kind": "tool_result",
+            "request_id": "54cd5290-d287-407e-8299-1dc19189fd93",
+            "call_index": 0,
+            "id": "call_CBfBqOsjZRvumFvIKmZwXbCS",
+            "name": "c38rec2a19df06__record_write",
+            "content": "{\"status\":\"error\",\"tool_call_id\":\"call_CBfBqOsjZRvumFvIKmZwXbCS\",\"tool\":\"c38rec2a19df06__record_write\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"message\":\"Tool call rejected: Rejected by user\"}",
+            "success": false
+          }
+        }
+      ],
+      "answer": "I'll store that value for you.\n\nThe write was not performed — the tool call was rejected by the user before it executed.\n\n- **Key:** `note-2a19df06`\n- **Value attempted:** `CACTUS-09135F90`\n- **Result:** `Tool call rejected: Rejected by user`\n- **Revision:** none — no revision was returned because the store was never written.\n\nIf you'd like, I can retry the same write, or adjust the key/value first.",
+      "peer_records_after": {
+        "note-2a19df06": {
+          "value": "ORCHID-BC051E79",
+          "revision": 1
+        }
+      },
+      "peer_log_after": [
+        {
+          "at": "2026-10-27T15:59:33.079Z",
+          "tool": "record_write",
+          "arguments": {
+            "key": "note-2a19df06",
+            "value": "ORCHID-BC051E79"
+          },
+          "result": {
+            "stored": true,
+            "key": "note-2a19df06",
+            "revision": 1
+          }
+        },
+        {
+          "at": "2026-10-27T15:59:35.157Z",
+          "tool": "record_read",
+          "arguments": {
+            "key": "note-2a19df06"
+          },
+          "result": {
+            "found": true,
+            "key": "note-2a19df06",
+            "value": "ORCHID-BC051E79",
+            "revision": 1
+          }
+        }
+      ]
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-record-agent-2a19df06",
+        "metadata": {
+          "title": "Disposable Record Agent",
+          "description": "Stores and reads records through an MCP record peer.",
+          "tags": [
+            "records"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "c38rec2a19df06__record_write",
+              "c38rec2a19df06__record_read"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You store and read records only with the record_write and record_read tools. Report only values and revisions returned by the tools. If a tool call is denied or fails, say plainly that the operation was not performed.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.run_policy": {
+            "mcp_servers": {
+              "mode": "selected",
+              "ids": [
+                "c38rec2a19df06"
+              ]
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-record-agent-2a19df06\",\"metadata\":{\"title\":\"Disposable Record Agent\",\"description\":\"Stores and reads records through an MCP record peer.\",\"tags\":[\"records\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"c38rec2a19df06__record_write\",\"c38rec2a19df06__record_read\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You store and read records only with the record_write and record_read tools. Report only values and revisions returned by the tools. If a tool call is denied or fails, say plainly that the operation was not performed.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"mcp_servers\":{\"mode\":\"selected\",\"ids\":[\"c38rec2a19df06\"]}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-record-agent-2a19df06\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-record-agent-2a19df06",
+        "input": "Store the value ORCHID-BC051E79 under the key note-2a19df06 with record_write. Then read the key note-2a19df06 back with record_read and tell me the exact value and revision that record_read returned.",
+        "session_id": "fd74034a-1482-4346-abfb-008971ffce99",
+        "mcp_servers": [
+          {
+            "name": "c38rec2a19df06",
+            "url": "http://127.0.0.1:59419/mcp"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"stream_url\":\"/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":{\"version\":1,\"eventId\":\"e43657ef-d38c-4405-ba30-3c8f53aa98d9\",\"cursor\":19,\"rootRunId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"approvalId\":\"e43657ef-d38c-4405-ba30-3c8f53aa98d9\",\"issuerId\":\"805b23b2-bf24-43b4-a4ea-df992cfd8e67\",\"challengeId\":\"e43657ef-d38c-4405-ba30-3c8f53aa98d9\",\"admissionId\":\"ce092ca3-1444-4be0-a81d-db939e93eed7\",\"admissionOwner\":\"paired-host\",\"decisionOwner\":\"uar-runtime\",\"callIndex\":0,\"toolCallId\":\"call_01a17e16985c7744a875bfdc\",\"name\":\"c38rec2a19df06__record_write\",\"argumentsJson\":\"{\\\"operation\\\":\\\"c38rec2a19df06__record_write\\\",\\\"detailsAvailable\\\":false}\",\"riskReason\":\"Tool 'c38rec2a19df06__record_write' requires approval under its descriptor\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval",
+      "request": {
+        "approved": true,
+        "approval_id": "e43657ef-d38c-4405-ba30-3c8f53aa98d9"
+      },
+      "status": 200,
+      "response": "{\"resolved\":true,\"decision\":\"allow\",\"record\":{\"version\":1,\"issuerId\":\"805b23b2-bf24-43b4-a4ea-df992cfd8e67\",\"challengeId\":\"e43657ef-d38c-4405-ba30-3c8f53aa98d9\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"admissionId\":\"ce092ca3-1444-4be0-a81d-db939e93eed7\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_01a17e16985c7744a875bfdc\",\"toolName\":\"c38rec2a19df06__record_write\",\"createdAt\":\"2026-10-27T15:59:32.697980Z\",\"expiresAt\":\"2026-10-27T16:04:32.697956Z\",\"state\":\"approved\",\"decision\":{\"decisionId\":\"b6243917-ac2a-4fcb-9ca3-d1e7344e23e3\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":true,\"decidedAt\":\"2026-10-27T15:59:33.008681Z\"},\"updatedAt\":\"2026-10-27T15:59:33.008681Z\",\"continuation\":{\"checkpointId\":\"5853a039-77aa-4c0e-ab2c-ecd701efa519\",\"checkpointRevision\":\"f70782f2f0f393fd8f94c78d96425e5d4e5449fc6e3a2debb7903083cc4cf65f\",\"bindingDigest\":\"4c1950befc2210a397ee4d6479454f915e6ab64de3c3698999e543f48dfcbd04\",\"callIndex\":0},\"resolvable\":false,\"recoveryAvailable\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":{\"version\":1,\"eventId\":\"cb1a3963-1020-4dab-a15d-b0da1558bd01\",\"cursor\":34,\"rootRunId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"approvalId\":\"cb1a3963-1020-4dab-a15d-b0da1558bd01\",\"issuerId\":\"805b23b2-bf24-43b4-a4ea-df992cfd8e67\",\"challengeId\":\"cb1a3963-1020-4dab-a15d-b0da1558bd01\",\"admissionId\":\"f9693cf1-beef-4843-9ba2-24ddca4b295e\",\"admissionOwner\":\"paired-host\",\"decisionOwner\":\"uar-runtime\",\"callIndex\":0,\"toolCallId\":\"call_01a17e16a058705c83cd4e63\",\"name\":\"c38rec2a19df06__record_read\",\"argumentsJson\":\"{\\\"operation\\\":\\\"c38rec2a19df06__record_read\\\",\\\"detailsAvailable\\\":false}\",\"riskReason\":\"Tool 'c38rec2a19df06__record_read' requires approval under its descriptor\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval",
+      "request": {
+        "approved": true,
+        "approval_id": "cb1a3963-1020-4dab-a15d-b0da1558bd01"
+      },
+      "status": 200,
+      "response": "{\"resolved\":true,\"decision\":\"allow\",\"record\":{\"version\":1,\"issuerId\":\"805b23b2-bf24-43b4-a4ea-df992cfd8e67\",\"challengeId\":\"cb1a3963-1020-4dab-a15d-b0da1558bd01\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"admissionId\":\"f9693cf1-beef-4843-9ba2-24ddca4b295e\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_01a17e16a058705c83cd4e63\",\"toolName\":\"c38rec2a19df06__record_read\",\"createdAt\":\"2026-10-27T15:59:34.690593Z\",\"expiresAt\":\"2026-10-27T16:04:34.690575Z\",\"state\":\"approved\",\"decision\":{\"decisionId\":\"dcbb8d51-fa2c-481f-8336-c42cd3d2ad01\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":true,\"decidedAt\":\"2026-10-27T15:59:35.069676Z\"},\"updatedAt\":\"2026-10-27T15:59:35.069676Z\",\"continuation\":{\"checkpointId\":\"3d57f1e4-ee26-4ca2-81c1-a7bcf5ad579b\",\"checkpointRevision\":\"557f069aa47b90530fb2302390ca6345db782fa71b12da939479910a4ac74dc3\",\"bindingDigest\":\"4d862f34e5261c389e162779778a253f3fa3f5294557827801403c4a9873ef62\",\"callIndex\":0},\"resolvable\":false,\"recoveryAvailable\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2",
+      "status": 200,
+      "response": "{\"run_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"fd74034a-1482-4346-abfb-008971ffce99\",\"status\":\"done\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/a0930331-c134-4213-a88d-ba71df1458a2/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"after\":0,\"cursor\":64,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"a0930331-c134-4213-a88d-ba71df1458a2\",\"artifact_id\":\"run-policy-a0930331-c134-4213-a88d-ba71df1458a2\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-a0930331-c134-4213-a88d-ba71df1458a2\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-a0930331-c134-4213-a88d-ba71df1458a2\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-a0930331-c134-4213-a88d-ba71df1458a2\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-record-agent-2a19df06\\\",\\\"skills\\\":\\\"Skills · auto · 210 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selec"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-record-agent-2a19df06",
+        "input": "Store the value CACTUS-09135F90 under the key note-2a19df06 with record_write and tell me the revision it returns.",
+        "session_id": "5f1f647b-57b5-4f36-9542-35d8930589d8",
+        "mcp_servers": [
+          {
+            "name": "c38rec2a19df06",
+            "url": "http://127.0.0.1:59419/mcp"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"stream_url\":\"/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":{\"version\":1,\"eventId\":\"eba0c782-e11d-4744-b43e-dd8c312f7178\",\"cursor\":18,\"rootRunId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"approvalId\":\"eba0c782-e11d-4744-b43e-dd8c312f7178\",\"issuerId\":\"805b23b2-bf24-43b4-a4ea-df992cfd8e67\",\"challengeId\":\"eba0c782-e11d-4744-b43e-dd8c312f7178\",\"admissionId\":\"aa8b5368-de32-4636-99b3-f4c0b0b4eeca\",\"admissionOwner\":\"paired-host\",\"decisionOwner\":\"uar-runtime\",\"callIndex\":0,\"toolCallId\":\"call_CBfBqOsjZRvumFvIKmZwXbCS\",\"name\":\"c38rec2a19df06__record_write\",\"argumentsJson\":\"{\\\"operation\\\":\\\"c38rec2a19df06__record_write\\\",\\\"detailsAvailable\\\":false}\",\"riskReason\":\"Tool 'c38rec2a19df06__record_write' requires approval under its descriptor\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval",
+      "request": {
+        "approved": false,
+        "approval_id": "eba0c782-e11d-4744-b43e-dd8c312f7178"
+      },
+      "status": 200,
+      "response": "{\"resolved\":true,\"decision\":\"deny\",\"record\":{\"version\":1,\"issuerId\":\"805b23b2-bf24-43b4-a4ea-df992cfd8e67\",\"challengeId\":\"eba0c782-e11d-4744-b43e-dd8c312f7178\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"admissionId\":\"aa8b5368-de32-4636-99b3-f4c0b0b4eeca\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_CBfBqOsjZRvumFvIKmZwXbCS\",\"toolName\":\"c38rec2a19df06__record_write\",\"createdAt\":\"2026-10-27T15:59:45.074600Z\",\"expiresAt\":\"2026-10-27T16:04:45.074581Z\",\"state\":\"denied\",\"decision\":{\"decisionId\":\"fe602c4c-9192-448d-9622-104baa667d31\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":false,\"decidedAt\":\"2026-10-27T15:59:45.678653Z\"},\"updatedAt\":\"2026-10-27T15:59:45.678654Z\",\"continuation\":{\"checkpointId\":\"b5f4f4d5-3610-444e-af80-2510270fd102\",\"checkpointRevision\":\"942a872cde17bec96e400d88ac5a61769f54e4e699306ec4bf64282154206e08\",\"bindingDigest\":\"db9456c18d736a0a3f523a83d8cf769273d6cc4c550b138333441b4dc6ec5ee4\",\"callIndex\":0},\"resolvable\":false,\"recoveryAvailable\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"running\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93",
+      "status": 200,
+      "response": "{\"run_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"conversation_id\":\"5f1f647b-57b5-4f36-9542-35d8930589d8\",\"status\":\"done\",\"agent_revision\":\"sha256:844389a65141781f01f722728e6c0012f5c9bd77604b3bf644b3bc0683c8cf7a\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-2a19df06\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/54cd5290-d287-407e-8299-1dc19189fd93/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"after\":0,\"cursor\":36,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"54cd5290-d287-407e-8299-1dc19189fd93\",\"artifact_id\":\"run-policy-54cd5290-d287-407e-8299-1dc19189fd93\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-54cd5290-d287-407e-8299-1dc19189fd93\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-54cd5290-d287-407e-8299-1dc19189fd93\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-54cd5290-d287-407e-8299-1dc19189fd93\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-record-agent-2a19df06\\\",\\\"skills\\\":\\\"Skills · auto · 210 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selec"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-record-agent-2a19df06",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/fd74034a-1482-4346-abfb-008971ffce99",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/5f1f647b-57b5-4f36-9542-35d8930589d8",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 27238
+  },
+  "owned_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c38-mcp-peer/2a19df06-afcd-4ee3-932a-04de30cd5a86",
+  "server_name": "c38rec2a19df06",
+  "agent_id": "disposable-record-agent-2a19df06",
+  "scenario_policy": {
+    "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/policies/c38-mcp-tool-2a19df06-afcd-4ee3-932a-04de30cd5a86.cedar",
+    "principal": "disposable-record-agent-2a19df06",
+    "tools": [
+      "c38rec2a19df06__record_write",
+      "c38rec2a19df06__record_read"
+    ]
+  },
+  "restart_enable": {
+    "previous_pid": 27238,
+    "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-82764ce5-0cee-4bda-8db0-ca3f164f87f2.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 30315,
+    "new_process_ready": true
+  },
+  "peer": {
+    "url": "http://127.0.0.1:59419/mcp",
+    "pid": 31053,
+    "transport": "streamable_http_loopback",
+    "tools": [
+      "record_write",
+      "record_read"
+    ]
+  },
+  "result": "VERIFIED",
+  "restart_restore": {
+    "previous_pid": 30315,
+    "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-530c1f43-33d2-4ab6-a586-ee722903cc88.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 32267,
+    "new_process_ready": true
+  },
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 47936
+}

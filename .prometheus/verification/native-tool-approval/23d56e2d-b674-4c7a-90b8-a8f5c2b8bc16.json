@@ -1,0 +1,809 @@
+{
+  "scenario": "C37-NATIVE-TOOL-APPROVAL-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "requests": {
+    "approved": {
+      "label": "approved",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/approved-23d56e2d.txt",
+      "content": "C37 approved note 7d00d7db-f6fc-440f-b09e-235176b56c6e",
+      "approved": true,
+      "thread_id": "98f740f3-7588-4728-9f84-f0643d143ca3",
+      "runs": [
+        {
+          "run_id": "124ac110-68d5-47f5-b126-f637600d3950",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "98f740f3-7588-4728-9f84-f0643d143ca3",
+              "runId": "124ac110-68d5-47f5-b126-f637600d3950",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "TEXT_MESSAGE_START",
+              "messageId": "124ac110-68d5-47f5-b126-f637600d3950:assistant",
+              "role": "assistant"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "124ac110-68d5-47f5-b126-f637600d3950:assistant",
+              "delta": "I'll"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "124ac110-68d5-47f5-b126-f637600d3950:assistant",
+              "delta": " write the file now"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "124ac110-68d5-47f5-b126-f637600d3950:assistant",
+              "delta": "."
+            },
+            {
+              "type": "TOOL_CALL_START",
+              "toolCallId": "call_01a183a6a5e470ca871865ea",
+              "toolCallName": "file_write"
+            },
+            {
+              "type": "TOOL_CALL_ARGS",
+              "toolCallId": "call_01a183a6a5e470ca871865ea",
+              "delta": "{\"content\":\"C37 approved note 7d00d7db-f6fc-440f-b09e-235176b56c6e\",\"path\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/approved-23d56e2d.txt\"}"
+            },
+            {
+              "type": "TOOL_CALL_END",
+              "toolCallId": "call_01a183a6a5e470ca871865ea"
+            },
+            {
+              "type": "TEXT_MESSAGE_END",
+              "messageId": "124ac110-68d5-47f5-b126-f637600d3950:assistant"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "98f740f3-7588-4728-9f84-f0643d143ca3",
+              "runId": "124ac110-68d5-47f5-b126-f637600d3950",
+              "outcome": {
+                "type": "interrupt",
+                "interrupts": [
+                  {
+                    "id": "b3fb4342-f87a-422f-b543-995c6f467866",
+                    "reason": "tool_approval",
+                    "message": "Approve file_write",
+                    "toolCallId": "call_01a183a6a5e470ca871865ea",
+                    "expiresAt": "2026-10-28T17:59:59.709575+00:00",
+                    "responseSchema": {
+                      "type": "object",
+                      "properties": {
+                        "approved": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "approved"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "run_id": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "98f740f3-7588-4728-9f84-f0643d143ca3",
+              "runId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "TOOL_CALL_RESULT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:result:call_01a183a6a5e470ca871865ea",
+              "toolCallId": "call_01a183a6a5e470ca871865ea",
+              "role": "tool",
+              "content": "{\"ok\":true,\"path\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/approved-23d56e2d.txt\",\"bytes_written\":54,\"mode\":\"overwrite\"}"
+            },
+            {
+              "type": "TEXT_MESSAGE_START",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "role": "assistant"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "Th"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "e fil"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "e was written successfully.\n\n"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "-"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": " **Pat"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "h:**"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": " `/Users/gqadonis/Project"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "s/prometheus/universal-agent-runtime/target"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "/c37-native-tool/23d56"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "e2d-b674-4"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "c7a-90b8-a8"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "f5c2b8bc16"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "/approved-23d56e2"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "d.txt`\n- **bytes_written"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": ":** 54\n"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "- **mode:** overwrit"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant",
+              "delta": "e"
+            },
+            {
+              "type": "TEXT_MESSAGE_END",
+              "messageId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7:assistant"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "98f740f3-7588-4728-9f84-f0643d143ca3",
+              "runId": "b8e1e22a-4b82-45f0-b5ef-fa7a90715ce7",
+              "outcome": {
+                "type": "success"
+              }
+            }
+          ]
+        }
+      ],
+      "interrupt_id": "b3fb4342-f87a-422f-b543-995c6f467866",
+      "tool_call_id": "call_01a183a6a5e470ca871865ea",
+      "tool_call_starts": 1,
+      "tool_results": [
+        "{\"ok\":true,\"path\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/approved-23d56e2d.txt\",\"bytes_written\":54,\"mode\":\"overwrite\"}"
+      ],
+      "errors": [],
+      "outcome": {
+        "type": "success"
+      },
+      "answer": "The file was written successfully.\n\n- **Path:** `/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/approved-23d56e2d.txt`\n- **bytes_written:** 54\n- **mode:** overwrite",
+      "disk_after": "C37 approved note 7d00d7db-f6fc-440f-b09e-235176b56c6e"
+    },
+    "denied": {
+      "label": "denied",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/denied-23d56e2d.txt",
+      "content": "C37 denied note 2801c5da-05b0-43a0-9106-011a1ad77c03",
+      "approved": false,
+      "thread_id": "5bb92b30-99f8-4b20-9133-b3fb342cb942",
+      "runs": [
+        {
+          "run_id": "c0547a82-86ea-4c72-8467-f347e4a12952",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "5bb92b30-99f8-4b20-9133-b3fb342cb942",
+              "runId": "c0547a82-86ea-4c72-8467-f347e4a12952",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "TEXT_MESSAGE_START",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "role": "assistant"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "<think>Th"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "e task: write th"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "e file exactly"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": " once with th"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "e given content. Let me do that.\n\n"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "The content is:\n\"C"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "37 denied note 2801c5"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "da-05b0-43"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "a0-9106-011a1"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "ad77c03\"\n\n"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "Path i"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "s within"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": " the allowed directory. Let me write it"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "."
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant",
+              "delta": "</think>\n\n"
+            },
+            {
+              "type": "TOOL_CALL_START",
+              "toolCallId": "call_01a183a6c468776dafaca513",
+              "toolCallName": "file_write"
+            },
+            {
+              "type": "TOOL_CALL_ARGS",
+              "toolCallId": "call_01a183a6c468776dafaca513",
+              "delta": "{\"content\":\"C37 denied note 2801c5da-05b0-43a0-9106-011a1ad77c03\\n\",\"path\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/denied-23d56e2d.txt\"}"
+            },
+            {
+              "type": "TOOL_CALL_END",
+              "toolCallId": "call_01a183a6c468776dafaca513"
+            },
+            {
+              "type": "TEXT_MESSAGE_END",
+              "messageId": "c0547a82-86ea-4c72-8467-f347e4a12952:assistant"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "5bb92b30-99f8-4b20-9133-b3fb342cb942",
+              "runId": "c0547a82-86ea-4c72-8467-f347e4a12952",
+              "outcome": {
+                "type": "interrupt",
+                "interrupts": [
+                  {
+                    "id": "eaf9a1ae-cac2-4dbe-be35-2a6172322410",
+                    "reason": "tool_approval",
+                    "message": "Approve file_write",
+                    "toolCallId": "call_01a183a6c468776dafaca513",
+                    "expiresAt": "2026-10-28T18:00:07.467959+00:00",
+                    "responseSchema": {
+                      "type": "object",
+                      "properties": {
+                        "approved": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "approved"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "run_id": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "5bb92b30-99f8-4b20-9133-b3fb342cb942",
+              "runId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "TOOL_CALL_RESULT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:result:call_01a183a6c468776dafaca513",
+              "toolCallId": "call_01a183a6c468776dafaca513",
+              "role": "tool",
+              "content": "{\"status\":\"error\",\"tool_call_id\":\"call_01a183a6c468776dafaca513\",\"tool\":\"file_write\",\"provenance\":{\"source\":\"native\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"message\":\"Tool call rejected: Rejected by user\"}"
+            },
+            {
+              "type": "TEXT_MESSAGE_START",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "role": "assistant"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "Th"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "e write was not performed. The `"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "file_write` tool call was rejected by"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": " the user, so no fil"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "e was created and no"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": " `bytes_written` valu"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "e was returned.\n\n-"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": " **"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "Path requested"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": ":** `/Users/gqad"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "onis/Projects/prometheus/universal-agent"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "-runtime/target/c37-native-tool/"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "23d56e2d-b674"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "-4c7a-90b"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "8-a8f5c2b"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "8bc16/denied-23"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "d56e2d.txt`\n-"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": " **Result:** `statu"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "s: error`"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": " — \"Tool"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": " call rejected: Rejected by user\"\n"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "- **bytes_written:** non"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant",
+              "delta": "e reported"
+            },
+            {
+              "type": "TEXT_MESSAGE_END",
+              "messageId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc:assistant"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "5bb92b30-99f8-4b20-9133-b3fb342cb942",
+              "runId": "debb3dc6-3bd4-4a5c-980e-a10981ff61fc",
+              "outcome": {
+                "type": "success"
+              }
+            }
+          ]
+        }
+      ],
+      "interrupt_id": "eaf9a1ae-cac2-4dbe-be35-2a6172322410",
+      "tool_call_id": "call_01a183a6c468776dafaca513",
+      "tool_call_starts": 1,
+      "tool_results": [
+        "{\"status\":\"error\",\"tool_call_id\":\"call_01a183a6c468776dafaca513\",\"tool\":\"file_write\",\"provenance\":{\"source\":\"native\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"message\":\"Tool call rejected: Rejected by user\"}"
+      ],
+      "errors": [],
+      "outcome": {
+        "type": "success"
+      },
+      "answer": "The write was not performed. The `file_write` tool call was rejected by the user, so no file was created and no `bytes_written` value was returned.\n\n- **Path requested:** `/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16/denied-23d56e2d.txt`\n- **Result:** `status: error` — \"Tool call rejected: Rejected by user\"\n- **bytes_written:** none reported",
+      "disk_after": null
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "status": 200,
+      "response": "{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[],\"saved\":[],\"effective\":[],\"revision\":\"2026-10-27T15:47:33.046093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-27T15:47:33.046093Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "status": 200,
+      "response": "{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-27T15:47:33.088464000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-27T15:47:33.088464Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "status": 200,
+      "response": "{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[],\"saved\":[],\"effective\":[],\"revision\":\"2026-10-27T15:47:33.046093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-27T15:47:33.046093Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "request": {
+        "value": [
+          "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16"
+        ],
+        "expected_revision": "2026-10-27T15:47:33.046093000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"native_tools.file_allowed_paths\",\"namespace\":\"native_tools\",\"setting\":{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"saved\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"effective\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"revision\":\"2026-10-28T17:54:41.322479000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-28T17:54:41.322479Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "status": 200,
+      "response": "{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-27T15:47:33.088464000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-27T15:47:33.088464Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-27T15:47:33.088464000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"native_tools.file_tools_enabled\",\"namespace\":\"native_tools\",\"setting\":{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T17:54:41.368466000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-28T17:54:41.368466Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "status": 200,
+      "response": "{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"saved\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"effective\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"revision\":\"2026-10-28T17:54:41.322479000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-28T17:54:41.322479Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "status": 200,
+      "response": "{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T17:54:41.368466000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-28T17:54:41.368466Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-file-writer-23d56e2d",
+        "metadata": {
+          "title": "Disposable File Writer",
+          "description": "Writes requested notes with the native file_write tool.",
+          "tags": [
+            "files"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "file_write"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You write requested notes with the file_write tool, only inside /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16. Call the tool at most once per request. Report only facts returned by the tool. If a tool call is denied or fails, say plainly that the file was not written.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-file-writer-23d56e2d\",\"metadata\":{\"title\":\"Disposable File Writer\",\"description\":\"Writes requested notes with the native file_write tool.\",\"tags\":[\"files\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"file_write\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You write requested notes with the file_write tool, only inside /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16. Call the tool at most once per request. Report only facts returned by the tool. If a tool call is denied or fails, say plainly that the file was not written.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:81e48e102888e1e19db9e482a97b07169caf3e15dd9a8311d22a0d2823f7aa60\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-file-writer-23d56e2d\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-file-writer-23d56e2d",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/98f740f3-7588-4728-9f84-f0643d143ca3",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/5bb92b30-99f8-4b20-9133-b3fb342cb942",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "status": 200,
+      "response": "{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"saved\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"effective\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16\"],\"revision\":\"2026-10-28T17:54:41.322479000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-28T17:54:41.322479Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "request": {
+        "value": [],
+        "expected_revision": "2026-10-28T17:54:41.322479000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"native_tools.file_allowed_paths\",\"namespace\":\"native_tools\",\"setting\":{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[],\"saved\":[],\"effective\":[],\"revision\":\"2026-10-28T17:55:09.855139000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-28T17:55:09.855139Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "status": 200,
+      "response": "{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T17:54:41.368466000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-28T17:54:41.368466Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "request": {
+        "value": false,
+        "expected_revision": "2026-10-28T17:54:41.368466000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"native_tools.file_tools_enabled\",\"namespace\":\"native_tools\",\"setting\":{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T17:55:09.901530000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-28T17:55:09.901530Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_allowed_paths",
+      "status": 200,
+      "response": "{\"id\":\"41e97692-4d99-45f6-b614-b8dff1cac799\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"Allowed File Paths\",\"key\":\"native_tools.file_allowed_paths\",\"data\":[],\"saved\":[],\"effective\":[],\"revision\":\"2026-10-28T17:55:09.855139000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381075Z\",\"updated_at\":\"2026-10-28T17:55:09.855139Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/native_tools.file_tools_enabled",
+      "status": 200,
+      "response": "{\"id\":\"332c0abd-9b15-4605-b96b-ce3ae4c6df9a\",\"settings_type_id\":\"596d03f3-265e-4e6f-83c9-270f313f4921\",\"name\":\"File Tools Enabled\",\"key\":\"native_tools.file_tools_enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T17:55:09.901530000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T15:44:21.381073Z\",\"updated_at\":\"2026-10-28T17:55:09.901530Z\",\"source\":\"Api\",\"is_drift\":false}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 15316
+  },
+  "original_settings": {
+    "native_tools.file_allowed_paths": {
+      "saved": [],
+      "source": "Api",
+      "revision": "2026-10-27T15:47:33.046093000Z"
+    },
+    "native_tools.file_tools_enabled": {
+      "saved": false,
+      "source": "Api",
+      "revision": "2026-10-27T15:47:33.088464000Z"
+    }
+  },
+  "owned_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c37-native-tool/23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16",
+  "scenario_policy": {
+    "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/policies/c37-native-tool-23d56e2d-b674-4c7a-90b8-a8f5c2b8bc16.cedar",
+    "principal": "disposable-file-writer-23d56e2d",
+    "tool": "file_write"
+  },
+  "restart_enable": {
+    "previous_pid": 15316,
+    "binary_sha256": "50ac01d68248aac51f285651c44b39989c8719cc025db8386cebbd7e5f4ac104",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-04b994b8-8fc0-4667-9492-932f53a92a02.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 25609,
+    "new_process_ready": true
+  },
+  "agent_id": "disposable-file-writer-23d56e2d",
+  "result": "VERIFIED",
+  "restart_restore": {
+    "previous_pid": 25609,
+    "binary_sha256": "50ac01d68248aac51f285651c44b39989c8719cc025db8386cebbd7e5f4ac104",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-b23f51db-a939-4f94-9191-0392c08e0668.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 26099,
+    "new_process_ready": true
+  },
+  "restored_settings": {
+    "native_tools.file_allowed_paths": {
+      "saved": [],
+      "effective": [],
+      "source": "Api"
+    },
+    "native_tools.file_tools_enabled": {
+      "saved": false,
+      "effective": false,
+      "source": "Api"
+    }
+  },
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 43480
+}

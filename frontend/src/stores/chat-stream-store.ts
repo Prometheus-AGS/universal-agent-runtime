@@ -29,6 +29,9 @@ export interface UarChatPayload {
   agent_id?: string;
   /** Model override in "provider/model" format. */
   model?: string;
+  /** Client-only, never sent: id of the user message the caller already saved
+   * to PGlite. The history reload then holds it, so no second copy is added. */
+  persistedUserMessageId?: string;
 }
 export interface StreamCallbacks {
   onComplete?: () => void;
@@ -735,7 +738,10 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       return;
     }
 
-    if (!continuation) {
+    const history = useChatMessageStore.getState().messagesByThread[threadId] ?? [];
+    const alreadyLoaded = payload.persistedUserMessageId !== undefined
+      && history.some((message) => message.id === payload.persistedUserMessageId);
+    if (!continuation && !alreadyLoaded) {
     const userMsgId = `user-${Date.now()}`;
     // Build user message content: text + any image attachments for in-thread display
     const imageBlocks = (payload.attachments ?? [])

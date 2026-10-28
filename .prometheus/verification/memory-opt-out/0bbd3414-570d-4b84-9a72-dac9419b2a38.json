@@ -1,0 +1,283 @@
+{
+  "scenario": "E03-MEMORY-OPT-OUT-RESTART",
+  "scope": "opt-out-survives-restart half; retention expiry deferred until genuinely aged data exists",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "conversations": {
+    "tell_first": {
+      "session_id": "6e53b594-f3cd-47f3-8761-fc01d0c022c5",
+      "memory_context": [],
+      "errors": [
+        {
+          "kind": "error",
+          "request_id": "28712c0e-1750-4671-95ae-9d7b22ee005c",
+          "message": "LLM stream start timed out after 15000 ms",
+          "code": "provider_timeout"
+        }
+      ],
+      "answer": ""
+    }
+  },
+  "restarts": {
+    "enable": {
+      "previous_pid": 36729,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-5603c526-50e6-4507-a581-56bad4ac0e3c.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 42273,
+      "new_process_ready": true
+    },
+    "restore": {
+      "previous_pid": 42273,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-7b138207-22e6-4f53-b137-857234bd3331.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 44026,
+      "new_process_ready": true
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:47:45.589731000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:47:45.589731Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:47:45.632284000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:47:45.632284Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:47:45.589731000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:47:45.589731Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:47:45.589731000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:05.623346000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:05.623346Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:47:45.632284000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:47:45.632284Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:47:45.632284000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:05.669013000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:05.669013Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":5,\"consent_epoch\":3,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-opt-out-agent-0bbd3414",
+        "metadata": {
+          "title": "Disposable Memory Agent",
+          "description": "Remembers what the user tells it.",
+          "tags": [
+            "memory"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-opt-out-agent-0bbd3414\",\"metadata\":{\"title\":\"Disposable Memory Agent\",\"description\":\"Remembers what the user tells it.\",\"tags\":[\"memory\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:70381563bc3a10e2546eff586c2fc522908f6b5fcf22f52aa594d74deb4bd4eb\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-opt-out-agent-0bbd3414\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": true,
+        "retention": {
+          "kind": "days",
+          "days": 30
+        }
+      },
+      "status": 200,
+      "response": "{\"enabled\":true,\"retention\":{\"kind\":\"days\",\"days\":30},\"revision\":6,\"consent_epoch\":3,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[]}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":7,\"consent_epoch\":4,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-opt-out-agent-0bbd3414",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/6e53b594-f3cd-47f3-8761-fc01d0c022c5",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:05.623346000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:05.623346Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": false,
+        "expected_revision": "2026-10-28T13:49:05.623346000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:49:56.008754000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:56.008754Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:05.669013000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:05.669013Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:49:05.669013000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:49:56.088161000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:49:56.088161Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 36729
+  },
+  "original_policy": {
+    "enabled": false,
+    "retention": null,
+    "revision": 5,
+    "consent_epoch": 3,
+    "host_capture_enabled": true
+  },
+  "opt_in": {
+    "enabled": true,
+    "retention": {
+      "kind": "days",
+      "days": 30
+    },
+    "revision": 6,
+    "consent_epoch": 3,
+    "host_capture_enabled": true
+  },
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 75441
+}

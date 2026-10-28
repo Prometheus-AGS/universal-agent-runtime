@@ -1,0 +1,95 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "restore-an-agent's-access-to-an-existing-knowledge-base;relinking-an-existing-kb-restores-grounded-answers",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Relinking an existing KB restores grounded answers",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 766533499
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent whose original knowledge base link has been removed",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-relink.steps.mjs:59"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 41811809
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I restore the original knowledge base link on that agent",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-relink.steps.mjs:129"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6075842400
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "a fresh answer uses the original private fact with a matching citation",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-relink.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 142278967
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi1yZWxpbmsvNWUzMWZjM2QtZTQ5NS00NmVjLTkxNzQtOGJlN2NlOTI4NzU1Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@kb-relink",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "restore-an-agent's-access-to-an-existing-knowledge-base",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Restore an agent's access to an existing knowledge base",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@kb-relink",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-relink.feature"
+  }
+]

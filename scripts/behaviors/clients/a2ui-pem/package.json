@@ -1,0 +1,10 @@
+{
+  "name": "uar-behavior-client-a2ui-pem",
+  "private": true,
+  "description": "Isolated AG-UI A2UI client for the I19 behaviour scenario. Kept outside the pnpm workspace so the published packages, not the workspace copies, are used.",
+  "type": "module",
+  "dependencies": {
+    "@a2ui/web_core": "0.12.0",
+    "@prometheus-ags/a2ui-react": "4.3.0"
+  }
+}

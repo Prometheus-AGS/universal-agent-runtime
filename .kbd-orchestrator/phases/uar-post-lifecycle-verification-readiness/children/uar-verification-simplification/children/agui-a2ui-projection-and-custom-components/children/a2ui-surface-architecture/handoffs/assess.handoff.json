@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-10-28T09:30:08Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Assessed A2UI surface architecture: upstream carries A2UI as AG-UI activities with clients reducing; UAR carries it in STATE_*/CUSTOM, run-scoped, with 13 gaps (G1-G13); San Saba requires durable entity-bound surfaces and records three UAR blockers (tenant_id, RS256, A2A tenant partition). Critic warnings: inventory omitted the AG-UI route's Last-Event-ID resume; Cedar conflict unresolved.",
+  "skipped": false,
+  "skipReason": null
+}

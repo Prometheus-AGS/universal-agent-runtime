@@ -1,0 +1,25 @@
+{
+  "scenario": "C50",
+  "label": "B41",
+  "behavior": "A user can cancel an active run",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 2,
+  "prior_attempts": "1 FAIL: oracle required reconciliation evidence on the call record; the run had reported uncertainty as an accounting_unresolved diagnostic. Receipt c50-run-cancellation-attempt-001-fail.json",
+  "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/run-cancellation.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 7 steps (7 passed); 0m 9.707s",
+  "evidence": ".prometheus/verification/run-cancellation/a6aca91c-7d34-4735-9f73-0ba9a1c59040.json",
+  "files": ["scripts/behaviors/features/run-cancellation.feature", "scripts/behaviors/run-cancellation.cucumber.mjs", "scripts/behaviors/steps/run-cancellation.steps.mjs"],
+  "agent": "default-agent (saved; liter/MiniMax-M3)",
+  "evidence_review": {
+    "cancel": "native run 93fe92db streamed 264 chars, then POST /cancel returned cancelled:true; status running→cancelled; final event agui.cancelled; 0 events added after terminal; status stays cancelled; no success outcome",
+    "accounting": "one model call, state pending, observed_tokens 0; the run explicitly reported uar.presentation.diagnostic accounting_unresolved 'durable usage remains pending reconciliation'",
+    "after": "fresh run f674bcf5 status done, answer 42"
+  },
+  "cleanup": {"sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

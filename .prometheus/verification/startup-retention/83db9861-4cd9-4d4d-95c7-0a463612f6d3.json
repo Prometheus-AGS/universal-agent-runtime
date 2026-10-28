@@ -1,0 +1,13 @@
+{
+  "scenario": "C52-STARTUP-RETENTION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "owned_runtime_touched": false,
+  "exchanges": [],
+  "turns": {},
+  "fixture": {},
+  "status": "failed",
+  "error": "Error: Not ready within 180000 ms: http://127.0.0.1:58057/health\n    at waitReady (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/manual-host/c52-disposable-instance.mjs:43:9)\n    at async startUar (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/manual-host/c52-disposable-instance.mjs:72:3)\n    at async startDisposable (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/manual-host/c52-disposable-instance.mjs:106:19)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:56:13)",
+  "cleanup_errors": []
+}

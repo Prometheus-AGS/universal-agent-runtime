@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { getDbInstance } from "@/platform/pglite/client";
+import { fetchSessionMessages } from "@/services/chat-sessions-api";
+import { missingServerMessages } from "@/features/chat/model/session-backfill";
 import type {
   ContextUpdateContentBlock,
   MessageUsage,
@@ -38,6 +40,8 @@ interface ChatMessageState {
 interface ChatMessageActions {
   /** Load persisted messages for a thread from PGlite into Zustand. */
   loadMessagesFromDb(threadId: string): Promise<void>;
+  /** Append turns the server session holds but the local history lost. */
+  backfillFromServer(threadId: string): Promise<void>;
   initThread(threadId: string, messages: RichMessage[]): void;
   beginStream(threadId: string, runId: string): void;
   setAwaitingRetry(threadId: string, runId: string, attempt: number, maxAttempts: number, delayMs: number): void;
@@ -83,6 +87,28 @@ function ensureStreaming(state: ChatMessageState, threadId: string): StreamingSt
   return state.streamingByThread[threadId];
 }
 
+// Every assistant bubble a stream creates, by thread. A run that pauses or
+// changes run id splits one turn across several bubbles; all are saved when the
+// stream finishes, because the next send reloads history from PGlite.
+const streamBubbles = new Map<string, Set<string>>();
+
+function finalizeBubble(message: RichMessage, runId: string | undefined): RichMessage {
+  message.status = "complete";
+  for (const block of message.content) if (block.type === "skill" && block.status === "active") block.status = "complete";
+  message.chunks = ensureMessageChunks(message, runId).map((chunk) => {
+    if (chunk.kind === "skill-activation" && chunk.status === "active") (chunk as SkillActivationChunk).status = "complete";
+    if (chunk.kind === "text") {
+      const { text, ...base } = chunk;
+      return { ...base, kind: "markdown" as const, source: text };
+    }
+    return chunk;
+  });
+  // Snapshot outside the Immer proxy using JSON round-trip.
+  // structuredClone() fails on Immer draft proxies; JSON parse/stringify is safe
+  // for our plain JSON-serialisable content blocks.
+  return JSON.parse(JSON.stringify({ ...message, content: message.content })) as RichMessage;
+}
+
 function getOrCreateStreamingMessage(state: ChatMessageState, threadId: string, runId: string): RichMessage {
   const messages = state.messagesByThread[threadId];
   const streaming = state.streamingByThread[threadId];
@@ -94,6 +120,7 @@ function getOrCreateStreamingMessage(state: ChatMessageState, threadId: string, 
   const newMsg: RichMessage = { id: msgId, role: "assistant", content: [], chunks: [], createdAt: new Date(), status: "in_progress" };
   if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
   state.messagesByThread[threadId].push(newMsg);
+  streamBubbles.set(threadId, (streamBubbles.get(threadId) ?? new Set<string>()).add(msgId));
   state.streamingByThread[threadId] = {
     isStreaming: true,
     runId,
@@ -151,6 +178,23 @@ export const useChatMessageStore = create<ChatMessageStore>()(
       });
       historyLoads.set(threadId, owned);
       return owned;
+    },
+
+    backfillFromServer: async (threadId) => {
+      if (get().streamingByThread[threadId]?.isStreaming) return;
+      const before = get().messagesByThread[threadId] ?? [];
+      const server = await fetchSessionMessages(threadId);
+      if (!server) return;
+      const missing = missingServerMessages(before, server);
+      if (missing.length === 0) return;
+      // A send or another load during the request owns the history; leave it.
+      if (get().streamingByThread[threadId]?.isStreaming || get().messagesByThread[threadId] !== before) return;
+      const db = getDbInstance();
+      for (const message of missing) await db.insertMessage(threadId, message);
+      if (get().streamingByThread[threadId]?.isStreaming || get().messagesByThread[threadId] !== before) return;
+      set((state) => {
+        state.messagesByThread[threadId] = [...before, ...missing];
+      });
     },
 
     initThread: (threadId, messages) =>
@@ -572,40 +616,21 @@ export const useChatMessageStore = create<ChatMessageStore>()(
       }),
 
     finishStream: (threadId) => {
-      let finalMsgSnapshot: RichMessage | null = null;
+      const snapshots: RichMessage[] = [];
       set((state) => {
         const streaming = state.streamingByThread[threadId];
         if (!streaming) return;
         const messages = state.messagesByThread[threadId];
-        if (messages && streaming.streamingMessageId) {
-          const idx = messages.findIndex((m) => m.id === streaming.streamingMessageId);
-          if (idx !== -1) {
-            messages[idx].status = "complete";
-            for (const block of messages[idx].content) if (block.type === "skill" && block.status === "active") block.status = "complete";
-            const finalizedChunks = ensureMessageChunks(messages[idx], streaming.runId ?? undefined).map((chunk) => {
-              if (chunk.kind === "skill-activation" && chunk.status === "active") (chunk as SkillActivationChunk).status = "complete";
-              if (chunk.kind === "text") {
-                const { text, ...base } = chunk;
-                return { ...base, kind: "markdown" as const, source: text };
-              }
-              return chunk;
-            });
-            messages[idx].chunks = finalizedChunks;
-            // Snapshot outside the Immer proxy using JSON round-trip.
-            // structuredClone() fails on Immer draft proxies; JSON parse/stringify is safe
-            // for our plain JSON-serialisable content blocks.
-            finalMsgSnapshot = JSON.parse(JSON.stringify({
-              ...messages[idx],
-              content: messages[idx].content,
-            })) as RichMessage;
-          }
+        const bubbleIds = new Set(streamBubbles.get(threadId) ?? []);
+        if (streaming.streamingMessageId) bubbleIds.add(streaming.streamingMessageId);
+        for (const message of messages ?? []) {
+          if (bubbleIds.has(message.id)) snapshots.push(finalizeBubble(message, streaming.runId ?? undefined));
         }
         state.streamingByThread[threadId] = { ...defaultStreamingState };
       });
-      // Persist the completed assistant message to PGlite
-      if (finalMsgSnapshot) {
-        void getDbInstance().insertMessage(threadId, finalMsgSnapshot);
-      }
+      streamBubbles.delete(threadId);
+      // Persist every completed assistant bubble of this stream to PGlite
+      for (const snapshot of snapshots) void getDbInstance().insertMessage(threadId, snapshot);
       // Also update the thread's updated_at timestamp
       void getDbInstance().touchThread(threadId);
     },

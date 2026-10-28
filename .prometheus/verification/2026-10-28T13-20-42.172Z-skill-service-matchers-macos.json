@@ -1,0 +1,168 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "service-embedding-and-hybrid-skill-matchers-select-and-use-a-skill;the-service-embedding-matcher-selects-the-semantic-target-and-uses-its-rule",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The service embedding matcher selects the semantic target and uses its rule",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1640174481
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a semantic target skill, an unrelated decoy skill and a disposable agent restricted to both",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:65"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2816209878
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send the discriminating prompt under the service embedding matcher",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 225771
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the run names skill_service.embedding, accepts only the target and answers with the target's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 176100233
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1zZXJ2aWNlLW1hdGNoZXJzLzE5NGNiNDljLTk0OTgtNGE3OC05YWUzLTUxZDc5ZTlmOWNhYy5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "service-embedding-and-hybrid-skill-matchers-select-and-use-a-skill;the-service-hybrid-matcher-selects-the-semantic-target-and-uses-its-rule",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The service hybrid matcher selects the semantic target and uses its rule",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 202323832
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a semantic target skill, an unrelated decoy skill and a disposable agent restricted to both",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:65"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2525234518
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I send the discriminating prompt under the service hybrid matcher",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 171972
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the run names skill_service.hybrid, accepts only the target and answers with the target's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:155"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 289005994
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1zZXJ2aWNlLW1hdGNoZXJzL2ZmZTExYTBlLTFkZGUtNGEyZC1iNDc3LTQ0MzJiNGQ2ZTUwZC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "service-embedding-and-hybrid-skill-matchers-select-and-use-a-skill",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Service embedding and hybrid skill matchers select and use a skill",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-service-matchers.feature"
+  }
+]

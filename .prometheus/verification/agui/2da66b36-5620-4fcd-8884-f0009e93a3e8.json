@@ -1,0 +1,107 @@
+{
+  "scenario": "AGUI-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "AG-UI 1.0 saved-agent SSE",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\"],\"mode\":\"selected\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:972062f3b709f787d80289e3dfa4ee9b129013c571ce984c2b35d1ccd087fcb9\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/ag-ui/agents/math-specialist-db64c2a8",
+      "request": {
+        "threadId": "fbf61fcf-84a2-4e2e-b44a-a46a0ef101e4",
+        "runId": "53801bf2-1119-41bf-979c-5ede245ad8fe",
+        "protocolVersion": "1.0",
+        "tools": [],
+        "context": [],
+        "messages": [
+          {
+            "id": "1a391c4c-8ede-446c-826d-6067aef4c8dc",
+            "role": "user",
+            "content": "What is (63 multiplied by 19) plus 121? Follow your saved specialist/answer JSON instructions."
+          }
+        ],
+        "forwardedProps": {
+          "uar": {
+            "model": "liter/MiniMax-M3"
+          }
+        }
+      },
+      "response": "id: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:0:0\ndata: {\"type\":\"RUN_STARTED\",\"threadId\":\"fbf61fcf-84a2-4e2e-b44a-a46a0ef101e4\",\"runId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe\",\"protocolVersion\":\"1.0\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:11:1\ndata: {\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\",\"role\":\"assistant\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:11:2\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\",\"delta\":\"<think>Th\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:12:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\",\"delta\":\"e question is ordinary arithmetic: 63 * 19 + 121 = 1197 + 121\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:13:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\",\"delta\":\" = 1318.\\n\\nPer instructions, return JSON with specialist and answer.\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:14:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\",\"delta\":\"</think>\\n\\n```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:15:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\",\"delta\":\"-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 1318\\n}\\n```\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:17:90\ndata: {\"type\":\"TEXT_MESSAGE_END\",\"messageId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe:assistant\"}\n\nid: dafac11a699a7e34b3eba352b7c65d91ea8cfd9257df88ea0deac33e0d44c960:17:100\ndata: {\"type\":\"RUN_FINISHED\",\"threadId\":\"fbf61fcf-84a2-4e2e-b44a-a46a0ef101e4\",\"runId\":\"53801bf2-1119-41bf-979c-5ede245ad8fe\",\"outcome\":{\"type\":\"success\"}}\n\n",
+      "status": 200,
+      "content_type": "text/event-stream"
+    }
+  ],
+  "events": [
+    {
+      "type": "RUN_STARTED",
+      "threadId": "fbf61fcf-84a2-4e2e-b44a-a46a0ef101e4",
+      "runId": "53801bf2-1119-41bf-979c-5ede245ad8fe",
+      "protocolVersion": "1.0"
+    },
+    {
+      "type": "TEXT_MESSAGE_START",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant",
+      "role": "assistant"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant",
+      "delta": "<think>Th"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant",
+      "delta": "e question is ordinary arithmetic: 63 * 19 + 121 = 1197 + 121"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant",
+      "delta": " = 1318.\n\nPer instructions, return JSON with specialist and answer."
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant",
+      "delta": "</think>\n\n```json\n{\n  \"specialist\": \"MATH-ce9324ee-0d63-4714"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant",
+      "delta": "-982f-f099e8c8f378\",\n  \"answer\": 1318\n}\n```"
+    },
+    {
+      "type": "TEXT_MESSAGE_END",
+      "messageId": "53801bf2-1119-41bf-979c-5ede245ad8fe:assistant"
+    },
+    {
+      "type": "RUN_FINISHED",
+      "threadId": "fbf61fcf-84a2-4e2e-b44a-a46a0ef101e4",
+      "runId": "53801bf2-1119-41bf-979c-5ede245ad8fe",
+      "outcome": {
+        "type": "success"
+      }
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1318
+  },
+  "thread_id": "fbf61fcf-84a2-4e2e-b44a-a46a0ef101e4",
+  "run_id": "53801bf2-1119-41bf-979c-5ede245ad8fe",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1318
+  },
+  "content_fragments": 5,
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 5717
+}

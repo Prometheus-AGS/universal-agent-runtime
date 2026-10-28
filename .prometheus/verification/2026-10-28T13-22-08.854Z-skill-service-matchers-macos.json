@@ -1,0 +1,96 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "service-embedding-and-hybrid-skill-matchers-select-and-use-a-skill;the-service-llm-matcher-selects-the-semantic-target-and-uses-its-rule",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "The service llm matcher selects the semantic target and uses its rule",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 293662013
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "a semantic target skill, an unrelated decoy skill and a disposable agent restricted to both",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:65"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 23625519928,
+              "error_message": "AssertionError [ERR_ASSERTION]: Run must succeed\n    + expected - actual\n\n    -false\n    +true\n\n    at ask (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-service-matchers.steps.mjs:53:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async underAlgorithm (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-service-matchers.steps.mjs:127:14)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-service-matchers.steps.mjs:139:3)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "I send the discriminating prompt under the service llm matcher",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:138"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "the run names skill_service.llm, accepts only the target and answers with the target's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-service-matchers.steps.mjs:163"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 181256731
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1zZXJ2aWNlLW1hdGNoZXJzLzk2NjI2ZjgxLTIxOGUtNDU4OC1hZDA3LWM0ZThkMDk1OTk1MS5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "service-embedding-and-hybrid-skill-matchers-select-and-use-a-skill",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Service embedding and hybrid skill matchers select and use a skill",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-service-matchers.feature"
+  }
+]

@@ -1,0 +1,143 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "standard-skill-discovery-and-reload-change-usable-behavior;discover-a-skill-pack,-change-one-body,-reload,-and-use-the-new-body",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Discover a skill pack, change one body, reload, and use the new body",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 79266077
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and an owned skill pack with top-level and nested skills plus non-skill files",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:62"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3308707484
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I reload skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 389044384,
+              "error_message": "AssertionError [ERR_ASSERTION]: GET /api/uar/skills: 409: {\"error\":\"skill_selection_storage_missing; partial outcome possible; read to reconcile\",\"outcome\":\"partial_possible\"}\n    + expected - actual\n\n    -false\n    +true\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-reload.steps.mjs:20:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async listSkillIds (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-reload.steps.mjs:29:19)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-reload.steps.mjs:112:15)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "exactly the pack's two manifest skills are discovered once and non-skills are excluded",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "a request with the top-level skill attached follows its original private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I change that skill's body on disk and reload skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "a new request with the skill attached follows the changed rule, not the cached one",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reload.steps.mjs:133"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2696289487
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1yZWxvYWQvNWM2YThlZjQtYzc2Ni00ZTUyLThjMGEtYmY1MjE3YzFiNzQzLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@reload",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "standard-skill-discovery-and-reload-change-usable-behavior",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Standard skill discovery and reload change usable behavior",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@reload",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-reload.feature"
+  }
+]

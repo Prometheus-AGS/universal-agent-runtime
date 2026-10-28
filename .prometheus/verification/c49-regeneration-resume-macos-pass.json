@@ -1,0 +1,29 @@
+{
+  "scenario": "C49",
+  "label": "B51",
+  "behavior": "Interrupted KB regeneration resumes honestly",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 5,
+  "prior_attempts": "1 fixture (concurrent uploads exposed write conflicts); 2 product defect (regeneration stalled on retryable write conflicts); 3 oracle chunk boundary (product passed); 4 product contention exhausted the 8-try retry. Receipts c49-regeneration-resume-attempt-00{1,2,3,4}-fail.json",
+  "product_fix": "src/uar/persistence/providers/ingestion_records/surreal.rs (operator-approved in two steps): transition/publish/delete re-run their transaction when Surreal reports a retryable commit conflict, with exponential half-jittered backoff (15 ms base, cap 500 ms, up to 12 tries); Retryable ingestion documents report Pending instead of Failed.",
+  "binary_sha256": "b80d673bc58867f88f685e7c6e3d81fd62834b5999cee2a55a2b520dfd7703ff",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/regeneration-resume.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 7 steps (7 passed); 2m 57.123s",
+  "evidence": ".prometheus/verification/regeneration-resume/732a8816-9b3d-4a32-ab8e-5e51ef2849d8.json",
+  "files": ["scripts/behaviors/features/regeneration-resume.feature", "scripts/behaviors/regeneration-resume.cucumber.mjs", "scripts/behaviors/steps/regeneration-resume.steps.mjs"],
+  "host_fixture": "scripts/manual-host/embedding-config.mjs provisioned the real OpenAI endpoint for the scenario and restored the original owned config (sha 8726e43a) afterwards.",
+  "evidence_review": {
+    "interrupt": "60-document multi-chunk corpus; regeneration to openai/text-embedding-3-small 384 started; owned UAR restarted at 1/60",
+    "honest_state": "after restart: same generation, state running (23/60), last_error null, no false complete; all 60 sources retained; KB still indexed in fastembed/bge-small-en-v1.5",
+    "resume": "durable pending ingestion resumed without an explicit restart; complete 60/60 in ~110 s; last_error null",
+    "single_generation": "KB indexed_embedding switched to the target only at completion; every document indexed",
+    "retrieval": "query for note 17 returned its chunk with private seal WREN-8F896D-17-* (score 0.729)"
+  },
+  "spend": "OpenAI embeddings for a ~60 KB synthetic corpus plus queries (ceiling ~$0.002) against the separate $10 OpenAI cap.",
+  "cleanup": {"kb_deleted": true, "embedding_settings_restored": "fastembed/bge-small-en-v1.5", "host_config_restored": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

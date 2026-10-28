@@ -203,6 +203,15 @@ impl IntentClassifier for UnavailableClassifier {
     }
 }
 
+/// The ranking JSON inside a reply: inline `<think>` reasoning (MiniMax-M3 via
+/// Liter) is removed, then one surrounding Markdown code fence is unwrapped.
+fn ranking_json(response: &str) -> String {
+    let answer = crate::llm::inline_reasoning::split_inline_reasoning(response).answer;
+    let fenced = answer.strip_prefix("```").and_then(|rest| rest.strip_suffix("```"))
+        .and_then(|body| body.split_once('\n')).map(|(_, json)| json.trim().to_owned());
+    fenced.unwrap_or(answer)
+}
+
 /// Rank eligible public metadata with the trusted run's captured driver.
 /// The host owns credential resolution, request accounting and cancellation;
 /// this function neither constructs a provider nor substitutes another backend.
@@ -246,7 +255,9 @@ pub async fn classify_skills_with_driver(
     while let Some(event) = stream.next().await {
         match event? {
             NormalizedEvent::MessageDelta { text } => response.push_str(&text),
-            NormalizedEvent::StreamStart { .. } | NormalizedEvent::Usage { .. } => {},
+            // Reasoning models may stream their thinking separately; only the reply is ranked.
+            NormalizedEvent::StreamStart { .. } | NormalizedEvent::Usage { .. }
+            | NormalizedEvent::ThinkingDelta { .. } | NormalizedEvent::ReasoningDelta { .. } => {},
             // Liter emits this request metadata before generated content; accounting stays in the driver.
             NormalizedEvent::Custom { source, event_name, .. }
                 if source == "uar.request" && event_name == "budget_receipt" => {},
@@ -255,7 +266,7 @@ pub async fn classify_skills_with_driver(
         }
     }
     anyhow::ensure!(complete, "skill_classifier_stream_incomplete");
-    let ranking: Ranking = serde_json::from_str(response.trim())
+    let ranking: Ranking = serde_json::from_str(&ranking_json(&response))
         .map_err(|_| anyhow::anyhow!("skill_classifier_response_invalid"))?;
     let mut seen = std::collections::HashSet::new();
     let mut scores = Vec::new();

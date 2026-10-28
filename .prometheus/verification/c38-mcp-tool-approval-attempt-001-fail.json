@@ -1,0 +1,12 @@
+{
+  "scenario": "C38",
+  "status": "FAIL",
+  "failure_class": "test script used the wrong product path for this deployment's MCP posture; not a product defect",
+  "platform": "Mac",
+  "attempt": 1,
+  "observed_output": "1 scenario (1 failed); 9 steps (3 passed, 5 skipped, 1 failed); 0m 32.393s",
+  "evidence": ".prometheus/verification/mcp-tool-approval/e4354c0f-d481-46ce-ac82-91b8a7b3b7cc.json",
+  "failure": "PUT /api/uar/mcp/servers/{name} succeeded but the server listed connected:false with no tools. The owned config sets server.mcp_shared_transports_enabled=false, so global MCP servers are catalog-only (src/mcp/registry.rs upsert_server_owned) and need an explicit run grant through the native run API's mcp_servers field (docs/releases/v1.1.0-kubo.md). AG-UI does not carry mcp_servers.",
+  "cleanup": "MCP registration deleted, scenario policy removed, owned restart done, owned directory removed; cleanup_errors [].",
+  "next": "Drive the run through POST /api/uar/runs with mcp_servers:[{name}], answer approvals via /tool-approval; keep the deployment's no-ambient-sharing posture. Rerun once."
+}

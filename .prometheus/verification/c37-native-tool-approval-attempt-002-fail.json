@@ -1,0 +1,11 @@
+{
+  "scenario": "C37",
+  "status": "FAIL",
+  "failure_class": "test script (parsed the TOOL_CALL_RESULT event object instead of its content string)",
+  "platform": "Mac",
+  "attempt": 2,
+  "observed_output": "1 scenario (1 failed); 7 steps (4 passed, 2 skipped, 1 failed); 0m 33.957s",
+  "evidence": ".prometheus/verification/native-tool-approval/3a4592ca-300c-4f16-841e-4785629c5a28.json",
+  "observed_before_failure": "Approval interrupt raised for file_write; approved; one file_write call; file on disk with exactly the requested content once (55 bytes); paired result ok:true bytes_written 55; answer reported bytes_written 55. Cleanup succeeded: scenario policy removed, settings restored, restart done.",
+  "next": "Parse event.content; rerun once."
+}

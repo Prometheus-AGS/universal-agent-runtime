@@ -1,0 +1,162 @@
+{
+  "scenario": "I06-I07-A2A-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "follow_up_contract": "server context via contextId",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de",
+        "metadata": {
+          "title": "Disposable A2A agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "a2a-no-tools-450c43e2"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"A2A-e4590a41-6749-4d98-a42c-6459024e2d7b\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de\",\"metadata\":{\"title\":\"Disposable A2A agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2a-no-tools-450c43e2\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"A2A-e4590a41-6749-4d98-a42c-6459024e2d7b\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:e76bb64a3b4ed45bbf365652021fe694ec6a2bb911924b8e2dc056229d59e7c1\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bd96a5da-53a5-4fba-a013-63e8601cdcfc",
+        "method": "message/send",
+        "params": {
+          "message": {
+            "role": "user",
+            "parts": [
+              {
+                "type": "text",
+                "text": "What is (52 multiplied by 12) plus 436?"
+              }
+            ]
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"bd96a5da-53a5-4fba-a013-63e8601cdcfc\",\"result\":{\"id\":\"2659e90a-fcfc-4dd1-a11a-67e61a421f32\",\"context_id\":\"2659e90a-fcfc-4dd1-a11a-67e61a421f32\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-28T12:27:18.212629+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (52 multiplied by 12) plus 436?\"}]}],\"metadata\":{\"run_id\":\"abb80dd1-b589-4a04-b0ff-2d47b202acfe\",\"agent_id\":\"disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "4a1bea9d-0d2b-4836-8ef8-2b54317dbb65",
+        "method": "message/send",
+        "params": {
+          "message": {
+            "role": "user",
+            "parts": [
+              {
+                "type": "text",
+                "text": "Add 69 to your previous answer."
+              }
+            ]
+          },
+          "context_id": "2659e90a-fcfc-4dd1-a11a-67e61a421f32"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"4a1bea9d-0d2b-4836-8ef8-2b54317dbb65\",\"error\":{\"code\":-32002,\"message\":\"task is active, closed, or cannot be cancelled\"}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-a2a-450c43e2-ec47-4b27-a8e3-eaf5287779de",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    1060,
+    1129
+  ],
+  "mode": "legacy-json",
+  "scenario_status": "FAILED",
+  "duration_ms": 170
+}

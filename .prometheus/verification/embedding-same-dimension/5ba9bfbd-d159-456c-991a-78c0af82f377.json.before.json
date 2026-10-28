@@ -1,0 +1,107 @@
+{
+  "scenario": "C48-EMBEDDING-SAME-DIMENSION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.backend",
+      "status": 200,
+      "response": "{\"id\":\"a854022e-f8ee-4bef-b0e1-9cbed32ded73\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Backend\",\"key\":\"llm.embedding.backend\",\"data\":\"fastembed\",\"saved\":\"fastembed\",\"effective\":\"fastembed\",\"revision\":\"2026-10-27T16:50:59.639005000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:50:59.639005Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.model",
+      "status": 200,
+      "response": "{\"id\":\"550100be-f75c-46f2-98ac-a09b36412d56\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Model\",\"key\":\"llm.embedding.model\",\"data\":\"bge-small-en-v1.5\",\"saved\":\"bge-small-en-v1.5\",\"effective\":\"bge-small-en-v1.5\",\"revision\":\"2026-10-27T16:50:59.704565000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369364Z\",\"updated_at\":\"2026-10-27T16:50:59.704565Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/llm.embedding.vector_dimension",
+      "status": 200,
+      "response": "{\"id\":\"d45dd164-00e7-4441-8f61-8a8fdd78571b\",\"settings_type_id\":\"c41534bf-2d70-400e-ab7c-2cbd7236567f\",\"name\":\"Embedding Vector Dimension\",\"key\":\"llm.embedding.vector_dimension\",\"data\":384,\"saved\":384,\"effective\":384,\"revision\":\"2026-10-27T16:50:59.671821000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.369365Z\",\"updated_at\":\"2026-10-27T16:50:59.671821Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    }
+  ],
+  "target": {
+    "backend": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 384
+  },
+  "hosting": {
+    "embedding_caps_usd": {
+      "openai": 10,
+      "cohere": 10
+    },
+    "cohere_used": false,
+    "openai_used": true,
+    "openai_rate_usd_per_million_tokens": 0.02,
+    "rate_source": "value used by the earlier KNOWLEDGE-REGENERATION-01 receipt",
+    "actual_billing_usage": "not exposed by UAR"
+  },
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 33893
+  },
+  "original_settings": [
+    {
+      "id": "a854022e-f8ee-4bef-b0e1-9cbed32ded73",
+      "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+      "name": "Embedding Backend",
+      "key": "llm.embedding.backend",
+      "data": "fastembed",
+      "saved": "fastembed",
+      "effective": "fastembed",
+      "revision": "2026-10-27T16:50:59.639005000Z",
+      "apply": "next_turn",
+      "application_status": "effective",
+      "parent_id": null,
+      "created_at": "2026-10-26T06:32:43.369364Z",
+      "updated_at": "2026-10-27T16:50:59.639005Z",
+      "source": "Api",
+      "is_drift": false
+    },
+    {
+      "id": "550100be-f75c-46f2-98ac-a09b36412d56",
+      "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+      "name": "Embedding Model",
+      "key": "llm.embedding.model",
+      "data": "bge-small-en-v1.5",
+      "saved": "bge-small-en-v1.5",
+      "effective": "bge-small-en-v1.5",
+      "revision": "2026-10-27T16:50:59.704565000Z",
+      "apply": "next_turn",
+      "application_status": "effective",
+      "parent_id": null,
+      "created_at": "2026-10-26T06:32:43.369364Z",
+      "updated_at": "2026-10-27T16:50:59.704565Z",
+      "source": "Api",
+      "is_drift": false
+    },
+    {
+      "id": "d45dd164-00e7-4441-8f61-8a8fdd78571b",
+      "settings_type_id": "c41534bf-2d70-400e-ab7c-2cbd7236567f",
+      "name": "Embedding Vector Dimension",
+      "key": "llm.embedding.vector_dimension",
+      "data": 384,
+      "saved": 384,
+      "effective": 384,
+      "revision": "2026-10-27T16:50:59.671821000Z",
+      "apply": "next_turn",
+      "application_status": "effective",
+      "parent_id": null,
+      "created_at": "2026-10-26T06:32:43.369365Z",
+      "updated_at": "2026-10-27T16:50:59.671821Z",
+      "source": "Api",
+      "is_drift": false
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "scenario": "C53",
+  "status": "FAIL",
+  "attempt": 2,
+  "failure_class": "mixed: server path correct; browser renders one approval-paused turn as a duplicated user message plus three assistant message roots, which the script's one-root-per-turn assertion rejects",
+  "config": "scripts/behaviors/browser-agent-selection.config.mjs with video off, screenshots and trace on; tier3.allow created for this run and removed after (operator-approved 2026-10-27)",
+  "evidence": "browser-agent-selection/bec97e9a-a4b9-4074-a336-8d9aac511d3a.json; browser-agent-selection/c53-attempt-002-artifacts/ (error-context.md, test-failed-1.png, trace.zip)",
+  "observed": {
+    "writing_turn_server": "one completion POST; run 226ac53a-e4af-4b9f-8245-bb21a9c8d897; spawn_agent approval answered through the browser dialog (POST 200, approved=true); one uar.agent.selected event for writing-specialist (intent) at stream index 13 before first text at 18; answer begins '[writing-specialist]'",
+    "writing_turn_browser": "the user message paragraph appears twice in the conversation region; three aui_assistant-message-root elements: (1) policy artifact, sources and turn manifest, (2) approval chunk still showing 'pending' with an active 'Review approval' button next to 'Selected agent: Blog and Article Writer', (3) the specialist answer",
+    "failed_assertion": "expect(assistantMessages).toHaveCount(1) received 3 (scripts/behaviors/browser/browser-agent-selection.steps.mjs:192)",
+    "math_turn": "not reached",
+    "page_errors": [],
+    "cleanup": "both sessions deleted; saved agents retained as designed; no cleanup errors"
+  },
+  "classification": [
+    "Product (UI): duplicated user message after an approval pause/resume; approval chunk remains 'pending' after the decision (already recorded for approval-chunk.tsx).",
+    "Script: the one-assistant-root-per-turn count does not hold when a turn pauses for approval; the contract needs no duplicate answer or run, which the server evidence satisfies for this turn."
+  ],
+  "next": "Operator decision: fix the UI duplication first, or relax the script to count specialist answers per turn. A rerun needs the tier-3 guard opened again."
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "C42",
+  "status": "FAIL",
+  "failure_class": "test design: the 'none' check reused a conversation whose history revealed the private rule",
+  "platform": "Mac",
+  "attempt": 1,
+  "evidence": ".prometheus/verification/skill-scope-policy/25dd9ac7-4a0f-4aed-ba08-7627cfd62869.json",
+  "observed_before_failure": "Parent selected[A,B] deny B; conversation selected[A,C] resolved to selected[A] (source conversation); attachments B and C rejected ineligible; only A activated; answer 100 = 4 x 25 (A). Then 'none' in the same conversation: effective selected [] , nothing activated, A rejected ineligible — but the answer 300 = 12 x 25 was inferred from the earlier answer in that conversation's history.",
+  "next": "Run the 'none' selection in a fresh conversation; rerun once."
+}

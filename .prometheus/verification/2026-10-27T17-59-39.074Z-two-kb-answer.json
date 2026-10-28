@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "combine-facts-from-two-linked-knowledge-bases;an-agent-uses-both-kbs-to-answer-a-combined-inventory-question",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "An agent uses both KBs to answer a combined inventory question",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1365716641
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and two indexed knowledge bases with separate private facts",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40090504
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I link both knowledge bases to the agent",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4112697140
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I ask for the two inventories and their combined total in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1369655,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'AGENT-987cef8d-2ba2-4055-b758-918d39363c3'\n- 'AGENT-987cef8d-2ba2-4055-b758-b918d39363c3'\n\n    + expected - actual\n\n    -AGENT-987cef8d-2ba2-4055-b758-918d39363c3\n    +AGENT-987cef8d-2ba2-4055-b758-b918d39363c3\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/two-kb-answer.steps.mjs:141:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the answer combines both private facts with a matching citation for each knowledge base",
+            "match": {
+              "location": "scripts/behaviors/steps/two-kb-answer.steps.mjs:131"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 187414802
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90d28ta2ItYW5zd2VyL2JlMGYxMTVkLTRmNzUtNDEyYi1iMTljLTBiODA2OGMwOGQ3OC5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@two-kb-answer",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "combine-facts-from-two-linked-knowledge-bases",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Combine facts from two linked knowledge bases",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@two-kb-answer",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/two-kb-answer.feature"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "scenario": "C43",
+  "status": "FAIL",
+  "failure_class": "compaction not triggered (cause not yet diagnosed); reattachment half of the contract verified",
+  "platform": "Mac",
+  "attempt": 3,
+  "evidence": ".prometheus/verification/skill-reattachment/841049eb-5508-4cff-9ae7-41b37bb767ef.json",
+  "verified": "harness.skill_reattachment 120/150 via REST. Reattachment receipt: latest (small) skill reattached whole (32/32 tokens); oversized skill truncated (2067 \u2192 58); rendered exactly 150 = the total allowance (not widened). Answer 360 followed the small skill's private rule. Setting restored to 5000/25000.",
+  "not_verified": "Genuine compaction: summarize threshold 6 with 14 long messages (13.5k source tokens) made 1 completed summary tier call, but the prepared input stayed identical (changed false, summary_generated false). apply_strategy returns Summarize input unchanged (src/uar/context/strategy.rs:354); summary application happens in the async summarizer path, which did not apply the completed summary here \u2014 possibly only under window pressure (model window 1,048,576). Not diagnosed further.",
+  "next": "Decide whether compaction must be forced through window pressure (temporarily shrink the liter MiniMax-M3 context_window with a keyless provider update, then restore and re-verify), or whether this is a product defect in summary application to investigate first.",
+  "diagnosis": {
+    "date": "2026-10-27, read-only",
+    "observed": "UAR log: 'Host-marked summarization failed; retaining originals' with error 'summarize eligible prose span canonical-prose-0-1' (attempt 3) and 'canonical-prose-2-3' (attempt 1). The span context wraps an error from summarize_span after the tier call completed. Attempt 3's single tier call returned 198 tokens against a summary budget of 200 minus replacement framing.",
+    "mechanism_from_source": "src/uar/runtime/context/summarizer.rs summarize_span concatenates every MessageDelta into the summary and then checks the token count against the output ceiling (and non-emptiness). MiniMax-M3 through Liter streams inline <think> reasoning as MessageDelta text (established during the orchestrator-routing-reasoning-repair phase). The reasoning therefore counts as summary text and fills the small output allowance, so the summary exceeds its ceiling (198 > ~196) or would be reasoning-polluted; the whole summarization is discarded and the originals kept.",
+    "not_directly_observed": "The summary text itself is not logged or receipted, and the inner error is hidden behind the outer context in the warn line; the exact failing check is inferred from the counts.",
+    "classification": "product defect: reasoning text is treated as summary content and counted against the summary budget",
+    "proposed_minimal_fix": "In summarize_span, pass the collected text through crate::llm::inline_reasoning::split_inline_reasoning (added in that phase): use only the answer part as the summary; fail with a named error when the reply ended inside reasoning or has no answer; apply the output-budget check to the answer only. Optionally log the full error chain (%error:#) at the warn site."
+  }
+}

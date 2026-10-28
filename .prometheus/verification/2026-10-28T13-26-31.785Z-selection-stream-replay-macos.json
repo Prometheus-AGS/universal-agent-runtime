@@ -1,0 +1,155 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "reconnecting-or-replaying-an-orchestrator-selection-stream-does-not-dispatch-again;cursor-reconnect-and-identical-replay-preserve-the-selection-run,-and-a-next-turn-selects-afresh",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Cursor reconnect and identical replay preserve the selection run, and a next turn selects afresh",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 49679263
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved mathematics specialist is in the live roster",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:89"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6349548077
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the orchestrator routes a fresh calculation and I capture its selection stream and dispatches",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6976230
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I reconnect to that run from the selection event's cursor",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10619740
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "I replay the identical admitted request",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40497201
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "both replays preserve the run and selection identity and no second dispatch occurred",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8508667053
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I send a distinct next turn on the same thread",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:148"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 66144243
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the next turn performs a fresh selection with its own dispatch and a correct answer",
+            "match": {
+              "location": "scripts/behaviors/steps/selection-stream-replay.steps.mjs:154"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18441074
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9zZWxlY3Rpb24tc3RyZWFtLXJlcGxheS8xZmJlMzRkZC0zZGY2LTQyMWMtOTZlOS05NmM1NjU5MTE5YjUuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "reconnecting-or-replaying-an-orchestrator-selection-stream-does-not-dispatch-again",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Reconnecting or replaying an orchestrator selection stream does not dispatch again",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agui",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/selection-stream-replay.feature"
+  }
+]

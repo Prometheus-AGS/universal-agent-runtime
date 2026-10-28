@@ -1,0 +1,150 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "interrupted-kb-regeneration-resumes-honestly;restart-uar-mid-regeneration,-then-resume-to-one-target-generation",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Restart UAR mid-regeneration, then resume to one target generation",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 29032450457
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable multi-document knowledge base indexed with the original embedding model",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:46"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13193335971
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the active embedding model is changed to a different model of the same width",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:89"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 24449687448
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "regeneration starts and the owned UAR is restarted before it completes",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 65274158
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "after the restart the job reports an honest unfinished state and the sources are retained",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 87688088889
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "regeneration is resumed through its designed operation",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1371822970
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "it completes in one target generation and retrieval returns a private fact",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:152"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21310316146
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9yZWdlbmVyYXRpb24tcmVzdW1lLzczMmE4ODE2LTliM2QtNGEzMi1hYjhlLTVlNTFlZjI4NDlkOC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge",
+            "line": 1
+          },
+          {
+            "name": "@embedding",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "interrupted-kb-regeneration-resumes-honestly",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Interrupted KB regeneration resumes honestly",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge",
+        "line": 1
+      },
+      {
+        "name": "@embedding",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/regeneration-resume.feature"
+  }
+]

@@ -1,0 +1,168 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "lower-scope-skill-policies-cannot-widen-the-parent-selection;an-inherited-turn-policy-preserves-the-parent's-selected-skill-set",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "An inherited turn policy preserves the parent's selected skill set",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 17951997461
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "catalog presentation, skills A, B and C, and an agent that selects A and denies C",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-policy-narrowing.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5154096209
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "a turn that inherits the skill policy asks for a task that needs A's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-policy-narrowing.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1060235
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the effective selection is exactly A, B and C never load, and A's rule answers",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-policy-narrowing.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18707784357
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1wb2xpY3ktbmFycm93aW5nL2Q2Nzc3MDU1LTk4YzYtNDYyMi05ZTkzLWNjMTUzNDc5M2U5MC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "lower-scope-skill-policies-cannot-widen-the-parent-selection;an-auto-turn-policy-chooses-within-the-parent's-narrowed-set",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "An auto turn policy chooses within the parent's narrowed set",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22187368295
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "catalog presentation, skills A, B and a tempting decoy C, and an agent that selects A and B",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-policy-narrowing.steps.mjs:108"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6011923302
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "a turn with an auto skill policy asks for a task that C's description matches best",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-policy-narrowing.steps.mjs:117"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1050148
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the effective selection is exactly A and B, C is absent, and A is activated and answers",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-policy-narrowing.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14849521153
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1wb2xpY3ktbmFycm93aW5nLzg5MDQzNzliLTc3ZmUtNGQ4YS05ZDZkLWVlNzI5OGYxNDk2Mi5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "lower-scope-skill-policies-cannot-widen-the-parent-selection",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Lower-scope skill policies cannot widen the parent selection",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-policy-narrowing.feature"
+  }
+]

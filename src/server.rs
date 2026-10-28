@@ -2753,7 +2753,7 @@ async fn run_server_with_listener(
         )
         .route(
             "/api/uar/sessions/{id}",
-            axum::routing::delete(uar::api::discovery::delete_session),
+            get(uar::api::discovery::get_session).delete(uar::api::discovery::delete_session),
         )
         .route(
             "/api/uar/conversations/{id}/policy",

@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 682,
-  "derivedRevision": 682,
+  "sourceRevision": 700,
+  "derivedRevision": 700,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 570,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 588,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
@@ -13,19 +13,21 @@
   "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
   "path": [
     "uar-post-lifecycle-verification-readiness",
-    "uar-verification-simplification"
+    "uar-verification-simplification",
+    "identity-pass-through"
   ],
   "phaseIds": [
     "uar-post-lifecycle-verification-readiness",
-    "uar-verification-simplification"
+    "uar-verification-simplification",
+    "uar-verification-simplification::identity-pass-through"
   ],
-  "activePhaseId": "uar-verification-simplification",
-  "activePhase": "uar-verification-simplification",
+  "activePhaseId": "uar-verification-simplification::identity-pass-through",
+  "activePhase": "identity-pass-through",
   "phase": "uar-post-lifecycle-verification-readiness",
-  "parentPhase": "uar-post-lifecycle-verification-readiness",
-  "childPointer": "uar-verification-simplification",
-  "change": "simplify-user-workflow-verification",
-  "currentTask": "2.1",
+  "parentPhase": "uar-verification-simplification",
+  "childPointer": "identity-pass-through",
+  "change": null,
+  "currentTask": null,
   "status": "ready",
   "lifecycle": "ready",
   "stageId": null,
@@ -34,9 +36,9 @@
   "implementationCompleted": 144,
   "implementationTotal": 170,
   "planRevision": 178,
-  "revision": 682,
-  "exactNextCommand": "MANUAL scenario list only. Returned from agent-team child at operator request. TEAM-01 run003 FAILED: concurrency/math passed; writer has no final outline; article skipped. Await operator direction; no automatic retry/repair, packet/review/signing/inventory/exit gates. Owned UAR last ready PID50663 stays running.",
-  "nextChange": "simplify-user-workflow-verification",
-  "nextTask": "2.1",
-  "updatedAt": "2026-10-26T13:11:33.461203Z"
+  "revision": 700,
+  "exactNextCommand": "/kbd-assess uar-post-lifecycle-verification-readiness› identity-pass-through",
+  "nextChange": null,
+  "nextTask": null,
+  "updatedAt": "2026-10-28T10:59:39.603112Z"
 }

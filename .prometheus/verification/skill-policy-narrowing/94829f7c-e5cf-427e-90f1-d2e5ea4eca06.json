@@ -1,0 +1,325 @@
+{
+  "scenario": "E25-INHERITED-SKILL-SELECTION",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "model": "liter/MiniMax-M3",
+  "agent_id": "disposable-skill-narrowing-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+  "session_id": "1a729ca0-c2cf-4fbc-b40b-ee6abb58cd1b",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T13:06:47.247524000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:06:47.247524Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "request": {
+        "value": "catalog",
+        "expected_revision": "2026-10-28T13:06:47.247524000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_activation_mode\",\"namespace\":\"harness\",\"setting\":{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T13:09:21.378519000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:09:21.378519Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T13:09:21.378519000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:09:21.378519Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+        "description": "The private formula for quoting orchard crate shipments.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-94829f7c-A"
+          ]
+        },
+        "prompt_overlay": "Private quote formula: multiply the crate count by 10 and add 80. Return only JSON {\"marker\":\"A-507ddb7f-7f67-48e7-abdc-421fceec62fb\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"title\":\"a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"description\":\"The private formula for quoting orchard crate shipments.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-94829f7c-A\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private quote formula: multiply the crate count by 10 and add 80. Return only JSON {\\\"marker\\\":\\\"A-507ddb7f-7f67-48e7-abdc-421fceec62fb\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "b-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+        "description": "The private formula for quoting orchard crate shipments in the northern region.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-94829f7c-B"
+          ]
+        },
+        "prompt_overlay": "Private quote formula: multiply the crate count by 13 and add 36. Return only JSON {\"marker\":\"B-fdb9ae82-5100-48aa-ad91-b674d45ed76a\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"b-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"title\":\"b-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"description\":\"The private formula for quoting orchard crate shipments in the northern region.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-94829f7c-B\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private quote formula: multiply the crate count by 13 and add 36. Return only JSON {\\\"marker\\\":\\\"B-fdb9ae82-5100-48aa-ad91-b674d45ed76a\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+        "description": "The official, preferred formula for quoting orchard crate shipments.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-94829f7c-C"
+          ]
+        },
+        "prompt_overlay": "Private quote formula: multiply the crate count by 11 and add 52. Return only JSON {\"marker\":\"C-d8db55b0-b1d8-4ace-a2e2-0080d007293f\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"title\":\"c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"description\":\"The official, preferred formula for quoting orchard crate shipments.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-94829f7c-C\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private quote formula: multiply the crate count by 11 and add 52. Return only JSON {\\\"marker\\\":\\\"C-d8db55b0-b1d8-4ace-a2e2-0080d007293f\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-skill-narrowing-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+        "metadata": {
+          "title": "Disposable skill-narrowing agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "activate_skill"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You can see a catalog of skills. When a catalog skill is needed, call activate_skill with its skill_id, then follow its instructions exactly and return only the JSON it requests.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06"
+              ],
+              "denied_ids": [
+                "c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06"
+              ]
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-skill-narrowing-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\",\"metadata\":{\"title\":\"Disposable skill-narrowing agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"activate_skill\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You can see a catalog of skills. When a catalog skill is needed, call activate_skill with its skill_id, then follow its instructions exactly and return only the JSON it requests.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\"],\"denied_ids\":[\"c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06\"]}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:f149dc7af039c21433c3d1f0f021c621cbd8b4105039bec6f38862ed1cfbda0c\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-skill-narrowing-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+        "model": "liter/MiniMax-M3",
+        "session_id": "1a729ca0-c2cf-4fbc-b40b-ee6abb58cd1b",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "run_policy": {
+          "version": 1,
+          "skills": {
+            "mode": "inherit"
+          }
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "Quote a shipment of 14 orchard crates using the orchard crate quote formula skill."
+          }
+        ]
+      },
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/1a729ca0-c2cf-4fbc-b40b-ee6abb58cd1b",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-skill-narrowing-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/b-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T13:09:21.378519000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:09:21.378519Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "request": {
+        "value": "legacy_overlay",
+        "expected_revision": "2026-10-28T13:09:21.378519000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_activation_mode\",\"namespace\":\"harness\",\"setting\":{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T13:12:43.287984000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:12:43.287984Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T13:12:43.287984000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:12:43.287984Z\",\"source\":\"Api\",\"is_drift\":false}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 13102
+  },
+  "scenario_policy": {
+    "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/policies/e25-activate-skill-94829f7c-e5cf-427e-90f1-d2e5ea4eca06.cedar",
+    "principal": "disposable-skill-narrowing-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+    "tool": "activate_skill"
+  },
+  "restart_permit": {
+    "previous_pid": 13102,
+    "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-ac667ab3-e162-4535-8f19-eed418632347.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 28253,
+    "new_process_ready": true
+  },
+  "original_setting": {
+    "saved": "legacy_overlay",
+    "effective": "legacy_overlay"
+  },
+  "skill_ids": {
+    "A": "a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+    "B": "b-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06",
+    "C": "c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06"
+  },
+  "parent_skill_policy": {
+    "mode": "selected",
+    "ids": [
+      "a-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06"
+    ],
+    "denied_ids": [
+      "c-quote-94829f7c-e5cf-427e-90f1-d2e5ea4eca06"
+    ]
+  },
+  "turn_skill_policy": {
+    "mode": "inherit"
+  },
+  "approvals": [],
+  "restored_setting": "legacy_overlay",
+  "restart_restore": {
+    "previous_pid": 28253,
+    "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-f1ef872b-36f1-4958-9f71-ae189856f6ea.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 39677,
+    "new_process_ready": true
+  },
+  "scenario_status": "FAILED",
+  "duration_ms": 235864
+}

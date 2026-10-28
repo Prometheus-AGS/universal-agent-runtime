@@ -1,0 +1,119 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-browser-conversation-reloads-from-saved-history;reopen-a-saved-conversation-after-reload-and-continue-from-its-earlier-fact",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Reopen a saved conversation after reload and continue from its earlier fact",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable custom agent is selected in a fresh browser conversation",
+            "result": {
+              "status": "passed",
+              "duration": 2480000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give the agent a fresh fact in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 3339000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I reload the page and reopen that conversation from the thread list",
+            "result": {
+              "status": "passed",
+              "duration": 1608000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the reopened conversation shows the saved turns without a new run",
+            "result": {
+              "status": "failed",
+              "duration": 120250000000,
+              "error_message": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('[data-slot=\"aui_assistant-message-root\"][data-role=\"assistant\"]')\nExpected: 1\nReceived: 0\nTimeout:  120000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 120000ms\n  - waiting for locator('[data-slot=\"aui_assistant-message-root\"][data-role=\"assistant\"]')\n    243 × locator resolved to 0 elements\n        - unexpected value \"0\"\n\n   at ../../scripts/behaviors/browser/browser-history-reload.steps.mjs:209\n\n  207 | Then('the reopened conversation shows the saved turns without a new run', async ({ page, scenario: s }) => {\n  208 |   await expect(userMessages(page)).toHaveCount(1);\n> 209 |   await expect(assistantMessages(page)).toHaveCount(1);\n      |                                         ^\n  210 |   await expect(userMessages(page).first()).toContainText(s.reference);\n  211 |   await expect(assistantMessages(page).first()).toContainText(/READY/i);\n  212 |   await expect(page.getByRole('button', { name: 'Select agent', exact: true })).toContainText(s.title);\n\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-history-reload.steps.mjs:209:41)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated/features/browser-history-reload.feature.spec.js:10:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send a follow-up that contains none of the earlier facts",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the follow-up answer uses the earlier fact from the saved server history",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1487000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@conversation",
+            "line": 1
+          },
+          {
+            "name": "@reload",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-browser-conversation-reloads-from-saved-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A browser conversation reloads from saved history",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@conversation",
+        "line": 1
+      },
+      {
+        "name": "@reload",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-history-reload.feature"
+  }
+]

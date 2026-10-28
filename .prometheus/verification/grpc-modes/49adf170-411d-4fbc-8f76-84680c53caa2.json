@@ -1,0 +1,177 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-49adf170-411d-4fbc-8f76-84680c53caa2",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-49adf170-411d-4fbc-8f76-84680c53caa2",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-49adf170"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-b143aeea-9dec-4ea5-9300-d12cfd1d3702\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-49adf170-411d-4fbc-8f76-84680c53caa2\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-49adf170\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-b143aeea-9dec-4ea5-9300-d12cfd1d3702\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:5b2b8342d965c5d85a75af783dd94452ac3ef9847710d70f60755f20bd568649\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "What is (63 multiplied by 32) plus 188?"
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "4f55502b-281f-4acc-955a-77bb37d3243d",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (63 multiplied by 32) plus 188?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "4f55502b-281f-4acc-955a-77bb37d3243d",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "4f55502b-281f-4acc-955a-77bb37d3243d",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Add 77 to your previous answer."
+            }
+          ]
+        }
+      },
+      "events": [],
+      "status": {
+        "code": 9,
+        "details": "task is active, closed, or cannot be cancelled"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-49adf170-411d-4fbc-8f76-84680c53caa2",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    2204,
+    2281
+  ],
+  "mode": "grpc-legacy-stream",
+  "scenario_status": "FAILED",
+  "duration_ms": 107
+}

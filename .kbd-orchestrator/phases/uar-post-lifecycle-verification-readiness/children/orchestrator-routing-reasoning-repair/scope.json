@@ -1,0 +1,21 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/orchestrator-routing-reasoning-repair/**",
+    "openspec/changes/fix-orchestrator-routing-reasoning/**",
+    "src/llm/inline_reasoning.rs",
+    "src/llm/mod.rs",
+    "src/uar/runtime/graph/nodes/router_node.rs",
+    "src/uar/runtime/graph/nodes/agent_node.rs",
+    "tests/test_chat_completion.rs",
+    "scripts/behaviors/steps/live-roster-routing.steps.mjs",
+    ".prometheus/**",
+    "src/uar/runtime/manager.rs",
+    "openspec/changes/raise-delegated-child-output-allowance/**",
+    "src/uar/runtime/presentation_history_tests.rs",
+    "src/server/tests.rs"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Revision 2: exact implementation write surface. manager.rs, liter_driver.rs and kernel.rs are excluded (D1(b), T3 and D2(b) were removed or deferred).",
+  "__note_revision_3": "2026-10-27: operator approved d2b plan revision 2 (T8-T10), adding manager.rs and the raise-delegated-child-output-allowance change; and approved test-only initializer repairs in presentation_history_tests.rs and server/tests.rs. Supersedes the revision 2 note's exclusion of manager.rs."
+}

@@ -1,0 +1,23 @@
+{
+  "scenario": "C41",
+  "label": "B43",
+  "behavior": "Explicit skill attachment works in catalog mode",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 1,
+  "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/skill-attachment.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed)",
+  "evidence": ".prometheus/verification/skill-attachment/7f74cafd-d009-492c-b04a-e675ab26e191.json",
+  "files": ["scripts/behaviors/features/skill-attachment.feature", "scripts/behaviors/skill-attachment.cucumber.mjs", "scripts/behaviors/steps/skill-attachment.steps.mjs"],
+  "evidence_review": {
+    "attachment": "native run 405673f6 with skill_attachments:[vault-fee-7f74cafd]; no activation_failures; agui.skill.activated selection_method 'attachment'; run.activated_skills [vault-fee-7f74cafd]",
+    "not_matching": "skill triggers used an unmatched keyword; skill_service.keyword candidates did not accept it",
+    "answer": "225 = crates x private factor + private fee; neither factor nor fee appeared in the request"
+  },
+  "cleanup": {"skill_deleted": true, "agent_deleted": true, "sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

@@ -1,0 +1,497 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-8feeee86-ab51-41c7-918f-fb620e557725",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-8feeee86-ab51-41c7-918f-fb620e557725",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-8feeee86"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-8feeee86-ab51-41c7-918f-fb620e557725\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-8feeee86\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:7830b60fca330fbd4f0815d29a077935eba9fcf96f983f549c677c44f85da657\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "What is (23 multiplied by 25) plus 489?"
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (23 multiplied by 25) plus 489?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks: (23 * 25) + 489. 23 * 25 = 575. 575 + 489 = 1064.\n\nI need to return only a JSON object with keys marker and answer. Answer should be numeric result.\n\nShould I activate a skill? No skill needed for arithmetic. Let me just compute.\n\n23 × 25 = 575. 575 + 489 = 1064.\n\nOutput JSON only.\n\nThe instruction says \"Return only a JSON object with keys marker and answer.\" So myfinal response should be JSON.</think>\n\n{\"marker\": \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\", \"answer\": 1064}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "completed"
+      }
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Add 23 to your previous answer."
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (23 multiplied by 25) plus 489?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              },
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "<think>The user asks: (23 * 25) + 489. 23 * 25 = 575. 575 + 489 = 1064.\n\nI need to return only a JSON object with keys marker and answer. Answer should be numeric result.\n\nShould I activate a skill? No skill needed for arithmetic. Let me just compute.\n\n23 × 25 = 575. 575 + 489 = 1064.\n\nOutput JSON only.\n\nThe instruction says \"Return only a JSON object with keys marker and answer.\" So myfinal response should be JSON.</think>\n\n{\"marker\": \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\", \"answer\": 1064}",
+                    "content": "text"
+                  }
+                ],
+                "role": "agent"
+              },
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "Add 23 to your previous answer.",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks: (23 * 25) + 489. 23 * 25 = 575. 575 + 489 = 1064.\n\nI need to return only a JSON object with keys marker and answer. Answer should be numeric result.\n\nShould I activate a skill? No skill needed for arithmetic. Let me just compute.\n\n23 × 25 = 575. 575 + 489 = 1064.\n\nOutput JSON only.\n\nThe instruction says \"Return only a JSON object with keys marker and answer.\" So myfinal response should be JSON.</think>\n\n{\"marker\": \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\", \"answer\": 1064}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 23 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks: (23 * 25) + 489. 23 * 25 = 575. 575 + 489 = 1064.\n\nI need to return only a JSON object with keys marker and answer. Answer should be numeric result.\n\nShould I activate a skill? No skill needed for arithmetic. Let me just compute.\n\n23 × 25 = 575. 575 + 489 = 1064.\n\nOutput JSON only.\n\nThe instruction says \"Return only a JSON object with keys marker and answer.\" So myfinal response should be JSON.</think>\n\n{\"marker\": \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\", \"answer\": 1064}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 23 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (23 multiplied by 25) plus 489?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks: (23 * 25) + 489. 23 * 25 = 575. 575 + 489 = 1064.\n\nI need to return only a JSON object with keys marker and answer. Answer should be numeric result.\n\nShould I activate a skill? No skill needed for arithmetic. Let me just compute.\n\n23 × 25 = 575. 575 + 489 = 1064.\n\nOutput JSON only.\n\nThe instruction says \"Return only a JSON object with keys marker and answer.\" So myfinal response should be JSON.</think>\n\n{\"marker\": \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\", \"answer\": 1064}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 23 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>1064 + 23 = 1087.</think>\n\n{\"marker\": \"GRPC-ca8246d5-cebe-486e-b778-de91d0cf94f4\", \"answer\": 1087}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+        "status": "completed"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-8feeee86-ab51-41c7-918f-fb620e557725",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    1064,
+    1087
+  ],
+  "streams": [
+    {
+      "events": [
+        "status_update:working"
+      ],
+      "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+      "status": "completed"
+    },
+    {
+      "events": [
+        "status_update:working"
+      ],
+      "task_id": "a95b09bf-066f-49e4-b335-bf143d952dd0",
+      "status": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-legacy-stream",
+  "scenario_status": "PASSED",
+  "duration_ms": 7176
+}

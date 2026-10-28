@@ -1,0 +1,68 @@
+{
+  "scenario": "KB-DISABLE-01",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "report_timezone": "America/Chicago",
+  "recorded_at_utc": "2026-10-27T08:59:26.262408+00:00",
+  "attempt": 2,
+  "command": "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-disable.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed); 0m 23.876s",
+  "evidence": ".prometheus/verification/kb-disable/e7f58cbb-bd69-4c30-85d7-68376f17a902.json",
+  "cucumber_report": ".prometheus/verification/kb-disable-002-macos/cucumber.json",
+  "retained_failure": ".prometheus/verification/kb-disable-001-macos",
+  "first_failure": "Model copied one character of the saved agent marker incorrectly during enabled positive control; disablement/negative assertions skipped. Second run used unchanged source and assertions.",
+  "knowledge_base_id": "f411791f-b9f9-44c6-8668-4cd39a1cd802",
+  "links_before": [
+    "f411791f-b9f9-44c6-8668-4cd39a1cd802"
+  ],
+  "links_after": [
+    "f411791f-b9f9-44c6-8668-4cd39a1cd802"
+  ],
+  "enabled_before": true,
+  "enabled_after": false,
+  "effective_policy": {
+    "ids": [
+      "f411791f-b9f9-44c6-8668-4cd39a1cd802"
+    ],
+    "mode": "none"
+  },
+  "before_answer": {
+    "agent_marker": "AGENT-19b0a00d-07ba-43a6-bd55-0f75231b5737",
+    "sum": 488,
+    "knowledge_seal": "KNOWLEDGE-f6b255f6-46e6-46ce-a4a8-409efefe0209",
+    "citation": "[1]"
+  },
+  "after_answer": {
+    "agent_marker": "AGENT-19b0a00d-07ba-43a6-bd55-0f75231b5737",
+    "sum": 488,
+    "knowledge_seal": null,
+    "citation": null
+  },
+  "after_citations": [],
+  "before_session": "7db7fd67-e142-4e8f-9cb8-3569caf2de5e",
+  "after_session": "3b0695d2-9945-4dba-94b5-88a42df14bb1",
+  "kb_and_document_unchanged": true,
+  "linked_kb_remains_directly_searchable": true,
+  "private_fact_absent_from_disabled_response_and_events": true,
+  "cleanup_complete": true,
+  "previous_scenarios_rerun": false,
+  "production_changes": false,
+  "restart": false,
+  "rebuild": false,
+  "service_kept_running": true,
+  "runtime_pid": 21601,
+  "authentication_supplied_by_test": false,
+  "hosted_embedding_spend_usd": {
+    "openai": 0,
+    "cohere": 0
+  },
+  "source_sha256": {
+    "scripts/behaviors/kb-disable.cucumber.mjs": "05641388723f0f7b7f73c7bb787cbc0289c26a40700ee035f2253b4d50da5b70",
+    "scripts/behaviors/features/kb-disable.feature": "319aa3c6e15f9f5684ba63c4496608181777bb510ce8eb7c689ace87bb633b80",
+    "scripts/behaviors/steps/kb-disable.steps.mjs": "c8bf913542634141cf2fe30142ca77a99ff63bfbee42045794600a8f21a5f38b"
+  },
+  "scope": "One agent with one retained KB link, fresh conversation, local FastEmbed on Mac. Does not establish forgetting knowledge already in conversation history, other backends or other platforms.",
+  "karpathy_log": ".prometheus/knowledge/karpathy/manual-bdd-evolution-01a16d22/process.md"
+}

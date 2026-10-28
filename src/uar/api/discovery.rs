@@ -1254,6 +1254,43 @@ pub async fn delete_conversation_policy(
     StatusCode::NO_CONTENT.into_response()
 }
 
+/// GET `/api/uar/sessions/{id}`.
+///
+/// Returns one persisted session for the verified owner, in the same shape as
+/// the owner session list. Returns 404 when no session exists for that owner.
+pub async fn get_session(
+    State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let Ok(owner_key) = user.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let Some(persistence) = &state.persistence else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "persistence not configured"})),
+        )
+            .into_response();
+    };
+    match persistence.load_session(&owner_key, &session_id).await {
+        Ok(Some(session)) => Json(session).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "session not found"})),
+        )
+            .into_response(),
+        Err(error) => {
+            tracing::error!(%error, owner_id = %owner_key, %session_id, "failed to load session");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "failed to load session"})),
+            )
+                .into_response()
+        }
+    }
+}
+
 /// DELETE `/api/uar/sessions/{id}`.
 ///
 /// Authenticated session erasure. Cascades across the persistence layer

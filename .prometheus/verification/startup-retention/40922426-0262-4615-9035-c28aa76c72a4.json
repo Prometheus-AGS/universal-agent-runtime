@@ -1,0 +1,428 @@
+{
+  "scenario": "C52-STARTUP-RETENTION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "owned_runtime_touched": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/orchestrator-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"orchestrator-agent\",\"metadata\":{\"title\":\"Orchestrator\",\"description\":\"Classifies requests against the current registered agent roster and returns the selected agent's contribution.\",\"tags\":[\"orchestration\",\"delegation\",\"multi-agent\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"orchestrator\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\",\"spawn_agent\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution.\",\"instructions\":[\"Select the best eligible registered agent for the user's intent. Use the current roster rather than a fixed specialist list.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0da9f09752cb7689ae6dd035b0e6dd6fd4be64710deede75006fa04e842aa500\",\"source\":{\"kind\":\"builtin\",\"id\":\"orchestrator-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/general-purpose",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/rust-reviewer",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"rust-reviewer\",\"metadata\":{\"title\":\"Rust reviewer\",\"description\":\"Reviews Rust implementation, correctness and safety with source evidence.\",\"tags\":[\"rust\",\"review\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\",\"Review Rust correctness, ownership, concurrency and safety. Cite concrete source evidence for findings and state which behavior remains unverified.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0df1aff23bae79a2978132b5e46775ec00f16ba975c7f0aa9c5ec3ba06ac7f92\",\"source\":{\"kind\":\"builtin\",\"id\":\"rust-reviewer\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/compiler-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"0f1ba7bd-e9a3-4349-b726-a08c21f4a84e\",\"settings_type_id\":\"fc936f98-95fb-46f3-8d50-785e320bea0f\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"saved\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"effective\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"revision\":\"2026-10-27T22:09:15.563610000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:09:15.563610Z\",\"updated_at\":null,\"source\":\"ConfigFile\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "request": {
+        "value": {
+          "per_skill_tokens": 4321,
+          "total_tokens": 12345
+        },
+        "expected_revision": "2026-10-27T22:09:15.563610000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_reattachment\",\"namespace\":\"harness\",\"setting\":{\"id\":\"0f1ba7bd-e9a3-4349-b726-a08c21f4a84e\",\"settings_type_id\":\"fc936f98-95fb-46f3-8d50-785e320bea0f\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:09:30.129258000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:09:15.563610Z\",\"updated_at\":\"2026-10-27T22:09:30.129258Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"0f1ba7bd-e9a3-4349-b726-a08c21f4a84e\",\"settings_type_id\":\"fc936f98-95fb-46f3-8d50-785e320bea0f\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:09:30.129258000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:09:15.563610Z\",\"updated_at\":\"2026-10-27T22:09:30.129258Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/orchestrator-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"orchestrator-agent\",\"metadata\":{\"title\":\"Orchestrator\",\"description\":\"Classifies requests against the current registered agent roster and returns the selected agent's contribution.\",\"tags\":[\"orchestration\",\"delegation\",\"multi-agent\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"orchestrator\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\",\"spawn_agent\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution.\",\"instructions\":[\"Select the best eligible registered agent for the user's intent. Use the current roster rather than a fixed specialist list.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0da9f09752cb7689ae6dd035b0e6dd6fd4be64710deede75006fa04e842aa500\",\"source\":{\"kind\":\"builtin\",\"id\":\"orchestrator-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/general-purpose",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/rust-reviewer",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"rust-reviewer\",\"metadata\":{\"title\":\"Rust reviewer\",\"description\":\"Reviews Rust implementation, correctness and safety with source evidence.\",\"tags\":[\"rust\",\"review\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\",\"Review Rust correctness, ownership, concurrency and safety. Cite concrete source evidence for findings and state which behavior remains unverified.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0df1aff23bae79a2978132b5e46775ec00f16ba975c7f0aa9c5ec3ba06ac7f92\",\"source\":{\"kind\":\"builtin\",\"id\":\"rust-reviewer\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/compiler-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"0f1ba7bd-e9a3-4349-b726-a08c21f4a84e\",\"settings_type_id\":\"fc936f98-95fb-46f3-8d50-785e320bea0f\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:09:30.129258000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:09:15.563610Z\",\"updated_at\":\"2026-10-27T22:09:30.129258Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/providers/liter/test",
+      "request": {
+        "model": "MiniMax-M3",
+        "output_token_cap": 512
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\",\"latency_ms\":1277,\"received_text\":true}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "default-agent",
+        "model": "liter/MiniMax-M3",
+        "session_id": "21bbadae-1150-4ea7-89ff-4690b84a8f54",
+        "stream": false,
+        "max_completion_tokens": 512,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply with only the word READY."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-91f94a95-068d-4e70-a923-2f330df3c7e9\",\"object\":\"chat.completion\",\"created\":1793138977,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"READY\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15389,\"completion_tokens\":3,\"total_tokens\":15392},\"session_id\":\"21bbadae-1150-4ea7-89ff-4690b84a8f54\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "default-agent",
+        "model": "liter/MiniMax-M3",
+        "session_id": "106905f1-6c6a-48a1-9598-bd45675e3ec6",
+        "stream": false,
+        "max_completion_tokens": 512,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply with only the word READY."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-0fa653dd-0b39-4387-ae65-be2500b4aa74\",\"object\":\"chat.completion\",\"created\":1793138979,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"READY\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15389,\"completion_tokens\":3,\"total_tokens\":15392},\"session_id\":\"106905f1-6c6a-48a1-9598-bd45675e3ec6\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/21bbadae-1150-4ea7-89ff-4690b84a8f54",
+      "status": 200,
+      "response": "{\"id\":\"21bbadae-1150-4ea7-89ff-4690b84a8f54\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/106905f1-6c6a-48a1-9598-bd45675e3ec6",
+      "status": 200,
+      "response": "{\"id\":\"106905f1-6c6a-48a1-9598-bd45675e3ec6\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/21bbadae-1150-4ea7-89ff-4690b84a8f54",
+      "status": 200,
+      "response": "{\"id\":\"21bbadae-1150-4ea7-89ff-4690b84a8f54\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/106905f1-6c6a-48a1-9598-bd45675e3ec6",
+      "status": 200,
+      "response": "{\"id\":\"106905f1-6c6a-48a1-9598-bd45675e3ec6\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "default-agent",
+        "model": "liter/MiniMax-M3",
+        "session_id": "b9be013f-abd2-49b0-9bda-c4c4b9e0e26c",
+        "stream": false,
+        "max_completion_tokens": 512,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply with only the word READY."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-845cc917-9efa-4bfe-954b-fed90be61760\",\"object\":\"chat.completion\",\"created\":1793138982,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"READY\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15389,\"completion_tokens\":3,\"total_tokens\":15392},\"session_id\":\"b9be013f-abd2-49b0-9bda-c4c4b9e0e26c\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/21bbadae-1150-4ea7-89ff-4690b84a8f54",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/106905f1-6c6a-48a1-9598-bd45675e3ec6",
+      "status": 200,
+      "response": "{\"id\":\"106905f1-6c6a-48a1-9598-bd45675e3ec6\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/b9be013f-abd2-49b0-9bda-c4c4b9e0e26c",
+      "status": 200,
+      "response": "{\"id\":\"b9be013f-abd2-49b0-9bda-c4c4b9e0e26c\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "default-agent",
+        "model": "liter/MiniMax-M3",
+        "session_id": "b9be013f-abd2-49b0-9bda-c4c4b9e0e26c",
+        "stream": false,
+        "max_completion_tokens": 512,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply with only the word AGAIN."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-cee79ec0-7a6e-483f-a39f-5a53f14e32ea\",\"object\":\"chat.completion\",\"created\":1793138984,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"AGAIN\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15409,\"completion_tokens\":4,\"total_tokens\":15413},\"session_id\":\"b9be013f-abd2-49b0-9bda-c4c4b9e0e26c\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/106905f1-6c6a-48a1-9598-bd45675e3ec6",
+      "status": 200,
+      "response": "{\"id\":\"106905f1-6c6a-48a1-9598-bd45675e3ec6\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/sessions/b9be013f-abd2-49b0-9bda-c4c4b9e0e26c",
+      "status": 200,
+      "response": "{\"id\":\"b9be013f-abd2-49b0-9bda-c4c4b9e0e26c\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the word READY.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29885649,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/orchestrator-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"orchestrator-agent\",\"metadata\":{\"title\":\"Orchestrator\",\"description\":\"Classifies requests against the current registered agent roster and returns the selected agent's contribution.\",\"tags\":[\"orchestration\",\"delegation\",\"multi-agent\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"orchestrator\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\",\"spawn_agent\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution.\",\"instructions\":[\"Select the best eligible registered agent for the user's intent. Use the current roster rather than a fixed specialist list.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0da9f09752cb7689ae6dd035b0e6dd6fd4be64710deede75006fa04e842aa500\",\"source\":{\"kind\":\"builtin\",\"id\":\"orchestrator-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/general-purpose",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/rust-reviewer",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"rust-reviewer\",\"metadata\":{\"title\":\"Rust reviewer\",\"description\":\"Reviews Rust implementation, correctness and safety with source evidence.\",\"tags\":[\"rust\",\"review\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\",\"Review Rust correctness, ownership, concurrency and safety. Cite concrete source evidence for findings and state which behavior remains unverified.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0df1aff23bae79a2978132b5e46775ec00f16ba975c7f0aa9c5ec3ba06ac7f92\",\"source\":{\"kind\":\"builtin\",\"id\":\"rust-reviewer\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/compiler-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"0f1ba7bd-e9a3-4349-b726-a08c21f4a84e\",\"settings_type_id\":\"fc936f98-95fb-46f3-8d50-785e320bea0f\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:09:30.129258000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:09:15.563610Z\",\"updated_at\":\"2026-10-27T22:09:30.129258Z\",\"source\":\"Api\",\"is_drift\":true}"
+    }
+  ],
+  "turns": {
+    "terminal": {
+      "session_id": "21bbadae-1150-4ea7-89ff-4690b84a8f54",
+      "answer": "READY"
+    },
+    "control": {
+      "session_id": "106905f1-6c6a-48a1-9598-bd45675e3ec6",
+      "answer": "READY"
+    },
+    "trigger": {
+      "session_id": "b9be013f-abd2-49b0-9bda-c4c4b9e0e26c",
+      "answer": "READY"
+    },
+    "second_signal": {
+      "session_id": "b9be013f-abd2-49b0-9bda-c4c4b9e0e26c",
+      "answer": "AGAIN"
+    }
+  },
+  "fixture": {
+    "fixture_id": "f92c7321-8951-448c-8a47-337684e57071",
+    "store": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071/store",
+    "surreal_pid": 72472,
+    "proxy_pid": 72931,
+    "base_url": "http://127.0.0.1:61302",
+    "runtime_url": "http://127.0.0.1:61300",
+    "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+    "config_sha256": "9c0e641604dfe68a0f422dd8326843b5c5d718c8ff0556ceca6e6ac1ff80f568",
+    "persisted_ttl_secs": 3600,
+    "surreal_version": "3.3.0 for macos on x86_64",
+    "empty_store_before_start": [
+      {
+        "accesses": {},
+        "config": {
+          "QUERY_TIMEOUT": null
+        },
+        "defaults": {
+          "database": "main",
+          "namespace": "main"
+        },
+        "namespaces": {
+          "main": "DEFINE NAMESPACE main COMMENT 'Default namespace generated by SurrealDB'"
+        },
+        "nodes": {
+          "87d48df1-d9fc-4cb3-bb6b-c4fbbb5d145d": "NODE u'87d48df1-d9fc-4cb3-bb6b-c4fbbb5d145d' SEEN 1793138937892 ACTIVE"
+        },
+        "system": {
+          "available_parallelism": 24,
+          "cpu_usage": 0.9010495543479919,
+          "load_average": [
+            10.69287109375,
+            8.81689453125,
+            8.408203125
+          ],
+          "memory_allocated": 4351065056,
+          "memory_requested": 4347417969,
+          "memory_usage": 65110016,
+          "physical_cores": 12
+        },
+        "users": {
+          "root": "DEFINE USER root ON ROOT PASSHASH '[REDACTED]' PASSSCRAM '[REDACTED]' ROLES OWNER DURATION FOR TOKEN 1h, FOR SESSION NONE"
+        }
+      }
+    ],
+    "startups": [
+      {
+        "label": "initial",
+        "pid": 72483,
+        "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071/uar-initial.log"
+      },
+      {
+        "label": "repeat",
+        "pid": 72933,
+        "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/f92c7321-8951-448c-8a47-337684e57071/uar-repeat.log",
+        "previous_pid": 72483
+      }
+    ],
+    "teardown": {
+      "stopped": {
+        "proxy": true,
+        "uar": true,
+        "surreal": true
+      },
+      "directory_removed": true
+    }
+  },
+  "log_lines": {
+    "initial_seeded": [
+      "{\"timestamp\":\"2026-10-27T22:09:21.066501Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"default-agent\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(23)\"}",
+      "{\"timestamp\":\"2026-10-27T22:09:21.090436Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"orchestrator-agent\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(23)\"}",
+      "{\"timestamp\":\"2026-10-27T22:09:21.114495Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"general-purpose\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(23)\"}",
+      "{\"timestamp\":\"2026-10-27T22:09:21.138980Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"rust-reviewer\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(23)\"}",
+      "{\"timestamp\":\"2026-10-27T22:09:21.163570Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"compiler-agent\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(19)\"}"
+    ],
+    "repeat_seeded": [],
+    "purged_after_first_signal": [
+      "{\"timestamp\":\"2026-10-27T22:09:42.616434Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"persisted session purged by TTL sweep\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"session_id\":\"21bbadae-1150-4ea7-89ff-4690b84a8f54\"},\"target\":\"universal_agent_runtime::uar::runtime::manager\",\"line_number\":1677,\"threadId\":\"ThreadId(19)\"}"
+    ],
+    "purged_after_second_signal": [
+      "{\"timestamp\":\"2026-10-27T22:09:42.616434Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"persisted session purged by TTL sweep\",\"owner_id\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"session_id\":\"21bbadae-1150-4ea7-89ff-4690b84a8f54\"},\"target\":\"universal_agent_runtime::uar::runtime::manager\",\"line_number\":1677,\"threadId\":\"ThreadId(19)\"}"
+    ]
+  },
+  "initial_seed_lines": 5,
+  "seeded_setting": {
+    "source": "ConfigFile",
+    "effective": {
+      "per_skill_tokens": 5000,
+      "total_tokens": 25000
+    },
+    "revision": "2026-10-27T22:09:15.563610000Z"
+  },
+  "saved_setting": {
+    "source": "Api",
+    "effective": {
+      "per_skill_tokens": 4321,
+      "total_tokens": 12345
+    },
+    "revision": "2026-10-27T22:09:30.129258000Z"
+  },
+  "repeat_seed_lines": 0,
+  "setting_after_repeat": {
+    "source": "Api",
+    "effective": {
+      "per_skill_tokens": 4321,
+      "total_tokens": 12345
+    },
+    "revision": "2026-10-27T22:09:30.129258000Z"
+  },
+  "model_verification": {
+    "provider": "liter",
+    "model": "MiniMax-M3",
+    "ok": true,
+    "model_id": "MiniMax-M3"
+  },
+  "before_aging": {
+    "terminal": "2026-10-27T22:09:38.445834+00:00",
+    "control": "2026-10-27T22:09:41.167256+00:00"
+  },
+  "host_aging": {
+    "session_id": "21bbadae-1150-4ea7-89ff-4690b84a8f54",
+    "last_activity": "2026-10-27T20:09:41.207Z",
+    "rows_updated": 1
+  },
+  "after_aging": {
+    "terminal": "2026-10-27T20:09:41.207+00:00",
+    "control": "2026-10-27T22:09:41.167256+00:00"
+  },
+  "terminal_removed_within_ms": 5,
+  "purge_lines_after_first_signal": 1,
+  "purge_lines_after_second_signal": 1,
+  "result": "VERIFIED",
+  "status": "passed",
+  "cleanup_errors": []
+}

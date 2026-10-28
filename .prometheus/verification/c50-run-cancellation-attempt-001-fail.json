@@ -1,0 +1,11 @@
+{
+  "scenario": "C50",
+  "status": "FAIL",
+  "failure_class": "test oracle too narrow (required reconciliation evidence on the call record; the run reported uncertainty as a diagnostic)",
+  "platform": "Mac",
+  "attempt": 1,
+  "observed_output": "1 scenario (1 failed); 7 steps (5 passed, 1 skipped, 1 failed); 0m 9.407s",
+  "evidence": ".prometheus/verification/run-cancellation/bdf077c0-bf36-4137-a96c-33e883447a30.json",
+  "observed_before_failure": "Run 9b0ea6d9 streamed, cancel returned cancelled:true, status running→cancelled, agui.cancelled emitted, no events after terminal. Accounting call pending with observed_tokens 0; the run emitted uar.presentation.diagnostic code accounting_unresolved 'Execution outcome is independent of accounting; durable usage remains pending reconciliation'. Follow-up prompt step was skipped.",
+  "next": "Accept a pending call when the run explicitly reports accounting_unresolved; rerun once (also runs the skipped follow-up prompt)."
+}

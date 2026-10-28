@@ -1,0 +1,129 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "intent-classifier-tfidf-selects-and-uses-a-skill;the-tfidf-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The tfidf classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 223629329
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-tfidf.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 58193470
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the tfidf backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-tfidf.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5920079957
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-tfidf.steps.mjs:89"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1163913
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports the legacy_classifier.tfidf method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-tfidf.steps.mjs:103"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 374946
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-tfidf.steps.mjs:114"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 179169496
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLXRmaWRmLzQzZmZmYTBkLWZjOGQtNGI2NS1hMWRjLTJlNGJmNzY4M2VkNS5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "intent-classifier-tfidf-selects-and-uses-a-skill",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Intent-classifier tfidf selects and uses a skill",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@settings",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-classifier-tfidf.feature"
+  }
+]

@@ -1,0 +1,370 @@
+{
+  "scenario": "E14-SKILL-ACTIVATION-LIMIT",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "model": "liter/MiniMax-M3",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T12:41:47.934131000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T12:41:47.934131Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "request": {
+        "value": "catalog",
+        "expected_revision": "2026-10-28T12:41:47.934131000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_activation_mode\",\"namespace\":\"harness\",\"setting\":{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T12:41:48.001866000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T12:41:48.001866Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T12:41:48.001866000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T12:41:48.001866Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda",
+        "description": "The private formula for quoting orchard crate shipments.",
+        "triggers": {
+          "keywords": [
+            "crate-cb4a3145"
+          ]
+        },
+        "prompt_overlay": "Orchard crate quote formula: multiply the crate count by 11 and add 70. Return only JSON {\"marker\":\"CRATE-48f0f8fe-19a5-4a93-b634-d98522139ae0\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"title\":\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"description\":\"The private formula for quoting orchard crate shipments.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"crate-cb4a3145\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Orchard crate quote formula: multiply the crate count by 11 and add 70. Return only JSON {\\\"marker\\\":\\\"CRATE-48f0f8fe-19a5-4a93-b634-d98522139ae0\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "vault-fact-cb4a3145-4095-476d-bc40-732c27208dda",
+        "description": "A private vault reference code needed for audit notes.",
+        "triggers": {
+          "keywords": [
+            "vault-cb4a3145"
+          ]
+        },
+        "prompt_overlay": "The vault reference code is VAULT-5af42b87-e2f5-45ed-b9d2-b1fd5493ce05. Include it as \"vault\" in every JSON answer."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"vault-fact-cb4a3145-4095-476d-bc40-732c27208dda\",\"title\":\"vault-fact-cb4a3145-4095-476d-bc40-732c27208dda\",\"description\":\"A private vault reference code needed for audit notes.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"vault-cb4a3145\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"The vault reference code is VAULT-5af42b87-e2f5-45ed-b9d2-b1fd5493ce05. Include it as \\\"vault\\\" in every JSON answer.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-skill-catalog-cb4a3145-4095-476d-bc40-732c27208dda",
+        "metadata": {
+          "title": "Disposable catalog-skill agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "activate_skill"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 1
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You can see a catalog of skills. When asked, call activate_skill with the requested skill_id. If an activation fails, continue with the instructions you already have. Return only the JSON your active skill requests.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda",
+                "vault-fact-cb4a3145-4095-476d-bc40-732c27208dda"
+              ],
+              "denied_ids": []
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-skill-catalog-cb4a3145-4095-476d-bc40-732c27208dda\",\"metadata\":{\"title\":\"Disposable catalog-skill agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"activate_skill\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":1}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You can see a catalog of skills. When asked, call activate_skill with the requested skill_id. If an activation fails, continue with the instructions you already have. Return only the JSON your active skill requests.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:34ff19654749c5322027d31b421d72a929cf66480b6952275502d72f89f61ba8\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"vault-fact-cb4a3145-4095-476d-bc40-732c27208dda\"],\"denied_ids\":[]}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-skill-catalog-cb4a3145-4095-476d-bc40-732c27208dda",
+        "session_id": "2fccc558-2a81-4b14-9568-0fcf4ad022c9",
+        "input": "First call activate_skill with skill_id \"vault-fact-cb4a3145-4095-476d-bc40-732c27208dda\". Then quote a shipment of 28 orchard crates using the orchard crate formula.",
+        "skill_attachments": [
+          "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda"
+        ]
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"e5da73c3-c2c3-4f82-9d23-59f9e71eabe7\",\"stream_url\":\"/api/uar/runs/e5da73c3-c2c3-4f82-9d23-59f9e71eabe7/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e5da73c3-c2c3-4f82-9d23-59f9e71eabe7/stream?stream_mode=agui_spec&last_event_id=0",
+      "status": 200,
+      "response": "[70198 bytes of SSE]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e5da73c3-c2c3-4f82-9d23-59f9e71eabe7",
+      "status": 200,
+      "response": "{\"run_id\":\"e5da73c3-c2c3-4f82-9d23-59f9e71eabe7\",\"agent_id\":\"disposable-skill-catalog-cb4a3145-4095-476d-bc40-732c27208dda\",\"conversation_id\":\"2fccc558-2a81-4b14-9568-0fcf4ad022c9\",\"status\":\"done\",\"agent_revision\":\"sha256:34ff19654749c5322027d31b421d72a929cf66480b6952275502d72f89f61ba8\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-skill-catalog-cb4a3145-4095-476d-bc40-732c27208dda\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"vault-fact-cb4a3145-4095-476d-bc40-732c27208dda\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":true,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'activate_skill' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"vault-fact-cb4a3145-4095-476d-bc40-732c27208dda\",\"score\":0.0,\"accepted\":false}]},\"activated_skills\":[\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:0d33a174718662cb445a096dffb38a3a6a9d2600cc9bf6100333d03b62a301d1\",\"prepared_sha256\":\"sha256:0d33a174718662cb445a096dffb38a3a6a9d2600cc9bf6100333d03b62a301d1\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":556,\"prepared_tokens\":556,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:0d33a174718662cb445a096dffb38a3a6a9d2600cc9bf6100333d03b62a301d1\",\"final_messages\":2,\"final_tokens\":556,\"input_allowance\":1047195,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":866,\"request_tokens\":987,\"rendered_tokens\":118,\"rendered_sha256\":\"sha256:fc529bfd78b04357e1f20d16fe590ac226fac81012f360555224795b8b10b2ea\",\"fragments\":[{\"fragment_id\":\"skill.crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"skill_id\":\"crate-quote-cb4a3145-4095-476d-bc40-732c27208dda\",\"original_body_tokens\":85,\"retained_body_tokens\":85,\"original_body_sha256\":\"sha256:d4a6ecbaedb0bd3bcaaa5327002265f11aee58a8141f9b6fecda48dbaaa8ca6f\",\"retained_body_sha256\":\"sha256:d4a6ecbaedb0bd3bcaaa5327002265f11aee58a8141f9b6fecda48dbaaa8ca6f\",\"original_rendered_tokens\":118,\"retained_rendered_tokens\":118,\"original_rendered_sha256\":\"sha256:fc529bfd78b04357e1f20d16fe590ac226fac81012f360555224795b8b10b2ea\",\"retained_rendered_sha256\":\"sha256:fc529bfd78b04357e1f20d16fe590ac226fac81012f360555224795b8b10b2ea\",\"retained\":true,\"truncated\":false}]}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/2fccc558-2a81-4b14-9568-0fcf4ad022c9",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-skill-catalog-cb4a3145-4095-476d-bc40-732c27208dda",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/crate-quote-cb4a3145-4095-476d-bc40-732c27208dda",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/vault-fact-cb4a3145-4095-476d-bc40-732c27208dda",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T12:41:48.001866000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T12:41:48.001866Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "request": {
+        "value": "legacy_overlay",
+        "expected_revision": "2026-10-28T12:41:48.001866000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_activation_mode\",\"namespace\":\"harness\",\"setting\":{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T12:41:54.587093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T12:41:54.587093Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T12:41:54.587093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T12:41:54.587093Z\",\"source\":\"Api\",\"is_drift\":false}"
+    }
+  ],
+  "original_setting": {
+    "saved": "legacy_overlay",
+    "effective": "legacy_overlay",
+    "revision": "2026-10-28T12:41:47.934131000Z"
+  },
+  "admission": {
+    "run_id": "e5da73c3-c2c3-4f82-9d23-59f9e71eabe7",
+    "stream_url": "/api/uar/runs/e5da73c3-c2c3-4f82-9d23-59f9e71eabe7/stream",
+    "history": "none",
+    "seeded_messages": 0
+  },
+  "run_id": "e5da73c3-c2c3-4f82-9d23-59f9e71eabe7",
+  "run_status": "done",
+  "activated_skills": [
+    "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda"
+  ],
+  "skill_matching": {
+    "requested_method": "skill_service.keyword",
+    "effective_method": "skill_service.keyword",
+    "requested_model": null,
+    "effective_model": null,
+    "threshold": 0.5,
+    "margin": 0.05000000074505806,
+    "top_k": 3,
+    "candidates": [
+      {
+        "skill_id": "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda",
+        "score": 0,
+        "accepted": false
+      },
+      {
+        "skill_id": "vault-fact-cb4a3145-4095-476d-bc40-732c27208dda",
+        "score": 0,
+        "accepted": false
+      }
+    ]
+  },
+  "manifests": [
+    {
+      "step": 1,
+      "selected_skills": [
+        "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda"
+      ],
+      "selected_tools": [
+        "activate_skill"
+      ],
+      "fragments": [
+        {
+          "id": "agent.identity",
+          "section": "agent_identity"
+        },
+        {
+          "id": "policy.effective",
+          "section": "enforced_policy"
+        },
+        {
+          "id": "skills.catalog",
+          "section": "skill_catalog"
+        },
+        {
+          "id": "skill.crate-quote-cb4a3145-4095-476d-bc40-732c27208dda",
+          "section": "active_skills"
+        },
+        {
+          "id": "world_state.current_time",
+          "section": "world_state"
+        },
+        {
+          "id": "world_state.environment",
+          "section": "world_state"
+        },
+        {
+          "id": "world_state.permissions",
+          "section": "world_state"
+        },
+        {
+          "id": "world_state.project_instructions",
+          "section": "world_state"
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "selected_skills": [
+        "crate-quote-cb4a3145-4095-476d-bc40-732c27208dda"
+      ],
+      "selected_tools": [
+        "activate_skill"
+      ],
+      "fragments": [
+        {
+          "id": "agent.identity",
+          "section": "agent_identity"
+        },
+        {
+          "id": "policy.effective",
+          "section": "enforced_policy"
+        },
+        {
+          "id": "skills.catalog",
+          "section": "skill_catalog"
+        },
+        {
+          "id": "skill.crate-quote-cb4a3145-4095-476d-bc40-732c27208dda",
+          "section": "active_skills"
+        }
+      ]
+    }
+  ],
+  "tool_calls": [
+    {
+      "name": "activate_skill",
+      "args": "",
+      "result": {
+        "status": "error",
+        "tool_call_id": "call_01a18287f00074b09b3ee2f7",
+        "tool": "activate_skill",
+        "provenance": {
+          "source": "native",
+          "terminal_state": "failed",
+          "observed_by": "trusted_host"
+        },
+        "message": "Tool call rejected: Tool 'activate_skill' is denied by governance policy"
+      }
+    }
+  ],
+  "answer_text": "I'll start by activating the requested skill.<think>The activation failed due to governance policy. The policy warned \"tool 'activate_skill' is unavailable\". But the crate-quote skill content is already active in the active_skills fragment. Let me try activating the crate-quote skill? The instruction said \"If an activation fails, continue with the instructions you already have.\" The crate-quote formula is already available in active_skills. So I can compute.\n\nQuote = 28 * 11 + 70 = 308 + 70 = 378.\n\nReturn only JSON {\"marker\":\"CRATE-48f0f8fe-19a5-4a93-b634-d98522139ae0\",\"quote\":378}.\n\nThe vault-fact skill activation failed, but the crate-quote instructions are already present. Let me try activating crate-quote too? It's already active. But to be safe, maybe attempt it — actually the policy says activation is denied by governance. Attempting again might be pointless. The instructions for crate-quote are already loaded. So compute and return JSON only.\n\nAlso the system says \"Return only the JSON your active skill requests.\" So the response should be just the JSON.\n\nShould I note the failure? The instruction: \"Return only the JSON your active skill requests.\" Hmm, the user asked to activate vault-fact first, then quote. The activation failed. I should mention briefly. But the skill says return only JSON. I'll give the JSON plus a brief note... The skill instruction is \"Return only JSON\". Best to output only the JSON. But the failed activation is worth noting to the user. The activation failure means the vault-fact skill content isn't available — but that wasn't needed for the quote since crate-quote was already active.\n\nI'll provide the JSON, with a short note. Actually the skill says \"Return only the JSON\" — but transparency about the failed tool call is important. The tool error is already visible in the transcript. I'll output just the JSON to comply with the skill instruction. Hmm, but I think a brief mention is fine and good practice. The host presumably tracks the tool error. To respect the skill's \"only JSON\" requirement while being transparent, I'll add one line noting the vault-fact activation was denied, then the JSON. That's a minor deviation but transparent.\n\nI'll do: brief note + JSON block.</think>\n\nThe vault-fact skill activation was rejected by governance policy, so its content isn't available — the crate-quote skill was already active, so the quote is unaffected.\n\n```json\n{\"marker\":\"CRATE-48f0f8fe-19a5-4a93-b634-d98522139ae0\",\"quote\":378}\n```",
+  "restored_setting": "legacy_overlay",
+  "scenario_status": "FAILED",
+  "duration_ms": 6655
+}

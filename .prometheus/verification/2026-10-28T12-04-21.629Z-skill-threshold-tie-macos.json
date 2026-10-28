@@ -1,0 +1,135 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "below-threshold-or-ambiguous-skills-stay-inactive;neither-a-weak-match-nor-an-unresolved-tie-loads-a-skill-implicitly",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Neither a weak match nor an unresolved tie loads a skill implicitly",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1958408357
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and owned target and tied decoy skills under implicit-only matching",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-threshold-tie.steps.mjs:48"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 27562804366
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a prompt that matches the target skill only below the acceptance threshold",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-threshold-tie.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 818730
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "no skill is accepted or activated and the target's score is below the threshold",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-threshold-tie.steps.mjs:105"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 31774162977,
+              "error_message": "AssertionError [ERR_ASSERTION]: POST /v1/chat/completions: 504: {\"error\":{\"message\":\"Timed out waiting for model response\",\"type\":\"timeout_error\"}}\n\n504 !== 200\n\n    + expected - actual\n\n    -504\n    +200\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-threshold-tie.steps.mjs:22:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ask (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-threshold-tie.steps.mjs:31:22)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-threshold-tie.steps.mjs:117:14)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I send a prompt that matches both tied decoy skills equally",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-threshold-tie.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "no skill is accepted or activated because the tie is within the margin",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-threshold-tie.steps.mjs:120"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "no skill's private instructions reached either answer",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-threshold-tie.steps.mjs:133"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 140886750
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC10aHJlc2hvbGQtdGllLzFhMmUxNTJlLTg5ZWMtNGRiZC1hMzY3LTY2OGI5YTNhM2NkMy5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "below-threshold-or-ambiguous-skills-stay-inactive",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Below-threshold or ambiguous skills stay inactive",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-threshold-tie.feature"
+  }
+]

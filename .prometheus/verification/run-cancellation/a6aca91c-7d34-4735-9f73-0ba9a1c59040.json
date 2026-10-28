@@ -1,0 +1,342 @@
+{
+  "scenario": "C50-RUN-CANCELLATION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "default-agent",
+        "input": "Write a very long, detailed essay of at least 3000 words on the history of lighthouses, with many numbered sections covering every century from antiquity to today.",
+        "session_id": "a9e950a9-c172-4f14-9098-a71a20efdc0d"
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"stream_url\":\"/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":6,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kno"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"agent_id\":\"default-agent\",\"conversation_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":8,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kno"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"agent_id\":\"default-agent\",\"conversation_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":8,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kno"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"agent_id\":\"default-agent\",\"conversation_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":21,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kn"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/cancel",
+      "status": 200,
+      "response": "{\"cancelled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"agent_id\":\"default-agent\",\"conversation_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"agent_id\":\"default-agent\",\"conversation_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\",\"status\":\"cancelled\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":24,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kn"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":24,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kn"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "{\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"agent_id\":\"default-agent\",\"conversation_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\",\"status\":\"cancelled\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/93fe92db-b9c7-47ef-90d7-70121dcf5915",
+      "status": 200,
+      "response": "[{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"call_id\":\"6e627403-1d94-40a5-911b-1e5e0c39787e\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"run\",\"scope_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"session\",\"scope_id\":\"a9e950a9-c172-4f14-9098-a71a20efdc0d\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"agent\",\"scope_id\":\"default-agent\"},\"generation\":1},{\"identity\":{\"owner\":\"deployment\",\"scope\":\"global\",\"scope_id\":\"global\"},\"generation\":1}],\"reserved_cost_usd\":0.9143999999999999,\"reserved_tokens\":1512000,\"source_reservation\":null},\"revision\":0,\"state\":\"pending\",\"observed_cost_usd\":null,\"observed_tokens\":0,\"reconciliation_evidence\":null}]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/93fe92db-b9c7-47ef-90d7-70121dcf5915/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"after\":0,\"cursor\":24,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_id\":\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-93fe92db-b9c7-47ef-90d7-70121dcf5915\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kn"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "default-agent",
+        "input": "What is 17 plus 25? Reply with only the number.",
+        "session_id": "1c1bf608-95f8-4160-8629-dea2fea534bc"
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"stream_url\":\"/api/uar/runs/f674bcf5-f96e-4dbd-86b6-7ece5a790f1f/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/f674bcf5-f96e-4dbd-86b6-7ece5a790f1f",
+      "status": 200,
+      "response": "{\"run_id\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1c1bf608-95f8-4160-8629-dea2fea534bc\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/f674bcf5-f96e-4dbd-86b6-7ece5a790f1f",
+      "status": 200,
+      "response": "{\"run_id\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1c1bf608-95f8-4160-8629-dea2fea534bc\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/f674bcf5-f96e-4dbd-86b6-7ece5a790f1f",
+      "status": 200,
+      "response": "{\"run_id\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1c1bf608-95f8-4160-8629-dea2fea534bc\",\"status\":\"running\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"e"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/f674bcf5-f96e-4dbd-86b6-7ece5a790f1f",
+      "status": 200,
+      "response": "{\"run_id\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1c1bf608-95f8-4160-8629-dea2fea534bc\",\"status\":\"done\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evol"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/f674bcf5-f96e-4dbd-86b6-7ece5a790f1f/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"after\":0,\"cursor\":13,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"artifact_id\":\"run-policy-f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-f674bcf5-f96e-4dbd-86b6-7ece5a790f1f\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kn"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/a9e950a9-c172-4f14-9098-a71a20efdc0d",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/1c1bf608-95f8-4160-8629-dea2fea534bc",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 99575
+  },
+  "run_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915",
+  "streamed_chars_before_cancel": 264,
+  "cancel_response": {
+    "cancelled": true
+  },
+  "terminal_status": "cancelled",
+  "statuses_after_cancel": [
+    "running",
+    "cancelled"
+  ],
+  "event_names": [
+    "agui.artifact",
+    "agui.state.patch",
+    "agui.rag_citations",
+    "agui.stream.start",
+    "agui.message.delta",
+    "agui.custom",
+    "agui.cancelled"
+  ],
+  "event_count": 23,
+  "events_added_after_settle": 0,
+  "final_events": [
+    {
+      "eventId": 20,
+      "eventName": "agui.message.delta",
+      "data": {
+        "kind": "message",
+        "phase": "delta",
+        "request_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915",
+        "delta": {
+          "text": " Let me check"
+        }
+      }
+    },
+    {
+      "eventId": 21,
+      "eventName": "agui.message.delta",
+      "data": {
+        "kind": "message",
+        "phase": "delta",
+        "request_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915",
+        "delta": {
+          "text": " if any"
+        }
+      }
+    },
+    {
+      "eventId": 22,
+      "eventName": "agui.custom",
+      "data": {
+        "kind": "custom",
+        "request_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915",
+        "name": "uar.presentation.diagnostic",
+        "value": {
+          "code": "accounting_unresolved",
+          "message": "Execution outcome is independent of accounting; durable usage remains pending reconciliation"
+        }
+      }
+    },
+    {
+      "eventId": 23,
+      "eventName": "agui.state.patch",
+      "data": {
+        "kind": "state",
+        "phase": "patch",
+        "request_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915",
+        "patch": [
+          {
+            "op": "add",
+            "path": "/presentation",
+            "value": {
+              "version": 1,
+              "requested_mode": null,
+              "effective_mode": "legacy",
+              "admission_fallback_reason": null,
+              "fallback_reason": null,
+              "run_outcome": "cancelled",
+              "eligible_templates": [],
+              "published_templates": [],
+              "surface_published": false,
+              "generation_failed": false,
+              "receipt_status": "available",
+              "client_display": "unconfirmed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "eventId": 24,
+      "eventName": "agui.cancelled",
+      "data": {
+        "kind": "cancelled",
+        "request_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915"
+      }
+    }
+  ],
+  "streamed_chars_total": 264,
+  "calls": [
+    {
+      "admission": {
+        "identity": {
+          "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+          "run_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915",
+          "call_id": "6e627403-1d94-40a5-911b-1e5e0c39787e",
+          "attempt": 1
+        },
+        "model": "minimax/MiniMax-M3",
+        "scopes": [
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "run",
+              "scope_id": "93fe92db-b9c7-47ef-90d7-70121dcf5915"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "session",
+              "scope_id": "a9e950a9-c172-4f14-9098-a71a20efdc0d"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+              "scope": "agent",
+              "scope_id": "default-agent"
+            },
+            "generation": 1
+          },
+          {
+            "identity": {
+              "owner": "deployment",
+              "scope": "global",
+              "scope_id": "global"
+            },
+            "generation": 1
+          }
+        ],
+        "reserved_cost_usd": 0.9143999999999999,
+        "reserved_tokens": 1512000,
+        "source_reservation": null
+      },
+      "revision": 0,
+      "state": "pending",
+      "observed_cost_usd": null,
+      "observed_tokens": 0,
+      "reconciliation_evidence": null
+    }
+  ],
+  "accounting_diagnostics": [
+    {
+      "code": "accounting_unresolved",
+      "message": "Execution outcome is independent of accounting; durable usage remains pending reconciliation"
+    }
+  ],
+  "follow_up": {
+    "run_id": "f674bcf5-f96e-4dbd-86b6-7ece5a790f1f",
+    "status": "done",
+    "answer": "42"
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 9695
+}

@@ -579,6 +579,13 @@ async fn handle_runs_get(
                 crate::uar::domain::events::NormalizedEvent::ClientToolsRequested { batch_id, calls, .. } => Some(json!({"batch_id":batch_id,"calls":calls})),
                 _ => None,
             });
+            // A non-streaming client polls runs/get; give it the answer once the run is done.
+            let output = (r.status == crate::uar::domain::runs::RunStatus::Done).then(|| {
+                events.iter().filter_map(|event| match &event.event {
+                    crate::uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => Some(text_delta.as_str()),
+                    _ => None,
+                }).collect::<String>()
+            });
             let mut durable_client_tools = Value::Null;
             if let Some(store) = state.persistence.as_ref().filter(|store| store.supports_durable_client_tools()) {
                 let owner = match acp_owner_key(user) {
@@ -610,6 +617,7 @@ async fn handle_runs_get(
                 "status": format!("{:?}", r.status),
                 "agent_id": r.agent_id,
                 "conversation_id": r.conversation_id,
+                "output": output,
                 "pending_client_tools": pending,
                 "client_tool_continuation": durable_client_tools,
             }),

@@ -1,0 +1,152 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "interrupted-kb-regeneration-resumes-honestly;restart-uar-mid-regeneration,-then-resume-to-one-target-generation",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Restart UAR mid-regeneration, then resume to one target generation",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 3337686955,
+              "error_message": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(!docs.some(doc => doc.status === 'failed'))\n\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/regeneration-resume.steps.mjs:79:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable multi-document knowledge base indexed with the original embedding model",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:46"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the active embedding model is changed to a different model of the same width",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:87"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "regeneration starts and the owned UAR is restarted before it completes",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:99"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "after the restart the job reports an honest unfinished state and the sources are retained",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:117"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "regeneration is resumed through its designed operation",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:132"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "it completes in one target generation and retrieval returns a private fact",
+            "match": {
+              "location": "scripts/behaviors/steps/regeneration-resume.steps.mjs:150"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 2128794050,
+              "error_message": "AssertionError [ERR_ASSERTION]: Cleanup must succeed\n+ actual - expected\n\n+ [\n+   'DELETE /api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74: 500: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried'\n+ ]\n- []\n\n    + expected - actual\n\n    -[\n    -  \"DELETE /api/uar/knowledge-bases/1f17d606-9b58-4774-a24f-371120f26a74: 500: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried\"\n    -]\n    +[]\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/regeneration-resume.steps.mjs:194:10)"
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9yZWdlbmVyYXRpb24tcmVzdW1lL2Y2ODA0ODU5LWNkMDktNGQyOC1iYzIyLTNjZmViYzhlYmFhZC5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge",
+            "line": 1
+          },
+          {
+            "name": "@embedding",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "interrupted-kb-regeneration-resumes-honestly",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Interrupted KB regeneration resumes honestly",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge",
+        "line": 1
+      },
+      {
+        "name": "@embedding",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/regeneration-resume.feature"
+  }
+]

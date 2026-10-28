@@ -1,0 +1,10 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/children/uar-verification-simplification/children/agui-a2ui-projection-and-custom-components/children/a2ui-surface-architecture/**",
+    "openspec/changes/**",
+    ".prometheus/**"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Edit allowedWritePaths to widen the child loop's write surface. .kbd-orchestrator/** and SCRATCHPAD.md are always allowed. Enforced advisorily by check-child-scope.sh."
+}

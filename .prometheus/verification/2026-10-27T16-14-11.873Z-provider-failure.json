@@ -1,0 +1,142 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "provider-failure-produces-an-honest-recoverable-result;a-mid-stream-provider-disconnect-fails-honestly,-then-a-fresh-request-succeeds",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A mid-stream provider disconnect fails honestly, then a fresh request succeeds",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1442551915
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the configured Liter provider is routed through an owned fault proxy",
+            "match": {
+              "location": "scripts/behaviors/steps/provider-failure.steps.mjs:77"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3232911667
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the provider connection is cut mid-stream during an admitted request",
+            "match": {
+              "location": "scripts/behaviors/steps/provider-failure.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 378257
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the failed run never reports success or a fabricated answer",
+            "match": {
+              "location": "scripts/behaviors/steps/provider-failure.steps.mjs:127"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 294229
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "its model call is settled or explicitly uncertain without a model switch",
+            "match": {
+              "location": "scripts/behaviors/steps/provider-failure.steps.mjs:135"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4872334261
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "the fault is removed and I send a fresh request",
+            "match": {
+              "location": "scripts/behaviors/steps/provider-failure.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 599739
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the fresh run succeeds on the same configured model",
+            "match": {
+              "location": "scripts/behaviors/steps/provider-failure.steps.mjs:153"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16506475946
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wcm92aWRlci1mYWlsdXJlLzczNDM5M2ZmLTY5OTgtNDIyNS04NGI4LWMwNGQwZTcyOTNiYi5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@providers",
+            "line": 1
+          },
+          {
+            "name": "@failure",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "provider-failure-produces-an-honest-recoverable-result",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Provider failure produces an honest recoverable result",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@providers",
+        "line": 1
+      },
+      {
+        "name": "@failure",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/provider-failure.feature"
+  }
+]

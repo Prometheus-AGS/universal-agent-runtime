@@ -1,0 +1,33 @@
+{
+  "scenario": "C53",
+  "status": "PASS",
+  "platform": "darwin",
+  "attempt": 5,
+  "date": "2026-10-27",
+  "runtime": {
+    "binary_sha256_prefix": "a0f769d2790d39fe",
+    "pid": 78140,
+    "ui_bundle": "assets/index-C1548hLS.js served from target/manual-a2ui-browser-ui"
+  },
+  "changes_under_test": [
+    "chat-stream-store.ts + use-chat-runtime.ts: persistedUserMessageId (user message shown once)",
+    "chat-message-store.ts: every assistant bubble a stream creates is saved, marked complete, when the stream finishes (turn keeps its policy card, approval card and selection notice after the next send)",
+    "browser-agent-selection.steps.mjs: one answer bubble per specialist with the selection notice before it; visible timing measured on that bubble; new approval located by document position after the turn's user message"
+  ],
+  "config": "scripts/behaviors/browser-agent-selection.config.mjs, video off, screenshots and trace on; tier3.allow created for this run and removed after (operator-approved 2026-10-27)",
+  "evidence": "browser-agent-selection/675a8a04-aeb3-4c38-b654-13fc12ccf7ea.json; browser-agent-selection/c53-attempt-005-artifacts/ (writing_turn.png, math_turn.png, trace)",
+  "result": "1 passed (32.2 s test, 35.2 s total)",
+  "observed": {
+    "conversation": "2f2bca00-198a-4897-8d73-0db0a6d694f3; exactly 2 completion POSTs; listed root runs are exactly the two turn runs",
+    "writing_turn": "root run 61af4450-3675-4ead-a416-a0bf2a695bb9 (orchestrator-agent, done); uar.agent.selected writing-specialist by intent at stream index 13, first text at 18; spawn_agent approval answered in the browser (200); one child run 8890357f-43ba-4477-b7dc-74b1e23ce55e as writing-specialist (done); answer with the saved byline in one bubble; notice visible 10.9 s before the answer text",
+    "math_turn": "root run 86cc3c76-726f-4826-ae89-efcb32ddb21d (orchestrator-agent, done); uar.agent.selected math-specialist-db64c2a8 by intent at index 13, first text at 18; approval answered (200); one child run 68d2968d-e820-4614-a1d4-a5e5fe580bf1 as math-specialist-db64c2a8 (done); answer 22213 with the saved marker; notice visible 4.4 s before the answer text",
+    "persistence": "the writing turn's selection notice was still present after the math send (2 notices expected and found)",
+    "page_errors": [],
+    "cleanup": "three owned sessions deleted, saved specialists retained; no cleanup errors"
+  },
+  "not_covered": [
+    "an answered approval card still shows its Review button until the chunk records a decision (approval-chunk.tsx)",
+    "bubbles of a stream that ends by error or cancel are saved only at the next finished stream",
+    "the turn still renders as several assistant bubbles when it pauses for approval"
+  ]
+}

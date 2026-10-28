@@ -1,0 +1,9 @@
+{
+  "scenario": "C35",
+  "status": "FAIL",
+  "failure_class": "harness: Playwright video recording requires ffmpeg-1011, absent from ~/Library/Caches/ms-playwright",
+  "attempt": 1,
+  "config": "scripts/behaviors/browser-history-reload.config.mjs (bddgen then the Playwright runner; tier3.allow created for the run and removed after, operator-approved 2026-10-27)",
+  "observed": "browserContext.newPage: Executable doesn't exist at /Users/gqadonis/Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac; no page loaded; no server resources created",
+  "next": "Disable video in the config (screenshots and trace remain) or provision ffmpeg; a rerun needs the tier-3 guard opened again"
+}

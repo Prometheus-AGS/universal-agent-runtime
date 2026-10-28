@@ -1,0 +1,182 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "scripts/behaviors/browser-history-reload.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser-history-reload.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-attempt-005-artifacts/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 480000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-attempt-005-artifacts/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-attempt-005-artifacts/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/browser-history-reload.feature.spec.js",
+      "file": "features/browser-history-reload.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "A browser conversation reloads from saved history",
+          "file": "features/browser-history-reload.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Reopen a saved conversation after reload and continue from its earlier fact",
+              "ok": true,
+              "tags": [
+                "ui",
+                "conversation",
+                "reload"
+              ],
+              "tests": [
+                {
+                  "timeout": 480000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13875,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "EVIDENCE /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/1190c19a-2184-4350-951f-3d8d67938779.json status=passed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a disposable custom agent is selected in a fresh browser conversation",
+                          "duration": 2228
+                        },
+                        {
+                          "title": "When I give the agent a fresh fact in the browser",
+                          "duration": 3617
+                        },
+                        {
+                          "title": "And I reload the page and reopen that conversation from the thread list",
+                          "duration": 1557
+                        },
+                        {
+                          "title": "Then the reopened conversation shows the saved turns without a new run",
+                          "duration": 488
+                        },
+                        {
+                          "title": "When I send a follow-up that contains none of the earlier facts",
+                          "duration": 1965
+                        },
+                        {
+                          "title": "Then the follow-up answer uses the earlier fact from the saved server history",
+                          "duration": 1561
+                        }
+                      ],
+                      "startTime": "2026-10-27T21:20:51.392Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-attempt-005-artifacts/artifacts/features-browser-history-r-5dad2-tinue-from-its-earlier-fact/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-attempt-005-artifacts/artifacts/features-browser-history-r-5dad2-tinue-from-its-earlier-fact/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "697b265cb171ecec1882-837d3bc92497015774be",
+              "file": "features/browser-history-reload.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-27T21:20:50.751Z",
+    "duration": 23742.829999999998,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

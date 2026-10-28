@@ -1,0 +1,182 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "durable-memory-can-be-recalled,-updated-and-removed;save,-recall,-update-across-restart,-then-delete-a-private-memory",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Save, recall, update across restart, then delete a private memory",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37631070397
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "durable memory is enabled for the owned runtime after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40616546
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a disposable agent with conversation memory and no knowledge or tools",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:114"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6797600010
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I save a private locker code to memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:132"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 7324920300,
+              "error_message": "AssertionError [ERR_ASSERTION]: Memory context was injected\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/memory-lifecycle.steps.mjs:146:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "a fresh conversation recalls that locker code from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:143"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I update the saved locker code and UAR restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:150"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "a fresh conversation recalls only the updated locker code from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:163"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I delete the saved locker code",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:171"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "a fresh conversation no longer knows the locker code",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:176"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "after another restart the deleted memory is still absent",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:182"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15333633336
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tZW1vcnktbGlmZWN5Y2xlLzA2ZTM0NTQ2LWRkZWUtNGI0MS04ZWQxLTY3YzhlYTRmMzRhNy5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@memory",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "durable-memory-can-be-recalled,-updated-and-removed",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Durable memory can be recalled, updated and removed",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@memory",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/memory-lifecycle.feature"
+  }
+]

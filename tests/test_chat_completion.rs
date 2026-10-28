@@ -411,3 +411,155 @@ async fn attached_graph_does_not_change_default_agent_path() {
         NormalizedEvent::ChatDelta { text_delta, .. } if text_delta == "default answer"
     )));
 }
+
+fn reply(text: &str) -> Vec<DriverEvent> {
+    vec![
+        DriverEvent::MessageDelta {
+            text: text.to_string(),
+        },
+        DriverEvent::Done,
+    ]
+}
+
+/// Start an orchestrator run for a fixed task under a verified service peer.
+async fn start_orchestrator_run(manager: &RunManager) -> String {
+    let peer = UserContext {
+        host_authority: None, authority: None,
+        user_id: "chat-integration-peer".to_string(),
+        tenant_id: None,
+        claims: UserClaims {
+            sub: "chat-integration-peer".to_string(),
+            name: Some("Chat integration UAR peer".to_string()),
+            roles: Some(vec!["service".to_string()]),
+            tenant_id: None,
+            uar_instance_id: Some("chat-integration-uar".to_string()),
+            exp: usize::MAX,
+        },
+    };
+    let request = RunExecutionRequest::new(
+        defaults::orchestrator_agent(),
+        "Review this Rust ownership boundary".to_string(),
+    )
+    .with_user_context(&peer)
+    .expect("verified peer context builds a hosted run request");
+    manager.execute_request(request).await
+}
+
+/// Wait until the run records an event matching `done`, then return its history.
+async fn wait_for(
+    manager: &RunManager,
+    run_id: &str,
+    done: impl Fn(&NormalizedEvent) -> bool,
+) -> Vec<NormalizedEvent> {
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        loop {
+            let events: Vec<NormalizedEvent> = manager
+                .history_since(run_id, None)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .map(|event| event.event)
+                .collect();
+            if events.iter().any(&done) {
+                return events;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("expected run event was not recorded")
+}
+
+async fn approve_spawn(manager: &RunManager, run_id: &str) {
+    let events = wait_for(manager, run_id, |event| {
+        matches!(event, NormalizedEvent::ToolCallApprovalRequired { approval_id: Some(_), .. })
+    })
+    .await;
+    let approval_id = events
+        .into_iter()
+        .find_map(|event| match event {
+            NormalizedEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id,
+            _ => None,
+        })
+        .expect("spawn_agent approval id");
+    assert!(manager.resolve_approval_request(run_id, Some(&approval_id), true).await);
+}
+
+fn error_messages(events: &[NormalizedEvent]) -> Vec<&str> {
+    events
+        .iter()
+        .filter_map(|event| match event {
+            NormalizedEvent::Error { message, .. } => Some(message.as_str()),
+            _ => None,
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn orchestrator_selects_id_after_inline_reasoning_and_streams_answer_only() {
+    let driver = Arc::new(MockLlmDriver::new(vec![
+        reply("<think>\nThis is a Rust ownership question.\n</think>\n\nrust-reviewer"),
+        reply("<think>Check borrows first.</think>\n\nThe ownership boundary is sound."),
+    ]));
+    let (manager, _database) = make_graph_manager(Arc::clone(&driver)).await;
+    let run_id = start_orchestrator_run(&manager).await;
+    approve_spawn(&manager, &run_id).await;
+    let events = wait_for_run_done(&manager, &run_id).await;
+
+    assert_eq!(driver.call_count(), 2, "router and sub-agent must both run");
+    assert!(error_messages(&events).is_empty(), "{events:#?}");
+    assert!(events.iter().any(|event| matches!(
+        event,
+        NormalizedEvent::ChatDelta { text_delta, .. }
+            if text_delta == "[rust-reviewer]\n\nThe ownership boundary is sound."
+    )));
+    assert!(
+        !events.iter().any(|event| matches!(
+            event,
+            NormalizedEvent::ChatDelta { text_delta, .. } if text_delta.contains("<think>")
+        )),
+        "the delegated contribution must exclude reasoning"
+    );
+}
+
+#[tokio::test]
+async fn orchestrator_fails_when_delegated_child_returns_only_reasoning() {
+    let driver = Arc::new(MockLlmDriver::new(vec![
+        reply("rust-reviewer"),
+        reply("<think>Drafting the review. Word count 1 2 3"),
+    ]));
+    let (manager, _database) = make_graph_manager(Arc::clone(&driver)).await;
+    let run_id = start_orchestrator_run(&manager).await;
+    approve_spawn(&manager, &run_id).await;
+    let events = wait_for(&manager, &run_id, |event| matches!(
+        event,
+        NormalizedEvent::Error { message, .. } if message == "delegated_answer_missing: reasoning_only"
+    ))
+    .await;
+
+    assert_eq!(driver.call_count(), 2);
+    assert!(
+        !events.iter().any(|event| matches!(
+            event,
+            NormalizedEvent::ChatDelta { text_delta, .. } if text_delta.starts_with("[rust-reviewer]")
+        )),
+        "a reasoning-only child must not be streamed as a contribution"
+    );
+}
+
+#[tokio::test]
+async fn orchestrator_refuses_classifier_reply_that_ends_inside_reasoning() {
+    let driver = Arc::new(MockLlmDriver::new(vec![reply(
+        "<think>The best match might be rust-reviewer, but",
+    )]));
+    let (manager, _database) = make_graph_manager(Arc::clone(&driver)).await;
+    let run_id = start_orchestrator_run(&manager).await;
+    let events = wait_for(&manager, &run_id, |event| matches!(
+        event,
+        NormalizedEvent::Error { message, .. } if message == "graph_routing_classifier_incomplete"
+    ))
+    .await;
+
+    assert_eq!(driver.call_count(), 1, "no child may run after an incomplete classification");
+    assert!(!events.iter().any(|event| matches!(event, NormalizedEvent::AgentSelected { .. })));
+}

@@ -1,0 +1,48 @@
+{
+  "scenario": "C35",
+  "status": "PASS",
+  "platform": "darwin",
+  "attempt": 5,
+  "date": "2026-10-27",
+  "runtime": {
+    "binary_sha256_prefix": "a0f769d2790d39fe",
+    "pid": 78140,
+    "ui_bundle": "assets/index-fJgR9a8v.js served from target/manual-a2ui-browser-ui"
+  },
+  "fixes_under_test": [
+    "use-chat-runtime.ts onNew: thread marked persisted and title requested when the first message is sent",
+    "chat-titles-api.ts: title requested from the user message alone",
+    "chat-stream-store.ts + use-chat-runtime.ts: persistedUserMessageId stops the duplicate user message",
+    "discovery.rs + server.rs: owner-scoped GET /api/uar/sessions/{id}",
+    "chat-sessions-api.ts, session-backfill.ts, chat-message-store.ts backfillFromServer, use-chat-runtime.ts: reopened threads append turns the server holds but local history lost"
+  ],
+  "config": "scripts/behaviors/browser-history-reload.config.mjs, video off, screenshots and trace on; tier3.allow created for this run and removed after (operator-approved 2026-10-27)",
+  "evidence": "browser-history-reload/1190c19a-2184-4350-951f-3d8d67938779.json; browser-history-reload/c35-attempt-005-artifacts/",
+  "result": "1 passed (13.9 s test, 23.7 s total)",
+  "observed": {
+    "fact_turn": "READY; run e6c62757-35c3-49d9-82c7-b3fbbb4fee0e done",
+    "before_reload": "1 user and 1 assistant message; title 'Remember for this conversation: reference CASE-9ae36d8c-6ba5-4b7' (generate-title 200)",
+    "after_reload": "thread listed with the same title; reopened with 1 user message and the READY reply; agent selector shows the disposable agent; agent-config 200",
+    "follow_up": "request carried only the new question; run 8aa96c33-9de0-48d8-bf63-1161e9ed212a done; answer {reference: CASE-9ae36d8c-6ba5-4b72-b40b-3a443e63c484, total: 806} (130 + 676)",
+    "runs": "exactly 2 completion POSTs and 2 runs in conversation b6c52acb-07dd-4d11-b012-d99607e5745e; no duplicate run",
+    "page_errors": [],
+    "cleanup": "disposable agent and session deleted (204 each); no cleanup errors"
+  },
+  "inference_not_observed": "The reopened reply rendered as plain 'READY' without the policy artifact a locally saved reply carries, which indicates it came from the server backfill. The trace does not capture the session GET, so this is not directly observed.",
+  "not_covered": [
+    "backfilled replies are plain text: policy card, sources and token counts are not restored",
+    "image attachment previews are not drawn in the live user bubble on the de-duplicated path",
+    "a reload within about a second of sending can still lose the thread before the server holds it"
+  ],
+  "revalidation": [
+    {
+      "date": "2026-10-27",
+      "reason": "finishStream changed (save every stream bubble) after the attempt-5 pass",
+      "ui_bundle": "assets/index-C1548hLS.js",
+      "binary_sha256_prefix": "a0f769d2790d39fe",
+      "evidence": "browser-history-reload/99ea085d-f01d-4ae8-950c-83bbb6198b6a.json; browser-history-reload/c35-attempt-006-artifacts/",
+      "result": "1 passed (13.0 s test)",
+      "observed": "title set (200); thread listed with title after reload; reopened with the READY turn; follow-up {CASE-3ea149f1-f768-4721-b3f7-550fd283a907, 829} (233 + 596); 2 POSTs, 2 runs; no page or cleanup errors"
+    }
+  ]
+}

@@ -1,0 +1,296 @@
+{
+  "scenario": "C44-TRUNCATE-MIDDLE-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "runs": {
+    "truncate_middle": {
+      "run_id": "852c5d80-397f-411c-8005-458edb4485d0",
+      "status": "done",
+      "history": "seeded",
+      "seeded_messages": 10,
+      "context_reduction": {
+        "schema_version": 1,
+        "requested_strategy": {
+          "type": "truncate_middle",
+          "keep_first": 2,
+          "keep_last": 2
+        },
+        "source_sha256": "sha256:382f87df83efc33ef56b081119448074ae57f9ee5b8a11bf6afa2aaabefb9c1e",
+        "prepared_sha256": "sha256:44440fe13c4956fdfab96344d17a397758e55b3d2551239d0768804e8f571d39",
+        "source_messages": 12,
+        "prepared_messages": 5,
+        "source_tokens": 11605,
+        "prepared_tokens": 11475,
+        "eligible_spans": 11,
+        "changed": true,
+        "summary_generated": false,
+        "tier_calls": [],
+        "final_sha256": "sha256:44440fe13c4956fdfab96344d17a397758e55b3d2551239d0768804e8f571d39",
+        "final_messages": 5,
+        "final_tokens": 11475,
+        "input_allowance": 1044330,
+        "protected_groups": 0,
+        "protected_groups_preserved": true,
+        "skill_reattachment": {
+          "schema_version": 1,
+          "scope": "initial_assembly",
+          "model": "liter/MiniMax-M3",
+          "count_quality": "approximate",
+          "counting_revision": "token-service-model-estimate-v1",
+          "per_skill_tokens": 5000,
+          "total_tokens": 25000,
+          "context_limit": 1046695,
+          "reserve_tokens": 1000,
+          "request_input_limit": 1045695,
+          "history_tokens": 12837,
+          "request_tokens": 12837,
+          "rendered_tokens": 0,
+          "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "fragments": []
+        }
+      },
+      "answer": {
+        "A": "DEPOT-0BDF72",
+        "C": "UNKNOWN",
+        "E": "DEPOT-86BF19"
+      },
+      "final": "{\"A\":\"DEPOT-0BDF72\",\"C\":\"UNKNOWN\",\"E\":\"DEPOT-86BF19\"}"
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-context-ad3fdfce",
+        "metadata": {
+          "title": "Disposable context agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer only from this conversation. Return only JSON with the requested keys. Use the string UNKNOWN for any value the conversation does not contain. Never guess.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": false
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.run_policy": {
+            "context_strategy": {
+              "type": "truncate_middle",
+              "keep_first": 2,
+              "keep_last": 2
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-context-ad3fdfce\",\"metadata\":{\"title\":\"Disposable context agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer only from this conversation. Return only JSON with the requested keys. Use the string UNKNOWN for any value the conversation does not contain. Never guess.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":false},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-context-ad3fdfce\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"context_strategy\":{\"type\":\"truncate_middle\",\"keep_first\":2,\"keep_last\":2}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-context-ad3fdfce",
+        "session_id": "08271897-3752-4029-9897-237e2f8ea443",
+        "input": "What codes do depots A and C and E use? Return only JSON with keys \"A\", \"C\", \"E\".",
+        "history": {
+          "session_id": "08271897-3752-4029-9897-237e2f8ea443",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Record 1: depot A uses code DEPOT-0BDF72."
+            },
+            {
+              "role": "assistant",
+              "content": "Noted: depot A uses code DEPOT-0BDF72."
+            },
+            {
+              "role": "user",
+              "content": "Record 2: depot B uses code DEPOT-685740."
+            },
+            {
+              "role": "assistant",
+              "content": "Noted: depot B uses code DEPOT-685740."
+            },
+            {
+              "role": "user",
+              "content": "Record 3: depot C uses code DEPOT-7EAB52."
+            },
+            {
+              "role": "assistant",
+              "content": "Noted: depot C uses code DEPOT-7EAB52."
+            },
+            {
+              "role": "user",
+              "content": "Record 4: depot D uses code DEPOT-97EEE0."
+            },
+            {
+              "role": "assistant",
+              "content": "Noted: depot D uses code DEPOT-97EEE0."
+            },
+            {
+              "role": "user",
+              "content": "Record 5: depot E uses code DEPOT-86BF19."
+            },
+            {
+              "role": "assistant",
+              "content": "Noted: depot E uses code DEPOT-86BF19."
+            }
+          ]
+        }
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"stream_url\":\"/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0/stream\",\"history\":\"seeded\",\"seeded_messages\":10}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"running\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\","
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"done\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kb"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0",
+      "status": 200,
+      "response": "{\"run_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"agent_id\":\"disposable-context-ad3fdfce\",\"conversation_id\":\"08271897-3752-4029-9897-237e2f8ea443\",\"status\":\"done\",\"agent_revision\":\"sha256:802faeffd6de2be2a91f104e4151dd35126b71952fee4371f7b98ec5bc69f072\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-ad3fdfce\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kb"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/852c5d80-397f-411c-8005-458edb4485d0/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"after\":0,\"cursor\":55,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"852c5d80-397f-411c-8005-458edb4485d0\",\"artifact_id\":\"run-policy-852c5d80-397f-411c-8005-458edb4485d0\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-852c5d80-397f-411c-8005-458edb4485d0\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-852c5d80-397f-411c-8005-458edb4485d0\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-co"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/08271897-3752-4029-9897-237e2f8ea443",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-context-ad3fdfce",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "strategy": {
+    "type": "truncate_middle",
+    "keep_first": 2,
+    "keep_last": 2
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 5764
+}

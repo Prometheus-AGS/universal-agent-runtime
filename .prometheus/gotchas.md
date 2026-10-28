@@ -2183,3 +2183,49 @@ Per-KB descriptive fields alone do not change the active embedder. Change the gl
 ## Empty KB list is not implicit unlink intent — 2026-10-26T20:07:08.758403-05:00
 
 KB-UNLINK-01 first run revealed enabled+emptylist resolvedAuto and retrievedunlinked/unrelatedKBs. Explicit link/enabled PATCH now persists selected/none under uar.run_policy. Do not globally change legacyempty mapping: builtindefaults dependonit. The passingtest keepsKBenabled and verifies retainedKBdirectretrieval. Modelresponses may includeprogress/explanation around exactlyoneJSONblock; parseoutsidecompletedreasoning and avoid unrequested JSON-only framing assertions.
+
+## 2026-10-27 — KB disablement and model copy fidelity
+
+KB-DISABLE-01 passed with references preserved and enabled:false, genuine fresh-session refusal of private knowledge and unchanged searchable KB. First attempt failed on a one-character copied agent-marker error before disablement; keep the real failure and do not infer a product policy defect. Retries used unchanged assertions/source. Source-review evidence must decode JSON tool output before treating display escapes as literal file bytes.
+
+## 2026-10-27 — Slash in a gateway model id; null reserved output in streamed receipt
+
+UAR model id `xiaomi/mimo-v2.5-pro` under provider `liter` reached Liter as `mimo-v2.5-pro` and failed (`/test` 502, model not found). Use a slash-free id that the upstream accepts (OpenRouter resolves `mimo-v2.5-pro`). Separately, the streamed `uar.request:budget_receipt` final_provider_request payload has `reserved_output_tokens=null` without a destination budget contract. The applied cap is copied only into internal run context (manager.rs ~8169), which `GET /api/uar/runs/{id}` does not expose. Prove output limits behaviorally (observed output tokens against a larger request), not from that field. Adding a key to ~/.bash_profile does not reach the Liter launch agent; it reads only ~/.prometheus/kbd/secrets.env.
+
+## 2026-10-27 — Qwen key rejected on both international Model Studio hosts
+
+QWEN_TOKEN_PLAN_API_KEY (sk-sp- prefix) returned 401 "Incorrect API key" on dashscope-intl compatible-mode and 401 "invalid access token or token expired" on the Coding Plan host coding-intl.dashscope.aliyuncs.com/v1. Per Alibaba docs, sk-sp- keys work only with the Coding Plan URL, so the second result points to an expired or revoked key rather than a host mismatch. Do not keep trying hosts; obtain a valid key first.
+
+## 2026-10-27 — Supersedes the entry above: Token Plan has its own host
+
+Model Studio **Token Plan** (sk-sp- plan-specific key) is not the Coding Plan. Its OpenAI-compatible base URL is shown on the console Token Plan page: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1 for Singapore. The same valid key returns 401 on dashscope-intl compatible-mode ("Incorrect API key") and on coding-intl ("invalid access token or token expired"), so neither 401 means the key is bad. Read the plan's own base URL from the console before concluding a key is expired. The local catalog has a matching provider id, alibaba-token-plan.
+
+## 2026-10-27 — A green BDD can count unclosed reasoning as the answer
+
+C34 attempt 2: a routed MiniMax-M3 child streamed only an unclosed `<think>` block, cut off mid-sentence, and the run still finished with outcome success. The signature appeared inside the reasoning draft, so a check that strips only closed `<think>…</think>` blocks passed. Treat text from an unclosed `<think>` to the end as reasoning, and require answer markers outside it. Earlier steps that strip only closed blocks share this weakness, e.g. `rest-model-restart`, `context-budget` and `writing-orchestrator`. C33 compares the stripped answer for exact equality, so reasoning text cannot satisfy it. I have not rechecked the other scenarios' recorded streams.
+
+## 2026-10-27T07:19:48-05:00 — Inline `<think>` reaches router and delegation code as ordinary text
+
+Through Liter, MiniMax-M3 writes reasoning into `content`; the driver maps only a separate `reasoning_content` field to ReasoningDelta (`src/llm/liter_driver.rs:781-796`). Code that needs the *answer* must split inline reasoning with `crate::llm::inline_reasoning::split_inline_reasoning` (child phase orchestrator-routing-reasoning-repair). Do not add new `uar.request` custom events to driver streams: `context/summarizer.rs:173-185` and `matching/intent/mod.rs:247-253` reject unknown custom events, so an extra diagnostic event would break summarization and skill classification on every Liter model. Non-streaming probes of the router prompt returned a clean ID (D0); failures occurred only in the streaming path, with 4–8× longer classifier replies.
+
+## 2026-10-27 — Gate plans must follow the real-path evidence rule
+In orchestrator-routing-reasoning-repair, plan revision 2 put filtered `cargo test --lib` and mock-LLM integration tests into the verification gate and its exit criteria. `CLAUDE.md` says unit, module-local, mock-only and filtered tests do not count as completion evidence. The operator removed both steps, but only after one had run. That run needed a test-only repair of two stale initializers outside the change: the lib test target had been broken since 2026-10-20/22 and nobody had noticed. Before proposing gate commands, check each against that rule. For UAR product behavior, the gate is build → (validate) → owned restart → the manual BDD scenario plus raw-evidence review. Also confirm that any observable a gate step reads actually exists: the run API does not expose the request-budget receipt.
+
+## 2026-10-28 — A provider PUT clears every model's verification
+
+`PUT /api/uar/providers/{id}` changes the provider configuration digest, so
+`model_verifications` for **all** of that provider's models become empty, not
+only for the models edited. Unverified models disappear from `/v1/models`, and
+explicit `provider/model` selection is refused ("Selected model is disabled,
+unverified, or its configuration changed",
+`src/uar/api/targets.rs:82-83`). Observed when adding the MiMo v2.6 models to
+`liter`. After any provider PUT, re-run
+`POST /api/uar/providers/{id}/test` for every enabled model, with a small
+`output_token_cap`, before running scenarios that select models.
+
+## 2026-10-28 — Repeated gotcha
+The A2UI plan put unit tests and a typecheck into the gate, repeating the 2026-10-27 gotcha "Gate plans must follow the real-path evidence rule" (gotchas.md:2211), which the lead had not read before planning. Root cause: gotchas.md was not read before the subsystem work, as the project rules require. Gate corrected to build -> validate -> owned restart -> BDD + raw-evidence review.
+
+- 2026-10-28: The Bash tool's default `node` is nvm v10.14.1 (first on PATH), which fails `tsup` and other modern tooling with `internal/modules/cjs/loader.js` errors. Put `/usr/local/bin` (Node v24.18.0) first: `export PATH=/usr/local/bin:$PATH`. The TypeScript SDK requires Node >=20; its `dist/` was stale (July 14) relative to `src/` (October 25) until rebuilt.
+
+- 2026-10-28: Before calling a protocol behaviour a product defect, grep for its doc comment and the repo's own tests and acceptance clients. Legacy gRPC `MessageStream` returns one status snapshot by contract and is resolved with `TaskGet`; I misdiagnosed it from the BDD failure alone and proposed a product change the operator nearly approved.

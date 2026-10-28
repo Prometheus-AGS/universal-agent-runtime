@@ -1,0 +1,121 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "an-unknown-tool-effect-is-not-silently-repeated;a-committed-mcp-write-whose-response-is-lost-stays-uncertain-and-is-not-repeated",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A committed MCP write whose response is lost stays uncertain and is not repeated",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 54168931750
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "an owned MCP record peer that loses record_write responses is permitted for one disposable agent after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/unknown-tool-effect.steps.mjs:38"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4759113060
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask the agent to store a private value and approve only its first write",
+            "match": {
+              "location": "scripts/behaviors/steps/unknown-tool-effect.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11640091
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the peer committed the write exactly once and the runtime reports the outcome as unknown",
+            "match": {
+              "location": "scripts/behaviors/steps/unknown-tool-effect.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9514003
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I reconnect to the finished run's stream",
+            "match": {
+              "location": "scripts/behaviors/steps/unknown-tool-effect.steps.mjs:145"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 494422
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the replay still shows the unknown outcome and the peer effect count is unchanged",
+            "match": {
+              "location": "scripts/behaviors/steps/unknown-tool-effect.steps.mjs:157"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14417214588
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi91bmtub3duLXRvb2wtZWZmZWN0L2U5ZDhlMWE3LWJjN2MtNGRkYi04NzQ3LWVjOTc1MTUwNDA3My5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@mcp",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "an-unknown-tool-effect-is-not-silently-repeated",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "An unknown tool effect is not silently repeated",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@mcp",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/unknown-tool-effect.feature"
+  }
+]

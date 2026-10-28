@@ -298,3 +298,11 @@ Mac result: **KNOWLEDGE-RESTART-01 PASS**, all 5 reported steps in 22.95 seconds
 ## Selective KB unlink (Mac verified)
 
 `node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-unlink-one.cucumber.mjs` exercises only removal of one of two KB references. It uses a disposable agent/two KBs, fresh inference and matching source citations, then cleans up. Credentials stay outside the test. The current pass and retained first fixture failure are indexed in `.prometheus/verification/kb-unlink-one-01-macos-pass.json`. See `.prometheus/verification/behavior-status.md` for the maintained complete status catalog. Run only when explicitly selected; do not automatically replay the manual sequence.
+
+## Disable KB access while retaining links
+
+`node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-disable.cucumber.mjs` selects only KB-DISABLE-01. The disposable agent first demonstrates use of its linked private fact, then PATCH changes only `memory.kb.enabled` to false. A fresh session must answer ordinary arithmetic while omitting the KB fact and citations; saved links and directly searchable source data remain intact. The scenario cleans up only its own agent/KB. Host credentials remain external. Do not run older scenarios as part of this command.
+
+## Re-enable retained KB access
+
+`node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-reenable.cucumber.mjs` selects only KB-REENABLE-01. Setup saves a disposable KB link, disables access and reads it back. The action sends only enabled:true, retaining the original references. One fresh genuine inference must use the document-only private fact and matching runtime citation; original source snapshots and direct search must remain intact. No older scenario reruns, reindexing or credentials in the test. Cleanup removes only disposable resources and leaves UAR running.

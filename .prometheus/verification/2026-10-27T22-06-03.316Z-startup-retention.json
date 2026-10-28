@@ -1,0 +1,197 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "initial-and-repeat-startup-preserve-persisted-settings-and-retention-removes-only-expired-sessions;seed-once,-keep-an-override-across-restart,-and-expire-only-the-aged-session",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Seed once, keep an override across restart, and expire only the aged session",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 33244516596
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable UAR has completed its initial startup on an empty owned store",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:51"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 39175522
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I save an operator override of a seeded setting",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4855642339
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "the disposable UAR performs a repeat startup on the same store",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:78"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 35182626
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "built-ins were seeded once and the override is still effective",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:84"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 7049339,
+              "error_message": "AssertionError [ERR_ASSERTION]: POST /v1/chat/completions: 422: {\"error\":{\"message\":\"Selected model is disabled, unverified, or its configuration changed; verify it in UAR settings\",\"type\":\"invalid_request_error\",\"param\":\"model\",\"code\":\"model_not_verified\"}}\n    + expected - actual\n\n    -false\n    +true\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:31:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async turn (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:36:17)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:100:3)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I create a terminal session and a fresh control session",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the host ages only the terminal session past retention",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "a new turn publishes session activity",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the retention worker removes only the expired session",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:131"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "a second activity signal arrives",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "nothing else is removed and the protected definitions remain",
+            "match": {
+              "location": "scripts/behaviors/steps/startup-retention.steps.mjs:145"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 648161054
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@startup",
+            "line": 1
+          },
+          {
+            "name": "@retention",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "initial-and-repeat-startup-preserve-persisted-settings-and-retention-removes-only-expired-sessions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Initial and repeat startup preserve persisted settings and retention removes only expired sessions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@startup",
+        "line": 1
+      },
+      {
+        "name": "@retention",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/startup-retention.feature"
+  }
+]

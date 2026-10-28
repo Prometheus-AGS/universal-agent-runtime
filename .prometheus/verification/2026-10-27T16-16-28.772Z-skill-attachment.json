@@ -1,0 +1,116 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "explicit-skill-attachment-works-in-catalog-mode;an-attached-skill's-private-rule-drives-the-answer",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "An attached skill's private rule drives the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 147073540
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent and an eligible skill whose triggers cannot match the request",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-attachment.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4703650311
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a fresh request that attaches the skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-attachment.steps.mjs:66"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 816863
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the skill is activated as an attachment rather than by matching",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-attachment.steps.mjs:95"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 402575
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the answer follows the skill's private calculation rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-attachment.steps.mjs:102"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 172255508
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1hdHRhY2htZW50LzdmNzRjYWZkLWQwMDktNDkyYy1iMDRhLWU2NzVhYjI2ZTE5MS5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@attachment",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "explicit-skill-attachment-works-in-catalog-mode",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Explicit skill attachment works in catalog mode",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@attachment",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-attachment.feature"
+  }
+]

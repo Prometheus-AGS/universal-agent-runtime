@@ -2,19 +2,18 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 682,
-  "derivedRevision": 682,
+  "sourceRevision": 700,
+  "derivedRevision": 700,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 570,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 588,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
-  "updatedAt": "2026-10-26T13:11:33.461203Z",
+  "updatedAt": "2026-10-28T10:59:39.603112Z",
   "cursor": [
     "uar-post-lifecycle-verification-readiness",
     "uar-verification-simplification",
-    "simplify-user-workflow-verification",
-    "2.1"
+    "identity-pass-through"
   ],
   "root": {
     "type": "phase",
@@ -2071,6 +2070,18 @@
         "children": [
           {
             "type": "phase",
+            "id": "orchestrator-routing-reasoning-repair",
+            "canonicalId": "orchestrator-routing-reasoning-repair",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            },
+            "children": [],
+            "annotations": []
+          },
+          {
+            "type": "phase",
             "id": "uar-verification-simplification",
             "canonicalId": "uar-verification-simplification",
             "status": "PENDING",
@@ -2099,6 +2110,43 @@
                     }
                   }
                 ],
+                "annotations": []
+              },
+              {
+                "type": "phase",
+                "id": "agui-a2ui-projection-and-custom-components",
+                "canonicalId": "uar-verification-simplification::agui-a2ui-projection-and-custom-components",
+                "status": "IN_PROGRESS",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                },
+                "children": [
+                  {
+                    "type": "phase",
+                    "id": "a2ui-surface-architecture",
+                    "canonicalId": "uar-verification-simplification::agui-a2ui-projection-and-custom-components::a2ui-surface-architecture",
+                    "status": "IN_PROGRESS",
+                    "progress": {
+                      "done": 0,
+                      "total": 0
+                    },
+                    "children": [],
+                    "annotations": []
+                  }
+                ],
+                "annotations": []
+              },
+              {
+                "type": "phase",
+                "id": "identity-pass-through",
+                "canonicalId": "uar-verification-simplification::identity-pass-through",
+                "status": "IN_PROGRESS",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                },
+                "children": [],
                 "annotations": []
               },
               {

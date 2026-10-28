@@ -1,0 +1,28 @@
+{
+  "scenario": "C40",
+  "label": "B44",
+  "behavior": "Standard skill discovery and reload change usable behavior",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 3,
+  "prior_attempts": "1 FAIL product: reload did not persist new filesystem skills, so listing returned 409 skill_selection_storage_missing. 2 FAIL product: persisted copies shadowed live files on reload (stale body; removed skills kept). Receipts c40-skill-reload-attempt-00{1,2}-fail.json",
+  "product_fix": "src/uar/runtime/skills/service.rs, operator-approved in two steps: (1) SkillService::refresh persists registered skills lacking a durable record, as startup does; (2) a filesystem provider's live result supersedes persisted rows it owns (current body wins, row updated, durable enabled/scoped kept; rows whose file is gone leave the registry; persisted tombstones are not resurrected). The standard agent directory ('agent-skills') keeps its absence-never-deletes contract; API-created rows unchanged.",
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "build_command": "CARGO_TARGET_DIR=target/uar-team-concurrency-repair cargo build --locked --no-default-features --features server-full --bin universal-agent-runtime (exit 0, 3m 23s, warnings unchanged from the previous build)",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/skill-reload.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 7 steps (7 passed); 0m 18.97s",
+  "evidence": ".prometheus/verification/skill-reload/d4f2544a-5aae-43de-a288-b6c728c210c8.json",
+  "files": ["scripts/behaviors/features/skill-reload.feature", "scripts/behaviors/skill-reload.cucumber.mjs", "scripts/behaviors/steps/skill-reload.steps.mjs"],
+  "evidence_review": {
+    "discovery": "owned pack under the runtime's relative skills root: top-level c40-alpha and nested group/c40-beta discovered once each; notes/README.md and stray.md excluded; listing 200",
+    "original": "attached c40-alpha (selection_method attachment): 4 crates x 39 = 156",
+    "changed": "body rewritten to x 62 and reloaded: GET skill holds the new body; attached run answered 4 x 62 = 248, not the stale 156",
+    "removal": "pack deleted from disk and reloaded: no pack skills remain; listing 200"
+  },
+  "note": "Refresh 'count' is the raw total across providers; two filesystem providers (filesystem-skills-1 and fs-skills) scan the same 212 standard skills, so count 424 while the listing holds 212 unique skills.",
+  "cleanup": {"pack_removed": true, "agent_deleted": true, "sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

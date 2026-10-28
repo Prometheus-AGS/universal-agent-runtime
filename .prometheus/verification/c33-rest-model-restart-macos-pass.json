@@ -1,0 +1,193 @@
+{
+  "scenario": "C33",
+  "label": "B36",
+  "behavior": "REST model configuration is effective and durable",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "report_timezone": "America/Chicago",
+  "recorded_at_utc": "2026-10-27T11:04:24.486540+00:00",
+  "attempt": 1,
+  "executor": "Claude Desktop (Claude Code) session continuing .prometheus/handoffs/2026-10-27-c33-claude-desktop.md",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL_A=liter/MiniMax-M3 UAR_MODEL_B=liter/k3 UAR_CUCUMBER_REPORT=.prometheus/verification/c33-rest-model-restart-20261027T110124Z.cucumber.json node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/rest-model-restart.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 11 steps (11 passed); 2m 4.698s",
+  "evidence": ".prometheus/verification/rest-model-restart/246c766c-a558-4048-a119-71f521acdcc2.json",
+  "cucumber_report": ".prometheus/verification/c33-rest-model-restart-20261027T110124Z.cucumber.json",
+  "files": [
+    "scripts/behaviors/features/rest-model-restart.feature",
+    "scripts/behaviors/rest-model-restart.cucumber.mjs",
+    "scripts/behaviors/steps/rest-model-restart.steps.mjs"
+  ],
+  "binding_a": "liter/MiniMax-M3 (session override; pricing identity minimax/MiniMax-M3)",
+  "binding_b": "liter/k3 (saved provider default; pricing identity kimi-code-plan-global/k3; max_output_tokens 32768 -> 1024 during scenario)",
+  "request_model_override": false,
+  "authentication_supplied_by_test": false,
+  "credentials_in_requests": false,
+  "rejections": {
+    "stale_default_provider_revision": "HTTP 409 setting_revision_conflict; saved state unchanged",
+    "invalid_session_model": "HTTP 400 'model must identify a nonempty provider/model'; saved state unchanged"
+  },
+  "restart": {
+    "previous_pid": 21601,
+    "new_pid": 69961,
+    "binary_sha256": "f84baeaf99c7c0478fe01df20e9f2726f1f3f346b335d04d0958dbf2d800496d",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_process_ready": true
+  },
+  "saved_state_identical_after_restart": true,
+  "verifications_survived_restart": [
+    "MiniMax-M3",
+    "k3"
+  ],
+  "runs": {
+    "before_restart": {
+      "default_session": {
+        "run_id": "1bfefb13-9dda-46dd-ba80-93dc5b4e2235",
+        "effective_model": {
+          "provider_id": "liter",
+          "model_id": "k3"
+        },
+        "final": "C33-77AAB6FB 10364",
+        "usage": {
+          "inputTokens": 639,
+          "outputTokens": 47
+        },
+        "accounting": [
+          [
+            "kimi-code-plan-global/k3",
+            "settled",
+            686
+          ]
+        ]
+      },
+      "override_session": {
+        "run_id": "4a2550f2-18aa-4445-9bf3-964097111f22",
+        "effective_model": {
+          "provider_id": "liter",
+          "model_id": "MiniMax-M3"
+        },
+        "final": "C33-77AAB6FB 9736",
+        "usage": {
+          "inputTokens": 812,
+          "outputTokens": 69
+        },
+        "accounting": [
+          [
+            "minimax/MiniMax-M3",
+            "settled",
+            881
+          ]
+        ]
+      },
+      "output_limit_probe": {
+        "run_id": "269f3b92-777e-484f-b59f-a7948c999a5c",
+        "effective_model": {
+          "provider_id": "liter",
+          "model_id": "k3"
+        },
+        "final": "C33-77AAB6FB 1 2 3 4 5 6 7 8 9 10 11 12  \u2026  169 170 171 172 173 174",
+        "usage": {
+          "inputTokens": 713,
+          "outputTokens": 1024
+        },
+        "accounting": [
+          [
+            "kimi-code-plan-global/k3",
+            "settled",
+            1737
+          ]
+        ]
+      }
+    },
+    "after_restart": {
+      "default_session": {
+        "run_id": "d614b07c-f51f-441c-84a9-0df18d63ae93",
+        "effective_model": {
+          "provider_id": "liter",
+          "model_id": "k3"
+        },
+        "final": "C33-77AAB6FB 9401",
+        "usage": {
+          "inputTokens": 1648,
+          "outputTokens": 49
+        },
+        "accounting": [
+          [
+            "kimi-code-plan-global/k3",
+            "settled",
+            1697
+          ]
+        ]
+      },
+      "override_session": {
+        "run_id": "51b1c070-dffc-4b18-ae7b-6e0e26974017",
+        "effective_model": {
+          "provider_id": "liter",
+          "model_id": "MiniMax-M3"
+        },
+        "final": "C33-77AAB6FB 7712",
+        "usage": {
+          "inputTokens": 1223,
+          "outputTokens": 47
+        },
+        "accounting": [
+          [
+            "minimax/MiniMax-M3",
+            "settled",
+            1270
+          ]
+        ]
+      },
+      "output_limit_probe": {
+        "run_id": "8f30124d-5b5a-4196-b0cf-8b6e8ec6f1b1",
+        "effective_model": {
+          "provider_id": "liter",
+          "model_id": "k3"
+        },
+        "final": "C33-77AAB6FB 1 2 3 4 5 6 7 8 9 10 11 12  \u2026  169 170 171 172 173 174",
+        "usage": {
+          "inputTokens": 1722,
+          "outputTokens": 1024
+        },
+        "accounting": [
+          [
+            "kimi-code-plan-global/k3",
+            "settled",
+            2746
+          ]
+        ]
+      }
+    }
+  },
+  "output_limit_oracle": "Request asked max_completion_tokens 4096 for a listing of 1..1500 (>2,000 tokens). Provider-reported outputTokens was exactly 1024 before and after restart; listings stopped at 174. final_provider_request receipt output_ceiling_enforced=true.",
+  "model_dispatches": 12,
+  "cleanup": {
+    "provider_config_restored": true,
+    "original_routes_reverified": [
+      "MiniMax-M3",
+      "glm-5.3",
+      "k3",
+      "mimo-v2.5-pro"
+    ],
+    "override_policy_deleted": true,
+    "disposable_agent_deleted": true,
+    "sessions_deleted": true,
+    "cleanup_errors": []
+  },
+  "runtime_left_running": {
+    "pid": 69961,
+    "url": "http://127.0.0.1:53587",
+    "client_url": "http://127.0.0.1:60675"
+  },
+  "limits": [
+    "The final_provider_request budget receipt streamed to the client carries reserved_output_tokens=null in this binary (the 1024 value is patched only into internal run context, not exposed by GET /api/uar/runs/{id}). The handoff's planned receipt assertion was therefore replaced by a behavioral oracle: observed provider outputTokens=1024 with a 4096 request.",
+    "One provider (liter gateway) with two of its models; multi-provider default switching was not exercised.",
+    "Sessions accumulated history (memory_enabled=false on requests); conversation continuity across restart is not claimed.",
+    "Mac evidence only; does not certify Linux, iOS, PostgreSQL or the whole current tree.",
+    "Does not certify GLM-5.3, MiMo or Qwen; those were configured as model choices separately (see .prometheus/verification/model-choices/2026-10-27-model-choices.json)."
+  ]
+}

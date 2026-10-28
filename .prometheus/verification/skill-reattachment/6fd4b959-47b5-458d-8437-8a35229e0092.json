@@ -1,0 +1,22 @@
+{
+  "scenario": "C43-SKILL-REATTACHMENT-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "budget": {
+    "per_skill_tokens": 120,
+    "total_tokens": 150
+  },
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 404,
+      "response": "{\"error\":\"Setting 'harness.skill_reattachment' not found\"}"
+    }
+  ],
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 39
+}

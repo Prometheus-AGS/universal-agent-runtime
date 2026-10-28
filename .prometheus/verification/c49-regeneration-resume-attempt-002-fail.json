@@ -1,0 +1,16 @@
+{
+  "scenario": "C49",
+  "status": "FAIL",
+  "failure_class": "product defect (concurrent ingestion on one KB fails with retryable store write conflicts, handled only by long job backoff)",
+  "platform": "Mac",
+  "attempt": 2,
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "observed_output": "1 scenario (1 failed); 7 steps (4 passed, 1 skipped, 2 failed); 6m 32s",
+  "evidence": ".prometheus/verification/regeneration-resume/e13a5d2c-0f06-40c0-b01d-c1791980d364.json",
+  "passed_parts": "60-document corpus indexed sequentially; host fixture provisioned the real endpoint; switch to openai/text-embedding-3-small 384. Regeneration started; at 1/60 the owned UAR was restarted. After restart: same generation, state running (3/60), no false complete, all 60 sources retained, KB still indexed in the previous space.",
+  "failure": "Resume did not complete within 300s: progress stalled at 38/60 while last_error repeatedly showed 'executor error: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried'. Cleanup DELETE of the KB hit the same conflict (500); deleted afterwards (204/404).",
+  "root_cause_from_source": "Concurrent ingestion workers commit Surreal transactions touching the same KB; a retryable commit conflict becomes IngestionRecord::failed_attempt (src/uar/persistence/ingestion_records/mod.rs:71-77): Retryable with next attempt 30s x attempts, Failed after 5. transition (src/uar/persistence/providers/ingestion_records/surreal.rs:146-149) maps Retryable to DocumentStatus::Failed, so documents also read as failed while awaiting retry.",
+  "user_impact": "Uploading several files to one KB shows some as failed; regenerating a multi-document KB after a model change crawls or fails; deleting a KB during ingestion returns 500.",
+  "cleanup": "KB deleted; embedding settings restored to fastembed/bge-small-en-v1.5; host config restored (sha 8726e43a, blackhole base_url).",
+  "next": "Stopped for operator approval of a product fix: retry a store commit that Surreal reports as retryable (bounded, immediate, with jitter) inside the ingestion transaction path, and report Retryable documents as pending rather than failed. Then build, owned restart, rerun C49 once."
+}

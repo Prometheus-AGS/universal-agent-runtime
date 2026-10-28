@@ -1,0 +1,629 @@
+{
+  "scenario": "C34-LIVE-ROSTER-ROUTING-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "model": "liter/MiniMax-M3",
+  "no_match_binding": "Operator-approved 2026-10-27: unmatched intent must route only within the current eligible roster or be refused with graph_routing_selection_invalid; the absent explicit no-match path is a recorded product gap.",
+  "roster_snapshots": {
+    "initial": {
+      "agents": [
+        {
+          "id": "compiler-agent",
+          "entry": "default",
+          "title": "UAR Compiler Agent"
+        },
+        {
+          "id": "default-agent",
+          "entry": "default",
+          "title": "Default Assistant"
+        },
+        {
+          "id": "general-purpose",
+          "entry": "default",
+          "title": "General-purpose specialist"
+        },
+        {
+          "id": "math-specialist-db64c2a8",
+          "entry": "default",
+          "title": "Mathematics Specialist"
+        },
+        {
+          "id": "orchestrator-agent",
+          "entry": "orchestrator",
+          "title": "Orchestrator"
+        },
+        {
+          "id": "rust-reviewer",
+          "entry": "default",
+          "title": "Rust reviewer"
+        },
+        {
+          "id": "writing-specialist",
+          "entry": "default",
+          "title": "Blog and Article Writer"
+        }
+      ],
+      "eligible": [
+        "compiler-agent",
+        "default-agent",
+        "general-purpose",
+        "math-specialist-db64c2a8",
+        "rust-reviewer",
+        "writing-specialist"
+      ]
+    },
+    "after_registration": {
+      "agents": [
+        {
+          "id": "compiler-agent",
+          "entry": "default",
+          "title": "UAR Compiler Agent"
+        },
+        {
+          "id": "default-agent",
+          "entry": "default",
+          "title": "Default Assistant"
+        },
+        {
+          "id": "disposable-plant-clinic-6a9624bd",
+          "entry": "default",
+          "title": "Houseplant Care Diagnostician"
+        },
+        {
+          "id": "general-purpose",
+          "entry": "default",
+          "title": "General-purpose specialist"
+        },
+        {
+          "id": "math-specialist-db64c2a8",
+          "entry": "default",
+          "title": "Mathematics Specialist"
+        },
+        {
+          "id": "orchestrator-agent",
+          "entry": "orchestrator",
+          "title": "Orchestrator"
+        },
+        {
+          "id": "rust-reviewer",
+          "entry": "default",
+          "title": "Rust reviewer"
+        },
+        {
+          "id": "writing-specialist",
+          "entry": "default",
+          "title": "Blog and Article Writer"
+        }
+      ],
+      "eligible": [
+        "compiler-agent",
+        "default-agent",
+        "disposable-plant-clinic-6a9624bd",
+        "general-purpose",
+        "math-specialist-db64c2a8",
+        "rust-reviewer",
+        "writing-specialist"
+      ]
+    },
+    "after_deletion": {
+      "agents": [
+        {
+          "id": "compiler-agent",
+          "entry": "default",
+          "title": "UAR Compiler Agent"
+        },
+        {
+          "id": "default-agent",
+          "entry": "default",
+          "title": "Default Assistant"
+        },
+        {
+          "id": "general-purpose",
+          "entry": "default",
+          "title": "General-purpose specialist"
+        },
+        {
+          "id": "math-specialist-db64c2a8",
+          "entry": "default",
+          "title": "Mathematics Specialist"
+        },
+        {
+          "id": "orchestrator-agent",
+          "entry": "orchestrator",
+          "title": "Orchestrator"
+        },
+        {
+          "id": "rust-reviewer",
+          "entry": "default",
+          "title": "Rust reviewer"
+        },
+        {
+          "id": "writing-specialist",
+          "entry": "default",
+          "title": "Blog and Article Writer"
+        }
+      ],
+      "eligible": [
+        "compiler-agent",
+        "default-agent",
+        "general-purpose",
+        "math-specialist-db64c2a8",
+        "rust-reviewer",
+        "writing-specialist"
+      ]
+    }
+  },
+  "routes": {
+    "eligible_specialist": {
+      "label": "eligible_specialist",
+      "task": "My Boston fern's fronds are turning brown and crispy at the tips, even though I water it weekly. What is wrong and how do I fix it?",
+      "thread_id": "34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+      "runs": [
+        {
+          "run_id": "42caf099-9a9e-4c14-b7df-1674e50bc7c8",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+              "runId": "42caf099-9a9e-4c14-b7df-1674e50bc7c8",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "TOOL_CALL_START",
+              "toolCallId": "eafd04c4-0501-45d1-b60e-0cb7030b9c0c",
+              "toolCallName": "spawn_agent"
+            },
+            {
+              "type": "TOOL_CALL_ARGS",
+              "toolCallId": "eafd04c4-0501-45d1-b60e-0cb7030b9c0c",
+              "delta": "{\"operation\":\"spawn_agent\",\"detailsAvailable\":false}"
+            },
+            {
+              "type": "TOOL_CALL_END",
+              "toolCallId": "eafd04c4-0501-45d1-b60e-0cb7030b9c0c"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+              "runId": "42caf099-9a9e-4c14-b7df-1674e50bc7c8",
+              "outcome": {
+                "type": "interrupt",
+                "interrupts": [
+                  {
+                    "id": "16c686f8-d35e-4074-8661-5902c421be4d",
+                    "reason": "tool_approval",
+                    "message": "Approve spawn_agent",
+                    "toolCallId": "eafd04c4-0501-45d1-b60e-0cb7030b9c0c",
+                    "expiresAt": "2026-10-27T11:35:54.049356+00:00",
+                    "responseSchema": {
+                      "type": "object",
+                      "properties": {
+                        "approved": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "approved"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "run_id": "9987cd96-9e1b-4753-b4cb-172dd22a023c",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+              "runId": "9987cd96-9e1b-4753-b4cb-172dd22a023c",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "CUSTOM",
+              "name": "uar.agent.selected",
+              "value": {
+                "sourceAgentId": "orchestrator-agent",
+                "agent": {
+                  "id": "disposable-plant-clinic-6a9624bd",
+                  "title": "Houseplant Care Diagnostician"
+                },
+                "selectedThreadId": "4c0a26ce-a189-4956-8d5b-c76794237530",
+                "selectionMethod": "intent",
+                "rosterRevision": "bb4e34258d06ace6417e979b173c5b4943baf5555a0774ed7762de241b670ac4"
+              },
+              "threadId": "34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+              "runId": "9987cd96-9e1b-4753-b4cb-172dd22a023c",
+              "agentId": "orchestrator-agent"
+            },
+            {
+              "type": "TEXT_MESSAGE_START",
+              "messageId": "9987cd96-9e1b-4753-b4cb-172dd22a023c:assistant",
+              "role": "assistant"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "9987cd96-9e1b-4753-b4cb-172dd22a023c:assistant",
+              "delta": "[disposable-plant-clinic-6a9624bd]\n\n<think>We need answer as houseplant care diagnostician, max 120 words, 2-3 concrete steps, exact signature on own line. The question: Boston fern fronds brown crispy tips despite weekly watering. Most likely underwatering/low humidity rather than schedule; Boston ferns need consistently moist soil, not waterlogged, high humidity. Could also be low humidity/salt buildup from fertilizer or tap water. Need diagnose most likely cause and fix.\n\nWe should give concise answer within 120 words. Perhaps: \"Most likely water/humidity stress, not a fixed watering schedule. Boston ferns need evenly moist (not soggy) soil and humid air; if soil dries between weekly waterings or room air is dry, tips brown and crisp.\"\n\nCare steps:\n1. Check soil 2-3 cm down; water thoroughly when it feels just barely dry, drain fully. Don't leave standing water. (Or if dry all the way, soak then drain.)\n2. Raise humidity: mist, use pebble tray, place away from vents/radiators. Misting alone temporary.\n3. Trim crispy fronds with clean scissors; flush pot or repot if salts/crust or poor drainage; avoid fertilizing until new growth recovers.\n\nMaybe mention check for root rot if soil stays wet/smelly, then repot. Keep within 120. Let's count approx.\n\nDraft:\n\n\"Most likely cause: moisture or humidity stress—not a fixed weekly schedule. Boston ferns want soil consistently moist (never soggy) and humid air. If the root ball dries out between waterings, or the room is dry, tip burn develops. Fertilizer salt buildup can worsen it.\n\n1. Check the soil 2–3 cm down. Water thoroughly when it’s barely dry, let excess drain; don’t leave the pot sitting in water.\n2. Raise humidity with a pebble tray, room humidifier, or regular misting, and keep the fern away from radiators and vents.\n3. Trim dead tips with clean scissors. Flush the pot with water; if the soil smells sour or stays wet, repot in fresh, well-draining mix. Hold fertilizer until healthy new growth appears.\n\nFernwell Plant Clinic FERNWELL-43CB319C\"\n\nWord count ~120? Let's count. Most(1) likely2 cause3 moisture4 or5 humidity6 stress7 not8 a9 fixed10 weekly11 schedule12 Boston13 ferns14 want15 soil16 consistently17 moist18 never19 soggy20 and21 humid22 air23 If24 the25 root26 ball27 dries28 out29 between30 waterings31 or32 the33 room34 is35 dry36 tip37 burn38 develops39 Fertilizer40 salt41 buildup42 can43 worsen44 it45.\n\n1 Check46 the47 soil48 2-3 49 cm50 down51 Water52 thoroughly53 when54 it's55 barely56 dry57 let58 excess59 drain60 don't61 leave62 the63 pot64 sitting65 in66 water67.\n\n2 Raise68 humidity69 with70 a71 pebble72 tray73 room74 humidifier75 or76 regular77 misting78 and79 keep80 the81 fern82 away83 from84 radiators85 and86 vents87.\n\n3 Trim88 dead89 tips90 with91 clean92 scissors93 Flush94 the95 pot96 with97 water98 if99 the100 soil101 smells102 sour103 or104 stays105 wet106 repot107 in108 fresh109 well-draining110 mix111 Hold112 fertilizer113 until114 healthy115 new116 growth117 appears118.\n\nFernwell119 Plant120 Clinic121 FERNWELL-43CB319C122. Slightly over 120 counting signature. Need max 120 words. Let's trim ~10 words to be safe.\n\n\"Most likely: moisture or humidity stress—not a fixed watering schedule. Boston ferns want consistently moist soil (never soggy) and humid air. If the root ball dries between waterings or the room is dry, tip burn develops. Fertilizer salts can worsen it.\n\n1. Check soil 2–3 cm down. Water thoroughly when barely dry; let excess drain, and never leave the pot standing in water.\n2. Increase humidity with a pebble tray, humidifier, or regular misting. Keep the fern away from radiators and vents.\n3. Trim crispy tips with clean scissors. Flush the pot to remove salts; if soil smells sour or stays wet, repot in fresh, well-draining mix. Pause fertilizer until healthy new growth appears.\"\n\nCount: Most1 likely2 moisture3 or4 humidity5 stress6 not7 a8 fixed9 watering10 schedule11 Boston12 ferns13 want14 consistently15 moist16 soil17 never18 soggy19 and20 humid21 air22 If23 the24 root25 ball26 dries27 between28 waterings29 or30 the31 room32 is33 dry34 tip35 burn36 develops37 Fertilizer38 salts39 can40 worsen41"
+            },
+            {
+              "type": "TEXT_MESSAGE_END",
+              "messageId": "9987cd96-9e1b-4753-b4cb-172dd22a023c:assistant"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+              "runId": "9987cd96-9e1b-4753-b4cb-172dd22a023c",
+              "outcome": {
+                "type": "success"
+              }
+            }
+          ]
+        }
+      ],
+      "approval": {
+        "interrupt_id": "16c686f8-d35e-4074-8661-5902c421be4d",
+        "tool": "spawn_agent",
+        "approved": true,
+        "parent_run_id": "42caf099-9a9e-4c14-b7df-1674e50bc7c8"
+      },
+      "wire_run_id": "9987cd96-9e1b-4753-b4cb-172dd22a023c",
+      "selection": {
+        "sourceAgentId": "orchestrator-agent",
+        "agent": {
+          "id": "disposable-plant-clinic-6a9624bd",
+          "title": "Houseplant Care Diagnostician"
+        },
+        "selectedThreadId": "4c0a26ce-a189-4956-8d5b-c76794237530",
+        "selectionMethod": "intent",
+        "rosterRevision": "bb4e34258d06ace6417e979b173c5b4943baf5555a0774ed7762de241b670ac4"
+      },
+      "selection_count": 1,
+      "error": null,
+      "outcome": {
+        "type": "success"
+      },
+      "answer": "[disposable-plant-clinic-6a9624bd]\n\n<think>We need answer as houseplant care diagnostician, max 120 words, 2-3 concrete steps, exact signature on own line. The question: Boston fern fronds brown crispy tips despite weekly watering. Most likely underwatering/low humidity rather than schedule; Boston ferns need consistently moist soil, not waterlogged, high humidity. Could also be low humidity/salt buildup from fertilizer or tap water. Need diagnose most likely cause and fix.\n\nWe should give concise answer within 120 words. Perhaps: \"Most likely water/humidity stress, not a fixed watering schedule. Boston ferns need evenly moist (not soggy) soil and humid air; if soil dries between weekly waterings or room air is dry, tips brown and crisp.\"\n\nCare steps:\n1. Check soil 2-3 cm down; water thoroughly when it feels just barely dry, drain fully. Don't leave standing water. (Or if dry all the way, soak then drain.)\n2. Raise humidity: mist, use pebble tray, place away from vents/radiators. Misting alone temporary.\n3. Trim crispy fronds with clean scissors; flush pot or repot if salts/crust or poor drainage; avoid fertilizing until new growth recovers.\n\nMaybe mention check for root rot if soil stays wet/smelly, then repot. Keep within 120. Let's count approx.\n\nDraft:\n\n\"Most likely cause: moisture or humidity stress—not a fixed weekly schedule. Boston ferns want soil consistently moist (never soggy) and humid air. If the root ball dries out between waterings, or the room is dry, tip burn develops. Fertilizer salt buildup can worsen it.\n\n1. Check the soil 2–3 cm down. Water thoroughly when it’s barely dry, let excess drain; don’t leave the pot sitting in water.\n2. Raise humidity with a pebble tray, room humidifier, or regular misting, and keep the fern away from radiators and vents.\n3. Trim dead tips with clean scissors. Flush the pot with water; if the soil smells sour or stays wet, repot in fresh, well-draining mix. Hold fertilizer until healthy new growth appears.\n\nFernwell Plant Clinic FERNWELL-43CB319C\"\n\nWord count ~120? Let's count. Most(1) likely2 cause3 moisture4 or5 humidity6 stress7 not8 a9 fixed10 weekly11 schedule12 Boston13 ferns14 want15 soil16 consistently17 moist18 never19 soggy20 and21 humid22 air23 If24 the25 root26 ball27 dries28 out29 between30 waterings31 or32 the33 room34 is35 dry36 tip37 burn38 develops39 Fertilizer40 salt41 buildup42 can43 worsen44 it45.\n\n1 Check46 the47 soil48 2-3 49 cm50 down51 Water52 thoroughly53 when54 it's55 barely56 dry57 let58 excess59 drain60 don't61 leave62 the63 pot64 sitting65 in66 water67.\n\n2 Raise68 humidity69 with70 a71 pebble72 tray73 room74 humidifier75 or76 regular77 misting78 and79 keep80 the81 fern82 away83 from84 radiators85 and86 vents87.\n\n3 Trim88 dead89 tips90 with91 clean92 scissors93 Flush94 the95 pot96 with97 water98 if99 the100 soil101 smells102 sour103 or104 stays105 wet106 repot107 in108 fresh109 well-draining110 mix111 Hold112 fertilizer113 until114 healthy115 new116 growth117 appears118.\n\nFernwell119 Plant120 Clinic121 FERNWELL-43CB319C122. Slightly over 120 counting signature. Need max 120 words. Let's trim ~10 words to be safe.\n\n\"Most likely: moisture or humidity stress—not a fixed watering schedule. Boston ferns want consistently moist soil (never soggy) and humid air. If the root ball dries between waterings or the room is dry, tip burn develops. Fertilizer salts can worsen it.\n\n1. Check soil 2–3 cm down. Water thoroughly when barely dry; let excess drain, and never leave the pot standing in water.\n2. Increase humidity with a pebble tray, humidifier, or regular misting. Keep the fern away from radiators and vents.\n3. Trim crispy tips with clean scissors. Flush the pot to remove salts; if soil smells sour or stays wet, repot in fresh, well-draining mix. Pause fertilizer until healthy new growth appears.\"\n\nCount: Most1 likely2 moisture3 or4 humidity5 stress6 not7 a8 fixed9 watering10 schedule11 Boston12 ferns13 want14 consistently15 moist16 soil17 never18 soggy19 an"
+    },
+    "fresh_task_after_removal": {
+      "label": "fresh_task_after_removal",
+      "task": "The lower leaves of my snake plant are turning yellow and mushy at the base. What is likely wrong and what should I do?",
+      "thread_id": "9b351b15-8c36-43da-86c7-901f46306de7",
+      "runs": [
+        {
+          "run_id": "2e4d062f-8884-4b20-a8fc-50c124ff43bc",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "9b351b15-8c36-43da-86c7-901f46306de7",
+              "runId": "2e4d062f-8884-4b20-a8fc-50c124ff43bc",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "RUN_ERROR",
+              "code": "",
+              "message": "graph_routing_selection_invalid"
+            }
+          ]
+        }
+      ],
+      "wire_run_id": "2e4d062f-8884-4b20-a8fc-50c124ff43bc",
+      "selection": null,
+      "selection_count": 0,
+      "error": {
+        "type": "RUN_ERROR",
+        "code": "",
+        "message": "graph_routing_selection_invalid"
+      },
+      "outcome": null,
+      "answer": "",
+      "disposition": "refused_without_fallback"
+    },
+    "unmatched_intent": {
+      "label": "unmatched_intent",
+      "task": "In one sentence, suggest a cheese that pairs well with a dry Riesling.",
+      "thread_id": "1e84ad94-ca4c-4211-895f-af74ff5ed485",
+      "runs": [
+        {
+          "run_id": "c840cea6-3928-4c35-8bc5-5375ea30d35b",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "1e84ad94-ca4c-4211-895f-af74ff5ed485",
+              "runId": "c840cea6-3928-4c35-8bc5-5375ea30d35b",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "TOOL_CALL_START",
+              "toolCallId": "17a7e018-74b4-4b4b-bd47-951f31834e04",
+              "toolCallName": "spawn_agent"
+            },
+            {
+              "type": "TOOL_CALL_ARGS",
+              "toolCallId": "17a7e018-74b4-4b4b-bd47-951f31834e04",
+              "delta": "{\"operation\":\"spawn_agent\",\"detailsAvailable\":false}"
+            },
+            {
+              "type": "TOOL_CALL_END",
+              "toolCallId": "17a7e018-74b4-4b4b-bd47-951f31834e04"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "1e84ad94-ca4c-4211-895f-af74ff5ed485",
+              "runId": "c840cea6-3928-4c35-8bc5-5375ea30d35b",
+              "outcome": {
+                "type": "interrupt",
+                "interrupts": [
+                  {
+                    "id": "8c382d4a-e9f1-45c9-9e6e-90d4ee1acf51",
+                    "reason": "tool_approval",
+                    "message": "Approve spawn_agent",
+                    "toolCallId": "17a7e018-74b4-4b4b-bd47-951f31834e04",
+                    "expiresAt": "2026-10-27T11:36:23.848958+00:00",
+                    "responseSchema": {
+                      "type": "object",
+                      "properties": {
+                        "approved": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "approved"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "run_id": "d55aa954-6428-4303-84c4-2f1e58696911",
+          "events": [
+            {
+              "type": "RUN_STARTED",
+              "threadId": "1e84ad94-ca4c-4211-895f-af74ff5ed485",
+              "runId": "d55aa954-6428-4303-84c4-2f1e58696911",
+              "protocolVersion": "1.0"
+            },
+            {
+              "type": "CUSTOM",
+              "name": "uar.agent.selected",
+              "value": {
+                "sourceAgentId": "orchestrator-agent",
+                "agent": {
+                  "id": "default-agent",
+                  "title": "Default Assistant"
+                },
+                "selectedThreadId": "4219752a-b648-43fd-9449-59f66578a550",
+                "selectionMethod": "intent",
+                "rosterRevision": "eb8d082daf06a479b36a6a649f1b86b32ac643c3c4ae948eeb83bdf3bcd250da"
+              },
+              "threadId": "1e84ad94-ca4c-4211-895f-af74ff5ed485",
+              "runId": "d55aa954-6428-4303-84c4-2f1e58696911",
+              "agentId": "orchestrator-agent"
+            },
+            {
+              "type": "TEXT_MESSAGE_START",
+              "messageId": "d55aa954-6428-4303-84c4-2f1e58696911:assistant",
+              "role": "assistant"
+            },
+            {
+              "type": "TEXT_MESSAGE_CONTENT",
+              "messageId": "d55aa954-6428-4303-84c4-2f1e58696911:assistant",
+              "delta": "[default-agent]\n\nTry a dry, aged goat cheese like **Chèvre des(entry)**: its tangy, creamy body and earthy finish cut through the Riesling's high acidity while matching its mineral, petrol-like edge."
+            },
+            {
+              "type": "TEXT_MESSAGE_END",
+              "messageId": "d55aa954-6428-4303-84c4-2f1e58696911:assistant"
+            },
+            {
+              "type": "RUN_FINISHED",
+              "threadId": "1e84ad94-ca4c-4211-895f-af74ff5ed485",
+              "runId": "d55aa954-6428-4303-84c4-2f1e58696911",
+              "outcome": {
+                "type": "success"
+              }
+            }
+          ]
+        }
+      ],
+      "approval": {
+        "interrupt_id": "8c382d4a-e9f1-45c9-9e6e-90d4ee1acf51",
+        "tool": "spawn_agent",
+        "approved": true,
+        "parent_run_id": "c840cea6-3928-4c35-8bc5-5375ea30d35b"
+      },
+      "wire_run_id": "d55aa954-6428-4303-84c4-2f1e58696911",
+      "selection": {
+        "sourceAgentId": "orchestrator-agent",
+        "agent": {
+          "id": "default-agent",
+          "title": "Default Assistant"
+        },
+        "selectedThreadId": "4219752a-b648-43fd-9449-59f66578a550",
+        "selectionMethod": "intent",
+        "rosterRevision": "eb8d082daf06a479b36a6a649f1b86b32ac643c3c4ae948eeb83bdf3bcd250da"
+      },
+      "selection_count": 1,
+      "error": null,
+      "outcome": {
+        "type": "success"
+      },
+      "answer": "[default-agent]\n\nTry a dry, aged goat cheese like **Chèvre des(entry)**: its tangy, creamy body and earthy finish cut through the Riesling's high acidity while matching its mineral, petrol-like edge.",
+      "disposition": "routed_to_eligible_agent"
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/writing-specialist",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"writing-specialist\",\"metadata\":{\"title\":\"Blog and Article Writer\",\"description\":\"Professional writing specialist for blog posts, articles, editorial drafts, storytelling, copywriting and clear engaging prose for a requested audience.\",\"tags\":[\"writing\",\"blog\",\"articles\",\"editorial\",\"copywriting\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a professional blog and article writer. Create publishable drafts with clear headlines, coherent paragraphs and engaging prose. Follow the requested topic, audience, tone and approximate length. End every draft with your exact byline: By Wren Editor (writer-76b5104d). Provide the final draft directly, without planning commentary.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:588f01753bdbb6d27324f13d808412e5dd4f9efe3f98cec9f4edb8b14d1b0389\",\"source\":{\"kind\":\"uar_api\",\"id\":\"writing-specialist\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents",
+      "status": 200,
+      "response": "{\"runtime_agents\":[{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialis"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-plant-clinic-6a9624bd",
+        "metadata": {
+          "title": "Houseplant Care Diagnostician",
+          "description": "Diagnoses houseplant health problems such as browning or yellowing leaves, crispy fronds, root rot, overwatering, underwatering, humidity, light and pests for ferns, succulents and other indoor plants.",
+          "tags": [
+            "houseplants",
+            "plant care",
+            "gardening",
+            "plant diagnosis",
+            "ferns"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You are a houseplant care diagnostician. Diagnose the most likely cause of the described plant problem and give two or three concrete care steps, in at most 120 words. End every answer with this exact signature on its own line: Fernwell Plant Clinic FERNWELL-43CB319C",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-plant-clinic-6a9624bd\",\"metadata\":{\"title\":\"Houseplant Care Diagnostician\",\"description\":\"Diagnoses houseplant health problems such as browning or yellowing leaves, crispy fronds, root rot, overwatering, underwatering, humidity, light and pests for ferns, succulents and other indoor plants.\",\"tags\":[\"houseplants\",\"plant care\",\"gardening\",\"plant diagnosis\",\"ferns\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a houseplant care diagnostician. Diagnose the most likely cause of the described plant problem and give two or three concrete care steps, in at most 120 words. End every answer with this exact signature on its own line: Fernwell Plant Clinic FERNWELL-43CB319C\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:615a6eed40543db7e6bf29f6c569566fbf362029f937d6a2fb9058f465ad7a67\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-plant-clinic-6a9624bd\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents",
+      "status": 200,
+      "response": "{\"runtime_agents\":[{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-plant-clinic-6a9624bd\",\"metadata\":{\"title\":\"Houseplant Care Diagnostician\",\"description\":\"Diagnoses houseplant health problems such as browning or yellowing leaves, crispy fronds, root rot, overwatering, underwatering, humidity, light and pests for ferns, succulents and other indoor plants.\",\"tags\":[\"houseplants\",\"plant care\",\"gardening\",\"plant diagnosis\",\"ferns\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a houseplant care diagnostician. Diagnose the most likely cause of the described plant problem and give two or three concrete care steps, in at most 120 words. End every answer with this exact signature on its own line: Fernwell Plant Clinic FERNWELL-43CB319C\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:615a6eed40543db7e6bf29f6c569566fbf362029f937d6a2fb9058f465ad7a67\",\"source\":{\"k"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-plant-clinic-6a9624bd",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-plant-clinic-6a9624bd",
+      "status": 404,
+      "response": "Persisted agent not found"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents",
+      "status": 200,
+      "response": "{\"runtime_agents\":[{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}},{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialis"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/34acf6ee-9a55-40ff-a4f3-3411d3c32048",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/9b351b15-8c36-43da-86c7-901f46306de7",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/1e84ad94-ca4c-4211-895f-af74ff5ed485",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:77a7384a1cde2e05c0839eec96c7e6e03e0a0296690598ed1793cc6a2c089e38\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/writing-specialist",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"writing-specialist\",\"metadata\":{\"title\":\"Blog and Article Writer\",\"description\":\"Professional writing specialist for blog posts, articles, editorial drafts, storytelling, copywriting and clear engaging prose for a requested audience.\",\"tags\":[\"writing\",\"blog\",\"articles\",\"editorial\",\"copywriting\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a professional blog and article writer. Create publishable drafts with clear headlines, coherent paragraphs and engaging prose. Follow the requested topic, audience, tone and approximate length. End every draft with your exact byline: By Wren Editor (writer-76b5104d). Provide the final draft directly, without planning commentary.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:588f01753bdbb6d27324f13d808412e5dd4f9efe3f98cec9f4edb8b14d1b0389\",\"source\":{\"kind\":\"uar_api\",\"id\":\"writing-specialist\",\"revision\":\"1.0.0\"}}}}"
+    }
+  ],
+  "agent_id": "disposable-plant-clinic-6a9624bd",
+  "marker": "FERNWELL-43CB319C",
+  "result": "VERIFIED",
+  "disposable_agent_deleted": true,
+  "saved_agents_retained": true,
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 39011
+}

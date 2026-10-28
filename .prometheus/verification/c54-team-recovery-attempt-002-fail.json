@@ -1,0 +1,34 @@
+{
+  "catalog_id": "C54",
+  "attempt": 2,
+  "classification": "script failure (task prompt invites teammate tool use), not a recovery defect",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team-recovery.cucumber.mjs",
+  "cucumber_summary": "1 scenario (1 failed); 14 steps (11 passed, 2 skipped, 1 failed); 2m 18.45s",
+  "evidence": ".prometheus/verification/team-recovery/388e3add-c00a-4ae2-bd17-da95d695de09.json",
+  "failed_step": "When I submit an explicit replacement note and a replacement join over the settled tally artifact",
+  "observed": {
+    "replacement_note_attempt": {
+      "id": "1c2480ed-a2c6-4115-9c8c-29c73400ea1a",
+      "runId": "4ab410c3-38d2-4c26-ad13-2910f63f24d6",
+      "status": "failed",
+      "stateReason": "team_tool_application_or_transport_failed",
+      "usage": {
+        "tokens": 39055,
+        "costMicrounits": 17164,
+        "elapsedSeconds": 73
+      }
+    },
+    "model_tool_calls": [
+      "team_roster",
+      "team_delegate (denied by governance policy)",
+      "team_send (denied)",
+      "team_wait (TEAM_SCOPE_DENIED)",
+      "team_delegate (denied)",
+      "final text"
+    ],
+    "comparison": "The passing C36 note (attempt 13a92a70) also issued denied team_delegate/team_send calls but never team_wait, and succeeded. Both C54 replacement notes called team_wait, whose TEAM_SCOPE_DENIED tool failure marks the attempt failed (runtime/team_execution/execution.rs:176-192); governance denials come from runtime/manager.rs:7517-7524.",
+    "cause": "The writer is the coordinator of a mission that names the tally; with the C36 note wording the model still tried to obtain the tally from the math member. Model-behaviour sensitivity to the prompt; the recovery path under test passed every step before this one.",
+    "recovery_steps_passed_before_failure": "tally settled; note cancelled -> cancelled (reserved-unknown); restart; tally artifact/attempt/calls byte-identical; cancelled note calls unchanged; recover returned []; original join release probe 409"
+  },
+  "fix": "State in the replacement note request that it needs no tally or teammate input and must not contact, delegate to or wait for teammates; no product code change."
+}

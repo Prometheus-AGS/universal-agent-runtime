@@ -1,0 +1,129 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "same-dimension-embedding-change-requires-regeneration;regenerate-a-retained-document-after-switching-to-a-different-model-of-the-same-width",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Regenerate a retained document after switching to a different model of the same width",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 719574885
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable knowledge base indexed with the original embedding model",
+            "match": {
+              "location": "scripts/behaviors/steps/embedding-same-dimension.steps.mjs:57"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13056743522
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I change the active embedding model to a different model with the same vector dimension",
+            "match": {
+              "location": "scripts/behaviors/steps/embedding-same-dimension.steps.mjs:102"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7484551
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the old knowledge index refuses retrieval despite the equal dimension",
+            "match": {
+              "location": "scripts/behaviors/steps/embedding-same-dimension.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1085144569
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I regenerate the knowledge index from its retained document",
+            "match": {
+              "location": "scripts/behaviors/steps/embedding-same-dimension.steps.mjs:127"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 371797870
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "retrieval returns the original private fact using the new embedding space",
+            "match": {
+              "location": "scripts/behaviors/steps/embedding-same-dimension.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15245220648
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9lbWJlZGRpbmctc2FtZS1kaW1lbnNpb24vMDU5N2NjNDMtNDI5NC00YTE3LWE5MjktMzc4ZDk1NmY1OGEwLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge",
+            "line": 1
+          },
+          {
+            "name": "@embedding",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "same-dimension-embedding-change-requires-regeneration",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Same-dimension embedding change requires regeneration",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge",
+        "line": 1
+      },
+      {
+        "name": "@embedding",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/embedding-same-dimension.feature"
+  }
+]

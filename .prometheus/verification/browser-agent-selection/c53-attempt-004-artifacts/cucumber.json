@@ -1,0 +1,119 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "the-browser-shows-orchestrator-agent-selection-before-the-answer;a-writing-task-and-then-a-math-task-show-each-selected-specialist-first",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A writing task and then a math task show each selected specialist first",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math and writing specialists and an orchestrator conversation in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 2318000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a writing task in that conversation through the browser",
+            "result": {
+              "status": "passed",
+              "duration": 17773000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the browser shows the writing specialist selection before its specialist answer",
+            "result": {
+              "status": "passed",
+              "duration": 1577000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I send a math task in the same conversation through the browser",
+            "result": {
+              "status": "failed",
+              "duration": 302868000000,
+              "error_message": "AssertionError: math_turn run failed\n+ actual - expected\n\n+ [\n+   {\n+     code: '',\n+     eventId: '15:8',\n+     message: \"AgentNode 'selected-agent' failed: Tool lease or budget reservation expired before claim\",\n+     profile: 'uar.agui/1',\n+     runId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n+     sequence: 240,\n+     threadId: 'c627a4a9-3237-4cee-a898-3141b3f46050',\n+     type: 'RUN_ERROR'\n+   }\n+ ]\n- []\n\n   at ../../scripts/behaviors/browser/browser-agent-selection.steps.mjs:172\n\n  170 |     stream_selection_index: selections.length ? events.indexOf(selections[0]) : -1,\n  171 |     stream_first_text_index: events.findIndex(e => e.type === 'TEXT_MESSAGE_CONTENT') });\n> 172 |   assert.deepEqual(errors, [], `${label} run failed`);\n      |          ^\n  173 |   assert.equal(starts.length, 1, `${label}: exactly one run`);\n  174 |   assert.equal(finishes.length, 1, `${label}: exactly one terminal event`);\n  175 |   assert.equal(starts[0].runId, finishes[0].runId);\n\n    at sendTurn (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:172:10)\n    at Object.<anonymous> (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser/browser-agent-selection.steps.mjs:282:12)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated/features/browser-agent-selection.feature.spec.js:10:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the browser shows the math specialist selection before its specialist answer",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "each selected specialist matches execution with no duplicate answer or run",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 3855000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@routing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "the-browser-shows-orchestrator-agent-selection-before-the-answer",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "The browser shows orchestrator agent selection before the answer",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@routing",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-agent-selection.feature"
+  }
+]
