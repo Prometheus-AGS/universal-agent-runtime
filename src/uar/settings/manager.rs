@@ -526,6 +526,26 @@ impl SettingsManager {
         Ok(self.get_typed_for_admission("skills.matching.engine").await?.unwrap_or_default())
     }
 
+    /// Resolve the intent classifier from its committed `intent_classifier.*` settings.
+    /// A setting that is absent keeps the corresponding value of `fallback`.
+    pub async fn intent_classifier_config_for_admission(
+        &self,
+        fallback: &crate::uar::runtime::matching::intent::ClassifierConfig,
+    ) -> Result<crate::uar::runtime::matching::intent::ClassifierConfig> {
+        Ok(crate::uar::runtime::matching::intent::ClassifierConfig {
+            backend: self.get_typed_for_admission("intent_classifier.backend").await?
+                .unwrap_or_else(|| fallback.backend.clone()),
+            topk: self.get_typed_for_admission("intent_classifier.topk").await?
+                .unwrap_or(fallback.topk),
+            accept_threshold: self.get_typed_for_admission("intent_classifier.accept_threshold").await?
+                .unwrap_or(fallback.accept_threshold),
+            margin_threshold: self.get_typed_for_admission("intent_classifier.margin_threshold").await?
+                .unwrap_or(fallback.margin_threshold),
+            wasm_component_path: self.get_typed_for_admission("intent_classifier.wasm_component_path").await?
+                .unwrap_or_else(|| fallback.wasm_component_path.clone()),
+        })
+    }
+
     /// Conditionally update only Presentation intent, without replacing other policy fields.
     pub async fn update_presentation_assignment(
         &self,

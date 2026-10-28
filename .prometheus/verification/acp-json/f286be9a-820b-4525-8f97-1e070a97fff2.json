@@ -1,0 +1,41 @@
+{
+  "scenario": "I08-ACP-JSON-DEFAULT",
+  "client_platform": "darwin",
+  "agent_id": "default-agent",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "protocol": "ACP JSON-RPC POST /acp/ sessions/create, runs/create (no stream), runs/get",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "0f6bdfa9-d8e3-4013-a4f2-8040c2f65b94",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "default-agent"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"0f6bdfa9-d8e3-4013-a4f2-8040c2f65b94\",\"result\":{\"session_id\":\"ace4b4f2-83e3-47b2-8148-6692a7fc899f\",\"agent_id\":\"default-agent\",\"created_at\":\"2026-10-28T20:38:51.063204Z\",\"last_active\":\"2026-10-28T20:38:51.063204Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "e31b1b1b-c0de-4bf0-9967-e200e8084c78",
+        "method": "sessions/delete",
+        "params": {
+          "session_id": "ace4b4f2-83e3-47b2-8148-6692a7fc899f"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"e31b1b1b-c0de-4bf0-9967-e200e8084c78\",\"result\":{\"deleted\":true,\"session_id\":\"ace4b4f2-83e3-47b2-8148-6692a7fc899f\"}}"
+    }
+  ],
+  "session_id": "ace4b4f2-83e3-47b2-8148-6692a7fc899f",
+  "scenario_status": "UNDEFINED",
+  "duration_ms": 50
+}

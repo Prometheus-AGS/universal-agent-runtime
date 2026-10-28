@@ -1,0 +1,109 @@
+{
+  "scenario": "I08-ACP-JSON-DEFAULT",
+  "client_platform": "darwin",
+  "agent_id": "default-agent",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "protocol": "ACP JSON-RPC POST /acp/ sessions/create, runs/create (no stream), runs/get",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "a1bc16a4-bdf3-4fde-8ad6-a143908f338d",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "default-agent"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"a1bc16a4-bdf3-4fde-8ad6-a143908f338d\",\"result\":{\"session_id\":\"1aac45e7-5d2e-4a45-a5b7-a89cffacd764\",\"agent_id\":\"default-agent\",\"created_at\":\"2026-10-28T20:38:59.948261Z\",\"last_active\":\"2026-10-28T20:38:59.948261Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "d2802920-f2d1-4f71-a665-384228453b92",
+        "method": "runs/create",
+        "params": {
+          "session_id": "1aac45e7-5d2e-4a45-a5b7-a89cffacd764",
+          "input": "What is (32 multiplied by 19) plus 164? Reply with only a JSON object {\"answer\": <number>}."
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"d2802920-f2d1-4f71-a665-384228453b92\",\"result\":{\"run_id\":\"72466005-0545-4031-9af2-3af85b7ddba9\",\"status\":\"running\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "22d7ab69-3e87-4c6f-a452-38d9f839bbb1",
+        "method": "runs/get",
+        "params": {
+          "run_id": "72466005-0545-4031-9af2-3af85b7ddba9"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"22d7ab69-3e87-4c6f-a452-38d9f839bbb1\",\"result\":{\"run_id\":\"72466005-0545-4031-9af2-3af85b7ddba9\",\"status\":\"Running\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1aac45e7-5d2e-4a45-a5b7-a89cffacd764\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "d312f525-d293-4b80-85f2-95fde96f58bd",
+        "method": "runs/get",
+        "params": {
+          "run_id": "72466005-0545-4031-9af2-3af85b7ddba9"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"d312f525-d293-4b80-85f2-95fde96f58bd\",\"result\":{\"run_id\":\"72466005-0545-4031-9af2-3af85b7ddba9\",\"status\":\"Running\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1aac45e7-5d2e-4a45-a5b7-a89cffacd764\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "255d4027-5028-43eb-bda9-5dab44af3068",
+        "method": "runs/get",
+        "params": {
+          "run_id": "72466005-0545-4031-9af2-3af85b7ddba9"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"255d4027-5028-43eb-bda9-5dab44af3068\",\"result\":{\"run_id\":\"72466005-0545-4031-9af2-3af85b7ddba9\",\"status\":\"Done\",\"agent_id\":\"default-agent\",\"conversation_id\":\"1aac45e7-5d2e-4a45-a5b7-a89cffacd764\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "069b943f-2df1-4623-b83b-66395a75f02d",
+        "method": "sessions/delete",
+        "params": {
+          "session_id": "1aac45e7-5d2e-4a45-a5b7-a89cffacd764"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"069b943f-2df1-4623-b83b-66395a75f02d\",\"result\":{\"deleted\":true,\"session_id\":\"1aac45e7-5d2e-4a45-a5b7-a89cffacd764\"}}"
+    }
+  ],
+  "session_id": "1aac45e7-5d2e-4a45-a5b7-a89cffacd764",
+  "expected": 772,
+  "run_id": "72466005-0545-4031-9af2-3af85b7ddba9",
+  "create_status": "running",
+  "final_run": {
+    "run_id": "72466005-0545-4031-9af2-3af85b7ddba9",
+    "status": "Done",
+    "agent_id": "default-agent",
+    "conversation_id": "1aac45e7-5d2e-4a45-a5b7-a89cffacd764",
+    "pending_client_tools": null,
+    "client_tool_continuation": null
+  },
+  "scenario_status": "FAILED",
+  "duration_ms": 4615
+}

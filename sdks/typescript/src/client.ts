@@ -1,4 +1,3 @@
-import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
 import { z, type ZodType } from "zod";
 import * as schemas from "./schemas.js";
 import type {
@@ -116,15 +115,44 @@ export class UarClient {
   private stream(path: string, init: { method?: string; body?: unknown; headers?: HeadersInit }, options: StreamOptions = {}): AsyncIterable<SseEvent> {
     const output = new EventStream<SseEvent>();
     const headers = this.requestHeaders(init.headers, init.body);
+    headers.set("accept", "text/event-stream");
     if (options.lastEventId) headers.set("last-event-id", options.lastEventId);
-    void fetchEventSource(`${this.baseUrl}${path}`, {
-      method: init.method, headers: Object.fromEntries(headers.entries()), body: init.body === undefined ? undefined : JSON.stringify(init.body), signal: options.signal,
-      openWhenHidden: true, fetch: this.fetcher,
-      onopen: async (response) => { if (!response.ok) throw new UarSdkError(`SSE request failed with ${response.status}`, response.status, await this.readBody(response)); },
-      onmessage: (message: EventSourceMessage) => output.push({ id: message.id || undefined, event: message.event || undefined, data: this.parseEventData(message.data) }),
-      onclose: () => output.close(), onerror: (error) => { output.fail(error); throw error; },
-    }).catch((error: unknown) => output.fail(error));
+    const request = { method: init.method, headers, body: init.body === undefined ? undefined : JSON.stringify(init.body), signal: options.signal };
+    void this.readEvents(`${this.baseUrl}${path}`, request, output)
+      .then(() => output.close(), (error: unknown) => (options.signal?.aborted ? output.close() : output.fail(error)));
     return output;
+  }
+
+  // Parses SSE with fetch alone, so streaming works in Node as well as in browsers.
+  private async readEvents(url: string, init: RequestInit, output: EventStream<SseEvent>): Promise<void> {
+    const response = await this.fetcher(url, init);
+    if (!response.ok) throw new UarSdkError(`SSE request failed with ${response.status}`, response.status, await this.readBody(response));
+    if (!response.body) throw new UarSdkError("SSE response had no body", response.status);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let message: { id?: string; event?: string; data: string[] } = { data: [] };
+    const dispatch = () => {
+      if (message.data.length) output.push({ id: message.id, event: message.event, data: this.parseEventData(message.data.join("\n")) });
+      message = { data: [] };
+    };
+    for (;;) {
+      const { done, value: bytes } = await reader.read();
+      buffer += decoder.decode(bytes, { stream: !done });
+      const lines = buffer.split(/\r?\n/);
+      buffer = done ? "" : lines.pop() ?? "";
+      for (const line of lines) {
+        if (line === "") { dispatch(); continue; }
+        if (line.startsWith(":")) continue;
+        const colon = line.indexOf(":");
+        const field = colon === -1 ? line : line.slice(0, colon);
+        const fieldValue = colon === -1 ? "" : line.slice(colon + 1).replace(/^ /, "");
+        if (field === "data") message.data.push(fieldValue);
+        else if (field === "event") message.event = fieldValue || undefined;
+        else if (field === "id") message.id = fieldValue || undefined;
+      }
+      if (done) { dispatch(); return; }
+    }
   }
 
   private requestHeaders(extra?: HeadersInit, body?: unknown): Headers {

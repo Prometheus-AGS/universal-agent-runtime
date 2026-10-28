@@ -1,0 +1,181 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "shipped-typescript-sdk-unary-and-streamed-completions;the-typescript-sdk's-unary-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The TypeScript SDK's unary chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 69475147
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for the TypeScript SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:43"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10909140765
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the shipped TypeScript SDK sends a fresh calculation and then a dependent follow-up with chat.complete",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:84"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18325385
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both TypeScript SDK completions stop with the agent's marker and correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 102839438
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90eXBlc2NyaXB0LXNkay1tb2Rlcy85YzFjZTkwMS02MDcyLTRlMTYtYjkxZC05ZTY2NjgxYzVkOTguanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@typescript",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "shipped-typescript-sdk-unary-and-streamed-completions;the-typescript-sdk's-streamed-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The TypeScript SDK's streamed chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37711817
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for the TypeScript SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:43"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 4556981681,
+              "error_message": "Error: TypeScript SDK client exited 1: /Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/@microsoft/fetch-event-source/lib/cjs/fetch.js:39\n            document.removeEventListener('visibilitychange', onVisibilityChange);\n            ^\n\nReferenceError: document is not defined\n    at dispose (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/@microsoft/fetch-event-source/lib/cjs/fetch.js:39:13)\n    at create (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/@microsoft/fetch-event-source/lib/cjs/fetch.js:77:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n\nNode.js v24.18.0\n\n    at dispose (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/@microsoft/fetch-event-source/lib/cjs/fetch.js:39:13)\n    at create (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/sdks/typescript/node_modules/@microsoft/fetch-event-source/lib/cjs/fetch.js:77:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at ChildProcess.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:38:14)\n    at ChildProcess.emit (node:events:509:28)\n    at maybeClose (node:internal/child_process:1124:16)\n    at Socket.<anonymous> (node:internal/child_process:481:11)\n    at Socket.emit (node:events:509:28)\n    at Pipe.<anonymous> (node:net:351:12)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "the shipped TypeScript SDK sends a fresh calculation and then a dependent follow-up with chat.stream",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both TypeScript SDK streams deliver incremental text to one stop with correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:120"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 119044552
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90eXBlc2NyaXB0LXNkay1tb2Rlcy83NDE4NzJiOC0yYzlmLTRjZmItOTE3OC0wZDM3YmY4ODI4NGUuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@typescript",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "shipped-typescript-sdk-unary-and-streamed-completions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Shipped TypeScript SDK unary and streamed completions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@sdk",
+        "line": 1
+      },
+      {
+        "name": "@typescript",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/typescript-sdk-modes.feature"
+  }
+]

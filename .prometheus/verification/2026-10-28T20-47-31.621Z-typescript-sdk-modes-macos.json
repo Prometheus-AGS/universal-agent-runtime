@@ -1,0 +1,103 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "shipped-typescript-sdk-unary-and-streamed-completions;the-typescript-sdk's-streamed-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The TypeScript SDK's streamed chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 74494147
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for the TypeScript SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:43"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8866935271
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "the shipped TypeScript SDK sends a fresh calculation and then a dependent follow-up with chat.stream",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 25432015
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both TypeScript SDK streams deliver incremental text to one stop with correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/typescript-sdk-modes.steps.mjs:120"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 89632723
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90eXBlc2NyaXB0LXNkay1tb2Rlcy83MDRhYzM1Ni05YjI5LTQ0N2EtOGFmYy0wMWYyY2M2MjgxNTEuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@typescript",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "shipped-typescript-sdk-unary-and-streamed-completions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Shipped TypeScript SDK unary and streamed completions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@sdk",
+        "line": 1
+      },
+      {
+        "name": "@typescript",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/typescript-sdk-modes.feature"
+  }
+]

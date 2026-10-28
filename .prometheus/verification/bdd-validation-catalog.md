@@ -7,9 +7,9 @@ Prepared 2026-10-27 during `uar-verification-simplification`. This is the concre
 | Priority | Concrete scenario definitions | Existing Mac outcome credit | Remaining on Mac |
 |---|---:|---:|---:|
 | Common user workflows, C01–C54 | 54 | 54 | **0** |
-| Additional configuration and resilience, E01–E28 | 28 | 16 | 12 |
-| Remaining public client/mode contracts, I01–I20 | 20 | 11 | 9 |
-| **Full proposed baseline** | **102** | **81** | **21** |
+| Additional configuration and resilience, E01–E28 | 28 | 21 | 7 |
+| Remaining public client/mode contracts, I01–I20 | 20 | 14 | 6 |
+| **Full proposed baseline** | **102** | **89** | **13** |
 
 Updated 2026-10-28: the common row now reflects the C-series passes recorded below (it still showed 33). New Mac passes:
 
@@ -34,6 +34,12 @@ Updated 2026-10-28: the common row now reflects the C-series passes recorded bel
 | E08 | [unknown-tool-effect](unknown-tool-effect/) | 1; the run ends `error` by design (fail-closed on an unknown outcome) |
 | E26 | [skill-all-policy](skill-all-policy/) | 1; rewritten to the user outcome on the real installed skill set (operator 2026-10-28), not an isolated {A,B} universe |
 | I19 | [agui-route-a2ui](agui-route-a2ui/) | 3 on binary `50ac01d6…`; attempt 1 lacked `UAR_WORKSPACE_ID`/`UAR_MODEL` in the invocation, attempt 2 read web_core's component `Map` as entries (test defect). Proven: render, two clicks answered with each client-only note, late attach re-renders with no tool call, forged action 422 |
+| I11 | [typescript-sdk-modes](typescript-sdk-modes/) | 1; the SDK's own `chat.complete` from `sdks/typescript/dist`, rebuilt 2026-10-28 from current `src` with Node 24, no credentials |
+| I12 | [typescript-sdk-modes](typescript-sdk-modes/) | 2 on the fixed SDK; attempt 1 was the product defect below (Node streaming crash), fixed by a fetch-based SSE reader in `sdks/typescript/src/client.ts` |
+| I08 | [acp-json](acp-json/) | 3 on binary `768cd6c3…`, default and custom agents; attempt 1 was a cucumber `/` test defect, attempt 2 the product defect below (no output from `runs/get`), fixed in `acp/handler.rs` |
+| E19, E21 | [skill-classifier-backends](skill-classifier-backends/) | 2 on binary `768cd6c3…`; attempt 1 was the inert-settings product defect below, fixed by resolving `intent_classifier.*` per turn (`settings/manager.rs`, `runtime/manager.rs`) |
+| E23, E24 | [skill-classifier-backends](skill-classifier-backends/) | 3 on binary `4d28673e…`; attempt 1 inert settings, attempt 2 the two product defects below, fixed: localembedding confidence calibrated from the unrelated-cosine floor (`intent/local_embedding.rs`), llm classifier ignores reasoning events and strips inline `<think>` and one code fence (`intent/mod.rs`) |
+| E18 | [skill-service-matchers](skill-service-matchers/) | 2 on binary `4d28673e…`; attempt 1 failed admission (masked); the same llm-classifier parser fix cleared it |
 
 Partly proven on Mac 2026-10-28 (not credited): **E03** opt-out half, [memory-opt-out](memory-opt-out/), attempt 5. Opt-in capture and recall worked, the opt-out survived a restart, and a later fact was never captured. The retention-expiry half waits for genuinely aged data.
 
@@ -41,7 +47,13 @@ Observed product failures (not scenarios): asking the agent to remember somethin
 
 I19's earlier FAIL (the route dropped every A2UI event) is superseded by the pass above, after the A2UI activity slice.
 
-Failed on Mac 2026-10-28 (not credited): **E18** service llm matcher, run admission `skill_matching_unavailable`; cause hidden by `manager.rs:5450`. See the session log.
+Fixed and rerun on Mac 2026-10-28: I12, I08, E19 and E21 above. Their first failures stay on record in the session log (Node `document` crash in `@microsoft/fetch-event-source` 2.0.1; ACP `runs/get` without output; `intent_classifier.*` settings never read by production).
+
+Fixed and rerun on Mac 2026-10-28 (binary `4d28673e…`): E23 (threshold-only acceptance of raw cosine let the decoy and unrelated skills in), E24 and E18 (the llm classifier rejected MiniMax-M3 reasoning output; the matching error branch now logs its internal cause). Still open:
+
+- **E22** wasm: BLOCKED, `intent_classifier.wasm_component_path` is unset.
+
+E18's earlier failure (masked `skill_matching_unavailable`) is superseded by the pass above.
 
 Every attempt is in `.prometheus/session-log.md`. These are the ready queue in `validation-queue-2026-10-28.md`.
 
