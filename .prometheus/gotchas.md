@@ -2227,3 +2227,5 @@ unverified, or its configuration changed",
 The A2UI plan put unit tests and a typecheck into the gate, repeating the 2026-10-27 gotcha "Gate plans must follow the real-path evidence rule" (gotchas.md:2211), which the lead had not read before planning. Root cause: gotchas.md was not read before the subsystem work, as the project rules require. Gate corrected to build -> validate -> owned restart -> BDD + raw-evidence review.
 
 - 2026-10-28: The Bash tool's default `node` is nvm v10.14.1 (first on PATH), which fails `tsup` and other modern tooling with `internal/modules/cjs/loader.js` errors. Put `/usr/local/bin` (Node v24.18.0) first: `export PATH=/usr/local/bin:$PATH`. The TypeScript SDK requires Node >=20; its `dist/` was stale (July 14) relative to `src/` (October 25) until rebuilt.
+
+- 2026-10-28: Before calling a protocol behaviour a product defect, grep for its doc comment and the repo's own tests and acceptance clients. Legacy gRPC `MessageStream` returns one status snapshot by contract and is resolved with `TaskGet`; I misdiagnosed it from the BDD failure alone and proposed a product change the operator nearly approved.

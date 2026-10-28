@@ -1,0 +1,335 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions;legacy-grpc-messagesend-completes-and-continues-the-same-task",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Legacy gRPC MessageSend completes and continues the same task",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 75455939
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for gRPC",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8085917003
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a fresh calculation and then a dependent follow-up through legacy gRPC MessageSend",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 471093
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both legacy gRPC tasks complete with the agent's marker and the correct answers",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37645544
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ncnBjLW1vZGVzLzY3YWYyOTkxLTI2ZWQtNDQ2MS04YWNlLTYxMmEzODFmMmI1Yy5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@grpc",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions;legacy-grpc-messagestream-delivers-the-completed-task-and-continues-it",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "Legacy gRPC MessageStream delivers the completed task and continues it",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 43662216
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for gRPC",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 23983126,
+              "error_message": "Error: MessageStream: gRPC 9 task is active, closed, or cannot be cancelled\n    at ClientReadableStreamImpl.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/grpc-modes.steps.mjs:63:12)\n    at ClientReadableStreamImpl.emit (node:events:509:28)\n    at Object.onReceiveStatus (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/clients/grpc-a2a/node_modules/@grpc/grpc-js/build/src/client.js:359:28)\n    at Object.onReceiveStatus (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/clients/grpc-a2a/node_modules/@grpc/grpc-js/build/src/client-interceptors.js:327:181)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/clients/grpc-a2a/node_modules/@grpc/grpc-js/build/src/resolving-call.js:155:78\n    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I send a fresh calculation and then a dependent follow-up through legacy gRPC MessageStream",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:145"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both legacy gRPC streams end with a completed task carrying the agent's marker and the correct answers",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:153"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 38487822
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ncnBjLW1vZGVzLzQ5YWRmMTcwLTQxMWQtNGZiYy04Zjc2LTg0NjgwYzUzY2FhMi5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@grpc",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions;a2a-v1-grpc-sendmessage-completes-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "A2A v1 gRPC SendMessage completes and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 44681959
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "a disposable saved agent with a private instruction marker for gRPC",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8424980230
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "I send a fresh calculation and then a dependent follow-up through A2A v1 gRPC SendMessage",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:177"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 317082
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "both v1 gRPC tasks complete with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:187"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 34480198
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ncnBjLW1vZGVzLzE5YzFkZDc0LTZlNjYtNGE0MS05ZDMzLTY0MGQyZjViNzRkNC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@grpc",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions;a2a-v1-grpc-sendstreamingmessage-streams-to-a-completed-task-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 18,
+        "name": "A2A v1 gRPC SendStreamingMessage streams to a completed task in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 55366447
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 19,
+            "name": "a disposable saved agent with a private instruction marker for gRPC",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9250393965
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 20,
+            "name": "I send a fresh calculation and then a dependent follow-up through A2A v1 gRPC SendStreamingMessage",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:209"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 427079
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 21,
+            "name": "both v1 gRPC streams progress to a completed task with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:216"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 55267112
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ncnBjLW1vZGVzLzE4NzA3NjY0LTA5NDgtNDRkZi05YzZlLWVmNDc2NGFmYzE0ZC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@grpc",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Legacy and v1 A2A gRPC unary and streamed completions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@grpc",
+        "line": 1
+      },
+      {
+        "name": "@a2a",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/grpc-modes.feature"
+  }
+]

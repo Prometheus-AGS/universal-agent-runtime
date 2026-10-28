@@ -1,0 +1,10 @@
+{
+  "name": "uar-behavior-client-grpc-a2a",
+  "private": true,
+  "description": "Isolated gRPC client for the I15-I18 behaviour scenarios, loading UAR's shipped proto/a2a.proto and proto/a2a_v1.proto. Kept outside the pnpm workspace.",
+  "type": "module",
+  "dependencies": {
+    "@grpc/grpc-js": "1.14.6",
+    "@grpc/proto-loader": "0.8.1"
+  }
+}

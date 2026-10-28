@@ -24,4 +24,6 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 futures-util = "0.3"
 http = "1"
+# HTTP/2-only client for gRPC forwarding; reqwest drops the trailers gRPC needs.
+hyper-util = { version = "0.1", features = ["client-legacy", "http2", "tokio"] }
 dirs = "6"

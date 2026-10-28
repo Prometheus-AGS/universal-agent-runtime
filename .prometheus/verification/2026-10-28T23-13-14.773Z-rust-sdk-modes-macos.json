@@ -1,0 +1,180 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "shipped-rust-sdk-unary-and-streamed-completions;the-rust-sdk's-unary-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The Rust SDK's unary chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 94098387
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for the Rust SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/rust-sdk-modes.steps.mjs:42"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7872567068
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the shipped Rust SDK sends a fresh calculation and then a dependent follow-up with chat().complete",
+            "match": {
+              "location": "scripts/behaviors/steps/rust-sdk-modes.steps.mjs:83"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12560056
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both Rust SDK completions stop with the agent's marker and correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/rust-sdk-modes.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 141763965
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydXN0LXNkay1tb2Rlcy8yMjc5NzRiNS1iZWM4LTRkMjgtYjQwNi1kMjAwMDViYTIxZTAuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@rust",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "shipped-rust-sdk-unary-and-streamed-completions;the-rust-sdk's-streamed-chat-answers-and-continues-a-session-with-a-saved-agent",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The Rust SDK's streamed chat answers and continues a session with a saved agent",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 45836873
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for the Rust SDK",
+            "match": {
+              "location": "scripts/behaviors/steps/rust-sdk-modes.steps.mjs:42"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6018919359
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "the shipped Rust SDK sends a fresh calculation and then a dependent follow-up with chat().stream",
+            "match": {
+              "location": "scripts/behaviors/steps/rust-sdk-modes.steps.mjs:87"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16884709
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both Rust SDK streams deliver incremental text to one stop with correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/rust-sdk-modes.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 121267153
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydXN0LXNkay1tb2Rlcy82YzE0Y2Q0Ny04MDc4LTQ0ZjktYTEzMy1kMGY1OWIxMzdhNDAuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@sdk",
+            "line": 1
+          },
+          {
+            "name": "@rust",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "shipped-rust-sdk-unary-and-streamed-completions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Shipped Rust SDK unary and streamed completions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@sdk",
+        "line": 1
+      },
+      {
+        "name": "@rust",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/rust-sdk-modes.feature"
+  }
+]

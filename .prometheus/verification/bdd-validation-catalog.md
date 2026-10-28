@@ -8,8 +8,8 @@ Prepared 2026-10-27 during `uar-verification-simplification`. This is the concre
 |---|---:|---:|---:|
 | Common user workflows, C01–C54 | 54 | 54 | **0** |
 | Additional configuration and resilience, E01–E28 | 28 | 21 | 7 |
-| Remaining public client/mode contracts, I01–I20 | 20 | 14 | 6 |
-| **Full proposed baseline** | **102** | **89** | **13** |
+| Remaining public client/mode contracts, I01–I20 | 20 | 20 | **0** |
+| **Full proposed baseline** | **102** | **95** | **7** |
 
 Updated 2026-10-28: the common row now reflects the C-series passes recorded below (it still showed 33). New Mac passes:
 
@@ -40,6 +40,9 @@ Updated 2026-10-28: the common row now reflects the C-series passes recorded bel
 | E19, E21 | [skill-classifier-backends](skill-classifier-backends/) | 2 on binary `768cd6c3…`; attempt 1 was the inert-settings product defect below, fixed by resolving `intent_classifier.*` per turn (`settings/manager.rs`, `runtime/manager.rs`) |
 | E23, E24 | [skill-classifier-backends](skill-classifier-backends/) | 3 on binary `4d28673e…`; attempt 1 inert settings, attempt 2 the two product defects below, fixed: localembedding confidence calibrated from the unrelated-cosine floor (`intent/local_embedding.rs`), llm classifier ignores reasoning events and strips inline `<think>` and one code fence (`intent/mod.rs`) |
 | E18 | [skill-service-matchers](skill-service-matchers/) | 2 on binary `4d28673e…`; attempt 1 failed admission (masked); the same llm-classifier parser fix cleared it |
+| I13, I14 | [rust-sdk-modes](rust-sdk-modes/) | 1; the SDK's own `chat().complete`/`chat().stream` via the credential-free driver `sdks/rust/examples/bdd_sdk_turns.rs` (the existing `user_outcome_acceptance` example requires a bearer credential) |
+| I15, I17, I18 | [grpc-modes](grpc-modes/) | 1; `@grpc/grpc-js` 1.14.6 with the shipped protos, through the identity proxy's new gRPC listener (`tools/uar-jwt-proxy --grpc-listen`); no credentials in the test |
+| I16 | [grpc-modes](grpc-modes/) | 2; attempt 1 was a test defect: the scenario read the single status snapshot as final instead of resolving it with TaskGet, which is the documented legacy contract (`a2a/grpc.rs` `message_stream`, `tests/user_outcome_grpc.rs`) |
 
 Partly proven on Mac 2026-10-28 (not credited): **E03** opt-out half, [memory-opt-out](memory-opt-out/), attempt 5. Opt-in capture and recall worked, the opt-out survived a restart, and a later fact was never captured. The retention-expiry half waits for genuinely aged data.
 
