@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { randomInt, randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { createHash, randomInt, randomUUID } from 'node:crypto';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 import { parseAnswerJson } from '../support/answer-oracle.mjs';
@@ -8,6 +8,10 @@ import { parseAnswerJson } from '../support/answer-oracle.mjs';
 setDefaultTimeout(180_000);
 const ENGINE = 'skills.matching.engine';
 const BACKEND = 'intent_classifier.backend';
+const WASM_PATH = 'intent_classifier.wasm_component_path';
+// The keyword classifier guest built from scripts/acceptance/fixtures/intent-classifier-guest.
+const WASM_COMPONENT = process.env.UAR_CLASSIFIER_WASM
+  ?? 'target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm';
 
 async function request(w, method, path, payload, expected = 200) {
   const res = await fetch(new URL(path, w.base), {
@@ -80,6 +84,14 @@ Given('skill matching is switched to the intent classifier with the {word} backe
   this.originalBackend = await request(this, 'GET', `/api/uar/settings/${BACKEND}`);
   this.evidence.original_engine = this.originalEngine.effective;
   this.evidence.original_backend = this.originalBackend.effective;
+  if (backend === 'wasm') {
+    const component = resolve(WASM_COMPONENT);
+    this.evidence.wasm_component = { path: component, sha256: createHash('sha256').update(await readFile(component)).digest('hex') };
+    this.originalWasmPath = await request(this, 'GET', `/api/uar/settings/${WASM_PATH}`);
+    this.wasmPathChanged = true;
+    await request(this, 'PUT', `/api/uar/settings/${WASM_PATH}`, { value: component, expected_revision: this.originalWasmPath.revision });
+    assert.equal((await request(this, 'GET', `/api/uar/settings/${WASM_PATH}`)).effective, component);
+  }
   if (this.originalBackend.effective !== backend) {
     this.backendChanged = true;
     await request(this, 'PUT', `/api/uar/settings/${BACKEND}`, { value: backend, expected_revision: this.originalBackend.revision });
@@ -144,6 +156,14 @@ After(async function ({ result }) {
       this.evidence.restored_backend = (await request(this, 'GET', `/api/uar/settings/${BACKEND}`)).effective;
       assert.equal(this.evidence.restored_backend, this.originalBackend.effective);
     } catch (error) { errors.push(`Backend restore: ${error}`); }
+  }
+  if (this.wasmPathChanged) {
+    try {
+      const current = await request(this, 'GET', `/api/uar/settings/${WASM_PATH}`);
+      await request(this, 'PUT', `/api/uar/settings/${WASM_PATH}`, { value: this.originalWasmPath.saved, expected_revision: current.revision });
+      this.evidence.restored_wasm_path = (await request(this, 'GET', `/api/uar/settings/${WASM_PATH}`)).effective;
+      assert.deepEqual(this.evidence.restored_wasm_path, this.originalWasmPath.effective);
+    } catch (error) { errors.push(`WASM path restore: ${error}`); }
   }
   for (const path of [...this.owned].reverse()) {
     try { await request(this, 'DELETE', path, undefined, 204); }

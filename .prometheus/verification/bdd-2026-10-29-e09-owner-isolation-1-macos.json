@@ -1,0 +1,176 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "external-owner-contexts-isolate-runs-and-conversation-history;a-second-owner-can-neither-touch-the-first-owner's-run-nor-read-its-conversation",
+        "keyword": "Scenario",
+        "line": 5,
+        "name": "A second owner can neither touch the first owner's run nor read its conversation",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1508343202
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 6,
+            "name": "a disposable agent and owner A's private fact in a fresh session",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:62"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12369285
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "owner B reads owner A's run and its events and asks to cancel it",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:112"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5392559
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "owner B is refused each operation and owner A's run is unchanged",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4822333630
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "owner B asks about the fact in the same public session ID",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:131"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4648887
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "owner B's answer comes from its own empty partition without owner A's fact",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:138"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15103951270
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "the owned UAR restarts with its existing store",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:148"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2040342292
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "owner A asks about the fact in the same session without replaying it",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:154"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12525728
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "owner A still recalls the fact while owner B's run stays invisible to owner A",
+            "match": {
+              "location": "scripts/behaviors/steps/owner-isolation.steps.mjs:160"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 65460233
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9vd25lci1pc29sYXRpb24vYjZmYzI2NGItNWU5MC00YzBhLTg2ZTAtZDM3NjM2MTM3ZGMyLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@identity",
+            "line": 1
+          },
+          {
+            "name": "@isolation",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "external-owner-contexts-isolate-runs-and-conversation-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "External owner contexts isolate runs and conversation history",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@identity",
+        "line": 1
+      },
+      {
+        "name": "@isolation",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/owner-isolation.feature"
+  }
+]
