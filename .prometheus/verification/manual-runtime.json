@@ -4,7 +4,7 @@
   "method": "Manual BDD; authentication supplied externally, never by test scripts",
   "base_url": "http://127.0.0.1:60675",
   "runtime_url": "http://127.0.0.1:53587",
-  "runtime_pid": 96110,
+  "runtime_pid": 48316,
   "external_identity_pid": 3923,
   "model": "liter/MiniMax-M3",
   "workspace_id": "uar-user-outcomes-007-supporting-workspace",

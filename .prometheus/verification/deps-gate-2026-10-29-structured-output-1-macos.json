@@ -1,0 +1,100 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "structured-output-follows-the-supplied-schema;a-response_format-json-schema-shapes-the-final-answer",
+        "keyword": "Scenario",
+        "line": 5,
+        "name": "A response_format JSON schema shapes the final answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 76570089
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 6,
+            "name": "a disposable agent on a structured-output model with a schema holding a fresh discriminator",
+            "match": {
+              "location": "scripts/behaviors/steps/structured-output.steps.mjs:39"
+            }
+          },
+          {
+            "result": {
+              "status": "undefined",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I ask for a fresh calculation through \\/v1\\/chat\\/completions with that response_format"
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the final answer validates against the exact schema, carries the discriminator and the correct result",
+            "match": {
+              "location": "scripts/behaviors/steps/structured-output.steps.mjs:93"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 31543162
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9zdHJ1Y3R1cmVkLW91dHB1dC9lZjg1Y2E1Ny1lNTBhLTRlOTktYmY0ZS0xNjczMTJkMjg4NDAuanNvbiIsInN0YXR1cyI6IlVOREVGSU5FRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@openai",
+            "line": 1
+          },
+          {
+            "name": "@structured-output",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "structured-output-follows-the-supplied-schema",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Structured output follows the supplied schema",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@openai",
+        "line": 1
+      },
+      {
+        "name": "@structured-output",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/structured-output.feature"
+  }
+]

@@ -7,9 +7,9 @@ Prepared 2026-10-27 during `uar-verification-simplification`. This is the concre
 | Priority | Concrete scenario definitions | Existing Mac outcome credit | Remaining on Mac |
 |---|---:|---:|---:|
 | Common user workflows, C01–C54 | 54 | 54 | **0** |
-| Additional configuration and resilience, E01–E28 | 28 | 21 | 7 |
+| Additional configuration and resilience, E01–E28 | 28 | 25 | 3 |
 | Remaining public client/mode contracts, I01–I20 | 20 | 20 | **0** |
-| **Full proposed baseline** | **102** | **95** | **7** |
+| **Full proposed baseline** | **102** | **99** | **3** |
 
 Updated 2026-10-28: the common row now reflects the C-series passes recorded below (it still showed 33). New Mac passes:
 
@@ -43,8 +43,17 @@ Updated 2026-10-28: the common row now reflects the C-series passes recorded bel
 | I13, I14 | [rust-sdk-modes](rust-sdk-modes/) | 1; the SDK's own `chat().complete`/`chat().stream` via the credential-free driver `sdks/rust/examples/bdd_sdk_turns.rs` (the existing `user_outcome_acceptance` example requires a bearer credential) |
 | I15, I17, I18 | [grpc-modes](grpc-modes/) | 1; `@grpc/grpc-js` 1.14.6 with the shipped protos, through the identity proxy's new gRPC listener (`tools/uar-jwt-proxy --grpc-listen`); no credentials in the test |
 | I16 | [grpc-modes](grpc-modes/) | 2; attempt 1 was a test defect: the scenario read the single status snapshot as final instead of resolving it with TaskGet, which is the documented legacy contract (`a2a/grpc.rs` `message_stream`, `tests/user_outcome_grpc.rs`) |
+| E05 | [structured-output](structured-output/) | 3 on binary `810617af…` (xberg build), model `liter/glm-5.3`; attempts 1-2 were test defects (cucumber escape in the feature text, non-UUID session_id). The schema's fresh field name and only allowed value never appear in the prompt |
+| E22 | [skill-classifier-backends](skill-classifier-backends/) | 1 on binary `810617af…`; `legacy_classifier.wasm` with the keyword guest built from `scripts/acceptance/fixtures/intent-classifier-guest` (sha256 `08caaeb2…`) |
+| E09 | [owner-isolation](owner-isolation/) | 1 on binary `810617af…`; owner B is a temporary second `uar-jwt-proxy` with another subject, started and stopped by the host. Foreign read, events and cancel 404; B's same-session answer `{reference:null,total:null}`; A recalls after restart |
+| E03 | [memory-retention](memory-retention/) | 1 on binary `810617af…`; aged record from the host fixture `scripts/acceptance/fixtures/provision-aged-memory.mjs` (product capture, then the stopped store's control moved 8 days back with the `surrealql_store_runner` example). Hidden at once under a 7-day policy, physically purged (`reason: expired`, `purged: true`), opt-out survived restart with no late capture |
 
-Partly proven on Mac 2026-10-28 (not credited): **E03** opt-out half, [memory-opt-out](memory-opt-out/), attempt 5. Opt-in capture and recall worked, the opt-out survived a restart, and a later fact was never captured. The retention-expiry half waits for genuinely aged data.
+E03's earlier partial result (opt-out half, [memory-opt-out](memory-opt-out/), attempt 5) is superseded by the full pass above.
+
+Remaining on Mac 2026-10-29, each BLOCKED by a missing product capability rather than a failed run:
+
+- **E04** routing: run dispatch ignores route requirements (`manager.rs` builds `RouteRequirements { preferred_provider, ..default() }`), `/api/uar/route` has no exclusion and its answer is not used by runs, and the install has one provider.
+- **E06** vision and **E07** image half: no public path delivers image content to the model. `/v1/chat/completions` keeps only text parts (`server.rs` `extract_text_content`), attachments reach the model as JSON text, and the native, AG-UI and A2A paths are text-only.
 
 Observed product failures (not scenarios): asking the agent to remember something with Auto tools ended in `PROTECTED_HISTORY_OVERFLOW` on a `memory_save` call; the first model call after a UAR restart timed out at stream start (15 s) in 2 of 3 restarts.
 
@@ -54,7 +63,7 @@ Fixed and rerun on Mac 2026-10-28: I12, I08, E19 and E21 above. Their first fail
 
 Fixed and rerun on Mac 2026-10-28 (binary `4d28673e…`): E23 (threshold-only acceptance of raw cosine let the decoy and unrelated skills in), E24 and E18 (the llm classifier rejected MiniMax-M3 reasoning output; the matching error branch now logs its internal cause). Still open:
 
-- **E22** wasm: BLOCKED, `intent_classifier.wasm_component_path` is unset.
+- **E22** wasm: superseded by the pass above.
 
 E18's earlier failure (masked `skill_matching_unavailable`) is superseded by the pass above.
 

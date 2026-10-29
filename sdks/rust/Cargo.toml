@@ -41,7 +41,7 @@ webpki-root-certs = { version = "=1.0.11", optional = true }
 liter-llm = { path = "../../vendor/git/liter-llm/crates/liter-llm", features = ["full"], optional = true }
 
 # Embedded mode - re-export the core crate
-universal-agent-runtime = { version = "=1.3.0", path = "../..", optional = true, default-features = false }
+universal-agent-runtime = { version = "=1.4.0-rc.1", path = "../..", optional = true, default-features = false }
 
 [dev-dependencies]
 tokio-test = "0.4"
