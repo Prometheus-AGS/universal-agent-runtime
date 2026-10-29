@@ -17,15 +17,15 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.3" }
+tauri-build = { version = "2.7.4" }
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.9.5" }
+tauri = { version = "2.12.5" }
 tauri-plugin-log = "2"
 universal-agent-runtime = { path = "..", features = ["desktop-full"] }
 tokio = { version = "1", features = ["full"] }
 # Matches the root crate's pin exactly — Cli must construct identically to
 # how main.rs / uar-sidecar.rs build it.
-clap = { version = "4.6.0", features = ["derive", "env"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }

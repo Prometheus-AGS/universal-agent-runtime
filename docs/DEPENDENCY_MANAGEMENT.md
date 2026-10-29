@@ -11,10 +11,10 @@ UAR uses several crates sourced directly from Git repositories rather than crate
 | `rmcp` | `modelcontextprotocol/rust-sdk` | MCP Rust SDK is pre-release; no stable crates.io version |
 | `surreal-memory` | `Prometheus-AGS/surreal-memory-server` | Internal library, stored as a curated source snapshot |
 | `liter-llm` | `GQAdonis/liter-llm` | Internal provider runtime, stored as an exact gitlink |
-| `kreuzberg` | `kreuzberg-dev/kreuzberg` | Default local document intelligence provider; pinned to a release tag (not a branch) |
+| `xberg` | `Know-Me-Tools/xberg` | Default local document intelligence provider (successor to `kreuzberg`; UAR's `kreuzberg` provider name is unchanged); pinned to a commit of the fork's `main` |
 | `prometheus_parking_lot` | `Prometheus-AGS/prometheus-parking-lot-rs` | Internal library, not published |
 
-Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` in `Cargo.toml`. `kreuzberg` is pinned to a release `tag` (currently `v4.9.8`) rather than a branch or commit SHA, so upgrades happen by moving to a newer tag rather than an upstream `main` sync. Pinning ensures:
+Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` in `Cargo.toml`. `xberg` is pinned to a commit SHA of the `Know-Me-Tools/xberg` fork's `main` (workspace version 1.4.0, ahead of the 1.3.10 crates.io release), so upgrades happen by moving that `rev`. Pinning ensures:
 
 - **Reproducible builds**: The same SHA is resolved every time regardless of upstream changes
 - **CI stability**: The CI pipeline does not break due to unexpected upstream commits
@@ -26,7 +26,7 @@ Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` 
 rmcp          = rev "26b65b6b88c5552447905923f683b6e4720a5600"
 surreal-memory = curated snapshot "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
 liter-llm     = gitlink "c5c6caac617eb931cd5009146a70831422ec236c" (1.18.2)
-kreuzberg     = tag "v4.9.8" on kreuzberg-dev/kreuzberg
+xberg         = rev "ffb3b1a25b6c14c13858142997dd82a16d5b2f35" on Know-Me-Tools/xberg (1.4.0)
 prometheus_parking_lot = rev "ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0"
 ```
 
@@ -130,6 +130,13 @@ workflow implementations that first exposed each issue. Their risk dispositions
 remain useful; their workflow locations are superseded by the local gate above.
 
 ### Resolved (fork): `kreuzberg` → `lopdf` / `quick-xml`
+
+**Superseded (2026-10-29)**: UAR no longer depends on `kreuzberg`. Kreuzberg
+development moved to xberg, and UAR now pins `xberg` 1.4.0 from the
+`Know-Me-Tools/xberg` fork at rev `ffb3b1a25b6c14c13858142997dd82a16d5b2f35`.
+That graph resolves `calamine` 0.37, `quick-xml` 0.42 and `biblib` 0.10, and
+UAR enables no xberg PDF feature, so xberg adds no `lopdf`. The history below
+is kept for the record.
 
 **Update (`uar-final-production-hardening-2026-07`,
 `re-remediate-stale-rustsec`)**: the "fork and backport" future-work noted

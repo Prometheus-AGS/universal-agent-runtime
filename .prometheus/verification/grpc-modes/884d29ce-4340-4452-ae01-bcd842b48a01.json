@@ -1,0 +1,865 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-884d29ce-4340-4452-ae01-bcd842b48a01",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-884d29ce-4340-4452-ae01-bcd842b48a01",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-884d29ce"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-884d29ce-4340-4452-ae01-bcd842b48a01\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-884d29ce\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:23b7ca81aee1b28053f3560ba8f2272372fdf7c60f67ba0013c7a0514cd29de8\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "What is (59 multiplied by 11) plus 424?"
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (59 multiplied by 11) plus 424?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "completed"
+      }
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Add 13 to your previous answer."
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (59 multiplied by 11) plus 424?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              },
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                    "content": "text"
+                  }
+                ],
+                "role": "agent"
+              },
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "Add 13 to your previous answer.",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (59 multiplied by 11) plus 424?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (59 * 11) + 424 = 649 + 424 = 1073.\n\nThe response should be a JSON object with keysmarker and answer.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1073}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 13 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>Previous answer 1073, add13 = 1086.</think>\n\n{\"marker\": \"GRPC-df25bc34-f0eb-4fa1-b109-c062ef41a824\", \"answer\": 1086}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+        "status": "completed"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-884d29ce-4340-4452-ae01-bcd842b48a01",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    1073,
+    1086
+  ],
+  "streams": [
+    {
+      "events": [
+        "status_update:working"
+      ],
+      "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+      "status": "completed"
+    },
+    {
+      "events": [
+        "status_update:working"
+      ],
+      "task_id": "49197a68-f78e-4f56-9b57-3eef4c34cc4a",
+      "status": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-legacy-stream",
+  "scenario_status": "PASSED",
+  "duration_ms": 15159
+}

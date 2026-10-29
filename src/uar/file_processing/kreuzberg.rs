@@ -1,7 +1,8 @@
 //! Kreuzberg file processing provider.
 //!
-//! Uses the Kreuzberg Rust core for high-performance document extraction.
-//! Supports 56+ file formats including PDF, Office documents, images, and more.
+//! Uses the xberg Rust core (the successor to Kreuzberg) for document
+//! extraction. The provider keeps its `kreuzberg` name and configuration.
+//! Supports PDF, Office documents, images, and more.
 
 use async_trait::async_trait;
 use std::fmt::Write;
@@ -55,6 +56,57 @@ where
     }
 }
 
+/// Build the xberg `ExtractionConfig` from our config.
+fn extraction_config(config: &KreuzbergConfig) -> xberg::ExtractionConfig {
+    let mut extraction_config = xberg::ExtractionConfig::default();
+
+    extraction_config.output_format = match config.output_format.as_str() {
+        "markdown" => xberg::OutputFormat::Markdown,
+        _ => xberg::OutputFormat::Plain,
+    };
+
+    if config.ocr_enabled {
+        // Our language setting uses Tesseract's `eng+deu` form; xberg takes a list.
+        extraction_config.ocr = Some(xberg::OcrConfig {
+            backend: config.ocr_backend.clone(),
+            language: config.ocr_language.split('+').map(String::from).collect(),
+            ..xberg::OcrConfig::default()
+        });
+    } else {
+        // xberg's automatic OCR strategy would otherwise still OCR pages with no text.
+        extraction_config.disable_ocr = true;
+    }
+
+    extraction_config.force_ocr = config.force_ocr;
+
+    if let Some(chunking) = &config.chunking {
+        extraction_config.chunking = Some(xberg::ChunkingConfig {
+            max_characters: chunking.max_characters,
+            overlap: chunking.overlap,
+            ..xberg::ChunkingConfig::default()
+        });
+    }
+
+    extraction_config.extraction_timeout_secs = Some(config.extraction_timeout_secs);
+    extraction_config
+}
+
+/// Run xberg's async extraction to completion on the calling blocking worker.
+fn extract_document(
+    handle: &tokio::runtime::Handle,
+    input: xberg::ExtractInput,
+    config: &xberg::ExtractionConfig,
+) -> Result<xberg::ExtractedDocument, ProcessingError> {
+    let result = handle
+        .block_on(xberg::extract(input, config))
+        .map_err(|error| ProcessingError::ProviderError(format!("xberg error: {error}")))?;
+    result
+        .results
+        .into_iter()
+        .next()
+        .ok_or_else(|| ProcessingError::ProviderError("xberg returned no document".to_string()))
+}
+
 /// Kreuzberg-based file processor using the native Rust core.
 ///
 /// Provides high-performance document extraction with OCR support.
@@ -75,41 +127,6 @@ impl KreuzbergProvider {
         Self {
             config: KreuzbergConfig::default(),
         }
-    }
-
-    /// Build the Kreuzberg `ExtractionConfig` from our config.
-    fn build_extraction_config(&self) -> kreuzberg::ExtractionConfig {
-        let mut config = kreuzberg::ExtractionConfig::default();
-
-        // Map output format string → v4 enum
-        config.output_format = match self.config.output_format.as_str() {
-            "markdown" => kreuzberg::OutputFormat::Markdown,
-            _ => kreuzberg::OutputFormat::Plain,
-        };
-
-        // Configure OCR settings
-        if self.config.ocr_enabled {
-            let ocr_config = kreuzberg::OcrConfig {
-                backend: self.config.ocr_backend.clone(),
-                language: self.config.ocr_language.clone(),
-                ..kreuzberg::OcrConfig::default()
-            };
-            config.ocr = Some(ocr_config);
-        }
-
-        // Force OCR setting
-        config.force_ocr = self.config.force_ocr;
-
-        // Wire chunking config when present
-        if let Some(chunking) = &self.config.chunking {
-            config.chunking = Some(kreuzberg::ChunkingConfig {
-                max_characters: chunking.max_characters,
-                overlap: chunking.overlap,
-                ..kreuzberg::ChunkingConfig::default()
-            });
-        }
-
-        config
     }
 }
 
@@ -153,18 +170,16 @@ impl FileProcessor for KreuzbergProvider {
             });
         }
 
-        let extraction_config = self.build_extraction_config();
+        let extraction_config = extraction_config(&self.config);
 
-        // Use kreuzberg's synchronous API wrapped in spawn_blocking
-        // for async compatibility
-        let path_buf = path.to_path_buf();
+        // xberg's extract is async, but several of its extractors parse inline;
+        // drive it on a blocking worker so that work stays off the async pool.
+        let handle = tokio::runtime::Handle::current();
+        let input = xberg::ExtractInput::from_uri(path.to_string_lossy().into_owned());
         let result = extract_owned(
             "document-file-extraction",
             self.config.extraction_timeout_secs,
-            move || {
-                kreuzberg::extract_file_sync(path_buf, None, &extraction_config)
-                    .map_err(|error| ProcessingError::ProviderError(format!("Kreuzberg error: {error}")))
-            },
+            move || extract_document(&handle, input, &extraction_config),
         )
         .await?;
 
@@ -294,46 +309,15 @@ pub async fn process_bytes(
         )));
     }
 
-    let mut extraction_config = kreuzberg::ExtractionConfig::default();
-
-    // Map output format string → v4 enum
-    extraction_config.output_format = match config.output_format.as_str() {
-        "markdown" => kreuzberg::OutputFormat::Markdown,
-        _ => kreuzberg::OutputFormat::Plain,
-    };
-
-    // Configure OCR
-    if config.ocr_enabled {
-        let ocr_config = kreuzberg::OcrConfig {
-            backend: config.ocr_backend.clone(),
-            language: config.ocr_language.clone(),
-            ..kreuzberg::OcrConfig::default()
-        };
-        extraction_config.ocr = Some(ocr_config);
-    }
-
-    extraction_config.force_ocr = config.force_ocr;
-
-    // Wire chunking if configured
-    if let Some(chunking) = &config.chunking {
-        extraction_config.chunking = Some(kreuzberg::ChunkingConfig {
-            max_characters: chunking.max_characters,
-            overlap: chunking.overlap,
-            ..kreuzberg::ChunkingConfig::default()
-        });
-    }
-
-    let data_owned = data.to_vec();
-    let mime_for_extraction = mime_type.to_string();
+    let extraction_config = extraction_config(config);
     let mime_for_result = mime_type.to_string();
 
+    let handle = tokio::runtime::Handle::current();
+    let input = xberg::ExtractInput::from_bytes(data.to_vec(), mime_type, None);
     let result = extract_owned(
         "document-bytes-extraction",
         config.extraction_timeout_secs,
-        move || {
-            kreuzberg::extract_bytes_sync(&data_owned, &mime_for_extraction, &extraction_config)
-                .map_err(|error| ProcessingError::ProviderError(format!("Kreuzberg error: {error}")))
-        },
+        move || extract_document(&handle, input, &extraction_config),
     )
     .await?;
 

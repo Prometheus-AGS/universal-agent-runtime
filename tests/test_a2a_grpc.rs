@@ -119,11 +119,10 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
         grpc_url: None,
     });
     // Seed only the isolated test store, then obtain proof through real key validation.
-    use argon2::{Argon2, password_hash::{PasswordHasher, SaltString, rand_core::OsRng}};
+    use argon2::{Argon2, password_hash::PasswordHasher};
     let storage = Arc::new(InMemoryApiKeyStorage::new());
     let seed = "synthetic-grpc-fixture-bootstrap";
-    let salt = SaltString::generate(&mut OsRng);
-    let hash = Argon2::default().hash_password(seed.as_bytes(), &salt).unwrap().to_string();
+    let hash = Argon2::default().hash_password(seed.as_bytes()).unwrap().to_string();
     storage.insert(ApiKeyRecord {
         id: "fixture-bootstrap".to_owned(), key_hash: hash, name: "fixture".to_owned(),
         subject: "a2a-grpc-user".to_owned(), authority_version: 1, issuer: None,

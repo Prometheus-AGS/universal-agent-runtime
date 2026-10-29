@@ -1,0 +1,557 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-51ade493-9ae5-4048-86b4-ec81ebf30eb5",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-51ade493-9ae5-4048-86b4-ec81ebf30eb5",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-51ade493"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-51ade493-9ae5-4048-86b4-ec81ebf30eb5\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-51ade493\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:f54764339e25d4edf34b0d2eb57e90b5928e907e6ab0df5d5ec2aacac5fa62f8\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "MessageSend",
+      "request": {
+        "task_id": "",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "What is (49 multiplied by 28) plus 455?"
+            }
+          ]
+        }
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (49 * 28) + 455 = 1372 + 455 = 1827.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer. Let me comply.\n\n49 * 28 = 1372. 1372 + 455 = 1827.\n\nNo tool needed. But should I activate a skill? No relevant skill needed for arithmetic.\n\nReturn JSON.</think>\n\n<think>No skill needed. Just answer with the JSON.\n\n49 × 28 = 1372; 1372 + 455 = 1827.</think>\n\n```json\n{\"marker\": \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\", \"answer\": 1827}\n```\n\n49 × 28 = 1372, and 1372 + 455 = **1827**.",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "completed"
+      }
+    },
+    {
+      "grpc": "MessageSend",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Add 41 to your previous answer."
+            }
+          ]
+        }
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (49 * 28) + 455 = 1372 + 455 = 1827.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer. Let me comply.\n\n49 * 28 = 1372. 1372 + 455 = 1827.\n\nNo tool needed. But should I activate a skill? No relevant skill needed for arithmetic.\n\nReturn JSON.</think>\n\n<think>No skill needed. Just answer with the JSON.\n\n49 × 28 = 1372; 1372 + 455 = 1827.</think>\n\n```json\n{\"marker\": \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\", \"answer\": 1827}\n```\n\n49 × 28 = 1372, and 1372 + 455 = **1827**.",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 41 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (49 * 28) + 455 = 1372 + 455 = 1827.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer. Let me comply.\n\n49 * 28 = 1372. 1372 + 455 = 1827.\n\nNo tool needed. But should I activate a skill? No relevant skill needed for arithmetic.\n\nReturn JSON.</think>\n\n<think>No skill needed. Just answer with the JSON.\n\n49 × 28 = 1372; 1372 + 455 = 1827.</think>\n\n```json\n{\"marker\": \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\", \"answer\": 1827}\n```\n\n49 × 28 = 1372, and 1372 + 455 = **1827**.",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 41 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (49 * 28) + 455 = 1372 + 455 = 1827.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer. Let me comply.\n\n49 * 28 = 1372. 1372 + 455 = 1827.\n\nNo tool needed. But should I activate a skill? No relevant skill needed for arithmetic.\n\nReturn JSON.</think>\n\n<think>No skill needed. Just answer with the JSON.\n\n49 × 28 = 1372; 1372 + 455 = 1827.</think>\n\n```json\n{\"marker\": \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\", \"answer\": 1827}\n```\n\n49 × 28 = 1372, and 1372 + 455 = **1827**.",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 41 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (49 multiplied by 28) plus 455?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The question: (49 * 28) + 455 = 1372 + 455 = 1827.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer. Let me comply.\n\n49 * 28 = 1372. 1372 + 455 = 1827.\n\nNo tool needed. But should I activate a skill? No relevant skill needed for arithmetic.\n\nReturn JSON.</think>\n\n<think>No skill needed. Just answer with the JSON.\n\n49 × 28 = 1372; 1372 + 455 = 1827.</think>\n\n```json\n{\"marker\": \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\", \"answer\": 1827}\n```\n\n49 × 28 = 1372, and 1372 + 455 = **1827**.",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 41 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>1827 + 41 = 1868.\n\nReturn JSON only withmarker and answer.</think>\n\n```json\n{\"marker\": \"GRPC-b8fff59a-82c1-4780-9abe-e0f4106b5b4b\", \"answer\": 1868}\n```\n\n1827 + 41 = **1868**.",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+        "status": "completed"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-51ade493-9ae5-4048-86b4-ec81ebf30eb5",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    1827,
+    1868
+  ],
+  "tasks": [
+    {
+      "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+      "status": "completed"
+    },
+    {
+      "task_id": "2f2b4fc0-4e91-439b-8063-de8a848d533d",
+      "status": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-legacy-json",
+  "scenario_status": "PASSED",
+  "duration_ms": 10211
+}
