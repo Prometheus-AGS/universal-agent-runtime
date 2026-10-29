@@ -185,7 +185,7 @@ importers:
         version: 10.1.0(@types/react@19.3.0)(react@19.3.1)(supports-color@11.0.0)
       react-resizable-panels:
         specifier: ^4
-        version: 4.14.8(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 4.15.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-router:
         specifier: ^8.5.1
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -456,13 +456,13 @@ importers:
     dependencies:
       '@a2ui/react':
         specifier: 0.12.0
-        version: 0.12.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@3.25.76)
+        version: 0.12.0(react-dom@19.3.1(react@19.3.1))(react@19.2.8)(zod@3.25.76)
       react:
         specifier: ^19.2.7
-        version: 19.2.8
+        version: 19.3.1
       react-dom:
         specifier: ^19.2.7
-        version: 19.2.8(react@19.2.8)
+        version: 19.3.1(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: ^19.3.0
@@ -7587,8 +7587,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-resizable-panels@4.14.8:
-    resolution: {integrity: sha512-kVot7JCIZct85ZY87vww95R7tI25VSTjHpEAIIy2YcsOtbtwG6l1+vDD6TCYgmgE/JSp0ADqNooHn97Y6dMOFw==}
+  react-resizable-panels@4.15.0:
+    resolution: {integrity: sha512-DRjF1E8QHg4j5n6RcpxDoeP0C15T0w+dlEE9eyooGCwOE8rPPxfXt4OfhJjEuezzCG/JjRwh5ZHLVkakUJF+dA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -8910,6 +8910,16 @@ snapshots:
       markdown-it: 14.3.0
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
+      zod: 3.25.76
+
+  '@a2ui/react@0.12.0(react-dom@19.3.1(react@19.3.1))(react@19.2.8)(zod@3.25.76)':
+    dependencies:
+      '@a2ui/markdown-it': 0.2.0(@a2ui/web_core@0.12.0)
+      '@a2ui/web_core': 0.12.0
+      clsx: 2.1.1
+      markdown-it: 14.3.0
+      react: 19.2.8
+      react-dom: 19.3.1(react@19.3.1)
       zod: 3.25.76
 
   '@a2ui/web_core@0.12.0':
@@ -16158,7 +16168,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.3.0
 
-  react-resizable-panels@4.14.8(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  react-resizable-panels@4.15.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
