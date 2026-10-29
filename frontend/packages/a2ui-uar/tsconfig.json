@@ -10,7 +10,9 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["*"],
+    "noUncheckedSideEffectImports": false
   },
   "include": ["src", "test", "vitest.config.ts", "vitest.perf.config.ts"]
 }

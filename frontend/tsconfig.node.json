@@ -9,7 +9,8 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "composite": true,
-    "strict": true
+    "strict": true,
+    "types": ["*"]
   },
   "include": ["vite.config.ts", "build/**/*.ts"]
 }

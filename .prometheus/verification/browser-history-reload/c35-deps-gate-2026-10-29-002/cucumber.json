@@ -1,0 +1,118 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-browser-conversation-reloads-from-saved-history;reopen-a-saved-conversation-after-reload-and-continue-from-its-earlier-fact",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Reopen a saved conversation after reload and continue from its earlier fact",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable custom agent is selected in a fresh browser conversation",
+            "result": {
+              "status": "passed",
+              "duration": 2317000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I give the agent a fresh fact in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 3665000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I reload the page and reopen that conversation from the thread list",
+            "result": {
+              "status": "passed",
+              "duration": 1505000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the reopened conversation shows the saved turns without a new run",
+            "result": {
+              "status": "passed",
+              "duration": 470000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send a follow-up that contains none of the earlier facts",
+            "result": {
+              "status": "passed",
+              "duration": 11517000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the follow-up answer uses the earlier fact from the saved server history",
+            "result": {
+              "status": "passed",
+              "duration": 206000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1414000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@conversation",
+            "line": 1
+          },
+          {
+            "name": "@reload",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-browser-conversation-reloads-from-saved-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A browser conversation reloads from saved history",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@conversation",
+        "line": 1
+      },
+      {
+        "name": "@reload",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-history-reload.feature"
+  }
+]

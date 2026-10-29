@@ -15,8 +15,10 @@ overrides:
   js-yaml@>=3.0.0 <4.0.0: "3.15.1"
   js-yaml@>=4.0.0 <4.3.1: "4.3.1"
   nanoid@>=3.0.0 <3.3.18: "3.3.18"
-  vite: "8.1.4"
-  valibot@<=1.4.1: "1.4.2"
+  vite: "8.3.5"
+  valibot@<=1.4.1: "1.5.0"
+  "@a2ui/markdown-it": "0.2.0"
 minimumReleaseAgeExclude:
-  - '@prometheus-ags/entity-graph-core@3.0.3'
-  - '@prometheus-ags/prometheus-entity-management@3.0.3'
+  - '@prometheus-ags/entity-graph-core@4.3.0'
+  - '@prometheus-ags/entity-graph-react@4.3.0'
+  - '@prometheus-ags/prometheus-entity-management@4.3.0'

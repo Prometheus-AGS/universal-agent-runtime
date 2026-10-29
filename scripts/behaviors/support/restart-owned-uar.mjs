@@ -72,7 +72,8 @@ export async function assertOwnedEndpoint(base) {
   assert.equal(new URL(runtime.runtime_url).href, new URL(launch.base_url).href);
   assert.equal(runtime.runtime_pid, launch.pid);
   assert.equal(runtime.external_identity_pid, proxy.pid);
-  const expected = `${proxy.binary} --config ${proxy.config} --upstream ${proxy.upstream} --listen ${new URL(proxy.base_url).host}`;
+  const grpcListen = proxy.grpc_base_url ? ` --grpc-listen ${new URL(proxy.grpc_base_url).host}` : '';
+  const expected = `${proxy.binary} --config ${proxy.config} --upstream ${proxy.upstream} --listen ${new URL(proxy.base_url).host}${grpcListen}`;
   assert.equal(execFileSync('ps', ['-p', String(proxy.pid), '-o', 'command='], { encoding: 'utf8', timeout: 10_000 }).trim(), expected);
   for (const [pid, url] of [[proxy.pid, proxy.base_url], [launch.pid, launch.base_url]]) {
     const listener = execFileSync('lsof', ['-nP', '-a', '-p', String(pid), '-iTCP:' + new URL(url).port, '-sTCP:LISTEN', '-Fn'], { encoding: 'utf8', timeout: 10_000 });

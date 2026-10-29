@@ -219,15 +219,15 @@ harness = false
 
 [dev-dependencies]
 anyhow = "1.0"
-axum-test = "21.0.0"
+axum-test = "21.1.0"
 cucumber = "0.23.0"
 # Snapshot only the prompt prefix-stability diff; the exact version is governed
 # by versions.toml so review output cannot drift with runner upgrades.
 insta = "=1.49.0"
 serial_test = "4.0.1"
 tempfile = "3.27.0"
-tokio = { version = "1.50.0", features = ["full", "test-util"] }
-tower = { version = "0.5.2", features = ["util"] }
+tokio = { version = "1.54.1", features = ["full", "test-util"] }
+tower = { version = "0.5.3", features = ["util"] }
 # Exercise provider status and Retry-After handling at the real HTTP boundary;
 # the exact version is governed by versions.toml.
 wiremock = "=0.6.5"
@@ -235,9 +235,9 @@ wiremock = "=0.6.5"
 # Testing infrastructure dependencies
 mockall = "0.15"
 tokio-test = "0.4"
-rustls = { version = "0.23.37", features = ["ring"] }
+rustls = { version = "0.23.46", features = ["ring"] }
 criterion = { version = "0.8.2", features = ["html_reports", "async_tokio"] }
-proptest = "1.6"
+proptest = "1.12"
 # Process-table inspection for the sidecar token-confinement tests. Same
 # version and feature set surrealdb-core already resolves, so no new lock entry.
 sysinfo = { version = "=0.37.2", default-features = false, features = ["system"] }
@@ -309,7 +309,7 @@ tract-embeddings = ["local-models", "dep:ort", "dep:ort-tract", "ort/alternative
 candle-embeddings = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
 
 ## Local PDF/Office/OCR/archive document extraction.
-document-intelligence = ["dep:kreuzberg", "dep:lopdf"]
+document-intelligence = ["dep:xberg", "dep:lopdf"]
 
 ## Embedded Swagger UI. The OpenAPI JSON contract remains available without it.
 api-docs = ["dep:utoipa-swagger-ui"]
@@ -354,7 +354,7 @@ bauar-native-admission-gate = []
 # Web framework
 axum = { version = "0.8", optional = true, features = ["multipart"] }
 http-body-util = { version = "=0.1.5", optional = true }
-tower-http = { version = "0.7.0", optional = true, features = [
+tower-http = { version = "0.7.1", optional = true, features = [
   "fs",
   "cors",
   "trace",
@@ -368,7 +368,7 @@ tokio-util = { version = "0.7", features = ["codec", "io", "rt"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.147"
+serde_json = "1.0.154"
 
 # gRPC (A2A v0.3 transport)
 tonic = { version = "0.14", optional = true }
@@ -377,15 +377,15 @@ prost = { version = "0.14", optional = true }
 prost-types = { version = "=0.14.4", optional = true }
 
 # Async utilities
-futures = "0.3.32"
+futures = "0.3.34"
 async-stream = "0.3"
 async-trait = "0.1"
 
 # Actor model
-ractor = "0.16.3"
+ractor = "0.16.5"
 
 # Governance policy engine
-cedar-policy = { version = "4.9.1", optional = true }
+cedar-policy = { version = "4.14.0", optional = true }
 
 # Sycophancy detection and correction (runtime quality gate)
 sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-core", optional = true }
@@ -401,8 +401,8 @@ sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-c
 # wasmtime 46 -> 47 while #220 (the matching wasmtime-wasi bump) sat blocked on
 # a lockfile conflict: `server-full` stopped compiling on main, and the errors
 # named `wasmtime_internal_core` types that appear nowhere in this repo.
-wasmtime = { version = "47", optional = true }
-wasmtime-wasi = { version = "47", optional = true }
+wasmtime = { version = "50", optional = true }
+wasmtime-wasi = { version = "50", optional = true }
 
 # HTTP client
 reqwest = { version = "=0.13.5", default-features = false, features = [
@@ -421,7 +421,7 @@ reqwest = { version = "=0.13.5", default-features = false, features = [
 # fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
 # server transport (patched >=1.4.0) -- this project enables
 # transport-streamable-http-server below, so it was directly exposed.
-rmcp = { version = "=3.7.0", features = [
+rmcp = { version = "=3.8.0", features = [
   "client",
   "server",
   "macros",
@@ -471,10 +471,10 @@ surreal-memory = { path = "vendor/git/surreal-memory-server/crates/surreal-memor
 ] }
 
 # Utilities
-url = "2.5.7"
-uuid = { version = "1.21.0", features = ["v4", "serde"] }
+url = "2.5.8"
+uuid = { version = "1.29.0", features = ["v4", "serde"] }
 dotenvy = "0.15.7"
-clap = { version = "4.6.0", features = ["derive", "env"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
 
 # Performance (M-MIMALLOC-APPS)
 mimalloc = "0.1"
@@ -485,27 +485,29 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # Span-trace capture for UarError (src/uar/error.rs) — attaches the current
 # tracing span chain to every error logged at the public API boundary.
 tracing-error = "0.2"
-anyhow = "1.0.100"
+anyhow = "1.0.104"
 # Optional error reporting for UarError, gated behind the `sentry` feature
 # (default off). Actual DSN/project configuration is operator work.
 sentry = { version = "0.49", optional = true, default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls"] }
-axum-extra = { version = "0.12.3", optional = true, features = [
+axum-extra = { version = "0.12.6", optional = true, features = [
   "typed-routing",
   "typed-header",
 ] }
-tower = { version = "0.5.2", optional = true }
-tokio-stream = { version = "0.1.17", features = ["net", "sync"] }
+tower = { version = "0.5.3", optional = true }
+tokio-stream = { version = "0.1.19", features = ["net", "sync"] }
 serde_norway = "0.9.42"
 # Real local embedding inference (BGE-small-en-v1.5) — fix-embeddings-fastembed.
-# Major-version 4 (not 5.x): surreal-memory → mempalace-core already depends on
-# fastembed "4", and fastembed pins ort exactly per release — two fastembed
-# majors would demand two conflicting `ort 2.0.0-rc.*` pins cargo cannot
-# unify. default-features off on OUR edge: UAR loads the model + tokenizer
+# Exact 7.1.1: fastembed pins ort exactly per release, and 7.1.1 is the newest
+# release on `ort =2.0.0-rc.13`. 7.1.2+ moves to rc.15, but the newest ort-tract
+# (0.5.0) targets rc.14 and two `ort-sys` versions cannot link, so the
+# `tract-embeddings` path blocks it. Move fastembed, ort and ort-tract together
+# once ort-tract publishes an rc.15 release.
+# default-features off on OUR edge: UAR loads the model + tokenizer
 # shipped in src/uar/runtime/matching/models/ via try_new_from_user_defined —
 # never hf-hub. (mempalace's default features still union `online` into the
 # shared build; UAR's embedding path performs no runtime downloads.)
 # ort-download-binaries fetches prebuilt ONNX Runtime at BUILD time only.
-fastembed = { version = "5", optional = true, default-features = false, features = [
+fastembed = { version = "=7.1.1", optional = true, default-features = false, features = [
   "ort-download-binaries",
 ] }
 ort = { version = "=2.0.0-rc.13", optional = true, default-features = false, features = ["std", "ndarray"] }
@@ -515,12 +517,13 @@ candle-core = { version = "0.11.0", optional = true }
 candle-nn = { version = "0.11.0", optional = true }
 candle-transformers = { version = "0.11.0", optional = true }
 tokenizers = { version = "0.23", optional = true, default-features = false, features = ["onig"] }
-tiktoken-rs = "0.12.0"
+tiktoken-rs = "0.12.1"
 # Postgres stack — optional, gated by the `postgres-backend` feature. The empty
 # `sqlx` feature flag (above) wires this dependency in for any code that needs
 # `sqlx::FromRow` derives without enabling the full `postgres-backend` stack.
-sqlx = { version = "0.8.6", default-features = false, optional = true, features = [
-  "runtime-tokio-native-tls",
+sqlx = { version = "0.9.0", default-features = false, optional = true, features = [
+  "runtime-tokio",
+  "tls-native-tls",
   "postgres",
   "macros",
   "uuid",
@@ -528,28 +531,28 @@ sqlx = { version = "0.8.6", default-features = false, optional = true, features 
   "json",
   "migrate",
 ] }
-# Pinned to =0.4.1: its `sqlx` feature requires sqlx ^0.8, which unifies with
-# our sqlx 0.8.6 pin. pgvector 0.4.2 widened to `>=0.8, <0.10`, causing cargo to
-# resolve a second sqlx 0.9.0 whose Encode/Type impls don't match sqlx 0.8.6.
+# Pinned to =0.4.2: its `sqlx` feature accepts `>=0.8, <0.10`, so it unifies
+# with our sqlx 0.9. Keep the exact pin so a later pgvector release cannot
+# silently move the sqlx range out from under the Encode/Type impls.
 pgvector = { version = "=0.4.2", optional = true, features = ["sqlx"] }
-text-splitter = { version = "0.32.0", features = ["markdown"] }
-chrono = { version = "0.4.44", features = ["serde"] }
+text-splitter = { version = "0.33.1", features = ["markdown"] }
+chrono = { version = "0.4.45", features = ["serde"] }
 jiff = "=0.2.38"
 walkdir = "2.5.0"
 serde_yaml = "0.9"
 jsonwebtoken.workspace = true
-tracing-opentelemetry = { version = "0.33.0", optional = true }
-opentelemetry = { version = "0.32.0", optional = true }
-opentelemetry-otlp = { version = "0.32.0", optional = true }
-opentelemetry_sdk = { version = "0.32.1", optional = true, features = ["rt-tokio"] }
-metrics = { version = "0.24.3", optional = true }
-metrics-exporter-prometheus = { version = "0.18.1", optional = true }
-config = "0.15.22"
+tracing-opentelemetry = { version = "0.34.0", optional = true }
+opentelemetry = { version = "0.33.1", optional = true }
+opentelemetry-otlp = { version = "0.33.1", optional = true }
+opentelemetry_sdk = { version = "0.33.1", optional = true, features = ["rt-tokio"] }
+metrics = { version = "0.24.6", optional = true }
+metrics-exporter-prometheus = { version = "0.18.3", optional = true }
+config = "0.15.27"
 # JSON Schema generation for AppConfig, exposed at GET /.well-known/uar-config
 # (openspec/changes/config-rs-schemars-migration).
 schemars = "1"
 # Lock-free runtime config hot-reload (openspec/changes/config-hot-reload-vault).
-arc-swap = "1.6"
+arc-swap = "1.9"
 # Optional HashiCorp Vault KV-v2 source, gated behind the `vault` feature.
 vaultrs = { version = "0.8", optional = true }
 ## Pinned to =3.3.0 (exact) so UAR, librefang, surreal-memory, and the deployed
@@ -561,13 +564,13 @@ governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
 
 # Compiler pipeline (UAR-AGENT-MD → descriptor)
-pulldown-cmark = "0.13.3"
-sha2 = "0.11.0"
+pulldown-cmark = "0.13.5"
+sha2 = "0.11.1"
 # Host retries use Tokio; omit browser/blocking sleepers and their dependencies.
 backon = { version = "1.6.0", default-features = false, features = ["std", "tokio-sleep"] }
 ed25519-dalek = { version = "3.0", features = ["rand_core"] }
-rand = "0.10.0"
-argon2 = "0.5"
+rand = "0.10.3"
+argon2 = "0.6"
 
 # File processing (multimodal support)
 thiserror = "2.0"
@@ -580,15 +583,13 @@ cap-std = "=4.0.3"
 # Credential encryption — AES-256-GCM for per-user provider API keys at rest
 aes-gcm = "0.11"
 
-# Kreuzberg - document intelligence framework with Rust core (v4 upstream)
-# CLI install: cargo install --git https://github.com/kreuzberg-dev/kreuzberg --tag v4.9.8 kreuzberg-cli
-# Or via Homebrew: brew tap kreuzberg-dev/tap && brew install kreuzberg-cli
-# Prometheus-AGS fork of kreuzberg v4.9.9 + security bumps (lopdf 0.42,
-# quick-xml 0.41, calamine 0.36, biblib 0.7) clearing RUSTSEC-2026-0187/0194/
-# 0195 — upstream PR filed (kreuzberg-dev/kreuzberg); repoint at an upstream
-# tag once it ships a release containing these bumps.
-kreuzberg = { version = "=4.10.4", optional = true, default-features = false, features = [
-    "tokio-runtime",        # extract_file_sync, batch_extract_file_sync
+# xberg - document intelligence framework (successor to kreuzberg), from the
+# Know-Me-Tools fork at a pinned commit of main (workspace version 1.4.0).
+# UAR's `kreuzberg` provider, settings and config names are unchanged.
+# CLI binary is `xberg`: brew install xberg-io/tap/xberg, or build
+# `cargo build --release -p xberg-cli --bin xberg` from the fork.
+xberg = { git = "https://github.com/Know-Me-Tools/xberg.git", rev = "ffb3b1a25b6c14c13858142997dd82a16d5b2f35", optional = true, default-features = false, features = [
+    "tokio-runtime",        # async extract() on the host Tokio runtime
     "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
     "excel",                # xlsx/xlsm/xls (replaces "formats")
     "email",                # .eml, .msg, .pst (replaces "formats")
@@ -597,9 +598,9 @@ kreuzberg = { version = "=4.10.4", optional = true, default-features = false, fe
     "ocr",                  # Tesseract OCR backend (replaces "analysis")
     "language-detection",   # whatlang language detection (replaces "analysis")
     "chunking",             # RAG text chunking via ChunkingConfig
-    "mcp",                  # Embedded MCP server (kreuzberg mcp --transport stdio)
+    "mcp",                  # Embedded MCP server (xberg mcp --transport stdio)
 ] }
-lopdf = { version = "=0.44.0", optional = true, default-features = false }
+lopdf = { version = "=0.46.0", optional = true, default-features = false }
 
 # Pinned source export; exact upstream SHA and manifest adaptations are recorded
 # in vendor/git/README.md. Refresh the facade and required workspace crates
@@ -607,11 +608,11 @@ lopdf = { version = "=0.44.0", optional = true, default-features = false }
 # UAR owns execution and uses only the runtime-free admission core. The facade's
 # optional backends are not part of UAR's dependency graph.
 prometheus-parking-lot-core = { path = "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core", version = "0.4.0" }
-num_cpus = "1.16"
+num_cpus = "1.17"
 
 # Graph algorithms for community detection (Leiden)
 petgraph = "0.8"
-dirs = "6.0.0"
+dirs = "7.0.0"
 
 # Filesystem watcher for skill hot-reload
 notify = "8"
@@ -631,8 +632,8 @@ liter-llm = { path = "vendor/git/liter-llm/crates/liter-llm", features = ["full"
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation
-utoipa = { version = "5", optional = true, features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "9", optional = true, features = ["axum", "vendored"] }
+utoipa = { version = "6", optional = true, features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "10", optional = true, features = ["axum", "vendored"] }
 
 # Leptos SSR (minimal templating)
 
@@ -673,7 +674,7 @@ module_name_repetitions = "allow"
 must_use_candidate = "allow"
 
 # Dev/test build speed. The dependency graph here (burn, cedar-policy,
-# surrealdb, kreuzberg-tesseract, tokenizers, ...) produces very large debug
+# surrealdb, xberg-tesseract, tokenizers, ...) produces very large debug
 # binaries; full DWARF (debug=2) embedded in each of the ~50+ test binaries
 # makes linking slow and memory-hungry (see .cargo/config.toml `jobs = 2`
 # comment for the incident this was tuned against). `split-debuginfo =

@@ -215,8 +215,8 @@ RUN cd frontend \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
-# The current lockfile uses registry dependencies, including Kreuzberg. Retain
-# the optional github_token mount for private Git dependency compatibility.
+# The lockfile fetches xberg (document extraction) from a public Git fork over
+# HTTPS. Retain the optional github_token mount for private Git dependencies.
 # Runtime-only Git configuration rewrites SSH to credential-free HTTPS URLs;
 # the GitHub-scoped helper reads the mount only on get and never stores secrets.
 RUN --mount=type=secret,id=github_token \

@@ -1051,7 +1051,7 @@ impl PersistenceLayer for PostgresProvider {
         let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
         let config = serde_json::to_value(&kb.config)?;
 
-        let changed = sqlx::query(&namespace.query(r"
+        let changed = sqlx::query(namespace.sql(r"
             INSERT INTO knowledge_bases (id, owner_id, name, description, config, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
@@ -1087,7 +1087,7 @@ impl PersistenceLayer for PostgresProvider {
         let embedding_vector = Vector::from(chunk.embedding.clone());
         let metadata = serde_json::to_value(&chunk.metadata)?;
 
-        sqlx::query(&namespace.query(r"
+        sqlx::query(namespace.sql(r"
             INSERT INTO knowledge_chunks (id, owner_id, kb_id, document_id, content, metadata, embedding, created_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
@@ -1264,7 +1264,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let row = sqlx::query(&namespace.query("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND id = $2"))
+        let row = sqlx::query(namespace.sql("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND id = $2"))
         .bind(owner_id)
         .bind(id)
         .fetch_optional(&self.pool)
@@ -1300,7 +1300,7 @@ impl PersistenceLayer for PostgresProvider {
         name: &str,
     ) -> Result<Option<KnowledgeBase>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let row = sqlx::query(&namespace.query("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND name = $2"))
+        let row = sqlx::query(namespace.sql("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND name = $2"))
         .bind(owner_id)
         .bind(name)
         .fetch_optional(&self.pool)
@@ -1332,7 +1332,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let rows = sqlx::query(&namespace.query("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 ORDER BY created_at"))
+        let rows = sqlx::query(namespace.sql("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 ORDER BY created_at"))
         .bind(owner_id)
         .fetch_all(&self.pool)
         .await?;
@@ -1364,7 +1364,7 @@ impl PersistenceLayer for PostgresProvider {
     async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         // CASCADE will handle chunks and documents
-        sqlx::query(&namespace.query("DELETE FROM knowledge_bases WHERE owner_id = $1 AND id = $2"))
+        sqlx::query(namespace.sql("DELETE FROM knowledge_bases WHERE owner_id = $1 AND id = $2"))
             .bind(owner_id)
             .bind(id)
             .execute(&self.pool)
@@ -1406,7 +1406,7 @@ impl PersistenceLayer for PostgresProvider {
             _ => None,
         };
 
-        sqlx::query(&namespace.query(r"
+        sqlx::query(namespace.sql(r"
             INSERT INTO knowledge_documents (id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
@@ -1439,7 +1439,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let row = sqlx::query(&namespace.query("SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
+        let row = sqlx::query(namespace.sql("SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
         .bind(owner_id)
         .bind(id)
         .fetch_optional(&self.pool)
@@ -1487,7 +1487,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let rows = sqlx::query(&namespace.query("SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2 ORDER BY created_at"))
+        let rows = sqlx::query(namespace.sql("SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2 ORDER BY created_at"))
         .bind(owner_id)
         .bind(kb_id)
         .fetch_all(&self.pool)
@@ -1535,7 +1535,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn count_documents(&self, owner_id: &str, kb_id: &str) -> Result<usize> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let row = sqlx::query(&namespace.query("SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2"))
+        let row = sqlx::query(namespace.sql("SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2"))
                 .bind(owner_id)
                 .bind(kb_id)
                 .fetch_one(&self.pool)
@@ -1562,7 +1562,7 @@ impl PersistenceLayer for PostgresProvider {
             _ => None,
         };
 
-        sqlx::query(&namespace.query("UPDATE knowledge_documents SET status = $1, error_message = $2, updated_at = NOW() WHERE owner_id = $3 AND id = $4"))
+        sqlx::query(namespace.sql("UPDATE knowledge_documents SET status = $1, error_message = $2, updated_at = NOW() WHERE owner_id = $3 AND id = $4"))
         .bind(status_str)
         .bind(error_msg)
         .bind(owner_id)
@@ -1578,7 +1578,7 @@ impl PersistenceLayer for PostgresProvider {
         let mut tx = self.pool.begin().await?;
         ingestion_records::lock_writable_kb(&mut tx, namespace, owner_id, &document.kb_id).await?;
         // The composite foreign keys revoke source/job/chunks in this same transaction.
-        sqlx::query(&namespace.query("DELETE FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
+        sqlx::query(namespace.sql("DELETE FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
             .bind(owner_id).bind(doc_id).execute(&mut *tx).await?;
         tx.commit().await?;
         Ok(())

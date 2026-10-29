@@ -1,0 +1,130 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "-c",
+      "scripts/behaviors/browser-history-reload.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser-history-reload.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-001/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 480000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-001/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "snapshotDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 480000,
+        "use": {
+          "baseURL": "http://127.0.0.1:60675",
+          "channel": "chrome",
+          "headless": true,
+          "viewport": {
+            "width": 1280,
+            "height": 900
+          },
+          "video": "off",
+          "screenshot": "on",
+          "trace": "on",
+          "extraHTTPHeaders": {
+            "x-uar-workspace-id": "uar-user-outcomes-007-supporting-workspace"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-001/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-001/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Playwright Test did not expect test.describe() to be called here.\nMost common reasons include:\n- You are calling test.describe() in a configuration file.\n- You are calling test.describe() in a file that is imported by the configuration file.\n- You have two different versions of @playwright/test. This usually happens\n  when one of the dependencies in your package.json depends on @playwright/test.\n- You are calling test.describe() from an async test.describe() block. Only sync ones are supported.",
+      "stack": "Error: Playwright Test did not expect test.describe() to be called here.\nMost common reasons include:\n- You are calling test.describe() in a configuration file.\n- You are calling test.describe() in a file that is imported by the configuration file.\n- You have two different versions of @playwright/test. This usually happens\n  when one of the dependencies in your package.json depends on @playwright/test.\n- You are calling test.describe() from an async test.describe() block. Only sync ones are supported.\n    at _TestTypeImpl._currentSuite (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/common/index.js:2263:13)\n    at _TestTypeImpl._describe (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/common/index.js:2304:24)\n    at Function.describe (/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/common/index.js:1209:12)\n    at /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated/features/browser-history-reload.feature.spec.js:4:6",
+      "location": {
+        "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated/features/browser-history-reload.feature.spec.js",
+        "column": 6,
+        "line": 4
+      },
+      "snippet": "   at features/browser-history-reload.feature.spec.js:4\n\n  2 | import { test } from \"../../../scripts/behaviors/browser/browser-history-reload.steps.mjs\";\n  3 |\n> 4 | test.describe('A browser conversation reloads from saved history', () => {\n    |      ^\n  5 |\n  6 |   test('Reopen a saved conversation after reload and continue from its earlier fact', { tag: ['@ui', '@conversation', '@reload'] }, async ({ Given, When, Then, And, page, scenario }) => { \n  7 |     await Given('a disposable custom agent is selected in a fresh browser conversation', null, { page, scenario }); "
+    },
+    {
+      "message": "Error: No tests found",
+      "stack": "Error: No tests found"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-10-29T09:08:44.576Z",
+    "duration": 84.394,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

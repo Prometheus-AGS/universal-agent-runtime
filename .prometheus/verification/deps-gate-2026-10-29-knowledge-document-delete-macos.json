@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "remove-deleted-documents-from-knowledge-retrieval;delete-one-document-without-losing-another-document-in-the-same-kb",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Delete one document without losing another document in the same KB",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 3931423,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n24808 !== 3923\n\n    + expected - actual\n\n    -24808\n    +3923\n\n    at assertOwnedEndpoint (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/restart-owned-uar.mjs:74:10)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/knowledge-document-delete.steps.mjs:58:28)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable knowledge base with two indexed laboratory notes",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-document-delete.steps.mjs:48"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the same query retrieves both original notes",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-document-delete.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I delete only the first laboratory note",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-document-delete.steps.mjs:91"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "retrieval excludes the deleted note and still returns the retained note",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-document-delete.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1123567
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rbm93bGVkZ2UtZG9jdW1lbnQtZGVsZXRlLzAxZTk2ZTc5LTY0YTQtNDVkOC04YzM5LTg5Mzk4OWQzNGIwZS5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge-document-delete",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "remove-deleted-documents-from-knowledge-retrieval",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Remove deleted documents from knowledge retrieval",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge-document-delete",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/knowledge-document-delete.feature"
+  }
+]

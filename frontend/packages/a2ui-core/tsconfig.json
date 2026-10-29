@@ -9,7 +9,8 @@
     "moduleDetection": "force",
     "strict": true,
     "noEmit": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["*"]
   },
   "include": ["src"]
 }

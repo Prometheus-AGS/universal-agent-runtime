@@ -147,7 +147,7 @@ impl PostgresApiKeyStorage {
 
     async fn records(
         &self,
-        query: &str,
+        query: &'static str,
         parameter: Option<&str>,
     ) -> anyhow::Result<Vec<ApiKeyRecord>> {
         use sqlx::Row;

@@ -106,7 +106,7 @@ impl Default for ProvisionOptions {
 }
 
 /// Curated [`ToolSpec`] for tool names this codebase already documents an
-/// install path for (see `Cargo.toml`'s comment above the `kreuzberg`
+/// install path for (see `Cargo.toml`'s comment above the `xberg`
 /// dependency and `docs/DEPENDENCY_MANAGEMENT.md`). Returns a bare,
 /// strategy-less spec (Adopt-only) for anything not curated — this
 /// deliberately does not invent installation strategies for arbitrary,
@@ -123,6 +123,20 @@ pub fn known_tool_spec(name: &str) -> ToolSpec {
                 url: "https://github.com/kreuzberg-dev/kreuzberg.git",
                 build_cmd: &["cargo", "install", "--path", ".", "--bin", "kreuzberg"],
                 binary_relpath: "target/release/kreuzberg",
+            }),
+            prebuilt: None,
+        },
+        // Kreuzberg's successor; the source is the fork UAR links against.
+        "xberg" => ToolSpec {
+            name: "xberg",
+            native_pkg: PerOsPackageName {
+                brew: Some("xberg-io/tap/xberg"),
+                ..Default::default()
+            },
+            git_install: Some(GitInstallSpec {
+                url: "https://github.com/Know-Me-Tools/xberg.git",
+                build_cmd: &["cargo", "build", "--release", "-p", "xberg-cli", "--bin", "xberg"],
+                binary_relpath: "target/release/xberg",
             }),
             prebuilt: None,
         },
@@ -537,6 +551,16 @@ mod tests {
             spec.native_pkg.brew,
             Some("kreuzberg-dev/tap/kreuzberg-cli")
         );
+    }
+
+    #[test]
+    fn known_tool_spec_returns_curated_xberg_spec() {
+        let spec = known_tool_spec("xberg");
+        assert_eq!(spec.name, "xberg");
+        assert_eq!(spec.native_pkg.brew, Some("xberg-io/tap/xberg"));
+        let git = spec.git_install.expect("xberg has a git install path");
+        assert_eq!(git.url, "https://github.com/Know-Me-Tools/xberg.git");
+        assert_eq!(git.binary_relpath, "target/release/xberg");
     }
 
     #[test]

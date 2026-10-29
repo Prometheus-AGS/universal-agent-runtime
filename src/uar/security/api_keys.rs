@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 };
 use async_trait::async_trait;
 use jsonwebtoken::{EncodingKey, Header};
@@ -468,10 +468,9 @@ fn generate_raw_key() -> String {
 
 /// Hash a raw key with Argon2id.
 fn hash_key(raw_key: &str) -> anyhow::Result<String> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let hash = argon2
-        .hash_password(raw_key.as_bytes(), &salt)
+    // argon2 0.6 draws the salt itself (default `getrandom` feature).
+    let hash: PasswordHash = Argon2::default()
+        .hash_password(raw_key.as_bytes())
         .map_err(|e| anyhow::anyhow!("argon2 hash error: {e}"))?;
     Ok(hash.to_string())
 }

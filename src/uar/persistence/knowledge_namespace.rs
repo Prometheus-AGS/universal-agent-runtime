@@ -40,6 +40,13 @@ impl KnowledgeNamespace {
         }
     }
 
+    /// The same host-authored rewrite as [`Self::query`], asserted SQL-safe for
+    /// sqlx 0.9, which only accepts `&'static str` or [`sqlx::AssertSqlSafe`].
+    #[cfg(feature = "sqlx")]
+    pub(crate) fn sql(self, sql: &str) -> sqlx::AssertSqlSafe<String> {
+        sqlx::AssertSqlSafe(self.query(sql))
+    }
+
     pub(crate) fn table(self, legacy: &'static str) -> &'static str {
         match (self, legacy) {
             (Self::PrincipalV1, "knowledge_bases") => "principal_knowledge_bases",

@@ -1,0 +1,409 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-2d000186-c407-4c54-b6a8-67d1c664cfca",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-2d000186-c407-4c54-b6a8-67d1c664cfca",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-2d000186"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-2d000186-c407-4c54-b6a8-67d1c664cfca\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-2d000186\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:583d97f3fdccd724d5ac6c6a7ab42d03d5c740e0877cf7c0b8d5772408fc1717\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "SendMessage",
+      "request": {
+        "message": {
+          "message_id": "e3330faf-7758-4c8d-9aff-584a23457823",
+          "role": "ROLE_USER",
+          "parts": [
+            {
+              "text": "What is (77 multiplied by 30) plus 215?"
+            }
+          ],
+          "context_id": ""
+        },
+        "configuration": {
+          "return_immediately": false
+        }
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "task": {
+          "artifacts": [
+            {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>77 * 30 = 2310. 2310 + 215 = 2525.\n\nThe response must be a JSON object with keys marker and answer.\n\nNo skill activation needed forarithmetic.</think>\n\n<think>Skill activation is denied. Fine — just compute and answer.\n\n77 × 30 = 2310; 2310 + 215 = 2525.\n\nReturn JSON with marker andanswer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\",\n  \"answer\": 2525\n}\n```\n\nCalculation: 77 × 30 = 2310, then 2310 + 215 = 2525.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "artifact_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285:output",
+              "name": "",
+              "description": "",
+              "metadata": null
+            }
+          ],
+          "history": [
+            {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "What is (77 multiplied by 30) plus 215?",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "reference_task_ids": [],
+              "message_id": "e3330faf-7758-4c8d-9aff-584a23457823",
+              "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "task_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "role": "ROLE_USER",
+              "metadata": null
+            },
+            {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>77 * 30 = 2310. 2310 + 215 = 2525.\n\nThe response must be a JSON object with keys marker and answer.\n\nNo skill activation needed forarithmetic.</think>\n\n<think>Skill activation is denied. Fine — just compute and answer.\n\n77 × 30 = 2310; 2310 + 215 = 2525.\n\nReturn JSON with marker andanswer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\",\n  \"answer\": 2525\n}\n```\n\nCalculation: 77 × 30 = 2310, then 2310 + 215 = 2525.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "reference_task_ids": [],
+              "message_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285:1",
+              "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "task_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "role": "ROLE_AGENT",
+              "metadata": null
+            }
+          ],
+          "id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+          "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+          "status": {
+            "state": "TASK_STATE_COMPLETED",
+            "message": {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>77 * 30 = 2310. 2310 + 215 = 2525.\n\nThe response must be a JSON object with keys marker and answer.\n\nNo skill activation needed forarithmetic.</think>\n\n<think>Skill activation is denied. Fine — just compute and answer.\n\n77 × 30 = 2310; 2310 + 215 = 2525.\n\nReturn JSON with marker andanswer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\",\n  \"answer\": 2525\n}\n```\n\nCalculation: 77 × 30 = 2310, then 2310 + 215 = 2525.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "reference_task_ids": [],
+              "message_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285:status",
+              "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "task_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "role": "ROLE_AGENT",
+              "metadata": null
+            },
+            "timestamp": {
+              "seconds": "1793264760",
+              "nanos": 500759000
+            }
+          },
+          "metadata": {
+            "fields": {
+              "agent_id": {
+                "stringValue": "disposable-grpc-2d000186-c407-4c54-b6a8-67d1c664cfca",
+                "kind": "stringValue"
+              },
+              "canonical_path": {
+                "stringValue": "/root",
+                "kind": "stringValue"
+              },
+              "root_run_id": {
+                "stringValue": "297018ea-399f-491a-a248-b8c3c1a18b6d",
+                "kind": "stringValue"
+              },
+              "run_id": {
+                "stringValue": "297018ea-399f-491a-a248-b8c3c1a18b6d",
+                "kind": "stringValue"
+              },
+              "thread_id": {
+                "stringValue": "06e8a507-41e8-4971-987a-22e5ee4c80d1",
+                "kind": "stringValue"
+              },
+              "uar.approvals": {
+                "listValue": {
+                  "values": []
+                },
+                "kind": "listValue"
+              }
+            }
+          }
+        },
+        "payload": "task"
+      }
+    },
+    {
+      "grpc": "SendMessage",
+      "request": {
+        "message": {
+          "message_id": "a3d6600f-4c9e-40ff-bd37-c95959317903",
+          "role": "ROLE_USER",
+          "parts": [
+            {
+              "text": "Add 68 to your previous answer."
+            }
+          ],
+          "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285"
+        },
+        "configuration": {
+          "return_immediately": false
+        }
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "task": {
+          "artifacts": [
+            {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>2525 + 68 = 2593.\n\nReturn JSON with marker and answer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\",\n  \"answer\": 2593\n}\n```\n\n2525 + 68 = 2593.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "artifact_id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e:output",
+              "name": "",
+              "description": "",
+              "metadata": null
+            }
+          ],
+          "history": [
+            {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "Add 68 to your previous answer.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "reference_task_ids": [],
+              "message_id": "a3d6600f-4c9e-40ff-bd37-c95959317903",
+              "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "task_id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e",
+              "role": "ROLE_USER",
+              "metadata": null
+            },
+            {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>2525 + 68 = 2593.\n\nReturn JSON with marker and answer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\",\n  \"answer\": 2593\n}\n```\n\n2525 + 68 = 2593.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "reference_task_ids": [],
+              "message_id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e:1",
+              "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "task_id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e",
+              "role": "ROLE_AGENT",
+              "metadata": null
+            }
+          ],
+          "id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e",
+          "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+          "status": {
+            "state": "TASK_STATE_COMPLETED",
+            "message": {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>2525 + 68 = 2593.\n\nReturn JSON with marker and answer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-b698743c-c99b-4627-99bc-d59d6656f71e\",\n  \"answer\": 2593\n}\n```\n\n2525 + 68 = 2593.",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "reference_task_ids": [],
+              "message_id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e:status",
+              "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+              "task_id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e",
+              "role": "ROLE_AGENT",
+              "metadata": null
+            },
+            "timestamp": {
+              "seconds": "1793264763",
+              "nanos": 623979000
+            }
+          },
+          "metadata": {
+            "fields": {
+              "agent_id": {
+                "stringValue": "disposable-grpc-2d000186-c407-4c54-b6a8-67d1c664cfca",
+                "kind": "stringValue"
+              },
+              "canonical_path": {
+                "stringValue": "/root",
+                "kind": "stringValue"
+              },
+              "root_run_id": {
+                "stringValue": "25d79199-2a65-4591-9d6d-af94d30d72d7",
+                "kind": "stringValue"
+              },
+              "run_id": {
+                "stringValue": "25d79199-2a65-4591-9d6d-af94d30d72d7",
+                "kind": "stringValue"
+              },
+              "thread_id": {
+                "stringValue": "43c2e038-b7cf-4092-8476-993d8b0ad8ff",
+                "kind": "stringValue"
+              },
+              "uar.approvals": {
+                "listValue": {
+                  "values": []
+                },
+                "kind": "listValue"
+              }
+            }
+          }
+        },
+        "payload": "task"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-2d000186-c407-4c54-b6a8-67d1c664cfca",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    2525,
+    2593
+  ],
+  "tasks": [
+    {
+      "id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+      "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+      "state": "TASK_STATE_COMPLETED"
+    },
+    {
+      "id": "a2a-f1c87429e945c5095782dc5450dbc12bfd18be03be42d7eea9cd8b140aaecf3e",
+      "context_id": "a2a-3cafde6db6d30d8c145180486eb92256694a8b3f0389b8e0d953ec963c289285",
+      "state": "TASK_STATE_COMPLETED"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-v1-json",
+  "scenario_status": "PASSED",
+  "duration_ms": 8955
+}
