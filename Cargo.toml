@@ -109,6 +109,12 @@ required-features = ["server"]
 
 # Cookbook examples live in docs/cookbook/runtime/ but are built as examples of
 # the runtime crate so they share the workspace build cache.
+# Host fixture tool for stopped embedded stores; never part of a release.
+[[example]]
+name = "surrealql_store_runner"
+path = "scripts/acceptance/fixtures/surrealql_store_runner.rs"
+required-features = ["surreal-backend"]
+
 [[example]]
 name = "cookbook_01_start_server"
 path = "docs/cookbook/runtime/src/bin/01_start_server.rs"

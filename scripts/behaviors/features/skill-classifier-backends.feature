@@ -13,3 +13,4 @@ Feature: Each intent-classifier backend selects and uses a skill
       | hybrid         |
       | localembedding |
       | llm            |
+      | wasm           |
