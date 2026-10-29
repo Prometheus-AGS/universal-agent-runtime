@@ -7,5 +7,5 @@
   "exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } },
   "scripts": { "build": "tsc", "typecheck": "tsc --noEmit", "lint": "eslint .", "test": "vitest run" },
   "dependencies": { "@prometheus-ags/a2ui-core": "workspace:*", "lit": "3.3.3" },
-  "devDependencies": { "@types/node": "^26.6.5", "eslint": "^10.13.0", "globals": "^17.13.0", "happy-dom": "^21.0.4", "typescript": "^6.0.3", "typescript-eslint": "^8.72.1", "vitest": "4.1.10" }
+  "devDependencies": { "@types/node": "^26.6.5", "eslint": "^10.13.0", "globals": "^17.13.0", "happy-dom": "^21.0.4", "typescript": "^6.0.3", "typescript-eslint": "^8.72.1", "vitest": "5.0.5" }
 }
