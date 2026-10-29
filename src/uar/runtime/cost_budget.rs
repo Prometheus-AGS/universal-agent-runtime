@@ -13,8 +13,11 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use crate::uar::persistence::accounting::{AccountingError, CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity, ScopeLimits};
 use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::accounting::{
+    AccountingError, CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity,
+    ScopeLimits,
+};
 
 use crate::uar::api::a2a::contract::{UarUsageGrant, UarUsageReceipt};
 use crate::uar::runtime::thread::policy_intersection::ThreadBudgets;
@@ -30,8 +33,10 @@ pub(crate) fn team_token_allocation(total: u64) -> anyhow::Result<(u64, u64)> {
     let input = total
         .checked_sub(output)
         .ok_or_else(|| anyhow::anyhow!("team token allocation overflows"))?;
-    anyhow::ensure!(input > 0 && output > 0,
-        "team token allocation must leave nonzero input and output allowances");
+    anyhow::ensure!(
+        input > 0 && output > 0,
+        "team token allocation must leave nonzero input and output allowances"
+    );
     Ok((input, output))
 }
 
@@ -40,10 +45,21 @@ fn storage_error_kind(error: &anyhow::Error) -> &'static str {
     #[cfg(feature = "surreal-backend")]
     for cause in error.chain() {
         if let Some(storage) = cause.downcast_ref::<surrealdb::Error>() {
-            return if matches!(storage.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)) { "transaction_conflict" } else { "other_storage_error" };
+            return if matches!(
+                storage.query_details(),
+                Some(surrealdb::types::QueryError::TransactionConflict)
+            ) {
+                "transaction_conflict"
+            } else {
+                "other_storage_error"
+            };
         }
     }
-    if error.chain().any(|cause| cause.is::<AccountingError>()) { "accounting_error" } else { "non_storage" }
+    if error.chain().any(|cause| cause.is::<AccountingError>()) {
+        "accounting_error"
+    } else {
+        "non_storage"
+    }
 }
 
 /// Closed SurrealDB kind/subkind chain; never formats error text or detail fields.
@@ -51,38 +67,78 @@ fn storage_error_detail(error: &anyhow::Error) -> String {
     #[cfg(feature = "surreal-backend")]
     for cause in error.chain() {
         if let Some(storage) = cause.downcast_ref::<surrealdb::Error>() {
-            use surrealdb::types::{ConfigurationError, ErrorDetails, NotFoundError, QueryError, SerializationError, ValidationError};
+            use surrealdb::types::{
+                ConfigurationError, ErrorDetails, NotFoundError, QueryError, SerializationError,
+                ValidationError,
+            };
             let label = |storage: &surrealdb::Error| {
                 let subtype = match storage.details() {
                     ErrorDetails::Query(Some(QueryError::NotExecuted)) => Some("NotExecuted"),
                     ErrorDetails::Query(Some(QueryError::TimedOut { .. })) => Some("TimedOut"),
                     ErrorDetails::Query(Some(QueryError::Cancelled)) => Some("Cancelled"),
-                    ErrorDetails::Query(Some(QueryError::TransactionConflict)) => Some("TransactionConflict"),
+                    ErrorDetails::Query(Some(QueryError::TransactionConflict)) => {
+                        Some("TransactionConflict")
+                    }
                     ErrorDetails::Validation(Some(ValidationError::Parse)) => Some("Parse"),
-                    ErrorDetails::Validation(Some(ValidationError::InvalidRequest)) => Some("InvalidRequest"),
-                    ErrorDetails::Validation(Some(ValidationError::InvalidParams)) => Some("InvalidParams"),
-                    ErrorDetails::Validation(Some(ValidationError::NamespaceEmpty)) => Some("NamespaceEmpty"),
-                    ErrorDetails::Validation(Some(ValidationError::DatabaseEmpty)) => Some("DatabaseEmpty"),
-                    ErrorDetails::Validation(Some(ValidationError::InvalidParameter { .. })) => Some("InvalidParameter"),
-                    ErrorDetails::Validation(Some(ValidationError::InvalidContent { .. })) => Some("InvalidContent"),
-                    ErrorDetails::Validation(Some(ValidationError::InvalidMerge { .. })) => Some("InvalidMerge"),
-                    ErrorDetails::Configuration(Some(ConfigurationError::LiveQueryNotSupported)) => Some("LiveQueryNotSupported"),
-                    ErrorDetails::Configuration(Some(ConfigurationError::BadLiveQueryConfig)) => Some("BadLiveQueryConfig"),
-                    ErrorDetails::Configuration(Some(ConfigurationError::BadGraphqlConfig)) => Some("BadGraphqlConfig"),
-                    ErrorDetails::Configuration(Some(ConfigurationError::DialectNotSupported)) => Some("DialectNotSupported"),
-                    ErrorDetails::Serialization(Some(SerializationError::Serialization)) => Some("Serialization"),
-                    ErrorDetails::Serialization(Some(SerializationError::Deserialization)) => Some("Deserialization"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidRequest)) => {
+                        Some("InvalidRequest")
+                    }
+                    ErrorDetails::Validation(Some(ValidationError::InvalidParams)) => {
+                        Some("InvalidParams")
+                    }
+                    ErrorDetails::Validation(Some(ValidationError::NamespaceEmpty)) => {
+                        Some("NamespaceEmpty")
+                    }
+                    ErrorDetails::Validation(Some(ValidationError::DatabaseEmpty)) => {
+                        Some("DatabaseEmpty")
+                    }
+                    ErrorDetails::Validation(Some(ValidationError::InvalidParameter {
+                        ..
+                    })) => Some("InvalidParameter"),
+                    ErrorDetails::Validation(Some(ValidationError::InvalidContent { .. })) => {
+                        Some("InvalidContent")
+                    }
+                    ErrorDetails::Validation(Some(ValidationError::InvalidMerge { .. })) => {
+                        Some("InvalidMerge")
+                    }
+                    ErrorDetails::Configuration(Some(
+                        ConfigurationError::LiveQueryNotSupported,
+                    )) => Some("LiveQueryNotSupported"),
+                    ErrorDetails::Configuration(Some(ConfigurationError::BadLiveQueryConfig)) => {
+                        Some("BadLiveQueryConfig")
+                    }
+                    ErrorDetails::Configuration(Some(ConfigurationError::BadGraphqlConfig)) => {
+                        Some("BadGraphqlConfig")
+                    }
+                    ErrorDetails::Configuration(Some(ConfigurationError::DialectNotSupported)) => {
+                        Some("DialectNotSupported")
+                    }
+                    ErrorDetails::Serialization(Some(SerializationError::Serialization)) => {
+                        Some("Serialization")
+                    }
+                    ErrorDetails::Serialization(Some(SerializationError::Deserialization)) => {
+                        Some("Deserialization")
+                    }
                     ErrorDetails::NotFound(Some(NotFoundError::Table { .. })) => Some("Table"),
                     ErrorDetails::NotFound(Some(NotFoundError::Record { .. })) => Some("Record"),
-                    ErrorDetails::NotFound(Some(NotFoundError::Namespace { .. })) => Some("Namespace"),
-                    ErrorDetails::NotFound(Some(NotFoundError::Database { .. })) => Some("Database"),
+                    ErrorDetails::NotFound(Some(NotFoundError::Namespace { .. })) => {
+                        Some("Namespace")
+                    }
+                    ErrorDetails::NotFound(Some(NotFoundError::Database { .. })) => {
+                        Some("Database")
+                    }
                     ErrorDetails::NotFound(Some(NotFoundError::Transaction)) => Some("Transaction"),
-                    ErrorDetails::Query(None) | ErrorDetails::Validation(None)
-                    | ErrorDetails::Configuration(None) | ErrorDetails::Serialization(None)
+                    ErrorDetails::Query(None)
+                    | ErrorDetails::Validation(None)
+                    | ErrorDetails::Configuration(None)
+                    | ErrorDetails::Serialization(None)
                     | ErrorDetails::NotFound(None) => Some("Unspecified"),
                     _ => None,
                 };
-                subtype.map_or_else(|| storage.kind_str().to_owned(), |subtype| format!("{}:{subtype}", storage.kind_str()))
+                subtype.map_or_else(
+                    || storage.kind_str().to_owned(),
+                    |subtype| format!("{}:{subtype}", storage.kind_str()),
+                )
             };
             let mut detail = label(storage);
             let mut current = storage;
@@ -125,9 +181,14 @@ impl BudgetFailureOrigin {
 /// Closed client-facing `(code, message)` for a budget-owned refusal: the category plus the
 /// `AccountingError` cause. Typed provider failures keep their own code; no error text is used.
 pub(crate) fn client_failure(error: &anyhow::Error) -> Option<(&'static str, String)> {
-    if crate::llm::ProviderError::from_anyhow(error).is_some() { return None; }
+    if crate::llm::ProviderError::from_anyhow(error).is_some() {
+        return None;
+    }
     let category = error.downcast_ref::<BudgetFailureOrigin>()?.category();
-    let message = match error.chain().find_map(|cause| cause.downcast_ref::<AccountingError>()) {
+    let message = match error
+        .chain()
+        .find_map(|cause| cause.downcast_ref::<AccountingError>())
+    {
         Some(cause) => format!("{category}: {cause}"),
         None => category.to_owned(),
     };
@@ -270,7 +331,10 @@ pub struct ClientToolBudgetSnapshot {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 struct ClientToolScopeSnapshot {
-    scope: BudgetScope, id: String, tokens: u64, cost_usd: f64,
+    scope: BudgetScope,
+    id: String,
+    tokens: u64,
+    cost_usd: f64,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -282,34 +346,62 @@ struct ClientToolActivitySnapshot {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 struct ClientToolRemoteSnapshot {
-    accounting_id: String, elapsed_ms: u64, activity: ClientToolActivitySnapshot,
+    accounting_id: String,
+    elapsed_ms: u64,
+    activity: ClientToolActivitySnapshot,
 }
 
-fn handoff_activity(usage: Option<&RunUsage>, now: Instant, wall_ms: i64) -> anyhow::Result<ClientToolActivitySnapshot> {
+fn handoff_activity(
+    usage: Option<&RunUsage>,
+    now: Instant,
+    wall_ms: i64,
+) -> anyhow::Result<ClientToolActivitySnapshot> {
     let windows = |entries: Option<&VecDeque<(Instant, u64)>>| -> anyhow::Result<Vec<(i64, u64)>> {
-        entries.into_iter().flatten().filter(|(at, _)| now.saturating_duration_since(*at) < Duration::from_secs(60))
+        entries
+            .into_iter()
+            .flatten()
+            .filter(|(at, _)| now.saturating_duration_since(*at) < Duration::from_secs(60))
             .map(|(at, count)| {
                 let age = i64::try_from(now.saturating_duration_since(*at).as_millis())?;
-                Ok((wall_ms.checked_sub(age).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?, *count))
-            }).collect()
+                Ok((
+                    wall_ms
+                        .checked_sub(age)
+                        .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?,
+                    *count,
+                ))
+            })
+            .collect()
     };
     Ok(ClientToolActivitySnapshot {
         cumulative: RunUsageSnapshot {
             usage_reports: usage.map_or(0, |v| v.usage_reports),
             completed_usage_reports: usage.map_or(0, |v| v.completed_usage_reports),
             unpriced_usage: usage.is_some_and(|v| v.unpriced_usage),
-            total_tokens: usage.map_or(0, |v| v.total_tokens), cost_usd: usage.map_or(0.0, |v| v.cost_usd),
-            model_requests: usage.map_or(0, |v| v.total_requests), tool_calls: usage.map_or(0, |v| v.tool_calls),
+            total_tokens: usage.map_or(0, |v| v.total_tokens),
+            cost_usd: usage.map_or(0.0, |v| v.cost_usd),
+            model_requests: usage.map_or(0, |v| v.total_requests),
+            tool_calls: usage.map_or(0, |v| v.tool_calls),
         },
-        requests: windows(usage.map(|v| &v.requests))?, tokens: windows(usage.map(|v| &v.token_window))?,
+        requests: windows(usage.map(|v| &v.requests))?,
+        tokens: windows(usage.map(|v| &v.token_window))?,
     })
 }
 
-fn restore_handoff_activity(usage: &mut RunUsage, saved: &ClientToolActivitySnapshot, now: Instant, wall_ms: i64) -> anyhow::Result<()> {
+fn restore_handoff_activity(
+    usage: &mut RunUsage,
+    saved: &ClientToolActivitySnapshot,
+    now: Instant,
+    wall_ms: i64,
+) -> anyhow::Result<()> {
     let total = &saved.cumulative;
-    anyhow::ensure!(total.cost_usd.is_finite() && total.cost_usd >= 0.0, "invalid_client_budget_usage");
+    anyhow::ensure!(
+        total.cost_usd.is_finite() && total.cost_usd >= 0.0,
+        "invalid_client_budget_usage"
+    );
     usage.usage_reports = usage.usage_reports.max(total.usage_reports);
-    usage.completed_usage_reports = usage.completed_usage_reports.max(total.completed_usage_reports);
+    usage.completed_usage_reports = usage
+        .completed_usage_reports
+        .max(total.completed_usage_reports);
     usage.unpriced_usage |= total.unpriced_usage;
     usage.total_tokens = usage.total_tokens.max(total.total_tokens);
     usage.cost_usd = usage.cost_usd.max(total.cost_usd);
@@ -317,39 +409,48 @@ fn restore_handoff_activity(usage: &mut RunUsage, saved: &ClientToolActivitySnap
     usage.tool_calls = usage.tool_calls.max(total.tool_calls);
     // Per-wall-second maxima make repeated restoration idempotent and preserve
     // already observed activity without charging a usage delta a second time.
-    let merge = |current: &mut VecDeque<(Instant, u64)>, entries: &[(i64, u64)]| -> anyhow::Result<()> {
-        let mut buckets = std::collections::BTreeMap::<i64, u64>::new();
-        for (at, count) in current.iter() {
-            let age = i64::try_from(now.saturating_duration_since(*at).as_millis())?;
-            let timestamp = wall_ms.checked_sub(age).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
-            let bucket = buckets.entry(timestamp.div_euclid(1000)).or_default();
-            *bucket = bucket.saturating_add(*count);
-        }
-        let mut saved_buckets = std::collections::BTreeMap::<i64, u64>::new();
-        for (timestamp, count) in entries {
-            anyhow::ensure!(*timestamp <= wall_ms, "client_budget_clock_reversed");
-            let bucket = saved_buckets.entry(timestamp.div_euclid(1000)).or_default();
-            *bucket = bucket.saturating_add(*count);
-        }
-        for (second, count) in saved_buckets {
-            let bucket = buckets.entry(second).or_default();
-            *bucket = (*bucket).max(count);
-        }
-        let mut merged = VecDeque::new();
-        for (second, count) in buckets {
-            // Use the end of the bucket: rounding may extend the restriction
-            // by under a second, but cannot expire observed spend early.
-            let timestamp = second.checked_mul(1000).and_then(|v| v.checked_add(999))
-                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?.min(wall_ms);
-            let age = u64::try_from(wall_ms - timestamp)?;
-            if age < 60_000 {
-                merged.push_back((now.checked_sub(Duration::from_millis(age))
-                    .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?, count));
+    let merge =
+        |current: &mut VecDeque<(Instant, u64)>, entries: &[(i64, u64)]| -> anyhow::Result<()> {
+            let mut buckets = std::collections::BTreeMap::<i64, u64>::new();
+            for (at, count) in current.iter() {
+                let age = i64::try_from(now.saturating_duration_since(*at).as_millis())?;
+                let timestamp = wall_ms
+                    .checked_sub(age)
+                    .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+                let bucket = buckets.entry(timestamp.div_euclid(1000)).or_default();
+                *bucket = bucket.saturating_add(*count);
             }
-        }
-        *current = merged;
-        Ok(())
-    };
+            let mut saved_buckets = std::collections::BTreeMap::<i64, u64>::new();
+            for (timestamp, count) in entries {
+                anyhow::ensure!(*timestamp <= wall_ms, "client_budget_clock_reversed");
+                let bucket = saved_buckets.entry(timestamp.div_euclid(1000)).or_default();
+                *bucket = bucket.saturating_add(*count);
+            }
+            for (second, count) in saved_buckets {
+                let bucket = buckets.entry(second).or_default();
+                *bucket = (*bucket).max(count);
+            }
+            let mut merged = VecDeque::new();
+            for (second, count) in buckets {
+                // Use the end of the bucket: rounding may extend the restriction
+                // by under a second, but cannot expire observed spend early.
+                let timestamp = second
+                    .checked_mul(1000)
+                    .and_then(|v| v.checked_add(999))
+                    .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?
+                    .min(wall_ms);
+                let age = u64::try_from(wall_ms - timestamp)?;
+                if age < 60_000 {
+                    merged.push_back((
+                        now.checked_sub(Duration::from_millis(age))
+                            .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?,
+                        count,
+                    ));
+                }
+            }
+            *current = merged;
+            Ok(())
+        };
     merge(&mut usage.requests, &saved.requests)?;
     merge(&mut usage.token_window, &saved.tokens)?;
     Ok(())
@@ -650,7 +751,9 @@ impl CostBudgetTracker {
             .inner
             .lock()
             .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
-        for id in std::iter::once(usage_id).chain(remote.map(|remote| remote.accounting_id.as_str())) {
+        for id in
+            std::iter::once(usage_id).chain(remote.map(|remote| remote.accounting_id.as_str()))
+        {
             let usage = inner.runs.entry(id.to_owned()).or_default();
             if completed {
                 usage.completed_usage_reports = usage.completed_usage_reports.saturating_add(1);
@@ -909,89 +1012,194 @@ pub(crate) struct ModelCallBudget {
 impl ModelCallBudget {
     /// Capture counters without recording another accounting charge.
     pub(crate) fn snapshot_client_handoff(&self) -> anyhow::Result<ClientToolBudgetSnapshot> {
-        let durable = self.durable.as_ref().ok_or_else(|| anyhow::anyhow!("client_budget_durable_accounting_required"))?;
+        let durable = self
+            .durable
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("client_budget_durable_accounting_required"))?;
         let now = Instant::now();
         let wall_ms = chrono::Utc::now().timestamp_millis();
-        let inner = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
-        anyhow::ensure!(!inner.remote_reservations.values().any(|reservation|
-            reservation.usage_id == self.usage_id
-                || self.remote.as_ref().is_some_and(|remote| reservation.usage_id == remote.accounting_id)),
-            "client_budget_remote_liability_unresolved");
-        let scopes = self.scopes.iter().map(|(scope, id)| {
-            let key = (*scope, id.clone());
-            ClientToolScopeSnapshot { scope: *scope, id: id.clone(),
-                tokens: inner.tokens.get(&key).copied().unwrap_or(0),
-                cost_usd: inner.spend.get(&key).copied().unwrap_or(0.0) }
-        }).collect();
-        let deadline_at_ms = self.deadline.map(|deadline| {
-            let remaining = i64::try_from(deadline.saturating_duration_since(now).as_millis())?;
-            wall_ms.checked_add(remaining).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))
-        }).transpose()?;
-        let remote = self.remote.as_ref().map(|remote| -> anyhow::Result<ClientToolRemoteSnapshot> {
-            Ok(ClientToolRemoteSnapshot { accounting_id: remote.accounting_id.clone(),
-                elapsed_ms: u64::try_from(now.saturating_duration_since(remote.started_at).as_millis())?,
-                activity: handoff_activity(inner.runs.get(&remote.accounting_id), now, wall_ms)? })
-        }).transpose()?;
-        Ok(ClientToolBudgetSnapshot { version: 1, owner: durable.owner.clone(),
-            source_usage_id: self.usage_id.clone(), captured_at_ms: wall_ms,
-            elapsed_root_ms: u64::try_from(now.saturating_duration_since(self.started_at).as_millis())?,
-            deadline_at_ms, limits: self.limits.clone(), scopes,
-            activity: handoff_activity(inner.runs.get(&self.usage_id), now, wall_ms)?, remote })
+        let inner = self
+            .tracker
+            .inner
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+        anyhow::ensure!(
+            !inner
+                .remote_reservations
+                .values()
+                .any(|reservation| reservation.usage_id == self.usage_id
+                    || self
+                        .remote
+                        .as_ref()
+                        .is_some_and(|remote| reservation.usage_id == remote.accounting_id)),
+            "client_budget_remote_liability_unresolved"
+        );
+        let scopes = self
+            .scopes
+            .iter()
+            .map(|(scope, id)| {
+                let key = (*scope, id.clone());
+                ClientToolScopeSnapshot {
+                    scope: *scope,
+                    id: id.clone(),
+                    tokens: inner.tokens.get(&key).copied().unwrap_or(0),
+                    cost_usd: inner.spend.get(&key).copied().unwrap_or(0.0),
+                }
+            })
+            .collect();
+        let deadline_at_ms = self
+            .deadline
+            .map(|deadline| {
+                let remaining = i64::try_from(deadline.saturating_duration_since(now).as_millis())?;
+                wall_ms
+                    .checked_add(remaining)
+                    .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))
+            })
+            .transpose()?;
+        let remote = self
+            .remote
+            .as_ref()
+            .map(|remote| -> anyhow::Result<ClientToolRemoteSnapshot> {
+                Ok(ClientToolRemoteSnapshot {
+                    accounting_id: remote.accounting_id.clone(),
+                    elapsed_ms: u64::try_from(
+                        now.saturating_duration_since(remote.started_at).as_millis(),
+                    )?,
+                    activity: handoff_activity(
+                        inner.runs.get(&remote.accounting_id),
+                        now,
+                        wall_ms,
+                    )?,
+                })
+            })
+            .transpose()?;
+        Ok(ClientToolBudgetSnapshot {
+            version: 1,
+            owner: durable.owner.clone(),
+            source_usage_id: self.usage_id.clone(),
+            captured_at_ms: wall_ms,
+            elapsed_root_ms: u64::try_from(
+                now.saturating_duration_since(self.started_at).as_millis(),
+            )?,
+            deadline_at_ms,
+            limits: self.limits.clone(),
+            scopes,
+            activity: handoff_activity(inner.runs.get(&self.usage_id), now, wall_ms)?,
+            remote,
+        })
     }
 
     /// Restore a host-owned snapshot under freshly resolved policy and authority.
     /// Existing durable scope liabilities are rebound, never replayed as charges.
     pub(crate) async fn restore_client_handoff(
-        mut self, snapshot: &ClientToolBudgetSnapshot,
+        mut self,
+        snapshot: &ClientToolBudgetSnapshot,
         owner: &crate::uar::runtime::actor::messages::ActorOwner,
     ) -> anyhow::Result<Self> {
-        let durable = self.durable.as_ref().ok_or_else(|| anyhow::anyhow!("client_budget_durable_accounting_required"))?;
+        let durable = self
+            .durable
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("client_budget_durable_accounting_required"))?;
         let store = Arc::clone(&durable.store);
-        anyhow::ensure!(snapshot.version == 1 && !snapshot.source_usage_id.is_empty() && durable.owner == snapshot.owner
-            && owner.session_owner_key()? == snapshot.owner, "client_budget_owner_mismatch");
+        anyhow::ensure!(
+            snapshot.version == 1
+                && !snapshot.source_usage_id.is_empty()
+                && durable.owner == snapshot.owner
+                && owner.session_owner_key()? == snapshot.owner,
+            "client_budget_owner_mismatch"
+        );
         snapshot.limits.validate()?;
-        anyhow::ensure!(snapshot.scopes.len() == self.scopes.len()
-            && snapshot.scopes.iter().map(|scope| (scope.scope, scope.id.as_str()))
-                .collect::<std::collections::HashSet<_>>().len() == snapshot.scopes.len()
-            && snapshot.scopes.iter().filter(|scope| scope.scope == BudgetScope::Run).count() == 1
-            && snapshot.scopes.iter().all(|scope| !scope.id.is_empty() && scope.cost_usd.is_finite() && scope.cost_usd >= 0.0
-                && (scope.scope == BudgetScope::Run || self.scopes.contains(&(scope.scope, scope.id.clone())))),
-            "client_budget_scope_mismatch");
-        anyhow::ensure!(snapshot.remote.as_ref().map(|v| &v.accounting_id)
-            == self.remote.as_ref().map(|v| &v.accounting_id), "client_budget_remote_scope_mismatch");
+        anyhow::ensure!(
+            snapshot.scopes.len() == self.scopes.len()
+                && snapshot
+                    .scopes
+                    .iter()
+                    .map(|scope| (scope.scope, scope.id.as_str()))
+                    .collect::<std::collections::HashSet<_>>()
+                    .len()
+                    == snapshot.scopes.len()
+                && snapshot
+                    .scopes
+                    .iter()
+                    .filter(|scope| scope.scope == BudgetScope::Run)
+                    .count()
+                    == 1
+                && snapshot.scopes.iter().all(|scope| !scope.id.is_empty()
+                    && scope.cost_usd.is_finite()
+                    && scope.cost_usd >= 0.0
+                    && (scope.scope == BudgetScope::Run
+                        || self.scopes.contains(&(scope.scope, scope.id.clone())))),
+            "client_budget_scope_mismatch"
+        );
+        anyhow::ensure!(
+            snapshot.remote.as_ref().map(|v| &v.accounting_id)
+                == self.remote.as_ref().map(|v| &v.accounting_id),
+            "client_budget_remote_scope_mismatch"
+        );
         let now = Instant::now();
         let wall_ms = chrono::Utc::now().timestamp_millis();
-        let away_ms = u64::try_from(wall_ms.checked_sub(snapshot.captured_at_ms)
-            .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?)
-            .map_err(|_| anyhow::anyhow!("client_budget_clock_reversed"))?;
-        let elapsed = snapshot.elapsed_root_ms.checked_add(away_ms)
+        let away_ms = u64::try_from(
+            wall_ms
+                .checked_sub(snapshot.captured_at_ms)
+                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?,
+        )
+        .map_err(|_| anyhow::anyhow!("client_budget_clock_reversed"))?;
+        let elapsed = snapshot
+            .elapsed_root_ms
+            .checked_add(away_ms)
             .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
-        self.started_at = now.checked_sub(Duration::from_millis(elapsed))
+        self.started_at = now
+            .checked_sub(Duration::from_millis(elapsed))
             .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
         self.limits = self.limits.intersect(&snapshot.limits);
-        let saved_deadline = snapshot.deadline_at_ms.map(|deadline| -> anyhow::Result<Instant> {
-            let remaining = u64::try_from(deadline.checked_sub(wall_ms)
-                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?)
+        let saved_deadline = snapshot
+            .deadline_at_ms
+            .map(|deadline| -> anyhow::Result<Instant> {
+                let remaining = u64::try_from(
+                    deadline
+                        .checked_sub(wall_ms)
+                        .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?,
+                )
                 .map_err(|_| anyhow::anyhow!("client_budget_deadline_exceeded"))?;
-            anyhow::ensure!(remaining > 0, "client_budget_deadline_exceeded");
-            now.checked_add(Duration::from_millis(remaining)).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))
-        }).transpose()?;
-        self.deadline = [self.deadline, saved_deadline, Self::deadline(self.started_at, &self.limits)?]
-            .into_iter().flatten().min();
+                anyhow::ensure!(remaining > 0, "client_budget_deadline_exceeded");
+                now.checked_add(Duration::from_millis(remaining))
+                    .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))
+            })
+            .transpose()?;
+        self.deadline = [
+            self.deadline,
+            saved_deadline,
+            Self::deadline(self.started_at, &self.limits)?,
+        ]
+        .into_iter()
+        .flatten()
+        .min();
         if let (Some(current), Some(saved)) = (&mut self.remote, &snapshot.remote) {
-            let elapsed = saved.elapsed_ms.checked_add(away_ms).ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
-            current.started_at = now.checked_sub(Duration::from_millis(elapsed))
+            let elapsed = saved
+                .elapsed_ms
+                .checked_add(away_ms)
+                .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
+            current.started_at = now
+                .checked_sub(Duration::from_millis(elapsed))
                 .ok_or_else(|| anyhow::anyhow!("client_budget_clock_range"))?;
         }
         {
-            let mut inner = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+            let mut inner = self
+                .tracker
+                .inner
+                .lock()
+                .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
             for scope in &snapshot.scopes {
                 let key = (scope.scope, scope.id.clone());
                 // Current policy's run-specific ceiling follows the retained
                 // economic scope; persistent scope limits remain authoritative.
                 if scope.scope == BudgetScope::Run
-                    && let Some(current_id) = self.scopes.iter().find(|(kind, _)| *kind == BudgetScope::Run)
-                    && let Some(current_limit) = inner.limits.get(current_id).copied() {
+                    && let Some(current_id) = self
+                        .scopes
+                        .iter()
+                        .find(|(kind, _)| *kind == BudgetScope::Run)
+                    && let Some(current_limit) = inner.limits.get(current_id).copied()
+                {
                     let retained = inner.limits.entry(key.clone()).or_insert(current_limit);
                     retained.limit_usd = retained.limit_usd.min(current_limit.limit_usd);
                     retained.warn_at = retained.warn_at.min(current_limit.warn_at);
@@ -1001,13 +1209,29 @@ impl ModelCallBudget {
                 let cost = inner.spend.entry(key).or_default();
                 *cost = (*cost).max(scope.cost_usd);
             }
-            restore_handoff_activity(inner.runs.entry(self.usage_id.clone()).or_default(), &snapshot.activity, now, wall_ms)?;
+            restore_handoff_activity(
+                inner.runs.entry(self.usage_id.clone()).or_default(),
+                &snapshot.activity,
+                now,
+                wall_ms,
+            )?;
             if let Some(remote) = &snapshot.remote {
-                restore_handoff_activity(inner.runs.entry(remote.accounting_id.clone()).or_default(), &remote.activity, now, wall_ms)?;
+                restore_handoff_activity(
+                    inner.runs.entry(remote.accounting_id.clone()).or_default(),
+                    &remote.activity,
+                    now,
+                    wall_ms,
+                )?;
             }
         }
-        self.scopes = snapshot.scopes.iter().map(|scope| (scope.scope, scope.id.clone())).collect();
-        self = self.with_durable_accounting(Some(store), Some(owner)).await?;
+        self.scopes = snapshot
+            .scopes
+            .iter()
+            .map(|scope| (scope.scope, scope.id.clone()))
+            .collect();
+        self = self
+            .with_durable_accounting(Some(store), Some(owner))
+            .await?;
         self.admit()?;
         Ok(self)
     }
@@ -1209,35 +1433,53 @@ impl ModelCallBudget {
         {
             return Err(BudgetFailureOrigin::RootDeadline.into());
         }
-        self.tracker.admit(
-            &self.scopes,
-            &self.usage_id,
-            &self.limits,
-            None,
-            self.remote.as_ref(),
-        ).map_err(|error| error.context(BudgetFailureOrigin::Admission))
+        self.tracker
+            .admit(
+                &self.scopes,
+                &self.usage_id,
+                &self.limits,
+                None,
+                self.remote.as_ref(),
+            )
+            .map_err(|error| error.context(BudgetFailureOrigin::Admission))
     }
 
     pub(crate) fn admit_tool(&self) -> anyhow::Result<()> {
         self.admit()?;
-        self.tracker.admit_tool(
-            &self.scopes,
-            &self.usage_id,
-            &self.limits,
-            self.remote.as_ref(),
-        ).map_err(|error| error.context(BudgetFailureOrigin::Admission))
+        self.tracker
+            .admit_tool(
+                &self.scopes,
+                &self.usage_id,
+                &self.limits,
+                self.remote.as_ref(),
+            )
+            .map_err(|error| error.context(BudgetFailureOrigin::Admission))
     }
 
     /// Called only by the trusted host before an authorized tool attempt.
     pub(crate) async fn admit_tool_durable(&self) -> anyhow::Result<()> {
         self.admit_tool()?;
-        self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Tool).await
+        self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Tool)
+            .await
     }
 
-    async fn admit_remote_activity(&self, activity: crate::uar::persistence::accounting::RemoteGrantActivity) -> anyhow::Result<()> {
-        let Some(remote) = &self.remote else { return Ok(()); };
+    async fn admit_remote_activity(
+        &self,
+        activity: crate::uar::persistence::accounting::RemoteGrantActivity,
+    ) -> anyhow::Result<()> {
+        let Some(remote) = &self.remote else {
+            return Ok(());
+        };
         let durable = self.durable.as_ref().ok_or(AccountingError::Unsupported)?;
-        durable.store.admit_remote_grant(&durable.owner, &remote.accounting_id, &remote.grant, activity).await?;
+        durable
+            .store
+            .admit_remote_grant(
+                &durable.owner,
+                &remote.accounting_id,
+                &remote.grant,
+                activity,
+            )
+            .await?;
         Ok(())
     }
 
@@ -1301,7 +1543,8 @@ impl RemoteBudgetReservation {
             .get(&self.id)
             .ok_or_else(|| anyhow::anyhow!("Remote budget reservation is unavailable"))?
             .clone();
-        self.unresolved.store(true, std::sync::atomic::Ordering::Release);
+        self.unresolved
+            .store(true, std::sync::atomic::Ordering::Release);
         self.record_cumulative_local(UarUsageReceipt {
             total_tokens: state.used.total_tokens.max(
                 state
@@ -1465,17 +1708,25 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
         mut request: crate::llm::LlmRequest,
     ) -> anyhow::Result<crate::llm::ExternalDriverStream> {
         use futures::StreamExt;
-        self.budget.narrow_team_output_cap(&mut request).await
+        self.budget
+            .narrow_team_output_cap(&mut request)
+            .await
             .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
         self.budget.admit()?;
-        self.budget.tracker.admit(
-            &self.budget.scopes,
-            &self.budget.usage_id,
-            &self.budget.limits,
-            Some(&self.model),
-            self.budget.remote.as_ref(),
-        ).map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
-        let durable_call = self.budget.begin_call(&self.model, &request).await
+        self.budget
+            .tracker
+            .admit(
+                &self.budget.scopes,
+                &self.budget.usage_id,
+                &self.budget.limits,
+                Some(&self.model),
+                self.budget.remote.as_ref(),
+            )
+            .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
+        let durable_call = self
+            .budget
+            .begin_call(&self.model, &request)
+            .await
             .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
         let mut stream = tokio::select! {
             biased;
@@ -1687,20 +1938,26 @@ mod tests {
         let spawn_error = root_budget
             .narrowed(&ThreadBudgets::default())
             .expect_err("an exhausted root refuses another child spawn");
-        assert!(
-            spawn_error
-                .to_string()
-                .contains("run token budget exceeded")
+        assert!(matches!(
+            spawn_error.downcast_ref::<BudgetFailureOrigin>(),
+            Some(BudgetFailureOrigin::Admission)
+        ));
+        assert_eq!(
+            spawn_error.root_cause().to_string(),
+            "run token budget exceeded"
         );
 
         let model_error = match child_driver.stream(request()).await {
             Ok(_) => panic!("an exhausted root must refuse another child model call"),
             Err(error) => error,
         };
-        assert!(
-            model_error
-                .to_string()
-                .contains("run token budget exceeded")
+        assert!(matches!(
+            model_error.downcast_ref::<BudgetFailureOrigin>(),
+            Some(BudgetFailureOrigin::Admission)
+        ));
+        assert_eq!(
+            model_error.root_cause().to_string(),
+            "run token budget exceeded"
         );
         assert_eq!(
             provider.call_count(),
@@ -1719,17 +1976,29 @@ struct DurableBudget {
     source_reservation: Option<CallIdentity>,
 }
 #[derive(Debug, Clone)]
-struct DurableCall { store: Arc<dyn PersistenceLayer>, identity: CallIdentity }
+struct DurableCall {
+    store: Arc<dyn PersistenceLayer>,
+    identity: CallIdentity,
+}
 impl DurableCall {
     fn terminal_evidence(&self) -> String {
         format!("host-confirmed-terminal:{}", self.identity.key())
     }
 
     async fn usage(&self, cost: Option<f64>, tokens: u64, terminal: bool) -> anyhow::Result<()> {
-        let recorded = self.store.record_accounting_usage(&CallUsage { identity: self.identity.clone(),
-            cost_usd: cost, tokens, terminal,
-            evidence: terminal.then(|| self.terminal_evidence()) }).await?;
-        if terminal && recorded.state != crate::uar::persistence::accounting::AccountingState::Settled {
+        let recorded = self
+            .store
+            .record_accounting_usage(&CallUsage {
+                identity: self.identity.clone(),
+                cost_usd: cost,
+                tokens,
+                terminal,
+                evidence: terminal.then(|| self.terminal_evidence()),
+            })
+            .await?;
+        if terminal
+            && recorded.state != crate::uar::persistence::accounting::AccountingState::Settled
+        {
             return Err(AccountingError::Unresolved.into());
         }
         Ok(())
@@ -1744,15 +2013,26 @@ impl ModelCallBudget {
     /// Preserve explicit untracked, unlimited development execution; a configured
     /// financial/token envelope or remote grant cannot use that compatibility path.
     pub(crate) fn has_configured_limits(&self) -> bool {
-        self.remote.is_some() || self.limits.max_cost_per_session_usd.is_some()
-            || self.limits.max_tokens_per_turn.is_some() || self.limits.max_tokens_per_session.is_some()
-            || self.tracker.inner.lock().map_or(true, |inner| self.scopes.iter().any(|key|
-                inner.limits.get(key).is_some_and(|limit| limit.limit_usd.is_finite())))
+        self.remote.is_some()
+            || self.limits.max_cost_per_session_usd.is_some()
+            || self.limits.max_tokens_per_turn.is_some()
+            || self.limits.max_tokens_per_session.is_some()
+            || self.tracker.inner.lock().map_or(true, |inner| {
+                self.scopes.iter().any(|key| {
+                    inner
+                        .limits
+                        .get(key)
+                        .is_some_and(|limit| limit.limit_usd.is_finite())
+                })
+            })
     }
 
     /// Capture persistence and the complete middleware-verified principal in the host.
-    pub(crate) async fn with_durable_accounting(mut self, store: Option<Arc<dyn PersistenceLayer>>,
-        owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>) -> anyhow::Result<Self> {
+    pub(crate) async fn with_durable_accounting(
+        mut self,
+        store: Option<Arc<dyn PersistenceLayer>>,
+        owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
+    ) -> anyhow::Result<Self> {
         let store = store.ok_or(AccountingError::Unsupported)?;
         match store.durable_store_eligibility() {
             crate::uar::persistence::DurableStoreEligibility::RemoteNotAttested => {
@@ -1764,101 +2044,220 @@ impl ModelCallBudget {
             crate::uar::persistence::DurableStoreEligibility::LocalDurable
             | crate::uar::persistence::DurableStoreEligibility::RemoteAttested => {}
         }
-        anyhow::ensure!(store.supports_durable_accounting(), "durable_accounting_unsupported");
-        let owner = owner.and_then(|owner| owner.credential_principal())
-            .ok_or_else(|| anyhow::anyhow!("accounting_verified_principal_required"))?.storage_key();
-        let configured = self.tracker.inner.lock()
-            .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?.limits.clone();
+        anyhow::ensure!(
+            store.supports_durable_accounting(),
+            "durable_accounting_unsupported"
+        );
+        let owner = owner
+            .and_then(|owner| owner.credential_principal())
+            .ok_or_else(|| anyhow::anyhow!("accounting_verified_principal_required"))?
+            .storage_key();
+        let configured = self
+            .tracker
+            .inner
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
+            .limits
+            .clone();
         let mut scopes = Vec::new();
         // Only the exact pending reservation in this same durable store proves
         // shared economic authority. A different deployment must enforce its
         // own house budget; team grants also retain normal economic scopes.
         let mut shared_source = None;
         if let Some(remote) = &self.remote {
-            let state = store.admit_remote_grant(&owner, &remote.accounting_id, &remote.grant,
-                crate::uar::persistence::accounting::RemoteGrantActivity::Inspect).await?;
+            let state = store
+                .admit_remote_grant(
+                    &owner,
+                    &remote.accounting_id,
+                    &remote.grant,
+                    crate::uar::persistence::accounting::RemoteGrantActivity::Inspect,
+                )
+                .await?;
             if let Some(expires_at) = state.expires_at {
-                let remaining = (expires_at - chrono::Utc::now()).to_std()
+                let remaining = (expires_at - chrono::Utc::now())
+                    .to_std()
                     .map_err(|_| anyhow::anyhow!("remote_grant_expired"))?;
-                let deadline = Instant::now().checked_add(remaining)
+                let deadline = Instant::now()
+                    .checked_add(remaining)
                     .ok_or_else(|| anyhow::anyhow!("remote_grant_deadline_invalid"))?;
-                self.deadline = Some(self.deadline.map_or(deadline, |current| current.min(deadline)));
+                self.deadline = Some(
+                    self.deadline
+                        .map_or(deadline, |current| current.min(deadline)),
+                );
             }
-            let id = ScopeIdentity { owner: owner.clone(), scope: "remote_destination".into(), scope_id: remote.accounting_id.clone() };
-            let limits = ScopeLimits { cost_usd: remote.grant.max_total_cost_usd, tokens: remote.grant.max_total_tokens };
-            let row = store.ensure_accounting_scope(&id,&limits).await?;
-            scopes.push(ScopeBinding { identity: id, generation: row.generation });
+            let id = ScopeIdentity {
+                owner: owner.clone(),
+                scope: "remote_destination".into(),
+                scope_id: remote.accounting_id.clone(),
+            };
+            let limits = ScopeLimits {
+                cost_usd: remote.grant.max_total_cost_usd,
+                tokens: remote.grant.max_total_tokens,
+            };
+            let row = store.ensure_accounting_scope(&id, &limits).await?;
+            scopes.push(ScopeBinding {
+                identity: id,
+                generation: row.generation,
+            });
             if let Some(digest) = remote.accounting_id.strip_prefix("a2a:") {
                 if let Some(source) = store.get_accounting_delegation(digest).await? {
-                    anyhow::ensure!(source.state == crate::uar::persistence::accounting::AccountingState::Pending
-                        && source.admission.model == "remote-delegation"
-                        && source.admission.reserved_cost_usd == remote.grant.max_total_cost_usd
-                        && source.admission.reserved_tokens == remote.grant.max_total_tokens,
-                        "shared source accounting reservation is not live or does not match the grant");
+                    anyhow::ensure!(
+                        source.state
+                            == crate::uar::persistence::accounting::AccountingState::Pending
+                            && source.admission.model == "remote-delegation"
+                            && source.admission.reserved_cost_usd
+                                == remote.grant.max_total_cost_usd
+                            && source.admission.reserved_tokens == remote.grant.max_total_tokens,
+                        "shared source accounting reservation is not live or does not match the grant"
+                    );
                     shared_source = Some(source.admission.identity);
                 }
             }
         }
         if shared_source.is_none() {
-            for (kind,id) in &self.scopes {
-                let identity = ScopeIdentity { owner: if *kind == BudgetScope::Global { "deployment".into() } else { owner.clone() },
-                    scope: kind.as_str().into(), scope_id: id.clone() };
-                let mut limits = ScopeLimits { cost_usd: configured.get(&(*kind,id.clone())).map(|v| v.limit_usd).filter(|v| v.is_finite()), tokens: None };
-                if *kind == BudgetScope::Run { limits.tokens = self.limits.max_tokens_per_turn; }
+            for (kind, id) in &self.scopes {
+                let identity = ScopeIdentity {
+                    owner: if *kind == BudgetScope::Global {
+                        "deployment".into()
+                    } else {
+                        owner.clone()
+                    },
+                    scope: kind.as_str().into(),
+                    scope_id: id.clone(),
+                };
+                let mut limits = ScopeLimits {
+                    cost_usd: configured
+                        .get(&(*kind, id.clone()))
+                        .map(|v| v.limit_usd)
+                        .filter(|v| v.is_finite()),
+                    tokens: None,
+                };
+                if *kind == BudgetScope::Run {
+                    limits.tokens = self.limits.max_tokens_per_turn;
+                }
                 if *kind == BudgetScope::Session {
                     limits.tokens = self.limits.max_tokens_per_session;
-                    if let Some(cost) = self.limits.max_cost_per_session_usd { limits.cost_usd = Some(limits.cost_usd.map_or(cost,|v| v.min(cost))); }
+                    if let Some(cost) = self.limits.max_cost_per_session_usd {
+                        limits.cost_usd = Some(limits.cost_usd.map_or(cost, |v| v.min(cost)));
+                    }
                 }
-                let row = store.ensure_accounting_scope(&identity,&limits).await?;
-                scopes.push(ScopeBinding { identity, generation: row.generation });
+                let row = store.ensure_accounting_scope(&identity, &limits).await?;
+                scopes.push(ScopeBinding {
+                    identity,
+                    generation: row.generation,
+                });
             }
         }
-        self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
-            .accounting_owners.insert(self.usage_id.clone(),owner.clone());
-        self.durable = Some(DurableBudget { store, owner, scopes, source_reservation: shared_source });
+        self.tracker
+            .inner
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
+            .accounting_owners
+            .insert(self.usage_id.clone(), owner.clone());
+        self.durable = Some(DurableBudget {
+            store,
+            owner,
+            scopes,
+            source_reservation: shared_source,
+        });
         Ok(self)
     }
 
-    async fn begin_call(&self, model: &str, request: &crate::llm::LlmRequest) -> anyhow::Result<Option<DurableCall>> {
-        self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Model).await?;
-        let Some(durable) = &self.durable else { return Ok(None); };
+    async fn begin_call(
+        &self,
+        model: &str,
+        request: &crate::llm::LlmRequest,
+    ) -> anyhow::Result<Option<DurableCall>> {
+        self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Model)
+            .await?;
+        let Some(durable) = &self.durable else {
+            return Ok(None);
+        };
         let (input, output, reservation_source) = if request.budget_contract.is_some() {
-            let (input,output) = crate::llm::liter_driver::request_budget_bound(&request.budget_contract.as_ref().ok_or(AccountingError::Unresolved)?.destination_model,request)?;
-            (Some(input),Some(output), "final_wire_contract")
-        } else if let Some(remote) = self.remote.as_ref()
-            .filter(|remote| remote.accounting_id.starts_with("team-budget:")) {
-            let total = remote.grant.max_total_tokens
+            let (input, output) = crate::llm::liter_driver::request_budget_bound(
+                &request
+                    .budget_contract
+                    .as_ref()
+                    .ok_or(AccountingError::Unresolved)?
+                    .destination_model,
+                request,
+            )?;
+            (Some(input), Some(output), "final_wire_contract")
+        } else if let Some(remote) = self
+            .remote
+            .as_ref()
+            .filter(|remote| remote.accounting_id.starts_with("team-budget:"))
+        {
+            let total = remote
+                .grant
+                .max_total_tokens
                 .ok_or_else(|| anyhow::anyhow!("team token allocation is missing"))?;
             let (input, allocated_output) = team_token_allocation(total)?;
-            let output = u64::from(request.output_token_cap
-                .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?);
-            anyhow::ensure!(output <= allocated_output,
-                "team request output token cap exceeds its host allocation");
+            let output = u64::from(
+                request
+                    .output_token_cap
+                    .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?,
+            );
+            anyhow::ensure!(
+                output <= allocated_output,
+                "team request output token cap exceeds its host allocation"
+            );
             // The host chooses this finite split; it is not a measured provider
             // input count and therefore does not qualify a settings-only route.
-            (Some(input), Some(output), "team_host_input_allowance_and_output_cap")
+            (
+                Some(input),
+                Some(output),
+                "team_host_input_allowance_and_output_cap",
+            )
         } else {
-            let info = model.split_once('/').and_then(|(provider,model)| crate::llm::catalog::ModelCatalog::global().model(provider,model));
-            (info.map(|m| m.limits.context_window).filter(|v| *v > 0), info.map(|m| m.limits.max_output).filter(|v| *v > 0), "catalog_context_and_output")
+            let info = model.split_once('/').and_then(|(provider, model)| {
+                crate::llm::catalog::ModelCatalog::global().model(provider, model)
+            });
+            (
+                info.map(|m| m.limits.context_window).filter(|v| *v > 0),
+                info.map(|m| m.limits.max_output).filter(|v| *v > 0),
+                "catalog_context_and_output",
+            )
         };
-        let tokens = input.zip(output).and_then(|(input,output)| input.checked_add(output));
-        let cost = input.zip(output).and_then(|(input,output)| {
+        let tokens = input
+            .zip(output)
+            .and_then(|(input, output)| input.checked_add(output));
+        let cost = input.zip(output).and_then(|(input, output)| {
             // Reserve the most expensive input category; cache writes can cost
             // more than uncached input and cannot be silently discounted.
-            let plain = crate::llm::catalog::estimate_cost_with_cache_write(model,input,output,0,0)?;
-            let writes = crate::llm::catalog::estimate_cost_with_cache_write(model,input,output,0,input)?;
-            let reads = crate::llm::catalog::estimate_cost_with_cache_write(model,input,output,input,0)?;
+            let plain =
+                crate::llm::catalog::estimate_cost_with_cache_write(model, input, output, 0, 0)?;
+            let writes = crate::llm::catalog::estimate_cost_with_cache_write(
+                model, input, output, 0, input,
+            )?;
+            let reads = crate::llm::catalog::estimate_cost_with_cache_write(
+                model, input, output, input, 0,
+            )?;
             Some(plain.max(writes).max(reads))
         });
-        let identity = CallIdentity { owner: durable.owner.clone(), run_id: self.usage_id.clone(),
-            call_id: uuid::Uuid::new_v4().to_string(), attempt: 1 };
-        durable.store.admit_accounting_call(&CallAdmission { identity: identity.clone(), model: model.into(),
-            scopes: durable.scopes.clone(), reserved_cost_usd: cost, reserved_tokens: tokens,
-            source_reservation: durable.source_reservation.clone() }).await.map_err(|error| {
+        let identity = CallIdentity {
+            owner: durable.owner.clone(),
+            run_id: self.usage_id.clone(),
+            call_id: uuid::Uuid::new_v4().to_string(),
+            attempt: 1,
+        };
+        durable
+            .store
+            .admit_accounting_call(&CallAdmission {
+                identity: identity.clone(),
+                model: model.into(),
+                scopes: durable.scopes.clone(),
+                reserved_cost_usd: cost,
+                reserved_tokens: tokens,
+                source_reservation: durable.source_reservation.clone(),
+            })
+            .await
+            .map_err(|error| {
                 // Only this closed, field-free error enum may supply a cause.
                 // Provider/storage error chains and request content stay private;
                 // `storage_error_kind` is a closed label derived from the chain, never its text.
-                let cause = error.downcast_ref::<AccountingError>()
+                let cause = error
+                    .downcast_ref::<AccountingError>()
                     .map(ToString::to_string)
                     .unwrap_or_else(|| "accounting_admission_unavailable".to_owned());
                 let reference = uuid::Uuid::new_v4();
@@ -1878,7 +2277,10 @@ impl ModelCallBudget {
                 );
                 error
             })?;
-        Ok(Some(DurableCall { store: durable.store.clone(), identity }))
+        Ok(Some(DurableCall {
+            store: durable.store.clone(),
+            identity,
+        }))
     }
 
     /// Keep every team provider dispatch within the remaining durable grant.
@@ -1891,74 +2293,139 @@ impl ModelCallBudget {
         if request.budget_contract.is_some() {
             return Ok(());
         }
-        let Some(remote) = self.remote.as_ref()
+        let Some(remote) = self
+            .remote
+            .as_ref()
             .filter(|remote| remote.accounting_id.starts_with("team-budget:"))
         else {
             return Ok(());
         };
-        let total = remote.grant.max_total_tokens
+        let total = remote
+            .grant
+            .max_total_tokens
             .ok_or_else(|| anyhow::anyhow!("team token allocation is missing"))?;
         let (input, allocated_output) = team_token_allocation(total)?;
-        let configured_output = u64::from(request.output_token_cap
-            .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?);
-        anyhow::ensure!(configured_output <= allocated_output,
-            "team request output token cap exceeds its host allocation");
-        let durable = self.durable.as_ref()
+        let configured_output = u64::from(
+            request
+                .output_token_cap
+                .ok_or_else(|| anyhow::anyhow!("team request has no output token cap"))?,
+        );
+        anyhow::ensure!(
+            configured_output <= allocated_output,
+            "team request output token cap exceeds its host allocation"
+        );
+        let durable = self
+            .durable
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("team budget durable accounting is required"))?;
 
         let mut remaining = total;
         for binding in &durable.scopes {
-            let scope = durable.store.get_accounting_scope(&binding.identity).await?
+            let scope = durable
+                .store
+                .get_accounting_scope(&binding.identity)
+                .await?
                 .ok_or(AccountingError::Missing)?;
             if scope.generation != binding.generation {
                 return Err(AccountingError::Conflict.into());
             }
             if let Some(limit) = scope.limits.tokens {
-                let available = limit.saturating_sub(
-                    scope.settled_tokens.saturating_add(scope.reserved_tokens),
-                );
+                let available = limit
+                    .saturating_sub(scope.settled_tokens.saturating_add(scope.reserved_tokens));
                 remaining = remaining.min(available);
             }
         }
         let output = configured_output.min(remaining.saturating_sub(input));
-        anyhow::ensure!(output > 0, "team token grant has no remaining output allowance");
+        anyhow::ensure!(
+            output > 0,
+            "team token grant has no remaining output allowance"
+        );
         request.output_token_cap = Some(u32::try_from(output)?);
         Ok(())
     }
 
     /// The trusted host calls this; the read-only kernel only exposes the budget handle.
-    pub(crate) async fn reserve_remote(&self, requested: &ThreadBudgets) -> anyhow::Result<RemoteBudgetReservation> {
+    pub(crate) async fn reserve_remote(
+        &self,
+        requested: &ThreadBudgets,
+    ) -> anyhow::Result<RemoteBudgetReservation> {
         let mut reservation = self.reserve_remote_local(requested)?;
         if let Some(durable) = &self.durable {
             let result = async {
                 // Narrow the process-local offer with authoritative current balances.
                 for binding in &durable.scopes {
-                    let scope = durable.store.get_accounting_scope(&binding.identity).await?.ok_or(AccountingError::Missing)?;
-                    if scope.generation != binding.generation { return Err(AccountingError::Conflict.into()); }
+                    let scope = durable
+                        .store
+                        .get_accounting_scope(&binding.identity)
+                        .await?
+                        .ok_or(AccountingError::Missing)?;
+                    if scope.generation != binding.generation {
+                        return Err(AccountingError::Conflict.into());
+                    }
                     if let Some(limit) = scope.limits.cost_usd {
-                        let available = (limit-scope.settled_cost_usd-scope.reserved_cost_usd).max(0.0);
-                        reservation.grant.max_total_cost_usd = Some(reservation.grant.max_total_cost_usd.map_or(available, |v| v.min(available)));
+                        let available =
+                            (limit - scope.settled_cost_usd - scope.reserved_cost_usd).max(0.0);
+                        reservation.grant.max_total_cost_usd = Some(
+                            reservation
+                                .grant
+                                .max_total_cost_usd
+                                .map_or(available, |v| v.min(available)),
+                        );
                     }
                     if let Some(limit) = scope.limits.tokens {
-                        let available = limit.saturating_sub(scope.settled_tokens.saturating_add(scope.reserved_tokens));
-                        reservation.grant.max_total_tokens = Some(reservation.grant.max_total_tokens.map_or(available, |v| v.min(available)));
+                        let available = limit.saturating_sub(
+                            scope.settled_tokens.saturating_add(scope.reserved_tokens),
+                        );
+                        reservation.grant.max_total_tokens = Some(
+                            reservation
+                                .grant
+                                .max_total_tokens
+                                .map_or(available, |v| v.min(available)),
+                        );
                     }
                 }
                 reservation.grant.validate()?;
-                let identity = CallIdentity { owner: durable.owner.clone(), run_id: self.usage_id.clone(), call_id: reservation.id.clone(), attempt: 1 };
-                durable.store.admit_accounting_call(&CallAdmission { identity: identity.clone(), model: "remote-delegation".into(),
-                    scopes: durable.scopes.clone(), reserved_cost_usd: reservation.grant.max_total_cost_usd,
-                    reserved_tokens: reservation.grant.max_total_tokens,
-                    source_reservation: durable.source_reservation.clone() }).await?;
-                Ok::<_,anyhow::Error>(DurableCall { store: durable.store.clone(), identity })
-            }.await;
+                let identity = CallIdentity {
+                    owner: durable.owner.clone(),
+                    run_id: self.usage_id.clone(),
+                    call_id: reservation.id.clone(),
+                    attempt: 1,
+                };
+                durable
+                    .store
+                    .admit_accounting_call(&CallAdmission {
+                        identity: identity.clone(),
+                        model: "remote-delegation".into(),
+                        scopes: durable.scopes.clone(),
+                        reserved_cost_usd: reservation.grant.max_total_cost_usd,
+                        reserved_tokens: reservation.grant.max_total_tokens,
+                        source_reservation: durable.source_reservation.clone(),
+                    })
+                    .await?;
+                Ok::<_, anyhow::Error>(DurableCall {
+                    store: durable.store.clone(),
+                    identity,
+                })
+            }
+            .await;
             match result {
                 Ok(call) => {
-                    let mut inner = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
-                    inner.remote_reservations.get_mut(&reservation.id).ok_or(AccountingError::Missing)?.grant = reservation.grant.clone();
+                    let mut inner = self
+                        .tracker
+                        .inner
+                        .lock()
+                        .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+                    inner
+                        .remote_reservations
+                        .get_mut(&reservation.id)
+                        .ok_or(AccountingError::Missing)?
+                        .grant = reservation.grant.clone();
                     reservation.durable = Some(call);
                 }
-                Err(error) => { reservation.release_confirmed_local()?; return Err(error); }
+                Err(error) => {
+                    reservation.release_confirmed_local()?;
+                    return Err(error);
+                }
             }
         }
         Ok(reservation)
@@ -1969,9 +2436,14 @@ impl RemoteBudgetReservation {
     /// source, target and child identities and every granted restriction.
     pub(crate) async fn bind_contract(&self, digest: String) -> anyhow::Result<()> {
         if let Some(call) = &self.durable {
-            call.store.bind_accounting_delegation(&crate::uar::persistence::accounting::AccountingDelegation {
-                contract_digest: digest, source: call.identity.clone(),
-            }).await?;
+            call.store
+                .bind_accounting_delegation(
+                    &crate::uar::persistence::accounting::AccountingDelegation {
+                        contract_digest: digest,
+                        source: call.identity.clone(),
+                    },
+                )
+                .await?;
         }
         Ok(())
     }
@@ -1979,24 +2451,42 @@ impl RemoteBudgetReservation {
     pub(crate) async fn record_cumulative(&self, receipt: UarUsageReceipt) -> anyhow::Result<()> {
         let result = async {
             receipt.validate()?;
-            if let Some(call) = &self.durable { call.usage(Some(receipt.cost_usd),receipt.total_tokens,false).await?; }
+            if let Some(call) = &self.durable {
+                call.usage(Some(receipt.cost_usd), receipt.total_tokens, false)
+                    .await?;
+            }
             self.record_cumulative_local(receipt)
-        }.await;
+        }
+        .await;
         if result.is_err() {
             // A later cleanup path cannot turn a stale/default receipt into a
             // confirmed final cost after any counter or persistence failure.
-            self.unresolved.store(true, std::sync::atomic::Ordering::Release);
+            self.unresolved
+                .store(true, std::sync::atomic::Ordering::Release);
         }
         result
     }
     pub(crate) async fn release_confirmed(&self) -> anyhow::Result<()> {
-        if self.is_released() { return Ok(()); }
+        if self.is_released() {
+            return Ok(());
+        }
         if let Some(call) = &self.durable {
             // Cleanup alone cannot establish the billed usage of an uncertain peer.
-            if self.unresolved.load(std::sync::atomic::Ordering::Acquire) { return Err(AccountingError::Unresolved.into()); }
-            let used = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
-                .remote_reservations.get(&self.id).ok_or(AccountingError::Missing)?.used.clone();
-            call.usage(Some(used.cost_usd),used.total_tokens,true).await?;
+            if self.unresolved.load(std::sync::atomic::Ordering::Acquire) {
+                return Err(AccountingError::Unresolved.into());
+            }
+            let used = self
+                .tracker
+                .inner
+                .lock()
+                .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
+                .remote_reservations
+                .get(&self.id)
+                .ok_or(AccountingError::Missing)?
+                .used
+                .clone();
+            call.usage(Some(used.cost_usd), used.total_tokens, true)
+                .await?;
         }
         self.release_confirmed_local()
     }

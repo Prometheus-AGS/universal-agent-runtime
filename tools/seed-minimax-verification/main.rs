@@ -40,8 +40,9 @@ fn main() -> Result<()> {
 }
 
 async fn run() -> Result<()> {
-    let pers = env::var("UAR_PERSISTENCE_DIR")
-        .map_err(|_| anyhow!("UAR_PERSISTENCE_DIR env var required (path to runtime's surrealkv dir)"))?;
+    let pers = env::var("UAR_PERSISTENCE_DIR").map_err(|_| {
+        anyhow!("UAR_PERSISTENCE_DIR env var required (path to runtime's surrealkv dir)")
+    })?;
     let endpoint = format!("surrealkv://{pers}");
     eprintln!("[seed-minimax-verification] connecting to {endpoint}");
 
@@ -52,7 +53,9 @@ async fn run() -> Result<()> {
     // Match the runtime's namespace/database selection (server.rs:1150: use_ns("uar").use_db(<runtime default>)).
     // For loopback-only embedded surrealkv, the runtime uses `uar` / `uar` by default; the harness overrides
     // via UAR_PERSISTENCE__DATABASE_URL but the embedded engine accepts any USE statement.
-    db.use_ns("uar").use_db("uar").await
+    db.use_ns("uar")
+        .use_db("uar")
+        .await
         .context("setting namespace/database")?;
 
     // 1. Build the provider config JSON exactly as the runtime's registry holds it.
@@ -164,9 +167,16 @@ async fn run() -> Result<()> {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .map_err(|e| anyhow!("system clock before epoch: {e}"))?;
-    let _verified_at = format!("{}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}+00:00",
+    let _verified_at = format!(
+        "{}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}+00:00",
         1970 + (now / (365 * 24 * 60 * 60)) as i32,
-        1, 1, 0, 0, 0, 0);
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+    );
     // The above date math is crude but produces a deterministic RFC3339 string; the
     // runtime only parses the value as a string for its in-memory cache, not the DB.
     // For DB correctness, use chrono.
@@ -236,7 +246,9 @@ async fn run() -> Result<()> {
         .take::<Vec<surrealdb::types::Value>>(0)
         .context("taking settings rows")?;
     if rows.is_empty() {
-        return Err(anyhow!("readback failed: no row found at record_id={record_id}"));
+        return Err(anyhow!(
+            "readback failed: no row found at record_id={record_id}"
+        ));
     }
     eprintln!(
         "[seed-minimax-verification] readback OK: {} row(s)",

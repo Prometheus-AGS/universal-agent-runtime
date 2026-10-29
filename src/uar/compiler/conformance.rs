@@ -534,7 +534,7 @@ keep_last: 2
     }
 
     #[tokio::test]
-    async fn context_strategy_auto_is_not_declared() {
+    async fn context_strategy_authored_auto_is_satisfied_and_omission_is_not_declared() {
         let ir = ir_with_v2(
             r#"
 ## Context Strategy
@@ -545,7 +545,10 @@ type: "auto"
         );
         let router = router_with_anthropic().await;
         let report = check_conformance(&ir, &router).await;
-        assert_eq!(report.context_strategy, CheckResult::NotDeclared);
+        assert!(matches!(report.context_strategy, CheckResult::Satisfied(_)));
+        let omitted = ir_with_v2("");
+        let omitted_report = check_conformance(&omitted, &router).await;
+        assert_eq!(omitted_report.context_strategy, CheckResult::NotDeclared);
     }
 
     #[test]

@@ -35,7 +35,7 @@ use universal_agent_runtime::{
         defaults::default_agent,
         domain::{events::NormalizedEvent as RunEvent, runs::RunStatus},
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
-        rag::embeddings::UnavailableEmbeddingBackend,
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{
             graph::{AgentGraph, CheckpointNode, LlmNode},
             manager::RunManager,
@@ -90,27 +90,46 @@ async fn user() -> UserContext {
     let secret = "dot05-signed-principal-fixture";
     let config = universal_agent_runtime::config::SecurityConfig {
         provider_credentials: Default::default(),
-        deployment_profile: Default::default(), jwt_algorithm: None,
+        deployment_profile: Default::default(),
+        jwt_algorithm: None,
         workspace_authorities: Vec::new(),
         skill_required_roles: Default::default(),
-        api_key_delegable_roles: universal_agent_runtime::config::SecurityConfig::default_api_key_delegable_roles(),
-        api_key_admin_principals: Vec::new(), trusted_host_principals: Vec::new(),
-        jwt_required: true, jwt_secret: secret.to_owned().into(), jwks_url: None,
-        jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
-        settings_mutation_auth_required: true, settings_admin_key: None,
+        api_key_delegable_roles:
+            universal_agent_runtime::config::SecurityConfig::default_api_key_delegable_roles(),
+        api_key_admin_principals: Vec::new(),
+        trusted_host_principals: Vec::new(),
+        jwt_required: true,
+        jwt_secret: secret.to_owned().into(),
+        jwks_url: None,
+        jwt_issuer: None,
+        jwt_audience: None,
+        jwt_validate_nbf: true,
+        settings_mutation_auth_required: true,
+        settings_admin_key: None,
     };
     // The production verifier owns process-provider initialization. Raw fixture
     // signing must follow it, while malformed credentials remain unauthorized.
-    assert!(matches!(universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
+    assert!(
+        matches!(universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
         &config, "dot05-malformed-synthetic-token").await, Err(status) if status == StatusCode::UNAUTHORIZED),
-        "production verifier must reject malformed fixture credentials before signing");
-    let token = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &UserClaims {
-        sub: OWNER.into(), name: None, roles: Some(vec!["user".into()]),
-        tenant_id: None, uar_instance_id: None,
-        exp: (chrono::Utc::now().timestamp() + 3600) as usize,
-    }, &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes())).unwrap();
+        "production verifier must reject malformed fixture credentials before signing"
+    );
+    let token = jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &UserClaims {
+            sub: OWNER.into(),
+            name: None,
+            roles: Some(vec!["user".into()]),
+            tenant_id: None,
+            uar_instance_id: None,
+            exp: (chrono::Utc::now().timestamp() + 3600) as usize,
+        },
+        &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes()),
+    )
+    .unwrap();
     universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(&config, &token)
-        .await.expect("actual signed fixture principal verification")
+        .await
+        .expect("actual signed fixture principal verification")
 }
 
 fn openssl(root: &Path, args: &[&str]) {
@@ -188,8 +207,17 @@ fn certificates(root: &Path) {
     );
 }
 
+struct OwnedHttpsChild(Child);
+
+impl Drop for OwnedHttpsChild {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
 struct HttpsPeer {
-    child: Child,
+    _child: OwnedHttpsChild,
     root: PathBuf,
     address: std::net::SocketAddr,
 }
@@ -215,21 +243,23 @@ impl HttpsPeer {
         )
         .unwrap();
         std::fs::write(root.join("second.bin"), peer::wire(protocol, case, true)).unwrap();
-        let child = Command::new("/usr/bin/python3")
-            .arg(
-                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                    .join("tests/fixtures/stream_terminal_https.py"),
-            )
-            .arg(root)
-            .arg(case)
-            .env_clear()
-            .env("PATH", "/usr/bin:/bin")
-            .stdout(Stdio::null())
-            .stderr(Stdio::from(
-                std::fs::File::create(root.join("peer.stderr")).unwrap(),
-            ))
-            .spawn()
-            .unwrap();
+        let child = OwnedHttpsChild(
+            Command::new("/usr/bin/python3")
+                .arg(
+                    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                        .join("tests/fixtures/stream_terminal_https.py"),
+                )
+                .arg(root)
+                .arg(case)
+                .env_clear()
+                .env("PATH", "/usr/bin:/bin")
+                .stdout(Stdio::null())
+                .stderr(Stdio::from(
+                    std::fs::File::create(root.join("peer.stderr")).unwrap(),
+                ))
+                .spawn()
+                .unwrap(),
+        );
         tokio::time::timeout(Duration::from_secs(10), async {
             while !root.join("port").exists() {
                 tokio::time::sleep(Duration::from_millis(10)).await;
@@ -243,7 +273,7 @@ impl HttpsPeer {
             .parse()
             .unwrap();
         Self {
-            child,
+            _child: child,
             root: root.to_path_buf(),
             address: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
         }
@@ -270,12 +300,6 @@ impl HttpsPeer {
             .lines()
             .map(|line| serde_json::from_str(line).unwrap())
             .collect()
-    }
-}
-impl Drop for HttpsPeer {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
     }
 }
 
@@ -544,10 +568,9 @@ async fn graph(
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
             Arc::new(VectorMatcher::new(
-                Arc::new(UnavailableEmbeddingBackend::new(
-                    384,
-                    "stream fixture does not use embeddings",
-                )),
+                Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+                    UnavailableEmbeddingBackend::new(384, "stream fixture does not use embeddings"),
+                ))),
                 0.75,
             )),
             Some(store.clone()),

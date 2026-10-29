@@ -1,12 +1,30 @@
 //! Full binary qualification; no crate-private adapter or same-process manager proof.
 
-use axum::{Json, Router, extract::State, response::{IntoResponse, Response}, routing::post};
+use axum::{
+    Json, Router,
+    extract::State,
+    response::{IntoResponse, Response},
+    routing::post,
+};
 use reqwest::Method;
 use serde_json::{Value, json};
-use std::{collections::BTreeSet, io::Write, path::{Path, PathBuf}, process::{Child, Command, Stdio},
-    sync::{Arc, Mutex}, time::Duration};
-use universal_agent_runtime::uar::{defaults::default_agent, persistence::{PersistenceLayer,
-    checkpoint_resume::CheckpointResumeEnvelope, providers::surreal::SurrealDbProvider}};
+use std::{
+    collections::BTreeSet,
+    io::Write,
+    path::{Path, PathBuf},
+    process::{Child, Command, Stdio},
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+use universal_agent_runtime::uar::{
+    defaults::default_agent,
+    persistence::{
+        PersistenceLayer,
+        checkpoint_resume::CheckpointResumeEnvelope,
+        providers::surreal::SurrealDbProvider,
+        run_history::{RunHistoryEvent, RunHistoryRecord},
+    },
+};
 
 pub(super) const OWNER: &str = "dot06-owner";
 pub(super) const TENANT: &str = "dot06-tenant";
@@ -24,8 +42,13 @@ pub(super) fn private_dir(path: &Path) {
 
 pub(super) fn private_write(path: &Path, bytes: &[u8]) {
     use std::os::unix::fs::OpenOptionsExt;
-    let mut file = std::fs::OpenOptions::new().write(true).create(true).truncate(true)
-        .mode(0o600).open(path).unwrap();
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(path)
+        .unwrap();
     file.write_all(bytes).unwrap();
 }
 
@@ -35,10 +58,13 @@ pub(super) fn private_file(path: &Path) -> std::fs::File {
 }
 
 pub(super) fn token(subject: &str, tenant: &str, issuer: &str) -> String {
-    jsonwebtoken::encode(&jsonwebtoken::Header::default(),
+    jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
         &json!({"sub":subject,"tenant_id":tenant,"iss":issuer,"aud":"dot06-runtime",
             "roles":["user"],"exp":chrono::Utc::now().timestamp()+3600}),
-        &jsonwebtoken::EncodingKey::from_secret(JWT_SECRET.as_bytes())).unwrap()
+        &jsonwebtoken::EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+    )
+    .unwrap()
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -55,80 +81,169 @@ pub(super) struct Database {
 impl Database {
     pub(super) fn new(root: &Path, profile: &str, case: &str) -> Self {
         if profile == "local" {
-            Self { provider: "surreal".into(), url: format!("surrealkv://{}", root.join("database").display()),
-                namespace: "dot06".into(), name: "resume".into(), user: None, password: None, remote: false }
+            Self {
+                provider: "surreal".into(),
+                url: format!("surrealkv://{}", root.join("database").display()),
+                namespace: "dot06".into(),
+                name: "resume".into(),
+                user: None,
+                password: None,
+                remote: false,
+            }
         } else if profile == "memory" {
-            Self { provider: "surreal".into(), url: "memory".into(), namespace: "dot06".into(),
-                name: "unsupported".into(), user: None, password: None, remote: false }
+            Self {
+                provider: "surreal".into(),
+                url: "memory".into(),
+                namespace: "dot06".into(),
+                name: "unsupported".into(),
+                user: None,
+                password: None,
+                remote: false,
+            }
         } else {
-            let path = std::env::var("UAR_DOT06_INFRA_FILE").expect("private disposable infrastructure manifest");
+            let path = std::env::var("UAR_DOT06_INFRA_FILE")
+                .expect("private disposable infrastructure manifest");
             let manifest: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
             if profile == "postgres" {
-                Self { provider: "postgres".into(), url: manifest["postgres"]["url"].as_str().unwrap().into(),
-                    namespace: String::new(), name: String::new(), user: None, password: None, remote: false }
+                Self {
+                    provider: "postgres".into(),
+                    url: manifest["postgres"]["url"].as_str().unwrap().into(),
+                    namespace: String::new(),
+                    name: String::new(),
+                    user: None,
+                    password: None,
+                    remote: false,
+                }
             } else {
                 let config = &manifest["surreal"];
-                Self { provider: "surreal".into(), url: config["url"].as_str().unwrap().into(),
+                Self {
+                    provider: "surreal".into(),
+                    url: config["url"].as_str().unwrap().into(),
                     namespace: std::env::var("UAR_DOT06_NAMESPACE").expect("isolated namespace"),
                     name: format!("resume_{}", case.replace('-', "_")),
                     user: config["username"].as_str().map(str::to_owned),
-                    password: config["password"].as_str().map(str::to_owned), remote: true }
+                    password: config["password"].as_str().map(str::to_owned),
+                    remote: true,
+                }
             }
         }
     }
 
     pub(super) async fn connect(&self) -> SurrealDbProvider {
-        SurrealDbProvider::new(&self.url, self.user.as_deref(), self.password.as_deref(),
-            Some(&self.namespace), Some(&self.name)).await.expect("qualified durable readback")
+        SurrealDbProvider::new(
+            &self.url,
+            self.user.as_deref(),
+            self.password.as_deref(),
+            Some(&self.namespace),
+            Some(&self.name),
+        )
+        .await
+        .expect("qualified durable readback")
     }
 }
 
 #[derive(Default)]
-pub(super) struct Seen { pub(super) requests: Mutex<Vec<Value>>, pub(super) log: PathBuf }
+pub(super) struct Seen {
+    pub(super) requests: Mutex<Vec<Value>>,
+    pub(super) log: PathBuf,
+}
 
-pub(super) struct Peer { pub(super) url: String, pub(super) seen: Arc<Seen>, pub(super) task: tokio::task::JoinHandle<()> }
+pub(super) struct Peer {
+    pub(super) url: String,
+    pub(super) seen: Arc<Seen>,
+    pub(super) task: tokio::task::JoinHandle<()>,
+}
 
 impl Peer {
     pub(super) async fn start(root: &Path) -> Self {
         let log = root.join("provider-requests.jsonl");
         private_write(&log, b"");
-        let seen = Arc::new(Seen { log, ..Seen::default() });
+        let seen = Arc::new(Seen {
+            log,
+            ..Seen::default()
+        });
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}/v1", listener.local_addr().unwrap());
-        let app = Router::new().route("/v1/chat/completions", post(completion)).with_state(seen.clone());
-        let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap(); });
+        let app = Router::new()
+            .route("/v1/chat/completions", post(completion))
+            .with_state(seen.clone());
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
         Self { url, seen, task }
     }
-    pub(super) fn count(&self) -> usize { self.seen.requests.lock().unwrap().len() }
+    pub(super) fn count(&self) -> usize {
+        self.seen.requests.lock().unwrap().len()
+    }
     fn saw(&self, mode: &str) -> bool {
-        self.seen.requests.lock().unwrap().iter().any(|request|
-            request["messages"].as_array().is_some_and(|messages|
-                messages.iter().any(|message| message["role"] == "user" && message["content"] == mode)))
+        self.seen.requests.lock().unwrap().iter().any(|request| {
+            request["messages"].as_array().is_some_and(|messages| {
+                messages
+                    .iter()
+                    .any(|message| message["role"] == "user" && message["content"] == mode)
+            })
+        })
     }
 }
 
-impl Drop for Peer { fn drop(&mut self) { self.task.abort(); } }
+impl Drop for Peer {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
+}
 
 async fn completion(State(seen): State<Arc<Seen>>, Json(body): Json<Value>) -> Response {
     {
         seen.requests.lock().unwrap().push(body.clone());
-        let mut log = std::fs::OpenOptions::new().append(true).open(&seen.log).unwrap();
-        serde_json::to_writer(&mut log, &body).unwrap(); log.write_all(b"\n").unwrap(); log.sync_all().unwrap();
+        let mut log = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&seen.log)
+            .unwrap();
+        serde_json::to_writer(&mut log, &body).unwrap();
+        log.write_all(b"\n").unwrap();
+        log.sync_all().unwrap();
     }
     let messages = body["messages"].as_array().unwrap();
-    let index = messages.iter().rposition(|message| message["role"] == "user").unwrap();
-    let mode = messages[index]["content"].as_str().expect("controlled user input");
-    if mode == "kill_before" { std::future::pending::<()>().await; }
-    let chunk = |delta: Value, finish: Value| format!("data: {}\n\n", json!({
+    let index = messages
+        .iter()
+        .rposition(|message| message["role"] == "user")
+        .unwrap();
+    let mode = messages[index]["content"]
+        .as_str()
+        .expect("controlled user input");
+    if mode == "kill_before" {
+        std::future::pending::<()>().await;
+    }
+    let chunk = |delta: Value, finish: Value| {
+        format!(
+            "data: {}\n\n",
+            json!({
         "id":"dot06-response","object":"chat.completion.chunk","created":1,"model":"gpt-4o-mini",
-        "choices":[{"index":0,"delta":delta,"finish_reason":finish}]}));
+        "choices":[{"index":0,"delta":delta,"finish_reason":finish}]})
+        )
+    };
     let mut frames = String::new();
-    if mode == "Reply with OK." || messages[index + 1..].iter().any(|message| message["role"] == "tool") {
-        frames.push_str(&chunk(json!({"role":"assistant","content":"resume-complete"}), Value::Null));
+    if mode == "Reply with OK."
+        || messages[index + 1..]
+            .iter()
+            .any(|message| message["role"] == "tool")
+    {
+        frames.push_str(&chunk(
+            json!({"role":"assistant","content":"resume-complete"}),
+            Value::Null,
+        ));
         frames.push_str(&chunk(json!({}), json!("stop")));
     } else {
-        let tool = body["tools"].as_array().unwrap().iter().find_map(|tool|
-            tool["function"]["name"].as_str().filter(|name| name.ends_with("__effect"))).unwrap();
+        let tool = body["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find_map(|tool| {
+                tool["function"]["name"]
+                    .as_str()
+                    .filter(|name| name.ends_with("__effect"))
+            })
+            .unwrap();
         let arguments = json!({"mode":mode}).to_string();
         frames.push_str(&chunk(json!({"role":"assistant","tool_calls":[{"index":0,
             "id":format!("dot06-{mode}-{index}"),"type":"function","function":{"name":tool,"arguments":arguments}}]}), Value::Null));
@@ -139,30 +254,72 @@ async fn completion(State(seen): State<Arc<Seen>>, Json(body): Json<Value>) -> R
 }
 
 fn unused_port() -> u16 {
-    std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port()
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port()
 }
 
 fn trace(path: &Path) -> Vec<Value> {
-    std::fs::read_to_string(path).unwrap_or_default().lines()
-        .map(|line| serde_json::from_str(line).unwrap()).collect()
+    std::fs::read_to_string(path)
+        .unwrap_or_default()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
 }
 
-pub(super) fn effects(path: &Path) -> usize { trace(path).iter().filter(|row| row["event"] == "effect").count() }
+pub(super) fn effects(path: &Path) -> usize {
+    trace(path)
+        .iter()
+        .filter(|row| row["event"] == "effect")
+        .count()
+}
 
-pub(super) struct Node { pub(super) child: Child, pub(super) base: String, pub(super) directory: PathBuf, trace: PathBuf, client: reqwest::Client }
+pub(super) struct Node {
+    pub(super) child: Child,
+    pub(super) base: String,
+    pub(super) directory: PathBuf,
+    trace: PathBuf,
+    client: reqwest::Client,
+}
 
 impl Node {
-    fn launch(root: &Path, label: &str, database: &Database, peer: &Peer, effect_trace: &Path, attested: bool) -> Self {
-        let directory = root.join(label); private_dir(&directory);
-        for suffix in ["home", "work", "work/policies", "no-builtins"] { private_dir(&directory.join(suffix)); }
-        for name in ["default.cedar", "tool-approval.cedar", "skill-mutation.cedar"] {
-            private_write(&directory.join("work/policies").join(name), &std::fs::read(
-                Path::new(env!("CARGO_MANIFEST_DIR")).join("policies").join(name)).unwrap());
+    fn launch(
+        root: &Path,
+        label: &str,
+        database: &Database,
+        peer: &Peer,
+        effect_trace: &Path,
+        attested: bool,
+    ) -> Self {
+        let directory = root.join(label);
+        private_dir(&directory);
+        for suffix in ["home", "work", "work/policies", "no-builtins", "ingest"] {
+            private_dir(&directory.join(suffix));
+        }
+        for name in [
+            "default.cedar",
+            "tool-approval.cedar",
+            "skill-mutation.cedar",
+        ] {
+            private_write(
+                &directory.join("work/policies").join(name),
+                &std::fs::read(
+                    Path::new(env!("CARGO_MANIFEST_DIR"))
+                        .join("policies")
+                        .join(name),
+                )
+                .unwrap(),
+            );
         }
         let mcp = json!({"mcpServers":{"resume":{"command":"/usr/bin/python3",
             "args":[Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/fresh_process_resume_mcp.py"),effect_trace],
             "env":{},"sandboxed":false}}});
-        private_write(&directory.join("mcp.json"), &serde_json::to_vec_pretty(&mcp).unwrap());
+        private_write(
+            &directory.join("mcp.json"),
+            &serde_json::to_vec_pretty(&mcp).unwrap(),
+        );
         let port = unused_port();
         let config = json!({
             "service_instance":{"instance_id":"urn:uar:dot06:fixture"},
@@ -171,60 +328,154 @@ impl Node {
             "persistence":{"provider":database.provider,"database_url":database.url,"surreal_ns":database.namespace,
                 "surreal_db":database.name,"surreal_user":database.user,"surreal_pass":database.password},
             "resilience":{"rate_limit_enabled":false},
-            "llm":{"model":"openai/gpt-4o-mini","base_url":peer.url,"api_key":PROVIDER_SECRET},
+            "llm":{"model":"openai/gpt-4o-mini","base_url":peer.url,"api_key":PROVIDER_SECRET,
+                "embedding":{"models_dir":Path::new(env!("CARGO_MANIFEST_DIR")).join("src/uar/runtime/matching/models")}},
             "providers":[{"id":"openai","base_url":peer.url,"api_key":PROVIDER_SECRET,"protocol":"chat",
                 "default_model":"gpt-4o-mini","enabled":true,"models":[{"id":"gpt-4o-mini","enabled":true,
                 "supports_tools":true,"supports_streaming":true,"execution_profile":{"profile":{
                     "id":"uar.openai-compatible-chat.settings-v1","revision":1},"settingsRevision":1,"reasoning":{"mode":"off"}}}]}],
-            "server":{"host":"127.0.0.1","port":port,"grpc_port":unused_port(),"shutdown_timeout_secs":10},
+            "server":{"host":"127.0.0.1","port":port,"grpc_port":unused_port(),"shutdown_timeout_secs":10,
+                "ingest_directory":directory.join("ingest")},
             "memory":{"enabled":false}});
-        private_write(&directory.join("config.yaml"), &serde_json::to_vec_pretty(&config).unwrap());
+        private_write(
+            &directory.join("config.yaml"),
+            &serde_json::to_vec_pretty(&config).unwrap(),
+        );
         let mut command = Command::new(env!("CARGO_BIN_EXE_universal-agent-runtime"));
-        command.arg("--config").arg(directory.join("config.yaml")).current_dir(directory.join("work"))
-            .env_clear().env("PATH", std::env::var_os("PATH").unwrap_or_default()).env("HOME", directory.join("home"))
-            .env("MCP_CONFIG_PATH", directory.join("mcp.json")).env("UAR_BUILTIN_SKILLS_DIR", directory.join("no-builtins"))
-            .env("CREDENTIAL_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef")
-            .stdin(Stdio::null()).stdout(private_file(&directory.join("stdout.log"))).stderr(private_file(&directory.join("stderr.log")));
-        if database.remote && attested { command.env("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED", "1"); }
+        command
+            .arg("--config")
+            .arg(directory.join("config.yaml"))
+            .current_dir(directory.join("work"))
+            .env_clear()
+            .env("PATH", std::env::var_os("PATH").unwrap_or_default())
+            .env("HOME", directory.join("home"))
+            .env("MCP_CONFIG_PATH", directory.join("mcp.json"))
+            .env("UAR_BUILTIN_SKILLS_DIR", directory.join("no-builtins"))
+            .env(
+                "CREDENTIAL_ENCRYPTION_KEY",
+                "0123456789abcdef0123456789abcdef",
+            )
+            .stdin(Stdio::null())
+            .stdout(private_file(&directory.join("stdout.log")))
+            .stderr(private_file(&directory.join("stderr.log")));
+        if database.remote && attested {
+            command.env("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED", "1");
+        }
         let child = command.spawn().expect("actual production runtime binary");
-        let node = Self { child, base: format!("http://127.0.0.1:{port}"), directory,
-            trace: effect_trace.to_path_buf(), client: reqwest::Client::builder().timeout(WAIT).build().unwrap() };
-        private_write(&node.directory.join("process.json"), &serde_json::to_vec(&json!({"pid":node.child.id()})).unwrap());
+        let node = Self {
+            child,
+            base: format!("http://127.0.0.1:{port}"),
+            directory,
+            trace: effect_trace.to_path_buf(),
+            client: reqwest::Client::builder().timeout(WAIT).build().unwrap(),
+        };
+        private_write(
+            &node.directory.join("process.json"),
+            &serde_json::to_vec(&json!({"pid":node.child.id()})).unwrap(),
+        );
         node
     }
 
-    pub(super) async fn boot(root: &Path, label: &str, database: &Database, peer: &Peer, effect_trace: &Path, attested: bool) -> Self {
+    pub(super) async fn boot(
+        root: &Path,
+        label: &str,
+        database: &Database,
+        peer: &Peer,
+        effect_trace: &Path,
+        attested: bool,
+    ) -> Self {
         let mut node = Self::launch(root, label, database, peer, effect_trace, attested);
         let deadline = tokio::time::Instant::now() + Duration::from_secs(180);
         loop {
-            if node.client.get(format!("{}/health", node.base)).send().await.is_ok_and(|response| response.status().is_success()) { break; }
-            assert!(node.child.try_wait().unwrap().is_none(), "runtime exited; private logs retained");
-            assert!(tokio::time::Instant::now() < deadline, "runtime readiness deadline");
+            if node
+                .client
+                .get(format!("{}/health", node.base))
+                .send()
+                .await
+                .is_ok_and(|response| response.status().is_success())
+            {
+                break;
+            }
+            assert!(
+                node.child.try_wait().unwrap().is_none(),
+                "runtime exited; private logs retained"
+            );
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "runtime readiness deadline"
+            );
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
         node
     }
 
-    pub(super) async fn request(&self, credential: &str, method: Method, path: &str, body: Option<Value>) -> (u16, Value) {
-        let mut request = self.client.request(method, format!("{}{path}", self.base)).bearer_auth(credential)
-            .header("x-uar-admin-key", ADMIN).header("x-uar-workspace-id", "dot06-workspace");
-        if let Some(body) = body { request = request.json(&body); }
-        let response = request.send().await.expect("actual authenticated API request");
-        let status = response.status().as_u16(); let bytes = response.bytes().await.unwrap();
+    pub(super) async fn request(
+        &self,
+        credential: &str,
+        method: Method,
+        path: &str,
+        body: Option<Value>,
+    ) -> (u16, Value) {
+        let mut request = self
+            .client
+            .request(method, format!("{}{path}", self.base))
+            .bearer_auth(credential)
+            .header("x-uar-admin-key", ADMIN)
+            .header("x-uar-workspace-id", "dot06-workspace");
+        if let Some(body) = body {
+            request = request.json(&body);
+        }
+        let response = request
+            .send()
+            .await
+            .expect("actual authenticated API request");
+        let status = response.status().as_u16();
+        let bytes = response.bytes().await.unwrap();
         private_write(&self.directory.join("last-response.json"), &bytes);
-        (status, if bytes.is_empty() { Value::Null } else { serde_json::from_slice(&bytes).unwrap() })
+        (
+            status,
+            if bytes.is_empty() {
+                Value::Null
+            } else {
+                serde_json::from_slice(&bytes).unwrap()
+            },
+        )
     }
 
-    pub(super) async fn api(&self, method: Method, path: &str, body: Option<Value>, expected: u16) -> Value {
-        let (status, value) = self.request(&token(OWNER, TENANT, ISSUER), method, path, body).await;
-        assert_eq!(status, expected, "API status; private response retained"); value
+    pub(super) async fn api(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<Value>,
+        expected: u16,
+    ) -> Value {
+        let (status, value) = self
+            .request(&token(OWNER, TENANT, ISSUER), method, path, body)
+            .await;
+        assert_eq!(status, expected, "API status; private response retained");
+        value
     }
 
     async fn approve(&self, run: &str) {
-        let pending = self.api(Method::GET, &format!("/api/uar/runs/{run}/tool-approval/pending"), None, 200).await;
-        if let Some(id) = pending["pending"]["approval_id"].as_str().or_else(|| pending["pending"]["approvalId"].as_str()) {
-            self.api(Method::POST, &format!("/api/uar/runs/{run}/tool-approval"),
-                Some(json!({"approval_id":id,"approved":true})), 200).await;
+        let pending = self
+            .api(
+                Method::GET,
+                &format!("/api/uar/runs/{run}/tool-approval/pending"),
+                None,
+                200,
+            )
+            .await;
+        if let Some(id) = pending["pending"]["approval_id"]
+            .as_str()
+            .or_else(|| pending["pending"]["approvalId"].as_str())
+        {
+            self.api(
+                Method::POST,
+                &format!("/api/uar/runs/{run}/tool-approval"),
+                Some(json!({"approval_id":id,"approved":true})),
+                200,
+            )
+            .await;
         }
     }
 
@@ -232,98 +483,209 @@ impl Node {
         let deadline = tokio::time::Instant::now() + WAIT;
         loop {
             self.approve(run).await;
-            let state = self.api(Method::GET, &format!("/api/uar/runs/{run}"), None, 200).await;
+            let state = self
+                .api(Method::GET, &format!("/api/uar/runs/{run}"), None, 200)
+                .await;
             if ["done", "error", "cancelled"].contains(&state["status"].as_str().unwrap()) {
-                let events = self.api(Method::GET, &format!("/api/uar/runs/{run}/events?after=0"), None, 200).await;
-                private_write(&self.directory.join(format!("events-{run}.json")), &serde_json::to_vec_pretty(&events).unwrap());
+                let events = self
+                    .api(
+                        Method::GET,
+                        &format!("/api/uar/runs/{run}/events?after=0"),
+                        None,
+                        200,
+                    )
+                    .await;
+                private_write(
+                    &self.directory.join(format!("events-{run}.json")),
+                    &serde_json::to_vec_pretty(&events).unwrap(),
+                );
                 assert_eq!(state["status"], if success { "done" } else { "error" });
-                let errors = events["events"].as_array().unwrap().iter().filter(|event| event["eventName"] == "agui.error").count();
-                assert_eq!(errors == 0, success, "event and RunStatus agreement"); return;
+                let errors = events["events"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|event| event["eventName"] == "agui.error")
+                    .count();
+                assert_eq!(errors == 0, success, "event and RunStatus agreement");
+                return;
             }
-            assert!(tokio::time::Instant::now() < deadline, "run completion deadline");
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "run completion deadline"
+            );
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
     }
 
     pub(super) async fn stop(&mut self) {
-        assert!(self.stop_status().await.success(), "orderly runtime shutdown failed");
+        assert!(
+            self.stop_status().await.success(),
+            "orderly runtime shutdown failed"
+        );
     }
 
     pub(super) async fn stop_status(&mut self) -> std::process::ExitStatus {
-        assert!(Command::new("/bin/kill").arg("-TERM").arg(self.child.id().to_string()).status().unwrap().success());
+        assert!(
+            Command::new("/bin/kill")
+                .arg("-TERM")
+                .arg(self.child.id().to_string())
+                .status()
+                .unwrap()
+                .success()
+        );
         let deadline = tokio::time::Instant::now() + Duration::from_secs(45);
         loop {
-            if let Some(status) = self.child.try_wait().unwrap() { return status; }
-            assert!(tokio::time::Instant::now() < deadline, "orderly shutdown deadline");
+            if let Some(status) = self.child.try_wait().unwrap() {
+                return status;
+            }
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "orderly shutdown deadline"
+            );
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
     }
 
-    pub(super) fn kill(&mut self) { self.child.kill().unwrap(); self.child.wait().unwrap(); }
+    pub(super) fn kill(&mut self) {
+        self.child.kill().unwrap();
+        self.child.wait().unwrap();
+    }
 }
 
 impl Drop for Node {
     fn drop(&mut self) {
-        if self.child.try_wait().ok().flatten().is_none() { let _ = self.child.kill(); let _ = self.child.wait(); }
+        if self.child.try_wait().ok().flatten().is_none() {
+            let _ = self.child.kill();
+            let _ = self.child.wait();
+        }
         cleanup_peers(&self.trace);
     }
 }
 
 pub(super) fn artifact() -> Value {
-    let mut artifact = default_agent(); artifact.id = "dot06-artifact".into(); artifact.memory.kb.enabled = false;
+    let mut artifact = default_agent();
+    artifact.id = "dot06-artifact".into();
+    artifact.memory.kb.enabled = false;
     artifact.policy.tools.allow = vec!["resume__effect".into()];
-    artifact.policy.provider.default.provider = "openai".into(); artifact.policy.provider.default.model = "gpt-4o-mini".into();
+    artifact.policy.provider.default.provider = "openai".into();
+    artifact.policy.provider.default.model = "gpt-4o-mini".into();
     serde_json::to_value(artifact).unwrap()
 }
 
-pub(super) fn credentials(peer: &Peer) -> Value { json!([{"provider_id":"openai","provider_kind":"openai_compatible",
-    "base_url":peer.url,"api_key":PROVIDER_SECRET,"default_model":"gpt-4o-mini","context_window":128000}]) }
+pub(super) fn credentials(peer: &Peer) -> Value {
+    json!([{"provider_id":"openai","provider_kind":"openai_compatible",
+    "base_url":peer.url,"api_key":PROVIDER_SECRET,"default_model":"gpt-4o-mini","context_window":128000}])
+}
 
-async fn source(node: &Node, peer: &Peer, mode: &str, binding: bool, selected_model: bool) -> (String, String) {
+async fn source(
+    node: &Node,
+    peer: &Peer,
+    mode: &str,
+    binding: bool,
+    selected_model: bool,
+) -> (String, String) {
     let mut body = json!({"artifact":artifact(),"input":mode,"run_credentials":credentials(peer)});
     if selected_model {
-        let verified = node.api(Method::POST, "/api/uar/providers/openai/test", Some(json!({"model":"gpt-4o-mini"})), 200).await;
-        assert_eq!(verified["ok"], true); assert_eq!(verified["received_text"], true);
+        let verified = node
+            .api(
+                Method::POST,
+                "/api/uar/providers/openai/test",
+                Some(json!({"model":"gpt-4o-mini"})),
+                200,
+            )
+            .await;
+        assert_eq!(verified["ok"], true);
+        assert_eq!(verified["received_text"], true);
         body["model"] = json!("openai/gpt-4o-mini");
     }
     if binding {
         body["service_placement"] = json!({"intent":"new","expectedInstanceId":"urn:uar:dot06:fixture",
             "expectedProfile":universal_agent_runtime::uar::service_instance::SERVICE_PROFILE});
     }
-    let created = node.api(Method::POST, "/api/uar/runs", Some(body), 200).await;
+    let created = node
+        .api(Method::POST, "/api/uar/runs", Some(body), 200)
+        .await;
     let run = created["run_id"].as_str().unwrap().to_owned();
     node.finish(&run, mode != "unknown").await;
-    let checkpoints = node.api(Method::GET, &format!("/api/uar/runs/{run}/checkpoints"), None, 200).await;
+    let checkpoints = node
+        .api(
+            Method::GET,
+            &format!("/api/uar/runs/{run}/checkpoints"),
+            None,
+            200,
+        )
+        .await;
     assert_eq!(checkpoints["execution_restorable"], true);
-    let checkpoint = checkpoints["checkpoints"].as_array().unwrap().last().expect("real tool loop saved checkpoint")["id"].as_str().unwrap().to_owned();
+    let checkpoint = checkpoints["checkpoints"]
+        .as_array()
+        .unwrap()
+        .last()
+        .expect("real tool loop saved checkpoint")["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
     (run, checkpoint)
 }
 
 async fn envelopes(db: &SurrealDbProvider, run: &str) -> Vec<CheckpointResumeEnvelope> {
-    let owner = format!("v1:k:issuer:i:{}:{}:t:{}:{}:s:{}:{}", ISSUER.len(), ISSUER, TENANT.len(), TENANT, OWNER.len(), OWNER);
+    let owner = format!(
+        "v1:k:issuer:i:{}:{}:t:{}:{}:s:{}:{}",
+        ISSUER.len(),
+        ISSUER,
+        TENANT.len(),
+        TENANT,
+        OWNER.len(),
+        OWNER
+    );
     let rows = db.list_checkpoint_resumes(&owner, run).await.unwrap();
     assert!(!rows.is_empty());
     for row in &rows {
-        row.validate().unwrap(); assert!(!row.source_json.contains(PROVIDER_SECRET)); assert!(!row.checkpoint_json.contains(PROVIDER_SECRET));
-        let checkpoint = db.load_checkpoint(&row.checkpoint_id).await.unwrap().expect("atomically saved checkpoint");
-        assert_eq!(serde_json::to_value(checkpoint).unwrap(), serde_json::to_value(row.checkpoint().unwrap()).unwrap());
+        row.validate().unwrap();
+        assert!(!row.source_json.contains(PROVIDER_SECRET));
+        assert!(!row.checkpoint_json.contains(PROVIDER_SECRET));
+        let checkpoint = db
+            .load_checkpoint(&row.checkpoint_id)
+            .await
+            .unwrap()
+            .expect("atomically saved checkpoint");
+        assert_eq!(
+            serde_json::to_value(checkpoint).unwrap(),
+            serde_json::to_value(row.checkpoint().unwrap()).unwrap()
+        );
     }
     rows
 }
 
-async fn proof(db: &SurrealDbProvider, rows: &[CheckpointResumeEnvelope], run: &str,
-    expected_epoch_state: &str, expected_claims: usize) {
+async fn proof(
+    db: &SurrealDbProvider,
+    rows: &[CheckpointResumeEnvelope],
+    run: &str,
+    expected_epoch_state: &str,
+    expected_claims: usize,
+) {
     let mut response = db.client().query("SELECT VALUE state FROM checkpoint_runtime_epochs WHERE epoch = $epoch; SELECT VALUE data FROM checkpoint_resume_claims WHERE source_run_id = $run;")
         .bind(("epoch", rows[0].source_runtime_epoch.clone())).bind(("run", run.to_owned())).await.unwrap().check().unwrap();
-    let states: Vec<String> = response.take(0).unwrap(); assert_eq!(states, vec![expected_epoch_state]);
-    let claims: Vec<String> = response.take(1).unwrap(); assert_eq!(claims.len(), expected_claims);
-    for data in claims { let claim: universal_agent_runtime::uar::persistence::checkpoint_resume::CheckpointContinuationClaim = serde_json::from_str(&data).unwrap();
-        let envelope = rows.iter().find(|row| row.checkpoint_id == claim.checkpoint_id).unwrap(); claim.validate(envelope).unwrap(); }
+    let states: Vec<String> = response.take(0).unwrap();
+    assert_eq!(states, vec![expected_epoch_state]);
+    let claims: Vec<String> = response.take(1).unwrap();
+    assert_eq!(claims.len(), expected_claims);
+    for data in claims {
+        let claim: universal_agent_runtime::uar::persistence::checkpoint_resume::CheckpointContinuationClaim = serde_json::from_str(&data).unwrap();
+        let envelope = rows
+            .iter()
+            .find(|row| row.checkpoint_id == claim.checkpoint_id)
+            .unwrap();
+        claim.validate(envelope).unwrap();
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 enum ReadbackOperation {
-    Inspect { expected_epoch_state: String, expected_claims: usize, corrupt_checkpoint: Option<String> },
+    Inspect {
+        expected_epoch_state: String,
+        expected_claims: usize,
+        corrupt_checkpoint: Option<String>,
+    },
     AssertNoClaims,
 }
 
@@ -336,22 +698,70 @@ struct ReadbackJob {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct ReadbackResult { envelopes: Vec<CheckpointResumeEnvelope> }
+struct ReadbackResult {
+    envelopes: Vec<CheckpointResumeEnvelope>,
+    history_record: Option<RunHistoryRecord>,
+    history_events: Vec<RunHistoryEvent>,
+}
+
+pub(super) fn history_inspection(record: &RunHistoryRecord, run_id: &str) -> Value {
+    let owner = format!(
+        "v1:t:{}:{}:s:{}:{}",
+        TENANT.len(),
+        TENANT,
+        OWNER.len(),
+        OWNER
+    );
+    assert_eq!(record.owner_key.as_deref(), Some(owner.as_str()));
+    assert_eq!(record.run_id, run_id);
+    let run: universal_agent_runtime::uar::domain::runs::Run =
+        serde_json::from_value(record.run.clone()).unwrap();
+    assert_eq!(run.run_id, run_id);
+    assert_eq!(run.user_id.as_deref(), Some(OWNER));
+    let inspection = json!({
+        "run_id":run.run_id,"agent_id":run.agent_id,"conversation_id":run.conversation_id,"status":run.status,
+        "agent_revision":run.context.pointer("/agent_snapshot/revision").and_then(Value::as_str),
+        "effective_model":run.context.pointer("/effective_run_policy/model"),
+        "effective_run_policy":run.context.get("effective_run_policy"),
+        "presentation_selection":run.context.get("presentation_selection"),
+        "host_resources":run.context.get("host_resources"),
+        "effective_service_binding":run.context.get("effective_service_binding").filter(|value| !value.is_null()),
+    });
+    let public = serde_json::to_string(&inspection).unwrap();
+    for secret in [PROVIDER_SECRET, JWT_SECRET, ADMIN] {
+        assert!(
+            !public.contains(secret),
+            "public run inspection leaked a fixture credential"
+        );
+    }
+    inspection
+}
 
 /// Fixture orchestration only: the parent never opens the embedded KV. One
 /// child owns one production provider for the whole readback/mutation phase.
 pub async fn run_readback_child() -> bool {
-    let Some(path) = std::env::var_os("UAR_DOT06_READBACK_JOB") else { return false; };
+    let Some(path) = std::env::var_os("UAR_DOT06_READBACK_JOB") else {
+        return false;
+    };
     let job: ReadbackJob = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
     let db = job.database.connect().await;
     let rows = match job.operation {
-        ReadbackOperation::Inspect { expected_epoch_state, expected_claims, corrupt_checkpoint } => {
+        ReadbackOperation::Inspect {
+            expected_epoch_state,
+            expected_claims,
+            corrupt_checkpoint,
+        } => {
             let rows = envelopes(&db, &job.run).await;
             proof(&db, &rows, &job.run, &expected_epoch_state, expected_claims).await;
             if let Some(checkpoint) = corrupt_checkpoint {
-                let mut altered = rows.iter().find(|row| row.checkpoint_id == checkpoint).unwrap().clone();
+                let mut altered = rows
+                    .iter()
+                    .find(|row| row.checkpoint_id == checkpoint)
+                    .unwrap()
+                    .clone();
                 let mut source: Value = serde_json::from_str(&altered.source_json).unwrap();
-                source["context"]["agent_snapshot"]["artifact"]["prompt"]["system"] = json!("tampered stored definition");
+                source["context"]["agent_snapshot"]["artifact"]["prompt"]["system"] =
+                    json!("tampered stored definition");
                 altered.source_json = serde_json::to_string(&source).unwrap();
                 db.client().query("UPDATE checkpoint_resume_envelopes SET data = $data WHERE source_run_id = $run AND checkpoint_id = $checkpoint;")
                     .bind(("data", serde_json::to_string(&altered).unwrap())).bind(("run", job.run.clone()))
@@ -360,13 +770,43 @@ pub async fn run_readback_child() -> bool {
             rows
         }
         ReadbackOperation::AssertNoClaims => {
-            let mut response = db.client().query("SELECT VALUE data FROM checkpoint_resume_claims WHERE source_run_id = $run;")
-                .bind(("run", job.run)).await.unwrap().check().unwrap();
-            let claims: Vec<String> = response.take(0).unwrap(); assert!(claims.is_empty());
+            let mut response = db
+                .client()
+                .query(
+                    "SELECT VALUE data FROM checkpoint_resume_claims WHERE source_run_id = $run;",
+                )
+                .bind(("run", job.run.clone()))
+                .await
+                .unwrap()
+                .check()
+                .unwrap();
+            let claims: Vec<String> = response.take(0).unwrap();
+            assert!(claims.is_empty());
             Vec::new()
         }
     };
-    private_write(&job.result, &serde_json::to_vec(&ReadbackResult { envelopes: rows }).unwrap());
+    let history_record = db.load_run_history_record(&job.run).await.unwrap();
+    if let Some(record) = &history_record {
+        history_inspection(record, &job.run);
+    }
+    let history_events = db.load_run_history_events(&job.run).await.unwrap();
+    for event in &history_events {
+        assert_eq!(event.run_id, job.run);
+    }
+    assert!(
+        history_events
+            .windows(2)
+            .all(|pair| pair[0].event_id < pair[1].event_id)
+    );
+    private_write(
+        &job.result,
+        &serde_json::to_vec(&ReadbackResult {
+            envelopes: rows,
+            history_record,
+            history_events,
+        })
+        .unwrap(),
+    );
     true
 }
 
@@ -374,194 +814,611 @@ struct ReadbackChild(Child);
 
 impl Drop for ReadbackChild {
     fn drop(&mut self) {
-        if self.0.try_wait().ok().flatten().is_none() { let _ = self.0.kill(); let _ = self.0.wait(); }
+        if self.0.try_wait().ok().flatten().is_none() {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
     }
 }
 
-async fn readback(database: &Database, root: &Path, label: &str, run: &str,
-    operation: ReadbackOperation) -> Vec<CheckpointResumeEnvelope> {
-    let directory = root.join(label); private_dir(&directory);
+async fn readback(
+    database: &Database,
+    root: &Path,
+    label: &str,
+    run: &str,
+    operation: ReadbackOperation,
+) -> ReadbackResult {
+    let directory = root.join(label);
+    private_dir(&directory);
     let result = directory.join("readback-result.json");
-    let job = ReadbackJob { database: database.clone(), run: run.to_owned(), operation, result: result.clone() };
+    let job = ReadbackJob {
+        database: database.clone(),
+        run: run.to_owned(),
+        operation,
+        result: result.clone(),
+    };
     let job_path = directory.join("readback-job.json");
     private_write(&job_path, &serde_json::to_vec(&job).unwrap());
     let executable = std::env::current_exe().unwrap();
     let mut command = Command::new(&executable);
     // This invokes the unchanged full integration entrypoint in its private
     // fixture-child mode. There is no filter or independent acceptance gate.
-    command.args(["--nocapture", "--test-threads=1"]).env_clear()
-        .env("PATH", std::env::var_os("PATH").unwrap_or_default()).env("HOME", &directory)
-        .env("UAR_DOT06_READBACK_JOB", &job_path).stdin(Stdio::null())
-        .stdout(private_file(&directory.join("stdout.log"))).stderr(private_file(&directory.join("stderr.log")));
+    command
+        .args(["--nocapture", "--test-threads=1"])
+        .env_clear()
+        .env("PATH", std::env::var_os("PATH").unwrap_or_default())
+        .env("HOME", &directory)
+        .env("UAR_DOT06_READBACK_JOB", &job_path)
+        .stdin(Stdio::null())
+        .stdout(private_file(&directory.join("stdout.log")))
+        .stderr(private_file(&directory.join("stderr.log")));
     for name in ["DYLD_LIBRARY_PATH", "LD_LIBRARY_PATH"] {
-        if let Some(value) = std::env::var_os(name) { command.env(name, value); }
+        if let Some(value) = std::env::var_os(name) {
+            command.env(name, value);
+        }
     }
-    if database.remote && std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED").is_ok_and(|value| value == "1") {
+    if database.remote
+        && std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED").is_ok_and(|value| value == "1")
+    {
         command.env("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED", "1");
     }
     let mut child = ReadbackChild(command.spawn().expect("owned durable readback child"));
     let pid = child.0.id();
     let process = directory.join("readback-process.json");
-    private_write(&process, &serde_json::to_vec(&json!({"pid":pid,"role":"durable-readback","executable":executable})).unwrap());
+    private_write(
+        &process,
+        &serde_json::to_vec(&json!({"pid":pid,"role":"durable-readback","executable":executable}))
+            .unwrap(),
+    );
     let deadline = tokio::time::Instant::now() + WAIT;
     let status = loop {
-        if let Some(status) = child.0.try_wait().unwrap() { break status; }
-        assert!(tokio::time::Instant::now() < deadline, "durable readback child deadline; private diagnostics retained");
+        if let Some(status) = child.0.try_wait().unwrap() {
+            break status;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "durable readback child deadline; private diagnostics retained"
+        );
         tokio::time::sleep(Duration::from_millis(25)).await;
     };
-    private_write(&process, &serde_json::to_vec(&json!({"pid":pid,"role":"durable-readback","executable":executable,
-        "joined":true,"exit_code":status.code()})).unwrap());
-    assert!(status.success(), "durable readback child failed; private diagnostics retained");
+    private_write(
+        &process,
+        &serde_json::to_vec(
+            &json!({"pid":pid,"role":"durable-readback","executable":executable,
+        "joined":true,"exit_code":status.code()}),
+        )
+        .unwrap(),
+    );
+    assert!(
+        status.success(),
+        "durable readback child failed; private diagnostics retained"
+    );
     // A joined OS exit releases this phase's KV ownership before the caller can
     // launch its next readback or production runtime. Lexical Drop is not proof.
     let result: ReadbackResult = serde_json::from_slice(&std::fs::read(result).unwrap()).unwrap();
-    result.envelopes
+    result
+}
+
+async fn inspect_cold_run(
+    node: &Node,
+    peer: &Peer,
+    effect_trace: &Path,
+    run: &str,
+    expected: Option<&Value>,
+    negative: bool,
+) {
+    let requests = peer.count();
+    let effect_count = effects(effect_trace);
+    let resident = node.api(Method::GET, "/api/uar/runs", None, 200).await;
+    assert_eq!(
+        resident,
+        json!([]),
+        "fresh process must not rehydrate execution from history"
+    );
+    let path = format!("/api/uar/runs/{run}");
+    for _ in 0..2 {
+        let observed = node
+            .api(
+                Method::GET,
+                &path,
+                None,
+                if expected.is_some() { 200 } else { 404 },
+            )
+            .await;
+        if let Some(expected) = expected {
+            assert_eq!(
+                &observed, expected,
+                "cold inspection must match independent durable metadata"
+            );
+        }
+    }
+    node.api(
+        Method::GET,
+        &format!("/api/uar/runs/{run}/checkpoints"),
+        None,
+        200,
+    )
+    .await;
+    node.api(
+        Method::GET,
+        &format!("/api/uar/runs/{run}-missing"),
+        None,
+        404,
+    )
+    .await;
+    if negative {
+        for (subject, tenant, issuer, expected_status) in [
+            ("other", TENANT, ISSUER, 404),
+            (OWNER, "other", ISSUER, 404),
+            (OWNER, TENANT, "other", 401),
+        ] {
+            let (status, _) = node
+                .request(&token(subject, tenant, issuer), Method::GET, &path, None)
+                .await;
+            assert_eq!(status, expected_status);
+        }
+    }
+    assert_eq!(
+        node.api(Method::GET, "/api/uar/runs", None, 200).await,
+        resident
+    );
+    assert_eq!(
+        peer.count(),
+        requests,
+        "inspection must not invoke the provider"
+    );
+    assert_eq!(
+        effects(effect_trace),
+        effect_count,
+        "inspection must not dispatch an effect"
+    );
 }
 
 async fn wait_for(node: &Node, run: &str, condition: impl Fn() -> bool) {
     let deadline = tokio::time::Instant::now() + WAIT;
-    while !condition() { node.approve(run).await; assert!(tokio::time::Instant::now() < deadline, "controlled boundary deadline");
-        tokio::time::sleep(Duration::from_millis(25)).await; }
+    while !condition() {
+        node.approve(run).await;
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "controlled boundary deadline"
+        );
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    }
 }
 
 fn cleanup_peers(effect_trace: &Path) {
-    for pid in trace(effect_trace).iter().filter_map(|row| row["pid"].as_u64()).collect::<BTreeSet<_>>() {
-        let _ = Command::new("/bin/kill").arg("-TERM").arg(pid.to_string())
-            .stdout(Stdio::null()).stderr(Stdio::null()).status();
+    for pid in trace(effect_trace)
+        .iter()
+        .filter_map(|row| row["pid"].as_u64())
+        .collect::<BTreeSet<_>>()
+    {
+        let _ = Command::new("/bin/kill")
+            .arg("-TERM")
+            .arg(pid.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
     }
 }
 
 async fn corrupted_envelope(root: &Path, profile: &str) {
-    private_dir(root); let effect_trace = root.join("effects.jsonl"); private_write(&effect_trace, b"");
-    let database = Database::new(root, profile, "corrupt"); let peer = Peer::start(root).await;
-    let mut predecessor = Node::boot(root, "predecessor", &database, &peer, &effect_trace, true).await;
+    private_dir(root);
+    let effect_trace = root.join("effects.jsonl");
+    private_write(&effect_trace, b"");
+    let database = Database::new(root, profile, "corrupt");
+    let peer = Peer::start(root).await;
+    let mut predecessor =
+        Node::boot(root, "predecessor", &database, &peer, &effect_trace, true).await;
     let (run, checkpoint) = source(&predecessor, &peer, "seed", false, false).await;
     predecessor.stop().await;
-    readback(&database, root, "source-readback", &run, ReadbackOperation::Inspect {
-        expected_epoch_state: "orderly_excluded".into(), expected_claims: 0, corrupt_checkpoint: Some(checkpoint.clone()),
-    }).await;
+    readback(
+        &database,
+        root,
+        "source-readback",
+        &run,
+        ReadbackOperation::Inspect {
+            expected_epoch_state: "orderly_excluded".into(),
+            expected_claims: 0,
+            corrupt_checkpoint: Some(checkpoint.clone()),
+        },
+    )
+    .await;
     let mut current = Node::boot(root, "current", &database, &peer, &effect_trace, true).await;
-    let requests = peer.count(); let effect_count = effects(&effect_trace);
+    let requests = peer.count();
+    let effect_count = effects(&effect_trace);
     for (method, path, body) in [
-        (Method::GET, format!("/api/uar/runs/{run}/checkpoints"), None),
-        (Method::POST, format!("/api/uar/runs/{run}/resume/{checkpoint}"), Some(json!({"run_credentials":credentials(&peer)}))),
+        (
+            Method::GET,
+            format!("/api/uar/runs/{run}/checkpoints"),
+            None,
+        ),
+        (
+            Method::POST,
+            format!("/api/uar/runs/{run}/resume/{checkpoint}"),
+            Some(json!({"run_credentials":credentials(&peer)})),
+        ),
     ] {
         let response = current.api(method, &path, body, 409).await;
         assert_eq!(response["code"], "checkpoint_resume_invalid");
     }
-    assert_eq!(requests, peer.count()); assert_eq!(effect_count, effects(&effect_trace));
+    assert_eq!(requests, peer.count());
+    assert_eq!(effect_count, effects(&effect_trace));
     current.stop().await;
-    readback(&database, root, "final-readback", &run, ReadbackOperation::AssertNoClaims).await;
+    readback(
+        &database,
+        root,
+        "final-readback",
+        &run,
+        ReadbackOperation::AssertNoClaims,
+    )
+    .await;
     cleanup_peers(&effect_trace);
-    private_write(&root.join("acceptance.json"), &serde_json::to_vec_pretty(&json!({"profile":profile,"case":"corrupt",
-        "status":409,"newExecutions":0,"verified":true,"genuineInference":false})).unwrap());
+    private_write(
+        &root.join("acceptance.json"),
+        &serde_json::to_vec_pretty(&json!({"profile":profile,"case":"corrupt",
+        "status":409,"newExecutions":0,"verified":true,"genuineInference":false}))
+        .unwrap(),
+    );
 }
 
 async fn scenario(root: &Path, profile: &str, case: &str) {
-    private_dir(root); let effect_trace = root.join("effects.jsonl"); private_write(&effect_trace, b"");
-    let database = Database::new(root, profile, case); let peer = Peer::start(root).await;
-    let mut predecessor = Node::boot(root, "predecessor", &database, &peer, &effect_trace, true).await;
-    let (run, checkpoint) = source(&predecessor, &peer, if case == "uncertain" { "unknown" } else { "seed" },
-        case == "binding", case == "target").await;
+    private_dir(root);
+    let effect_trace = root.join("effects.jsonl");
+    private_write(&effect_trace, b"");
+    let database = Database::new(root, profile, case);
+    let peer = Peer::start(root).await;
+    let mut predecessor =
+        Node::boot(root, "predecessor", &database, &peer, &effect_trace, true).await;
+    let (run, checkpoint) = source(
+        &predecessor,
+        &peer,
+        if case == "uncertain" {
+            "unknown"
+        } else {
+            "seed"
+        },
+        case == "binding",
+        case == "target",
+    )
+    .await;
     let predecessor_pid = predecessor.child.id();
-    if case == "abrupt" { predecessor.kill(); }
-    else if case == "uncertain" {
+    if case == "abrupt" {
+        predecessor.kill();
+    } else if case == "uncertain" {
         // Even after a real orderly signal and joined shutdown work, unknown
         // effects prevent an exclusion certificate. Exit failure is retained.
-        assert!(!predecessor.stop_status().await.success(), "unknown effects must fail orderly certification");
-    } else { predecessor.stop().await; }
-    let rows = readback(&database, root, "source-readback", &run, ReadbackOperation::Inspect {
-        expected_epoch_state: if case == "abrupt" || case == "uncertain" { "active" } else { "orderly_excluded" }.into(),
-        expected_claims: 0, corrupt_checkpoint: None,
-    }).await;
-    let finals = rows.iter().filter(|row| row.checkpoint().unwrap().node_id == "tool_loop_1").collect::<Vec<_>>();
+        assert!(
+            !predecessor.stop_status().await.success(),
+            "unknown effects must fail orderly certification"
+        );
+    } else {
+        predecessor.stop().await;
+    }
+    let source_readback = readback(
+        &database,
+        root,
+        "source-readback",
+        &run,
+        ReadbackOperation::Inspect {
+            expected_epoch_state: if case == "abrupt" || case == "uncertain" {
+                "active"
+            } else {
+                "orderly_excluded"
+            }
+            .into(),
+            expected_claims: 0,
+            corrupt_checkpoint: None,
+        },
+    )
+    .await;
+    let rows = &source_readback.envelopes;
+    // An abrupt kill may leave only the already-committed history prefix. The
+    // independent readback, not the predecessor's live status, defines cold GET.
+    let expected_inspection = source_readback
+        .history_record
+        .as_ref()
+        .map(|record| history_inspection(record, &run));
+    if case != "abrupt" {
+        let inspection = expected_inspection
+            .as_ref()
+            .expect("joined predecessor retains durable run metadata");
+        assert_eq!(
+            inspection["status"],
+            if case == "uncertain" { "error" } else { "done" }
+        );
+        assert_eq!(inspection["agent_id"], "dot06-artifact");
+    }
+    let finals = rows
+        .iter()
+        .filter(|row| row.checkpoint().unwrap().node_id == "tool_loop_1")
+        .collect::<Vec<_>>();
     assert_eq!(finals.len(), 1, "one committed post-ToolEnd checkpoint");
     assert_eq!(finals[0].checkpoint_id, checkpoint);
-    assert_eq!(rows.iter().filter(|row| row.checkpoint().unwrap().node_id == "pending_tool_approval").count(), 1,
-        "one protected pre-effect approval checkpoint");
+    assert_eq!(
+        rows.iter()
+            .filter(|row| row.checkpoint().unwrap().node_id == "pending_tool_approval")
+            .count(),
+        1,
+        "one protected pre-effect approval checkpoint"
+    );
     let mut current = Node::boot(root, "current", &database, &peer, &effect_trace, true).await;
     assert_ne!(predecessor_pid, current.child.id(), "fresh OS process");
     if case == "target" {
-        assert_eq!(finals[0].source_run().unwrap().context["effective_target"]["kind"], "model");
-        let verified = current.api(Method::POST, "/api/uar/providers/openai/test", Some(json!({"model":"gpt-4o-mini"})), 200).await;
+        assert_eq!(
+            finals[0].source_run().unwrap().context["effective_target"]["kind"],
+            "model"
+        );
+        let verified = current
+            .api(
+                Method::POST,
+                "/api/uar/providers/openai/test",
+                Some(json!({"model":"gpt-4o-mini"})),
+                200,
+            )
+            .await;
         assert_eq!(verified["ok"], true);
     }
-    current.api(Method::GET, &format!("/api/uar/runs/{run}"), None, 404).await;
-    current.api(Method::GET, &format!("/api/uar/runs/{run}/checkpoints"), None, 200).await;
-    let path = format!("/api/uar/runs/{run}/resume/{checkpoint}"); let before = effects(&effect_trace); let requests = peer.count();
-    let input = match case { "kill-before" => "kill_before", "kill-after" => "hold_after_effect", _ => "resume" };
+    inspect_cold_run(
+        &current,
+        &peer,
+        &effect_trace,
+        &run,
+        expected_inspection.as_ref(),
+        case == "negative",
+    )
+    .await;
+    if case == "resume" {
+        // Prove conservation before any intentional work, with no concurrent KV
+        // owner. Later resume/approval operations retain their original oracles.
+        let inspection_pid = current.child.id();
+        let requests = peer.count();
+        let effect_count = effects(&effect_trace);
+        current.stop().await;
+        drop(current);
+        let inspected = readback(
+            &database,
+            root,
+            "inspection-readback",
+            &run,
+            ReadbackOperation::Inspect {
+                expected_epoch_state: "orderly_excluded".into(),
+                expected_claims: 0,
+                corrupt_checkpoint: None,
+            },
+        )
+        .await;
+        assert_eq!(inspected.history_record, source_readback.history_record);
+        assert_eq!(inspected.history_events, source_readback.history_events);
+        assert_eq!(
+            serde_json::to_value(&inspected.envelopes).unwrap(),
+            serde_json::to_value(rows).unwrap()
+        );
+        assert_eq!(peer.count(), requests);
+        assert_eq!(effects(&effect_trace), effect_count);
+        current = Node::boot(root, "executor", &database, &peer, &effect_trace, true).await;
+        assert_ne!(
+            current.child.id(),
+            predecessor_pid,
+            "execution uses a fresh OS process"
+        );
+        assert_ne!(
+            current.child.id(),
+            inspection_pid,
+            "inspection process must be joined before execution"
+        );
+        inspect_cold_run(
+            &current,
+            &peer,
+            &effect_trace,
+            &run,
+            expected_inspection.as_ref(),
+            false,
+        )
+        .await;
+    }
+    let path = format!("/api/uar/runs/{run}/resume/{checkpoint}");
+    let before = effects(&effect_trace);
+    let requests = peer.count();
+    let input = match case {
+        "kill-before" => "kill_before",
+        "kill-after" => "hold_after_effect",
+        _ => "resume",
+    };
     let body = json!({"input":input,"run_credentials":credentials(&peer)});
     if case == "abrupt" || case == "uncertain" {
         let rejected = current.api(Method::POST, &path, Some(body), 409).await;
-        assert_eq!(rejected["code"], "checkpoint_predecessor_uncertain"); assert_eq!(peer.count(), requests); assert_eq!(effects(&effect_trace), before);
+        assert_eq!(rejected["code"], "checkpoint_predecessor_uncertain");
+        assert_eq!(peer.count(), requests);
+        assert_eq!(effects(&effect_trace), before);
         current.kill();
     } else if case == "binding" {
         // A fresh process answers at a different actual endpoint. Revalidation
         // must reject the original identity-bearing endpoint roles.
         let rejected = current.api(Method::POST, &path, Some(body), 409).await;
         assert_eq!(rejected["code"], "service_instance_incompatible");
-        assert_eq!(peer.count(), requests); assert_eq!(effects(&effect_trace), before);
+        assert_eq!(peer.count(), requests);
+        assert_eq!(effects(&effect_trace), before);
         current.stop().await;
     } else if case == "policy" {
         let conversation = finals[0].source_run().unwrap().conversation_id.unwrap();
-        current.api(Method::PUT, &format!("/api/uar/conversations/{conversation}/policy"),
-            Some(json!({"tool_approval":"deny"})), 200).await;
+        current
+            .api(
+                Method::PUT,
+                &format!("/api/uar/conversations/{conversation}/policy"),
+                Some(json!({"tool_approval":"deny"})),
+                200,
+            )
+            .await;
         let rejected = current.api(Method::POST, &path, Some(body), 409).await;
         assert_eq!(rejected["code"], "checkpoint_admission_denied");
-        assert_eq!(peer.count(), requests); assert_eq!(effects(&effect_trace), before);
+        assert_eq!(peer.count(), requests);
+        assert_eq!(effects(&effect_trace), before);
         let runs = current.api(Method::GET, "/api/uar/runs", None, 200).await;
-        assert!(runs.as_array().unwrap().iter().any(|run| run["status"] == "error"));
+        assert!(
+            runs.as_array()
+                .unwrap()
+                .iter()
+                .any(|run| run["status"] == "error")
+        );
         current.stop().await;
     } else if case == "negative" {
-        for (subject, tenant, issuer, expected) in [("other", TENANT, ISSUER, 404), (OWNER, "other", ISSUER, 404), (OWNER, TENANT, "other", 401)] {
-            let (status, _) = current.request(&token(subject, tenant, issuer), Method::POST, &path, Some(body.clone())).await; assert_eq!(status, expected);
-            let (status, _) = current.request(&token(subject, tenant, issuer), Method::GET, &format!("/api/uar/runs/{run}/checkpoints"), None).await; assert_eq!(status, expected);
+        for (subject, tenant, issuer, expected) in [
+            ("other", TENANT, ISSUER, 404),
+            (OWNER, "other", ISSUER, 404),
+            (OWNER, TENANT, "other", 401),
+        ] {
+            let (status, _) = current
+                .request(
+                    &token(subject, tenant, issuer),
+                    Method::POST,
+                    &path,
+                    Some(body.clone()),
+                )
+                .await;
+            assert_eq!(status, expected);
+            let (status, _) = current
+                .request(
+                    &token(subject, tenant, issuer),
+                    Method::GET,
+                    &format!("/api/uar/runs/{run}/checkpoints"),
+                    None,
+                )
+                .await;
+            assert_eq!(status, expected);
         }
-        let missing = current.api(Method::POST, &path, Some(json!({"input":"resume"})), 422).await; assert_eq!(missing["code"], "run_credential_required");
-        let mut altered = artifact(); altered["prompt"]["system"] = json!("altered");
-        let rejected = current.api(Method::POST, &path, Some(json!({"artifact":altered,"run_credentials":credentials(&peer)})), 409).await;
+        let missing = current
+            .api(Method::POST, &path, Some(json!({"input":"resume"})), 422)
+            .await;
+        assert_eq!(missing["code"], "run_credential_required");
+        let mut altered = artifact();
+        altered["prompt"]["system"] = json!("altered");
+        let rejected = current
+            .api(
+                Method::POST,
+                &path,
+                Some(json!({"artifact":altered,"run_credentials":credentials(&peer)})),
+                409,
+            )
+            .await;
         assert_eq!(rejected["code"], "run_artifact_mismatch");
-        current.api(Method::POST, &path, Some(json!({"session_id":"different","run_credentials":credentials(&peer)})), 409).await;
+        current
+            .api(
+                Method::POST,
+                &path,
+                Some(json!({"session_id":"different","run_credentials":credentials(&peer)})),
+                409,
+            )
+            .await;
         current.api(Method::POST, &path, Some(json!({"history":{"session_id":"caller-history","messages":[]},"run_credentials":credentials(&peer)})), 422).await;
-        let binding = current.api(Method::POST, &path, Some(json!({"run_credentials":credentials(&peer),"service_placement":{
-            "intent":"reattach","expectedInstanceId":"altered","expectedProfile":"local"}})), 409).await;
+        let binding = current
+            .api(
+                Method::POST,
+                &path,
+                Some(
+                    json!({"run_credentials":credentials(&peer),"service_placement":{
+            "intent":"reattach","expectedInstanceId":"altered","expectedProfile":"local"}}),
+                ),
+                409,
+            )
+            .await;
         assert_eq!(binding["code"], "service_binding_unavailable");
-        assert_eq!(peer.count(), requests); assert_eq!(effects(&effect_trace), before);
-        let result = current.api(Method::POST, &format!("/api/uar/runs/{run}/resume"), Some(body), 200).await;
-        current.finish(result["run_id"].as_str().unwrap(), true).await;
-        current.api(Method::POST, &path, Some(json!({"run_credentials":credentials(&peer)})), 409).await;
-        assert_eq!(effects(&effect_trace), before + 1); current.stop().await;
+        assert_eq!(peer.count(), requests);
+        assert_eq!(effects(&effect_trace), before);
+        let result = current
+            .api(
+                Method::POST,
+                &format!("/api/uar/runs/{run}/resume"),
+                Some(body),
+                200,
+            )
+            .await;
+        current
+            .finish(result["run_id"].as_str().unwrap(), true)
+            .await;
+        current
+            .api(
+                Method::POST,
+                &path,
+                Some(json!({"run_credentials":credentials(&peer)})),
+                409,
+            )
+            .await;
+        assert_eq!(effects(&effect_trace), before + 1);
+        current.stop().await;
     } else if case == "race" {
         assert_eq!(profile, "shared");
-        let mut second = Node::boot(root, "second", &database, &peer, &effect_trace, true).await; assert_ne!(current.child.id(), second.child.id());
+        let mut second = Node::boot(root, "second", &database, &peer, &effect_trace, true).await;
+        assert_ne!(current.child.id(), second.child.id());
         let principal = token(OWNER, TENANT, ISSUER);
-        let (a, b) = tokio::join!(current.request(&principal, Method::POST, &path, Some(body.clone())), second.request(&principal, Method::POST, &path, Some(body)));
+        let (a, b) = tokio::join!(
+            current.request(&principal, Method::POST, &path, Some(body.clone())),
+            second.request(&principal, Method::POST, &path, Some(body))
+        );
         assert_eq!(BTreeSet::from([a.0, b.0]), BTreeSet::from([200, 409]));
-        if a.0 == 200 { current.finish(a.1["run_id"].as_str().unwrap(), true).await; } else { second.finish(b.1["run_id"].as_str().unwrap(), true).await; }
-        assert_eq!(effects(&effect_trace), before + 1); current.stop().await; second.stop().await;
+        if a.0 == 200 {
+            current.finish(a.1["run_id"].as_str().unwrap(), true).await;
+        } else {
+            second.finish(b.1["run_id"].as_str().unwrap(), true).await;
+        }
+        assert_eq!(effects(&effect_trace), before + 1);
+        current.stop().await;
+        second.stop().await;
     } else {
-        let result = current.api(Method::POST, &path, Some(body.clone()), 200).await;
-        let continuation = result["run_id"].as_str().unwrap(); assert_ne!(continuation, run);
+        let result = current
+            .api(Method::POST, &path, Some(body.clone()), 200)
+            .await;
+        let continuation = result["run_id"].as_str().unwrap();
+        assert_ne!(continuation, run);
         if case == "kill-before" || case == "kill-after" {
-            wait_for(&current, continuation, || if case == "kill-before" { peer.saw("kill_before") } else { effects(&effect_trace) == before + 1 }).await;
+            wait_for(&current, continuation, || {
+                if case == "kill-before" {
+                    peer.saw("kill_before")
+                } else {
+                    effects(&effect_trace) == before + 1
+                }
+            })
+            .await;
             current.kill();
-            let mut second = Node::boot(root, "second", &database, &peer, &effect_trace, true).await;
-            let count = peer.count(); let effect_count = effects(&effect_trace);
-            let rejected = second.api(Method::POST, &path, Some(body), 409).await; assert_eq!(rejected["code"], "checkpoint_resume_conflict");
-            assert_eq!(peer.count(), count); assert_eq!(effects(&effect_trace), effect_count);
-            if case == "kill-before" { assert_eq!(effect_count, before); }
+            let mut second =
+                Node::boot(root, "second", &database, &peer, &effect_trace, true).await;
+            let count = peer.count();
+            let effect_count = effects(&effect_trace);
+            let rejected = second.api(Method::POST, &path, Some(body), 409).await;
+            assert_eq!(rejected["code"], "checkpoint_resume_conflict");
+            assert_eq!(peer.count(), count);
+            assert_eq!(effects(&effect_trace), effect_count);
+            if case == "kill-before" {
+                assert_eq!(effect_count, before);
+            }
             second.stop().await;
         } else {
             current.finish(continuation, true).await;
-            current.api(Method::POST, &path, Some(body), 409).await; assert_eq!(effects(&effect_trace), before + 1);
+            current.api(Method::POST, &path, Some(body), 409).await;
+            assert_eq!(effects(&effect_trace), before + 1);
             current.stop().await;
         }
     }
-    readback(&database, root, "final-readback", &run, ReadbackOperation::Inspect {
-        expected_epoch_state: if case == "abrupt" || case == "uncertain" { "active" } else { "orderly_excluded" }.into(),
-        expected_claims: if case == "abrupt" || case == "uncertain" || case == "binding" { 0 } else { 1 },
-        corrupt_checkpoint: None,
-    }).await;
+    readback(
+        &database,
+        root,
+        "final-readback",
+        &run,
+        ReadbackOperation::Inspect {
+            expected_epoch_state: if case == "abrupt" || case == "uncertain" {
+                "active"
+            } else {
+                "orderly_excluded"
+            }
+            .into(),
+            expected_claims: if case == "abrupt" || case == "uncertain" || case == "binding" {
+                0
+            } else {
+                1
+            },
+            corrupt_checkpoint: None,
+        },
+    )
+    .await;
     // Retained peers identify themselves in this private protocol trace. Only
     // fixture children are signalled; no process inventory or argv is inspected.
     cleanup_peers(&effect_trace);
@@ -571,26 +1428,55 @@ async fn scenario(root: &Path, profile: &str, case: &str) {
 }
 
 async fn unsupported(root: &Path, profile: &str, attested: bool) {
-    private_dir(root); let effect_trace = root.join("effects.jsonl"); private_write(&effect_trace, b"");
-    let peer = Peer::start(root).await; let database = Database::new(root, profile, "unattested");
+    private_dir(root);
+    let effect_trace = root.join("effects.jsonl");
+    private_write(&effect_trace, b"");
+    let peer = Peer::start(root).await;
+    let database = Database::new(root, profile, "unattested");
     if profile == "memory" {
         // The release feature set excludes the development-only kv-mem engine.
         // Qualify its actual explicit startup refusal, not an unentered HTTP API.
-        let mut node = Node::launch(root, "unsupported", &database, &peer, &effect_trace, attested);
+        let mut node = Node::launch(
+            root,
+            "unsupported",
+            &database,
+            &peer,
+            &effect_trace,
+            attested,
+        );
         let deadline = tokio::time::Instant::now() + WAIT;
         let status = loop {
-            assert!(!node.client.get(format!("{}/health", node.base)).send().await
-                .is_ok_and(|response| response.status().is_success()), "memory runtime unexpectedly accepted startup");
-            if let Some(status) = node.child.try_wait().unwrap() { break status; }
-            assert!(tokio::time::Instant::now() < deadline, "memory startup refusal deadline; private logs retained");
+            assert!(
+                !node
+                    .client
+                    .get(format!("{}/health", node.base))
+                    .send()
+                    .await
+                    .is_ok_and(|response| response.status().is_success()),
+                "memory runtime unexpectedly accepted startup"
+            );
+            if let Some(status) = node.child.try_wait().unwrap() {
+                break status;
+            }
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "memory startup refusal deadline; private logs retained"
+            );
             tokio::time::sleep(Duration::from_millis(100)).await;
         };
-        assert!(!status.success(), "memory configuration must be explicitly rejected by the release profile");
+        assert!(
+            !status.success(),
+            "memory configuration must be explicitly rejected by the release profile"
+        );
         let stdout = std::fs::read_to_string(node.directory.join("stdout.log")).unwrap();
         let stderr = std::fs::read_to_string(node.directory.join("stderr.log")).unwrap();
-        assert!(stdout.contains("Unsupported scheme: memory") || stderr.contains("Unsupported scheme: memory"),
-            "memory startup did not report the observed unsupported transport reason; private logs retained");
-        assert_eq!(peer.count(), 0); assert_eq!(effects(&effect_trace), 0);
+        assert!(
+            stdout.contains("Unsupported scheme: memory")
+                || stderr.contains("Unsupported scheme: memory"),
+            "memory startup did not report the observed unsupported transport reason; private logs retained"
+        );
+        assert_eq!(peer.count(), 0);
+        assert_eq!(effects(&effect_trace), 0);
         cleanup_peers(&effect_trace);
         private_write(&root.join("acceptance.json"), &serde_json::to_vec_pretty(&json!({"profile":profile,"attested":attested,
             "status":"startup_rejected","refusalBoundary":"startup","reason":"unsupported_memory_transport",
@@ -599,24 +1485,64 @@ async fn unsupported(root: &Path, profile: &str, attested: bool) {
             "runtimeExitCode":status.code(),"verified":true,"durabilityCertified":false,"checkpointApiCertified":false})).unwrap());
         return;
     }
-    let mut node = Node::boot(root, "unsupported", &database, &peer, &effect_trace, attested).await;
-    for (method, path, body) in [(Method::GET,"/api/uar/runs/unsupported/checkpoints", None),
-        (Method::POST,"/api/uar/runs/unsupported/resume", Some(json!({}))),
-        (Method::POST,"/api/uar/runs/unsupported/resume/checkpoint", Some(json!({})))] {
-        let response = node.api(method, path, body, 503).await; assert_eq!(response["code"], "checkpoint_resume_unsupported");
+    let mut node = Node::boot(
+        root,
+        "unsupported",
+        &database,
+        &peer,
+        &effect_trace,
+        attested,
+    )
+    .await;
+    for (method, path, body) in [
+        (Method::GET, "/api/uar/runs/unsupported/checkpoints", None),
+        (
+            Method::POST,
+            "/api/uar/runs/unsupported/resume",
+            Some(json!({})),
+        ),
+        (
+            Method::POST,
+            "/api/uar/runs/unsupported/resume/checkpoint",
+            Some(json!({})),
+        ),
+    ] {
+        let response = node.api(method, path, body, 503).await;
+        assert_eq!(response["code"], "checkpoint_resume_unsupported");
     }
-    assert_eq!(peer.count(), 0); assert_eq!(effects(&effect_trace), 0); node.stop().await;
+    assert_eq!(peer.count(), 0);
+    assert_eq!(effects(&effect_trace), 0);
+    node.stop().await;
     cleanup_peers(&effect_trace);
-    private_write(&root.join("acceptance.json"), &serde_json::to_vec_pretty(&json!({"profile":profile,"attested":attested,
-        "status":503,"executionCount":0,"verified":true})).unwrap());
+    private_write(
+        &root.join("acceptance.json"),
+        &serde_json::to_vec_pretty(&json!({"profile":profile,"attested":attested,
+        "status":503,"executionCount":0,"verified":true}))
+        .unwrap(),
+    );
 }
 
 pub async fn qualify() {
-    assert!(cfg!(feature = "postgres-backend"), "complete dot06 gate requires the postgres-backend capability for its unsupported-profile proof");
-    let root = PathBuf::from(std::env::var("UAR_DOT06_EVIDENCE_ROOT").expect("private preserved evidence directory"));
+    assert!(
+        cfg!(feature = "postgres-backend"),
+        "complete dot06 gate requires the postgres-backend capability for its unsupported-profile proof"
+    );
+    let root = PathBuf::from(
+        std::env::var("UAR_DOT06_EVIDENCE_ROOT").expect("private preserved evidence directory"),
+    );
     private_dir(&root);
     for profile in ["local", "shared"] {
-        for case in ["resume", "target", "negative", "policy", "binding", "abrupt", "uncertain", "kill-before", "kill-after"] {
+        for case in [
+            "resume",
+            "target",
+            "negative",
+            "policy",
+            "binding",
+            "abrupt",
+            "uncertain",
+            "kill-before",
+            "kill-after",
+        ] {
             scenario(&root.join(format!("{profile}-{case}")), profile, case).await;
             eprintln!("dot06 profile={profile} case={case} status=passed");
         }

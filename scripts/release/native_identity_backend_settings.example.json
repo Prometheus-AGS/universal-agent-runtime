@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "source_manifest": "/Users/gqadonis/.claude/worktrees/uar-native-tool-identity-pr13/.agent-team/uar-core/handoffs/kubo-native-identity/source-manifest-r9.json",
+  "source_manifest_sha256": null,
+  "staged_git_tree": null,
+  "output_dir": null,
+  "resource_dir": null,
+  "cargo_binary": "/Users/gqadonis/.cargo/bin/cargo",
+  "rustc_binary": "/Users/gqadonis/.cargo/bin/rustc",
+  "git_binary": "/usr/bin/git",
+  "docker_binary": "/opt/homebrew/bin/docker",
+  "cargo_home": "/Users/gqadonis/.cargo",
+  "cargo_config_sha256": null,
+  "rustup_home": "/Users/gqadonis/.rustup",
+  "target_dir": "/Users/gqadonis/.claude/worktrees/uar-native-tool-identity-pr13/target",
+  "path": "/Users/gqadonis/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+  "docker_host": "unix:///Users/gqadonis/.orbstack/run/docker.sock",
+  "docker_config": "/Users/gqadonis/.docker",
+  "platform": "linux/arm64",
+  "postgres_image": "docker.io/supabase/postgres:17.6.1.173@sha256:da28f45caeb2d0857a5f53759654859a46c469112f257290e28bc2c291727506",
+  "surreal_image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
+}

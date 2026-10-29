@@ -366,10 +366,11 @@ where
                 .collect()
         } else {
             to_agui_event(&event.event)
-                .or_else(|| cursor_run_id.as_ref().map(|run_id| (
-                    "uar.cursor",
-                    serde_json::json!({"request_id": run_id}),
-                )))
+                .or_else(|| {
+                    cursor_run_id
+                        .as_ref()
+                        .map(|run_id| ("uar.cursor", serde_json::json!({"request_id": run_id})))
+                })
                 .map(|(event_name, payload)| {
                     let json = serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
                     vec![Ok(Event::default()
@@ -388,7 +389,11 @@ where
 
 pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
     match event {
-        NormalizedEvent::ClientToolsRequested { run_id, batch_id, calls } => Some((
+        NormalizedEvent::ClientToolsRequested {
+            run_id,
+            batch_id,
+            calls,
+        } => Some((
             "agui.client_tools.requested",
             serde_json::json!({
                 "kind": "client_tools",
@@ -1230,6 +1235,13 @@ mod tests {
 
     #[test]
     fn maps_core_lifecycle_text_tool_state_and_error_to_agui_profile() {
+        assert!(
+            to_agui_spec_event(&NormalizedEvent::ThinkingDelta {
+                run_id: "run-1".into(),
+                text_delta: "private thinking".into(),
+            })
+            .is_none()
+        );
         let cases = [
             (
                 NormalizedEvent::RunStart {
@@ -1246,7 +1258,7 @@ mod tests {
                 "TEXT_MESSAGE_CONTENT",
             ),
             (
-                NormalizedEvent::ThinkingDelta {
+                NormalizedEvent::ReasoningDelta {
                     run_id: "run-1".into(),
                     text_delta: "reason".into(),
                 },

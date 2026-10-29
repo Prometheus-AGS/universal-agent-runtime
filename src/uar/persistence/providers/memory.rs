@@ -13,8 +13,8 @@ use uuid::Uuid;
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalToolReceipt, PersistedAgentThread,
 };
-use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::persistence::approval_decisions::{ApprovalRecord, ApprovalState};
+use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 
 use crate::{
@@ -117,17 +117,31 @@ impl PersistenceLayer for InMemoryProvider {
         Ok(None)
     }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> {
-        anyhow::ensure!(record.state == ApprovalState::Pending && record.decision.is_none(), "New approval must be pending");
+        anyhow::ensure!(
+            record.state == ApprovalState::Pending && record.decision.is_none(),
+            "New approval must be pending"
+        );
         let mut records = write(&self.approval_records)?;
-        anyhow::ensure!(!records.contains_key(&record.storage_key()), "Approval already exists");
+        anyhow::ensure!(
+            !records.contains_key(&record.storage_key()),
+            "Approval already exists"
+        );
         records.insert(record.storage_key(), record.clone());
         Ok(())
     }
-    async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> {
+    async fn transition_approval_record(
+        &self,
+        before: &ApprovalRecord,
+        after: &ApprovalRecord,
+    ) -> Result<bool> {
         before.validate_transition(after)?;
         let mut records = write(&self.approval_records)?;
-        if records.get(&before.storage_key()) != Some(before) { return Ok(false); }
-        if matches!(after.state, ApprovalState::Approved | ApprovalState::Denied) && before.expires_at <= chrono::Utc::now() {
+        if records.get(&before.storage_key()) != Some(before) {
+            return Ok(false);
+        }
+        if matches!(after.state, ApprovalState::Approved | ApprovalState::Denied)
+            && before.expires_at <= chrono::Utc::now()
+        {
             records.insert(before.storage_key(), before.expire());
             return Ok(false);
         }
@@ -135,7 +149,11 @@ impl PersistenceLayer for InMemoryProvider {
         Ok(true)
     }
     async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> {
-        Ok(read(&self.approval_records)?.values().filter(|record| record.owner_key == owner && record.root_run_id == run).cloned().collect())
+        Ok(read(&self.approval_records)?
+            .values()
+            .filter(|record| record.owner_key == owner && record.root_run_id == run)
+            .cloned()
+            .collect())
     }
 
     async fn record_cost_entry(&self, scope: &str, scope_id: &str, cost_usd: f64) -> Result<()> {
@@ -576,14 +594,22 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
-        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_knowledge_bases
+        } else {
+            &self.knowledge_bases
+        };
         let key = crate::uar::persistence::tenant_storage_key(&kb.owner_id, &kb.id);
         write(knowledge_bases)?.insert(key, kb.clone());
         Ok(())
     }
     async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_knowledge_bases
+        } else {
+            &self.knowledge_bases
+        };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
         Ok(read(knowledge_bases)?.get(&key).cloned())
     }
@@ -593,7 +619,11 @@ impl PersistenceLayer for InMemoryProvider {
         name: &str,
     ) -> Result<Option<KnowledgeBase>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_knowledge_bases
+        } else {
+            &self.knowledge_bases
+        };
         Ok(read(knowledge_bases)?
             .values()
             .find(|kb| kb.owner_id == owner_id && kb.name == name)
@@ -601,7 +631,11 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_knowledge_bases
+        } else {
+            &self.knowledge_bases
+        };
         Ok(read(knowledge_bases)?
             .values()
             .filter(|kb| kb.owner_id == owner_id)
@@ -610,9 +644,21 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
-        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
-        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_documents
+        } else {
+            &self.documents
+        };
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_chunks
+        } else {
+            &self.chunks
+        };
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_knowledge_bases
+        } else {
+            &self.knowledge_bases
+        };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
         write(knowledge_bases)?.remove(&key);
         write(chunks)?.retain(|_, chunk| chunk.owner_id != owner_id || chunk.kb_id != id);
@@ -622,7 +668,11 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(&chunk.owner_id)?;
-        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_chunks
+        } else {
+            &self.chunks
+        };
         let key =
             crate::uar::persistence::tenant_storage_key(&chunk.owner_id, &chunk.id.to_string());
         write(chunks)?.insert(key, chunk.clone());
@@ -647,7 +697,11 @@ impl PersistenceLayer for InMemoryProvider {
         _min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_chunks
+        } else {
+            &self.chunks
+        };
         Ok(read(chunks)?
             .values()
             .filter(|chunk| {
@@ -661,20 +715,32 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(&doc.owner_id)?;
-        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_documents
+        } else {
+            &self.documents
+        };
         let key = crate::uar::persistence::tenant_storage_key(&doc.owner_id, &doc.id);
         write(documents)?.insert(key, doc.clone());
         Ok(())
     }
     async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_documents
+        } else {
+            &self.documents
+        };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
         Ok(read(documents)?.get(&key).cloned())
     }
     async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_documents
+        } else {
+            &self.documents
+        };
         Ok(read(documents)?
             .values()
             .filter(|doc| doc.owner_id == owner_id && doc.kb_id == kb_id)
@@ -688,7 +754,11 @@ impl PersistenceLayer for InMemoryProvider {
         status: &DocumentStatus,
     ) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_documents
+        } else {
+            &self.documents
+        };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, doc_id);
         write(documents)?
             .get_mut(&key)
@@ -698,8 +768,16 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
         let namespace = KnowledgeNamespace::for_owner(owner_id)?;
-        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
-        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_documents
+        } else {
+            &self.documents
+        };
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 {
+            &self.principal_chunks
+        } else {
+            &self.chunks
+        };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, doc_id);
         write(documents)?.remove(&key);
         write(chunks)?.retain(|_, chunk| {
@@ -1080,13 +1158,22 @@ mod tests {
         );
         assert!(
             provider
-                .search_knowledge_scoped("v1:k:issuer:i:7:fixture:local:s:3:bob", &[&kb.id], &[1.0], 10, 0.0)
+                .search_knowledge_scoped(
+                    "v1:k:issuer:i:7:fixture:local:s:3:bob",
+                    &[&kb.id],
+                    &[1.0],
+                    10,
+                    0.0
+                )
                 .await
                 .unwrap()
                 .is_empty()
         );
 
-        provider.delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:3:bob", &kb.id).await.unwrap();
+        provider
+            .delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:3:bob", &kb.id)
+            .await
+            .unwrap();
         assert!(
             provider
                 .get_knowledge_base("v1:k:issuer:i:7:fixture:local:s:5:alice", &kb.id)
@@ -1106,30 +1193,59 @@ mod tests {
     #[tokio::test]
     async fn delete_session_cascades_and_is_scoped_to_owner() {
         let provider = InMemoryProvider::new();
+        let alice =
+            crate::uar::security::claims::CredentialPrincipal::for_test("alice").storage_key();
+        let bob = crate::uar::security::claims::CredentialPrincipal::for_test("bob").storage_key();
 
         // Alice creates a session.
-        let session = crate::session::SessionStore::new().create_for_user("alice");
+        let session = crate::session::SessionStore::new().create_for_user(&alice);
         let session_id = session.id().to_string();
         provider.save_session(&session).await.unwrap();
 
         // Alice also has a conversation policy for the same conversation ID.
         let record = ConversationPolicyRecord::new_for_user(
-            "alice",
+            &alice,
             &session_id,
             crate::uar::domain::policy::RunPolicy::default(),
         );
-        provider.save_conversation_policy(&record).await.unwrap();
+        assert!(
+            provider
+                .save_principal_conversation_policy(&record, None)
+                .await
+                .unwrap()
+        );
+        let foreign = ConversationPolicyRecord::new_for_user(
+            &bob,
+            &session_id,
+            crate::uar::domain::policy::RunPolicy::default(),
+        );
+        assert!(
+            provider
+                .save_principal_conversation_policy(&foreign, None)
+                .await
+                .unwrap()
+        );
+        // Even an identical owner string in the legacy namespace is separate data.
+        let legacy = record.clone();
+        provider.save_conversation_policy(&legacy).await.unwrap();
 
         // Bob cannot delete Alice's session.
-        assert!(!provider.delete_session("bob", &session_id).await.unwrap());
+        assert!(!provider.delete_session(&bob, &session_id).await.unwrap());
+        assert_eq!(
+            provider
+                .load_principal_conversation_policy(&alice, &session_id)
+                .await
+                .unwrap(),
+            Some(record)
+        );
 
         // Alice can delete her own session.
-        assert!(provider.delete_session("alice", &session_id).await.unwrap());
+        assert!(provider.delete_session(&alice, &session_id).await.unwrap());
 
         // Session is gone.
         assert!(
             provider
-                .load_session("alice", &session_id)
+                .load_session(&alice, &session_id)
                 .await
                 .unwrap()
                 .is_none()
@@ -1138,14 +1254,28 @@ mod tests {
         // Conversation policy cascaded.
         assert!(
             provider
-                .load_conversation_policy("alice", &session_id)
+                .load_principal_conversation_policy(&alice, &session_id)
                 .await
                 .unwrap()
                 .is_none()
         );
 
         // Deleting again returns false (idempotent).
-        assert!(!provider.delete_session("alice", &session_id).await.unwrap());
+        assert!(!provider.delete_session(&alice, &session_id).await.unwrap());
+        assert_eq!(
+            provider
+                .load_principal_conversation_policy(&bob, &session_id)
+                .await
+                .unwrap(),
+            Some(foreign)
+        );
+        assert_eq!(
+            provider
+                .load_conversation_policy(&alice, &session_id)
+                .await
+                .unwrap(),
+            Some(legacy)
+        );
     }
 
     #[tokio::test]

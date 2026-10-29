@@ -85,6 +85,13 @@ Use the existing authenticated routes and original run/challenge IDs:
   resource-renewal fields. Executable calls/history come from protected storage.
   Caller `history` and a new `input` cannot replace the unresolved continuation.
 
+A successful `GET /api/uar/runs/{run_id}` after restart can describe persisted
+run metadata even when the current process has no run or original approval
+waiter. This read does not reactivate the run or authorize execution. The pending
+and decision routes distinguish a process-resident run from durable history;
+history alone does not select live handling. Cold recovery continues through the
+verified principal/workspace ledger and protected checkpoint admission below.
+
 Denial needs only the current authenticated pending challenge. It is processed
 before executable-continuation validation, including for an unbound record on
 an unsupported resume backend. It starts no run or effect. Expiry still wins
@@ -145,7 +152,8 @@ and production memory storage. Pre-deadline unbound denial is a positive
 control; stale approve/deny intents must become expired. PostgreSQL holds a
 real row lock until after expiry to exercise the await/lock boundary. These
 short storage-contract deadlines supplement the unchanged real five-minute
-public API expiry case. The full authored inventory is 32 groups.
+public API expiry case. The full authored inventory is 34 groups, including the
+two local/shared live native-identity recovery groups.
 
 Set `UAR_DOT07_EVIDENCE_ROOT` to a private preserved directory and reuse the
 private `UAR_DOT06_INFRA_FILE`/`UAR_DOT06_NAMESPACE` disposable infrastructure

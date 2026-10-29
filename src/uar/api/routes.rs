@@ -42,7 +42,10 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
         .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{id}/events", get(super::run_events::snapshot))
-        .route("/runs/{run_id}/tool-approval", get(api_approval_records).post(api_tool_approval))
+        .route(
+            "/runs/{run_id}/tool-approval",
+            get(api_approval_records).post(api_tool_approval),
+        )
         .route(
             "/runs/{run_id}/tool-approval/pending",
             get(api_pending_tool_approval),
@@ -202,8 +205,16 @@ pub(crate) struct RunApiError {
 }
 
 impl RunApiError {
-    pub(crate) fn delegated_context(status: StatusCode, code: &'static str, message: String) -> Self {
-        Self { status, code, message }
+    pub(crate) fn delegated_context(
+        status: StatusCode,
+        code: &'static str,
+        message: String,
+    ) -> Self {
+        Self {
+            status,
+            code,
+            message,
+        }
     }
     pub(crate) fn status(&self) -> StatusCode {
         self.status
@@ -281,19 +292,24 @@ pub(crate) async fn attach_host_resources(
     reasoning_effort: Option<String>,
     history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
 ) -> Result<(), RunApiError> {
-    manager.authorize_preferred_skills(user, &request.artifact).await.map_err(|error| {
-        use crate::uar::security::skill_roles::SkillAdmissionError;
-        match error {
-            SkillAdmissionError::Forbidden => RunApiError {
-                status: StatusCode::FORBIDDEN, code: "skill_forbidden",
-                message: "the verified principal cannot use a selected skill".to_owned(),
-            },
-            SkillAdmissionError::Unavailable => RunApiError {
-                status: StatusCode::SERVICE_UNAVAILABLE, code: "skill_unavailable",
-                message: "a selected protected skill is unavailable".to_owned(),
-            },
-        }
-    })?;
+    manager
+        .authorize_preferred_skills(user, &request.artifact)
+        .await
+        .map_err(|error| {
+            use crate::uar::security::skill_roles::SkillAdmissionError;
+            match error {
+                SkillAdmissionError::Forbidden => RunApiError {
+                    status: StatusCode::FORBIDDEN,
+                    code: "skill_forbidden",
+                    message: "the verified principal cannot use a selected skill".to_owned(),
+                },
+                SkillAdmissionError::Unavailable => RunApiError {
+                    status: StatusCode::SERVICE_UNAVAILABLE,
+                    code: "skill_unavailable",
+                    message: "a selected protected skill is unavailable".to_owned(),
+                },
+            }
+        })?;
     if working_directory.is_some() {
         request.working_directory = canonical_working_directory(working_directory)?;
     }
@@ -390,9 +406,15 @@ pub(crate) async fn attach_host_resources(
                 ))
             })?;
         let (servers, resources) = manager
-            .admit_run_mcp_servers(servers, user, owner, cwd,
-                (!request.host_resources_marker.artifact_inline && request.collaboration_binding.is_none())
-                    .then_some(&request.artifact))
+            .admit_run_mcp_servers(
+                servers,
+                user,
+                owner,
+                cwd,
+                (!request.host_resources_marker.artifact_inline
+                    && request.collaboration_binding.is_none())
+                .then_some(&request.artifact),
+            )
             .await?;
         request.host_resources_marker.mcp_servers = server_names.into_iter().collect();
         request.host_resources_marker.mcp_grants = servers.grant_markers();
@@ -573,8 +595,18 @@ pub(crate) async fn admit_run(
             .resolve_bound_agent_run(&owner_id, &workspace_id, &binding_id)
             .await
             .map_err(collaboration_run_error)?;
-        effective_target = Some(state.manager.target_sources().admit_bound(&bound, model.as_deref(), &workspace_id).await
-            .map_err(|message| RunApiError { status:StatusCode::UNPROCESSABLE_ENTITY,code:"target_model_unavailable",message })?);
+        effective_target = Some(
+            state
+                .manager
+                .target_sources()
+                .admit_bound(&bound, model.as_deref(), &workspace_id)
+                .await
+                .map_err(|message| RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "target_model_unavailable",
+                    message,
+                })?,
+        );
         crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
             bound,
             input,
@@ -595,17 +627,38 @@ pub(crate) async fn admit_run(
     };
     if let Some(model) = model.as_deref() {
         if effective_target.is_none() {
-            let (route, proof) = state.manager.target_sources().verified_model(model).await
-                .map_err(|message| RunApiError { status:StatusCode::UNPROCESSABLE_ENTITY,code:"target_model_unavailable",message })?;
-            effective_target = Some(super::targets::TargetReceipt {version:1,id:model.to_owned(),kind:"model".into(),
-                agent_id:request.artifact.id.clone(),provider_id:route.provider_id,model_id:route.model_id,
-                verified_at:proof.verified_at,configuration_digest:proof.configuration_digest,definition:None,binding:None,
-                workspace_id:super::targets::workspace(&headers).map(str::to_owned),instance_id:Some(state.service_instance.descriptor().instance.id.clone())});
+            let (route, proof) = state
+                .manager
+                .target_sources()
+                .verified_model(model)
+                .await
+                .map_err(|message| RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "target_model_unavailable",
+                    message,
+                })?;
+            effective_target = Some(super::targets::TargetReceipt {
+                version: 1,
+                id: model.to_owned(),
+                kind: "model".into(),
+                agent_id: request.artifact.id.clone(),
+                provider_id: route.provider_id,
+                model_id: route.model_id,
+                verified_at: proof.verified_at,
+                configuration_digest: proof.configuration_digest,
+                definition: None,
+                binding: None,
+                workspace_id: super::targets::workspace(&headers).map(str::to_owned),
+                instance_id: Some(state.service_instance.descriptor().instance.id.clone()),
+            });
         }
     }
     if let Some(target) = &effective_target {
         request.host_policy_constraint = Some(crate::uar::domain::policy::RunPolicy {
-            model:Some(crate::uar::domain::policy::ModelRoute {provider_id:target.provider_id.clone(),model_id:target.model_id.clone()}),
+            model: Some(crate::uar::domain::policy::ModelRoute {
+                provider_id: target.provider_id.clone(),
+                model_id: target.model_id.clone(),
+            }),
             ..Default::default()
         });
         request.target_selection = Some(serde_json::json!(target));
@@ -640,16 +693,25 @@ pub(crate) async fn admit_run(
             code: "invalid_client_tools",
             message: error.to_string(),
         })?;
-        let store = state.manager.persistence.as_deref().ok_or_else(|| RunApiError {
-            status: StatusCode::SERVICE_UNAVAILABLE,
-            code: "durable_client_tools_unsupported",
-            message: "caller tools require durable continuation storage".into(),
-        })?;
+        let store = state
+            .manager
+            .persistence
+            .as_deref()
+            .ok_or_else(|| RunApiError {
+                status: StatusCode::SERVICE_UNAVAILABLE,
+                code: "durable_client_tools_unsupported",
+                message: "caller tools require durable continuation storage".into(),
+            })?;
         let owner = user.session_owner_key().map_err(|_| principal_invalid())?;
         super::client_tools::validate_visible_history(
-            store, &owner, user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
-            &request.artifact.id, client,
-        ).await.map_err(|error| RunApiError {
+            store,
+            &owner,
+            user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+            &request.artifact.id,
+            client,
+        )
+        .await
+        .map_err(|error| RunApiError {
             status: StatusCode::BAD_REQUEST,
             code: "invalid_client_tool_history",
             message: error.to_string(),
@@ -658,8 +720,12 @@ pub(crate) async fn admit_run(
     request.skill_attachments = skill_attachments;
     request.presentation_negotiation = presentation_negotiation;
     if let Some(context) = delegated_host_context {
-        let run_id = reserved_run_id.as_deref().ok_or_else(super::full_harness::host_context::run_mismatch)?;
-        context.attach(&state, &mut request, run_id).await
+        let run_id = reserved_run_id
+            .as_deref()
+            .ok_or_else(super::full_harness::host_context::run_mismatch)?;
+        context
+            .attach(&state, &mut request, run_id)
+            .await
             .map_err(super::full_harness::host_context::run_error)?;
     }
     if let Some(input) = tool_admission {
@@ -1033,24 +1099,62 @@ async fn api_tool_approval(
     Json(body): Json<ToolApprovalRequest>,
 ) -> axum::response::Response {
     let manager = &state.manager;
-    if body.approved && manager.authorize_run_skill_roles(&user, &run_id).await.is_err() {
-        return (StatusCode::FORBIDDEN, Json(serde_json::json!({"resolved":false,"code":"skill_forbidden"}))).into_response();
+    if body.approved
+        && manager
+            .authorize_run_skill_roles(&user, &run_id)
+            .await
+            .is_err()
+    {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({"resolved":false,"code":"skill_forbidden"})),
+        )
+            .into_response();
     }
-    let Some(approval_id) = body.approval_id.as_deref().filter(|id| !id.trim().is_empty()) else {
+    let Some(approval_id) = body
+        .approval_id
+        .as_deref()
+        .filter(|id| !id.trim().is_empty())
+    else {
         return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
             "resolved": false, "error": "approval_id_required",
             "message": "Submit the approval_id from the originating approval event or pending snapshot"
         }))).into_response();
     };
-    if manager.get_run_for_context(&user, &run_id).await.is_none() {
-        let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
-        if manager.approval_records_for_context(&user, &run_id, workspace).await.is_err() {
-            return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_history_unavailable"}))).into_response();
+    if !manager.has_resident_run_for_context(&user, &run_id).await {
+        let workspace = headers
+            .get("x-uar-workspace-id")
+            .and_then(|value| value.to_str().ok());
+        if manager
+            .approval_records_for_context(&user, &run_id, workspace)
+            .await
+            .is_err()
+        {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({"resolved":false,"code":"approval_history_unavailable"})),
+            )
+                .into_response();
         }
-        let record = match manager.approval_recovery_record(&user, &run_id, approval_id, workspace).await {
+        let record = match manager
+            .approval_recovery_record(&user, &run_id, approval_id, workspace)
+            .await
+        {
             Ok(Some(record)) => record,
-            Ok(None) => return (StatusCode::NOT_FOUND, Json(serde_json::json!({"resolved":false}))).into_response(),
-            Err(_) => return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_persistence_unavailable"}))).into_response(),
+            Ok(None) => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(serde_json::json!({"resolved":false})),
+                )
+                    .into_response();
+            }
+            Err(_) => return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(
+                    serde_json::json!({"resolved":false,"code":"approval_persistence_unavailable"}),
+                ),
+            )
+                .into_response(),
         };
         use crate::uar::persistence::approval_decisions::ApprovalState;
         if record.state != ApprovalState::Pending {
@@ -1064,23 +1168,47 @@ async fn api_tool_approval(
             };
         }
         let Some(continuation) = &record.continuation else {
-            if manager.finish_recovered_approval(&record, ApprovalState::Invalidated).await.is_err() {
+            if manager
+                .finish_recovered_approval(&record, ApprovalState::Invalidated)
+                .await
+                .is_err()
+            {
                 return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_persistence_unavailable"}))).into_response();
             }
             return (StatusCode::CONFLICT, Json(serde_json::json!({"resolved":false,"code":"approval_continuation_unavailable"}))).into_response();
         };
         let checkpoint_id = continuation.checkpoint_id.clone();
-        let req = match body.resume {
-            Some(req) => req,
-            None => match serde_json::from_value(serde_json::json!({})) {
-                Ok(req) => req,
-                Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"resolved":false,"code":"approval_resume_required"}))).into_response(),
-            },
-        };
+        let req =
+            match body.resume {
+                Some(req) => req,
+                None => match serde_json::from_value(serde_json::json!({})) {
+                    Ok(req) => req,
+                    Err(_) => return (
+                        StatusCode::BAD_REQUEST,
+                        Json(
+                            serde_json::json!({"resolved":false,"code":"approval_resume_required"}),
+                        ),
+                    )
+                        .into_response(),
+                },
+            };
         if req.input.is_some() {
-            return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"resolved":false,"code":"approval_resume_input_invalid"}))).into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"resolved":false,"code":"approval_resume_input_invalid"})),
+            )
+                .into_response();
         }
-        return resume_checkpoint(state, user, credential_capture, run_id, checkpoint_id, req, Some(record)).await;
+        return resume_checkpoint(
+            state,
+            user,
+            credential_capture,
+            run_id,
+            checkpoint_id,
+            req,
+            Some(record),
+        )
+        .await;
     }
     match manager.resolve_approval_record(&run_id, Some(approval_id), body.approved).await {
         Ok(Some((record, delivered))) => (StatusCode::OK, Json(serde_json::json!({
@@ -1101,12 +1229,23 @@ async fn api_approval_records(
     headers: HeaderMap,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
-    let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
-    match manager.approval_records_for_context(&user, &run_id, workspace).await {
-        Ok((durable, records)) => {
-            (StatusCode::OK, Json(serde_json::json!({ "version": 1, "runId": run_id, "durable": durable, "records": records })))
-        }
-        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({ "code": "approval_history_unavailable" }))),
+    let workspace = headers
+        .get("x-uar-workspace-id")
+        .and_then(|value| value.to_str().ok());
+    match manager
+        .approval_records_for_context(&user, &run_id, workspace)
+        .await
+    {
+        Ok((durable, records)) => (
+            StatusCode::OK,
+            Json(
+                serde_json::json!({ "version": 1, "runId": run_id, "durable": durable, "records": records }),
+            ),
+        ),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({ "code": "approval_history_unavailable" })),
+        ),
     }
 }
 
@@ -1120,16 +1259,25 @@ async fn api_pending_tool_approval(
     headers: HeaderMap,
     Path(run_id): Path<String>,
 ) -> axum::response::Response {
-    if manager.get_run_for_context(&user, &run_id).await.is_none() {
-        let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
-        return match manager.approval_records_for_context(&user, &run_id, workspace).await {
+    if !manager.has_resident_run_for_context(&user, &run_id).await {
+        let workspace = headers
+            .get("x-uar-workspace-id")
+            .and_then(|value| value.to_str().ok());
+        return match manager
+            .approval_records_for_context(&user, &run_id, workspace)
+            .await
+        {
             Ok((durable, records)) => {
                 let pending = records.into_iter().find(|view| view.record.state == crate::uar::persistence::approval_decisions::ApprovalState::Pending)
                     .map(|view| serde_json::json!({"version":1,"approvalId":view.record.challenge_id,
                         "record":view.record,"resolvable":view.resolvable,"recoveryAvailable":view.recovery_available}));
                 Json(serde_json::json!({"version":1,"runId":run_id,"durable":durable,"pending":pending})).into_response()
             }
-            Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"code":"approval_history_unavailable"}))).into_response(),
+            Err(_) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({"code":"approval_history_unavailable"})),
+            )
+                .into_response(),
         };
     }
     let pending = manager
@@ -1139,7 +1287,8 @@ async fn api_pending_tool_approval(
         "version": 1,
         "runId": run_id,
         "pending": pending,
-    })).into_response()
+    }))
+    .into_response()
 }
 
 /// GET /api/uar/runs/{run_id}/tool-admission-evidence
@@ -1152,10 +1301,14 @@ async fn api_tool_admission_evidence(
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
     if manager.get_run_for_context(&user, &run_id).await.is_none() {
-        let Ok(owner) = user.session_owner_key() else { return StatusCode::UNAUTHORIZED.into_response(); };
-        let Some(store) = &manager.persistence else { return StatusCode::NOT_FOUND.into_response(); };
+        let Ok(owner) = user.session_owner_key() else {
+            return StatusCode::UNAUTHORIZED.into_response();
+        };
+        let Some(store) = &manager.persistence else {
+            return StatusCode::NOT_FOUND.into_response();
+        };
         match store.list_checkpoint_resumes(&owner, &run_id).await {
-            Ok(records) if !records.is_empty() => {},
+            Ok(records) if !records.is_empty() => {}
             Ok(_) => return StatusCode::NOT_FOUND.into_response(),
             Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
         }
@@ -1264,22 +1417,61 @@ struct CheckpointListResponse {
 /// List all persisted checkpoints for a run, ordered by creation time.
 /// Returns 503 if no persistence layer is configured.
 fn checkpoint_resume_api_error(error: anyhow::Error) -> RunApiError {
-    if error.downcast_ref::<crate::uar::persistence::approval_decisions::ApprovalRecoveryError>().is_some() {
+    if error
+        .downcast_ref::<crate::uar::persistence::approval_decisions::ApprovalRecoveryError>()
+        .is_some()
+    {
         return RunApiError { status: StatusCode::SERVICE_UNAVAILABLE, code: "approval_persistence_unavailable",
             message: "Recovered approval state could not be durably confirmed; its continuation claim remains held".into() };
     }
     use crate::uar::persistence::checkpoint_resume::CheckpointResumeError;
     let (status, code, message) = match error.downcast_ref::<CheckpointResumeError>() {
-        Some(CheckpointResumeError::Unsupported) => (StatusCode::SERVICE_UNAVAILABLE, "checkpoint_resume_unsupported", "Durable checkpoint resume is unavailable"),
-        Some(CheckpointResumeError::PredecessorUncertain) => (StatusCode::CONFLICT, "checkpoint_predecessor_uncertain", "Predecessor execution and effects have not been safely excluded"),
-        Some(CheckpointResumeError::Conflict) => (StatusCode::CONFLICT, "checkpoint_resume_conflict", "This source run already has a continuation claim"),
-        Some(CheckpointResumeError::ExecutorClosed) => (StatusCode::CONFLICT, "checkpoint_executor_closed", "The executor is closed"),
-        Some(CheckpointResumeError::AdmissionDenied) => (StatusCode::CONFLICT, "checkpoint_admission_denied", "Current checkpoint authority did not admit execution"),
-        Some(CheckpointResumeError::ExecutionUnavailable) => (StatusCode::CONFLICT, "checkpoint_execution_unavailable", "The captured host execution definition cannot be reconstructed"),
-        Some(CheckpointResumeError::Invalid) => (StatusCode::CONFLICT, "checkpoint_resume_invalid", "Protected checkpoint metadata does not match the request"),
-        None => (StatusCode::CONFLICT, "checkpoint_resume_unavailable", "Checkpoint persistence or current admission could not be confirmed"),
+        Some(CheckpointResumeError::Unsupported) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "checkpoint_resume_unsupported",
+            "Durable checkpoint resume is unavailable",
+        ),
+        Some(CheckpointResumeError::PredecessorUncertain) => (
+            StatusCode::CONFLICT,
+            "checkpoint_predecessor_uncertain",
+            "Predecessor execution and effects have not been safely excluded",
+        ),
+        Some(CheckpointResumeError::Conflict) => (
+            StatusCode::CONFLICT,
+            "checkpoint_resume_conflict",
+            "This source run already has a continuation claim",
+        ),
+        Some(CheckpointResumeError::ExecutorClosed) => (
+            StatusCode::CONFLICT,
+            "checkpoint_executor_closed",
+            "The executor is closed",
+        ),
+        Some(CheckpointResumeError::AdmissionDenied) => (
+            StatusCode::CONFLICT,
+            "checkpoint_admission_denied",
+            "Current checkpoint authority did not admit execution",
+        ),
+        Some(CheckpointResumeError::ExecutionUnavailable) => (
+            StatusCode::CONFLICT,
+            "checkpoint_execution_unavailable",
+            "The captured host execution definition cannot be reconstructed",
+        ),
+        Some(CheckpointResumeError::Invalid) => (
+            StatusCode::CONFLICT,
+            "checkpoint_resume_invalid",
+            "Protected checkpoint metadata does not match the request",
+        ),
+        None => (
+            StatusCode::CONFLICT,
+            "checkpoint_resume_unavailable",
+            "Checkpoint persistence or current admission could not be confirmed",
+        ),
     };
-    RunApiError { status, code, message: message.to_owned() }
+    RunApiError {
+        status,
+        code,
+        message: message.to_owned(),
+    }
 }
 
 async fn list_checkpoints(
@@ -1287,12 +1479,16 @@ async fn list_checkpoints(
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
-    let owner = match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
-        Ok(owner) => owner.storage_key(),
-        Err(_) => return principal_invalid().into_response(),
-    };
+    let owner =
+        match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
+            Ok(owner) => owner.storage_key(),
+            Err(_) => return principal_invalid().into_response(),
+        };
     let Some(db) = &manager.persistence else {
-        return checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()).into_response();
+        return checkpoint_resume_api_error(
+            crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into(),
+        )
+        .into_response();
     };
     let envelopes = match db.list_checkpoint_resumes(&owner, &run_id).await {
         Ok(envelopes) => envelopes,
@@ -1301,14 +1497,31 @@ async fn list_checkpoints(
     if envelopes.is_empty() && manager.get_run_for_context(&user, &run_id).await.is_none() {
         return StatusCode::NOT_FOUND.into_response();
     }
-    let checkpoints = match envelopes.iter().map(|envelope| envelope.checkpoint()).collect::<anyhow::Result<Vec<_>>>() {
+    let checkpoints = match envelopes
+        .iter()
+        .map(|envelope| envelope.checkpoint())
+        .collect::<anyhow::Result<Vec<_>>>()
+    {
         Ok(checkpoints) => checkpoints,
         Err(error) => return checkpoint_resume_api_error(error).into_response(),
     };
-    let execution_restorable = !envelopes.is_empty() && envelopes.iter().all(|envelope| envelope.require_restorable_execution().is_ok());
-    Json(CheckpointListResponse { run_id, checkpoints, execution_restorable,
-        unavailable_reason: if envelopes.is_empty() { Some("checkpoint_resume_evidence_unavailable") }
-            else if execution_restorable { None } else { Some("checkpoint_execution_unavailable") } }).into_response()
+    let execution_restorable = !envelopes.is_empty()
+        && envelopes
+            .iter()
+            .all(|envelope| envelope.require_restorable_execution().is_ok());
+    Json(CheckpointListResponse {
+        run_id,
+        checkpoints,
+        execution_restorable,
+        unavailable_reason: if envelopes.is_empty() {
+            Some("checkpoint_resume_evidence_unavailable")
+        } else if execution_restorable {
+            None
+        } else {
+            Some("checkpoint_execution_unavailable")
+        },
+    })
+    .into_response()
 }
 
 #[derive(Clone, Deserialize)]
@@ -1431,13 +1644,18 @@ fn renew_checkpoint_target(
     // must still match the protected source. The receipt is evidence, not a grant.
     saved.verified_at = current.verified_at;
     if saved != current {
-        return Err(RunApiError { status: StatusCode::CONFLICT, code: "run_target_changed",
-            message: "the current verified target no longer matches the source run".to_owned() });
+        return Err(RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_target_changed",
+            message: "the current verified target no longer matches the source run".to_owned(),
+        });
     }
     request.host_policy_constraint = Some(crate::uar::domain::policy::RunPolicy {
         model: Some(crate::uar::domain::policy::ModelRoute {
-            provider_id: current.provider_id.clone(), model_id: current.model_id.clone(),
-        }), ..Default::default()
+            provider_id: current.provider_id.clone(),
+            model_id: current.model_id.clone(),
+        }),
+        ..Default::default()
     });
     request.target_selection = Some(serde_json::json!(current));
     Ok(())
@@ -1450,10 +1668,18 @@ async fn resume_execution_request(
     artifact: AgentArtifact,
     input: String,
 ) -> Result<(crate::uar::runtime::turn::RunExecutionRequest, bool), RunApiError> {
-    let target: Option<super::targets::TargetReceipt> = source_run.context.get("effective_target")
-        .filter(|value| !value.is_null()).cloned().map(serde_json::from_value).transpose()
-        .map_err(|_| RunApiError { status: StatusCode::CONFLICT, code: "run_target_changed",
-            message: "the protected target receipt is invalid".to_owned() })?;
+    let target: Option<super::targets::TargetReceipt> = source_run
+        .context
+        .get("effective_target")
+        .filter(|value| !value.is_null())
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|_| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_target_changed",
+            message: "the protected target receipt is invalid".to_owned(),
+        })?;
     let Some(binding) = source_run
         .context
         .get("effective_collaboration_binding")
@@ -1464,14 +1690,28 @@ async fn resume_execution_request(
             .map_err(|_| principal_invalid())?;
         if let Some(saved) = target {
             let selector = format!("{}/{}", saved.provider_id, saved.model_id);
-            let (route, proof) = state.manager.target_sources().verified_model(&selector).await
-                .map_err(|message| RunApiError { status: StatusCode::UNPROCESSABLE_ENTITY,
-                    code: "target_model_unavailable", message })?;
+            let (route, proof) = state
+                .manager
+                .target_sources()
+                .verified_model(&selector)
+                .await
+                .map_err(|message| RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "target_model_unavailable",
+                    message,
+                })?;
             let current = super::targets::TargetReceipt {
-                version: 1, id: selector, kind: "model".to_owned(), agent_id: request.artifact.id.clone(),
-                provider_id: route.provider_id, model_id: route.model_id,
-                verified_at: proof.verified_at, configuration_digest: proof.configuration_digest,
-                definition: None, binding: None, workspace_id: saved.workspace_id.clone(),
+                version: 1,
+                id: selector,
+                kind: "model".to_owned(),
+                agent_id: request.artifact.id.clone(),
+                provider_id: route.provider_id,
+                model_id: route.model_id,
+                verified_at: proof.verified_at,
+                configuration_digest: proof.configuration_digest,
+                definition: None,
+                binding: None,
+                workspace_id: saved.workspace_id.clone(),
                 instance_id: Some(state.service_instance.descriptor().instance.id.clone()),
             };
             renew_checkpoint_target(&mut request, saved, current)?;
@@ -1536,11 +1776,25 @@ async fn resume_execution_request(
         });
     }
     let current_target = if let Some(saved) = target.as_ref() {
-        Some(state.manager.target_sources().admit_bound(&bound,
-            Some(&format!("{}/{}", saved.provider_id, saved.model_id)), workspace_id).await
-            .map_err(|message| RunApiError { status: StatusCode::UNPROCESSABLE_ENTITY,
-                code: "target_model_unavailable", message })?)
-    } else { None };
+        Some(
+            state
+                .manager
+                .target_sources()
+                .admit_bound(
+                    &bound,
+                    Some(&format!("{}/{}", saved.provider_id, saved.model_id)),
+                    workspace_id,
+                )
+                .await
+                .map_err(|message| RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "target_model_unavailable",
+                    message,
+                })?,
+        )
+    } else {
+        None
+    };
     let mut request = crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
         bound,
         input,
@@ -1553,8 +1807,11 @@ async fn resume_execution_request(
     // Compare the current bound execution artifact after its existing model and
     // skill resolution, rather than the unbound package definition.
     if request.artifact.definition_revision() != artifact.definition_revision() {
-        return Err(RunApiError { status: StatusCode::CONFLICT, code: "run_binding_changed",
-            message: "deployment binding no longer resolves the source run definition".to_owned() });
+        return Err(RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_changed",
+            message: "deployment binding no longer resolves the source run definition".to_owned(),
+        });
     }
     if let (Some(saved), Some(current)) = (target, current_target) {
         renew_checkpoint_target(&mut request, saved, current)?;
@@ -1572,23 +1829,38 @@ async fn resume_run(
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    let owner = match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
-        Ok(owner) => owner.storage_key(),
-        Err(_) => return principal_invalid().into_response(),
-    };
+    let owner =
+        match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
+            Ok(owner) => owner.storage_key(),
+            Err(_) => return principal_invalid().into_response(),
+        };
     let Some(db) = &state.manager.persistence else {
-        return checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()).into_response();
+        return checkpoint_resume_api_error(
+            crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into(),
+        )
+        .into_response();
     };
     let mut envelopes = match db.list_checkpoint_resumes(&owner, &run_id).await {
         Ok(envelopes) => envelopes,
         Err(error) => return checkpoint_resume_api_error(error).into_response(),
     };
     let Some(envelope) = envelopes.pop() else {
-        return RunApiError { status: StatusCode::NOT_FOUND, code: "checkpoint_resume_evidence_unavailable",
-            message: "No checkpoint with protected owner-bound resume metadata is available".into() }.into_response();
+        return RunApiError {
+            status: StatusCode::NOT_FOUND,
+            code: "checkpoint_resume_evidence_unavailable",
+            message: "No checkpoint with protected owner-bound resume metadata is available".into(),
+        }
+        .into_response();
     };
-    resume_run_from_checkpoint(State(state), Extension(user), credential_capture,
-        Path((run_id, envelope.checkpoint_id)), Json(req)).await.into_response()
+    resume_run_from_checkpoint(
+        State(state),
+        Extension(user),
+        credential_capture,
+        Path((run_id, envelope.checkpoint_id)),
+        Json(req),
+    )
+    .await
+    .into_response()
 }
 
 /// POST /api/uar/runs/{run_id}/resume/{checkpoint_id}
@@ -1602,16 +1874,40 @@ async fn resume_run_from_checkpoint(
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    resume_checkpoint(state, user, credential_capture, run_id, checkpoint_id, req, None).await
+    resume_checkpoint(
+        state,
+        user,
+        credential_capture,
+        run_id,
+        checkpoint_id,
+        req,
+        None,
+    )
+    .await
 }
 
 async fn resume_checkpoint(
-    state: Arc<RunApiState>, user: UserContext,
+    state: Arc<RunApiState>,
+    user: UserContext,
     credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
-    run_id: String, checkpoint_id: String, req: ResumeRequest,
+    run_id: String,
+    checkpoint_id: String,
+    req: ResumeRequest,
     approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
 ) -> axum::response::Response {
-    match resume_checkpoint_admitted(state, user, credential_capture, run_id, checkpoint_id, req, approval, None, None).await {
+    match resume_checkpoint_admitted(
+        state,
+        user,
+        credential_capture,
+        run_id,
+        checkpoint_id,
+        req,
+        approval,
+        None,
+        None,
+    )
+    .await
+    {
         Ok(receipt) => Json(receipt.response).into_response(),
         Err(response) => response,
     }
@@ -1630,9 +1926,19 @@ impl ResumeRequest {
         request
     }
     pub(crate) fn for_input(input: String) -> Self {
-        Self { client_tools: None, artifact: None, input: Some(input), session_id: None, run_credentials: None,
-            mcp_servers: None, working_directory: None, reasoning_effort: None, history: None,
-            service_placement: None, presentation_negotiation: Default::default() }
+        Self {
+            client_tools: None,
+            artifact: None,
+            input: Some(input),
+            session_id: None,
+            run_credentials: None,
+            mcp_servers: None,
+            working_directory: None,
+            reasoning_effort: None,
+            history: None,
+            service_placement: None,
+            presentation_negotiation: Default::default(),
+        }
     }
 }
 
@@ -1644,83 +1950,164 @@ pub(crate) struct HostApprovalResolution {
 /// Authenticate the exact committed challenge before deciding or reconstructing
 /// its protected continuation. Callers reserve their transport correlation first.
 pub(crate) async fn resolve_host_approval(
-    state: Arc<RunApiState>, user: UserContext,
-    credential_capture: Option<AuthenticatedCredentialCapture>, run_id: String,
-    approval_id: String, approved: bool, workspace: Option<String>,
-    resume: ResumeRequest, reserved_run_id: Option<String>,
+    state: Arc<RunApiState>,
+    user: UserContext,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
+    run_id: String,
+    approval_id: String,
+    approved: bool,
+    workspace: Option<String>,
+    resume: ResumeRequest,
+    reserved_run_id: Option<String>,
     fresh_a2a_contract: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
 ) -> Result<HostApprovalResolution, axum::response::Response> {
     use crate::uar::persistence::approval_decisions::ApprovalState;
     if approved {
-        state.manager.authorize_run_skill_roles(&user, &run_id).await.map_err(|_| {
-            (StatusCode::FORBIDDEN, Json(serde_json::json!({"code":"skill_forbidden"}))).into_response()
-        })?;
+        state
+            .manager
+            .authorize_run_skill_roles(&user, &run_id)
+            .await
+            .map_err(|_| {
+                (
+                    StatusCode::FORBIDDEN,
+                    Json(serde_json::json!({"code":"skill_forbidden"})),
+                )
+                    .into_response()
+            })?;
     }
-    let (_, records) = state.manager.approval_records_for_context(&user, &run_id, workspace.as_deref())
-        .await.map_err(|error| checkpoint_resume_api_error(error).into_response())?;
-    let view = records.into_iter().find(|view| view.record.challenge_id == approval_id)
+    let (_, records) = state
+        .manager
+        .approval_records_for_context(&user, &run_id, workspace.as_deref())
+        .await
+        .map_err(|error| checkpoint_resume_api_error(error).into_response())?;
+    let view = records
+        .into_iter()
+        .find(|view| view.record.challenge_id == approval_id)
         .ok_or_else(|| StatusCode::NOT_FOUND.into_response())?;
     let record = view.record;
     if record.state != ApprovalState::Pending {
-        if record.decision.as_ref().is_some_and(|decision| decision.approved == approved)
-            && matches!(record.state, ApprovalState::Approved | ApprovalState::Denied) {
+        if record
+            .decision
+            .as_ref()
+            .is_some_and(|decision| decision.approved == approved)
+            && matches!(
+                record.state,
+                ApprovalState::Approved | ApprovalState::Denied
+            )
+        {
             return Ok(HostApprovalResolution { run_id });
         }
-        return Err((StatusCode::CONFLICT, Json(serde_json::json!({"code":"approval_not_pending"}))).into_response());
+        return Err((
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({"code":"approval_not_pending"})),
+        )
+            .into_response());
     }
     if view.resolvable {
-        return match state.manager.resolve_approval_record(&run_id, Some(&approval_id), approved).await {
+        return match state
+            .manager
+            .resolve_approval_record(&run_id, Some(&approval_id), approved)
+            .await
+        {
             Ok(Some(_)) => Ok(HostApprovalResolution { run_id }),
             Ok(None) => Err(StatusCode::CONFLICT.into_response()),
             Err(error) => Err(checkpoint_resume_api_error(error).into_response()),
         };
     }
     if !approved {
-        if !state.manager.deny_recovered_approval(&record).await
-            .map_err(|error| checkpoint_resume_api_error(error).into_response())? {
+        if !state
+            .manager
+            .deny_recovered_approval(&record)
+            .await
+            .map_err(|error| checkpoint_resume_api_error(error).into_response())?
+        {
             return Err(StatusCode::CONFLICT.into_response());
         }
-        let _record = state.manager.approval_recovery_record(&user, &run_id, &approval_id, workspace.as_deref()).await
+        let _record = state
+            .manager
+            .approval_recovery_record(&user, &run_id, &approval_id, workspace.as_deref())
+            .await
             .map_err(|error| checkpoint_resume_api_error(error).into_response())?
             .ok_or_else(|| StatusCode::CONFLICT.into_response())?;
         return Ok(HostApprovalResolution { run_id });
     }
     if resume.input.is_some() || !view.recovery_available {
-        return Err((StatusCode::CONFLICT, Json(serde_json::json!({"code":"approval_continuation_unavailable"}))).into_response());
+        return Err((
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({"code":"approval_continuation_unavailable"})),
+        )
+            .into_response());
     }
-    let checkpoint_id = record.continuation.as_ref().ok_or_else(|| StatusCode::CONFLICT.into_response())?.checkpoint_id.clone();
-    let receipt = resume_checkpoint_admitted(Arc::clone(&state), user.clone(), credential_capture.map(Extension),
-        run_id.clone(), checkpoint_id, resume, Some(record), reserved_run_id, fresh_a2a_contract).await?;
-    let _record = state.manager.approval_recovery_record(&user, &run_id, &approval_id, workspace.as_deref()).await
+    let checkpoint_id = record
+        .continuation
+        .as_ref()
+        .ok_or_else(|| StatusCode::CONFLICT.into_response())?
+        .checkpoint_id
+        .clone();
+    let receipt = resume_checkpoint_admitted(
+        Arc::clone(&state),
+        user.clone(),
+        credential_capture.map(Extension),
+        run_id.clone(),
+        checkpoint_id,
+        resume,
+        Some(record),
+        reserved_run_id,
+        fresh_a2a_contract,
+    )
+    .await?;
+    let _record = state
+        .manager
+        .approval_recovery_record(&user, &run_id, &approval_id, workspace.as_deref())
+        .await
         .map_err(|error| checkpoint_resume_api_error(error).into_response())?
         .ok_or_else(|| StatusCode::CONFLICT.into_response())?;
-    Ok(HostApprovalResolution { run_id: receipt.run_id })
+    Ok(HostApprovalResolution {
+        run_id: receipt.run_id,
+    })
 }
 
 /// Shared protected resume admission. A reserved ID comes only from a trusted
 /// transport reservation, never a client-supplied run ID.
 pub(crate) async fn resume_checkpoint_admitted(
-    state: Arc<RunApiState>, user: UserContext,
+    state: Arc<RunApiState>,
+    user: UserContext,
     credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
-    run_id: String, checkpoint_id: String, req: ResumeRequest,
+    run_id: String,
+    checkpoint_id: String,
+    req: ResumeRequest,
     approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
     reserved_run_id: Option<String>,
     fresh_a2a_contract: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
 ) -> Result<CheckpointResumeReceipt, axum::response::Response> {
     let manager = Arc::clone(&state.manager);
-    let owner = match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
-        Ok(owner) => owner.storage_key(),
-        Err(_) => return Err(principal_invalid().into_response()),
-    };
+    let owner =
+        match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
+            Ok(owner) => owner.storage_key(),
+            Err(_) => return Err(principal_invalid().into_response()),
+        };
     let Some(db) = &manager.persistence else {
-        return Err(checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()).into_response());
+        return Err(checkpoint_resume_api_error(
+            crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into(),
+        )
+        .into_response());
     };
     // Protected owner metadata comes first. No live manager or caller artifact
     // supplies the source authority after a process restart.
-    let envelope = match db.load_checkpoint_resume(&owner, &run_id, &checkpoint_id).await {
+    let envelope = match db
+        .load_checkpoint_resume(&owner, &run_id, &checkpoint_id)
+        .await
+    {
         Ok(Some(envelope)) => envelope,
-        Ok(None) => return Err(RunApiError { status: StatusCode::NOT_FOUND, code: "checkpoint_resume_evidence_unavailable",
-            message: "No checkpoint with protected owner-bound resume metadata is available".into() }.into_response()),
+        Ok(None) => {
+            return Err(RunApiError {
+                status: StatusCode::NOT_FOUND,
+                code: "checkpoint_resume_evidence_unavailable",
+                message: "No checkpoint with protected owner-bound resume metadata is available"
+                    .into(),
+            }
+            .into_response());
+        }
         Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
     };
     let source_run = match envelope.source_run() {
@@ -1728,20 +2115,33 @@ pub(crate) async fn resume_checkpoint_admitted(
         Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
     };
     let restorable = match &fresh_a2a_contract {
-        Some(contract) if reserved_run_id.is_some()
-            && contract.owner_id == user.user_id
-            && user.claims.uar_instance_id.as_deref() == Some(contract.source_instance_id.as_str())
-            && contract.target_instance_id == state.service_instance.descriptor().instance.id => {
-                envelope.require_restorable_a2a(contract)
-            }
-        Some(_) => Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into()),
+        Some(contract)
+            if reserved_run_id.is_some()
+                && contract.owner_id == user.user_id
+                && user.claims.uar_instance_id.as_deref()
+                    == Some(contract.source_instance_id.as_str())
+                && contract.target_instance_id
+                    == state.service_instance.descriptor().instance.id =>
+        {
+            envelope.require_restorable_a2a(contract)
+        }
+        Some(_) => {
+            Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into())
+        }
         None => envelope.require_restorable_execution(),
     };
     if let Err(error) = restorable {
         return Err(checkpoint_resume_api_error(error).into_response());
     }
-    if req.session_id.as_ref().is_some_and(|id| Some(id) != source_run.conversation_id.as_ref()) {
-        return Err(checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into()).into_response());
+    if req
+        .session_id
+        .as_ref()
+        .is_some_and(|id| Some(id) != source_run.conversation_id.as_ref())
+    {
+        return Err(checkpoint_resume_api_error(
+            crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into(),
+        )
+        .into_response());
     }
     let service_binding = match resume_service_binding(
         &state.service_instance,
@@ -1750,21 +2150,35 @@ pub(crate) async fn resume_checkpoint_admitted(
     ) {
         Ok(binding) => binding,
         Err(error) => {
-            if req.service_placement.is_none() && let Some(record) = &approval {
-                if manager.finish_recovered_approval(record,
-                    crate::uar::persistence::approval_decisions::ApprovalState::Invalidated).await.is_err() {
-                    return Err((StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"code":"approval_persistence_unavailable"}))).into_response());
+            if req.service_placement.is_none()
+                && let Some(record) = &approval
+            {
+                if manager
+                    .finish_recovered_approval(
+                        record,
+                        crate::uar::persistence::approval_decisions::ApprovalState::Invalidated,
+                    )
+                    .await
+                    .is_err()
+                {
+                    return Err((
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        Json(serde_json::json!({"code":"approval_persistence_unavailable"})),
+                    )
+                        .into_response());
                 }
             }
             return Err(error.into_response());
         }
     };
     if req.history.is_some() {
-        return Err(RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
-            "history_invalid",
-            "checkpoint resume uses protected checkpoint history",
-        ))
-        .into_response());
+        return Err(
+            RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+                "history_invalid",
+                "checkpoint resume uses protected checkpoint history",
+            ))
+            .into_response(),
+        );
     }
     let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
         .context
@@ -1862,13 +2276,25 @@ pub(crate) async fn resume_checkpoint_admitted(
             return Err(principal_invalid().into_response());
         };
         let Some(session_id) = request.session_id.as_deref() else {
-            return Err(checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into()).into_response());
+            return Err(checkpoint_resume_api_error(
+                crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into(),
+            )
+            .into_response());
         };
-        request.resolved_policy = Some(match manager.resolve_remote_policy_constraint(
-            &request.artifact, actor_owner, session_id, contract.execution_policy()).await {
+        request.resolved_policy = Some(
+            match manager
+                .resolve_remote_policy_constraint(
+                    &request.artifact,
+                    actor_owner,
+                    session_id,
+                    contract.execution_policy(),
+                )
+                .await
+            {
                 Ok(policy) => policy,
                 Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
-            });
+            },
+        );
         let digest = match contract.digest() {
             Ok(digest) => digest,
             Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
@@ -1876,17 +2302,30 @@ pub(crate) async fn resume_checkpoint_admitted(
         request.host_budget_constraint = Some(contract.budgets.clone());
         request.host_policy_constraint = Some(contract.execution_policy());
         request.host_sandbox_constraint = Some(contract.sandbox.clone());
-        request.host_usage_grant = Some(crate::uar::runtime::cost_budget::RemoteUsageGrantBinding {
-            accounting_id: format!("a2a:{digest}"), grant: contract.usage_grant.clone(),
-            started_at: std::time::Instant::now(),
-        });
-        request.presentation_negotiation = contract.presentation_negotiation.clone().unwrap_or_default();
+        request.host_usage_grant =
+            Some(crate::uar::runtime::cost_budget::RemoteUsageGrantBinding {
+                accounting_id: format!("a2a:{digest}"),
+                grant: contract.usage_grant.clone(),
+                started_at: std::time::Instant::now(),
+            });
+        request.presentation_negotiation = contract
+            .presentation_negotiation
+            .clone()
+            .unwrap_or_default();
         request.a2a_delegation = Some(contract);
     }
     let recovering_approval = approval.clone();
     let execution = match reserved_run_id {
-        Some(run_id) => manager.execute_checkpoint_a2a_with_run_id(request, &envelope, bound, approval, run_id).await,
-        None => manager.execute_checkpoint_approval(request, &envelope, bound, approval).await,
+        Some(run_id) => {
+            manager
+                .execute_checkpoint_a2a_with_run_id(request, &envelope, bound, approval, run_id)
+                .await
+        }
+        None => {
+            manager
+                .execute_checkpoint_approval(request, &envelope, bound, approval)
+                .await
+        }
     };
     let new_run_id = match execution {
         Ok(run_id) => run_id,
@@ -1900,7 +2339,9 @@ pub(crate) async fn resume_checkpoint_admitted(
                 "code":"approval_decision_unconfirmed", "run_id":new_run_id, "continuation_admitted":true,
             }))).into_response()),
         }
-    } else { None };
+    } else {
+        None
+    };
 
     let response = serde_json::json!({
         "resumed_from_run_id": run_id,
@@ -1916,7 +2357,10 @@ pub(crate) async fn resume_checkpoint_admitted(
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
         "effective_service_binding": response_service_binding,
     });
-    Ok(CheckpointResumeReceipt { run_id: new_run_id, response })
+    Ok(CheckpointResumeReceipt {
+        run_id: new_run_id,
+        response,
+    })
 }
 
 /// GET /api/uar/resolve-model

@@ -11,8 +11,8 @@ use universal_agent_runtime::uar::{
         AdmissionCancellationOutcome, AdmissionCancellationReason, AdmissionTerminalOutcome,
         AdmittedToolInvocation, HostAdmissionBinding, HostAdmissionDisposition,
         HostAdmissionPreparation, HostAdmissionReceipt, HostToolAdmissionPort,
-        LocalAdmissionDisposition, PreparedToolInvocation, ToolAdmissionContext,
-        ToolAdmissionRuntime, ToolExecutionKind, TOOL_ADMISSION_PROTOCOL_VERSION,
+        LocalAdmissionDisposition, PreparedToolInvocation, TOOL_ADMISSION_PROTOCOL_VERSION,
+        ToolAdmissionContext, ToolAdmissionRuntime, ToolExecutionKind,
     },
     tools::descriptor::{ApprovalClass, Exposure, ToolDescriptor, ToolEffect, ToolSource},
 };
@@ -20,6 +20,7 @@ use universal_agent_runtime::uar::{
 #[derive(Debug)]
 struct RecordingManagedHost {
     binding: HostAdmissionBinding,
+    preparations: AtomicUsize,
     claim_revalidations: AtomicUsize,
     finished: AtomicUsize,
     deny_claim: AtomicBool,
@@ -28,6 +29,7 @@ struct RecordingManagedHost {
 impl RecordingManagedHost {
     fn new(runtime_epoch: &str) -> Self {
         Self {
+            preparations: AtomicUsize::new(0),
             binding: HostAdmissionBinding {
                 version: TOOL_ADMISSION_PROTOCOL_VERSION,
                 host_epoch: format!("managed:{runtime_epoch}"),
@@ -49,6 +51,7 @@ impl HostToolAdmissionPort for RecordingManagedHost {
         &self,
         invocation: Arc<PreparedToolInvocation>,
     ) -> anyhow::Result<HostAdmissionPreparation> {
+        self.preparations.fetch_add(1, Ordering::SeqCst);
         invocation.validate_authority_envelope()?;
         anyhow::ensure!(
             invocation.execution_kind == ToolExecutionKind::HostMcp,
@@ -218,6 +221,47 @@ async fn admitted(runtime: &ToolAdmissionRuntime) -> AdmittedToolInvocation {
         .await
         .expect("managed host resolves the exact effect")
         .expect("approved effect has an admission receipt")
+}
+
+#[tokio::test]
+async fn blank_model_identity_is_refused_before_host_preparation() {
+    let (runtime, host, _) = managed_runtime().await;
+    for source in [ToolSource::Mcp, ToolSource::NativeSkill] {
+        let mut descriptor = descriptor();
+        descriptor.source = source;
+        for id in ["", " ", "\t\r\n"] {
+            let invocation =
+                runtime.prepare(id.to_owned(), &descriptor, json!({"path":"output.txt"}), 0);
+            assert_eq!(invocation.model_tool_call_id, id);
+            assert!(invocation.validate_authority_envelope().is_err());
+            assert!(runtime.prepare_host(invocation).await.is_err());
+        }
+    }
+    assert_eq!(host.preparations.load(Ordering::SeqCst), 0);
+    assert_eq!(host.claim_revalidations.load(Ordering::SeqCst), 0);
+    assert_eq!(host.finished.load(Ordering::SeqCst), 0);
+
+    let id = " exact-provider-id ";
+    let invocation = runtime.prepare(
+        id.to_owned(),
+        &descriptor(),
+        json!({"path":"output.txt"}),
+        0,
+    );
+    invocation.validate_authority_envelope().unwrap();
+    let prepared = runtime.prepare_host(Arc::clone(&invocation)).await.unwrap();
+    let admitted = runtime
+        .resolve(
+            invocation,
+            prepared,
+            LocalAdmissionDisposition::Approved,
+            true,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(admitted.prepared.model_tool_call_id, id);
+    assert_eq!(host.preparations.load(Ordering::SeqCst), 1);
 }
 
 #[tokio::test]

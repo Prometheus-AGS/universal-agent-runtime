@@ -17,12 +17,12 @@ use crate::uar::domain::skills::{
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
-use sha2::{Digest, Sha256};
 
 /// Supported matching algorithms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -637,7 +637,9 @@ impl SkillService {
 
     /// Set a durable enabled-state override at one scope.
     pub async fn set_scoped_enabled(&self, id: &str, scope: SkillScope, enabled: bool) -> bool {
-        self.set_scoped_enabled_checked(id, scope, enabled).await.is_ok()
+        self.set_scoped_enabled_checked(id, scope, enabled)
+            .await
+            .is_ok()
     }
 
     /// Create a new skill dynamically via API.
@@ -1008,9 +1010,11 @@ impl SkillService {
             .cloned()
             .unwrap_or_default();
         for skill in registry.list() {
-            if let Some(config) = skill.scoped_config.iter().find(|config| {
-                matches!(&config.scope, SkillScope::Agent(id) if id == agent_id)
-            }) {
+            if let Some(config) = skill
+                .scoped_config
+                .iter()
+                .find(|config| matches!(&config.scope, SkillScope::Agent(id) if id == agent_id))
+            {
                 ids.retain(|id| id != &skill.skill_id);
                 if config.enabled {
                     ids.push(skill.skill_id);
@@ -1147,7 +1151,7 @@ impl SkillService {
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
-    use crate::uar::domain::skills::{SkillConstraints, SkillOrigin, SkillTriggers};
+    use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
     use crate::uar::persistence::providers::surreal::SurrealDbProvider;
     use crate::uar::runtime::skills::storage::{
         DatabaseStorageProvider, FilesystemStorageProvider, filesystem::serialize_skill_to_md,
@@ -1278,9 +1282,9 @@ mod tests {
             batch_sizes: Arc::clone(&batch_sizes),
         });
         let matcher = Arc::new(VectorMatcher::new(
-            Arc::new(crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
-                backend,
-            )),
+            Arc::new(
+                crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(backend),
+            ),
             0.75,
         ));
         let database_directory = tempfile::tempdir().unwrap();
