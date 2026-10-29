@@ -22,9 +22,10 @@ repository or this document, and none should be copied across.
   blocked by missing product capabilities, being built in two other sessions
   (OpenSpec changes `route-requirements-dispatch` and `chat-image-input`, on
   their own branches, not merged).
-- **Open PRs:** #440 (native tool-call identity, merged with main and
-  mergeable; it will ship in 1.4.0) and #447 (`react-resizable-panels` 4.15.0,
-  mergeable).
+- **Merged after this was first written:** #440 (native tool-call identity,
+  ships in 1.4.0) and #447 (`react-resizable-panels` 4.15.0). #440 is product
+  code that has not been built or BDD-tested since its merge with main, so the
+  first build in §3.2 is also its first build.
 - **Operator to-do:** `versions.toml` still pins Vitest 4.1.10 while the
   frontend is on 5.0.5. Only the operator edits `versions.toml`.
 
@@ -54,16 +55,37 @@ linux/amd64 even the locked install succeeds, so only aarch64 Linux can prove
 the fix (an emulated attempt on the Intel Mac was still compiling after two
 hours).
 
-Proof command, native here:
+**An uncached stage build alone does not prove the fix.** `cargo binstall`
+first tries prebuilt binaries, and QuickInstall (a third-party binary host)
+sometimes has `cargo-wasi-0.1.28-aarch64-unknown-linux-gnu`. When it does, the
+crate is downloaded rather than compiled, and the fixed source path never runs.
+That happened in the emulated arm64 build on the Intel Mac on 2026-10-29: it
+passed only because binstall downloaded the QuickInstall binary. The CI failure
+came from a run where binstall compiled from source.
+
+Deterministic check, which always compiles. Run it natively in a linux/arm64
+container with the pinned nightly; the first install should reproduce the
+`rustix` failure and the second should succeed:
+
+```bash
+docker run --rm --platform linux/arm64 rust:1-bookworm bash -c 'rustup toolchain install nightly-2026-07-18 --profile minimal >/dev/null && cargo +nightly-2026-07-18 install cargo-wasi --version 0.1.28 --locked --root /tmp/locked; echo "LOCKED_EXIT=$?"; cargo +nightly-2026-07-18 install cargo-wasi --version 0.1.28 --root /tmp/unlocked; echo "UNLOCKED_EXIT=$?"'
+```
+
+Pass: `LOCKED_EXIT` is non-zero with `could not compile rustix` (the original
+failure reproduced) and `UNLOCKED_EXIT=0` with
+``Installed package `cargo-wasi v0.1.28` `` (the fix works). If the locked
+install also succeeds, the failure is not reproduced; report that rather than
+claiming a pass.
+
+Then build the whole toolchain stage, uncached, to confirm the Dockerfile
+itself; note in the log whether binstall downloaded or compiled `cargo-wasi`:
 
 ```bash
 docker buildx build --no-cache --platform linux/arm64 --target toolchain --progress=plain -o type=cacheonly -f Dockerfile .
 ```
 
-Pass: the log shows ``Installed package `cargo-wasi v0.1.28` `` and the stage
-completes. Record the command, duration and result in
-`.prometheus/session-log.md`. Optional next step: a full
-`--platform linux/arm64` image build of `main`.
+Record each command, duration and result in `.prometheus/session-log.md`.
+Optional next step: a full `--platform linux/arm64` image build of `main`.
 
 ### 3.2 macOS arm64 catalog cell
 
