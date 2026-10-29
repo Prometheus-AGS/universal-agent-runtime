@@ -1,0 +1,576 @@
+{
+  "scenario": "E03-MEMORY-OPT-OUT-RESTART",
+  "scope": "opt-out-survives-restart half; retention expiry deferred until genuinely aged data exists",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "conversations": {
+    "tell_first": {
+      "session_id": "a5d07ba2-fd89-41c9-adb9-513c9a1262b7",
+      "memory_context": [],
+      "errors": [],
+      "answer": "I'll check what I already know about this locker and its code before suggesting anything.\n\n\n\nI have no stored inventory for **LOCKER-BC468B** yet, so here's a general scheme you can adapt (the interactive plan above mirrors it):\n\n**Zone by access frequency** (back wall = seldomest used):\n- **A · Door zone (daily):** tools, consumables, the \"currently active project\" tote\n- **B · Mid zone (weekly):** sports, camping, household kit\n- **C · Back wall (seasonal):** holiday gear, seasonal clothing\n- **D · Floor / stacked:** archive and heavy/bulky items (files, media, bulk)\n\n**One category per tote, uniformly labelled.** Label format: `LOCKER-BC468B | Z-A | TOOLS | 2026` — stuck on the front, the lid, and one side so you can identify a bin without moving others. One colour per category (e.g. blue = active, grey = archive) gives you instant scanning.\n\n**Fit-out rules:** heavy low, light high; 10–15 cm clearance from walls so nothing gets lost behind; lids sealed, desiccant in damp-prone item"
+    },
+    "ask_first": {
+      "session_id": "d4d6d2a0-8bb3-4e4f-8389-a8b749b56817",
+      "memory_context": [],
+      "errors": [],
+      "answer": "I'll check my memory for your storage locker code.Your storage locker code is **LOCKER-BC468B**.\n\nAnd since you asked — a simple way to organize a storage locker:\n\n1. **Zone it** — divide it into fixed zones (top shelf: seasonal/occasional, middle: active use, bottom: heavy/bulky).\n2. **Bin it** — clear, labeled transparent bins per category so you can see contents without unstacking.\n3. **Label every bin and every shelf** — a label on the front edge of the shelf saves digging.\n4. **One-in-one-out** — when something is removed, replace it or donate it, so volume stays stable.\n5. **Use the door and walls** — over-door racks, hooks, and magnetic bins recover otherwise-dead vertical space.\n6. **Seasonal swap** — keep an off-site or attic bin for decorations and swap it in twice a year.\n7. **15-minute reset** — monthly, pull everything out, discard what expired, and re-group.\n\nWould you like a more tailored system (e.g., for a specific locker size, apartment, or equipment)?"
+    },
+    "warmup_after_after_opt_out": {
+      "session_id": "b9414a8a-6601-486b-8dfc-6828ab886fcf",
+      "memory_context": [],
+      "errors": [],
+      "answer": "Hello! I'm the UAR agent runtime, ready to help.\n\nI can:\n- **Compile agent descriptors** from UAR-AGENT-MD Markdown into signed documents\n- **Run interactive A2UI surfaces** rendered directly in chat\n- **Manage long-term memory** — recall, save, update, and delete remembered facts\n\nWhat would you like to work on?"
+    },
+    "tell_second": {
+      "session_id": "6bbe642c-bd5e-4e49-b668-445245a616b3",
+      "memory_context": [],
+      "errors": [],
+      "answer": "Noted the gate code — it isn't needed for shed advice, so I'll keep it out of the picture.\n\nHere's a solid way to organise a garden shed:\n\n**1. Zone by task, not by object type**\nGive each zone a job and stick to it:\n- **Potting & propagation** (soil, compost, pots, seed trays) — near the door or window, needs light and water access\n- **Hand tools** (spades, forks, shears, rakes) — on the wall, not in a pile\n- **Small parts & repairs** (fixings, wire, ties, twine) — one drawer unit with small clear boxes\n- **Seasonal / overflow** (hoses, summer stuff, kids' bikes) — top racks, lowest priority\n- **Chemicals & fuels** (paint, feed, weedkiller, oil) — a lockable or high-mounted cabinet, off the floor\n\n**2. Use the walls and ceiling**\nMost sheds are floor-bound; that's the mistake. A pegboard or slatted wall panel for tools, ceiling hooks for hanging bikes/wheelbarrow/hoses, and shelving for the rest. Heavy items go between knee and shoulder height, never above head height.\n\n**3. Everythin"
+    },
+    "ask_second": {
+      "session_id": "9d082219-fe5e-4b95-baae-eae0f5e1553b",
+      "memory_context": [],
+      "errors": [],
+      "answer": "UNKNOWN"
+    }
+  },
+  "restarts": {
+    "enable": {
+      "previous_pid": 51239,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-7f0fcb2d-d8eb-4994-af57-96141db04b1f.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 53994,
+      "new_process_ready": true
+    },
+    "after_opt_out": {
+      "previous_pid": 53994,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-e850e508-15cb-4d21-a967-90c709ec8340.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 57901,
+      "new_process_ready": true
+    },
+    "restore": {
+      "previous_pid": 57901,
+      "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-19fe2ed2-c16f-4fb1-acad-95843a2b6bbc.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 64280,
+      "new_process_ready": true
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:52:15.767603000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:52:15.767603Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:52:15.807387000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:52:15.807387Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:52:15.767603000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:52:15.767603Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:52:15.767603000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:53:07.183597000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:53:07.183597Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:52:15.807387000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:52:15.807387Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:52:15.807387000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:53:07.237132000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:53:07.237132Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":10,\"consent_epoch\":6,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-opt-out-agent-f6890d42",
+        "metadata": {
+          "title": "Disposable Memory Agent",
+          "description": "Remembers what the user tells it.",
+          "tags": [
+            "memory"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-opt-out-agent-f6890d42\",\"metadata\":{\"title\":\"Disposable Memory Agent\",\"description\":\"Remembers what the user tells it.\",\"tags\":[\"memory\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:d64472ec97b30febf15665178cc5cb61064c027b76326e196c83eb8bf8cc7e44\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-opt-out-agent-f6890d42\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": true,
+        "retention": {
+          "kind": "days",
+          "days": 30
+        }
+      },
+      "status": 200,
+      "response": "{\"enabled\":true,\"retention\":{\"kind\":\"days\",\"days\":30},\"revision\":11,\"consent_epoch\":6,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":12,\"consent_epoch\":7,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":12,\"consent_epoch\":7,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\"}},\"content\":\"By the way, my storage locker code is LOCKER-BC468B. Can you suggest a good way to organise a storage locker?\",\"embedding\":[-0.03937623277306557,-0.07254014164209366,0.011304513551294804,-0.04969247430562973,0.037329625338315964,-0.03117852844297886,0.04222558066248894,-0.008029633201658726,-0.0069936043582856655,-0.026809945702552795,-0.006280966568738222,-0.05107225105166435,0.03761837258934975,0.029676824808120728,0.09239385277032852,0.0076667447574436665,0.02821918949484825,0.009149277582764626,-0.09571688622236252,0.04450221732258797,0.006801108829677105,-0.03185676783323288,-0.06703048199415207,-0.0007924300152808428,0.0031230286695063114,-0.028757618740200996,-0.0534062422811985,-0.0061315628699958324,-0.07075007259845734,-0.16676227748394012,-0.023912999778985977,-0.08172198385000229,0.035652995109558105,-0.007032292895019054,0.04067840427160263,-0.03718419373035431,0.04418133571743965,0.015051950700581074,-0.1078600063920021,0.03693101555109024,-0.011036264710128307,0.023379530757665634,-0.0024281360674649477,0.007430767174810171,-0.0008853335166350007,-0.0028208261355757713,0.0225686002522707,-0.0013049652334302664,0.03837795555591583,-0.02204178087413311,0.04827403277158737,0.028221111744642258,-0.03855537995696068,0.019522162154316902,-0.06052827835083008,0.06240149587392807,0.0029655310790985823,0.01502786111086607,0.010042829439043999,0.020102187991142273,0.055750105530023575,0.02958967722952366,-0.10990651696920395,0.11981655657291412,0.07514163851737976,0.012107884511351585,0.031775809824466705,-0.00482639716938138,0.04300286993384361,0.06815453618764877,0.05348699912428856,-0.006308357696980238,-0.002799165667966008,0.10757821798324585,0.03206823021173477,-0.001096343039534986,0.004300248343497515,0.012585961259901524,-0.02862263284623623,-0.004521357361227274,-0.09149342030286789,-0.04839072749018669,0.0096681"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/memory/records/memory:capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6",
+      "status": 200,
+      "response": "{\"id\":\"memory:capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6\",\"deleted\":true,\"purge\":\"pending\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[]}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":13,\"consent_epoch\":8,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-opt-out-agent-f6890d42",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/a5d07ba2-fd89-41c9-adb9-513c9a1262b7",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/d4d6d2a0-8bb3-4e4f-8389-a8b749b56817",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/b9414a8a-6601-486b-8dfc-6828ab886fcf",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/6bbe642c-bd5e-4e49-b668-445245a616b3",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/9d082219-fe5e-4b95-baae-eae0f5e1553b",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:53:07.183597000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:53:07.183597Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": false,
+        "expected_revision": "2026-10-28T13:53:07.183597000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-28T13:57:15.925914000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:57:15.925914Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:53:07.237132000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:53:07.237132Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-28T13:53:07.237132000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-28T13:57:15.971090000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-28T13:57:15.971090Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 51239
+  },
+  "original_policy": {
+    "enabled": false,
+    "retention": null,
+    "revision": 10,
+    "consent_epoch": 6,
+    "host_capture_enabled": true
+  },
+  "opt_in": {
+    "enabled": true,
+    "retention": {
+      "kind": "days",
+      "days": 30
+    },
+    "revision": 11,
+    "consent_epoch": 6,
+    "host_capture_enabled": true
+  },
+  "first_captured": [
+    "memory:capture-8ec49f606ce92ba5d7d8e8d113edade27a56465e5bb968c5a2a61c77ad83dfa6"
+  ],
+  "opt_out": {
+    "enabled": false,
+    "retention": null,
+    "revision": 12,
+    "consent_epoch": 7,
+    "host_capture_enabled": true
+  },
+  "policy_after_restart": {
+    "enabled": false,
+    "retention": null,
+    "revision": 12,
+    "consent_epoch": 7,
+    "host_capture_enabled": true
+  },
+  "second_captured": [],
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 268154
+}

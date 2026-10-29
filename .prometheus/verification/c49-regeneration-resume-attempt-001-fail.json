@@ -1,0 +1,12 @@
+{
+  "scenario": "C49",
+  "status": "FAIL",
+  "failure_class": "fixture setup (concurrent uploads), exposing a product finding",
+  "platform": "Mac",
+  "attempt": 1,
+  "observed_output": "1 scenario (1 failed); 7 steps (5 skipped, 2 failed); 0m 5.488s",
+  "evidence": ".prometheus/verification/regeneration-resume/f6804859-cd09-4d28-bc22-3cfebc8ebaad.json",
+  "failure": "60 documents uploaded back-to-back into one KB (all 202). 28 of 60 reported status failed with 'executor error: Cannot COMMIT: Transaction conflict: Transaction write conflict. This transaction can be retried'; 32 indexed. The cleanup DELETE of the KB also hit the same conflict (500) while ingestion ran; it was deleted afterwards (204/404). Host config and embedding settings were never changed (setup failed first).",
+  "product_finding": "IngestionRecord::failed_attempt marks the job Retryable (up to 5 attempts, 30s x attempts backoff), but transition (src/uar/persistence/providers/ingestion_records/surreal.rs:146-149) maps Retryable to DocumentStatus::Failed, so a document that will be retried is shown to the user as failed. Concurrent uploads into one KB cause the retryable Surreal write conflicts. Not fixed; reported to the operator.",
+  "next": "Upload the corpus sequentially (wait for each document) and rerun once."
+}

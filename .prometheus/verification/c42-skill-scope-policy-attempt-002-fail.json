@@ -1,0 +1,10 @@
+{
+  "scenario": "C42",
+  "status": "FAIL",
+  "failure_class": "test script read a field the skill view does not expose (scoped_config)",
+  "platform": "Mac",
+  "attempt": 2,
+  "evidence": ".prometheus/verification/skill-scope-policy/234dcb05-a384-4304-8e0d-d9b7a42dc4bd.json",
+  "observed_before_failure": "selected[A,C] → selected[A]; B/C rejected ineligible; answer 288 = 12 x 24. Fresh none: selected [] , A rejected ineligible, answer UNKNOWN. Disabled conversation: A rejected 'disabled', answer UNKNOWN. Enabled conversation: A active, answer 168 = 7 x 24. After owned restart, GET /api/uar/skills/{A} (SkillResponse) carries no scoped_config.",
+  "next": "Verify the saved scoped disable behaviorally after restart (disabled conversation still rejects A with 'disabled'); rerun once."
+}

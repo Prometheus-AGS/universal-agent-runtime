@@ -4,6 +4,8 @@ pub mod a2a;
 #[cfg(feature = "server")]
 pub mod agui;
 #[cfg(feature = "server")]
+mod agui_a2ui;
+#[cfg(feature = "server")]
 pub mod accounting;
 #[cfg(feature = "server")]
 pub mod acp;

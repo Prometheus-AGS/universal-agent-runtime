@@ -1,0 +1,30 @@
+{
+  "scenario": "C34",
+  "status": "FAIL",
+  "cucumber_reported": "PASSED (13/13) \u2014 overridden by evidence review",
+  "platform": "Mac",
+  "recorded_at": "2026-10-27T06:32:37-05:00",
+  "attempt": 2,
+  "change_before_attempt": "Operator-approved helper fix: parse response bodies as JSON only for successful responses (plain-text 404 no longer throws). No assertion changed.",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 UAR_CUCUMBER_REPORT=.prometheus/verification/c34-live-roster-routing-20261027T113050Z.cucumber.json node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/live-roster-routing.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 13 steps (13 passed); 0m 39.39s",
+  "evidence": ".prometheus/verification/live-roster-routing/6a9624bd-8aa4-4c06-89c4-1845915edb40.json",
+  "why_fail": "The specialist's entire streamed text (4161 chars) was one unclosed <think> reasoning block ending mid-sentence; the signature occurs only inside that reasoning draft. The step strips only closed <think>\u2026</think> blocks, so it accepted reasoning as the answer. The catalog forbids counting reasoning as output; no genuine final answer from the routed specialist was observed. The run nevertheless reported RUN_FINISHED outcome success.",
+  "failure_classes": [
+    "measurement: answer oracle accepted unclosed reasoning",
+    "observed product/model behavior (cause not established): routed child turn ended inside reasoning with no final answer, reported as success"
+  ],
+  "valid_observations": {
+    "roster": "new specialist present after registration, absent after deletion; saved math/writer retained",
+    "selection": "disposable-plant-clinic-6a9624bd selected by intent before text (rosterRevision bb4e3425\u2026)",
+    "fresh_task_after_removal": "RUN_STARTED then RUN_ERROR message graph_routing_selection_invalid, no selection, no approval interrupt \u2014 accepted under the operator's no-match binding",
+    "unmatched_intent": "routed to default-agent (current roster, rosterRevision eb8d082d\u2026), genuine one-sentence cheese answer, no deleted-agent signature"
+  },
+  "cleanup": {
+    "disposable_agent_deleted": true,
+    "saved_agents_retained": true,
+    "cleanup_errors": []
+  },
+  "next": "Operator decision required before any further change or rerun."
+}

@@ -1,0 +1,440 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-rules-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 12,
+        "name": "The rules classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 189403389
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 92477973
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the rules backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2947877148
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 834229
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 302247
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 315506411
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzL2NkMjEzMWQwLTI4ODQtNGJiOS05NjNiLTViMjEzYTRiMzYwMC5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-hybrid-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 13,
+        "name": "The hybrid classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 164821292
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 87398192
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the hybrid backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5968785492
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 105558
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 142549
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 296413930
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzLzRiNDdlMzhjLWQ3NjMtNDUxNy05NTc3LTZiYmM5NDlkZDc5Mi5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-localembedding-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 14,
+        "name": "The localembedding classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 132976000
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 87126834
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the localembedding backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 17617379658
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1180037,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    'zorblat-quintex-vellum8097325e',\n+   'vellum8097325e-archive-storage',\n+   'better-interface',\n+   'liter-llm-bridge',\n+   'minimalist-ui'\n  ]\n\n    + expected - actual\n\n     [\n       \"zorblat-quintex-vellum8097325e\"\n    -  \"vellum8097325e-archive-storage\"\n    -  \"better-interface\"\n    -  \"liter-llm-bridge\"\n    -  \"minimalist-ui\"\n     ]\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:114:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 361308194
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzLzgwOTczMjVlLWZmN2EtNGUzNC1iOWU4LThhMDAwZWQzNDA2Yi5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "each-intent-classifier-backend-selects-and-uses-a-skill;the-llm-classifier-picks-the-target-skill-and-its-private-rule-shapes-the-answer",
+        "keyword": "Scenario Outline",
+        "line": 15,
+        "name": "The llm classifier picks the target skill and its private rule shapes the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 205961767
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with owned target and decoy skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:29"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 104818185
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "skill matching is switched to the intent classifier with the llm backend",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 3596705015,
+              "error_message": "AssertionError [ERR_ASSERTION]: POST /v1/chat/completions: 500: {\"error\":{\"message\":\"Run admission failed before protected content publication\",\"type\":\"server_error\"}}\n\n500 !== 200\n\n    + expected - actual\n\n    -500\n    +200\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:25:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-classifier-backends.steps.mjs:102:21)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I send the target's discriminating prompt through a real run",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run reports its backend's legacy_classifier method with the target accepted over the decoy",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the private rule stored only in the target skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-classifier-backends.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 221297898
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jbGFzc2lmaWVyLWJhY2tlbmRzL2I4YzM2OGQ2LTJlMjItNGY3NC1iNTEzLTI0ZTM5ODExYzkxMy5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@settings",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "each-intent-classifier-backend-selects-and-uses-a-skill",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Each intent-classifier backend selects and uses a skill",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@settings",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-classifier-backends.feature"
+  }
+]

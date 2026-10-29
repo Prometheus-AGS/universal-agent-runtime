@@ -1,0 +1,177 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "real-mcp-tool-discovery,-approval-and-result-use;discover-an-owned-mcp-peer,-approve-a-write-and-read,-then-deny-a-write",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Discover an owned MCP peer, approve a write and read, then deny a write",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 29264591309
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "an owned MCP record peer is permitted for one disposable agent after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 88262718
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I register the MCP peer with UAR",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:115"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5543077
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "UAR lists the peer as a registered MCP server",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 44665658
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a disposable agent that may use only the peer's record tools",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:135"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 15486497,
+              "error_message": "AssertionError [ERR_ASSERTION]: POST /api/uar/runs: 422: {\"code\":\"run_mcp_server_invalid\",\"error\":\"MCP server must select one loopback URL or one trusted destination grant\"}\n    + expected - actual\n\n    -false\n    +true\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/mcp-tool-approval.steps.mjs:21:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async runWithDecision (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/mcp-tool-approval.steps.mjs:50:19)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/mcp-tool-approval.steps.mjs:154:19)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I ask the agent to store and read back a private value and approve its MCP calls",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the peer stored the value once and the answer reports the value and revision the peer returned",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:159"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I ask the agent to overwrite the value and deny the MCP call",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:175"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the peer record is unchanged and the answer reports that the write was not performed",
+            "match": {
+              "location": "scripts/behaviors/steps/mcp-tool-approval.steps.mjs:182"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 28428757108
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tY3AtdG9vbC1hcHByb3ZhbC8xYTc0MzdjZi0yZGI3LTQwM2MtYWNjYS1kMDhiYWU3M2M3N2IuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@tools",
+            "line": 1
+          },
+          {
+            "name": "@approval",
+            "line": 1
+          },
+          {
+            "name": "@mcp",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "real-mcp-tool-discovery,-approval-and-result-use",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Real MCP tool discovery, approval and result use",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@tools",
+        "line": 1
+      },
+      {
+        "name": "@approval",
+        "line": 1
+      },
+      {
+        "name": "@mcp",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/mcp-tool-approval.feature"
+  }
+]

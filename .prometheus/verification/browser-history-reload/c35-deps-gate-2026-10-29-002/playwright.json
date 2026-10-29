@@ -1,0 +1,218 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "-c",
+      "scripts/behaviors/browser-history-reload.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser-history-reload.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-002/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 480000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-002/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "snapshotDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-history-reload-generated",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 480000,
+        "use": {
+          "baseURL": "http://127.0.0.1:60675",
+          "channel": "chrome",
+          "headless": true,
+          "viewport": {
+            "width": 1280,
+            "height": 900
+          },
+          "video": "off",
+          "screenshot": "on",
+          "trace": "on",
+          "extraHTTPHeaders": {
+            "x-uar-workspace-id": "uar-user-outcomes-007-supporting-workspace"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-002/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-002/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/browser-history-reload.feature.spec.js",
+      "file": "features/browser-history-reload.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "A browser conversation reloads from saved history",
+          "file": "features/browser-history-reload.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Reopen a saved conversation after reload and continue from its earlier fact",
+              "ok": true,
+              "tags": [
+                "ui",
+                "conversation",
+                "reload"
+              ],
+              "tests": [
+                {
+                  "timeout": 480000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 22059,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "EVIDENCE /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c06645d8-2141-4ff3-a4b8-dc1fdbf2ff6a.json status=passed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a disposable custom agent is selected in a fresh browser conversation",
+                          "duration": 2317
+                        },
+                        {
+                          "title": "When I give the agent a fresh fact in the browser",
+                          "duration": 3665
+                        },
+                        {
+                          "title": "And I reload the page and reopen that conversation from the thread list",
+                          "duration": 1505
+                        },
+                        {
+                          "title": "Then the reopened conversation shows the saved turns without a new run",
+                          "duration": 470
+                        },
+                        {
+                          "title": "When I send a follow-up that contains none of the earlier facts",
+                          "duration": 11517
+                        },
+                        {
+                          "title": "Then the follow-up answer uses the earlier fact from the saved server history",
+                          "duration": 206
+                        }
+                      ],
+                      "startTime": "2026-10-29T09:10:12.933Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-002/artifacts/features-browser-history-r-5dad2-tinue-from-its-earlier-fact/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-history-reload/c35-deps-gate-2026-10-29-002/artifacts/features-browser-history-r-5dad2-tinue-from-its-earlier-fact/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "697b265cb171ecec1882-837d3bc92497015774be",
+              "file": "features/browser-history-reload.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-29T09:10:12.334Z",
+    "duration": 32034.267000000003,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

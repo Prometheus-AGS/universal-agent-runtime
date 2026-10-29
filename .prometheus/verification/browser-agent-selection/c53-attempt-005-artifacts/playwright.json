@@ -1,0 +1,182 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "scripts/behaviors/browser-agent-selection.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser-agent-selection.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-005-artifacts/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 900000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-005-artifacts/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.62.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-005-artifacts/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/browser-agent-selection.feature.spec.js",
+      "file": "features/browser-agent-selection.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "The browser shows orchestrator agent selection before the answer",
+          "file": "features/browser-agent-selection.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A writing task and then a math task show each selected specialist first",
+              "ok": true,
+              "tags": [
+                "ui",
+                "orchestrator",
+                "routing"
+              ],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 32202,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "EVIDENCE /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/675a8a04-aeb3-4c38-b654-13fc12ccf7ea.json status=passed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the saved math and writing specialists and an orchestrator conversation in the browser",
+                          "duration": 2439
+                        },
+                        {
+                          "title": "When I send a writing task in that conversation through the browser",
+                          "duration": 15897
+                        },
+                        {
+                          "title": "Then the browser shows the writing specialist selection before its specialist answer",
+                          "duration": 1577
+                        },
+                        {
+                          "title": "When I send a math task in the same conversation through the browser",
+                          "duration": 9281
+                        },
+                        {
+                          "title": "Then the browser shows the math specialist selection before its specialist answer",
+                          "duration": 1013
+                        },
+                        {
+                          "title": "And each selected specialist matches execution with no duplicate answer or run",
+                          "duration": 91
+                        }
+                      ],
+                      "startTime": "2026-10-27T21:40:15.529Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-005-artifacts/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-attempt-005-artifacts/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9435d2e72f8e6704d80d-5de06e8077d2a281e00c",
+              "file": "features/browser-agent-selection.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-27T21:40:14.945Z",
+    "duration": 35189.862,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "scenario": "C49",
+  "status": "BLOCKED",
+  "platform": "Mac",
+  "attempt": 0,
+  "blocked_reason": "Same prerequisite as C48 (E: genuine embedding binding provisioned outside the test). Regeneration to any remote embedding backend is blackholed by the owned config (embedding.base_url http://127.0.0.1:1/v1) and only one local model is cached, so a real regeneration job cannot run to an interruption point and completion. Not run.",
+  "unblock": "Same as C48."
+}

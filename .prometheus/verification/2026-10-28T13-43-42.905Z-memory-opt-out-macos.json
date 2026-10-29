@@ -1,0 +1,149 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-memory-opt-out-survives-restart-and-stops-new-capture;after-opting-out-and-a-restart,-a-new-private-fact-is-never-remembered",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "After opting out and a restart, a new private fact is never remembered",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18658349032
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "durable memory with automatic capture is enabled for a disposable agent after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:77"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 18944190936
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I opt in, tell the agent a private fact, and ask about it in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 807387,
+              "error_message": "AssertionError [ERR_ASSERTION]: Recall answer: UNKNOWN\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/memory-opt-out.steps.mjs:132:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the agent recalls the fact from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I opt out of memory capture and the runtime restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:135"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "my opt-out is still in effect",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:141"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I tell the agent a new private fact and ask about it in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:146"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the new fact was never captured and the agent cannot recall it",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:153"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 14832272998,
+              "error_message": "AssertionError [ERR_ASSERTION]: Cleanup must succeed\n+ actual - expected\n\n+ [\n+   'Memory cleanup: AssertionError [ERR_ASSERTION]: DELETE /api/memory/records/[object Object]: 409: delete_memory failed'\n+ ]\n- []\n\n    + expected - actual\n\n    -[\n    -  \"Memory cleanup: AssertionError [ERR_ASSERTION]: DELETE /api/memory/records/[object Object]: 409: delete_memory failed\"\n    -]\n    +[]\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/memory-opt-out.steps.mjs:195:10)"
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tZW1vcnktb3B0LW91dC81ZmU5ODg1OC0wMjYwLTQ3MDctYjQzOS0zNDZlMzNhOGNkZDAuanNvbiIsInN0YXR1cyI6IkZBSUxFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@memory",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-memory-opt-out-survives-restart-and-stops-new-capture",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A memory opt-out survives restart and stops new capture",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@memory",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/memory-opt-out.feature"
+  }
+]

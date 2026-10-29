@@ -1,0 +1,1714 @@
+{
+  "audit_date": "2026-10-27",
+  "timezone": "America/Chicago",
+  "recorded_at_utc": "2026-10-27T09:23:08.496107+00:00",
+  "method": "Read retained source and evidence only; no product test, runtime API/service, build or publication",
+  "summary": {
+    "manual_behavior_labels": 35,
+    "unique_primary_receipts": 32,
+    "manual_outcomes": 32,
+    "direct_workflow_outcomes": 31,
+    "composite_workflow_outcomes": 1,
+    "successful_formal_reports": 31,
+    "successful_formal_scenarios": 31,
+    "formal_reports_all_passed": true,
+    "direct_prompt_successes": 1,
+    "successful_execution_records": 32,
+    "original_case_count": 97,
+    "original_exact_full_claims": 0,
+    "original_partial_overlap": 28,
+    "original_no_matching_scenario_credit": 69,
+    "original_ids_match_manifest": true,
+    "missing_receipt_or_support_files": [],
+    "authored_feature_files": 32,
+    "uncatalogued_passing_report_candidates": 0,
+    "combined_persistence_feature_fully_passed": false
+  },
+  "manual_behaviors": [
+    {
+      "id": "B01",
+      "claim": "Prompt configured default agent",
+      "receipt": {
+        "path": ".prometheus/verification/2026-10-26T06-38-40.440Z-prompt-macos.json",
+        "exists": true,
+        "sha256": "5803840bf65d01ec02d181d643d59ba4a2c8ea4d8ce388a29f14bad1e6eced6e"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "kind": "direct_prompt",
+        "receipt_status": "VERIFIED",
+        "http_status": 200,
+        "answer": "70"
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B02",
+      "claim": "Receive a useful incremental streamed answer",
+      "receipt": {
+        "path": ".prometheus/verification/2026-10-26T06-56-36.601Z-streaming-macos.json",
+        "exists": true,
+        "sha256": "9d499cf36836c90be0627fe05b23eb59ce3c3ea7f5d9f77963d929208b4578b7"
+      },
+      "recorded_result": "runner_report",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T06-56-36.601Z-streaming-macos.json",
+        "exists": true,
+        "sha256": "9d499cf36836c90be0627fe05b23eb59ce3c3ea7f5d9f77963d929208b4578b7",
+        "scenarios": [
+          {
+            "name": "The default agent streams a complete useful answer",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B03",
+      "claim": "Create and retain a custom mathematics agent across restart, then query it (composite evidence; initial combined feature failed)",
+      "receipt": {
+        "path": ".prometheus/verification/agents/math-specialist-db64c2a8.verified.json",
+        "exists": true,
+        "sha256": "86530cdd1501ce39d071939b3e83b6e2ed2bd00d0c82754eba72961919060191"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/2026-10-26T07-09-18.272Z-persisted-agent-macos.json",
+          "exists": true,
+          "sha256": "e41d9503ee59d5389ddafaf08f1b0f09849f2f5f5a5dd7924bef668571495a16"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T07-17-02.689Z-query-agent-macos.json",
+        "exists": true,
+        "sha256": "7c14c9b29e920c0849e45bbc381831900bd1ccf377d9e0c8fd707fc559197536",
+        "scenarios": [
+          {
+            "name": "Query the previously created mathematics specialist",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": true
+    },
+    {
+      "id": "B04",
+      "claim": "Persist/list a writing specialist alongside math and route a writing request to it by intent",
+      "receipt": {
+        "path": ".prometheus/verification/agents/writing-specialist.verified.json",
+        "exists": true,
+        "sha256": "3fc4f4f810e8c8add811534588919322673b2c4b0cf52a8beeeac15e1c772383"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T07-44-36.207Z-writing-orchestrator-macos.json",
+        "exists": true,
+        "sha256": "60b67bc9446d03edda5a785eef9e759aeb9c6caa18a19b2397e3613ee7c033a4",
+        "scenarios": [
+          {
+            "name": "Save a writer and let intent classification route a blog request",
+            "statuses": {
+              "passed": 7
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B05",
+      "claim": "Create a knowledge base",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json",
+        "exists": true,
+        "sha256": "943d6bc97a0820726a7615b44d64034d4ed0f2339cac4ed855707a7539c3d263"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T08-20-39.467Z-knowledge-macos.json",
+        "exists": true,
+        "sha256": "b57d22e08d9b44e8a344a85e66a8c52ccd644a077b49e3e38194b136ed32e7f6",
+        "scenarios": [
+          {
+            "name": "Retrieve specialized wheel-graph mathematics with source provenance",
+            "statuses": {
+              "passed": 7
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B06",
+      "claim": "Add and genuinely index a document in a knowledge base",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json",
+        "exists": true,
+        "sha256": "943d6bc97a0820726a7615b44d64034d4ed0f2339cac4ed855707a7539c3d263"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T08-20-39.467Z-knowledge-macos.json",
+        "exists": true,
+        "sha256": "b57d22e08d9b44e8a344a85e66a8c52ccd644a077b49e3e38194b136ed32e7f6",
+        "scenarios": [
+          {
+            "name": "Retrieve specialized wheel-graph mathematics with source provenance",
+            "statuses": {
+              "passed": 7
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B07",
+      "claim": "Persist a knowledge-base reference on an existing agent",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json",
+        "exists": true,
+        "sha256": "943d6bc97a0820726a7615b44d64034d4ed0f2339cac4ed855707a7539c3d263"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T08-20-39.467Z-knowledge-macos.json",
+        "exists": true,
+        "sha256": "b57d22e08d9b44e8a344a85e66a8c52ccd644a077b49e3e38194b136ed32e7f6",
+        "scenarios": [
+          {
+            "name": "Retrieve specialized wheel-graph mathematics with source provenance",
+            "statuses": {
+              "passed": 7
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B08",
+      "claim": "Answer using retrieved KB content with matching source provenance",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge/wheel-profile-aae19b22-4654-493f-b34e-d487a21c3464.json",
+        "exists": true,
+        "sha256": "943d6bc97a0820726a7615b44d64034d4ed0f2339cac4ed855707a7539c3d263"
+      },
+      "recorded_result": "VERIFIED",
+      "supporting_evidence": [],
+      "successful_execution": {
+        "path": ".prometheus/verification/2026-10-26T08-20-39.467Z-knowledge-macos.json",
+        "exists": true,
+        "sha256": "b57d22e08d9b44e8a344a85e66a8c52ccd644a077b49e3e38194b136ed32e7f6",
+        "scenarios": [
+          {
+            "name": "Retrieve specialized wheel-graph mathematics with source provenance",
+            "statuses": {
+              "passed": 7
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B09",
+      "claim": "Create a team with exact math/writer membership, run both concurrently, then merge both real outputs into an article",
+      "receipt": {
+        "path": ".prometheus/verification/team-01-macos-pass.json",
+        "exists": true,
+        "sha256": "1ac14d99196eafe0c7cfc54d538b2eef4368a4ead402831c77a5f853e7295ec3"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/teams/380da082-617f-4369-a8f6-0367e85b74d2.json",
+          "exists": true,
+          "sha256": "2bb6adcb741273bbcc171853209007aae527e022232fcd8618dc2797dd39ca33"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/manual-team-noauth-003-macos.cucumber.json",
+        "exists": true,
+        "sha256": "c637ecf5ea3080ac91e193b3a7bd49eb38e06dd19702284adfccf2176679e361",
+        "scenarios": [
+          {
+            "name": "Concurrent calculation and editorial work merge into one article",
+            "statuses": {
+              "passed": 8
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B10",
+      "claim": "Continue a saved math-agent conversation using server-held history without client transcript replay",
+      "receipt": {
+        "path": ".prometheus/verification/continuity-01-macos-pass.json",
+        "exists": true,
+        "sha256": "b3b7f357e43436b8784ab718598d31fcd9102a8e3e9a099952e686a8f11d02fb"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/conversations/72f50cb7-16c5-499b-94e1-f50e512a7e55.json",
+          "exists": true,
+          "sha256": "bbf5bcaa615c08935f765baf6f8febd63a70b23b79214dad060efec8e178d61d"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/continuity-002-macos.cucumber.json",
+        "exists": true,
+        "sha256": "da531cafed3c167132f59449674617261a76c8c30736172f49724c0dd247080c",
+        "scenarios": [
+          {
+            "name": "A follow-up uses the first exchange without the client repeating it",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B11",
+      "claim": "Prevent deletion of default and orchestrator agents while preserving their definitions",
+      "receipt": {
+        "path": ".prometheus/verification/protected-agents-01-macos-pass.json",
+        "exists": true,
+        "sha256": "b2a357d3a966d57c461a69db468f946bd542a5cefc98cabfa755cb2d38ba554d"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/protected-agents/aa61314c-2794-4e2d-bd79-5dc3901c70cb.json",
+          "exists": true,
+          "sha256": "64ee455f8efb5ef722991dd753fc6054b7793943c6438e6e9d4e00c499ce011a"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/protected-agents-001-macos.cucumber.json",
+        "exists": true,
+        "sha256": "91f4a25d5a846eb586c6fff9a06ef6347c510c0c4fc80505bcd101fdf2b0acc6",
+        "scenarios": [
+          {
+            "name": "The default and orchestrator agents cannot be deleted",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B12",
+      "claim": "Update custom-agent instructions, observe changed inference behavior, and delete the disposable agent",
+      "receipt": {
+        "path": ".prometheus/verification/agent-lifecycle-01-macos-pass.json",
+        "exists": true,
+        "sha256": "04c074abda5413ac75af83a3f49a1b175f34db826f4ffcbb8bcbb0f644b85f93"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/agent-lifecycle/disposable-lifecycle-3c2e587a-0482-46d5-bf90-ddb26dcfca61.json",
+          "exists": true,
+          "sha256": "459ee878afe9c7c99fa72285105ae5dda585b5595204f14f9fa044e35893b5a2"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/agent-lifecycle-002-macos.cucumber.json",
+        "exists": true,
+        "sha256": "9fa62fd439e789f9b01d7a9a2fe6d1fdf5da5df1cb5f68c351ee38bd93e622b8",
+        "scenarios": [
+          {
+            "name": "Updated instructions take effect before the custom agent is deleted",
+            "statuses": {
+              "passed": 9
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B13",
+      "claim": "Prompt the saved math agent through the Anthropic-compatible Messages API",
+      "receipt": {
+        "path": ".prometheus/verification/anthropic-01-macos-pass.json",
+        "exists": true,
+        "sha256": "084fd6a5619487fc02433b07edaac2149be70f4c1da2a0e40463af829aee4db8"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/anthropic/e09d47ff-ef92-4fbe-b53e-c7afb39e0f56.json",
+          "exists": true,
+          "sha256": "500a60af1bbbf56550828e84d09918596d8a596a16b300faf060bcc59d1bc23a"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/anthropic-001-macos.cucumber.json",
+        "exists": true,
+        "sha256": "0562b8a6778d9071acafcb60b466d9b81be89923d9853f577a53c1400f68aa55",
+        "scenarios": [
+          {
+            "name": "The saved math agent returns the correct answer through Messages",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B14",
+      "claim": "Prompt the saved math agent through A2A v1 and receive a completed task with its answer",
+      "receipt": {
+        "path": ".prometheus/verification/a2a-01-macos-pass.json",
+        "exists": true,
+        "sha256": "dad3cf8c7b06bd4d88f3c35b0f21e27998f0adeab01ebf1d712a9219ef5515f4"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/a2a/f5c001b0-9d15-4548-af63-345f8211f98b.json",
+          "exists": true,
+          "sha256": "64fcc63e2acc18ae4ae520224fb773fba16db4230ef367189a1b0759876ea0e5"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/a2a-001-macos.cucumber.json",
+        "exists": true,
+        "sha256": "89780328aa752832dd693c3d8f3b3f2778ad7604098959110d279846048898a8",
+        "scenarios": [
+          {
+            "name": "The saved math agent completes an A2A task with the correct answer",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B15",
+      "claim": "Prompt the saved math agent through ACP and receive its correct answer with completed run status",
+      "receipt": {
+        "path": ".prometheus/verification/acp-01-macos-pass.json",
+        "exists": true,
+        "sha256": "a25b8d17d0290f26bc1d3446b2ac6590c10a969b4c97f4c62cd54abd91a4238e"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/acp/1f97faad-8008-4168-883c-987651e7a0cb.json",
+          "exists": true,
+          "sha256": "db96656d5b75e12843c94d3b00dbb46aa9fbadd13ddb63199a60aa6ccb133541"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/acp-001-macos.cucumber.json",
+        "exists": true,
+        "sha256": "d8643ccd710f890f7add1782cdbba69928ad98e6ef13fedba8f94e47e92ab116",
+        "scenarios": [
+          {
+            "name": "The saved math agent answers an ACP prompt correctly",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B16",
+      "claim": "Prompt the saved math agent through AG-UI and assemble a correct streamed answer with correlated successful completion",
+      "receipt": {
+        "path": ".prometheus/verification/agui-01-macos-pass.json",
+        "exists": true,
+        "sha256": "ae509216605606e38f487e61af1ffa104397deee3483595d651d49d99c042b85"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/agui/aa061402-829b-475d-887d-d8176243c5c6.json",
+          "exists": true,
+          "sha256": "353a1dae5f8a941a7bf6e6a4007688cd0f78af14f7526e4b797a4a0287897077"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/agui-001-macos.cucumber.json",
+        "exists": true,
+        "sha256": "f5afe615d65889b50a3fcbe358e3681b98d6705106c50f3375eaee65a8f969cb",
+        "scenarios": [
+          {
+            "name": "The saved math agent streams a correct answer through AG-UI",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B17",
+      "claim": "Receive a genuinely published A2UI greeting surface and matching state updates through AG-UI agui_spec stream mode",
+      "receipt": {
+        "path": ".prometheus/verification/a2ui-01-macos-pass.json",
+        "exists": true,
+        "sha256": "bb91577f6dd787a37bb0cdcf70328e49ff9e4087e250b046a730f5998e8e970e"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/a2ui/disposable-a2ui-574fb622-a5d8-447e-831a-254a18835dbe.json",
+          "exists": true,
+          "sha256": "69142ce06f223f1016ff6991fa341c05b3b699faf29ac7f121f40587eb79636a"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/a2ui-002-macos.cucumber.json",
+        "exists": true,
+        "sha256": "c6087484e07cb5fba1cc08a801cae256f3fd9d36c4b162ec370b41c2753bd23b",
+        "scenarios": [
+          {
+            "name": "A real agent publishes the requested A2UI greeting",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B18",
+      "claim": "Render A2UI controls in Chrome and deliver a fresh user action to the agent for a correct continuation answer",
+      "receipt": {
+        "path": ".prometheus/verification/a2ui-browser-01-macos-pass.json",
+        "exists": true,
+        "sha256": "1b3c2c7d3a5fdda0cee956e78ec4b3e4da85fc6bc55d402f0ba1d2e1db983e97"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/a2ui-browser-007-macos/evidence.json",
+          "exists": true,
+          "sha256": "b990f9bfd9e04aee420d93cfd527242adea63a57506513178742987bd578f2e1"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/a2ui-browser-007-macos/cucumber.json",
+        "exists": true,
+        "sha256": "3c3d1b28d8b2c1e3e40adf233b566d283716c63bb42c395a1cef0eb49cb7d54c",
+        "scenarios": [
+          {
+            "name": "A rendered calculator sends fresh input back to its agent",
+            "statuses": {
+              "passed": 7
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B19",
+      "claim": "Implicitly detect and activate the matching keyword skill, then answer using its private recipe and marker",
+      "receipt": {
+        "path": ".prometheus/verification/skill-detection-01-macos-pass.json",
+        "exists": true,
+        "sha256": "2d8d29d8fbac6055cf6e872e83e98b4607a03d24b51aed5e04c7f3fd1f95a30e"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/skill-detection/fa374d50-6d5b-4a34-b07c-b3a6f85bb7f1.json",
+          "exists": true,
+          "sha256": "d0906efda0cf940b1806a6b55d4b7844dee3a8e56171936167736be41d093a2c"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/skill-detection-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "a3022e6eb60df07ece4fe041a65f02a8ca5a00c3bab1874e0ea5fb4552303fd0",
+        "scenarios": [
+          {
+            "name": "A parcel request selects the pricing skill and uses its private recipe",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B20",
+      "claim": "Select and use the matching skill from a paraphrased prompt with zero trigger matches, using local embeddings at threshold0.65",
+      "receipt": {
+        "path": ".prometheus/verification/semantic-skill-01-macos-pass.json",
+        "exists": true,
+        "sha256": "fb14f941cec70a872c94819e15b004351e2f9c919dd7e8ac0c96efbb41fbb60c"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/semantic-skill/1740f52e-a229-416c-a3f4-9f7243f259e1.json",
+          "exists": true,
+          "sha256": "25855b3f03566325efc7bf499a92ab83f4e0593d7ae718fe578df8cd82d7a1ef"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/semantic-skill-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "8d69a9ba8cfb110a0d78e81c3e81737b790a73865e4e294dc6147c89903112bb",
+        "scenarios": [
+          {
+            "name": "A paraphrased delivery request selects and uses the matching skill",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B21",
+      "claim": "Reduce the final request within its token allowance while preserving follow-up facts; structural truncate_middle execution is not demonstrated",
+      "receipt": {
+        "path": ".prometheus/verification/context-budget-01-macos-pass.json",
+        "exists": true,
+        "sha256": "b30793f7f7cef88dd125bdf5fe2244c4034ad6dac7a16a978de43c092cbea9b2"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/context-budget/6e963cf7-8709-4610-b8e0-59abbac9aaf1.json",
+          "exists": true,
+          "sha256": "7fcefaec4895db827548ff1953b8a78b837f1466de67150102aa77017f0bc398"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/context-budget-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "d8a698a9c95ac45f8242b0da50e57ba8a4cf02e313d3ef6b67065ad2e66e1c2a",
+        "scenarios": [
+          {
+            "name": "Reduce oversized conversation context and answer a dependent follow-up",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B22",
+      "claim": "Generate a summary of the fact-bearing conversation turn and preserve its key facts for a follow-up",
+      "receipt": {
+        "path": ".prometheus/verification/conversation-summary-01-macos-pass.json",
+        "exists": true,
+        "sha256": "709561568b50393a20836c52436474a48b1653f64aea046fcb237c392349996c"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/conversation-summary/c54371b9-13cf-4586-9e2e-d60ae7cb2d9b.json",
+          "exists": true,
+          "sha256": "d14b155270a022efdb25c0b5870bdf5e418353a7d14cab23a2080c4b1ff829d7"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/conversation-summary-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "67e71c16d46d4e427518ac033f15ecb737f588966d80afe083905d107e4b9441",
+        "scenarios": [
+          {
+            "name": "Recall booking details after actual summarization",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B23",
+      "claim": "Preserve a conversation across a graceful UAR restart and recall earlier facts without replay",
+      "receipt": {
+        "path": ".prometheus/verification/conversation-restart-01-macos-pass.json",
+        "exists": true,
+        "sha256": "a10701ed872ea892ea95e590d549c7c18b6c41af2ecfb485dcc1294d151afd5d"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/conversation-restart/0be2a4a8-c415-4bf7-9769-191ad66ea22a.json",
+          "exists": true,
+          "sha256": "ed3e4491408a72185e4fb50d3964222ddee875d46e49f2c23252f17889a70606"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/conversation-restart-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "460730b1c498cc0ef76ed4f05319b9c23fa1bc7eac037e25daee25b421e685a9",
+        "scenarios": [
+          {
+            "name": "Recall earlier facts from the durable conversation after restart",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B24",
+      "claim": "Retain both overlapping same-conversation turns across a graceful restart and recall their facts",
+      "receipt": {
+        "path": ".prometheus/verification/concurrent-conversation-restart-01-macos-pass.json",
+        "exists": true,
+        "sha256": "4f84f8417ab9975031fc55c921c9007bb01193280d452fcdccb7f07096704199"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/concurrent-conversation-restart/85bf68ab-d292-41c7-80b3-b9647641f110.json",
+          "exists": true,
+          "sha256": "dc7fdc19c6d037478c5c4c1b47b3f8aa4c77a00aae8b9de1f49305d28641ff5d"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/concurrent-conversation-restart-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "15effe02c3566322689ec928d3272f03e62d0978328a0e64b0bb72f34a0c41b3",
+        "scenarios": [
+          {
+            "name": "Recall facts from both overlapping turns after restarting UAR",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B25",
+      "claim": "Update a user setting through REST and retain it across a graceful UAR restart",
+      "receipt": {
+        "path": ".prometheus/verification/rest-setting-restart-01-macos-pass.json",
+        "exists": true,
+        "sha256": "71bae7ee867863a09dfb6fea0b28a164570a3be6710a16ab0ad6b2d1f50b3699"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/rest-setting-restart/1d90d1c7-8dca-4092-9c43-59c648439b81.json",
+          "exists": true,
+          "sha256": "a9fe897d0b75ad5ae96e3cca58aa0e93c07be8dfe3ff6a82fe9e31050eeebee3"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/rest-setting-restart-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "fa5df2698a733ec1543b46ae942ea1e5da6ef1fa9c8a0f4a7325dc7b6a1776de",
+        "scenarios": [
+          {
+            "name": "Persist a changed user preference through restart",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B26",
+      "claim": "Use the saved math agent\u2019s retained knowledge base after UAR restart with matching retrieval evidence",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge-restart-01-macos-pass.json",
+        "exists": true,
+        "sha256": "f6f0ae82d54b6bb15858261e189287ff472286ba1b200cf98a9395ec82ba9b38"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/knowledge-restart/5f4777cc-f0fe-48c7-a762-1644de605d17.json",
+          "exists": true,
+          "sha256": "31db25edfd0b208073295625601d412af25b1b44f75166f17a9fbfed6077cf4d"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/knowledge-restart-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "e8a0c3f969c54e24aaeebe79cbbee3ee0f9704e6f61810c8fb24f43e1741c91b",
+        "scenarios": [
+          {
+            "name": "Retrieve the saved math agent's research note after UAR restarts",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B27",
+      "claim": "Change embedding model/dimension, reject the incompatible index, regenerate the retained document and retrieve its original private fact",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge-regeneration-01-macos-pass.json",
+        "exists": true,
+        "sha256": "8a5206726244347f208fbda68506690895e9d0ed49b1727919aa8aa5c1fefdfa"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/knowledge-regeneration/5f74c032-2e6b-49d3-9806-77043017477d.json",
+          "exists": true,
+          "sha256": "a100f71d0ef6d4cca2218782cd5bfd6ce38caaba387409d3e6218db1baae2324"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/knowledge-regeneration-host/eb91aa0c-a89f-4718-b140-74aca939646f/cucumber.json",
+        "exists": true,
+        "sha256": "3fb7b7f312820d0b06636d9845c9ee7763334f04da542ccd8ab1d7fe8e30cf21",
+        "scenarios": [
+          {
+            "name": "Regenerate a retained document in a different embedding space",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B28",
+      "claim": "Delete an indexed KB document so it disappears from retrieval while another document in the same KB remains searchable",
+      "receipt": {
+        "path": ".prometheus/verification/knowledge-document-delete-01-macos-pass.json",
+        "exists": true,
+        "sha256": "7a954c4645763e58c55fc0fbf684372215ffdc9a881f939cea8f1a189b261750"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/knowledge-document-delete/728fbaab-5ff2-46cf-bcb1-0726c5224550.json",
+          "exists": true,
+          "sha256": "4277f9a1b895a37efcd4eb4fcd5e516e04f425e66bb0e87b7b35d5f34b61d075"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/knowledge-document-delete-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "6d224c2114a8b3a4a9aa3fc0bab58bedab969072c6a9fa7ebeeaf1adcaccbc4d",
+        "scenarios": [
+          {
+            "name": "Delete one document without losing another document in the same KB",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B29",
+      "claim": "Delete a linked KB while its unchanged agent still answers in a fresh conversation without the deleted knowledge or citations",
+      "receipt": {
+        "path": ".prometheus/verification/linked-kb-delete-01-macos-pass.json",
+        "exists": true,
+        "sha256": "e74437059ccf22a319646221016c9cf58ebeff5163c069297e364db95da0a3f4"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/linked-kb-delete/0b7b8c88-89a7-4876-a053-802ae1ddb57b.json",
+          "exists": true,
+          "sha256": "f3b5c93284276e7108eb1bf21af2b989b0ca8924dacc462a7ca15da20df906b0"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/linked-kb-delete-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "3eb553dab6258901bffcc544e5969861462f71698ae151eb0048b2a46fe8fbff",
+        "scenarios": [
+          {
+            "name": "A linked agent answers without deleted knowledge in a fresh conversation",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B30",
+      "claim": "Unlink a KB so the agent stops using it in a fresh conversation while the unchanged KB remains directly searchable",
+      "receipt": {
+        "path": ".prometheus/verification/kb-unlink-01-macos-pass.json",
+        "exists": true,
+        "sha256": "62f47e803ad3391406696a9db5e77119c6ca0a9cbb8daa04fe7ad6cadd720e71"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/kb-unlink/04e6d7ba-0385-44aa-9bd7-f453e05eeee4.json",
+          "exists": true,
+          "sha256": "df895c5f0eb6333b96fcbe2fc48644c1ac2fe38af6fd9eb8994bcc795b738d80"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/kb-unlink-004-macos/cucumber.json",
+        "exists": true,
+        "sha256": "276c32d0b1dcd65a26930671cf3481dc18f382dd3f4f513df2b213d7894acddf",
+        "scenarios": [
+          {
+            "name": "Unlinking stops agent retrieval while the KB remains available",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B31",
+      "claim": "Relink an existing KB to an agent and restore grounded use of its unchanged document in a fresh conversation",
+      "receipt": {
+        "path": ".prometheus/verification/kb-relink-01-macos-pass.json",
+        "exists": true,
+        "sha256": "8547c325244e2c4681acc55cc04f8e35b021535988153ac1ed1dc18b6d77264a"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/kb-relink/e9c77249-8969-4625-b496-369a11b30978.json",
+          "exists": true,
+          "sha256": "f01972a0fe06fa4efe52b428a7d31766e4d17812820b77579866471078db7a83"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/kb-relink-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "3355f4785341f409d4b267d48486b01dacbf727c8dff0d0481fda0469d1d3eeb",
+        "scenarios": [
+          {
+            "name": "Relinking an existing KB restores grounded answers",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B32",
+      "claim": "Link two KBs to an agent and combine private facts from both with matching source citations",
+      "receipt": {
+        "path": ".prometheus/verification/two-kb-answer-01-macos-pass.json",
+        "exists": true,
+        "sha256": "0be95932ee306de04854bda9bd37d85e4f313170825802d46f6c4d9075fa66e9"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/two-kb-answer/625e39bd-f856-4a3a-a575-d6982e3c33b9.json",
+          "exists": true,
+          "sha256": "b512f6db981e2d6c16970bf443c9d176b54eb9c4151af23976508bc77c918342"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/two-kb-answer-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "ff3e048300af8b4e27f994aa533c7672a9cb52c92c2fa1605f4ba7d291bf8ee8",
+        "scenarios": [
+          {
+            "name": "An agent uses both KBs to answer a combined inventory question",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B33",
+      "claim": "Unlink one of two agent KBs; a fresh answer uses only the remaining KB, while the removed KB remains intact and directly searchable.",
+      "receipt": {
+        "path": ".prometheus/verification/kb-unlink-one-01-macos-pass.json",
+        "exists": true,
+        "sha256": "a15010401ca6cb47633d97fd585a7e5ee70d45f24b94ac1523f2c7f1782a5b85"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/kb-unlink-one/5dfa7246-5221-4bb3-8d42-c582750f6fb3.json",
+          "exists": true,
+          "sha256": "6a2b63ac97a61a01099fa4edbd216acbbbebaf2c29db92e8cec32cb400198200"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/kb-unlink-one-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "b23c53f7d3abd5318aadf1227e74ae9e23135d6726a351c0d45dba5d665b65e6",
+        "scenarios": [
+          {
+            "name": "Removing cobalt leaves only amber available to the agent",
+            "statuses": {
+              "passed": 6
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B34",
+      "claim": "Disable KB access without removing the saved link; a fresh answer omits the KB fact and citations while the original source remains searchable.",
+      "receipt": {
+        "path": ".prometheus/verification/kb-disable-01-macos-pass.json",
+        "exists": true,
+        "sha256": "289e7ab7fe18140f927338d0b7e6fa5d2e6d44fc4a0667dbb5730385fdbaebfb"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/kb-disable/e7f58cbb-bd69-4c30-85d7-68376f17a902.json",
+          "exists": true,
+          "sha256": "cc4597d80f1efaa9736fa9cd2b8131198599985697584d84747e7f9d48be57e8"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/kb-disable-002-macos/cucumber.json",
+        "exists": true,
+        "sha256": "6af93ef729c615a65d26d5ac6cadd8477f4a542a0fcb961d69b68e908fe77e43",
+        "scenarios": [
+          {
+            "name": "A disabled agent cannot use its still-linked private knowledge",
+            "statuses": {
+              "passed": 5
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    },
+    {
+      "id": "B35",
+      "claim": "Re-enable KB access without resending retained links; a fresh answer uses the original private document fact and matching citation, with unchanged indexed source.",
+      "receipt": {
+        "path": ".prometheus/verification/kb-reenable-01-macos-pass.json",
+        "exists": true,
+        "sha256": "66d25745981c71ef06022f883728a3a67c203a5d5152d0a0d333be0feebd6e68"
+      },
+      "recorded_result": "PASS",
+      "supporting_evidence": [
+        {
+          "path": ".prometheus/verification/kb-reenable/adc307be-17dc-4c84-a676-a26aad5369b9.json",
+          "exists": true,
+          "sha256": "136ad932c67446ade2e9be3855c8687b4f610176ea211339f33aa75948fb404a"
+        }
+      ],
+      "successful_execution": {
+        "path": ".prometheus/verification/kb-reenable-001-macos/cucumber.json",
+        "exists": true,
+        "sha256": "8a5a693f949c747233a6788e87f3f6c82177eaddf0ecfca7c76d839736dd0913",
+        "scenarios": [
+          {
+            "name": "Re-enabled access restores use of the original linked knowledge",
+            "statuses": {
+              "passed": 4
+            },
+            "all_passed": true
+          }
+        ]
+      },
+      "composite_outcome": false
+    }
+  ],
+  "original_cases": [
+    {
+      "id": "U01.configured-prompt",
+      "description": "Configure a genuine model and obtain a correct input-dependent answer.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B01: Useful genuine configured default-agent answer. Original provider CRUD/read/test controls, effective run/agent revision correlation and settled call evidence for this run remain unproved."
+    },
+    {
+      "id": "U02.session-continuation",
+      "description": "Recall prior turns before and after restart with consistent durable session history.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B10, B23\u2013B24: Warm/cold and observed concurrent recall. Original canonical-message prefix snapshots and post-restart run-catalog/GET agreement for both original runs remain."
+    },
+    {
+      "id": "U03.custom-agent",
+      "description": "Create/read/list/update, restart, use and delete a saved custom agent.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B03\u2013B04, B12, B23: Create/read/list, saved definitions across restart, changed instructions and deletion. Updated revision across restart, unavailable selection after deletion and deletion surviving a second restart remain."
+    },
+    {
+      "id": "U04.protected-agents",
+      "description": "Refuse both built-in agent deletions on the exposed management path and preserve usability across restart.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B11: Both built-in DELETE refusals and unchanged definitions on the one exposed management path. Original post-refusal prompting of both agents, restart/catalog uniqueness and subsequent prompting remain; B12 separately covers custom deletion."
+    },
+    {
+      "id": "U20.effective-configuration",
+      "description": "Apply REST configuration precedence, preserve valid state on failure and reload after restart.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B25, B27; original KB setup: One user preference survives restart; embedding settings take effect. Chat-model precedence and failed-write controls remain."
+    },
+    {
+      "id": "U21.startup-maintenance",
+      "description": "Seed once, preserve operator settings and run durable idempotent startup/maintenance.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B03, B23\u2013B26: Retained records survive warm restart; empty-store seed uniqueness and named maintenance/migrations remain."
+    },
+    {
+      "id": "U06.live-roster-intent",
+      "description": "Route to the eligible live specialist roster, including changes and unmatched intent.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B04: Writer selected over math and executed; roster changes/removal and ambiguous/unmatched routing remain."
+    },
+    {
+      "id": "U07.official-agui-selection-replay",
+      "description": "Deliver selected-agent wire events with follow-up and replay without duplicate work.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B04: Intent selection before answer. Original second selection in the same conversation, exact Last-Event-ID replay, idempotent POST and unchanged durable identities remain. Browser rendering is explicitly outside this wire case."
+    },
+    {
+      "id": "U05.chat.json.default",
+      "description": "Native chat endpoint: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.json.custom",
+      "description": "Native chat endpoint: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.openai.default",
+      "description": "Native chat endpoint: OpenAI SSE, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.openai.custom",
+      "description": "Native chat endpoint: OpenAI SSE, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.agui.default",
+      "description": "Native chat endpoint: AG-UI stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.agui.custom",
+      "description": "Native chat endpoint: AG-UI stream, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.dual.default",
+      "description": "Native chat endpoint: dual stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.dual.custom",
+      "description": "Native chat endpoint: dual stream, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.agui_spec.default",
+      "description": "Native chat endpoint: agui_spec stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.chat.agui_spec.custom",
+      "description": "Native chat endpoint: agui_spec stream, custom agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B18: Actual browser POST /api/chat/completion, custom agent and agui_spec stream. Bound-action continuation is not the original second fact-follow-up through the same chat profile; exact two-turn parity remains."
+    },
+    {
+      "id": "U05.openai.json.default",
+      "description": "OpenAI-compatible chat endpoint: nonstream JSON, default agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B01: Default nonstream answer observed; complete two-turn interface parity remains."
+    },
+    {
+      "id": "U05.openai.json.custom",
+      "description": "OpenAI-compatible chat endpoint: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B03, B08, B10, B12: Saved-agent prompts and actual same-session two-turn recall without client replay. Original effective agent revision/model and settled provider-call provenance for those exact turns remain."
+    },
+    {
+      "id": "U05.openai.openai.default",
+      "description": "OpenAI-compatible chat endpoint: OpenAI SSE, default agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B02: Useful streamed chunks, stop and DONE observed; follow-up continuity remains."
+    },
+    {
+      "id": "U05.openai.openai.custom",
+      "description": "OpenAI-compatible chat endpoint: OpenAI SSE, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.openai.agui.default",
+      "description": "OpenAI-compatible chat endpoint: AG-UI stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.openai.agui.custom",
+      "description": "OpenAI-compatible chat endpoint: AG-UI stream, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.openai.dual.default",
+      "description": "OpenAI-compatible chat endpoint: dual stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.openai.dual.custom",
+      "description": "OpenAI-compatible chat endpoint: dual stream, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.openai.agui_spec.default",
+      "description": "OpenAI-compatible chat endpoint: agui_spec stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.openai.agui_spec.custom",
+      "description": "OpenAI-compatible chat endpoint: agui_spec stream, custom agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B17, B19\u2013B24: Published A2UI plus correlated custom-agent streamed turns, warm recall and restart recall. Complete original two-turn private-instruction and effective-dispatch/accounting predicates remain."
+    },
+    {
+      "id": "U05.native.agui.default",
+      "description": "Native run/stream endpoints: AG-UI stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.native.agui.custom",
+      "description": "Native run/stream endpoints: AG-UI stream, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.native.agui_spec.default",
+      "description": "Native run/stream endpoints: agui_spec stream, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.native.agui_spec.custom",
+      "description": "Native run/stream endpoints: agui_spec stream, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "B18 consumes a continuation through GET native run stream, but does not use native POST run admission; saved URL omits query parameters. Supporting stream evidence is not credited as a native-profile prompt scenario."
+    },
+    {
+      "id": "U05.anthropic.json.default",
+      "description": "Anthropic-compatible Messages: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.anthropic.json.custom",
+      "description": "Anthropic-compatible Messages: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B13: Saved-agent Messages answer and terminal observed; follow-up context and complete parity remain."
+    },
+    {
+      "id": "U05.anthropic.stream.default",
+      "description": "Anthropic-compatible Messages: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.anthropic.stream.custom",
+      "description": "Anthropic-compatible Messages: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.a2a_legacy.json.default",
+      "description": "Legacy A2A: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.a2a_legacy.json.custom",
+      "description": "Legacy A2A: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.a2a_v1.json.default",
+      "description": "A2A v1: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.a2a_v1.json.custom",
+      "description": "A2A v1: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B14: Saved-agent completed A2A task observed; task continuation and complete parity remain."
+    },
+    {
+      "id": "U05.a2a_v1.stream.default",
+      "description": "A2A v1: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.a2a_v1.stream.custom",
+      "description": "A2A v1: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.acp.json.default",
+      "description": "ACP: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.acp.json.custom",
+      "description": "ACP: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.acp.stream.default",
+      "description": "ACP: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.acp.stream.custom",
+      "description": "ACP: streaming, custom agent; two-turn parity.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B15: Saved-agent ACP streamed answer/Done observed; original adapter envelope and follow-up parity remain."
+    },
+    {
+      "id": "U05.anthropic.json.implicit",
+      "description": "Anthropic-compatible Messages: nonstream JSON, implicit default-agent selection; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.anthropic.stream.implicit",
+      "description": "Anthropic-compatible Messages: streaming, implicit default-agent selection; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.python_sdk.json.default",
+      "description": "Shipped Python SDK: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.python_sdk.json.custom",
+      "description": "Shipped Python SDK: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.python_sdk.stream.default",
+      "description": "Shipped Python SDK: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.python_sdk.stream.custom",
+      "description": "Shipped Python SDK: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.typescript_sdk.json.default",
+      "description": "Shipped TypeScript SDK: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.typescript_sdk.json.custom",
+      "description": "Shipped TypeScript SDK: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.typescript_sdk.stream.default",
+      "description": "Shipped TypeScript SDK: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.typescript_sdk.stream.custom",
+      "description": "Shipped TypeScript SDK: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.rust_sdk.json.default",
+      "description": "Shipped Rust SDK: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.rust_sdk.json.custom",
+      "description": "Shipped Rust SDK: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.rust_sdk.stream.default",
+      "description": "Shipped Rust SDK: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.rust_sdk.stream.custom",
+      "description": "Shipped Rust SDK: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_legacy.json.default",
+      "description": "Legacy gRPC: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_legacy.json.custom",
+      "description": "Legacy gRPC: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_legacy.stream.default",
+      "description": "Legacy gRPC: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_legacy.stream.custom",
+      "description": "Legacy gRPC: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_v1.json.default",
+      "description": "gRPC v1: nonstream JSON, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_v1.json.custom",
+      "description": "gRPC v1: nonstream JSON, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_v1.stream.default",
+      "description": "gRPC v1: streaming, default agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U05.grpc_v1.stream.custom",
+      "description": "gRPC v1: streaming, custom agent; two-turn parity.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U08.installed-standard-a2ui-action",
+      "description": "Render A2UI, accept fresh input and deliver a bound action to genuine continuation.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B17\u2013B18 prove the central render/input/action/continuation interaction. Original basic-catalog URL differs from exercised UAR catalog; equal agent_revision and settled dispatch provenance comparisons remain."
+    },
+    {
+      "id": "U24.shipped-ui.default",
+      "description": "Use shipped browser configuration, prompting, streaming and saved history with default agent.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U24.shipped-ui.custom",
+      "description": "Use shipped browser configuration, prompting, streaming and saved history with custom agent.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B18: Shipped browser custom-agent selection, prompt, stream, rendered controls and genuine continued answer. Original two conversational fact turns and saved_history_reload remain unproved."
+    },
+    {
+      "id": "U24.shipped-ui.orchestrator",
+      "description": "Use shipped browser configuration, routing, streaming and history with orchestrator.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U09.skill-discovery-scope",
+      "description": "Discover top-level/nested/allowed-symlink skills once with correct scope and refresh behavior.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U10.skill-matching-strategies",
+      "description": "Exercise every exposed skill-matching strategy with discriminating candidates and real use.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B19\u2013B20: Keyword and calibrated local-embedding examples observed; every other exposed matching strategy/ranking contract remains."
+    },
+    {
+      "id": "U11.skill-activation-governance",
+      "description": "Enforce skill policy modes, catalog/overlay admission, scope and activation budgets.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B19\u2013B20: Matching skill implicitly activated and used; policy modes, scope/overlay combinations and budget denial remain."
+    },
+    {
+      "id": "U11.bounded-skill-reattachment",
+      "description": "Retain/re-attach selected skill context within governed bounds across later turns.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U12.context-strategy-effects",
+      "description": "Exercise all structural context strategies and thresholds without losing protected groups.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B22 proves actual summary replacement; B23\u2013B24 show none with unchanged context. B21 proves final budget reduction only (source=prepared; structural changed=false). Other structural strategies/thresholds/protected groups remain."
+    },
+    {
+      "id": "U13.whole-request-budget",
+      "description": "Enforce whole-request limits including tools, retrieval, context and output reservation.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B21: Final request reduced with fact recall; approximate receipt and provider input usage fit allowance. Exact-boundary/refusal, full tool/retrieval/output reservation and tokenizer guarantees remain."
+    },
+    {
+      "id": "U14.knowledge-lifecycle",
+      "description": "Create/index/bind/query/update/delete knowledge with current citations and retained-fact controls.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B05\u2013B08, B26, B28\u2013B35: Create/index/ground/restart/delete/link/relink/two-KB/disable/re-enable. Original delete-and-upload replacement with no stale fact, grounded document-removal controls, complete source/index removal and KB deletion surviving restart remain."
+    },
+    {
+      "id": "U15.embedding-regeneration",
+      "description": "Rebuild retained sources across same/different-dimension model changes and interrupted jobs.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B27: Different-dimension model transition rejects old index and regenerates retained document; same-dimension change and interrupted rebuild/resume remain."
+    },
+    {
+      "id": "U16.knowledge-adapter-contract",
+      "description": "Verify the knowledge persistence/adapter contract on both declared durable stores.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B26: Same Surreal agent/KB/document, retained cited fact and embedding space across process restart. Full logical/job/chunk/vector equality and cleanup controls, plus PostgreSQL adapter parity remain."
+    },
+    {
+      "id": "U17.team-dependencies",
+      "description": "Run independent team work concurrently and enforce dependent joins using genuine outputs.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B09: Team creation/membership, distinct overlapping specialists, settled calls and exact artifact IDs delivered to final writer. Early join rejection409, team_roster tool round trips, required multi-call attempts and exact-once fact controls remain."
+    },
+    {
+      "id": "U18.team-multicall-context",
+      "description": "Preserve authorized child context across rounds/attempts with provenance and team isolation.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U19.team-cancel-recovery",
+      "description": "Cancel/recover team execution with honest outcomes and no duplicate uncertain effects.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U22.native-tool-approval",
+      "description": "Discover/call native tools with approval/denial, paired results and cancellation.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B04, B17\u2013B18: spawn_agent approve/resume and native A2UI action observed; denial/nonexecution, cancellation and uncertain effects remain."
+    },
+    {
+      "id": "U22.mcp-tool-approval",
+      "description": "Discover/call actual MCP tools with approval/denial and correctly consumed results.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U23.owner-isolation",
+      "description": "Prevent cross-owner reads, continuation and cancellation of protected records/runs.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U23.failure-honesty",
+      "description": "Report provider disconnect/denial and durable-write failure without false success.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U23.unknown-tool-effect",
+      "description": "Keep unknown tool effects unresolved instead of silently repeating them.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.memory-lifecycle",
+      "description": "Capture/recall/update/delete durable scoped memory across sessions and restart.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.memory-consent",
+      "description": "Honor owner consent, opt-out and retention without late capture after restart.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.formats-vision",
+      "description": "Observe real image content and supported structured output through advertised routes.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.routing-capabilities",
+      "description": "Route to an actually eligible provider/model under capability and cooldown rules.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.lexical-semantic-disagreement",
+      "description": "Use one discriminating prompt to prove lexical/semantic scoring selects different winners.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.context-threshold-restart",
+      "description": "Keep below-threshold history unchanged and recall it after restart for all six strategies.",
+      "status": "Partial \u2014 not fully verified",
+      "mapping": "B23\u2013B24: none strategy, unchanged source/prepared/final hashes and cold fact recall. Five other strategies and the original warm-follow-up-before-restart sequence remain."
+    },
+    {
+      "id": "U22.skill-activation-count-limit",
+      "description": "Reject activation beyond the configured skill-count limit without extra effects.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    },
+    {
+      "id": "U25.protected-multimodal-context",
+      "description": "Preserve required multimodal/tool context groups through reduction and durability.",
+      "status": "Not verified",
+      "mapping": "No matching manual result credited; full described behavior remains."
+    }
+  ],
+  "source_documents": [
+    {
+      "path": ".prometheus/verification/coverage-audit-2026-10-27-early.md",
+      "exists": true,
+      "sha256": "2a0ac8da0b45928387ad5d4a8fd4cbc5181cc7db19986b7118610e422f9622fc"
+    },
+    {
+      "path": ".prometheus/verification/coverage-audit-2026-10-27-late.md",
+      "exists": true,
+      "sha256": "77844a1cbffc7adbd2a23f8f7131b7911158e8ff746132879881d2e9e0552c63"
+    },
+    {
+      "path": ".prometheus/verification/coverage-audit-2026-10-27-mapping.md",
+      "exists": true,
+      "sha256": "f25a9c907ae829f8f7383e6c0b71b0f296378e2de52c173aa726d9681160c7de"
+    }
+  ],
+  "limits": [
+    "Historical artifact/platform scope; not a regression claim for current checkout.",
+    "B03 original create/restart/query feature failed at query; creation/restart/read evidence is combined with later passed query-only report.",
+    "Do not add original-case and manual-label counts; they overlap.",
+    "Setup/cleanup/supporting assertions and repeated evidence wrappers add no executions.",
+    "Structural truncate_middle effect is not established by B21 despite final budget reduction."
+  ],
+  "saved_report_scan": {
+    "root": ".prometheus/verification",
+    "method": "Read JSON reports; identify feature elements and all-passed step/hook results; do not invoke runners",
+    "uncatalogued_passes": [],
+    "files_above_scan_limit": [],
+    "note": "32 authored feature files,31 passing formal scenarios; persisted-agent feature remains a retained failed run, with successful retained-agent query supplying composite B03 outcome."
+  }
+}

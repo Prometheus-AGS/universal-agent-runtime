@@ -1,0 +1,9 @@
+{
+  "scenario": "C48",
+  "status": "BLOCKED",
+  "platform": "Mac",
+  "attempt": 2,
+  "evidence": ".prometheus/verification/embedding-same-dimension/5ba9bfbd-d159-456c-991a-78c0af82f377.json",
+  "observed": "Target openai/text-embedding-3-small at 384 (send_dimensions on). Same-width refusal embedding_space_mismatch again correct. Regeneration could not reach the endpoint: the live switch copies the boot embedding config (src/uar/api/settings.rs candidate_embedding_config), whose base_url is the blackhole http://127.0.0.1:1/v1.",
+  "next": "Use the existing host fixture scripts/manual-host/embedding-config.mjs (prepareEmbeddingHost/restoreEmbeddingHost) to point the private owned config at the real endpoint for the scenario and restore it after; rerun once."
+}

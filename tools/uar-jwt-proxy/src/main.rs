@@ -72,6 +72,14 @@ struct Cli {
     /// Token TTL in seconds.
     #[arg(long, env = "PROXY_JWT_TTL_SECS", default_value_t = 3600)]
     ttl_secs: u64,
+
+    /// Address for a gRPC (HTTP/2 cleartext) listener. Unset disables gRPC forwarding.
+    #[arg(long, env = "PROXY_GRPC_LISTEN")]
+    grpc_listen: Option<SocketAddr>,
+
+    /// Upstream UAR gRPC base URL. Defaults to `server.grpc_port` from the config file.
+    #[arg(long, env = "PROXY_GRPC_UPSTREAM")]
+    grpc_upstream: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -88,6 +96,8 @@ struct ServerSection {
     host: Option<String>,
     #[serde(default)]
     port: Option<u16>,
+    #[serde(default)]
+    grpc_port: Option<u16>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -127,6 +137,16 @@ struct AppState {
     ttl_secs: u64,
     issuer: Option<String>,
     audience: Option<String>,
+}
+
+/// gRPC forwarding shares the HTTP path's identity minting.
+struct GrpcState {
+    identity: Arc<AppState>,
+    upstream: String,
+    client: hyper_util::client::legacy::Client<
+        hyper_util::client::legacy::connect::HttpConnector,
+        Body,
+    >,
 }
 
 static UAR_PROVIDER: OnceLock<Result<(), ()>> = OnceLock::new();
@@ -241,6 +261,34 @@ async fn main() -> Result<()> {
         "uar-jwt-proxy ready"
     );
 
+    if let Some(grpc_listen) = cli.grpc_listen {
+        let grpc_upstream = cli
+            .grpc_upstream
+            .clone()
+            .or_else(|| grpc_upstream_from_config(&cfg))
+            .context(
+                "gRPC upstream not provided: pass --grpc-upstream, set PROXY_GRPC_UPSTREAM, or \
+                 put server.grpc_port in the config file",
+            )?;
+        let grpc = Arc::new(GrpcState {
+            identity: state.clone(),
+            upstream: grpc_upstream.trim_end_matches('/').to_string(),
+            client: hyper_util::client::legacy::Client::builder(
+                hyper_util::rt::TokioExecutor::new(),
+            )
+            .http2_only(true)
+            .build_http(),
+        });
+        let grpc_listener = tokio::net::TcpListener::bind(grpc_listen).await?;
+        tracing::info!(grpc_listen = %grpc_listen, grpc_upstream = %grpc.upstream, "gRPC forwarding ready");
+        let grpc_app = Router::new().fallback(any(forward_grpc)).with_state(grpc);
+        tokio::spawn(async move {
+            if let Err(error) = axum::serve(grpc_listener, grpc_app).await {
+                tracing::error!(error = ?error, "gRPC listener stopped");
+            }
+        });
+    }
+
     let app = Router::new().fallback(any(dispatch)).with_state(state);
 
     let listener = tokio::net::TcpListener::bind(cli.listen).await?;
@@ -273,8 +321,15 @@ fn load_config(cli_path: Option<&Path>) -> Result<(UarConfig, Option<PathBuf>)> 
 }
 
 fn upstream_from_config(cfg: &UarConfig) -> Option<String> {
+    server_url(cfg, cfg.server.as_ref()?.port?)
+}
+
+fn grpc_upstream_from_config(cfg: &UarConfig) -> Option<String> {
+    server_url(cfg, cfg.server.as_ref()?.grpc_port?)
+}
+
+fn server_url(cfg: &UarConfig, port: u16) -> Option<String> {
     let server = cfg.server.as_ref()?;
-    let port = server.port?;
     let host_raw = server.host.as_deref().unwrap_or("127.0.0.1");
     // Bind addresses like 0.0.0.0 / :: aren't routable from the browser side; rewrite.
     let host = match host_raw {
@@ -331,6 +386,39 @@ async fn dispatch(State(state): State<Arc<AppState>>, req: Request) -> Response 
             }
         }
     }
+}
+
+async fn forward_grpc(State(grpc): State<Arc<GrpcState>>, req: Request) -> Response {
+    match send_grpc(&grpc, req).await {
+        Ok(response) => response,
+        Err(err) => {
+            tracing::error!(error = ?err, "proxy grpc error");
+            // A trailers-only gRPC reply: UNAVAILABLE (14).
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(http::header::CONTENT_TYPE, "application/grpc")
+                .header("grpc-status", "14")
+                .header("grpc-message", "uar-jwt-proxy upstream unavailable")
+                .body(Body::empty())
+                .unwrap()
+        }
+    }
+}
+
+/// Forward one gRPC call unchanged except for the injected identity, so the
+/// streamed body and its `grpc-status` trailers reach the client intact.
+async fn send_grpc(grpc: &GrpcState, req: Request) -> Result<Response> {
+    let (mut parts, body) = req.into_parts();
+    let path_and_query = parts.uri.path_and_query().map_or("/", |p| p.as_str());
+    parts.uri = format!("{}{path_and_query}", grpc.upstream).parse()?;
+    parts.headers.remove(http::header::HOST);
+    let token = grpc.identity.mint_token()?;
+    parts.headers.insert(
+        http::header::AUTHORIZATION,
+        HeaderValue::from_str(&format!("Bearer {token}"))?,
+    );
+    let response = grpc.client.request(Request::from_parts(parts, body)).await?;
+    Ok(response.map(Body::new))
 }
 
 fn is_websocket_upgrade(headers: &HeaderMap) -> bool {

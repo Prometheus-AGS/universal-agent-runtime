@@ -1,0 +1,116 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "structural-context-strategies-remove-the-intended-history;sliding-window-retains-the-intended-recent-groups",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Sliding-window retains the intended recent groups",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 96878469
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent using a sliding window of 4 messages",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5280976563
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I continue a seeded 10-message conversation that names an old and a recent depot code",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 142706
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the reduction receipt shows old groups left the prepared input",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 197115
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the answer uses the recent fact and cannot see the old one",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 70864748
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LXN0cnVjdHVyYWwvYzg1NTI2Y2QtZDM5Ny00MTcwLWJjYmYtNzA2NzhhZDdkYTBkLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@structural",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "structural-context-strategies-remove-the-intended-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Structural context strategies remove the intended history",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@structural",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/context-structural.feature"
+  }
+]

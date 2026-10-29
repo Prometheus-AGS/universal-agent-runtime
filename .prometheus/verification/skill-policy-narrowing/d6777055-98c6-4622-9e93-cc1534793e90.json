@@ -1,0 +1,494 @@
+{
+  "scenario": "E25-INHERITED-SKILL-SELECTION",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "model": "liter/MiniMax-M3",
+  "agent_id": "disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90",
+  "session_id": "35f8c8fd-e1ea-4f5f-bcab-09ce0801baae",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T13:16:41.432908000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:16:41.432908Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "request": {
+        "value": "catalog",
+        "expected_revision": "2026-10-28T13:16:41.432908000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_activation_mode\",\"namespace\":\"harness\",\"setting\":{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T13:17:50.844790000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:17:50.844790Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T13:17:50.844790000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:17:50.844790Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "a-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+        "description": "The private formula for quoting orchard crate shipments.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-d6777055-A"
+          ]
+        },
+        "prompt_overlay": "Private quote formula: multiply the crate count by 14 and add 82. Return only JSON {\"marker\":\"A-b3480e58-bb35-446a-9eed-0fcb7e130c09\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"title\":\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"description\":\"The private formula for quoting orchard crate shipments.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-d6777055-A\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private quote formula: multiply the crate count by 14 and add 82. Return only JSON {\\\"marker\\\":\\\"A-b3480e58-bb35-446a-9eed-0fcb7e130c09\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "b-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+        "description": "The private formula for quoting orchard crate shipments in the northern region.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-d6777055-B"
+          ]
+        },
+        "prompt_overlay": "Private quote formula: multiply the crate count by 7 and add 68. Return only JSON {\"marker\":\"B-f25539fc-b9a4-47a9-9cc7-a85d5b0aec1c\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"b-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"title\":\"b-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"description\":\"The private formula for quoting orchard crate shipments in the northern region.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-d6777055-B\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private quote formula: multiply the crate count by 7 and add 68. Return only JSON {\\\"marker\\\":\\\"B-f25539fc-b9a4-47a9-9cc7-a85d5b0aec1c\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "c-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+        "description": "The official, preferred formula for quoting orchard crate shipments.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-d6777055-C"
+          ]
+        },
+        "prompt_overlay": "Private quote formula: multiply the crate count by 9 and add 80. Return only JSON {\"marker\":\"C-da5bc4f5-bc5e-46da-b1d1-1a8beb55185d\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"c-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"title\":\"c-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"description\":\"The official, preferred formula for quoting orchard crate shipments.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-d6777055-C\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private quote formula: multiply the crate count by 9 and add 80. Return only JSON {\\\"marker\\\":\\\"C-da5bc4f5-bc5e-46da-b1d1-1a8beb55185d\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90",
+        "metadata": {
+          "title": "Disposable skill-narrowing agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "activate_skill"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You can see a catalog of skills. When a catalog skill is needed, call activate_skill with its skill_id, then follow its instructions exactly and return only the JSON it requests.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "a-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+              ],
+              "denied_ids": [
+                "c-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+              ]
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\",\"metadata\":{\"title\":\"Disposable skill-narrowing agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"activate_skill\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You can see a catalog of skills. When a catalog skill is needed, call activate_skill with its skill_id, then follow its instructions exactly and return only the JSON it requests.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:ec176a1edb48ffe38046e98972810fdfc392e5ffd42bf43be61101f20cb26d1e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\"],\"denied_ids\":[\"c-quote-d6777055-98c6-4622-9e93-cc1534793e90\"]}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90",
+        "model": "liter/MiniMax-M3",
+        "session_id": "35f8c8fd-e1ea-4f5f-bcab-09ce0801baae",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "run_policy": {
+          "version": 1,
+          "skills": {
+            "mode": "inherit"
+          }
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "Quote a shipment of 7 orchard crates using the orchard crate quote formula skill."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "[stream ended: agui.done]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=100",
+      "status": 200,
+      "response": "[{\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\",\"conversation_id\":\"35f8c8fd-e1ea-4f5f-bcab-09ce0801baae\",\"status\":\"running\",\"agent_revision\":\"sha256:ec176a1edb48ffe38046e98972810fdfc392e5ffd42bf43be61101f20cb26d1e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'activate_skill' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"score\":0.0,\"accepted\":false}]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:471f3cacb59accb04f74c2d29cbb1e2695ca96c4ba78460e6a9c9382858a68df\",\"prepared_sha256\":\"sha256:471f3cacb59accb04f74c2d29cbb1e2695ca96c4ba78460e6a9c9382858a68df\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":436,\"prepared_tokens\":436,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:471f3cacb59accb04f74c2d29cbb1e2695ca96c4ba78460e6a9c9382858a68df\",\"final_messages\":2,\"final_tokens\":436,\"input_allowance\":1044123,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":722,\"request_tokens\":722,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"after\":0,\"cursor\":6,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"skills\\\":\\\"Skills · selected · 1 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 1\\\",\\\"warnings\\\":\\\"tool 'activate_skill' is unavailable\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[\"tool 'activate_skill' is unavailable\"]}}},{\"eventId\":2,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":3,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"turn-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2936,\\\"rendered_characters\\\":2934,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\",\"fragment_count\":7}}},{\"eventId\":4,\"eventName\":\"agui.stream.start\",\"data\":{\"kind\":\"stream\",\"phase\":\"start\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\"}},{\"eventId\":5,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"conversation_id\":\"35f8c8fd-e1ea-4f5f-bcab-09ce0801baae\",\"status\":\"running\"}}]}}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"after\":0,\"cursor\":10,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"skills\\\":\\\"Skills · selected · 1 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 1\\\",\\\"warnings\\\":\\\"tool 'activate_skill' is unavailable\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[\"tool 'activate_skill' is unavailable\"]}}},{\"eventId\":2,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":3,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"turn-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2936,\\\"rendered_characters\\\":2934,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\",\"fragment_count\":7}}},{\"eventId\":4,\"eventName\":\"agui.stream.start\",\"data\":{\"kind\":\"stream\",\"phase\":\"start\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\"}},{\"eventId\":5,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"conversation_id\":\"35f8c8fd-e1ea-4f5f-bcab-09ce0801baae\",\"status\":\"running\"}}]}},{\"eventId\":7,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"37fd3a479eb3bc3836f66da5d3f14ccd0675791194c57111a4e2c40071245f3c\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2738,\\\"rendered_characters\\\":2736,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":8,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"attempt-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d-MiniMax-M3\",\"artifact_type\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"}}},{\"eventId\":9,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.request:budget_receipt\",\"artifact_type\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":927,\\\"serialized_bytes\\\":3656,\\\"serialized_sha256\\\":\\\"52b97b72e8702bf30ec2abcd2cc9be214a39380efbccbfa894a06e6c58384d01\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":10,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"delta\":{\"text\":\"I'll\"}}}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"after\":0,\"cursor\":15,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"skills\\\":\\\"Skills · selected · 1 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 1\\\",\\\"warnings\\\":\\\"tool 'activate_skill' is unavailable\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[\"tool 'activate_skill' is unavailable\"]}}},{\"eventId\":2,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":3,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"turn-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2936,\\\"rendered_characters\\\":2934,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\",\"fragment_count\":7}}},{\"eventId\":4,\"eventName\":\"agui.stream.start\",\"data\":{\"kind\":\"stream\",\"phase\":\"start\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\"}},{\"eventId\":5,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"conversation_id\":\"35f8c8fd-e1ea-4f5f-bcab-09ce0801baae\",\"status\":\"running\"}}]}},{\"eventId\":7,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"37fd3a479eb3bc3836f66da5d3f14ccd0675791194c57111a4e2c40071245f3c\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2738,\\\"rendered_characters\\\":2736,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":8,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"attempt-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d-MiniMax-M3\",\"artifact_type\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"}}},{\"eventId\":9,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.request:budget_receipt\",\"artifact_type\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":927,\\\"serialized_bytes\\\":3656,\\\"serialized_sha256\\\":\\\"52b97b72e8702bf30ec2abcd2cc9be214a39380efbccbfa894a06e6c58384d01\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":10,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"delta\":{\"text\":\"I'll\"}}},{\"eventId\":11,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"delta\":{\"text\":\" activate the orchard crate quote skill to get the pricing formula.\"}}},{\"eventId\":12,\"eventName\":\"agui.tool_call.delta\",\"data\":{\"kind\":\"tool_call\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"delta\":{\"arguments\":\"\\\"{\\\\\\\"skill_id\\\\\\\": \\\\\\\"a-quote-d6777055-98c6-4622-\\\"\"}}},{\"eventId\":13,\"eventName\":\"agui.tool_call.complete\",\"data\":{\"kind\":\"tool_call\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"name\":\"activate_skill\",\"arguments_json\":\"{\\\"skill_id\\\":\\\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\\\"}\"}},{\"eventId\":14,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/approval\",\"value\":{\"version\":1,\"issuerId\":\"53baf3cf-2de7-412d-acdb-3f052907b7cc\",\"challengeId\":\"e379c594-a9f5-40c0-8b66-87003791b65c\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"admissionId\":\"57aa1a32-4001-4b38-8089-ceb77c858eec\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"toolName\":\"activate_skill\",\"createdAt\":\"2026-10-28T13:17:55.199092Z\",\"expiresAt\":\"2026-10-28T13:22:55.199060Z\",\"state\":\"pending\",\"decision\":null,\"updatedAt\":\"2026-10-28T13:17:55.199092Z\",\"continuation\":{\"checkpointId\":\"0bfb0575-a746-4aa2-a207-2271db0ee491\",\"checkpointRevision\":\"a95a1c00b677ab5e91e777a503438e613c459c7235944e436939a91ce0204dfe\",\"bindingDigest\":\"8122eaec043377c719a7862fb3c75ecb0fa9f4dcdb8097ce92e667c014cddf29\",\"callIndex\":0}}}]}},{\"eventId\":15,\"eventName\":\"agui.tool_call.approval_required\",\"data\":{\"kind\":\"tool_call\",\"phase\":\"approval_required\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"approval_id\":\"e379c594-a9f5-40c0-8b66-87003791b65c\",\"admission_id\":\"57aa1a32-4001-4b38-8089-ceb77c858eec\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"name\":\"activate_skill\",\"arguments_json\":\"{\\\"operation\\\":\\\"activate_skill\\\",\\\"detailsAvailable\\\":false}\",\"risk_reason\":\"Tool 'activate_skill' requires approval under its descriptor\"}}]}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d/approval",
+      "request": {
+        "approved": true,
+        "approval_id": "e379c594-a9f5-40c0-8b66-87003791b65c"
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"approved\":true,\"decision\":\"allow\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"after\":0,\"cursor\":20,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"skills\\\":\\\"Skills · selected · 1 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 1\\\",\\\"warnings\\\":\\\"tool 'activate_skill' is unavailable\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[\"tool 'activate_skill' is unavailable\"]}}},{\"eventId\":2,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":3,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"turn-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_type\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2936,\\\"rendered_characters\\\":2934,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"b9cd9b1fe9fef052f31819aa119e81fcedf02b58782bca3b9097ae3eccb8c6a4\",\"fragment_count\":7}}},{\"eventId\":4,\"eventName\":\"agui.stream.start\",\"data\":{\"kind\":\"stream\",\"phase\":\"start\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\"}},{\"eventId\":5,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"conversation_id\":\"35f8c8fd-e1ea-4f5f-bcab-09ce0801baae\",\"status\":\"running\"}}]}},{\"eventId\":7,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"37fd3a479eb3bc3836f66da5d3f14ccd0675791194c57111a4e2c40071245f3c\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"c2640a5a0fb00cc513c9a38470298d35fc81cfc53f4921282b8a0284c74734c9\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f666c78e98f1eebae7205f19186ed958316e3cfbcd84a248430ea4d4490111cc\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2738,\\\"rendered_characters\\\":2736,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":8,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"attempt-manifest-e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d-MiniMax-M3\",\"artifact_type\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"}}},{\"eventId\":9,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.request:budget_receipt\",\"artifact_type\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":927,\\\"serialized_bytes\\\":3656,\\\"serialized_sha256\\\":\\\"52b97b72e8702bf30ec2abcd2cc9be214a39380efbccbfa894a06e6c58384d01\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":10,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"delta\":{\"text\":\"I'll\"}}},{\"eventId\":11,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"delta\":{\"text\":\" activate the orchard crate quote skill to get the pricing formula.\"}}},{\"eventId\":12,\"eventName\":\"agui.tool_call.delta\",\"data\":{\"kind\":\"tool_call\",\"phase\":\"delta\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"delta\":{\"arguments\":\"\\\"{\\\\\\\"skill_id\\\\\\\": \\\\\\\"a-quote-d6777055-98c6-4622-\\\"\"}}},{\"eventId\":13,\"eventName\":\"agui.tool_call.complete\",\"data\":{\"kind\":\"tool_call\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"name\":\"activate_skill\",\"arguments_json\":\"{\\\"skill_id\\\":\\\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\\\"}\"}},{\"eventId\":14,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/approval\",\"value\":{\"version\":1,\"issuerId\":\"53baf3cf-2de7-412d-acdb-3f052907b7cc\",\"challengeId\":\"e379c594-a9f5-40c0-8b66-87003791b65c\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"admissionId\":\"57aa1a32-4001-4b38-8089-ceb77c858eec\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"toolName\":\"activate_skill\",\"createdAt\":\"2026-10-28T13:17:55.199092Z\",\"expiresAt\":\"2026-10-28T13:22:55.199060Z\",\"state\":\"pending\",\"decision\":null,\"updatedAt\":\"2026-10-28T13:17:55.199092Z\",\"continuation\":{\"checkpointId\":\"0bfb0575-a746-4aa2-a207-2271db0ee491\",\"checkpointRevision\":\"a95a1c00b677ab5e91e777a503438e613c459c7235944e436939a91ce0204dfe\",\"bindingDigest\":\"8122eaec043377c719a7862fb3c75ecb0fa9f4dcdb8097ce92e667c014cddf29\",\"callIndex\":0}}}]}},{\"eventId\":15,\"eventName\":\"agui.tool_call.approval_required\",\"data\":{\"kind\":\"tool_call\",\"phase\":\"approval_required\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"approval_id\":\"e379c594-a9f5-40c0-8b66-87003791b65c\",\"admission_id\":\"57aa1a32-4001-4b38-8089-ceb77c858eec\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"name\":\"activate_skill\",\"arguments_json\":\"{\\\"operation\\\":\\\"activate_skill\\\",\\\"detailsAvailable\\\":false}\",\"risk_reason\":\"Tool 'activate_skill' requires approval under its descriptor\"}},{\"eventId\":16,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"patch\":[{\"op\":\"add\",\"path\":\"/approval\",\"value\":{\"version\":1,\"issuerId\":\"53baf3cf-2de7-412d-acdb-3f052907b7cc\",\"challengeId\":\"e379c594-a9f5-40c0-8b66-87003791b65c\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"admissionId\":\"57aa1a32-4001-4b38-8089-ceb77c858eec\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"toolName\":\"activate_skill\",\"createdAt\":\"2026-10-28T13:17:55.199092Z\",\"expiresAt\":\"2026-10-28T13:22:55.199060Z\",\"state\":\"approved\",\"decision\":{\"decisionId\":\"50493853-e3ef-4f42-abeb-47ae7dad6364\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":true,\"decidedAt\":\"2026-10-28T13:17:55.749771Z\"},\"updatedAt\":\"2026-10-28T13:17:55.749773Z\",\"continuation\":{\"checkpointId\":\"0bfb0575-a746-4aa2-a207-2271db0ee491\",\"checkpointRevision\":\"a95a1c00b677ab5e91e777a503438e613c459c7235944e436939a91ce0204dfe\",\"bindingDigest\":\"8122eaec043377c719a7862fb3c75ecb0fa9f4dcdb8097ce92e667c014cddf29\",\"callIndex\":0}}}]}},{\"eventId\":17,\"eventName\":\"agui.tool_result\",\"data\":{\"kind\":\"tool_result\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"call_index\":0,\"id\":\"call_ZKnkGDnWNZNSzOf26bSwr2s4\",\"name\":\"activate_skill\",\"content\":\"{\\\"status\\\":\\\"activated\\\",\\\"skill_id\\\":\\\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"invoke_type\\\":\\\"model\\\",\\\"sequence\\\":1}\",\"success\":true}},{\"eventId\":20,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":2,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"3032540becfc6095612c88942297260485086d43c6096072b5f8216b309e11b5\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"336f6e7d4572d63ccb7c4e05326aff77effee5be680b50598068ecead0cfed12\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"ae374aa32486cdd8a2ecb27e093dca37f99bffa9b35976b350bfa2c4d737e475\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"edd68747317910b409f1506cc99286ff6b10084f0687cf6637b86e82a3a1c65f\\\"},{\\\"id\\\":\\\"skill.a-quote-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"section\\\":\\\"active_skills\\\",\\\"source\\\":\\\"skill:a-quote-d6777055-98c6-4622-9e93-cc1534793e90\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"reclaimable\\\",\\\"content_hash\\\":\\\"61ea6045cd164b1c6f07e45421912e3dc8b2b214da5606aa58a5bdf0c17daee8\\\"}],\\\"counts\\\":{\\\"total\\\":4,\\\"by_section\\\":{\\\"active_skills\\\":1,\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1},\\\"by_authority\\\":{\\\"policy\\\":1,\\\"skill\\\":2,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":3253,\\\"rendered_characters\\\":3251,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[\\\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\\\"],\\\"selected_tools\\\":[\\\"activate_skill\\\"],\\\"warnings\\\":[\\\"tool 'activate_skill' is unavailable\\\"]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d/stream?stream_mode=agui_spec&last_event_id=0",
+      "status": 200,
+      "response": "[26324 bytes of SSE]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d",
+      "status": 200,
+      "response": "{\"run_id\":\"e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\",\"conversation_id\":\"35f8c8fd-e1ea-4f5f-bcab-09ce0801baae\",\"status\":\"done\",\"agent_revision\":\"sha256:ec176a1edb48ffe38046e98972810fdfc392e5ffd42bf43be61101f20cb26d1e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'activate_skill' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\",\"score\":0.0,\"accepted\":false}]},\"activated_skills\":[\"a-quote-d6777055-98c6-4622-9e93-cc1534793e90\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:471f3cacb59accb04f74c2d29cbb1e2695ca96c4ba78460e6a9c9382858a68df\",\"prepared_sha256\":\"sha256:471f3cacb59accb04f74c2d29cbb1e2695ca96c4ba78460e6a9c9382858a68df\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":436,\"prepared_tokens\":436,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:471f3cacb59accb04f74c2d29cbb1e2695ca96c4ba78460e6a9c9382858a68df\",\"final_messages\":2,\"final_tokens\":436,\"input_allowance\":1044123,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":722,\"request_tokens\":722,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/35f8c8fd-e1ea-4f5f-bcab-09ce0801baae",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/a-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/b-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/c-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"catalog\",\"saved\":\"catalog\",\"effective\":\"catalog\",\"revision\":\"2026-10-28T13:17:50.844790000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:17:50.844790Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "request": {
+        "value": "legacy_overlay",
+        "expected_revision": "2026-10-28T13:17:50.844790000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_activation_mode\",\"namespace\":\"harness\",\"setting\":{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T13:17:58.050322000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:17:58.050322Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_activation_mode",
+      "status": 200,
+      "response": "{\"id\":\"2049af77-120b-4da6-9a39-d43de7e1d6c0\",\"settings_type_id\":\"a8018099-408c-4675-b216-fadd5efbc95a\",\"name\":\"Skill Activation Mode\",\"key\":\"harness.skill_activation_mode\",\"data\":\"legacy_overlay\",\"saved\":\"legacy_overlay\",\"effective\":\"legacy_overlay\",\"revision\":\"2026-10-28T13:17:58.050322000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367466Z\",\"updated_at\":\"2026-10-28T13:17:58.050322Z\",\"source\":\"Api\",\"is_drift\":false}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 46443
+  },
+  "scenario_policy": {
+    "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/policies/e25-activate-skill-d6777055-98c6-4622-9e93-cc1534793e90.cedar",
+    "principal": "disposable-skill-narrowing-d6777055-98c6-4622-9e93-cc1534793e90",
+    "tool": "activate_skill"
+  },
+  "restart_permit": {
+    "previous_pid": 46443,
+    "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-60e75184-07dc-45c6-b6d7-fdce77e5ebf3.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 48107,
+    "new_process_ready": true
+  },
+  "original_setting": {
+    "saved": "legacy_overlay",
+    "effective": "legacy_overlay"
+  },
+  "skill_ids": {
+    "A": "a-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+    "B": "b-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+    "C": "c-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+  },
+  "parent_skill_policy": {
+    "mode": "selected",
+    "ids": [
+      "a-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+    ],
+    "denied_ids": [
+      "c-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+    ]
+  },
+  "turn_skill_policy": {
+    "mode": "inherit"
+  },
+  "approvals": [
+    {
+      "approval_id": "e379c594-a9f5-40c0-8b66-87003791b65c",
+      "tool": "activate_skill",
+      "approved": true,
+      "risk_reason": "Tool 'activate_skill' requires approval under its descriptor"
+    }
+  ],
+  "chat_stream_event_names": [
+    "agui.artifact",
+    "agui.state.patch",
+    "agui.stream.start",
+    "runtime.run",
+    "runtime.step",
+    "agui.message.delta",
+    "agui.tool_call.delta",
+    "agui.tool_call.complete",
+    "runtime.tool_call",
+    "agui.tool_call.approval_required",
+    "runtime.approval",
+    "agui.tool_result",
+    "agui.done"
+  ],
+  "run_id": "e9fe64fe-c297-4e8a-a7ee-09ebfb739c0d",
+  "run_status": "done",
+  "effective_skills": {
+    "mode": "selected",
+    "ids": [
+      "a-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+    ],
+    "source": "agent"
+  },
+  "activated_skills": [
+    "a-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+  ],
+  "manifests": [
+    {
+      "step": 1,
+      "selected_skills": [],
+      "selected_tools": [
+        "activate_skill"
+      ],
+      "fragments": [
+        {
+          "id": "agent.identity",
+          "section": "agent_identity"
+        },
+        {
+          "id": "policy.effective",
+          "section": "enforced_policy"
+        },
+        {
+          "id": "skills.catalog",
+          "section": "skill_catalog"
+        },
+        {
+          "id": "world_state.current_time",
+          "section": "world_state"
+        },
+        {
+          "id": "world_state.environment",
+          "section": "world_state"
+        },
+        {
+          "id": "world_state.permissions",
+          "section": "world_state"
+        },
+        {
+          "id": "world_state.project_instructions",
+          "section": "world_state"
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "selected_skills": [
+        "a-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+      ],
+      "selected_tools": [
+        "activate_skill"
+      ],
+      "fragments": [
+        {
+          "id": "agent.identity",
+          "section": "agent_identity"
+        },
+        {
+          "id": "policy.effective",
+          "section": "enforced_policy"
+        },
+        {
+          "id": "skills.catalog",
+          "section": "skill_catalog"
+        },
+        {
+          "id": "skill.a-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+          "section": "active_skills"
+        }
+      ]
+    }
+  ],
+  "tool_calls": [
+    {
+      "name": "activate_skill",
+      "args": {
+        "skill_id": "a-quote-d6777055-98c6-4622-9e93-cc1534793e90"
+      },
+      "result": {
+        "status": "activated",
+        "skill_id": "a-quote-d6777055-98c6-4622-9e93-cc1534793e90",
+        "invoke_type": "model",
+        "sequence": 1
+      }
+    }
+  ],
+  "answer_text": "I'll activate the orchard crate quote skill to get the pricing formula.<think>\nThe skill is already active in the context. Formula: crate count * 14 + 82. For 7 crates: 7*14 = 98 + 82 = 180.\n\nReturn only JSON {\"marker\":\"A-b3480e58-bb35-446a-9eed-0fcb7e130c09\",\"quote\":180}.\n</think>\n{\"marker\":\"A-b3480e58-bb35-446a-9eed-0fcb7e130c09\",\"quote\":180}",
+  "result": "VERIFIED",
+  "restored_setting": "legacy_overlay",
+  "restart_restore": {
+    "previous_pid": 48107,
+    "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-71f5b334-e044-4bdb-880a-2464d1ff9325.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 49251,
+    "new_process_ready": true
+  },
+  "scenario_status": "PASSED",
+  "duration_ms": 41814
+}

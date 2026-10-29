@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
+import { citesMarker, parseAnswerJson } from '../support/answer-oracle.mjs';
 
 setDefaultTimeout(125_000);
 const root = '/api/uar/knowledge-bases';
@@ -116,10 +117,7 @@ When('I ask the mathematics agent about the private research profile', async fun
 });
 
 Then('the answer contains the correct mathematics and a citation to the retrieved note', async function () {
-  const raw = this.completion.choices[0].message.content;
-  const final = raw.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, '').trim();
-  const fenced = /^```(?:json)?\s*\n([\s\S]*?)\n```$/.exec(final);
-  const answer = JSON.parse(fenced ? fenced[1] : final);
+  const answer = parseAnswerJson(this.completion.choices[0].message.content);
   let previous = 2, current = 1;
   for (let n = 2; n <= 11; n++) [previous, current] = [current, previous + current];
   assert.equal(answer.specialist, this.marker);
@@ -135,8 +133,7 @@ Then('the answer contains the correct mathematics and a citation to the retrieve
     .flatMap(event => event.data.citations ?? []);
   assert.ok(citations.some(citation => citation.knowledge_base_id === this.kb.id
     && citation.document_id === this.document.id && citation.snippet.includes(this.seal)
-    && (answer.citation === `[${citation.marker}]`
-      || answer.citation === `[${citation.marker}] (${citation.document_name})`)),
+    && citesMarker(answer.citation, citation.marker)),
   'Answer lacks a matching actual retrieved-document citation');
   this.evidence.answer = answer;
   this.evidence.result = 'VERIFIED';

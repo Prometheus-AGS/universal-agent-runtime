@@ -39,6 +39,36 @@ fn check(mut response: surrealdb::IndexedResults) -> Result<()> {
     Ok(())
 }
 
+/// Concurrent ingestion transactions all touch their KB row, so Surreal reports
+/// optimistic write conflicts between them as retryable. Every transaction
+/// re-checks its preconditions (CAS on the prior job data), so re-running one
+/// whose commit failed cannot apply it twice.
+const CONFLICT_RETRIES: u32 = 12;
+const CONFLICT_BASE_DELAY_MS: u64 = 15;
+const CONFLICT_MAX_DELAY_MS: u64 = 500;
+
+fn is_retryable_conflict(error: &anyhow::Error) -> bool {
+    error.chain().any(|cause| {
+        let message = cause.to_string();
+        message.contains("Transaction conflict") && message.contains("can be retried")
+    })
+}
+
+/// Wait with exponential, half-jittered backoff (capped) and report whether the
+/// conflicting transaction should be re-run; false once the budget is spent.
+async fn conflict_retry(attempt: &mut u32, error: &anyhow::Error) -> bool {
+    if *attempt >= CONFLICT_RETRIES || !is_retryable_conflict(error) {
+        return false;
+    }
+    let ceiling = CONFLICT_BASE_DELAY_MS.saturating_mul(1 << (*attempt).min(16)).min(CONFLICT_MAX_DELAY_MS);
+    *attempt += 1;
+    let half = ceiling / 2;
+    let jitter = (uuid::Uuid::new_v4().as_u128() % u128::from(half.max(1))) as u64;
+    let delay = half + jitter;
+    tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+    true
+}
+
 pub(super) async fn accept(store: &SurrealDbProvider, document: &KnowledgeDocument, source: &[u8]) -> Result<IngestionJob> {
     require_durable(store)?;
     anyhow::ensure!(document.status == DocumentStatus::Pending && document.chunk_count == 0, "new upload must be pending");
@@ -145,10 +175,13 @@ pub(super) async fn transition(store: &SurrealDbProvider, before: &IngestionJob,
     before.validate_transition(after)?;
     let status = match after.state {
         IngestionState::Processing => DocumentStatus::Processing,
-        IngestionState::Pending => DocumentStatus::Pending,
-        IngestionState::Retryable | IngestionState::Failed => DocumentStatus::Failed { error: after.last_error.clone().unwrap_or_default() },
+        // A retryable attempt will run again; reporting it as failed is false.
+        IngestionState::Pending | IngestionState::Retryable => DocumentStatus::Pending,
+        IngestionState::Failed => DocumentStatus::Failed { error: after.last_error.clone().unwrap_or_default() },
         IngestionState::Indexed => DocumentStatus::Indexed,
     };
+    let mut attempt = 0;
+    let outcome = loop {
     let response = store.db.query(namespace.query("BEGIN TRANSACTION;
         LET $kb=(SELECT * FROM knowledge_bases WHERE owner_id=$owner AND logical_id=$kb_id)[0];
         IF $kb=NONE { THROW 'uar_ingestion_revoked'; };
@@ -172,8 +205,14 @@ pub(super) async fn transition(store: &SurrealDbProvider, before: &IngestionJob,
         .bind(("kb_id",before.kb_id.clone())).bind(("regen",before.regeneration.clone())).bind(("error",after.last_error.clone()))
         .bind(("state", state(after)?)).bind(("next", after.next_attempt_at))
         .bind(("before", serde_json::to_string(before)?)).bind(("after", serde_json::to_string(after)?))
-        .bind(("status", serde_json::to_value(status)?)).bind(("now", chrono::Utc::now().to_rfc3339())).await?;
-    match check(response) {
+        .bind(("status", serde_json::to_value(&status)?)).bind(("now", chrono::Utc::now().to_rfc3339())).await
+        .map_err(anyhow::Error::from).and_then(check);
+    match response {
+        Err(error) if conflict_retry(&mut attempt, &error).await => continue,
+        other => break other,
+    }
+    };
+    match outcome {
         Ok(()) => Ok(true),
         Err(error) if error.downcast_ref::<IngestionStoreError>().is_some_and(|error| matches!(error, IngestionStoreError::Revoked)) => Ok(false),
         Err(error) => Err(error),
@@ -192,7 +231,9 @@ pub(super) async fn publish(store: &SurrealDbProvider, job: &IngestionJob, publi
     let mut indexed = job.clone();
     indexed.state = IngestionState::Indexed;
     indexed.last_error = None;
-    check(store.db.query(namespace.query("BEGIN TRANSACTION;
+    let mut attempt = 0;
+    loop {
+    let result = store.db.query(namespace.query("BEGIN TRANSACTION;
         LET $kb = (SELECT * FROM knowledge_bases WHERE owner_id=$owner AND (logical_id=$kb_id OR id=type::record('knowledge_bases',$kb_id)))[0];
         IF $kb = NONE { THROW 'uar_ingestion_revoked'; };
         IF $regen != NONE AND $regen != NULL {
@@ -220,8 +261,14 @@ pub(super) async fn publish(store: &SurrealDbProvider, job: &IngestionJob, publi
         .bind(("document_id", job.document_id.clone())).bind(("before", serde_json::to_string(job)?))
         .bind(("regen",job.regeneration.clone()))
         .bind(("after", serde_json::to_string(&indexed)?)).bind(("status", serde_json::to_value(DocumentStatus::Indexed)?))
-        .bind(("count", publication.chunks.len() as u64)).bind(("chunks", chunks))
-        .bind(("embedding", serde_json::to_value(&publication.embedding)?)).bind(("now", chrono::Utc::now().to_rfc3339())).await?)
+        .bind(("count", publication.chunks.len() as u64)).bind(("chunks", chunks.clone()))
+        .bind(("embedding", serde_json::to_value(&publication.embedding)?)).bind(("now", chrono::Utc::now().to_rfc3339())).await
+        .map_err(anyhow::Error::from).and_then(check);
+    match result {
+        Err(error) if conflict_retry(&mut attempt, &error).await => continue,
+        other => return other,
+    }
+    }
 }
 
 pub(super) async fn reconcile(store: &SurrealDbProvider) -> Result<()> {
@@ -260,8 +307,16 @@ pub(super) async fn delete(store: &SurrealDbProvider, owner: &str, id: &str, ent
          DELETE knowledge_documents WHERE owner_id=$owner AND (logical_id=$id OR id=type::record('knowledge_documents',$id));
          COMMIT TRANSACTION;"
     };
-    check(store.db.query(namespace.query(sql)).bind(("owner", owner.to_owned())).bind(("id", id.to_owned()))
-        .bind(("key", crate::uar::persistence::tenant_storage_key(owner, id))).await?)
+    let mut attempt = 0;
+    loop {
+        let result = store.db.query(namespace.query(sql)).bind(("owner", owner.to_owned())).bind(("id", id.to_owned()))
+            .bind(("key", crate::uar::persistence::tenant_storage_key(owner, id))).await
+            .map_err(anyhow::Error::from).and_then(check);
+        match result {
+            Err(error) if conflict_retry(&mut attempt, &error).await => continue,
+            other => return other,
+        }
+    }
 }
 
 pub(super) async fn begin_regeneration(store: &SurrealDbProvider, owner: &str, kb_id: &str,

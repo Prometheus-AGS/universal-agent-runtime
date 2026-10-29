@@ -10,7 +10,8 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["*"]
   },
   "include": ["src"]
 }

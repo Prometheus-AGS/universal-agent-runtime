@@ -1,0 +1,10 @@
+{
+  "scenario": "C45",
+  "status": "FAIL",
+  "failure_class": "test script: required exact answer keys",
+  "platform": "Mac",
+  "attempt": 1,
+  "evidence": ".prometheus/verification/context-structural/81dbd7e5-bd37-40fe-a060-47ca2db24459.json",
+  "observed_before_failure": "sliding_window max_messages 4: 10 seeded messages, receipt source 12 → prepared 5, changed true; answer {depot_a_code: UNKNOWN, depot_e_code: correct recent code}. The script read answer.E/answer.A and failed on key names.",
+  "next": "Select values by depot letter; rerun only the sliding-window scenario."
+}

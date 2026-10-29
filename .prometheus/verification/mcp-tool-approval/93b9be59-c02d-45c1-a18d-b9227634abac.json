@@ -1,0 +1,12 @@
+{
+  "scenario": "C38-MCP-TOOL-APPROVAL-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "requests": {},
+  "exchanges": [],
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 6
+}

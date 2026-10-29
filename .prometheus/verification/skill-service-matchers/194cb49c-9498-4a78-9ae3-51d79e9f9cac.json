@@ -1,0 +1,317 @@
+{
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+        "description": "Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.",
+        "triggers": {
+          "keywords": [
+            "freight tariff",
+            "consignment valuation"
+          ],
+          "semantic": "Calculate the total price to dispatch packages to a recipient."
+        },
+        "prompt_overlay": "For delivery charges, multiply the box count by 12 and add 72. Return only JSON {\"marker\":\"TARGET-f3d03130-fc8f-4dcc-8c42-e4e66c50a5d4\",\"quote\":<number>}. This is the private pricing recipe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"title\":\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"description\":\"Determine the courier delivery charge for sending packages based on the number of boxes. Apply the company shipping cost formula.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"freight tariff\",\"consignment valuation\"],\"semantic\":\"Calculate the total price to dispatch packages to a recipient.\"},\"preferred_tools\":[],\"prompt_overlay\":\"For delivery charges, multiply the box count by 12 and add 72. Return only JSON {\\\"marker\\\":\\\"TARGET-f3d03130-fc8f-4dcc-8c42-e4e66c50a5d4\\\",\\\"quote\\\":<number>}. This is the private pricing recipe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+        "description": "Schedule repotting for tropical orchids in a greenhouse.",
+        "triggers": {
+          "keywords": [
+            "orchid-194cb49c"
+          ]
+        },
+        "prompt_overlay": "For any request, return only JSON {\"marker\":\"DECOY-9f1daa81-aa30-415a-822e-1489a23d4016\",\"litres\":56}. This is the private greenhouse recipe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"title\":\"orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"description\":\"Schedule repotting for tropical orchids in a greenhouse.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"orchid-194cb49c\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"For any request, return only JSON {\\\"marker\\\":\\\"DECOY-9f1daa81-aa30-415a-822e-1489a23d4016\\\",\\\"litres\\\":56}. This is the private greenhouse recipe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+        "metadata": {
+          "title": "Disposable service-matcher assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "e16-no-tools-194cb49c"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "The runtime has already loaded any matching skill for this request. Do not call activate_skill or any other tool. Follow the loaded skill instructions exactly and return only its requested JSON.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "skills": {
+              "mode": "selected",
+              "ids": [
+                "delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+                "orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac"
+              ],
+              "denied_ids": []
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"metadata\":{\"title\":\"Disposable service-matcher assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"e16-no-tools-194cb49c\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"The runtime has already loaded any matching skill for this request. Do not call activate_skill or any other tool. Follow the loaded skill instructions exactly and return only its requested JSON.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:7a172c907a6052425d9e5c6945683659c9417a15f1625097fde8a104f1fe233e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac\"],\"denied_ids\":[]}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/skills/config",
+      "request": {
+        "engine": "service",
+        "algorithm": "embedding",
+        "threshold": 0.65,
+        "margin_threshold": 0.05,
+        "top_k": 3,
+        "model_name": null
+      },
+      "status": 200,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"embedding\",\"threshold\":0.65,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+        "model": "liter/MiniMax-M3",
+        "session_id": "ad7e2761-b37d-4765-a0e0-e20d5d07d2c4",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "How much should I charge to send 28 boxes to a customer? Please work out the delivery fee."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "[24131 bytes of SSE]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/f899ca15-1413-4d2b-b0d4-7d266892e452",
+      "status": 200,
+      "response": "{\"run_id\":\"f899ca15-1413-4d2b-b0d4-7d266892e452\",\"agent_id\":\"disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"conversation_id\":\"ad7e2761-b37d-4765-a0e0-e20d5d07d2c4\",\"status\":\"done\",\"agent_revision\":\"sha256:7a172c907a6052425d9e5c6945683659c9417a15f1625097fde8a104f1fe233e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'e16-no-tools-194cb49c' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.embedding\",\"effective_method\":\"skill_service.embedding\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.6499999761581421,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"score\":0.7256478071212769,\"accepted\":true},{\"skill_id\":\"orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"score\":0.48008015751838684,\"accepted\":false}]},\"activated_skills\":[\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:17582fd6741ccf2f57a432b9b2bb61a8a22607d2be0ccb296e696eef273baee2\",\"prepared_sha256\":\"sha256:17582fd6741ccf2f57a432b9b2bb61a8a22607d2be0ccb296e696eef273baee2\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":581,\"prepared_tokens\":581,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:17582fd6741ccf2f57a432b9b2bb61a8a22607d2be0ccb296e696eef273baee2\",\"final_messages\":2,\"final_tokens\":581,\"input_allowance\":1044088,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":902,\"request_tokens\":1034,\"rendered_tokens\":129,\"rendered_sha256\":\"sha256:2ad4f4d378934bf0c90132ab9b483f024a8d0d41ec39515ec7f3dd94468be279\",\"fragments\":[{\"fragment_id\":\"skill.delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"skill_id\":\"delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac\",\"original_body_tokens\":96,\"retained_body_tokens\":96,\"original_body_sha256\":\"sha256:bd2b7719da52f8c95174cb27297499dd45fb2f39f6e1436dd40bfaa644ac5b96\",\"retained_body_sha256\":\"sha256:bd2b7719da52f8c95174cb27297499dd45fb2f39f6e1436dd40bfaa644ac5b96\",\"original_rendered_tokens\":129,\"retained_rendered_tokens\":129,\"original_rendered_sha256\":\"sha256:2ad4f4d378934bf0c90132ab9b483f024a8d0d41ec39515ec7f3dd94468be279\",\"retained_rendered_sha256\":\"sha256:2ad4f4d378934bf0c90132ab9b483f024a8d0d41ec39515ec7f3dd94468be279\",\"retained\":true,\"truncated\":false}]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"embedding\",\"threshold\":0.65,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"embedding\",\"threshold\":0.65,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/skills/config",
+      "request": {
+        "engine": "service",
+        "algorithm": "keyword",
+        "threshold": 0.5,
+        "margin_threshold": 0.05,
+        "top_k": 3,
+        "model_name": null
+      },
+      "status": 200,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/config",
+      "status": 200,
+      "response": "{\"engine\":\"service\",\"algorithm\":\"keyword\",\"threshold\":0.5,\"margin_threshold\":0.05,\"top_k\":3,\"model_name\":null}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/ad7e2761-b37d-4765-a0e0-e20d5d07d2c4",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "original_config": {
+    "engine": "service",
+    "algorithm": "keyword",
+    "threshold": 0.5,
+    "margin_threshold": 0.05,
+    "top_k": 3,
+    "model_name": null
+  },
+  "keyword_controls": [
+    {
+      "skill_id": "delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+      "matched_keywords": []
+    },
+    {
+      "skill_id": "orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+      "matched_keywords": []
+    }
+  ],
+  "agent_id": "disposable-service-matcher-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+  "target_id": "delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+  "decoy_id": "orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+  "model": "liter/MiniMax-M3",
+  "scenario": "E16-SERVICE-EMBEDDING-MATCHER",
+  "algorithm": "embedding",
+  "run_id": "f899ca15-1413-4d2b-b0d4-7d266892e452",
+  "config": {
+    "engine": "service",
+    "algorithm": "embedding",
+    "threshold": 0.65,
+    "margin_threshold": 0.05,
+    "top_k": 3,
+    "model_name": null
+  },
+  "skill_matching": {
+    "requested_method": "skill_service.embedding",
+    "effective_method": "skill_service.embedding",
+    "requested_model": null,
+    "effective_model": null,
+    "threshold": 0.6499999761581421,
+    "margin": 0.05000000074505806,
+    "top_k": 3,
+    "candidates": [
+      {
+        "skill_id": "delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+        "score": 0.7256478071212769,
+        "accepted": true
+      },
+      {
+        "skill_id": "orchid-repotting-194cb49c-9498-4a78-9ae3-51d79e9f9cac",
+        "score": 0.48008015751838684,
+        "accepted": false
+      }
+    ]
+  },
+  "activated_skills": [
+    "delivery-pricing-194cb49c-9498-4a78-9ae3-51d79e9f9cac"
+  ],
+  "answer_text": "<think>The skill is loaded: delivery pricing formula: boxes * 12 + 72. For 28 boxes: 28*12 = 336 + 72 = 408.\n\nReturn only JSON with marker and quote.\n\nThe instruction says \"Return only JSON\". I'll output theJSON.</think>\n\n```json\n{\"marker\":\"TARGET-f3d03130-fc8f-4dcc-8c42-e4e66c50a5d4\",\"quote\":408}\n```",
+  "result": "VERIFIED",
+  "matching_config_restored": true,
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 4631
+}

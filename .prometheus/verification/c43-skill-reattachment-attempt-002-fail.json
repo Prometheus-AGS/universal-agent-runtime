@@ -1,0 +1,1 @@
+{"scenario":"C43","status":"FAIL","failure_class":"fixture: attempt 1 cleanup reset the setting with DELETE, removing its row until restart","attempt":2,"evidence":".prometheus/verification/skill-reattachment/6fd4b959-47b5-458d-8437-8a35229e0092.json","recovery":"owned restart re-seeded harness.skill_reattachment (5000/25000); restore now PUTs the original value"}

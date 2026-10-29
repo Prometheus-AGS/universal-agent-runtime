@@ -1,0 +1,168 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks;legacy-a2a-message/send-completes-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Legacy A2A message/send completes and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 90262337
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for A2A",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:34"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8079705408
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a fresh calculation and then a dependent follow-up through legacy A2A message/send",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 650438
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both legacy tasks complete with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:91"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 33418456
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hMmEtbW9kZXMvNzhhNzg3NDktYjI3Yi00OGNlLWIzMjQtOTk5MTBhZmViMTgzLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks;a2a-v1-sendstreamingmessage-streams-task-updates-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "A2A v1 SendStreamingMessage streams task updates and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37178921
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for A2A",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:34"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8074368953
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I send a fresh calculation and then a dependent follow-up through A2A v1 SendStreamingMessage",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:127"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 297578
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both streams progress to a completed task with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:133"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 31975998
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hMmEtbW9kZXMvNzMyZTIwMDUtOGQ2OC00Y2Y3LWE1ZjktOTllMTJmNzcxODI1Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Legacy A2A JSON and A2A v1 streamed tasks",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@a2a",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/a2a-modes.feature"
+  }
+]

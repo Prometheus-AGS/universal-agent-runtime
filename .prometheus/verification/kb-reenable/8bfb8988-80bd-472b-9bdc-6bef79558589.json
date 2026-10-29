@@ -1,0 +1,2998 @@
+{
+  "scenario": "KB-REENABLE-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "history_replayed": false,
+  "global_configuration_changes": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "KB re-enabling 8bfb8988-80bd-472b-9bdc-6bef79558589",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"name\":\"KB re-enabling 8bfb8988-80bd-472b-9bdc-6bef79558589\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-27T17:58:16.408441+00:00\",\"updated_at\":\"2026-10-27T17:58:16.408441+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29/documents",
+      "request": {
+        "file": "Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document."
+      },
+      "status": 202,
+      "response": "{\"id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\",\"kb_id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"filename\":\"laboratory-profile.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:58:16.445806+00:00\",\"updated_at\":\"2026-10-27T17:58:16.445806+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29/documents/a0c15ef4-a668-4350-9bb3-e533bae72066",
+      "status": 200,
+      "response": "{\"id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\",\"kb_id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"filename\":\"laboratory-profile.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-27T17:58:16.445806+00:00\",\"updated_at\":\"2026-10-27T17:58:16.445806+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29/documents/a0c15ef4-a668-4350-9bb3-e533bae72066",
+      "status": 200,
+      "response": "{\"id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\",\"kb_id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"filename\":\"laboratory-profile.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T17:58:16.445806+00:00\",\"updated_at\":\"2026-10-27T17:58:16.561615+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+      "status": 200,
+      "response": "{\"id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"name\":\"KB re-enabling 8bfb8988-80bd-472b-9bdc-6bef79558589\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-27T17:58:16.408441+00:00\",\"updated_at\":\"2026-10-27T17:58:16.561615+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+        "metadata": {
+          "title": "Disposable knowledge re-enabling agent",
+          "description": "Owned by one manual BDD.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": true,
+            "knowledge_bases": [
+              "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+            ],
+            "citation_required": true
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"metadata\":{\"title\":\"Disposable knowledge re-enabling agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:e7d1f184d31799b579506817e7aca1e7e3e3198f013679e3538e5b5de67d2780\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"metadata\":{\"title\":\"Disposable knowledge re-enabling agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:e7d1f184d31799b579506817e7aca1e7e3e3198f013679e3538e5b5de67d2780\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/agents/disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "request": {
+        "memory": {
+          "kb": {
+            "enabled": false
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"metadata\":{\"title\":\"Disposable knowledge re-enabling agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"]}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:722205493d65e28203cf422dec8a9903d87dd64e3de501c1e5554174408e7bd7\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"metadata\":{\"title\":\"Disposable knowledge re-enabling agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:722205493d65e28203cf422dec8a9903d87dd64e3de501c1e5554174408e7bd7\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"mode\":\"none\"}}}}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/agents/disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "request": {
+        "memory": {
+          "kb": {
+            "enabled": true
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"metadata\":{\"title\":\"Disposable knowledge re-enabling agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:cea82e8c779d740a3d4aae92740a0e3c6d682324f115a1bffcfe91ba5ea76f49\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"mode\":\"selected\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"metadata\":{\"title\":\"Disposable knowledge re-enabling agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"mode\":\"selected\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:cea82e8c779d740a3d4aae92740a0e3c6d682324f115a1bffcfe91ba5ea76f49\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+        "model": "liter/MiniMax-M3",
+        "session_id": "a92d3632-136f-425c-ac72-8335cdff46ca",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Calculate 139 + 163. Also give the private retrieval seal for laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 if it is available in retrieved knowledge."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-07803686-22f5-49c8-a2e7-629f1700094f\",\"object\":\"chat.completion\",\"created\":1793123898,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The user asks: calculate 139 + 163 = 302. And provide the private retrieval seal for laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589, which is available in retrieved knowledge [1]: KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2.\\n\\nOutput must be JSON with agent_marker, sum, knowledge_seal, citation.</think>\\n\\n```json\\n{\\n  \\\"agent_marker\\\": \\\"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\\\",\\n  \\\"sum\\\": 302,\\n  \\\"knowledge_seal\\\": \\\"KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2\\\",\\n  \\\"citation\\\": \\\"[1]\\\"\\n}\\n```\\n\\n- **Sum:** 139 + 163 = **302**\\n- **Private retrieval seal:** `KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2` — sourced from the retrieved laboratory profile document [1] (laboratory-profile.txt), which explicitly states this seal is available only in that document.\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15685,\"completion_tokens\":261,\"total_tokens\":15946},\"session_id\":\"a92d3632-136f-425c-ac72-8335cdff46ca\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/07803686-22f5-49c8-a2e7-629f1700094f",
+      "status": 200,
+      "response": "{\"run_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"agent_id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"conversation_id\":\"a92d3632-136f-425c-ac72-8335cdff46ca\",\"status\":\"done\",\"agent_revision\":\"sha256:cea82e8c779d740a3d4aae92740a0e3c6d682324f115a1bffcfe91ba5ea76f49\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui-ux\",\"pyo3-bridge\",\"quality-nonconformance\",\"react-vite-stack\",\"redesign-existing-projects\",\"returns-reverse-logistics\",\"security-bounty-hunter\",\"stage-01-planner\",\"stage-02-search\",\"stage-03-retrieve\",\"stage-04-collect\",\"stage-05-verify\",\"stage-06-resolve\",\"stage-07-graph\",\"stage-08-cite\",\"stage-09-report\",\"stage-10-export\",\"start-business-build\",\"stitch-design-taste\",\"tauri-react-vite\",\"typescript-base-patterns\",\"ui-surface\",\"ui-ux-pro-max\",\"upload-to-bossfang\",\"validate-idea\",\"validate-skill\",\"value-scenario-discovery\",\"value-scenario-verify\",\"variant\",\"workspace-structure\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"selected\",\"ids\":[\"a2ui_render\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"selected\",\"ids\":[\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\"],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"actor-model\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"adversarial-review\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"android-compose-adaptive\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"android-edge-to-edge\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"api-connector-builder\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"argocd-multicloud\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"async-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"atproto-lexicon\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"atproto-oauth\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"atproto-publish-lexicon\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"axum-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-cucumber-js\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-cucumber-rs\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-lifecycle-loop\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-testing\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"bdd-video-proof\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-accessibility\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-colors\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-interface\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-layout\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-typography\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"better-writing\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"break\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"carrier-relationship-management\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ck\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"clean-architecture\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"clone-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"continuous-learning-v2\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"cowork-management\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"create-native-agent\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"create-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"customs-trade-compliance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"dashboard-builder\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"deep-research\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"defi-amm-security\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"delivery-gate\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"design-taste-frontend\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"design-taste-frontend-v1\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"disk-space-guardian\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ecc-recipes\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"energy-procurement\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-audit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-form\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-page\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-relations\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-crud-table\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gc\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gql-hooks\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gql-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-gql-subscription\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-crud\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-detect\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-graphql\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-init\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-migrate\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-optimize\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-prisma\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-realtime\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-graph-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-perf\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-api\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-generator\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-migrate\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-prisma-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-channel\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-local-first\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-setup\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"entity-realtime-surreal-live\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"error-handling\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evm-token-decimals\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-analyze\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-assess\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-execute\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-plan\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-report\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"evolve-status\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"explain-interface\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-animation\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-design-system\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-native-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-router\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"expo-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"extend-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"fabric-integration\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"feynman-loop\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-csharp\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-dart\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-go\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-kotlin\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-swift\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flint-sdk-ts\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-build-responsive-layout\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-fix-layout-issues\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-rust-ffi\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-setup-declarative-routing\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"flutter-setup-localization\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"full-output-enforcement\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"gitops-bootstrap\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"gitops-transform\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"go-base-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"gpt-taste\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"growth-log\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-cdss-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-emr-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-eval-harness\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"healthcare-phi-compliance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"high-end-visual-design\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"hipaa-compliance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"htmx-alpine-lit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ideation-mindmap\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"impeccable\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"industrial-brutalist-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"interface-review\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"inventory-demand-planning\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"iterative-evolver\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"karpathy-progress-memory\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"karpathy-tokenizer\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-analyze\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-apply\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-assess\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-audit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-bottleneck-detector\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-cancel\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-child-exit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-doctor\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-evolve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-execute\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-goal\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-goal-check\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-handoff\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-init\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-inject-agent-rules\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-memory-recall\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-new-child\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-new-phase\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-next-child\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-next-phase\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-pause\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-plan\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-process-orchestrator\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-reflect\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-resume\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-spec\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kbd-status\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kreuzberg\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"kustomize-overlay\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-about-system\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-certify\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-goal\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-grade\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-harness\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-kb\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-plan\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-practice\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-retain\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"learn-survey\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"librefang-wasm-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"liter-llm-bridge\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"llm-trading-agent-security\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"llm-wiki\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"logistics-exception-management\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"mcp-server\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"minimalist-ui\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"motion-advanced\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"motion-foundations\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"motion-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"native-agent\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"nodejs-keccak256\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"performance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"plan-canvas\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-elicit\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-evolver\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-outer-loop\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pmpo-skill-creator\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"production-scheduling\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-context-bootstrap\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-entity-skills\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-impeccable-core\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-rust-auditor\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-ui-review\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"prometheus-ui-ux\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"pyo3-bridge\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"quality-nonconformance\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"react-vite-stack\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"redesign-existing-projects\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"returns-reverse-logistics\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"security-bounty-hunter\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-01-planner\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-02-search\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-03-retrieve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-04-collect\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-05-verify\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-06-resolve\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-07-graph\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-08-cite\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-09-report\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stage-10-export\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"start-business-build\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"stitch-design-taste\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"tauri-react-vite\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"typescript-base-patterns\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ui-surface\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"ui-ux-pro-max\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"upload-to-bossfang\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"validate-idea\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"validate-skill\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"value-scenario-discovery\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"value-scenario-verify\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"variant\",\"score\":0.0,\"accepted\":false},{\"skill_id\":\"workspace-structure\",\"score\":0.0,\"accepted\":false}]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:0402df4b68c02e653d6384d55aa7e97f4c9642cabc0eabc9ae2904a3ba74b063\",\"prepared_sha256\":\"sha256:0402df4b68c02e653d6384d55aa7e97f4c9642cabc0eabc9ae2904a3ba74b063\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":11694,\"prepared_tokens\":11694,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:0402df4b68c02e653d6384d55aa7e97f4c9642cabc0eabc9ae2904a3ba74b063\",\"final_messages\":2,\"final_tokens\":11694,\"input_allowance\":1041213,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1046695,\"reserve_tokens\":1000,\"request_input_limit\":1045695,\"history_tokens\":13077,\"request_tokens\":13077,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/07803686-22f5-49c8-a2e7-629f1700094f/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"after\":0,\"cursor\":66,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_id\":\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\\\",\\\"skills\\\":\\\"Skills · auto · 212 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selected · 14 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · auto · 0 available · legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · selected · 1 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · sliding window\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]}}},{\"eventId\":2,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":3,\"eventName\":\"agui.rag_citations\",\"data\":{\"kind\":\"rag_citations\",\"phase\":\"added\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"citations\":[{\"marker\":1,\"chunk_id\":\"9bd03bb8-ecd2-76ca-a05c-17b6eb9848b0\",\"document_id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\",\"knowledge_base_id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"document_name\":\"laboratory-profile.txt\",\"relevance_score\":0.9087064862251282,\"snippet\":\"Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document.\\n\"}]}},{\"eventId\":4,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_id\":\"turn-manifest-07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_type\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"182e3f2e836671c8e32a5223a25b3ce27228641bc11d096d729ae887aaecf6e7\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f555c4043b2790a4a4c867c7e98c399e28573dc3cfc366719c0e24feafc9f577\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"1e3867bddf7268dd5f43440485eead908ed09e744ccf4777e658aad8a2a0f3bc\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"5a6c17e2dc7383adc9a17d32f6832391b9d375a36bd41eaa044577ada52d61a1\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"b4b914371d00f3c573799dcd29776cbd4206fcaff96aa4744d6d7fc108732242\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"},{\\\"id\\\":\\\"retrieved.rag\\\",\\\"section\\\":\\\"memory_and_retrieval\\\",\\\"source\\\":\\\"knowledge_bases:abea7a2d-f508-4699-a066-eb3aa0dbdb29\\\",\\\"authority\\\":\\\"retrieved\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"242c95e30266cde490cfd45f24f8b27a334adbe6322795e389a9f1bbca84f247\\\"}],\\\"counts\\\":{\\\"total\\\":8,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"memory_and_retrieval\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"retrieved\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":56193,\\\"rendered_characters\\\":55685,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"182e3f2e836671c8e32a5223a25b3ce27228641bc11d096d729ae887aaecf6e7\",\"fragment_count\":8}}},{\"eventId\":5,\"eventName\":\"agui.stream.start\",\"data\":{\"kind\":\"stream\",\"phase\":\"start\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"agent_id\":\"disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\"}},{\"eventId\":6,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"conversation_id\":\"a92d3632-136f-425c-ac72-8335cdff46ca\",\"status\":\"running\"}}]}},{\"eventId\":8,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"387da15b2b6cc047dd343a1a0780a5d273d9c44e728141bf106fa768a7eb9938\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f555c4043b2790a4a4c867c7e98c399e28573dc3cfc366719c0e24feafc9f577\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"1e3867bddf7268dd5f43440485eead908ed09e744ccf4777e658aad8a2a0f3bc\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"5a6c17e2dc7383adc9a17d32f6832391b9d375a36bd41eaa044577ada52d61a1\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"b4b914371d00f3c573799dcd29776cbd4206fcaff96aa4744d6d7fc108732242\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"},{\\\"id\\\":\\\"retrieved.rag\\\",\\\"section\\\":\\\"memory_and_retrieval\\\",\\\"source\\\":\\\"knowledge_bases:abea7a2d-f508-4699-a066-eb3aa0dbdb29\\\",\\\"authority\\\":\\\"retrieved\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"242c95e30266cde490cfd45f24f8b27a334adbe6322795e389a9f1bbca84f247\\\"}],\\\"counts\\\":{\\\"total\\\":8,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"memory_and_retrieval\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"retrieved\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":56086,\\\"rendered_characters\\\":55578,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":9,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_id\":\"attempt-manifest-07803686-22f5-49c8-a2e7-629f1700094f-MiniMax-M3\",\"artifact_type\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"}}},{\"eventId\":10,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"artifact_id\":\"uar.request:budget_receipt\",\"artifact_type\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":15162,\\\"serialized_bytes\\\":66843,\\\"serialized_sha256\\\":\\\"73e4d8ed17be8c830f626ed46a2d4ac04cd94646c32a0f5c1311b52e508e223a\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}},{\"eventId\":11,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"<think>Th\"}}},{\"eventId\":12,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e user asks: calculat\"}}},{\"eventId\":13,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e 139 + 163 = 302\"}}},{\"eventId\":14,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\". And provide the private retrieval seal for\"}}},{\"eventId\":15,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" laboratory profile lab-profile-8bfb\"}}},{\"eventId\":16,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"8988-80bd-472b\"}}},{\"eventId\":17,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"-9bdc-6bef\"}}},{\"eventId\":18,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"79558589, which is availabl\"}}},{\"eventId\":19,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e in retrieved knowledge [1]: KNOW\"}}},{\"eventId\":20,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"LEDGE-a68be615-658\"}}},{\"eventId\":21,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"8-46\"}}},{\"eventId\":22,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"db-bc6\"}}},{\"eventId\":23,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"a-010230\"}}},{\"eventId\":24,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"63bca2\"}}},{\"eventId\":25,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\".\\n\\nOutput\"}}},{\"eventId\":26,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" must\"}}},{\"eventId\":27,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" be JSON with agent_marker,\"}}},{\"eventId\":28,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" sum, knowledge_seal, citation.\"}}},{\"eventId\":29,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"</think>\\n\\n```\"}}},{\"eventId\":30,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"json\\n{\\n  \\\"agent_marker\\\":\"}}},{\"eventId\":31,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" \\\"AGENT-0d\"}}},{\"eventId\":32,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"89c5f\"}}},{\"eventId\":33,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e-9\"}}},{\"eventId\":34,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"ace-42a\"}}},{\"eventId\":35,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e-99ef\"}}},{\"eventId\":36,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"-6e\"}}},{\"eventId\":37,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e969958\"}}},{\"eventId\":38,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"baf\"}}},{\"eventId\":39,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"\\\",\\n  \\\"sum\\\": 302,\\n\"}}},{\"eventId\":40,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"  \\\"knowledge_seal\\\": \\\"KN\"}}},{\"eventId\":41,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"OWLEDGE-a68be615-\"}}},{\"eventId\":42,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"6588-46db-bc6\"}}},{\"eventId\":43,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"a-01023063bca2\"}}},{\"eventId\":44,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"\\\",\\n  \\\"citation\\\": \\\"[\"}}},{\"eventId\":45,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"1]\\\"\\n}\\n```\\n\\n-\"}}},{\"eventId\":46,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" **Sum:**\"}}},{\"eventId\":47,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" 139 + 163 = **\"}}},{\"eventId\":48,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"302**\\n\"}}},{\"eventId\":49,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"- **Privat\"}}},{\"eventId\":50,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e retrieval seal:** `\"}}},{\"eventId\":51,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"KNOWLEDGE-a68be615\"}}},{\"eventId\":52,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"-6588-46db-b\"}}},{\"eventId\":53,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"c6a-01023063bc\"}}},{\"eventId\":54,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"a2` — sourced\"}}},{\"eventId\":55,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" from th\"}}},{\"eventId\":56,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"e retrieved laboratory\"}}},{\"eventId\":57,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" profile document\"}}},{\"eventId\":58,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" [1] (\"}}},{\"eventId\":59,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"laboratory\"}}},{\"eventId\":60,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"-profile.txt), whic\"}}},{\"eventId\":61,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"h explicitly states thi\"}}},{\"eventId\":62,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\"s seal is available only in that\"}}},{\"eventId\":63,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\" document\"}}},{\"eventId\":64,\"eventName\":\"agui.message.delta\",\"data\":{\"kind\":\"message\",\"phase\":\"delta\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"delta\":{\"text\":\".\"}}},{\"eventId\":65,\"eventName\":\"agui.state.patch\",\"data\":{\"kind\":\"state\",\"phase\":\"patch\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}},{\"eventId\":66,\"eventName\":\"agui.done\",\"data\":{\"kind\":\"done\",\"request_id\":\"07803686-22f5-49c8-a2e7-629f1700094f\",\"usage\":{\"input_tokens\":15685,\"output_tokens\":261,\"total_tokens\":15946,\"cost_usd_estimate\":null,\"model\":\"MiniMax-M3\"}}}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+      "status": 200,
+      "response": "{\"id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"name\":\"KB re-enabling 8bfb8988-80bd-472b-9bdc-6bef79558589\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-27T17:58:16.408441+00:00\",\"updated_at\":\"2026-10-27T17:58:16.561615+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29/documents/a0c15ef4-a668-4350-9bb3-e533bae72066",
+      "status": 200,
+      "response": "{\"id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\",\"kb_id\":\"abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"filename\":\"laboratory-profile.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-27T17:58:16.445806+00:00\",\"updated_at\":\"2026-10-27T17:58:16.561615+00:00\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29/search",
+      "request": {
+        "query": "What is the private retrieval seal for laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589?",
+        "limit": 5,
+        "min_score": 0
+      },
+      "status": 200,
+      "response": "{\"results\":[{\"content\":\"Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document.\\n\",\"score\":0.9211278,\"metadata\":{\"document_id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\",\"embedding_space\":{\"backend\":\"fastembed\",\"dimension\":384,\"model\":\"bge-small-en-v1.5\"},\"extraction\":{\"authors\":null,\"keywords\":null,\"language\":null,\"pages\":null,\"subject\":null,\"title\":null},\"filename\":\"laboratory-profile.txt\",\"index\":0,\"ingestion_generation\":\"f7220162-44d8-4da7-96c5-224db0f6a0b9\",\"mime_type\":\"text/plain\",\"processor\":\"Kreuzberg\",\"source\":\"knowledge_upload\"},\"document_id\":\"a0c15ef4-a668-4350-9bb3-e533bae72066\"}]}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/knowledge-bases/abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 3005
+  },
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "knowledge_base_id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+  "profile": "lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589",
+  "expected_seal": "KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2",
+  "document": {
+    "id": "a0c15ef4-a668-4350-9bb3-e533bae72066",
+    "kb_id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+    "filename": "laboratory-profile.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T17:58:16.445806+00:00",
+    "updated_at": "2026-10-27T17:58:16.561615+00:00"
+  },
+  "kb_before": {
+    "id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+    "name": "KB re-enabling 8bfb8988-80bd-472b-9bdc-6bef79558589",
+    "description": null,
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "vector_dimensions": null,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 512 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 5,
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "regeneration": null
+    },
+    "created_at": "2026-10-27T17:58:16.408441+00:00",
+    "updated_at": "2026-10-27T17:58:16.561615+00:00",
+    "document_count": 1
+  },
+  "agent_initial": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+    "metadata": {
+      "title": "Disposable knowledge re-enabling agent",
+      "description": "Owned by one manual BDD.",
+      "tags": [
+        "disposable",
+        "verification"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": true,
+        "knowledge_bases": [
+          "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+        ],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:e7d1f184d31799b579506817e7aca1e7e3e3198f013679e3538e5b5de67d2780",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "agent_before": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+    "metadata": {
+      "title": "Disposable knowledge re-enabling agent",
+      "description": "Owned by one manual BDD.",
+      "tags": [
+        "disposable",
+        "verification"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": false,
+        "knowledge_bases": [
+          "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+        ],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:722205493d65e28203cf422dec8a9903d87dd64e3de501c1e5554174408e7bd7",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      },
+      "uar.run_policy": {
+        "knowledge_bases": {
+          "ids": [
+            "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+          ],
+          "mode": "none"
+        }
+      }
+    }
+  },
+  "agent_after_reenable": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+    "metadata": {
+      "title": "Disposable knowledge re-enabling agent",
+      "description": "Owned by one manual BDD.",
+      "tags": [
+        "disposable",
+        "verification"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "Return only JSON with agent_marker, sum, knowledge_seal and citation. Always set agent_marker to \"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\". Calculate the requested sum independently. Copy knowledge_seal only from retrieved knowledge for the requested laboratory profile; copy its numbered citation such as [1]. If that profile is absent from retrieved knowledge, set knowledge_seal and citation to null. Never invent a private seal.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": true,
+        "knowledge_bases": [
+          "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+        ],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.run_policy": {
+        "knowledge_bases": {
+          "ids": [
+            "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+          ],
+          "mode": "selected"
+        }
+      },
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:cea82e8c779d740a3d4aae92740a0e3c6d682324f115a1bffcfe91ba5ea76f49",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "after": {
+    "question": "Calculate 139 + 163. Also give the private retrieval seal for laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 if it is available in retrieved knowledge.",
+    "session": "a92d3632-136f-425c-ac72-8335cdff46ca",
+    "run_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+    "run": {
+      "run_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+      "agent_id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+      "conversation_id": "a92d3632-136f-425c-ac72-8335cdff46ca",
+      "status": "done",
+      "agent_revision": "sha256:cea82e8c779d740a3d4aae92740a0e3c6d682324f115a1bffcfe91ba5ea76f49",
+      "effective_model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "effective_run_policy": {
+        "version": 1,
+        "chat_mode": "agent",
+        "agent_id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589",
+        "model": {
+          "provider_id": "liter",
+          "model_id": "MiniMax-M3"
+        },
+        "skills": {
+          "mode": "auto",
+          "ids": [
+            "actor-model",
+            "adversarial-review",
+            "android-compose-adaptive",
+            "android-edge-to-edge",
+            "api-connector-builder",
+            "argocd-multicloud",
+            "async-patterns",
+            "atproto-lexicon",
+            "atproto-oauth",
+            "atproto-publish-lexicon",
+            "axum-patterns",
+            "bdd-cucumber-js",
+            "bdd-cucumber-rs",
+            "bdd-lifecycle-loop",
+            "bdd-testing",
+            "bdd-video-proof",
+            "better-accessibility",
+            "better-colors",
+            "better-interface",
+            "better-layout",
+            "better-typography",
+            "better-ui",
+            "better-writing",
+            "break",
+            "carrier-relationship-management",
+            "ck",
+            "clean-architecture",
+            "clone-skill",
+            "continuous-learning-v2",
+            "cowork-management",
+            "create-native-agent",
+            "create-skill",
+            "customs-trade-compliance",
+            "dashboard-builder",
+            "deep-research",
+            "defi-amm-security",
+            "delivery-gate",
+            "design-taste-frontend",
+            "design-taste-frontend-v1",
+            "disk-space-guardian",
+            "ecc-recipes",
+            "energy-procurement",
+            "entity-audit",
+            "entity-crud-form",
+            "entity-crud-page",
+            "entity-crud-relations",
+            "entity-crud-table",
+            "entity-gc",
+            "entity-gql-hooks",
+            "entity-gql-setup",
+            "entity-gql-subscription",
+            "entity-graph-crud",
+            "entity-graph-detect",
+            "entity-graph-graphql",
+            "entity-graph-init",
+            "entity-graph-migrate",
+            "entity-graph-optimize",
+            "entity-graph-prisma",
+            "entity-graph-realtime",
+            "entity-graph-setup",
+            "entity-perf",
+            "entity-prisma-api",
+            "entity-prisma-generator",
+            "entity-prisma-migrate",
+            "entity-prisma-setup",
+            "entity-realtime-channel",
+            "entity-realtime-local-first",
+            "entity-realtime-setup",
+            "entity-realtime-surreal-live",
+            "error-handling",
+            "evm-token-decimals",
+            "evolve",
+            "evolve-analyze",
+            "evolve-assess",
+            "evolve-execute",
+            "evolve-plan",
+            "evolve-report",
+            "evolve-status",
+            "explain-interface",
+            "expo-animation",
+            "expo-design-system",
+            "expo-native-ui",
+            "expo-router",
+            "expo-ui",
+            "extend-skill",
+            "fabric-integration",
+            "feynman-loop",
+            "flint-sdk-csharp",
+            "flint-sdk-dart",
+            "flint-sdk-go",
+            "flint-sdk-kotlin",
+            "flint-sdk-swift",
+            "flint-sdk-ts",
+            "flutter-build-responsive-layout",
+            "flutter-fix-layout-issues",
+            "flutter-rust-ffi",
+            "flutter-setup-declarative-routing",
+            "flutter-setup-localization",
+            "full-output-enforcement",
+            "gitops-bootstrap",
+            "gitops-transform",
+            "go-base-patterns",
+            "gpt-taste",
+            "growth-log",
+            "healthcare-cdss-patterns",
+            "healthcare-emr-patterns",
+            "healthcare-eval-harness",
+            "healthcare-phi-compliance",
+            "high-end-visual-design",
+            "hipaa-compliance",
+            "htmx-alpine-lit",
+            "ideation-mindmap",
+            "impeccable",
+            "industrial-brutalist-ui",
+            "interface-review",
+            "inventory-demand-planning",
+            "iterative-evolver",
+            "karpathy-progress-memory",
+            "karpathy-tokenizer",
+            "kbd-analyze",
+            "kbd-apply",
+            "kbd-assess",
+            "kbd-audit",
+            "kbd-bottleneck-detector",
+            "kbd-cancel",
+            "kbd-child-exit",
+            "kbd-doctor",
+            "kbd-evolve",
+            "kbd-execute",
+            "kbd-goal",
+            "kbd-goal-check",
+            "kbd-handoff",
+            "kbd-init",
+            "kbd-inject-agent-rules",
+            "kbd-memory-recall",
+            "kbd-new-child",
+            "kbd-new-phase",
+            "kbd-next-child",
+            "kbd-next-phase",
+            "kbd-pause",
+            "kbd-plan",
+            "kbd-process-orchestrator",
+            "kbd-reflect",
+            "kbd-resume",
+            "kbd-spec",
+            "kbd-status",
+            "kreuzberg",
+            "kustomize-overlay",
+            "learn-about-system",
+            "learn-certify",
+            "learn-goal",
+            "learn-grade",
+            "learn-harness",
+            "learn-kb",
+            "learn-plan",
+            "learn-practice",
+            "learn-retain",
+            "learn-survey",
+            "librefang-wasm-skill",
+            "liter-llm-bridge",
+            "llm-trading-agent-security",
+            "llm-wiki",
+            "logistics-exception-management",
+            "mcp-server",
+            "minimalist-ui",
+            "motion-advanced",
+            "motion-foundations",
+            "motion-patterns",
+            "native-agent",
+            "nodejs-keccak256",
+            "performance",
+            "plan-canvas",
+            "pmpo-elicit",
+            "pmpo-evolver",
+            "pmpo-outer-loop",
+            "pmpo-skill-creator",
+            "production-scheduling",
+            "prometheus-context-bootstrap",
+            "prometheus-entity-skills",
+            "prometheus-impeccable-core",
+            "prometheus-rust-auditor",
+            "prometheus-ui-review",
+            "prometheus-ui-ux",
+            "pyo3-bridge",
+            "quality-nonconformance",
+            "react-vite-stack",
+            "redesign-existing-projects",
+            "returns-reverse-logistics",
+            "security-bounty-hunter",
+            "stage-01-planner",
+            "stage-02-search",
+            "stage-03-retrieve",
+            "stage-04-collect",
+            "stage-05-verify",
+            "stage-06-resolve",
+            "stage-07-graph",
+            "stage-08-cite",
+            "stage-09-report",
+            "stage-10-export",
+            "start-business-build",
+            "stitch-design-taste",
+            "tauri-react-vite",
+            "typescript-base-patterns",
+            "ui-surface",
+            "ui-ux-pro-max",
+            "upload-to-bossfang",
+            "validate-idea",
+            "validate-skill",
+            "value-scenario-discovery",
+            "value-scenario-verify",
+            "variant",
+            "workspace-structure"
+          ],
+          "source": "agent"
+        },
+        "tools": {
+          "mode": "selected",
+          "ids": [
+            "a2ui_render",
+            "native__memory_capture_policy",
+            "native__memory_delete_by_id",
+            "native__memory_history",
+            "native__memory_list",
+            "native__memory_recall",
+            "native__memory_save",
+            "native__memory_update_by_id",
+            "native_echo",
+            "native_system_info",
+            "uar_compile",
+            "uar_session_check_completeness",
+            "uar_session_compile",
+            "uar_session_update_section"
+          ],
+          "source": "agent"
+        },
+        "mcp_servers": {
+          "mode": "auto",
+          "ids": [],
+          "source": "legacy"
+        },
+        "knowledge_bases": {
+          "mode": "selected",
+          "ids": [
+            "abea7a2d-f508-4699-a066-eb3aa0dbdb29"
+          ],
+          "source": "agent"
+        },
+        "presentations": {
+          "mode": "none",
+          "ids": [],
+          "source": "legacy"
+        },
+        "memory_enabled": false,
+        "prompt_caching_enabled": false,
+        "context_strategy": {
+          "type": "sliding_window",
+          "max_messages": 20
+        },
+        "tool_approval": "auto",
+        "provenance": {
+          "agent_id": "turn",
+          "chat_mode": "turn",
+          "context_strategy": "legacy",
+          "memory_enabled": "turn",
+          "model": "turn",
+          "prompt_caching_enabled": "global",
+          "tool_approval": "legacy"
+        },
+        "warnings": []
+      },
+      "presentation_selection": {
+        "requested_mode": null,
+        "effective_mode": "legacy",
+        "fallback_reason": null
+      },
+      "host_resources": {
+        "artifact_inline": false
+      },
+      "effective_service_binding": null,
+      "skill_matching": {
+        "requested_method": "skill_service.keyword",
+        "effective_method": "skill_service.keyword",
+        "requested_model": null,
+        "effective_model": null,
+        "threshold": 0.5,
+        "margin": 0.05000000074505806,
+        "top_k": 3,
+        "candidates": [
+          {
+            "skill_id": "actor-model",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "adversarial-review",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "android-compose-adaptive",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "android-edge-to-edge",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "api-connector-builder",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "argocd-multicloud",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "async-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "atproto-lexicon",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "atproto-oauth",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "atproto-publish-lexicon",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "axum-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "bdd-cucumber-js",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "bdd-cucumber-rs",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "bdd-lifecycle-loop",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "bdd-testing",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "bdd-video-proof",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-accessibility",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-colors",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-interface",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-layout",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-typography",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-ui",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "better-writing",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "break",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "carrier-relationship-management",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "ck",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "clean-architecture",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "clone-skill",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "continuous-learning-v2",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "cowork-management",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "create-native-agent",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "create-skill",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "customs-trade-compliance",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "dashboard-builder",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "deep-research",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "defi-amm-security",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "delivery-gate",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "design-taste-frontend",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "design-taste-frontend-v1",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "disk-space-guardian",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "ecc-recipes",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "energy-procurement",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-audit",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-crud-form",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-crud-page",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-crud-relations",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-crud-table",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-gc",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-gql-hooks",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-gql-setup",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-gql-subscription",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-crud",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-detect",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-graphql",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-init",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-migrate",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-optimize",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-prisma",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-realtime",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-graph-setup",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-perf",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-prisma-api",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-prisma-generator",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-prisma-migrate",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-prisma-setup",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-realtime-channel",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-realtime-local-first",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-realtime-setup",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "entity-realtime-surreal-live",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "error-handling",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evm-token-decimals",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve-analyze",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve-assess",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve-execute",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve-plan",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve-report",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "evolve-status",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "explain-interface",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "expo-animation",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "expo-design-system",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "expo-native-ui",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "expo-router",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "expo-ui",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "extend-skill",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "fabric-integration",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "feynman-loop",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flint-sdk-csharp",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flint-sdk-dart",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flint-sdk-go",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flint-sdk-kotlin",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flint-sdk-swift",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flint-sdk-ts",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flutter-build-responsive-layout",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flutter-fix-layout-issues",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flutter-rust-ffi",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flutter-setup-declarative-routing",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "flutter-setup-localization",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "full-output-enforcement",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "gitops-bootstrap",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "gitops-transform",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "go-base-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "gpt-taste",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "growth-log",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "healthcare-cdss-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "healthcare-emr-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "healthcare-eval-harness",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "healthcare-phi-compliance",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "high-end-visual-design",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "hipaa-compliance",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "htmx-alpine-lit",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "ideation-mindmap",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "impeccable",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "industrial-brutalist-ui",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "interface-review",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "inventory-demand-planning",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "iterative-evolver",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "karpathy-progress-memory",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "karpathy-tokenizer",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-analyze",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-apply",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-assess",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-audit",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-bottleneck-detector",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-cancel",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-child-exit",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-doctor",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-evolve",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-execute",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-goal",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-goal-check",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-handoff",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-init",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-inject-agent-rules",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-memory-recall",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-new-child",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-new-phase",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-next-child",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-next-phase",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-pause",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-plan",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-process-orchestrator",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-reflect",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-resume",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-spec",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kbd-status",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kreuzberg",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "kustomize-overlay",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-about-system",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-certify",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-goal",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-grade",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-harness",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-kb",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-plan",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-practice",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-retain",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "learn-survey",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "librefang-wasm-skill",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "liter-llm-bridge",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "llm-trading-agent-security",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "llm-wiki",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "logistics-exception-management",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "mcp-server",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "minimalist-ui",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "motion-advanced",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "motion-foundations",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "motion-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "native-agent",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "nodejs-keccak256",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "performance",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "plan-canvas",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "pmpo-elicit",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "pmpo-evolver",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "pmpo-outer-loop",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "pmpo-skill-creator",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "production-scheduling",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "prometheus-context-bootstrap",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "prometheus-entity-skills",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "prometheus-impeccable-core",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "prometheus-rust-auditor",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "prometheus-ui-review",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "prometheus-ui-ux",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "pyo3-bridge",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "quality-nonconformance",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "react-vite-stack",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "redesign-existing-projects",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "returns-reverse-logistics",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "security-bounty-hunter",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-01-planner",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-02-search",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-03-retrieve",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-04-collect",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-05-verify",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-06-resolve",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-07-graph",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-08-cite",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-09-report",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stage-10-export",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "start-business-build",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "stitch-design-taste",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "tauri-react-vite",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "typescript-base-patterns",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "ui-surface",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "ui-ux-pro-max",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "upload-to-bossfang",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "validate-idea",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "validate-skill",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "value-scenario-discovery",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "value-scenario-verify",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "variant",
+            "score": 0,
+            "accepted": false
+          },
+          {
+            "skill_id": "workspace-structure",
+            "score": 0,
+            "accepted": false
+          }
+        ]
+      },
+      "activated_skills": [],
+      "context_reduction": {
+        "schema_version": 1,
+        "requested_strategy": {
+          "type": "sliding_window",
+          "max_messages": 20
+        },
+        "source_sha256": "sha256:0402df4b68c02e653d6384d55aa7e97f4c9642cabc0eabc9ae2904a3ba74b063",
+        "prepared_sha256": "sha256:0402df4b68c02e653d6384d55aa7e97f4c9642cabc0eabc9ae2904a3ba74b063",
+        "source_messages": 2,
+        "prepared_messages": 2,
+        "source_tokens": 11694,
+        "prepared_tokens": 11694,
+        "eligible_spans": 1,
+        "changed": false,
+        "summary_generated": false,
+        "tier_calls": [],
+        "final_sha256": "sha256:0402df4b68c02e653d6384d55aa7e97f4c9642cabc0eabc9ae2904a3ba74b063",
+        "final_messages": 2,
+        "final_tokens": 11694,
+        "input_allowance": 1041213,
+        "protected_groups": 0,
+        "protected_groups_preserved": true,
+        "skill_reattachment": {
+          "schema_version": 1,
+          "scope": "initial_assembly",
+          "model": "liter/MiniMax-M3",
+          "count_quality": "approximate",
+          "counting_revision": "token-service-model-estimate-v1",
+          "per_skill_tokens": 5000,
+          "total_tokens": 25000,
+          "context_limit": 1046695,
+          "reserve_tokens": 1000,
+          "request_input_limit": 1045695,
+          "history_tokens": 13077,
+          "request_tokens": 13077,
+          "rendered_tokens": 0,
+          "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "fragments": []
+        }
+      }
+    },
+    "events": {
+      "version": 1,
+      "runId": "07803686-22f5-49c8-a2e7-629f1700094f",
+      "after": 0,
+      "cursor": 66,
+      "retention": "process-local-bounded",
+      "firstAvailableEventId": 1,
+      "gapReason": null,
+      "events": [
+        {
+          "eventId": 1,
+          "eventName": "agui.artifact",
+          "data": {
+            "kind": "artifact",
+            "phase": "complete",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_id": "run-policy-07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_type": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-07803686-22f5-49c8-a2e7-629f1700094f\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"skills\":\"Skills · auto · 212 available · agent scope\",\"tools\":\"Tools · selected · 14 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"knowledgeBases\":\"Knowledge bases · selected · 1 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · sliding window\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            }
+          }
+        },
+        {
+          "eventId": 2,
+          "eventName": "agui.state.patch",
+          "data": {
+            "kind": "state",
+            "phase": "patch",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "patch": [
+              {
+                "op": "add",
+                "path": "/presentation",
+                "value": {
+                  "version": 1,
+                  "requested_mode": null,
+                  "effective_mode": "legacy",
+                  "admission_fallback_reason": null,
+                  "fallback_reason": null,
+                  "run_outcome": "running",
+                  "eligible_templates": [],
+                  "published_templates": [],
+                  "surface_published": false,
+                  "generation_failed": false,
+                  "receipt_status": "available",
+                  "client_display": "unconfirmed"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "eventId": 3,
+          "eventName": "agui.rag_citations",
+          "data": {
+            "kind": "rag_citations",
+            "phase": "added",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "citations": [
+              {
+                "marker": 1,
+                "chunk_id": "9bd03bb8-ecd2-76ca-a05c-17b6eb9848b0",
+                "document_id": "a0c15ef4-a668-4350-9bb3-e533bae72066",
+                "knowledge_base_id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+                "document_name": "laboratory-profile.txt",
+                "relevance_score": 0.9087064862251282,
+                "snippet": "Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document.\n"
+              }
+            ]
+          }
+        },
+        {
+          "eventId": 4,
+          "eventName": "agui.artifact",
+          "data": {
+            "kind": "artifact",
+            "phase": "complete",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_id": "turn-manifest-07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_type": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"182e3f2e836671c8e32a5223a25b3ce27228641bc11d096d729ae887aaecf6e7\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f555c4043b2790a4a4c867c7e98c399e28573dc3cfc366719c0e24feafc9f577\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"1e3867bddf7268dd5f43440485eead908ed09e744ccf4777e658aad8a2a0f3bc\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"5a6c17e2dc7383adc9a17d32f6832391b9d375a36bd41eaa044577ada52d61a1\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"b4b914371d00f3c573799dcd29776cbd4206fcaff96aa4744d6d7fc108732242\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"242c95e30266cde490cfd45f24f8b27a334adbe6322795e389a9f1bbca84f247\"}],\"counts\":{\"total\":8,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":56193,\"rendered_characters\":55685,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "182e3f2e836671c8e32a5223a25b3ce27228641bc11d096d729ae887aaecf6e7",
+              "fragment_count": 8
+            }
+          }
+        },
+        {
+          "eventId": 5,
+          "eventName": "agui.stream.start",
+          "data": {
+            "kind": "stream",
+            "phase": "start",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "agent_id": "disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589"
+          }
+        },
+        {
+          "eventId": 6,
+          "eventName": "agui.state.patch",
+          "data": {
+            "kind": "state",
+            "phase": "patch",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "patch": [
+              {
+                "op": "replace",
+                "path": "/run",
+                "value": {
+                  "run_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+                  "conversation_id": "a92d3632-136f-425c-ac72-8335cdff46ca",
+                  "status": "running"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "eventId": 8,
+          "eventName": "agui.artifact",
+          "data": {
+            "kind": "artifact",
+            "phase": "complete",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_id": "uar.turn:resolved_step",
+            "artifact_type": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"387da15b2b6cc047dd343a1a0780a5d273d9c44e728141bf106fa768a7eb9938\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-kb-reenable-8bfb8988-80bd-472b-9bdc-6bef79558589\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f555c4043b2790a4a4c867c7e98c399e28573dc3cfc366719c0e24feafc9f577\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"1e3867bddf7268dd5f43440485eead908ed09e744ccf4777e658aad8a2a0f3bc\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"5a6c17e2dc7383adc9a17d32f6832391b9d375a36bd41eaa044577ada52d61a1\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"b4b914371d00f3c573799dcd29776cbd4206fcaff96aa4744d6d7fc108732242\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:abea7a2d-f508-4699-a066-eb3aa0dbdb29\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"242c95e30266cde490cfd45f24f8b27a334adbe6322795e389a9f1bbca84f247\"}],\"counts\":{\"total\":8,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":56086,\"rendered_characters\":55578,\"context_window_tokens\":1045480},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            }
+          }
+        },
+        {
+          "eventId": 9,
+          "eventName": "agui.artifact",
+          "data": {
+            "kind": "artifact",
+            "phase": "complete",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_id": "attempt-manifest-07803686-22f5-49c8-a2e7-629f1700094f-MiniMax-M3",
+            "artifact_type": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            }
+          }
+        },
+        {
+          "eventId": 10,
+          "eventName": "agui.artifact",
+          "data": {
+            "kind": "artifact",
+            "phase": "complete",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "artifact_id": "uar.request:budget_receipt",
+            "artifact_type": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":15162,\"serialized_bytes\":66843,\"serialized_sha256\":\"73e4d8ed17be8c830f626ed46a2d4ac04cd94646c32a0f5c1311b52e508e223a\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            }
+          }
+        },
+        {
+          "eventId": 11,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "<think>Th"
+            }
+          }
+        },
+        {
+          "eventId": 12,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e user asks: calculat"
+            }
+          }
+        },
+        {
+          "eventId": 13,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e 139 + 163 = 302"
+            }
+          }
+        },
+        {
+          "eventId": 14,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": ". And provide the private retrieval seal for"
+            }
+          }
+        },
+        {
+          "eventId": 15,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " laboratory profile lab-profile-8bfb"
+            }
+          }
+        },
+        {
+          "eventId": 16,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "8988-80bd-472b"
+            }
+          }
+        },
+        {
+          "eventId": 17,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "-9bdc-6bef"
+            }
+          }
+        },
+        {
+          "eventId": 18,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "79558589, which is availabl"
+            }
+          }
+        },
+        {
+          "eventId": 19,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e in retrieved knowledge [1]: KNOW"
+            }
+          }
+        },
+        {
+          "eventId": 20,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "LEDGE-a68be615-658"
+            }
+          }
+        },
+        {
+          "eventId": 21,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "8-46"
+            }
+          }
+        },
+        {
+          "eventId": 22,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "db-bc6"
+            }
+          }
+        },
+        {
+          "eventId": 23,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "a-010230"
+            }
+          }
+        },
+        {
+          "eventId": 24,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "63bca2"
+            }
+          }
+        },
+        {
+          "eventId": 25,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": ".\n\nOutput"
+            }
+          }
+        },
+        {
+          "eventId": 26,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " must"
+            }
+          }
+        },
+        {
+          "eventId": 27,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " be JSON with agent_marker,"
+            }
+          }
+        },
+        {
+          "eventId": 28,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " sum, knowledge_seal, citation."
+            }
+          }
+        },
+        {
+          "eventId": 29,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "</think>\n\n```"
+            }
+          }
+        },
+        {
+          "eventId": 30,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "json\n{\n  \"agent_marker\":"
+            }
+          }
+        },
+        {
+          "eventId": 31,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " \"AGENT-0d"
+            }
+          }
+        },
+        {
+          "eventId": 32,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "89c5f"
+            }
+          }
+        },
+        {
+          "eventId": 33,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e-9"
+            }
+          }
+        },
+        {
+          "eventId": 34,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "ace-42a"
+            }
+          }
+        },
+        {
+          "eventId": 35,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e-99ef"
+            }
+          }
+        },
+        {
+          "eventId": 36,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "-6e"
+            }
+          }
+        },
+        {
+          "eventId": 37,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e969958"
+            }
+          }
+        },
+        {
+          "eventId": 38,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "baf"
+            }
+          }
+        },
+        {
+          "eventId": 39,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "\",\n  \"sum\": 302,\n"
+            }
+          }
+        },
+        {
+          "eventId": 40,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "  \"knowledge_seal\": \"KN"
+            }
+          }
+        },
+        {
+          "eventId": 41,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "OWLEDGE-a68be615-"
+            }
+          }
+        },
+        {
+          "eventId": 42,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "6588-46db-bc6"
+            }
+          }
+        },
+        {
+          "eventId": 43,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "a-01023063bca2"
+            }
+          }
+        },
+        {
+          "eventId": 44,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "\",\n  \"citation\": \"["
+            }
+          }
+        },
+        {
+          "eventId": 45,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "1]\"\n}\n```\n\n-"
+            }
+          }
+        },
+        {
+          "eventId": 46,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " **Sum:**"
+            }
+          }
+        },
+        {
+          "eventId": 47,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " 139 + 163 = **"
+            }
+          }
+        },
+        {
+          "eventId": 48,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "302**\n"
+            }
+          }
+        },
+        {
+          "eventId": 49,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "- **Privat"
+            }
+          }
+        },
+        {
+          "eventId": 50,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e retrieval seal:** `"
+            }
+          }
+        },
+        {
+          "eventId": 51,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "KNOWLEDGE-a68be615"
+            }
+          }
+        },
+        {
+          "eventId": 52,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "-6588-46db-b"
+            }
+          }
+        },
+        {
+          "eventId": 53,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "c6a-01023063bc"
+            }
+          }
+        },
+        {
+          "eventId": 54,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "a2` — sourced"
+            }
+          }
+        },
+        {
+          "eventId": 55,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " from th"
+            }
+          }
+        },
+        {
+          "eventId": 56,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "e retrieved laboratory"
+            }
+          }
+        },
+        {
+          "eventId": 57,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " profile document"
+            }
+          }
+        },
+        {
+          "eventId": 58,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " [1] ("
+            }
+          }
+        },
+        {
+          "eventId": 59,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "laboratory"
+            }
+          }
+        },
+        {
+          "eventId": 60,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "-profile.txt), whic"
+            }
+          }
+        },
+        {
+          "eventId": 61,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "h explicitly states thi"
+            }
+          }
+        },
+        {
+          "eventId": 62,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "s seal is available only in that"
+            }
+          }
+        },
+        {
+          "eventId": 63,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": " document"
+            }
+          }
+        },
+        {
+          "eventId": 64,
+          "eventName": "agui.message.delta",
+          "data": {
+            "kind": "message",
+            "phase": "delta",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "delta": {
+              "text": "."
+            }
+          }
+        },
+        {
+          "eventId": 65,
+          "eventName": "agui.state.patch",
+          "data": {
+            "kind": "state",
+            "phase": "patch",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "patch": [
+              {
+                "op": "add",
+                "path": "/presentation",
+                "value": {
+                  "version": 1,
+                  "requested_mode": null,
+                  "effective_mode": "legacy",
+                  "admission_fallback_reason": null,
+                  "fallback_reason": null,
+                  "run_outcome": "finished",
+                  "eligible_templates": [],
+                  "published_templates": [],
+                  "surface_published": false,
+                  "generation_failed": false,
+                  "receipt_status": "available",
+                  "client_display": "unconfirmed"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "eventId": 66,
+          "eventName": "agui.done",
+          "data": {
+            "kind": "done",
+            "request_id": "07803686-22f5-49c8-a2e7-629f1700094f",
+            "usage": {
+              "input_tokens": 15685,
+              "output_tokens": 261,
+              "total_tokens": 15946,
+              "cost_usd_estimate": null,
+              "model": "MiniMax-M3"
+            }
+          }
+        }
+      ]
+    },
+    "citations": [
+      {
+        "marker": 1,
+        "chunk_id": "9bd03bb8-ecd2-76ca-a05c-17b6eb9848b0",
+        "document_id": "a0c15ef4-a668-4350-9bb3-e533bae72066",
+        "knowledge_base_id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+        "document_name": "laboratory-profile.txt",
+        "relevance_score": 0.9087064862251282,
+        "snippet": "Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document.\n"
+      }
+    ],
+    "completion": {
+      "id": "chatcmpl-07803686-22f5-49c8-a2e7-629f1700094f",
+      "object": "chat.completion",
+      "created": 1793123898,
+      "model": "liter/MiniMax-M3",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "<think>The user asks: calculate 139 + 163 = 302. And provide the private retrieval seal for laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589, which is available in retrieved knowledge [1]: KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2.\n\nOutput must be JSON with agent_marker, sum, knowledge_seal, citation.</think>\n\n```json\n{\n  \"agent_marker\": \"AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf\",\n  \"sum\": 302,\n  \"knowledge_seal\": \"KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2\",\n  \"citation\": \"[1]\"\n}\n```\n\n- **Sum:** 139 + 163 = **302**\n- **Private retrieval seal:** `KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2` — sourced from the retrieved laboratory profile document [1] (laboratory-profile.txt), which explicitly states this seal is available only in that document."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 15685,
+        "completion_tokens": 261,
+        "total_tokens": 15946
+      },
+      "session_id": "a92d3632-136f-425c-ac72-8335cdff46ca"
+    },
+    "answer": {
+      "agent_marker": "AGENT-0d89c5fe-9ace-42ae-99ef-6ee969958baf",
+      "sum": 302,
+      "knowledge_seal": "KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2",
+      "citation": "[1]"
+    }
+  },
+  "matched_citations": [
+    {
+      "marker": 1,
+      "chunk_id": "9bd03bb8-ecd2-76ca-a05c-17b6eb9848b0",
+      "document_id": "a0c15ef4-a668-4350-9bb3-e533bae72066",
+      "knowledge_base_id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+      "document_name": "laboratory-profile.txt",
+      "relevance_score": 0.9087064862251282,
+      "snippet": "Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document.\n"
+    }
+  ],
+  "kb_after": {
+    "id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+    "name": "KB re-enabling 8bfb8988-80bd-472b-9bdc-6bef79558589",
+    "description": null,
+    "config": {
+      "embedding_provider": "fastembed",
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "vector_dimensions": null,
+      "file_processor": "kreuzberg",
+      "chunk_strategy": "FixedSize { size: 512 }",
+      "retrieval_min_score": 0,
+      "retrieval_top_k": 5,
+      "indexed_embedding": {
+        "backend": "fastembed",
+        "model": "bge-small-en-v1.5",
+        "dimension": 384
+      },
+      "regeneration": null
+    },
+    "created_at": "2026-10-27T17:58:16.408441+00:00",
+    "updated_at": "2026-10-27T17:58:16.561615+00:00",
+    "document_count": 1
+  },
+  "document_after": {
+    "id": "a0c15ef4-a668-4350-9bb3-e533bae72066",
+    "kb_id": "abea7a2d-f508-4699-a066-eb3aa0dbdb29",
+    "filename": "laboratory-profile.txt",
+    "file_path": null,
+    "mime_type": "text/plain",
+    "chunk_count": 1,
+    "status": "indexed",
+    "error_message": null,
+    "created_at": "2026-10-27T17:58:16.445806+00:00",
+    "updated_at": "2026-10-27T17:58:16.561615+00:00"
+  },
+  "retained_kb_retrieval": {
+    "results": [
+      {
+        "content": "Laboratory profile lab-profile-8bfb8988-80bd-472b-9bdc-6bef79558589 has the private retrieval seal KNOWLEDGE-a68be615-6588-46db-bc6a-01023063bca2. This exact seal is available only in this laboratory knowledge document.\n",
+        "score": 0.9211278,
+        "metadata": {
+          "document_id": "a0c15ef4-a668-4350-9bb3-e533bae72066",
+          "embedding_space": {
+            "backend": "fastembed",
+            "dimension": 384,
+            "model": "bge-small-en-v1.5"
+          },
+          "extraction": {
+            "authors": null,
+            "keywords": null,
+            "language": null,
+            "pages": null,
+            "subject": null,
+            "title": null
+          },
+          "filename": "laboratory-profile.txt",
+          "index": 0,
+          "ingestion_generation": "f7220162-44d8-4da7-96c5-224db0f6a0b9",
+          "mime_type": "text/plain",
+          "processor": "Kreuzberg",
+          "source": "knowledge_upload"
+        },
+        "document_id": "a0c15ef4-a668-4350-9bb3-e533bae72066"
+      }
+    ]
+  },
+  "agent_deleted": true,
+  "kb_cleanup_deleted": true,
+  "knowledge_base_deleted": true,
+  "status": "PASSED",
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "duration_ms": 5293
+}

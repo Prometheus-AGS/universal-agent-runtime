@@ -1,0 +1,265 @@
+{
+  "record": "MODEL-CHOICES-2026-10-27",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "secret_values_recorded": false,
+  "liter": {
+    "config": "~/.config/liter-llm/liter-llm-proxy.toml",
+    "service": "ai.prometheus.liter-llm-api (launchctl kickstart -k, twice)",
+    "secret_variable_names_added_to_service_env": [
+      "ZAI_API_KEY",
+      "OPENROUTER_API_KEY",
+      "QWEN_TOKEN_PLAN_API_KEY"
+    ],
+    "private_backups": "~/.prometheus/kbd/backups/*.20261027T105325Z (0600)",
+    "routes_added": [
+      {
+        "name": "glm-5.3",
+        "upstream": "https://api.z.ai/api/coding/paas/v4",
+        "key_var": "ZAI_API_KEY",
+        "direct_probe": "200, answered 42",
+        "via_liter": "200, answered 42"
+      },
+      {
+        "name": "mimo-v2.5-pro",
+        "upstream": "https://openrouter.ai/api/v1 (resolves to xiaomi/mimo-v2.5-pro)",
+        "key_var": "OPENROUTER_API_KEY",
+        "direct_probe": "200, answered 42",
+        "via_liter": "200, answered 42",
+        "note": "first named xiaomi/mimo-v2.5-pro; UAR /test sent mimo-v2.5-pro and Liter returned not found (502). Renamed to bare id in Liter and UAR."
+      },
+      {
+        "name": "qwen3.8-max",
+        "upstream": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1 (operator-specified Singapore host)",
+        "key_var": "QWEN_TOKEN_PLAN_API_KEY",
+        "direct_probe": "401 Incorrect API key",
+        "via_liter": "401 authentication failed: Incorrect API key",
+        "status": "BLOCKED: key not accepted by the specified host; no other host tried"
+      }
+    ],
+    "existing_route_reused": {
+      "name": "k3",
+      "upstream": "https://api.kimi.com/coding/v1",
+      "via_liter": "200, answered 42"
+    }
+  },
+  "uar": {
+    "provider": "liter",
+    "method": "PUT /api/uar/providers/liter without api_key; POST /api/uar/providers/liter/test {model, output_token_cap:256}",
+    "provider_tests": {
+      "MiniMax-M3": "ok",
+      "k3": "ok",
+      "glm-5.3": "ok",
+      "mimo-v2.5-pro": "ok (after rename)",
+      "qwen3.8-max": "not tested; enabled=false"
+    },
+    "conservative_operator_limits": "context_window/max_output_tokens for new models set below catalog maxima (operator choice, not vendor facts)",
+    "default_model_unchanged": "MiniMax-M3",
+    "before": {
+      "id": "liter",
+      "display_name": "Configured Liter gateway",
+      "base_url": "http://127.0.0.1:4000/v1",
+      "protocol": "chat",
+      "default_model": "MiniMax-M3",
+      "models": [
+        {
+          "id": "MiniMax-M3",
+          "pricing_identity": {
+            "provider_id": "minimax",
+            "model_id": "MiniMax-M3"
+          },
+          "execution_profile": {
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "reasoning": {
+              "mode": "off"
+            }
+          },
+          "display_name": null,
+          "context_window": 1048576,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 64000,
+          "enabled": true
+        }
+      ],
+      "enabled": true,
+      "credential_configured": true,
+      "model_verifications": {
+        "MiniMax-M3": {
+          "verified_at": "2026-10-26T23:27:07.935477Z",
+          "configuration_digest": "62338f74ea5d9ddc4fcd0dffd07f64671a0e7cc26950a09f33290441449930fe"
+        }
+      }
+    },
+    "after": {
+      "id": "liter",
+      "display_name": "Configured Liter gateway",
+      "base_url": "http://127.0.0.1:4000/v1",
+      "protocol": "chat",
+      "default_model": "MiniMax-M3",
+      "models": [
+        {
+          "id": "MiniMax-M3",
+          "pricing_identity": {
+            "provider_id": "minimax",
+            "model_id": "MiniMax-M3"
+          },
+          "execution_profile": {
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "reasoning": {
+              "mode": "off"
+            }
+          },
+          "display_name": null,
+          "context_window": 1048576,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 64000,
+          "enabled": true
+        },
+        {
+          "id": "k3",
+          "pricing_identity": {
+            "provider_id": "kimi-code-plan-global",
+            "model_id": "k3"
+          },
+          "execution_profile": {
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "reasoning": {
+              "mode": "off"
+            }
+          },
+          "display_name": "Kimi K3 (Kimi Code plan)",
+          "context_window": 262144,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": true,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 32768,
+          "enabled": true
+        },
+        {
+          "id": "glm-5.3",
+          "pricing_identity": {
+            "provider_id": "zai-coding-plan",
+            "model_id": "glm-5.3"
+          },
+          "execution_profile": {
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "reasoning": {
+              "mode": "off"
+            }
+          },
+          "display_name": "GLM-5.3 (Z.ai Coding plan)",
+          "context_window": 200000,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": true,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 32768,
+          "enabled": true
+        },
+        {
+          "id": "mimo-v2.5-pro",
+          "pricing_identity": {
+            "provider_id": "openrouter",
+            "model_id": "xiaomi/mimo-v2.5-pro"
+          },
+          "execution_profile": {
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "reasoning": {
+              "mode": "off"
+            }
+          },
+          "display_name": "MiMo V2.5 Pro (OpenRouter)",
+          "context_window": 262144,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": true,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 32768,
+          "enabled": true
+        },
+        {
+          "id": "qwen3.8-max",
+          "pricing_identity": {
+            "provider_id": "alibaba",
+            "model_id": "qwen3.8-max"
+          },
+          "execution_profile": {
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "reasoning": {
+              "mode": "off"
+            }
+          },
+          "display_name": "Qwen3.8 Max (Model Studio Singapore)",
+          "context_window": 262144,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": true,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 32768,
+          "enabled": false
+        }
+      ],
+      "enabled": true,
+      "credential_configured": true,
+      "model_verifications": {
+        "MiniMax-M3": {
+          "verified_at": "2026-10-27T10:56:03.804332Z",
+          "configuration_digest": "83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a"
+        },
+        "glm-5.3": {
+          "verified_at": "2026-10-27T10:56:06.283069Z",
+          "configuration_digest": "83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a"
+        },
+        "k3": {
+          "verified_at": "2026-10-27T10:56:18.047146Z",
+          "configuration_digest": "83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a"
+        },
+        "mimo-v2.5-pro": {
+          "verified_at": "2026-10-27T10:56:15.477516Z",
+          "configuration_digest": "83baed210dae30c0ce2c05d53e27731dd3f05d2ca77626b75ac4ea622ce44d8a"
+        }
+      }
+    }
+  },
+  "limits": [
+    "Provider tests and one-prompt probes are not inference certification of features such as tools, structured output or team execution.",
+    "The default settings-only execution profile shows reasoning off for always-reasoning GLM-5.3; that label sends no reasoning parameter and does not certify GLM team support."
+  ]
+}

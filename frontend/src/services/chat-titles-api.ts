@@ -13,14 +13,14 @@ function cleanTitle(raw: string): string {
 
 export async function generateThreadTitle(userMsg: string, assistantMsg: string): Promise<string> {
   const fallback = "New conversation";
-  if (!userMsg.trim() || !assistantMsg.trim()) return fallback;
+  if (!userMsg.trim()) return fallback;
   try {
     const res = await fetch(TITLE_GEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: userMsg,
-        assistant_message: assistantMsg,
+        ...(assistantMsg.trim() ? { assistant_message: assistantMsg } : {}),
       }),
     });
     if (!res.ok) return fallback;

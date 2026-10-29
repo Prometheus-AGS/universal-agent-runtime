@@ -145,15 +145,19 @@ impl WasmSandbox {
         // Configure filesystem access
         if config.allow_filesystem {
             for dir_path in &config.preopened_dirs {
-                let dir = wasmtime_wasi::DirPerms::all();
-                let file = wasmtime_wasi::FilePerms::all();
-                wasi_builder.preopened_dir(dir_path, dir_path, dir, file)?;
+                // wasmtime-wasi 48 folded DirPerms/FilePerms into FsPerms.
+                wasi_builder.preopened_dir(dir_path, dir_path, wasmtime_wasi::FsPerms::ReadWrite)?;
             }
         }
 
         // Configure networking
         if config.allow_networking {
-            wasi_builder.inherit_network();
+            // wasmtime-wasi 48 made TCP/UDP opt-in; inherit_network only widens
+            // the address check, so the protocols must be enabled explicitly.
+            wasi_builder
+                .allow_tcp(true)
+                .allow_udp(true)
+                .inherit_network();
         }
 
         // Build WasiP1Ctx for core module execution

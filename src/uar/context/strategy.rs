@@ -625,7 +625,7 @@ async fn trim_with_marked_prose_recording(
             {
                 Ok(summary) => summary,
                 Err(error) => {
-                    tracing::warn!(%error, "Host-marked summarization failed; retaining originals");
+                    tracing::warn!(error = format!("{error:#}"), "Host-marked summarization failed; retaining originals");
                     messages
                 }
             }

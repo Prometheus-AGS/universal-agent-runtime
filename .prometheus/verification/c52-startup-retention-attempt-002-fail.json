@@ -1,0 +1,17 @@
+{
+  "scenario": "C52",
+  "status": "FAIL",
+  "attempt": 2,
+  "failure_class": "fixture: the disposable Surreal server was 3.2.0 (/usr/local/bin/surreal); versions.toml pins surrealdb_server = 3.3.0 and UAR's vendored SDK is 3.3.0. A 3.3.0 binary exists at ~/.prometheus/bin/surreal. Version mismatch is the leading cause; not yet confirmed by a 3.3.0 run.",
+  "command": "UAR_MODEL=liter/MiniMax-M3 node_modules/.bin/cucumber-js --config scripts/behaviors/startup-retention.cucumber.mjs (operator-approved 2026-10-27)",
+  "evidence": "startup-retention/83db9861-4cd9-4d4d-95c7-0a463612f6d3.json; disposable UAR log copied to the session scratchpad (c52-uar-initial.log)",
+  "observed": {
+    "surreal": "fresh 3.2.0 server on 127.0.0.1:58056 started; root user created from the fixture password",
+    "uar": "connected, signed in as root, selected ns 'prompt' db 'prompt', then about 8 s later exited: 'Failed to initialize SurrealDB at ws://127.0.0.1:58056: Cannot execute statement using value: NONE'",
+    "scenario": "1 step passed, 1 failed ('Not ready within 180000 ms: http://127.0.0.1:58057/health'), 9 skipped; 3m 1.9s",
+    "owned_runtime": "untouched; PID 78140 healthy (200) throughout"
+  },
+  "fixture_defect": "startDisposable threw before returning its handle, so the After hook could not tear down: the Surreal server stayed running and kept the cucumber process alive past the failure. I stopped the Surreal and cucumber processes by hand after the run.",
+  "leftovers": "directory target/c52-disposable/09173039-4b2d-48a5-ac85-271a7773ce97 (store, config.private.json with the disposable root password, logs) remains: removing it was denied by a permission rule. No processes remain.",
+  "next": "Use the pinned 3.3.0 server binary (checked against versions.toml at start) and tear down partial state when startup fails; operator removes or approves removal of the leftover directory."
+}

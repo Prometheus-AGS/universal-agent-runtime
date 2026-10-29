@@ -32,7 +32,6 @@
   "files": ["dist", "README.md", "LICENSE"],
   "engines": { "node": ">=20" },
   "dependencies": {
-    "@microsoft/fetch-event-source": "^2.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

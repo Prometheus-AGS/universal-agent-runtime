@@ -1,0 +1,190 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "skill-scope-and-lower-scope-policy-cannot-widen-access;lower-scopes-only-narrow-the-parent-skill-selection,-and-a-scoped-disable-is-durable",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Lower scopes only narrow the parent skill selection, and a scoped disable is durable",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 280108307
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "skills A, B and C with private rules and an agent whose parent selection is A and B with B denied",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:63"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2635556507
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "a conversation selects A and C and the run attaches A, B and C",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:102"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1080285
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "only A is eligible and active, and the answer follows A's rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:108"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3099238595
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "the same conversation selects no skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:117"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 924350,
+              "error_message": "AssertionError [ERR_ASSERTION]: No private rule was used\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-scope-policy.steps.mjs:126:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "no skill is eligible or active",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "A is disabled for a second conversation that selects A",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:129"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "that conversation never loads A",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:137"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "a third conversation that selects A uses A's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:143"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "after an owned restart the second conversation's disable of A is still saved",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-scope-policy.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 201776079
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1zY29wZS1wb2xpY3kvMjVkZDlhYzctNGEwZi00YWVkLWJhMDgtNzYyN2NmZDYyODY5Lmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@policy",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "skill-scope-and-lower-scope-policy-cannot-widen-access",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Skill scope and lower-scope policy cannot widen access",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@policy",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-scope-policy.feature"
+  }
+]

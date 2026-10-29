@@ -1,0 +1,160 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "team-follow-up-reassembles-child-context-and-dependencies;a-premature-join-is-refused-and-the-next-round-consumes-the-parents'-actual-artifacts",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A premature join is refused and the next round consumes the parents' actual artifacts",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2269320962
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math and writing specialists form an owned team",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:49"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3996986283
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a first-round math task, a private-fact writer task and a dependent join are submitted",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:158"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 797058377
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I submit the dependent join before its parents finish",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:178"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 319083195
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the premature join is refused with no attempt and no model dispatch",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:186"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 56679053240
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "the parent tasks finish in their own child threads",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:225"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 31390210430
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I submit the legitimate next round with the parents' actual artifacts",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:250"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 65343120
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the next round remembers the private first-round fact through the child thread",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:275"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 972252
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the next round consumed exactly the parent artifacts once",
+            "match": {
+              "location": "scripts/behaviors/steps/team-follow-up.steps.mjs:309"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 329424757
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90ZWFtLWZvbGxvdy11cC82NzU0NDRjOC02MTI1LTQ4ZmMtYjI4My1mMmFmYTUwMDVhNzUuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@team",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "team-follow-up-reassembles-child-context-and-dependencies",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Team follow-up reassembles child context and dependencies",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@team",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/team-follow-up.feature"
+  }
+]

@@ -1,0 +1,99 @@
+{
+  "scenario": "I20-I05-ANTHROPIC-IMPLICIT-DEFAULT",
+  "client_platform": "darwin",
+  "session_id": "531fb8d7-bcdd-4110-9ab8-e9534efebe36",
+  "model": "liter/MiniMax-M3",
+  "agent_id_sent": false,
+  "authentication_supplied_by_test": false,
+  "follow_up_contract": "client-supplied transcript (Anthropic Messages is stateless)",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/v1/messages",
+      "request": {
+        "model": "liter/MiniMax-M3",
+        "session_id": "531fb8d7-bcdd-4110-9ab8-e9534efebe36",
+        "max_tokens": 4096,
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is (76 multiplied by 29) plus 389? Reply with only the number."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"msg_78e55a2f0da6461b916e3595a8e87544\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"liter/MiniMax-M3\",\"content\":[{\"type\":\"text\",\"text\":\"<think>76 * 29 = 2204. Plus 389 = 2593.\\n\\nJustreply with the number.</think>\\n\\n2593\"}],\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"usage\":{\"input_tokens\":16152,\"output_tokens\":28,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/messages",
+      "request": {
+        "model": "liter/MiniMax-M3",
+        "session_id": "531fb8d7-bcdd-4110-9ab8-e9534efebe36",
+        "max_tokens": 4096,
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is (76 multiplied by 29) plus 389? Reply with only the number."
+          },
+          {
+            "role": "assistant",
+            "content": "2593"
+          },
+          {
+            "role": "user",
+            "content": "Add 29 to that result. Reply with only the number."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"msg_3c2b465315494f1ab9dd2b90bc5244ca\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"liter/MiniMax-M3\",\"content\":[{\"type\":\"text\",\"text\":\"2622\"}],\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"usage\":{\"input_tokens\":16238,\"output_tokens\":3,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=100",
+      "status": 200,
+      "response": "[{\"run_id\":\"16d0cb84-a02e-41fb-a00d-d380412222af\",\"agent_id\":\"disposable-lexical-semantic-13c7cc2f-b8a5-4012-885c-62fabba6abe2\",\"conversation_id\":\"3d714f95-f6f1-4cb5-bd42-dfa7429a4ba9\",\"status\":\"done\",\"agent_revision\":\"sha256:e51e1dbdfdf5c6e42aa6f0ff130bcf0305dd3bf121b81659e3d95c7b2bfe3393\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-lexical-semantic-13c7cc2f-b8a5-4012-885c-62fabba6abe2\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"delivery-pricing-13c7cc2f-b8a5-4012-885c-62fabba6abe2\",\"orchid-repotting-13c7cc2f-b8a5-4012-885c-62fabba6abe2\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'e15-no-tools-13c7cc2f' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[{\"skill_id\":\"orchid-repotting-13c7cc2f-b8a5-4012-885c-62fabba6abe2\",\"score\":1.0,\"accepted\":true},{\"skill_id\":\"delivery-pricing-13c7cc2f-b8a5-4012-885c-62fabba6abe2\",\"score\":0.0,\"accepted\":false}]},\"activated_skills\":[\"orchid-repotting-13c7cc2f-b8a5-4012-885c-62fabba6abe2\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:4eadb7c42c447e26b4a69ceaed7d28a717d54a73a52d9e836976e5a196dc4bbd\",\"prepared_sha256\":\"sha256:4eadb7c42c447e26b4a69ceaed7d28a717d54a73a52d9e836976e5a196dc4bbd\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":598,\"prepared_tokens\":598,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:4eadb7c42c447e26b4a69ceaed7d28a717d54a73a52d9e836976e5a196dc4bbd\",\"final_messages\":2,\"final_tokens\":598,\"input_allowance\":1044090,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":917,\"request_tokens\":1034,\"rendered_tokens"
+    }
+  ],
+  "expected": [
+    2593,
+    2622
+  ],
+  "turns": [
+    {
+      "deltas": 0,
+      "final": "2593"
+    },
+    {
+      "deltas": 0,
+      "final": "2622"
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "61ed62c4-f72c-43bf-a22d-403c1003632e",
+      "agent_id": "default-agent",
+      "status": "done",
+      "effective_model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      }
+    },
+    {
+      "run_id": "cab964ae-4c84-46f7-8cfa-c3af475f0ba3",
+      "agent_id": "default-agent",
+      "status": "done",
+      "effective_model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      }
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "json",
+  "scenario_status": "PASSED",
+  "duration_ms": 6849
+}

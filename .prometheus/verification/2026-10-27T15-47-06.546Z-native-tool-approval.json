@@ -1,0 +1,150 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "approved-native-tool-results-reach-the-answer;-denial-has-no-effect;approve-one-native-file-write-and-deny-another",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Approve one native file write and deny another",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13381699394
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "native file tools are enabled for one owned directory after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:99"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40107512
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a disposable agent that may use only the native file_write tool",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:142"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6518268702
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I ask the agent to write a private note and approve the file_write request",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:158"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 875732
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the approved note exists exactly once on disk and the answer reports the tool's real result",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:164"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6341079474
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I ask the agent to write a second note and deny the file_write request",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:176"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1374166
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the second note does not exist and the answer reports that the write was not performed",
+            "match": {
+              "location": "scripts/behaviors/steps/native-tool-approval.steps.mjs:182"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15226009161
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9uYXRpdmUtdG9vbC1hcHByb3ZhbC82YTI2MWM2Yy1jNjg3LTRkMDgtODEyMi03ZmM0OWQ2ZTc1NjMuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@tools",
+            "line": 1
+          },
+          {
+            "name": "@approval",
+            "line": 1
+          },
+          {
+            "name": "@native",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "approved-native-tool-results-reach-the-answer;-denial-has-no-effect",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Approved native tool results reach the answer; denial has no effect",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@tools",
+        "line": 1
+      },
+      {
+        "name": "@approval",
+        "line": 1
+      },
+      {
+        "name": "@native",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/native-tool-approval.feature"
+  }
+]

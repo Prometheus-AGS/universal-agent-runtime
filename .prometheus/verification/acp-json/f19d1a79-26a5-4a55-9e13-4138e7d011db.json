@@ -1,0 +1,100 @@
+{
+  "scenario": "I08-ACP-JSON-DEFAULT",
+  "client_platform": "darwin",
+  "agent_id": "default-agent",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "protocol": "ACP JSON-RPC POST /acp/ sessions/create, runs/create (no stream), runs/get",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "f520fa9b-b3bd-4a2b-b07b-0a53e77ac547",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "default-agent"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"f520fa9b-b3bd-4a2b-b07b-0a53e77ac547\",\"result\":{\"session_id\":\"501da32b-5970-41a7-93c8-bef934bcfca2\",\"agent_id\":\"default-agent\",\"created_at\":\"2026-10-28T21:01:39.027783Z\",\"last_active\":\"2026-10-28T21:01:39.027783Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "a04e8980-820e-40be-9838-541e56e7b634",
+        "method": "runs/create",
+        "params": {
+          "session_id": "501da32b-5970-41a7-93c8-bef934bcfca2",
+          "input": "What is (50 multiplied by 14) plus 253? Reply with only a JSON object {\"answer\": <number>}."
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"a04e8980-820e-40be-9838-541e56e7b634\",\"result\":{\"run_id\":\"a0925e96-17f0-478c-b4b5-1d53d681f50f\",\"status\":\"running\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "13d84905-b475-46a8-8ac7-514992e63ecc",
+        "method": "runs/get",
+        "params": {
+          "run_id": "a0925e96-17f0-478c-b4b5-1d53d681f50f"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"13d84905-b475-46a8-8ac7-514992e63ecc\",\"result\":{\"run_id\":\"a0925e96-17f0-478c-b4b5-1d53d681f50f\",\"status\":\"Running\",\"agent_id\":\"default-agent\",\"conversation_id\":\"501da32b-5970-41a7-93c8-bef934bcfca2\",\"output\":null,\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "b95578cd-0edb-4b5d-908c-1f9d2e471d02",
+        "method": "runs/get",
+        "params": {
+          "run_id": "a0925e96-17f0-478c-b4b5-1d53d681f50f"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"b95578cd-0edb-4b5d-908c-1f9d2e471d02\",\"result\":{\"run_id\":\"a0925e96-17f0-478c-b4b5-1d53d681f50f\",\"status\":\"Done\",\"agent_id\":\"default-agent\",\"conversation_id\":\"501da32b-5970-41a7-93c8-bef934bcfca2\",\"output\":\"{\\\"answer\\\": 953}\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "221aa1f9-a163-4bf6-9870-4769019bb256",
+        "method": "sessions/delete",
+        "params": {
+          "session_id": "501da32b-5970-41a7-93c8-bef934bcfca2"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"221aa1f9-a163-4bf6-9870-4769019bb256\",\"result\":{\"deleted\":true,\"session_id\":\"501da32b-5970-41a7-93c8-bef934bcfca2\"}}"
+    }
+  ],
+  "session_id": "501da32b-5970-41a7-93c8-bef934bcfca2",
+  "expected": 953,
+  "run_id": "a0925e96-17f0-478c-b4b5-1d53d681f50f",
+  "create_status": "running",
+  "final_run": {
+    "run_id": "a0925e96-17f0-478c-b4b5-1d53d681f50f",
+    "status": "Done",
+    "agent_id": "default-agent",
+    "conversation_id": "501da32b-5970-41a7-93c8-bef934bcfca2",
+    "output": "{\"answer\": 953}",
+    "pending_client_tools": null,
+    "client_tool_continuation": null
+  },
+  "answer": {
+    "answer": 953
+  },
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 5129
+}

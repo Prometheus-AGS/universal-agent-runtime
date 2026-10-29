@@ -1,0 +1,21 @@
+{
+  "scenario": "C35",
+  "status": "FAIL",
+  "attempt": 3,
+  "build": "frontend/src/features/chat/use-chat-runtime.ts onNew marks the thread persisted and requests its title at send (operator-approved 2026-10-27); pnpm build; static/ copied into the owned UI dir target/manual-a2ui-browser-ui (old index.html, sw.js, manifest.json backed up in the session scratchpad)",
+  "config": "scripts/behaviors/browser-history-reload.config.mjs, video off; tier3.allow created for this run and removed after",
+  "evidence": "browser-history-reload/83e4619c-87dc-4bed-9dc1-ff8156f8d022.json; browser-history-reload/c35-attempt-003-artifacts/",
+  "observed": {
+    "fact_turn": "READY; one completion POST",
+    "title": "no /api/generate-title request within 240 s; thread title stayed 'New conversation'",
+    "reload": "thread present after reload ('New conversation', 4m ago); reopened with the saved fact turn; agent-config reload 200",
+    "follow_up": "one completion POST; answer {reference: CASE-f19b6bbd-d187-46da-9026-67de81b1c809, total: 1176} matches the earlier fact, so history was used",
+    "failed_assertion": "user message roots expected 2, received 3: the follow-up user message is rendered twice (scripts/behaviors/browser/browser-history-reload.steps.mjs:240)"
+  },
+  "findings": [
+    "Regression from this fix: generateThreadTitle (frontend/src/services/chat-titles-api.ts) returns 'New conversation' without a request when the assistant text is empty. The send-time call therefore set no real title and its ref blocked the post-answer title path.",
+    "The thread survived reload, but this run does not prove the persistence fix: the 240 s title wait put about 4 minutes between the answer and the reload.",
+    "Separate UI defect, same as C53 attempt 2: the browser renders the just-sent user message twice. Server side there is one POST per turn."
+  ],
+  "next": "Operator decision: correct the title call; fix the duplicate user message rendering. A rerun needs the tier-3 guard opened again."
+}

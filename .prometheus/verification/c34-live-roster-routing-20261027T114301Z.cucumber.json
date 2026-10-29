@@ -1,0 +1,229 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "intent-routing-follows-the-live-eligible-roster;route-to-a-new-specialist-only-while-it-is-eligible",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Route to a new specialist only while it is eligible",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 69369482
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved mathematics and writing specialists are in the live roster",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:133"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 56686218
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I register a disposable houseplant care specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:153"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14310849
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the live roster includes the houseplant specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:173"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3203081006
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I ask the orchestrator to diagnose a houseplant problem",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:178"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1016486,
+              "error_message": "AssertionError [ERR_ASSERTION]: [{\"type\":\"RUN_ERROR\",\"code\":\"\",\"message\":\"graph_routing_selection_invalid\"}]\n\n1 !== 0\n\n    + expected - actual\n\n    -1\n    +0\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/live-roster-routing.steps.mjs:185:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "intent routing selects the houseplant specialist before its answer",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:183"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the houseplant specialist answers with its private clinic signature",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:190"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I delete the houseplant specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:196"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the live roster no longer includes the houseplant specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:202"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "I ask the orchestrator a fresh houseplant question",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:208"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "routing uses only a currently eligible agent and never the deleted specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:213"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "I ask the orchestrator a request that matches no specialist",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:217"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 15,
+            "name": "that request is also routed only within the current eligible roster",
+            "match": {
+              "location": "scripts/behaviors/steps/live-roster-routing.steps.mjs:222"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 188076571
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9saXZlLXJvc3Rlci1yb3V0aW5nLzUxOTVkNjgzLTNkYTUtNDIzZS1hZTVlLTI1NTE4M2YzNmZhZS5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@routing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "intent-routing-follows-the-live-eligible-roster",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Intent routing follows the live eligible roster",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@routing",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/live-roster-routing.feature"
+  }
+]

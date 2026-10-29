@@ -2562,3 +2562,134 @@ Require a private fact and matching provenance from each distinct source, plus a
 ## 2026-10-26T20:40:26.784956-05:00 — Maintain explicit behavior denominators
 
 Keep `.prometheus/verification/behavior-status.md` as the full status index, mapping manual Mac receipts to all97 legacy scenario IDs without adding overlapping counts or reopening obsolete verification ceremonies. Current33behavior/30journey passes remain valid scoped evidence; incomplete legacy predicates remain explicit.
+
+## 2026-10-27 — Audit coverage by evidence and count separate units
+
+Keep stable B01–B35 labels and32manual outcomes; do not inflate counts for incidental setup/cleanup. Explicitly report31formal scenario successes +1directprompt and B03's composite proof. Original97IDs are a separate overlapping planning view:28partial/69uncredited. Match actual route/mode and effect receipts, not topic similarity or requested strategy names. Audit files bind raw receipts and retain failures; no new runtime verification needed for retrospective count reconciliation.
+
+## 2026-10-27 — Count concrete BDD outcomes and prioritize the common gaps
+
+Use `bdd-validation-catalog.md` as the proposed forward denominator and `behavior-status.md` as the historical evidence index. Preserve 32 historical outcomes / 35 behavior labels rather than rerunning or recounting setup assertions. Name each missing supported choice/client explicitly and separate the 22 common unfinished workflows from 48 additional cases. Deduplicate chat aliases only because production mounts both to the same handler; do not infer SDK parity from HTTP. Fixed scope/effect predicates, small local scripts and finite per-case bounds serve coverage; a global runner/contract-preparation system does not. The baseline is proposed, with explicit residual scope, not a claim that every designed feature is certified.
+
+## 2026-10-27 — C33 bindings, output-limit oracle and model-choice routes
+
+Chose genuine subscription routes before the attempt: A = liter/MiniMax-M3 (session override), B = liter/k3 (new default). Rationale: both are existing paid-plan routes already verified, and B differs from the original default, so default precedence is observable. The output limit is proven by provider-observed output tokens (exactly 1024 against a 4096 request) rather than the streamed receipt's reserved_output_tokens, which is null on this path in the current binary. Model choices: GLM-5.3 via the Z.ai coding endpoint; MiMo V2.5 Pro via OpenRouter under the bare id `mimo-v2.5-pro`; Qwen3.8 Max on the operator-specified Singapore host, left disabled in UAR because the configured key is rejected there (no alternate host substituted). New-model context/output limits are conservative operator values below catalog maxima.
+
+## 2026-10-27 — Qwen3.8 Max routed through the Model Studio Token Plan host
+
+Supersedes "left disabled" in the entry above. The operator's console shows the plan-exclusive base URL, and the existing key matches the console's masked key. The Liter route now uses https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1, and UAR qwen3.8-max is enabled with pricing identity alibaba-token-plan/qwen3.8-max (subscription, catalog cost 0) rather than pay-as-you-go alibaba pricing.
+
+## 2026-10-27 — Routing-repair child phase placement and plan scope
+
+The operator placed `orchestrator-routing-reasoning-repair` as a sibling of `uar-verification-simplification`, keeping product repair separate from the manual BDD track. Plan revision 2 deliberately excludes run-level output-allowance changes (D2(b)), finish-reason recording and the other `Completed` consumers. Reason: each crosses a budget-governance or stream-contract boundary that the critique showed would break strict consumers or have no effect. They remain named residuals. The phase closes only on C34 PASS.
+
+## 2026-10-27 — D2(b): delegated child default output allowance 8,192
+
+Supersedes the entry above where it excluded output-allowance changes, and the parent plan's description of D2(b) as a change to "the run-level output reservation". Tracing showed accounting reservations without a contract or team grant come from catalog limits, not the request cap (`cost_budget.rs` `begin_call`). Operator decisions on d2b plan revision 2:
+- B1(a): every captured, non-team, local child turn without an explicit cap or contract gets the default. That covers graph-routed children, `spawn_agent` children and follow-up turns; one condition in `manager.rs`.
+- B2: 8,192.
+- B3(a): halve for small known windows, never below 1,000.
+- B4(a): one C34 pass, plus confirmation that the child ran with 8,192.
+- B5(a): one content-free log line, `delegated output allowance bound`, gives that confirmation, because the run API does not expose the budget receipt.
+
+Rationale: C34 attempts 2 and 4 show the routed MiniMax-M3 specialist spending its turn on reasoning; attempt 2's ~1,000-token unclosed block fits truncation at the 1,000 reserve. Risk accepted: the cap is the leading explanation, not a confirmed one. A larger allowance may make failures slower and up to about 8 times more expensive, and C34 does not observe the other child paths it changes.
+
+## 2026-10-27 — Operator standing instruction for the BDD catalog
+
+Operator, verbatim: "I want you to run autonomously and ONLY stop if there is a problem that need fixing. And I never want to revisit a test unless some code changes that the test depends on. I want to execute these tests in order of importance, anticipated usage (will use more), and tests that will give us verification of multiple scenarios at once. Also I want to avoid re-running ANY tests on multiple platforms if there is nothing different about those platforms that affects the test."
+
+Applied as:
+- **Standing approval:** authoring and running each catalog scenario once needs no per-run approval.
+- **Stops:** a product defect that needs fixing (code change, build or restart) stops for the operator.
+- **No revisits:** passed scenarios are not rerun unless code they depend on changes.
+- **Platform:** Mac is the single platform unless a scenario has a platform-specific dependency.
+
+## 2026-10-27 — Skill reload: persist new skills; live filesystem file supersedes its persisted copy
+
+Found by C40 on Mac. Fixed with operator approval in two steps, in `src/uar/runtime/skills/service.rs` `SkillService::refresh` plus the helper `supersede_persisted`:
+1. Persist registered skills that have no durable record, as startup does. Previously the skill listing returned 409 `skill_selection_storage_missing` after a reload found a new skill.
+2. A filesystem provider's live result supersedes the persisted rows it owns. The current body wins and the row is updated, keeping durable enabled/scoped state. Rows whose file is gone leave the registry. Persisted tombstones are not resurrected.
+
+Kept as before:
+- The standard agent directory (`agent-skills`) keeps its documented "source absence never deletes" contract.
+- API-created rows are unchanged.
+
+Verified only by the C40 rerun on binary `52360269…`. No unit tests were run (per the operator's evidence rule).
+
+## 2026-10-27 — Ingestion retries retryable store write conflicts; Retryable documents report Pending
+
+Found by C49 on Mac. Concurrent ingestion transactions all update their KB row, and Surreal rejects some commits with "Transaction conflict … can be retried". UAR used to turn each one into a 30-second-and-up job backoff and showed the document as failed.
+
+Fixed with operator approval in `src/uar/persistence/providers/ingestion_records/surreal.rs`:
+- `transition`, `publish` and `delete` re-run their transaction on a retryable conflict. The backoff is exponential and half-jittered: 15 ms base, 500 ms cap, at most 12 tries.
+- Each transaction re-checks its CAS preconditions, so a re-run cannot double-apply.
+- `IngestionState::Retryable` now maps to `DocumentStatus::Pending`.
+
+An 8-try linear version was tried first and was not enough under 60-document contention (C49 attempt 4).
+
+Verified only by the C49 run on the current binary. The alternative of removing the hot-row contention (serializing commits per KB) was deliberately not taken.
+
+## 2026-10-27 — Summarizer excludes inline reasoning from summaries
+
+Found by C43 on Mac. `summarize_span` counted MiniMax-M3's inline `<think>` text as summary content. The summary then exceeded its budget, and the whole summarization was discarded without any visible cause.
+
+Fixed with operator approval:
+- `src/uar/runtime/context/summarizer.rs` keeps only the answer part, using `split_inline_reasoning`.
+- It fails with the named errors `summary_reasoning_unclosed` and `summary_answer_missing`.
+- The budget is checked against the answer only.
+- `src/uar/context/strategy.rs` now logs the full error chain.
+
+Verified only by the C43 run on binary `cc1dbb81`. The hierarchical summarization path shares `summarize_span`; its warn site was not changed.
+
+## 2026-10-27 — C35 browser history fixes (operator-approved, uncommitted)
+- Thread rows are marked persisted and titled when the first message is sent, because PGlite reaches IndexedDB asynchronously (each flush rewrites a 16 MB WAL segment) and writes issued at answer completion were lost by a quick reload.
+- `generateThreadTitle` requests a title from the user message alone; the server builds it from the message.
+- `persistedUserMessageId` stops startStream from appending a second copy of a user message onNew already saved (cause of the duplicate bubble in C35/C53).
+- New owner-scoped `GET /api/uar/sessions/{id}` (load_session); reopened threads append turns the server session holds but local history lost, only when local user messages match the server's in order. Backfilled replies are plain text.
+- Uncomfortable part: the live bubble on the de-duplicated path shows text only (no image previews), and a reload within about a second of sending can still lose a thread the server has not yet stored.
+
+## 2026-10-27 — C53 save-every-bubble fix (operator-approved, uncommitted)
+- finishStream now saves every assistant bubble a stream created (tracked per thread), marked complete. Before, only the last bubble was saved, and startStream's history reload before each send erased a paused turn's policy card, approval card and selection notice.
+- C53 script finds the new approval as the first "Review approval" button after the turn's user message, and checks one answer bubble per specialist with the selection notice before it.
+- Uncomfortable part: bubbles of a stream that ends by error or cancel are only saved when a later stream finishes, and answered approval cards still show a Review button.
+
+## 2026-10-27 — C52 disposable-instance fixture (operator-approved, uncommitted)
+- C52 runs on a disposable UAR with its own fresh Surreal 3.3.0 server (pinned binary checked against versions.toml), a copied config with `sessions.persisted_ttl_secs`, and a second identity proxy, because enabling the persisted TTL on the owned store would delete every older session there and its embedded store cannot be aged from the host.
+- The fresh store needs product model verification (POST /api/uar/providers/{provider}/test) before turns.
+- Uncomfortable part: the fixture reuses the owned runtime's environment and proxy identity, so it proves startup and retention for that owner configuration only; PostgreSQL is still unexercised.
+
+## 2026-10-27 — AG-UI/A2UI work re-scoped into three changes
+Decision: replace the single plan with (1) `a2ui-surface-state-patches`, (2) a durable thread-scoped surface store, (3) `agui-a2ui-projection-and-custom-components` rebuilt on them. Rationale: four reviews each found new critical defects rooted in using per-run, 600 s in-memory replay as a thread's source of truth. Change 1 keeps the replay log's message encoding and adds separate reduced-state patches, which leaves the unarchived `a2ui-realtime-backbone` spec, run trace and the two integration tests intact.
+
+## 2026-10-28 — A2UI architecture scope: chat, full applications and personalized morphing
+
+- **Decision (operator):** the A2UI surface architecture (KBD child `a2ui-surface-architecture`) must serve chat-streamed surfaces, full applications built only from A2UI components over AG-UI (target: a specification like the San Saba workspace), and surfaces that morph under personalized real-time conditions.
+- **Rationale:** four revisions of `a2ui-surface-state-patches` failed review because the server tried to mirror a browser reducer; the operator judged this an architectural problem and widened the scope before choosing an architecture.
+- **Consequence:** change 1 revisions are on hold until the architecture decision; options are compared against the widened objectives.
+
+## 2026-10-28 — Pass-through identity with a required trust declaration
+
+- **Decision (operator):** adopt the recommended Q1-Q6 answers in
+  `.kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/identity-pass-through-evaluation.md`.
+  1. UAR does no authentication and applies no roles of its own. Every node
+     must declare where validation happens: `trusted-front`, an owner
+     validation hook, or `single-user`.
+  2. The partition key is `(iss, sub)`, with tenant optional.
+  3. Presented tokens are held in memory only. They are forwarded only to
+     destinations the owner opts in, preferably through a token-exchange hook.
+     They are never persisted, and the scrubber stays.
+  4. Existing `v1:k` rows are mapped to the new key; the method is decided in
+     Plan.
+  5. Removed roles are replaced by the admin key and host launch token for
+     host features, and by the owner hook for the rest.
+  6. Local test identities come from a non-secret subject-selector header on
+     the local identity proxy only.
+- **Rationale:**
+  - UAR should not be an identity provider.
+  - It removes the RS256/shared-secret incompatibility (San Saba G12).
+  - It makes many users per node cheap.
+  - The trust declaration prevents a public, multi-user node from accepting
+    asserted identities.
+  - The MCP specification forbids token passthrough, hence the opt-in
+    forwarding.
+- **Next:** KBD child phase `identity-pass-through`, Assess and Plan only.

@@ -1,0 +1,181 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "durable-memory-can-be-recalled,-updated-and-removed;save,-recall,-update-across-restart,-then-delete-a-private-memory",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Save, recall, update across restart, then delete a private memory",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14414296920
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "durable memory is enabled for the owned runtime after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 43314331
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a disposable agent with conversation memory and no knowledge or tools",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:121"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 674034800
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I save a private locker code to memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7023705719
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "a fresh conversation recalls that locker code from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:150"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13712296708
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I update the saved locker code and UAR restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:157"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9094146708
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "a fresh conversation recalls only the updated locker code from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:170"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 55320335
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I delete the saved locker code",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:178"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10378605835
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "a fresh conversation no longer knows the locker code",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:183"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21785856457
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "after another restart the deleted memory is still absent",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-lifecycle.steps.mjs:190"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15833027016
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tZW1vcnktbGlmZWN5Y2xlL2M4M2IxOTU2LTliM2QtNDhhOS04YTJlLWVjOTU5ZmNkZThiYS5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@memory",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "durable-memory-can-be-recalled,-updated-and-removed",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Durable memory can be recalled, updated and removed",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@memory",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/memory-lifecycle.feature"
+  }
+]

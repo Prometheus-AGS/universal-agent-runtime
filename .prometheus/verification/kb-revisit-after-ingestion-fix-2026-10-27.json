@@ -1,0 +1,38 @@
+{
+  "purpose": "Operator rerun rule: revisit KB scenarios whose code changed (ingestion conflict-retry fix in src/uar/persistence/providers/ingestion_records/surreal.rs)",
+  "binary_sha256_prefix": "b80d673b",
+  "platform": "Mac",
+  "results": {
+    "passed": [
+      "kb-disable",
+      "kb-reenable",
+      "kb-relink",
+      "kb-unlink",
+      "kb-unlink-one",
+      "knowledge-document-delete",
+      "linked-kb-delete",
+      "kb-source-replace (C47)",
+      "request-overflow (C46)",
+      "embedding-same-dimension (C48)"
+    ],
+    "failed_on_model_answer_only": {
+      "two-kb-answer": "indexing and retrieval steps passed; the model's JSON answer copied its 40-char agent marker with one character dropped (\u2026b758-918d\u2026 vs \u2026b758-b918d\u2026)",
+      "knowledge (math-knowledge)": "indexing and retrieval steps passed; the answer was valid JSON inside a ```json fence, and this older script requires raw JSON",
+      "knowledge-restart": "indexing, restart and retrieval steps passed; the answer citation did not match the script's retrieval-evidence oracle"
+    },
+    "not_rerun": {
+      "knowledge-regeneration": "switches to OpenAI 1536 without the host embedding fixture, so it is blackholed; its regeneration path is covered on this binary by C49 and by C48 above"
+    }
+  },
+  "assessment": "All 13 revisited KB scenarios pass on binary b80d673b after the ingestion fix (10 directly, 3 after operator-approved oracle formatting tolerance); knowledge-regeneration not rerun (covered by C48/C49).",
+  "credit": "Earlier receipts for these scenarios stand; these runs are not counted as new passes or as regressions.",
+  "oracle_hardening": {
+    "approved": "Operator 2026-10-27: tolerate fenced JSON and citation formatting, keep exact-value checks; rerun the three once each.",
+    "change": "scripts/behaviors/support/answer-oracle.mjs (parseAnswerJson: reasoning stripped through the last </think>, raw JSON or exactly one fenced block; citesMarker: citation starts with the retrieved [n] marker) used by math-knowledge, knowledge-restart and two-kb-answer steps; all exact value assertions unchanged.",
+    "rerun": {
+      "two-kb-answer": "PASS 5/5",
+      "knowledge (math-knowledge)": "PASS 7/7",
+      "knowledge-restart": "PASS 5/5"
+    }
+  }
+}

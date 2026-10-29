@@ -19,7 +19,7 @@ function alive(pid) {
 
 // Native NUL-delimited layout used by Apple's ps: adv_cmds/ps/print.c getproclline.
 // Values stay in memory; never expose the captured buffer in an error or receipt.
-function processEnvironment(pid) {
+export function processEnvironment(pid, expectedArgc = 3) {
   let raw;
   try {
     raw = execFileSync('python3', ['-c', `
@@ -37,7 +37,7 @@ sys.stdout.buffer.write(buf.raw[:size.value])
   } catch { throw new Error('Cannot capture the owned process environment; runtime left untouched'); }
   assert.ok(raw.length > 4, 'Missing process argument bytes');
   const argc = raw.readInt32LE(0);
-  assert.equal(argc, 3, 'Expected binary, --config and config path');
+  assert.equal(argc, expectedArgc, 'Unexpected owned process argument count');
   let cursor = 4;
   const next = () => {
     const end = raw.indexOf(0, cursor);
@@ -72,7 +72,8 @@ export async function assertOwnedEndpoint(base) {
   assert.equal(new URL(runtime.runtime_url).href, new URL(launch.base_url).href);
   assert.equal(runtime.runtime_pid, launch.pid);
   assert.equal(runtime.external_identity_pid, proxy.pid);
-  const expected = `${proxy.binary} --config ${proxy.config} --upstream ${proxy.upstream} --listen ${new URL(proxy.base_url).host}`;
+  const grpcListen = proxy.grpc_base_url ? ` --grpc-listen ${new URL(proxy.grpc_base_url).host}` : '';
+  const expected = `${proxy.binary} --config ${proxy.config} --upstream ${proxy.upstream} --listen ${new URL(proxy.base_url).host}${grpcListen}`;
   assert.equal(execFileSync('ps', ['-p', String(proxy.pid), '-o', 'command='], { encoding: 'utf8', timeout: 10_000 }).trim(), expected);
   for (const [pid, url] of [[proxy.pid, proxy.base_url], [launch.pid, launch.base_url]]) {
     const listener = execFileSync('lsof', ['-nP', '-a', '-p', String(pid), '-iTCP:' + new URL(url).port, '-sTCP:LISTEN', '-Fn'], { encoding: 'utf8', timeout: 10_000 });

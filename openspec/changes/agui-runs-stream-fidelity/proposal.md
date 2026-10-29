@@ -34,3 +34,15 @@ the-boss will translate UAR's AG-UI runs stream into its own message parts and r
 - **Runtime UX:** tool failures render as failed in the UAR console; a lagging tab reconnects instead of showing a gap.
 - **Provider compatibility:** unaffected.
 - **KBD workflow state:** yes. This change belongs to the-boss child phase `the-boss-universal-agent-runtime` (step 2); that phase's `progress.json` in `prometheus-skills-mini` must list it. This repository's `.kbd-orchestrator/` is not updated by this authoring pass.
+
+## Coordination with `a2ui-surface-state-patches` (2026-10-27)
+
+- This change remains the only change that MODIFIES "Cursor-consistent attach
+  and replay snapshots". `a2ui-surface-state-patches` does not modify that
+  requirement. It ADDs a separate requirement, "The UAR initial state holds
+  A2UI surfaces and actions", which defines the initial state that this
+  requirement refers to. The two changes can be archived in either order.
+- A2UI state patches become valid RFC 6902 under `a2ui-surface-state-patches`.
+  This change's eviction base, which keeps the state produced by evicted
+  events, must fold those patches the same way the snapshot applies them.
+  When it lands, it retires that change's history-ring limit (L2).

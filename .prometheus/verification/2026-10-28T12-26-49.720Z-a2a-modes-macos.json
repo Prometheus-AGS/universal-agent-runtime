@@ -1,0 +1,166 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks;legacy-a2a-message/send-completes-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Legacy A2A message/send completes and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 71872583
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for A2A",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:34"
+            }
+          },
+          {
+            "result": {
+              "status": "undefined",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a fresh calculation and then a dependent follow-up through legacy A2A message/send"
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "both legacy tasks complete with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:82"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 38853837
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hMmEtbW9kZXMvN2IxNDMxMjMtOGM1OC00ODM1LTlmZjQtZTA4YjRmNjM1NmI4Lmpzb24iLCJzdGF0dXMiOiJVTkRFRklORUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks;a2a-v1-sendstreamingmessage-streams-task-updates-and-continues-in-the-same-context",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "A2A v1 SendStreamingMessage streams task updates and continues in the same context",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 42590701
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for A2A",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:34"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7543859308
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I send a fresh calculation and then a dependent follow-up through A2A v1 SendStreamingMessage",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 1339003,
+              "error_message": "AssertionError [ERR_ASSERTION]: Require one unambiguous JSON answer: \"marker\": \"A2A-4246be88-6893-467f-8496-258ed3439c7c\",\n\n0 !== 1\n\n    + expected - actual\n\n    -0\n    +1\n\n    at parseAnswerJson (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/answer-oracle.mjs:18:10)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/a2a-modes.steps.mjs:126:20)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "both streams progress to a completed task with the agent's marker and the correct answers in one context",
+            "match": {
+              "location": "scripts/behaviors/steps/a2a-modes.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 66446084
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hMmEtbW9kZXMvNGViOTQxMWUtOGJlMi00OGFiLTk5NjItMTY4YjRjNzM1YWUwLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "legacy-a2a-json-and-a2a-v1-streamed-tasks",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Legacy A2A JSON and A2A v1 streamed tasks",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@a2a",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/a2a-modes.feature"
+  }
+]

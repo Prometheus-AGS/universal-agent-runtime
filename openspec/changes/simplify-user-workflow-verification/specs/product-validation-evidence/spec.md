@@ -214,3 +214,42 @@ The manual scenario SHALL unlink exactly one of two persisted KB references whil
 - **THEN** its answer contains the remaining source fact and matching runtime citation, while the removed source fact is unavailable and absent from citations
 - **AND** both original KB documents remain directly searchable and unchanged
 - **AND** only disposable resources are cleaned up, raw evidence is retained, and previously verified scenarios are not rerun
+
+### Requirement: Disabling KB access retains links without exposing retrieved knowledge
+The selected manual behavior SHALL disable an agent's KB access without deleting its references or source data.
+
+#### Scenario: Disable a linked agent's knowledge access
+- **GIVEN** a disposable agent with enabled KB access and an indexed linked source whose private fact appears in a genuine answer with matching provenance
+- **WHEN** only memory.kb.enabled is changed to false
+- **THEN** its saved KB links remain unchanged and a fresh-session answer omits that private fact and all retrieval citations while answering ordinary arithmetic correctly
+- **AND** the original KB and document remain unchanged and directly searchable
+- **AND** raw evidence is retained, disposable resources are cleaned up, and no previously verified scenario is rerun
+
+### Requirement: Re-enabling KB access reuses retained source references
+The selected manual behavior SHALL restore access by changing only the agent's KB enabled flag, preserving its original links and indexed sources.
+
+#### Scenario: Enable previously disabled retained knowledge
+- **GIVEN** an indexed KB and an agent with a saved reference, subsequently disabled with that reference intact
+- **WHEN** only memory.kb.enabled is changed to true
+- **THEN** a fresh genuine answer recovers the private document-only fact and a matching citation for the original KB and document
+- **AND** the retained links and original KB/document snapshots remain unchanged without reupload, relink or regeneration
+- **AND** disposable resources are cleaned up, evidence is retained and prior verified scenarios are not rerun
+
+### Requirement: Coverage counts distinguish executed scenarios from overlapping claims
+The manual coverage index SHALL derive counts from retained result evidence, preserve failed attempts and state when a workflow outcome combines successful steps from separate executions.
+
+#### Scenario: Audit retained manual results without rerunning them
+- **WHEN** saved receipts and original scenario predicates are reconciled
+- **THEN** behavior labels, distinct successful executions, composite outcomes and broader original-case overlaps are counted separately
+- **AND** incidental supporting assertions do not create extra executions, evidence gaps stay explicit, and a configured strategy is not reported as executed without a matching effect receipt
+- **AND** corrections update the maintained index and append-only process record without changing historical raw receipts
+
+### Requirement: Forward BDD scope has a finite user-outcome denominator
+The proposed manual BDD catalog SHALL name each concrete scenario, its prerequisites, action, observable result, failure/evidence requirements and owner. Existing bounded passes SHALL retain credit with their source/platform and composite-proof limits. Separate optional configurations and client modes SHALL stay visible without an automatic alias/default/custom/platform Cartesian product.
+
+#### Scenario: Engineer coverage from prior manual outcomes
+- **WHEN** the operator requests a complete forward scenario set
+- **THEN** every existing bounded manual outcome and original scenario ID is mapped to a retained result, concrete future scenario or explicit deferred/deduplicated disposition
+- **AND** counts distinguish scenario definitions, historical successful executions and per-platform/backend execution cells
+- **AND** the catalog separates common unfinished workflows from additional supported choices and does not silently claim residual promises are validated
+- **AND** planning runs no tests, creates no automatic runner, requires no test authentication and does not reopen superseded packet/signature ceremonies

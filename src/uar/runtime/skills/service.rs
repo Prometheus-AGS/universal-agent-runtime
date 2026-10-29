@@ -92,6 +92,38 @@ fn default_margin_threshold() -> f32 {
     0.05
 }
 
+/// Decide one refreshed skill against its persisted row. A live file owned by a
+/// superseding filesystem provider wins over that provider's persisted copy and
+/// keeps its durable selection; it is queued for persistence when it differs.
+/// A persisted row owned by such a provider is dropped (the live result, or the
+/// file's absence, is authoritative). A persisted tombstone is not resurrected.
+fn supersede_persisted(
+    kind: StorageProviderKind,
+    mut skill: Skill,
+    stored: &HashMap<String, Skill>,
+    live_owners: &HashSet<String>,
+    changed: &mut Vec<Skill>,
+) -> Option<Skill> {
+    if !live_owners.contains(&skill.provider_id) {
+        return Some(skill);
+    }
+    if kind != StorageProviderKind::Filesystem {
+        return None;
+    }
+    match stored.get(&skill.skill_id).filter(|row| row.provider_id == skill.provider_id) {
+        Some(row) if row.tombstoned => None,
+        Some(row) => {
+            skill.enabled = row.enabled;
+            skill.scoped_config.clone_from(&row.scoped_config);
+            if serde_json::to_value(row).ok() != serde_json::to_value(&skill).ok() {
+                changed.push(skill.clone());
+            }
+            Some(skill)
+        }
+        None => Some(skill),
+    }
+}
+
 fn is_configured_filesystem_provider(provider: &dyn SkillStorageProvider) -> bool {
     provider.kind() == StorageProviderKind::Filesystem
         && is_configured_filesystem_provider_id(provider.id())
@@ -543,21 +575,56 @@ impl SkillService {
         let mut registry = self.registry.write().await;
         registry.clear();
 
-        let mut all_skills = Vec::new();
+        let mut loaded = Vec::new();
         for provider in &self.providers {
             if !provider.is_enabled() {
                 continue;
             }
             match provider.refresh().await {
-                Ok(skills) => {
-                    all_skills.extend(skills.iter().filter(|skill| !skill.tombstoned).cloned());
-                    registry.register_all_loaded(skills);
-                }
+                Ok(skills) => loaded.push((provider.kind(), provider.id().to_owned(), skills)),
                 Err(e) => {
                     error!("Failed to refresh provider '{}': {:?}", provider.name(), e);
                 }
             }
         }
+
+        let stored = registry
+            .list_persisted()
+            .await?
+            .into_iter()
+            .map(|skill| (skill.skill_id.clone(), skill))
+            .collect::<HashMap<_, _>>();
+        // A filesystem provider's live result supersedes the persisted rows it
+        // owns. The standard agent directory keeps its documented contract that
+        // source absence never deletes; API-created rows are unchanged.
+        let live_owners = loaded
+            .iter()
+            .filter(|(kind, id, _)| *kind == StorageProviderKind::Filesystem && id != "agent-skills")
+            .map(|(_, id, _)| id.clone())
+            .collect::<HashSet<_>>();
+        let mut all_skills = Vec::new();
+        let mut changed = Vec::new();
+        for (kind, _, skills) in loaded {
+            let skills = skills
+                .into_iter()
+                .filter_map(|skill| supersede_persisted(kind, skill, &stored, &live_owners, &mut changed))
+                .collect::<Vec<_>>();
+            all_skills.extend(skills.iter().filter(|skill| !skill.tombstoned).cloned());
+            registry.register_all_loaded(skills);
+        }
+
+        // Newly discovered skills need durable records, as at startup;
+        // otherwise selection reconciliation rejects every later read.
+        let changed_ids = changed.iter().map(|skill| skill.skill_id.clone()).collect::<HashSet<_>>();
+        let unpersisted = registry
+            .list_for_deployment()
+            .into_iter()
+            .filter(|skill| !stored.contains_key(&skill.skill_id) && !changed_ids.contains(&skill.skill_id))
+            .chain(changed)
+            .collect::<Vec<_>>();
+        registry
+            .register_checked_batch_without_embeddings(unpersisted)
+            .await?;
 
         Ok(all_skills)
     }

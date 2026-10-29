@@ -1,0 +1,332 @@
+{
+  "scenario": "E10-SELECTION-STREAM-REPLAY",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "model": "liter/MiniMax-M3",
+  "thread_id": "c306afec-2393-4050-8384-3145d65ec84b",
+  "dispatch_evidence": "new run ids since start and per-run accounting call counts",
+  "streams": {
+    "original.first": [
+      {
+        "id": "7223b7395d2d6c171151f565997ac07bad2f7d586b588465bd0cd77e77d9f95c:0:0",
+        "type": "RUN_STARTED",
+        "runId": "8cbc531d-79cb-4bcb-9a16-2777bc7c3400"
+      },
+      {
+        "id": "7223b7395d2d6c171151f565997ac07bad2f7d586b588465bd0cd77e77d9f95c:11:1",
+        "type": "TOOL_CALL_START"
+      },
+      {
+        "id": "7223b7395d2d6c171151f565997ac07bad2f7d586b588465bd0cd77e77d9f95c:11:2",
+        "type": "TOOL_CALL_ARGS"
+      },
+      {
+        "id": "7223b7395d2d6c171151f565997ac07bad2f7d586b588465bd0cd77e77d9f95c:11:3",
+        "type": "TOOL_CALL_END"
+      },
+      {
+        "id": "7223b7395d2d6c171151f565997ac07bad2f7d586b588465bd0cd77e77d9f95c:11:100",
+        "type": "RUN_FINISHED",
+        "runId": "8cbc531d-79cb-4bcb-9a16-2777bc7c3400"
+      }
+    ],
+    "original.resumed": [
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:11:0",
+        "type": "RUN_STARTED",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:14:1",
+        "type": "CUSTOM",
+        "name": "uar.agent.selected",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:18:1",
+        "type": "TEXT_MESSAGE_START"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:18:2",
+        "type": "TEXT_MESSAGE_CONTENT"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:20:90",
+        "type": "TEXT_MESSAGE_END"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:20:100",
+        "type": "RUN_FINISHED",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      }
+    ],
+    "reconnect": [
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:18:1",
+        "type": "TEXT_MESSAGE_START"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:18:2",
+        "type": "TEXT_MESSAGE_CONTENT"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:20:90",
+        "type": "TEXT_MESSAGE_END"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:20:100",
+        "type": "RUN_FINISHED",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      }
+    ],
+    "replay": [
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:11:0",
+        "type": "RUN_STARTED",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:14:1",
+        "type": "CUSTOM",
+        "name": "uar.agent.selected",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:18:1",
+        "type": "TEXT_MESSAGE_START"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:18:2",
+        "type": "TEXT_MESSAGE_CONTENT"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:20:90",
+        "type": "TEXT_MESSAGE_END"
+      },
+      {
+        "id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:20:100",
+        "type": "RUN_FINISHED",
+        "runId": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+      }
+    ],
+    "next.first": [
+      {
+        "id": "1c152ebd69d926a119c1a9e28f8af5caff79284939365f36cbca5e55a20a4901:0:0",
+        "type": "RUN_STARTED",
+        "runId": "89a1d571-e1e2-490c-a9ee-1102d898292b"
+      },
+      {
+        "id": "1c152ebd69d926a119c1a9e28f8af5caff79284939365f36cbca5e55a20a4901:11:1",
+        "type": "TOOL_CALL_START"
+      },
+      {
+        "id": "1c152ebd69d926a119c1a9e28f8af5caff79284939365f36cbca5e55a20a4901:11:2",
+        "type": "TOOL_CALL_ARGS"
+      },
+      {
+        "id": "1c152ebd69d926a119c1a9e28f8af5caff79284939365f36cbca5e55a20a4901:11:3",
+        "type": "TOOL_CALL_END"
+      },
+      {
+        "id": "1c152ebd69d926a119c1a9e28f8af5caff79284939365f36cbca5e55a20a4901:11:100",
+        "type": "RUN_FINISHED",
+        "runId": "89a1d571-e1e2-490c-a9ee-1102d898292b"
+      }
+    ],
+    "next.resumed": [
+      {
+        "id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:11:0",
+        "type": "RUN_STARTED",
+        "runId": "fea4ef4e-4c7a-4871-9b5c-decdc8b84b5f"
+      },
+      {
+        "id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:14:1",
+        "type": "CUSTOM",
+        "name": "uar.agent.selected",
+        "runId": "fea4ef4e-4c7a-4871-9b5c-decdc8b84b5f"
+      },
+      {
+        "id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:18:1",
+        "type": "TEXT_MESSAGE_START"
+      },
+      {
+        "id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:18:2",
+        "type": "TEXT_MESSAGE_CONTENT"
+      },
+      {
+        "id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:20:90",
+        "type": "TEXT_MESSAGE_END"
+      },
+      {
+        "id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:20:100",
+        "type": "RUN_FINISHED",
+        "runId": "fea4ef4e-4c7a-4871-9b5c-decdc8b84b5f"
+      }
+    ]
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:972062f3b709f787d80289e3dfa4ee9b129013c571ce984c2b35d1ccd087fcb9\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=200",
+      "status": 200,
+      "response": "[{\"run_id\":\"5e1abb00-976c-4aa8-b56b-51a1a1db10a3\",\"agent_id\":\"orchestrator-agent\",\"conversation_id\":\"agui-69a19815104998dbcfad0d1f87cd64bfccdc155902ed19f23b27ac60c8dc225c\",\"status\":\"done\",\"agent_revision\":\"sha256:0da9f09752cb7689ae6dd035b0e6dd6fd4be64710deede75006fa04e842aa500\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"orchestrator-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=200",
+      "status": 200,
+      "response": "[{\"run_id\":\"27e2c571-74b5-4761-a131-d090ff5f4512\",\"agent_id\":\"math-specialist-db64c2a8\",\"conversation_id\":\"3584a021-90c5-44c5-9de8-fa4b1fb37615\",\"status\":\"done\",\"agent_revision\":\"sha256:94c69d9ab3a67c6bc45288d90e16dbad05c6510414e3341346e51f0c4aedca9c\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"math-specialist-db64c2a8\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolv"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/27e2c571-74b5-4761-a131-d090ff5f4512",
+      "status": 200,
+      "response": "[]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/785ee94e-317e-4977-b7a8-3d0f09f09083",
+      "status": 200,
+      "response": "[{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\",\"call_id\":\"8f898430-7678-4f3d-a39c-7b0d45d8cbd9\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"run\",\"scope_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"session\",\"scope_id\":\"agui-d3858fad671769a6ceed8d7549d04a32ec1029104f4c9cc6efc50764699ff3a3\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"agent\",\"scope_id\":\"orchestrator-agent\"},\"generation\":1},{\"identity\":{\"owner\":\"deployment\",\"scope\":\"global\",\"scope_id\":\"global\"},\"generation\":1}],\"reserved_cost_usd\":0.9143999999999999,\"reserved_tokens\":1512000,\"source_reservation\":null},\"revision\":2,\"state\":\"settled\",\"observed_cost_usd\":0.00503958,\"observed_tokens\":16745,\"reconciliation_evidence\":\"host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:785ee94e-317e-4977-b7a8-3d0f09f09083:36:8f898430-7678-4f3d-a39c-7b0d45d8cbd9:1\"},{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\",\"call_id\":\"fcc44ae7-b44b-4bf2-9fdd-67287b4d7265\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-te"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=200",
+      "status": 200,
+      "response": "[{\"run_id\":\"27e2c571-74b5-4761-a131-d090ff5f4512\",\"agent_id\":\"math-specialist-db64c2a8\",\"conversation_id\":\"3584a021-90c5-44c5-9de8-fa4b1fb37615\",\"status\":\"done\",\"agent_revision\":\"sha256:94c69d9ab3a67c6bc45288d90e16dbad05c6510414e3341346e51f0c4aedca9c\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"math-specialist-db64c2a8\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolv"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/27e2c571-74b5-4761-a131-d090ff5f4512",
+      "status": 200,
+      "response": "[]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/785ee94e-317e-4977-b7a8-3d0f09f09083",
+      "status": 200,
+      "response": "[{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\",\"call_id\":\"8f898430-7678-4f3d-a39c-7b0d45d8cbd9\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"run\",\"scope_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"session\",\"scope_id\":\"agui-d3858fad671769a6ceed8d7549d04a32ec1029104f4c9cc6efc50764699ff3a3\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"agent\",\"scope_id\":\"orchestrator-agent\"},\"generation\":1},{\"identity\":{\"owner\":\"deployment\",\"scope\":\"global\",\"scope_id\":\"global\"},\"generation\":1}],\"reserved_cost_usd\":0.9143999999999999,\"reserved_tokens\":1512000,\"source_reservation\":null},\"revision\":2,\"state\":\"settled\",\"observed_cost_usd\":0.00503958,\"observed_tokens\":16745,\"reconciliation_evidence\":\"host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:785ee94e-317e-4977-b7a8-3d0f09f09083:36:8f898430-7678-4f3d-a39c-7b0d45d8cbd9:1\"},{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\",\"call_id\":\"fcc44ae7-b44b-4bf2-9fdd-67287b4d7265\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-te"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=200",
+      "status": 200,
+      "response": "[{\"run_id\":\"27e2c571-74b5-4761-a131-d090ff5f4512\",\"agent_id\":\"math-specialist-db64c2a8\",\"conversation_id\":\"3584a021-90c5-44c5-9de8-fa4b1fb37615\",\"status\":\"done\",\"agent_revision\":\"sha256:94c69d9ab3a67c6bc45288d90e16dbad05c6510414e3341346e51f0c4aedca9c\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"math-specialist-db64c2a8\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"selected\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolv"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/27e2c571-74b5-4761-a131-d090ff5f4512",
+      "status": 200,
+      "response": "[]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/785ee94e-317e-4977-b7a8-3d0f09f09083",
+      "status": 200,
+      "response": "[{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\",\"call_id\":\"8f898430-7678-4f3d-a39c-7b0d45d8cbd9\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"run\",\"scope_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"session\",\"scope_id\":\"agui-d3858fad671769a6ceed8d7549d04a32ec1029104f4c9cc6efc50764699ff3a3\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"agent\",\"scope_id\":\"orchestrator-agent\"},\"generation\":1},{\"identity\":{\"owner\":\"deployment\",\"scope\":\"global\",\"scope_id\":\"global\"},\"generation\":1}],\"reserved_cost_usd\":0.9143999999999999,\"reserved_tokens\":1512000,\"source_reservation\":null},\"revision\":2,\"state\":\"settled\",\"observed_cost_usd\":0.00503958,\"observed_tokens\":16745,\"reconciliation_evidence\":\"host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:785ee94e-317e-4977-b7a8-3d0f09f09083:36:8f898430-7678-4f3d-a39c-7b0d45d8cbd9:1\"},{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"785ee94e-317e-4977-b7a8-3d0f09f09083\",\"call_id\":\"fcc44ae7-b44b-4bf2-9fdd-67287b4d7265\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-te"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/cd988fce-0907-4140-96aa-f6b4f4437b50",
+      "status": 200,
+      "response": "[]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/accounting/calls/f970b74c-bb65-44af-8e61-3b25dad424bb",
+      "status": 200,
+      "response": "[{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"f970b74c-bb65-44af-8e61-3b25dad424bb\",\"call_id\":\"414d1c6f-2244-4fa3-98ed-434912c121d4\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"run\",\"scope_id\":\"f970b74c-bb65-44af-8e61-3b25dad424bb\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"session\",\"scope_id\":\"agui-d3858fad671769a6ceed8d7549d04a32ec1029104f4c9cc6efc50764699ff3a3\"},\"generation\":1},{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"scope\":\"agent\",\"scope_id\":\"orchestrator-agent\"},\"generation\":1},{\"identity\":{\"owner\":\"deployment\",\"scope\":\"global\",\"scope_id\":\"global\"},\"generation\":1}],\"reserved_cost_usd\":0.9143999999999999,\"reserved_tokens\":1512000,\"source_reservation\":null},\"revision\":2,\"state\":\"settled\",\"observed_cost_usd\":0.0050428800000000005,\"observed_tokens\":16804,\"reconciliation_evidence\":\"host-confirmed-terminal:131:v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007:36:f970b74c-bb65-44af-8e61-3b25dad424bb:36:414d1c6f-2244-4fa3-98ed-434912c121d4:1\"},{\"admission\":{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"run_id\":\"f970b74c-bb65-44af-8e61-3b25dad424bb\",\"call_id\":\"864544f0-1092-49f5-bb9d-ae20ef19af1f\",\"attempt\":1},\"model\":\"minimax/MiniMax-M3\",\"scopes\":[{\"identity\":{\"owner\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/c306afec-2393-4050-8384-3145d65ec84b",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    }
+  ],
+  "selection": {
+    "frame_id": "a1cfe4903ee1ec7e453310da00ae04b31985038f8a5c240fba830ac68173bc73:14:1",
+    "value": {
+      "sourceAgentId": "orchestrator-agent",
+      "agent": {
+        "id": "math-specialist-db64c2a8",
+        "title": "Mathematics Specialist"
+      },
+      "selectedThreadId": "3584a021-90c5-44c5-9de8-fa4b1fb37615",
+      "selectionMethod": "intent",
+      "rosterRevision": "d6e2b536dea4879f385147b060b01d3f5aada9bd25e51687fc253d195eb0ccf0"
+    },
+    "run_id": "5c129cde-326a-4fc7-a38f-9e58dc5ee8e0"
+  },
+  "dispatches_after_original": {
+    "27e2c571-74b5-4761-a131-d090ff5f4512": {
+      "agent_id": "math-specialist-db64c2a8",
+      "status": "done",
+      "calls": 0
+    },
+    "785ee94e-317e-4977-b7a8-3d0f09f09083": {
+      "agent_id": "orchestrator-agent",
+      "status": "done",
+      "calls": 2
+    }
+  },
+  "dispatches_after_replays": {
+    "27e2c571-74b5-4761-a131-d090ff5f4512": {
+      "agent_id": "math-specialist-db64c2a8",
+      "status": "done",
+      "calls": 0
+    },
+    "785ee94e-317e-4977-b7a8-3d0f09f09083": {
+      "agent_id": "orchestrator-agent",
+      "status": "done",
+      "calls": 2
+    }
+  },
+  "dispatches_after_next": {
+    "27e2c571-74b5-4761-a131-d090ff5f4512": {
+      "agent_id": "math-specialist-db64c2a8",
+      "status": "done",
+      "calls": 0
+    },
+    "785ee94e-317e-4977-b7a8-3d0f09f09083": {
+      "agent_id": "orchestrator-agent",
+      "status": "done",
+      "calls": 2
+    },
+    "cd988fce-0907-4140-96aa-f6b4f4437b50": {
+      "agent_id": "math-specialist-db64c2a8",
+      "status": "done",
+      "calls": 0
+    },
+    "f970b74c-bb65-44af-8e61-3b25dad424bb": {
+      "agent_id": "orchestrator-agent",
+      "status": "done",
+      "calls": 2
+    }
+  },
+  "next_selection": {
+    "frame_id": "a9a157175fb99956bdbadcca48f6fba3511e8034193a441261d3d4b2539899fd:14:1",
+    "value": {
+      "sourceAgentId": "orchestrator-agent",
+      "agent": {
+        "id": "math-specialist-db64c2a8",
+        "title": "Mathematics Specialist"
+      },
+      "selectedThreadId": "1d4ff39a-8948-4389-8e1c-997365db6aed",
+      "selectionMethod": "intent",
+      "rosterRevision": "d6e2b536dea4879f385147b060b01d3f5aada9bd25e51687fc253d195eb0ccf0"
+    },
+    "run_id": "fea4ef4e-4c7a-4871-9b5c-decdc8b84b5f"
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 15038
+}

@@ -99,8 +99,11 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         wasm-tools \
         wit-bindgen-cli \
         wasm-bindgen-cli \
-        cargo-wasi \
         twiggy \
+    # cargo-wasi 0.1.28 (archived, last release) ships no prebuilt binaries, so
+    # binstall compiles it from source, and its locked rustix no longer
+    # compiles on the pinned nightly. Unlocked, it resolves a current rustix.
+    && cargo binstall --no-confirm cargo-wasi \
     && rm -rf /usr/local/cargo/registry /usr/local/cargo/git
 
 # Node.js + npm + pnpm + bun + JS/TS Component-Model toolchain.
@@ -215,8 +218,8 @@ RUN cd frontend \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
-# The current lockfile uses registry dependencies, including Kreuzberg. Retain
-# the optional github_token mount for private Git dependency compatibility.
+# The lockfile fetches xberg (document extraction) from a public Git fork over
+# HTTPS. Retain the optional github_token mount for private Git dependencies.
 # Runtime-only Git configuration rewrites SSH to credential-free HTTPS URLs;
 # the GitHub-scoped helper reads the mount only on get and never stores secrets.
 RUN --mount=type=secret,id=github_token \

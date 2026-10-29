@@ -1,0 +1,234 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-team-recovers-after-cancellation-and-restart-without-duplicate-work;cancelled-work-stays-honest-across-a-restart-and-only-permitted-work-resumes-to-a-dependent-conclusion",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Cancelled work stays honest across a restart and only permitted work resumes to a dependent conclusion",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2681862639
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math and writing specialists form an owned recovery team",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:69"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4640742202
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "a math tally, a long volunteer note and a dependent join are submitted",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:209"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11501033931
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "the math tally settles with its artifact",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:231"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9950475414
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "I cancel the volunteer note once its attempt is running",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:262"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1384622068
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the cancelled note reports an honest non-success state",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:295"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15451356641
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I restart the owned UAR",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:335"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 582211007
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the settled tally artifact, attempt and model calls are byte-identical after the restart",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:354"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 413079
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the cancelled note is still reported honestly with no new model calls",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:364"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1858075945
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "I ask the team to recover only what its recovery design permits",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:374"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 502931132
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "recovery re-dispatches nothing and the dependent of the cancelled note stays blocked",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:385"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 85704213225,
+              "error_message": "AssertionError [ERR_ASSERTION]: {\"id\":\"36f28ce5-d110-42dc-b9cf-a0bb18671919\",\"taskId\":\"note-retry\",\"runId\":\"1f7d8035-085b-4728-9910-ed2111015960\",\"status\":\"failed\",\"executionOutcome\":\"failed\",\"effectDisposition\":\"confirmed\",\"accountingState\":\"settled\",\"usage\":{\"tokens\":60258,\"costMicrounits\":18765,\"elapsedSeconds\":80},\"stateReason\":\"team_tool_application_or_transport_failed\",\"updatedAt\":\"2026-10-27T19:25:08.116579Z\"}\n    + expected - actual\n\n    -false\n    +true\n\n    at waitSucceeded (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/team-recovery.steps.mjs:187:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/team-recovery.steps.mjs:411:21)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "I submit an explicit replacement note and a replacement join over the settled tally artifact",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:406"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 15,
+            "name": "the replacement join reaches a legitimate conclusion from both artifacts",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:430"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "no settled tally work or cancelled note attempt was silently repeated",
+            "match": {
+              "location": "scripts/behaviors/steps/team-recovery.steps.mjs:451"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2093103842
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi90ZWFtLXJlY292ZXJ5LzFiOTViMDFiLWNmMmYtNDcxNy1iNDYzLWEzYTVmY2VhNTdlOS5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@team",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-team-recovers-after-cancellation-and-restart-without-duplicate-work",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A team recovers after cancellation and restart without duplicate work",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@team",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/team-recovery.feature"
+  }
+]

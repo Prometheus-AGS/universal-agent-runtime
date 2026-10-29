@@ -2,17 +2,17 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 679,
-  "derivedRevision": 679,
+  "sourceRevision": 700,
+  "derivedRevision": 700,
   "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 567,
+    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 588,
     "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
   },
   "conflictCount": 0,
   "phase": "uar-verification-simplification",
   "phaseId": "uar-verification-simplification",
   "parentPhase": "uar-post-lifecycle-verification-readiness",
-  "last_updated": "2026-10-26T12:49:19.688967Z",
+  "last_updated": "2026-10-28T10:59:39.603112Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 0,
@@ -90,6 +90,26 @@
       "changes_total": 1,
       "implementation_completed": 0,
       "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    },
+    "agui-a2ui-projection-and-custom-components": {
+      "status": "IN_PROGRESS",
+      "changes_completed": 0,
+      "changes_total": 0,
+      "implementation_completed": 0,
+      "implementation_total": 0,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    },
+    "identity-pass-through": {
+      "status": "IN_PROGRESS",
+      "changes_completed": 0,
+      "changes_total": 0,
+      "implementation_completed": 0,
+      "implementation_total": 0,
       "certification_status": "NOT_TRACKED",
       "handoff": null,
       "completed_at": null

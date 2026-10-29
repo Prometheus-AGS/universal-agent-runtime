@@ -1,0 +1,19 @@
+{
+  "scenario": "C53",
+  "status": "FAIL",
+  "attempt": 3,
+  "runtime": "binary a0f769d2…, PID 78140, UI bundle index-fJgR9a8v.js (includes the persistedUserMessageId fix)",
+  "config": "scripts/behaviors/browser-agent-selection.config.mjs, video off; tier3.allow created for this run and removed after (operator-approved 2026-10-27)",
+  "evidence": "browser-agent-selection/ebb6abbc-fcab-4e22-9ed0-7890b4c2dae7.json; browser-agent-selection/c53-attempt-003-artifacts/",
+  "observed": {
+    "writing_turn_server": "one completion POST; run a166384e-c94c-4e24-b130-76fd20314bbd; spawn_agent approval answered in the browser; one uar.agent.selected event for writing-specialist (intent) at stream index 13, before the first text at 18; answer begins '[writing-specialist]'",
+    "writing_turn_browser": "user message shown once (duplicate fixed). Three assistant bubbles for the turn: (1) policy artifact, sources and manifest, (2) the spawn_agent approval card next to 'Selected agent: Blog and Article Writer', (3) the specialist answer, which appears once",
+    "failed_assertion": "assistant message roots expected 1, received 3 (scripts/behaviors/browser/browser-agent-selection.steps.mjs:192)",
+    "math_turn": "not reached",
+    "page_errors": [],
+    "cleanup": "no cleanup errors"
+  },
+  "classification": "script: the one-assistant-bubble-per-turn assertion is stricter than the C53 contract (selection visible before the answer, IDs match execution, no duplicate answer or run). The browser store starts a new assistant bubble whenever the stream's run changes or pauses (chat-message-store.ts getOrCreateStreamingMessage and the runId checks), so an approval-paused turn renders as several bubbles. The answer itself is not duplicated.",
+  "proposed_script_change": "Per turn, require exactly one assistant bubble containing the specialist signature and the selection notice before it, instead of a total bubble count; in the final step, require each specialist signature exactly once instead of exactly 2 bubbles.",
+  "next": "Operator approval for the script change; a rerun needs the tier-3 guard opened again."
+}

@@ -1,0 +1,16 @@
+{
+  "scenario": "C40",
+  "status": "FAIL",
+  "failure_class": "product defect (stale persisted copy shadows the live filesystem skill on reload); approved fix for defect 1 confirmed",
+  "platform": "Mac",
+  "attempt": 2,
+  "binary_sha256": "1d4c80df784661696c3c71fa4970160bcf04a134aa68cf6013af1881372f4a98",
+  "change_before_attempt": "SkillService::refresh now persists registered skills that lack a durable record (register_checked_batch_without_embeddings), as startup does. Operator-approved.",
+  "observed_output": "1 scenario (1 failed); 7 steps (4 passed, 1 skipped, 2 failed)",
+  "evidence": ".prometheus/verification/skill-reload/4681cc18-cd54-42d1-b5e0-ece1aedf55c6.json",
+  "fixed": "Listing after reload now works (GET /api/uar/skills 200). Discovery found exactly the two pack skills; non-skill files excluded. The attached top-level skill's original rule was used (3 x 30 = 90; selection_method attachment).",
+  "failure": "After rewriting the skill body (x 56) and reloading, GET /api/uar/skills/{alpha} still returned the old body (x 30) and the reload count rose 422 -> 424. After deleting the pack from disk and reloading, both pack skills remained in the catalog.",
+  "root_cause_from_source": "SkillService::refresh registers provider results in order; the DatabaseStorageProvider (registered after the filesystem providers, src/server.rs ~1760) returns every persisted row (storage/database.rs:55-62), so a persisted copy of a filesystem skill overwrites that provider's live result, and a copy whose file was removed survives. This already affected filesystem skills persisted at startup; persisting newly discovered skills extends it to them.",
+  "cleanup": "Leftover pack skills deleted via DELETE /api/uar/skills/{id} (204); refresh back to 420 skills; listing 200; pack directory removed.",
+  "next": "Stopped for operator decision on precedence: a persisted row owned by a filesystem provider should be superseded by that provider's live result (current content wins, durable enabled/scoped kept) and should leave the registry when the file is gone."
+}

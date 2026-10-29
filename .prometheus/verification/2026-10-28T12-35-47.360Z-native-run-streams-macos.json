@@ -1,0 +1,103 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "native-run-admission-with-legacy-and-official-ag-ui-streams;a-native-run's-agui_spec-stream-delivers-official-ag-ui-events-and-continues-the-session",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "A native run's agui_spec stream delivers official AG-UI events and continues the session",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 96081823
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for native runs",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:37"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11804407420
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I admit a fresh calculation and then a dependent follow-up as native runs and subscribe to each agui_spec stream",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 98679231
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "each official run stream starts and finishes its run once with correct answers in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/native-run-streams.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 77406001
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9uYXRpdmUtcnVuLXN0cmVhbXMvMDcyOTYxZGMtODY2ZS00M2M1LWE4N2MtM2U3ODUzNzYwMDE4Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "native-run-admission-with-legacy-and-official-ag-ui-streams",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Native run admission with legacy and official AG-UI streams",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@streaming",
+        "line": 1
+      },
+      {
+        "name": "@agui",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/native-run-streams.feature"
+  }
+]

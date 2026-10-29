@@ -1,0 +1,209 @@
+{
+  "scenario": "I08-ACP-JSON-CUSTOM",
+  "client_platform": "darwin",
+  "agent_id": "disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "protocol": "ACP JSON-RPC POST /acp/ sessions/create, runs/create (no stream), runs/get",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7",
+        "metadata": {
+          "title": "Disposable ACP agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "acp-no-tools-3c76677f"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"ACPJSON-7950579d-4a2b-4f5c-ad0b-fd37c22deb9f\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7\",\"metadata\":{\"title\":\"Disposable ACP agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"acp-no-tools-3c76677f\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"ACPJSON-7950579d-4a2b-4f5c-ad0b-fd37c22deb9f\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:4c6ac68401ca8e88e6f31181545163e2a9e5705e53a71268664a76a45ada5587\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "982817f5-19d7-4d03-81a9-046b567fc18c",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"982817f5-19d7-4d03-81a9-046b567fc18c\",\"result\":{\"session_id\":\"a83a4a20-62fc-46a2-b004-b91768be9859\",\"agent_id\":\"disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7\",\"created_at\":\"2026-10-28T20:39:04.578302Z\",\"last_active\":\"2026-10-28T20:39:04.578302Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bbbfbe5f-5b4e-4f01-931a-d246b92774da",
+        "method": "runs/create",
+        "params": {
+          "session_id": "a83a4a20-62fc-46a2-b004-b91768be9859",
+          "input": "What is (72 multiplied by 13) plus 475?"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"bbbfbe5f-5b4e-4f01-931a-d246b92774da\",\"result\":{\"run_id\":\"7fcf5a06-a02b-47b0-8c51-3453772e48cf\",\"status\":\"running\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "abb603c9-e2b4-4ff1-86a1-973c7fdd751a",
+        "method": "runs/get",
+        "params": {
+          "run_id": "7fcf5a06-a02b-47b0-8c51-3453772e48cf"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"abb603c9-e2b4-4ff1-86a1-973c7fdd751a\",\"result\":{\"run_id\":\"7fcf5a06-a02b-47b0-8c51-3453772e48cf\",\"status\":\"Running\",\"agent_id\":\"disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7\",\"conversation_id\":\"a83a4a20-62fc-46a2-b004-b91768be9859\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "12d81d5f-d9be-4496-a457-b7467431f8a7",
+        "method": "runs/get",
+        "params": {
+          "run_id": "7fcf5a06-a02b-47b0-8c51-3453772e48cf"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"12d81d5f-d9be-4496-a457-b7467431f8a7\",\"result\":{\"run_id\":\"7fcf5a06-a02b-47b0-8c51-3453772e48cf\",\"status\":\"Running\",\"agent_id\":\"disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7\",\"conversation_id\":\"a83a4a20-62fc-46a2-b004-b91768be9859\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "26943b33-9040-4926-9c30-1a471139b3dc",
+        "method": "runs/get",
+        "params": {
+          "run_id": "7fcf5a06-a02b-47b0-8c51-3453772e48cf"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"26943b33-9040-4926-9c30-1a471139b3dc\",\"result\":{\"run_id\":\"7fcf5a06-a02b-47b0-8c51-3453772e48cf\",\"status\":\"Done\",\"agent_id\":\"disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7\",\"conversation_id\":\"a83a4a20-62fc-46a2-b004-b91768be9859\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "3d222eb4-0425-4eee-94c5-8f8f36b3bf23",
+        "method": "sessions/delete",
+        "params": {
+          "session_id": "a83a4a20-62fc-46a2-b004-b91768be9859"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"3d222eb4-0425-4eee-94c5-8f8f36b3bf23\",\"result\":{\"deleted\":true,\"session_id\":\"a83a4a20-62fc-46a2-b004-b91768be9859\"}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "session_id": "a83a4a20-62fc-46a2-b004-b91768be9859",
+  "expected": 1411,
+  "run_id": "7fcf5a06-a02b-47b0-8c51-3453772e48cf",
+  "create_status": "running",
+  "final_run": {
+    "run_id": "7fcf5a06-a02b-47b0-8c51-3453772e48cf",
+    "status": "Done",
+    "agent_id": "disposable-acp-json-3c76677f-7693-4728-a149-c455077bc7e7",
+    "conversation_id": "a83a4a20-62fc-46a2-b004-b91768be9859",
+    "pending_client_tools": null,
+    "client_tool_continuation": null
+  },
+  "scenario_status": "FAILED",
+  "duration_ms": 4574
+}

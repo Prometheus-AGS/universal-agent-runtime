@@ -1,0 +1,12 @@
+{
+  "scenario": "KNOWLEDGE-DOCUMENT-DELETE-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "configuration_changes": false,
+  "restart": false,
+  "exchanges": [],
+  "status": "FAILED",
+  "result": "FAILED",
+  "duration_ms": 6
+}

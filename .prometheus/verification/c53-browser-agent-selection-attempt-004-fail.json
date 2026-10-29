@@ -1,0 +1,19 @@
+{
+  "scenario": "C53",
+  "status": "FAIL",
+  "attempt": 4,
+  "runtime": "binary a0f769d2…, PID 78140, UI bundle index-fJgR9a8v.js",
+  "script_change": "per turn: exactly one assistant bubble contains the specialist signature, the selection notice is placed before it, and the visible-timing check uses that bubble; final step: each signature exactly once (operator-approved 2026-10-27)",
+  "config": "scripts/behaviors/browser-agent-selection.config.mjs, video off; tier3.allow created for this run and removed after",
+  "evidence": "browser-agent-selection/75fa37fb-877d-4f0e-8a9b-a2006997986e.json; browser-agent-selection/c53-attempt-004-artifacts/",
+  "observed": {
+    "writing_turn": "PASSED the revised checks: run 638526d8-c9c9-4936-9ced-5c09e54b44f8, one selection event (writing-specialist, intent) at stream index 13 before text at 18, approval answered in the browser (200, allow), answer bubble stream-run-1793136683080-1793136700602 holds the byline once, selection notice visible 12.9 s before the answer text",
+    "math_turn": "run c627a4a9-3237-4cee-a898-3141b3f46050 raised the spawn_agent approval; the test never answered it, and the run ended RUN_ERROR 'AgentNode selected-agent failed: Tool lease or budget reservation expired before claim' about 5 minutes later",
+    "page_after_math_send": "the writing turn now shows only its user message and final answer bubble; its policy card, approval card and 'Selected agent: Blog and Article Writer' notice are gone. Only one 'Review approval' button remains (the math one)"
+  },
+  "classification": [
+    "Product (UI): only the final assistant bubble of a turn is saved (finishStream persists the current streaming message). Earlier bubbles of the same turn (policy card, approval card, selection notice) live only in memory, and startStream reloads history from PGlite before each send, so they disappear at the next send. A turn's visible agent selection is lost from the conversation.",
+    "Script consequence: sendTurn finds the new approval by index, assuming earlier Review buttons stay; the writing turn's button vanished, so the math approval was never answered and the server lease expired. The expiry is the server's correct response to an unanswered approval."
+  ],
+  "next": "Operator decision: persist every assistant bubble a stream creates (minimal product fix) and/or locate the new approval by document position. A rerun needs the tier-3 guard opened again."
+}

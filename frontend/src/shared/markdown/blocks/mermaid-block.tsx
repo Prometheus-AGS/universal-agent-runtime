@@ -41,6 +41,9 @@ export const MermaidBlock: FC<MermaidBlockProps> = ({ source, theme }) => {
       securityLevel: "strict",
       secure: ["securityLevel", "startOnLoad", "theme", "themeVariables"],
       suppressErrorRendering: true,
+      // Mermaid 12 defaults to ELK layout and the neo look; keep the v11 rendering.
+      layout: "dagre",
+      look: "classic",
       theme: "base",
       themeVariables: mermaidThemeVariables(),
     });

@@ -1,0 +1,142 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "memory-retention-and-opt-out-survive-restart;shortening-retention-expires-the-aged-memory,-and-a-later-opt-out-survives-restart",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Shortening retention expires the aged memory, and a later opt-out survives restart",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 120255536
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "the host-provisioned aged automatic memory and fresh control memory under a 30-day policy",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-retention.steps.mjs:78"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 48654842
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I shorten the retention policy to 7 days",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-retention.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 61242239
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the aged memory becomes unqueryable while the fresh control memory stays valid",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-retention.steps.mjs:117"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 127839860626
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I opt out of memory capture, tell the agent a new private fact, and the runtime restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-retention.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 33889522
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "my opt-out survives the restart and the new fact was never captured",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-retention.steps.mjs:132"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 48059699
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "the aged memory stays gone after the restart while the control memory remains",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-retention.steps.mjs:141"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15359970390
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tZW1vcnktcmV0ZW50aW9uLzY3N2M0YzMyLTI4NzMtNGJkNi04OGI1LTM2ODJjZGRhODY0OS5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@memory",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "memory-retention-and-opt-out-survive-restart",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Memory retention and opt-out survive restart",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@memory",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/memory-retention.feature"
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "scenario": "C34",
+  "label": "B37",
+  "behavior": "Intent routing follows the live eligible roster",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "report_timezone": "America/Chicago",
+  "attempt": 5,
+  "prior_attempts": "1 FAIL (test script), 2 FAIL (evidence review overrode Cucumber pass: reasoning-only child), 3 FAIL (router refusal), 4 FAIL (delegated_answer_missing: reasoning_only); receipts c34-live-roster-routing-attempt-00{1,2,3,4}-fail.json are retained",
+  "executor": "Claude Desktop (Claude Code) session, child phase orchestrator-routing-reasoning-repair, D2(b) gate step 4 (operator-approved)",
+  "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+  "uar_pid": 340,
+  "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/live-roster-routing.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 13 steps (13 passed); 1m 4.930s",
+  "evidence": ".prometheus/verification/live-roster-routing/a6557c4a-a8fd-4736-8eae-514050b540d0.json",
+  "cucumber_report": "none written (the approved command set no UAR_CUCUMBER_REPORT)",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "evidence_review": {
+    "roster": "initial 6 eligible; after registration 7 incl. disposable-plant-clinic-a6557c4a; after deletion 6, specialist absent; saved math/writing agents retained throughout",
+    "eligible_specialist": "Boston fern task selected disposable-plant-clinic-a6557c4a by intent (uar.agent.selected before TEXT_MESSAGE_START), approval granted, outcome success; 695-char answer with no <think>/</think> anywhere in the stream; private signature 'Fernwell Plant Clinic FERNWELL-47F7EE47' in the answer text",
+    "fresh_task_after_removal": "snake-plant task routed by intent to general-purpose (on the current roster), never to the deleted specialist; 1,837-char genuine answer, no reasoning streamed",
+    "unmatched_intent": "cheese/Riesling request routed to default-agent (on the current roster); one-sentence genuine answer, no reasoning streamed",
+    "no_match_binding": "operator-approved 2026-10-27: route only within the current eligible roster or refuse with graph_routing_selection_invalid; both post-change routes stayed within the roster"
+  },
+  "allowance_confirmation": "Owned UAR log target/prompt-macos-hbitxj2c/server-conversation-restart-08b5f07a-eaab-4b08-a183-8268feef75f3.log line 1409: 'delegated output allowance bound' run_id 7b51ddb5-b27a-453c-88cc-52fda9f0c106 output_token_cap 8192 source delegated_default; line 1414: the same run (agent disposable-plant-clinic-a6557c4a) liter-llm stream complete, 144 events. Lines 1446 and 1483 show 8192/delegated_default for the two later child runs.",
+  "limits_of_this_result": "One pass (operator decision B4(a)). It shows the 8,192 allowance applied and the specialist answered; it does not prove the 1,000 cap would have failed on this run (attempt 1 once succeeded under 1,000). Finish reason is still not recorded. The router's refusal-diagnostic log was not exercised. Inline reasoning on ordinary non-delegated chats remains a named residual.",
+  "cleanup": {
+    "disposable_agent_deleted": true,
+    "saved_agents_retained": true,
+    "cleanup_errors": []
+  }
+}

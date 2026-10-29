@@ -1,0 +1,29 @@
+{
+  "scenario": "C34",
+  "status": "FAIL",
+  "failure_class": "fixture/measurement (test script), not product",
+  "platform": "Mac",
+  "recorded_at": "2026-10-27T06:30:19-05:00",
+  "attempt": 1,
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 UAR_CUCUMBER_REPORT=.prometheus/verification/c34-live-roster-routing-20261027T112929Z.cucumber.json node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/live-roster-routing.cucumber.mjs",
+  "exit_code": 1,
+  "observed_output": "1 scenario (1 failed); 13 steps (7 passed, 5 skipped, 1 failed); 0m 18.745s",
+  "evidence": ".prometheus/verification/live-roster-routing/77a2ece1-a35a-442f-a289-b44341e9ed89.json",
+  "failure": "Step 'When I delete the houseplant specialist': DELETE returned 204; GET of the deleted agent returned the expected 404 with plain-text body 'Persisted agent not found'; the step helper JSON-parsed every non-empty body and threw SyntaxError.",
+  "observed_before_failure": {
+    "roster_after_registration_included_new_agent": true,
+    "selection": "disposable-plant-clinic-77a2ece1 via intent, rosterRevision 67e6f883\u2026, before answer text",
+    "answer_signature": "Fernwell Plant Clinic FERNWELL-EF301EA6 present"
+  },
+  "not_reached": [
+    "roster after deletion",
+    "fresh houseplant task after removal",
+    "unmatched intent"
+  ],
+  "cleanup": {
+    "disposable_agent_deleted": true,
+    "saved_agents_retained": true,
+    "cleanup_errors": []
+  },
+  "proposed_fix": "Parse response bodies as JSON only for expected JSON responses (tolerate a text 404 body); no assertion weakened. Rerun only C34 after operator approval."
+}

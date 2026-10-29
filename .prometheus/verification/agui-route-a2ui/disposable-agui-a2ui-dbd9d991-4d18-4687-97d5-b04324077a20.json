@@ -1,0 +1,60 @@
+{
+  "scenario": "I19-AGUI-ROUTE-A2UI",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "agent_id": "disposable-agui-a2ui-dbd9d991-4d18-4687-97d5-b04324077a20",
+  "route": "/api/uar/ag-ui/agents/disposable-agui-a2ui-dbd9d991-4d18-4687-97d5-b04324077a20",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-agui-a2ui-dbd9d991-4d18-4687-97d5-b04324077a20\",\"metadata\":{\"title\":\"Disposable AG-UI A2UI greeting agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2ui_render\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Use the real a2ui_render tool exactly once to publish the requested greeting. Send canonical A2UI v0.9 createSurface then updateComponents messages using the https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json catalog. Use exactly one component: id root, component Text, text equal to the requested greeting. Use the requested surfaceId in both messages. After the tool succeed"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/c81c293d-0ffe-4644-965e-982c03330974",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-agui-a2ui-dbd9d991-4d18-4687-97d5-b04324077a20",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "surface_id": "greeting-810dff44-ee24-490f-824f-d02b1be62665",
+  "event_types": [
+    "RUN_STARTED",
+    "TEXT_MESSAGE_START",
+    "TEXT_MESSAGE_CONTENT",
+    "TOOL_CALL_START",
+    "TOOL_CALL_ARGS",
+    "TOOL_CALL_END",
+    "TOOL_CALL_RESULT",
+    "TEXT_MESSAGE_END",
+    "RUN_FINISHED"
+  ],
+  "a2ui_tool_results": [
+    "{\"status\":\"prepared\",\"terminal\":true,\"instruction\":\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\"}"
+  ],
+  "events_mentioning_surface": [
+    "TOOL_CALL_ARGS"
+  ],
+  "activity_snapshots": [],
+  "outcome": {
+    "type": "success"
+  },
+  "agent_called_a2ui_render": true,
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 7518
+}

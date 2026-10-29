@@ -1,0 +1,1457 @@
+{
+  "catalog_id": "C54",
+  "trace": "U19.team-cancel-recovery",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "base_url": "http://127.0.0.1:60675",
+  "workspace": "uar-user-outcomes-007-supporting-workspace",
+  "started_at": "2026-10-27T19:26:18.508Z",
+  "instance_before": {
+    "id": "uar-macos-behaviors",
+    "profile": "uar.service-instance/1",
+    "workspace_location": "local"
+  },
+  "source_agents": [
+    {
+      "id": "math-specialist-db64c2a8",
+      "version": "1.0.0",
+      "digest": "sha256:f19c310c1fedee481aee341a825c538d5f17d447308ba273fe6490d0dd880a6b"
+    },
+    {
+      "id": "writing-specialist",
+      "version": "1.0.0",
+      "digest": "sha256:5647a5776835e01ed811a80ffcf5221584f0ef70f001b97194c61e319b807cff"
+    }
+  ],
+  "install": {
+    "preflight": {
+      "package": {
+        "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package",
+        "version": "1.0.0",
+        "digest": "sha256:e1f369660ac46d1988d01458583a8cf95b2998d23f49a88dfff557f7c1d226d0"
+      },
+      "definitions": [
+        {
+          "id": "math-specialist-db64c2a8",
+          "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+          "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+        },
+        {
+          "id": "writing-specialist",
+          "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+          "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+        },
+        {
+          "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:definition",
+          "version": "1.0.0",
+          "digest": "sha256:abf0ab76522402b32e223c9988e001160a1cea33655c5c2ea25140e70d66ba2b"
+        }
+      ],
+      "diagnostics": [
+        {
+          "field": "/apiHarness",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/authoredFields",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/contentDigest",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/context",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/id",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/input",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/instructions",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/kind",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/legacySections",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/models",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/output",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/permittedChildren",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/profile",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/provenance",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/renameMapping",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/requestedLimits",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/role",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/skills",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/sourceDescriptor",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/sourceIdentity",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/title",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/version",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/whenToUse",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "required-unsupported",
+          "message": "The required field is preserved and blocks activation until it is supported."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "required-unsupported",
+          "message": "The required field is preserved and blocks activation until it is supported."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The optional field is preserved without a runtime support claim."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "required-unsupported",
+          "message": "The required field is preserved and blocks activation until it is supported."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The optional field is preserved without a runtime support claim."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/authoredFields",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/contentDigest",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/context",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/id",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/input",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/instructions",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/kind",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/legacySections",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/models",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/output",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/permittedChildren",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/profile",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/provenance",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/renameMapping",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/requestedLimits",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/role",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/skills",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/sourceDescriptor",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/sourceIdentity",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/title",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/version",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/whenToUse",
+          "disposition": "translated",
+          "message": "The field is retained with a documented translation."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "required-unsupported",
+          "message": "The required field is preserved and blocks activation until it is supported."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "required-unsupported",
+          "message": "The required field is preserved and blocks activation until it is supported."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The optional field is preserved without a runtime support claim."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "required-unsupported",
+          "message": "The required field is preserved and blocks activation until it is supported."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The optional field is preserved without a runtime support claim."
+        },
+        {
+          "field": "kind",
+          "disposition": "required-unsupported",
+          "message": "TeamDefinition is cataloged but is not executable until durable collaboration runtime support lands"
+        }
+      ],
+      "activationSupported": false,
+      "requestDigest": "sha256:b52a652d47a1a7ae5e167b0f9e30043b7f3c817017cd02afd674cfb6f383972b"
+    },
+    "receipt": {
+      "commandId": "a3a14356-3551-46cb-81e5-30421732ee66",
+      "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+      "requestDigest": "sha256:b52a652d47a1a7ae5e167b0f9e30043b7f3c817017cd02afd674cfb6f383972b",
+      "operation": "install-package",
+      "resourceId": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package",
+      "catalogRevision": 11,
+      "bindingRevision": null,
+      "committedAt": "2026-10-27T19:26:19.279993Z"
+    }
+  },
+  "binding": {
+    "preflight": {
+      "bindingId": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+      "package": {
+        "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package",
+        "version": "1.0.0",
+        "digest": "sha256:e1f369660ac46d1988d01458583a8cf95b2998d23f49a88dfff557f7c1d226d0"
+      },
+      "diagnostics": [
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        }
+      ],
+      "activationSupported": true,
+      "requestDigest": "sha256:a90d463739c3099f6ea387fe4c564c872b8b89c1e07bfba2f1c8176ee3a54b25"
+    },
+    "binding": {
+      "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+      "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+      "workspaceId": "uar-user-outcomes-007-supporting-workspace",
+      "revision": 1,
+      "document": {
+        "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+        "kind": "DeploymentBinding",
+        "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+        "version": "1.0.0",
+        "provenance": {
+          "source": "Saved UAR specialists captured for the C54 team recovery",
+          "authors": [
+            "UAR operator"
+          ]
+        },
+        "requiredCapabilities": [
+          "collaboration_deployment_bindings_v2"
+        ],
+        "extensions": {},
+        "exportClass": "private-installed-state",
+        "revision": 1,
+        "modelBindings": [
+          {
+            "requestedAlias": "project-model",
+            "providerId": "liter",
+            "modelId": "MiniMax-M3",
+            "credentialRef": "protected-credential://uar-acceptance/fixture-primary"
+          }
+        ],
+        "skillBindings": [],
+        "contextGrants": [],
+        "representationGrantRefs": [],
+        "policyRevision": "acceptance-owned-policy-v1",
+        "status": "ready",
+        "effectiveBindingReceiptRef": null,
+        "package": {
+          "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package",
+          "version": "1.0.0",
+          "digest": "sha256:e1f369660ac46d1988d01458583a8cf95b2998d23f49a88dfff557f7c1d226d0"
+        },
+        "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+        "workspaceId": "uar-user-outcomes-007-supporting-workspace",
+        "runtimeInstanceId": "uar-macos-behaviors",
+        "effectiveLimits": {
+          "concurrentTurns": 2,
+          "maxMembers": 2,
+          "maxDepth": 1,
+          "maxPendingTasks": 8
+        },
+        "effectiveBudget": {
+          "maxTokens": 640000,
+          "maxCostMicrounits": 5000000,
+          "currency": "USD",
+          "maxElapsedSeconds": 900
+        },
+        "storage": {
+          "backend": "surrealkv",
+          "connectionRef": "protected-connection://uar-acceptance/catalog",
+          "durableTransactions": true
+        },
+        "contentDigest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+      },
+      "package": {
+        "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package",
+        "version": "1.0.0",
+        "digest": "sha256:e1f369660ac46d1988d01458583a8cf95b2998d23f49a88dfff557f7c1d226d0"
+      },
+      "activationSupported": true,
+      "preflightDiagnostics": [
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        }
+      ],
+      "effectiveBindingReceipt": {
+        "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+        "kind": "EffectiveBindingReceipt",
+        "exportClass": "private-binding-evidence",
+        "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding/effective",
+        "revision": 1,
+        "contentDigest": "sha256:172bab51d16bd7a812ab8244b66195aafc597576d5956ad20f9b543f287f7c30",
+        "bindingRef": {
+          "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+          "revision": 1,
+          "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+        },
+        "package": {
+          "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package",
+          "version": "1.0.0",
+          "digest": "sha256:e1f369660ac46d1988d01458583a8cf95b2998d23f49a88dfff557f7c1d226d0"
+        },
+        "requested": {
+          "definition": {
+            "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:definition",
+            "version": "1.0.0",
+            "digest": "sha256:abf0ab76522402b32e223c9988e001160a1cea33655c5c2ea25140e70d66ba2b"
+          },
+          "skills": [],
+          "modelRequirements": null,
+          "promptDialect": null,
+          "ragConfiguration": null,
+          "contextStrategy": null,
+          "apiHarness": null
+        },
+        "effective": {
+          "teamPlanning": true,
+          "teamExecution": true
+        },
+        "resolvedSkills": [],
+        "resolvedModels": [],
+        "policyRevision": "acceptance-owned-policy-v1",
+        "representationGrants": [],
+        "runtimeCapabilities": [
+          "approval_lifecycle_v1",
+          "collaboration_conversion_reports_v1",
+          "collaboration_definition_packages_v1",
+          "collaboration_definition_packages_v2",
+          "collaboration_deployment_bindings_v1",
+          "collaboration_deployment_bindings_v2",
+          "collaboration_representation_execution_v1",
+          "collaboration_representation_grant_refs_v1",
+          "collaboration_team_execution_v1",
+          "collaboration_team_planning_v1",
+          "durable_agent_instances_v1",
+          "full_harness_delegation_v1",
+          "host_history",
+          "host_lifecycle_control_v1",
+          "local_scoped_observers_v1",
+          "prometheus.workflow-execution/1.0.0",
+          "reasoning_effort",
+          "run_scoped_credentials",
+          "run_scoped_mcp_servers",
+          "service_instance_placement_v1",
+          "session_principal",
+          "team_execution_continuations_v1",
+          "team_execution_host_workspace_v1",
+          "team_execution_peer_tools_v1",
+          "team_execution_shared_instructions_v1",
+          "tool_admission_v2",
+          "uar_target_catalog_v1",
+          "uar_target_model_override_v1",
+          "working_directory"
+        ],
+        "serviceBinding": {
+          "instanceId": "uar-macos-behaviors",
+          "profile": "uar.service-instance/1",
+          "workspaceLocation": "local",
+          "endpoints": {
+            "runtime": "http://127.0.0.1:53587",
+            "administration": "http://127.0.0.1:53587/api/uar",
+            "models": "http://127.0.0.1:53587/v1",
+            "console": "http://127.0.0.1:53587/admin"
+          },
+          "capabilities": [
+            "approval_lifecycle_v1",
+            "collaboration_conversion_reports_v1",
+            "collaboration_definition_packages_v1",
+            "collaboration_definition_packages_v2",
+            "collaboration_deployment_bindings_v1",
+            "collaboration_deployment_bindings_v2",
+            "collaboration_representation_execution_v1",
+            "collaboration_representation_grant_refs_v1",
+            "collaboration_team_execution_v1",
+            "collaboration_team_planning_v1",
+            "durable_agent_instances_v1",
+            "full_harness_delegation_v1",
+            "host_history",
+            "host_lifecycle_control_v1",
+            "local_scoped_observers_v1",
+            "prometheus.workflow-execution/1.0.0",
+            "reasoning_effort",
+            "run_scoped_credentials",
+            "run_scoped_mcp_servers",
+            "service_instance_placement_v1",
+            "session_principal",
+            "team_execution_continuations_v1",
+            "team_execution_host_workspace_v1",
+            "team_execution_peer_tools_v1",
+            "team_execution_shared_instructions_v1",
+            "tool_admission_v2",
+            "uar_target_catalog_v1",
+            "uar_target_model_override_v1",
+            "working_directory"
+          ],
+          "intent": "new",
+          "bindingId": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+          "bindingRevision": 1
+        },
+        "diagnostics": [
+          {
+            "pointer": "/models/0",
+            "disposition": "exact",
+            "reasonCode": "model.bound-exactly",
+            "message": "The model role resolves through a declared preferred alias.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "math-specialist-db64c2a8",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+            }
+          },
+          {
+            "pointer": "/modelRequirements",
+            "disposition": "exact",
+            "reasonCode": "runtime.model-capabilities-enforced",
+            "message": "Every selected configured model satisfies the authored capability requirements.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "math-specialist-db64c2a8",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+            }
+          },
+          {
+            "pointer": "/promptDialect",
+            "disposition": "exact",
+            "reasonCode": "runtime.prompt-dialect-enforced",
+            "message": "The bound model uses the authored dialect in ordinary prompt and request assembly.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "math-specialist-db64c2a8",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+            }
+          },
+          {
+            "pointer": "/contextStrategy",
+            "disposition": "exact",
+            "reasonCode": "runtime.context-policy-enforced",
+            "message": "The authored context strategy is installed as the ordinary turn policy.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "math-specialist-db64c2a8",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+            }
+          },
+          {
+            "pointer": "/ragConfiguration",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "math-specialist-db64c2a8",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+            }
+          },
+          {
+            "pointer": "/apiHarness",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "math-specialist-db64c2a8",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:dd528c69e6dd20d8ff99394d68798a8b35a1de67a8622a01caee1d8ec9824cda"
+            }
+          },
+          {
+            "pointer": "/models/0",
+            "disposition": "exact",
+            "reasonCode": "model.bound-exactly",
+            "message": "The model role resolves through a declared preferred alias.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "writing-specialist",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+            }
+          },
+          {
+            "pointer": "/modelRequirements",
+            "disposition": "exact",
+            "reasonCode": "runtime.model-capabilities-enforced",
+            "message": "Every selected configured model satisfies the authored capability requirements.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "writing-specialist",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+            }
+          },
+          {
+            "pointer": "/promptDialect",
+            "disposition": "exact",
+            "reasonCode": "runtime.prompt-dialect-enforced",
+            "message": "The bound model uses the authored dialect in ordinary prompt and request assembly.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "writing-specialist",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+            }
+          },
+          {
+            "pointer": "/contextStrategy",
+            "disposition": "exact",
+            "reasonCode": "runtime.context-policy-enforced",
+            "message": "The authored context strategy is installed as the ordinary turn policy.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "writing-specialist",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+            }
+          },
+          {
+            "pointer": "/ragConfiguration",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "writing-specialist",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+            }
+          },
+          {
+            "pointer": "/apiHarness",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+              "revision": 1,
+              "digest": "sha256:139fe8f7f773fb349cdfc43ecfd3c3a4578c09e541417fa8746bdcc3ba8a992d"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "writing-specialist",
+              "version": "1.0.0-recovery-388e3add-c00a-4ae2-bd17-da95d695de09",
+              "digest": "sha256:3c6e637d3a6a5bb034f9a17ddb3e8a12f8a37027767c66916db7fc03aeab969c"
+            }
+          }
+        ],
+        "admitted": true,
+        "createdAt": "2026-10-27T19:26:19.968607Z"
+      },
+      "updatedAt": "2026-10-27T19:26:19.970690Z"
+    },
+    "receipt": {
+      "commandId": "7083c0bf-3e22-4778-841d-8a61bb44a3b9",
+      "ownerId": "v1:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007",
+      "requestDigest": "sha256:a90d463739c3099f6ea387fe4c564c872b8b89c1e07bfba2f1c8176ee3a54b25",
+      "operation": "install-binding",
+      "resourceId": "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+      "catalogRevision": 11,
+      "bindingRevision": 1,
+      "committedAt": "2026-10-27T19:26:19.978951Z"
+    }
+  },
+  "team": {
+    "id": "bdee7f26-d8b5-4147-b6a1-42940c71f92a",
+    "members": [
+      {
+        "id": "2ef91f24-f132-4c36-b167-38eb79ce44be",
+        "role": "math",
+        "definition": "math-specialist-db64c2a8"
+      },
+      {
+        "id": "399e13a8-0cb6-4d3b-afd5-afc10afda372",
+        "role": "writer",
+        "definition": "writing-specialist"
+      }
+    ]
+  },
+  "private_fact": {
+    "codename": "SEEDLOCK-a8073a88",
+    "tally_inputs": {
+      "trays": 14,
+      "packets": 17
+    },
+    "expected_total": 238
+  },
+  "requests": {
+    "tally": "A seed library stores 14 trays with 17 seed packets in each tray. Calculate the total number of seed packets. Return your saved specialist/answer JSON.",
+    "note": "Private fact for this project only: the seed library's heirloom codename is SEEDLOCK-a8073a88. Write a detailed 1200 to 1500 word volunteer handbook with at least eight titled sections covering intake, sorting, labelling, storage, lending, returns, germination testing and safety. State this exact codename once in the introduction. Include your saved byline.",
+    "join": "Write a 60 to 120 word update for volunteers using ONLY the two selected completed artifacts. State the exact total number of seed packets from the math specialist result in decimal digits, and the exact heirloom codename from the volunteer note. Never guess either value. End with your saved byline. Return the update directly.",
+    "note-retry": "Private first-round fact for this project only: the seed library's heirloom codename is SEEDLOCK-a8073a88. Write a 40 to 70 word note to volunteers that states this exact codename once. Include your saved byline.",
+    "join-retry": "Write a 60 to 120 word update for volunteers using ONLY the two selected completed artifacts. State the exact total number of seed packets from the math specialist result in decimal digits, and the exact heirloom codename from the volunteer note. Never guess either value. End with your saved byline. Return the update directly."
+  },
+  "tasks_initial": {
+    "tally": {
+      "status": "ready",
+      "revision": 2,
+      "stateReason": null
+    },
+    "note": {
+      "status": "ready",
+      "revision": 2,
+      "stateReason": null
+    },
+    "join": {
+      "status": "queued",
+      "revision": 1,
+      "stateReason": null
+    }
+  },
+  "tally_admission": {
+    "id": "6f2a74e2-4c68-4ac4-9d2b-3685810a8bcc",
+    "taskId": "tally",
+    "runId": "9d7621c9-e682-4d0c-b968-47d96812c81e",
+    "status": "running",
+    "executionOutcome": null,
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "usage": null,
+    "stateReason": null,
+    "updatedAt": "2026-10-27T19:26:28.612539Z"
+  },
+  "tally_settled": {
+    "attempt": {
+      "id": "6f2a74e2-4c68-4ac4-9d2b-3685810a8bcc",
+      "taskId": "tally",
+      "runId": "9d7621c9-e682-4d0c-b968-47d96812c81e",
+      "status": "succeeded",
+      "executionOutcome": "succeeded",
+      "effectDisposition": "confirmed",
+      "accountingState": "settled",
+      "usage": {
+        "tokens": 6298,
+        "costMicrounits": 1097,
+        "elapsedSeconds": 12
+      },
+      "stateReason": null,
+      "updatedAt": "2026-10-27T19:26:40.974027Z"
+    },
+    "artifact_id": "artifact-6f2a74e2-4c68-4ac4-9d2b-3685810a8bcc",
+    "calls": {
+      "count": 2,
+      "settled": 2,
+      "ids": [
+        "098315e2-f39a-43c9-97a3-8b4bdb181b2f",
+        "c4f97488-70d5-4a08-88e7-06ae680cad07"
+      ],
+      "states": [
+        "settled",
+        "settled"
+      ],
+      "digest": "sha256:8a2a9166b82b623a30b0e4cf25b47ee62cc4e9e3af83027661809634e41cc7d8"
+    },
+    "answer": {
+      "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+      "answer": 238
+    }
+  },
+  "note_admission": {
+    "id": "972c1445-8360-4ff0-92b3-775462969a47",
+    "taskId": "note",
+    "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+    "status": "running",
+    "executionOutcome": null,
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "usage": null,
+    "stateReason": null,
+    "updatedAt": "2026-10-27T19:26:44.431275Z"
+  },
+  "note_run_registration": {
+    "status": 200,
+    "attempt": {
+      "id": "972c1445-8360-4ff0-92b3-775462969a47",
+      "taskId": "note",
+      "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+      "status": "running",
+      "executionOutcome": null,
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "usage": null,
+      "stateReason": null,
+      "updatedAt": "2026-10-27T19:26:44.431275Z"
+    }
+  },
+  "note_cancel": {
+    "status": 200,
+    "attempt": {
+      "id": "972c1445-8360-4ff0-92b3-775462969a47",
+      "taskId": "note",
+      "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+      "status": "cancellation_requested",
+      "executionOutcome": null,
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "usage": null,
+      "stateReason": "C54 cancel the active volunteer note",
+      "updatedAt": "2026-10-27T19:26:48.619632Z"
+    }
+  },
+  "note_after_cancel": {
+    "id": "972c1445-8360-4ff0-92b3-775462969a47",
+    "taskId": "note",
+    "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+    "status": "cancelled",
+    "executionOutcome": "cancelled",
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "usage": null,
+    "stateReason": "team_usage_or_effect_outcome_uncertain",
+    "updatedAt": "2026-10-27T19:26:49.487881Z"
+  },
+  "tasks_after_cancel": {
+    "tally": {
+      "status": "succeeded",
+      "revision": 5,
+      "stateReason": null
+    },
+    "note": {
+      "status": "cancelled",
+      "revision": 5,
+      "stateReason": "team_usage_or_effect_outcome_uncertain"
+    },
+    "join": {
+      "status": "queued",
+      "revision": 1,
+      "stateReason": null
+    }
+  },
+  "before_restart": {
+    "attempt_count": 2,
+    "attempts_per_task": {
+      "tally": 1,
+      "note": 1,
+      "join": 0
+    },
+    "tally_artifact_digest": "sha256:9b0fb43e51a9bcaa31843d006c25997804a0f755e6c0b4799cad0494547bb396",
+    "tally_attempt_digest": "sha256:bc10268bcb3e450b0f6f4065698af57f8a458481f43da7df7c85506dab2e393e",
+    "artifact_ids": [
+      "artifact-6f2a74e2-4c68-4ac4-9d2b-3685810a8bcc"
+    ],
+    "tally_calls": {
+      "count": 2,
+      "settled": 2,
+      "ids": [
+        "098315e2-f39a-43c9-97a3-8b4bdb181b2f",
+        "c4f97488-70d5-4a08-88e7-06ae680cad07"
+      ],
+      "states": [
+        "settled",
+        "settled"
+      ],
+      "digest": "sha256:8a2a9166b82b623a30b0e4cf25b47ee62cc4e9e3af83027661809634e41cc7d8"
+    },
+    "note_calls": {
+      "count": 1,
+      "settled": 0,
+      "ids": [
+        "d196d52f-e033-46b4-9288-af698a1c6d38"
+      ],
+      "states": [
+        "pending"
+      ],
+      "digest": "sha256:b294a3d5b40c9b80baf9457eb3d226e952a3422d0a53ac03f32fa26052b984b4"
+    },
+    "note_attempt": {
+      "id": "972c1445-8360-4ff0-92b3-775462969a47",
+      "taskId": "note",
+      "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+      "status": "cancelled",
+      "executionOutcome": "cancelled",
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "usage": null,
+      "stateReason": "team_usage_or_effect_outcome_uncertain",
+      "updatedAt": "2026-10-27T19:26:49.487881Z"
+    },
+    "note_thread": {
+      "id": "team-attempt:972c1445-8360-4ff0-92b3-775462969a47",
+      "status": null,
+      "messages": 5,
+      "roles": [
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    },
+    "tasks": {
+      "tally": {
+        "status": "succeeded",
+        "revision": 5,
+        "stateReason": null
+      },
+      "note": {
+        "status": "cancelled",
+        "revision": 5,
+        "stateReason": "team_usage_or_effect_outcome_uncertain"
+      },
+      "join": {
+        "status": "queued",
+        "revision": 1,
+        "stateReason": null
+      }
+    },
+    "uncertain_attempts": [],
+    "committed": {
+      "tokens": 6298,
+      "costMicrounits": 1097,
+      "elapsedSeconds": 12
+    },
+    "reserved": {
+      "tokens": 128000,
+      "costMicrounits": 1000000,
+      "elapsedSeconds": 120
+    }
+  },
+  "restart": {
+    "previous_pid": 94258,
+    "binary_sha256": "cc1dbb8193b12536e01a1ce9869d70e4cc4fc29f166b1d106539ad4f5bd314b0",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-0282eb09-39f2-40ae-9f54-ee781052f231.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 98912,
+    "new_process_ready": true
+  },
+  "instance_after": {
+    "id": "uar-macos-behaviors",
+    "profile": "uar.service-instance/1",
+    "workspace_location": "local"
+  },
+  "execution_owner_after": {
+    "status": 200,
+    "body": {
+      "claim": {
+        "catalogId": "uar-collaboration-catalog",
+        "serviceInstanceId": "uar-macos-behaviors",
+        "incarnationId": "b538f1bf-0967-4263-b34e-c151a3bb9f5d",
+        "epoch": 77,
+        "state": "held",
+        "acquiredAt": "2026-10-27T19:27:07.474806Z",
+        "auditReceiptId": "01e62d6d-203d-4600-8aac-0339bc1ca285"
+      },
+      "currentFence": {
+        "catalogId": "uar-collaboration-catalog",
+        "serviceInstanceId": "uar-macos-behaviors",
+        "incarnationId": "b538f1bf-0967-4263-b34e-c151a3bb9f5d",
+        "epoch": 77
+      },
+      "ownsExecution": true
+    }
+  },
+  "after_restart": {
+    "attempt_count": 2,
+    "attempts_per_task": {
+      "tally": 1,
+      "note": 1,
+      "join": 0
+    },
+    "tally_artifact_digest": "sha256:9b0fb43e51a9bcaa31843d006c25997804a0f755e6c0b4799cad0494547bb396",
+    "tally_attempt_digest": "sha256:bc10268bcb3e450b0f6f4065698af57f8a458481f43da7df7c85506dab2e393e",
+    "artifact_ids": [
+      "artifact-6f2a74e2-4c68-4ac4-9d2b-3685810a8bcc"
+    ],
+    "tally_calls": {
+      "count": 2,
+      "settled": 2,
+      "ids": [
+        "098315e2-f39a-43c9-97a3-8b4bdb181b2f",
+        "c4f97488-70d5-4a08-88e7-06ae680cad07"
+      ],
+      "states": [
+        "settled",
+        "settled"
+      ],
+      "digest": "sha256:8a2a9166b82b623a30b0e4cf25b47ee62cc4e9e3af83027661809634e41cc7d8"
+    },
+    "note_calls": {
+      "count": 1,
+      "settled": 0,
+      "ids": [
+        "d196d52f-e033-46b4-9288-af698a1c6d38"
+      ],
+      "states": [
+        "pending"
+      ],
+      "digest": "sha256:b294a3d5b40c9b80baf9457eb3d226e952a3422d0a53ac03f32fa26052b984b4"
+    },
+    "note_attempt": {
+      "id": "972c1445-8360-4ff0-92b3-775462969a47",
+      "taskId": "note",
+      "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+      "status": "cancelled",
+      "executionOutcome": "cancelled",
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "usage": null,
+      "stateReason": "team_usage_or_effect_outcome_uncertain",
+      "updatedAt": "2026-10-27T19:26:49.487881Z"
+    },
+    "note_thread": {
+      "id": "team-attempt:972c1445-8360-4ff0-92b3-775462969a47",
+      "status": null,
+      "messages": 5,
+      "roles": [
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    },
+    "tasks": {
+      "tally": {
+        "status": "succeeded",
+        "revision": 5,
+        "stateReason": null
+      },
+      "note": {
+        "status": "cancelled",
+        "revision": 5,
+        "stateReason": "team_usage_or_effect_outcome_uncertain"
+      },
+      "join": {
+        "status": "queued",
+        "revision": 1,
+        "stateReason": null
+      }
+    },
+    "uncertain_attempts": [],
+    "committed": {
+      "tokens": 6298,
+      "costMicrounits": 1097,
+      "elapsedSeconds": 12
+    },
+    "reserved": {
+      "tokens": 128000,
+      "costMicrounits": 1000000,
+      "elapsedSeconds": 120
+    }
+  },
+  "note_calls_unchanged_bytes": true,
+  "recover": {
+    "status": 200,
+    "body": []
+  },
+  "after_recover": {
+    "attempt_count": 2,
+    "attempts_per_task": {
+      "tally": 1,
+      "note": 1,
+      "join": 0
+    },
+    "tally_artifact_digest": "sha256:9b0fb43e51a9bcaa31843d006c25997804a0f755e6c0b4799cad0494547bb396",
+    "tally_attempt_digest": "sha256:bc10268bcb3e450b0f6f4065698af57f8a458481f43da7df7c85506dab2e393e",
+    "artifact_ids": [
+      "artifact-6f2a74e2-4c68-4ac4-9d2b-3685810a8bcc"
+    ],
+    "tally_calls": {
+      "count": 2,
+      "settled": 2,
+      "ids": [
+        "098315e2-f39a-43c9-97a3-8b4bdb181b2f",
+        "c4f97488-70d5-4a08-88e7-06ae680cad07"
+      ],
+      "states": [
+        "settled",
+        "settled"
+      ],
+      "digest": "sha256:8a2a9166b82b623a30b0e4cf25b47ee62cc4e9e3af83027661809634e41cc7d8"
+    },
+    "note_calls": {
+      "count": 1,
+      "settled": 0,
+      "ids": [
+        "d196d52f-e033-46b4-9288-af698a1c6d38"
+      ],
+      "states": [
+        "pending"
+      ],
+      "digest": "sha256:b294a3d5b40c9b80baf9457eb3d226e952a3422d0a53ac03f32fa26052b984b4"
+    },
+    "note_attempt": {
+      "id": "972c1445-8360-4ff0-92b3-775462969a47",
+      "taskId": "note",
+      "runId": "0218b596-4161-40be-821a-5ec8b15a5d5c",
+      "status": "cancelled",
+      "executionOutcome": "cancelled",
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "usage": null,
+      "stateReason": "team_usage_or_effect_outcome_uncertain",
+      "updatedAt": "2026-10-27T19:26:49.487881Z"
+    },
+    "note_thread": {
+      "id": "team-attempt:972c1445-8360-4ff0-92b3-775462969a47",
+      "status": null,
+      "messages": 5,
+      "roles": [
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    },
+    "tasks": {
+      "tally": {
+        "status": "succeeded",
+        "revision": 5,
+        "stateReason": null
+      },
+      "note": {
+        "status": "cancelled",
+        "revision": 5,
+        "stateReason": "team_usage_or_effect_outcome_uncertain"
+      },
+      "join": {
+        "status": "queued",
+        "revision": 1,
+        "stateReason": null
+      }
+    },
+    "uncertain_attempts": [],
+    "committed": {
+      "tokens": 6298,
+      "costMicrounits": 1097,
+      "elapsedSeconds": 12
+    },
+    "reserved": {
+      "tokens": 128000,
+      "costMicrounits": 1000000,
+      "elapsedSeconds": 120
+    }
+  },
+  "original_join_release_probe": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "collaboration_revision_conflict",
+        "messageKey": "collaboration.error.revisionConflict",
+        "detail": "task state transition is not allowed or dependencies remain unresolved",
+        "diagnostic": null
+      }
+    }
+  },
+  "permitted_resume": {
+    "recovery_redispatches": "only queued attempts; running/cancellation_requested become uncertain (compiler/collaboration/team_execution/recovery.rs:155-169, runtime/team_execution/controller.rs:486-498)",
+    "cancelled_task": "terminal and immutable (compiler/collaboration/team_planning/claims.rs:62-65); queued->ready requires succeeded parents (claims.rs:165-169); admission requires a ready task (team_execution/admission.rs:100-111)",
+    "action": "submit an explicit replacement note task and a replacement join over the settled tally artifact"
+  },
+  "note_retry_admission": {
+    "id": "1c2480ed-a2c6-4115-9c8c-29c73400ea1a",
+    "taskId": "note-retry",
+    "runId": "4ab410c3-38d2-4c26-ad13-2910f63f24d6",
+    "status": "running",
+    "executionOutcome": null,
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "usage": null,
+    "stateReason": null,
+    "updatedAt": "2026-10-27T19:27:19.505143Z"
+  },
+  "scenario_status": "FAILED",
+  "failure_message": "AssertionError [ERR_ASSERTION]: {\"id\":\"1c2480ed-a2c6-4115-9c8c-29c73400ea1a\",\"taskId\":\"note-retry\",\"runId\":\"4ab410c3-38d2-4c26-ad13-2910f63f24d6\",\"status\":\"failed\",\"executionOutcome\":\"failed\",\"effectDisposition\":\"confirmed\",\"accountingState\":\"settled\",\"usage\":{\"tokens\":39055,\"costMicrounits\":17164,\"elapsedSeconds\":73},\"stateReason\":\"team_tool_application_or_transport_failed\",\"updatedAt\":\"2026-10-27T19:28:33.266232Z\"}\n    + expected - actual\n\n    -false\n    +true\n\n    at waitSucceeded (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/team-recovery.steps.mjs:187:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/team-recovery.steps.mjs:412:21)",
+  "cleanup": {
+    "actions": [
+      {
+        "cancel_task": "join",
+        "status": 200
+      },
+      {
+        "cancel_task": "join-retry",
+        "status": 200
+      }
+    ],
+    "errors": [],
+    "retained": [
+      "bdee7f26-d8b5-4147-b6a1-42940c71f92a",
+      "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:binding",
+      "urn:uar:team-recovery:388e3add-c00a-4ae2-bd17-da95d695de09:package"
+    ]
+  },
+  "finished_at": "2026-10-27T19:28:36.525Z"
+}

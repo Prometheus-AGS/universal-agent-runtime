@@ -1,0 +1,55 @@
+{
+  "scenario": "KNOWLEDGE-DOCUMENT-DELETE-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "configuration_changes": false,
+  "restart": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "Document deletion BDD 6cc94f8d-2036-4e5e-8a76-fb15e59619fb",
+        "description": "Disposable target and retained control documents",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 10
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"5533c267-ebd7-4586-83f6-698a1997dc5e\",\"name\":\"Document deletion BDD 6cc94f8d-2036-4e5e-8a76-fb15e59619fb\",\"description\":\"Disposable target and retained control documents\",\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":10,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-29T09:06:20.833598+00:00\",\"updated_at\":\"2026-10-29T09:06:20.833598+00:00\",\"document_count\":0}"
+    }
+  ],
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 90146
+  },
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "knowledge_base_id": "5533c267-ebd7-4586-83f6-698a1997dc5e",
+  "deleted_seal": "DELETE-1f8a5f5f-9e5c-4dba-b9d5-cd45d6fa612d",
+  "retained_seal": "RETAIN-ceeeb3b0-a49c-40c1-957f-ef23db070e92"
+}

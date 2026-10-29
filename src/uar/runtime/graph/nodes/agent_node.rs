@@ -14,7 +14,8 @@
 //! # State keys written
 //! - `_agent_result_{node_id}` — typed persisted child outcome.
 //! - `_agent_thread_id_{node_id}` — persisted child identity.
-//! - `_agent_output_{node_id}` — text returned by either a local or remote agent.
+//! - `_agent_output_{node_id}` — answer text returned by either a local or remote agent,
+//!   with inline reasoning excluded.
 
 use async_trait::async_trait;
 use tracing::{debug, warn};
@@ -154,14 +155,19 @@ impl AgentNode {
         );
         state.set(&format!("_agent_result_{}", self.id), &outcome);
         match outcome.result {
-            Some(AgentThreadResult::Completed { output }) if !output.trim().is_empty() => {
-                state.set(&self.output_key(), output);
-                NodeResult::Continue(state)
-            }
-            Some(AgentThreadResult::Completed { .. }) => NodeResult::Error(
-                state,
-                format!("AgentNode '{}' returned empty output", self.id),
-            ),
+            Some(AgentThreadResult::Completed { output }) => match delegated_contribution(output) {
+                Ok(answer) => {
+                    state.set(&self.output_key(), answer);
+                    NodeResult::Continue(state)
+                }
+                Err(MissingAnswer::ReasoningOnly) => {
+                    NodeResult::Error(state, DELEGATED_ANSWER_REASONING_ONLY.into())
+                }
+                Err(MissingAnswer::Empty) => NodeResult::Error(
+                    state,
+                    format!("AgentNode '{}' returned empty output", self.id),
+                ),
+            },
             Some(AgentThreadResult::Failed { code, message }) => NodeResult::Error(
                 state,
                 format!("AgentNode '{}' child failed ({code}): {message}", self.id),
@@ -182,6 +188,30 @@ impl std::fmt::Debug for AgentNode {
             .field("id", &self.id)
             .field("agent_id_or_url", &self.agent_id_or_url)
             .finish()
+    }
+}
+
+const DELEGATED_ANSWER_REASONING_ONLY: &str = "delegated_answer_missing: reasoning_only";
+
+/// Why a completed child produced no contribution.
+#[derive(Debug, PartialEq, Eq)]
+enum MissingAnswer {
+    ReasoningOnly,
+    Empty,
+}
+
+/// A delegated contribution is answer text only. Output without inline
+/// reasoning is kept as written; otherwise reasoning is excluded, and
+/// reasoning alone is not an answer.
+fn delegated_contribution(output: String) -> Result<String, MissingAnswer> {
+    let split = crate::llm::inline_reasoning::split_inline_reasoning(&output);
+    if !split.had_reasoning {
+        return if output.trim().is_empty() { Err(MissingAnswer::Empty) } else { Ok(output) };
+    }
+    if split.answer.is_empty() {
+        Err(MissingAnswer::ReasoningOnly)
+    } else {
+        Ok(split.answer)
     }
 }
 
@@ -263,5 +293,37 @@ impl GraphNode for AgentNode {
                 NodeResult::Error(state, format!("AgentNode '{}' failed: {e}", self.id))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plain_output_is_kept_as_written() {
+        assert_eq!(delegated_contribution("Water it.\n".into()), Ok("Water it.\n".into()));
+    }
+
+    #[test]
+    fn closed_reasoning_is_excluded_from_the_contribution() {
+        assert_eq!(
+            delegated_contribution("<think>draft the signature</think>\n\nMist daily.\n\nFernwell Plant Clinic X".into()),
+            Ok("Mist daily.\n\nFernwell Plant Clinic X".into())
+        );
+    }
+
+    #[test]
+    fn reasoning_only_output_is_not_an_answer() {
+        assert_eq!(
+            delegated_contribution("<think>Drafting: Fernwell Plant Clinic X\n\nWord count 1".into()),
+            Err(MissingAnswer::ReasoningOnly)
+        );
+        assert_eq!(delegated_contribution("<think>done</think>  ".into()), Err(MissingAnswer::ReasoningOnly));
+    }
+
+    #[test]
+    fn empty_output_keeps_its_existing_failure() {
+        assert_eq!(delegated_contribution("  \n".into()), Err(MissingAnswer::Empty));
     }
 }

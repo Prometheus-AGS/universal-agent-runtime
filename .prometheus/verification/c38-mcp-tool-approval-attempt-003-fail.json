@@ -1,0 +1,12 @@
+{
+  "scenario": "C38",
+  "status": "FAIL",
+  "failure_class": "test script: read the wrong field of the pending approval",
+  "platform": "Mac",
+  "attempt": 3,
+  "observed_output": "1 scenario (1 failed); 9 steps (5 passed, 3 skipped, 1 failed)",
+  "evidence": ".prometheus/verification/mcp-tool-approval/7f67cd8f-1b6c-47a3-9ebf-ed659eb93c1c.json",
+  "observed_before_failure": "Loopback HTTP peer served record_write/record_read; the native run admitted the peer and raised a pending approval for c38rec7f67cd8f__record_write ('requires approval under its descriptor'). The script read pending.record.tool_name instead of pending.name and failed before answering.",
+  "cleanup": "cleanup_errors []",
+  "next": "Read pending.name; rerun once."
+}

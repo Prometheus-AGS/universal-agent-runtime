@@ -1,0 +1,183 @@
+{
+  "scenario": "E05-STRUCTURED-OUTPUT",
+  "client_platform": "darwin",
+  "agent_id": "disposable-structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923",
+  "model": "liter/glm-5.3",
+  "session_id": "structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923",
+  "discriminator": {
+    "field": "tag_9f3b1781",
+    "token": "D-bba1a941-cc6b-47d4-8180-6d0682223843"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "tag_9f3b1781": {
+        "type": "string",
+        "enum": [
+          "D-bba1a941-cc6b-47d4-8180-6d0682223843"
+        ]
+      },
+      "result": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "tag_9f3b1781",
+      "result"
+    ],
+    "additionalProperties": false
+  },
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923",
+        "metadata": {
+          "title": "Disposable structured-output agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "glm-5.3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "structured-no-tools-3ace181b"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You are a precise calculator. Answer in the format the request requires.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923\",\"metadata\":{\"title\":\"Disposable structured-output agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"glm-5.3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"structured-no-tools-3ace181b\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a precise calculator. Answer in the format the request requires.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:677f3b5e769c15d8d2b79c9021d0989290a5a325171bd27e266cad64f49e32d1\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923",
+        "model": "liter/glm-5.3",
+        "session_id": "structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "calculation",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tag_9f3b1781": {
+                  "type": "string",
+                  "enum": [
+                    "D-bba1a941-cc6b-47d4-8180-6d0682223843"
+                  ]
+                },
+                "result": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "tag_9f3b1781",
+                "result"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is (22 multiplied by 28) plus 266?"
+          }
+        ]
+      },
+      "status": 400,
+      "response": "{\"error\":{\"message\":\"session_id must be a valid UUID\",\"type\":\"invalid_request_error\",\"param\":\"session_id\",\"code\":\"invalid_session_id\"}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-structured-output-3ace181b-bd7d-4361-9997-5ee3ae8be923",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": 882,
+  "prompt": "What is (22 multiplied by 28) plus 266?",
+  "scenario_status": "FAILED",
+  "duration_ms": 111
+}

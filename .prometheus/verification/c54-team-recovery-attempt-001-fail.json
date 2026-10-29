@@ -1,0 +1,35 @@
+{
+  "catalog_id": "C54",
+  "attempt": 1,
+  "classification": "script failure (task prompt wording), not a recovery defect",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team-recovery.cucumber.mjs",
+  "cucumber_summary": "1 scenario (1 failed); 14 steps (11 passed, 2 skipped, 1 failed); 2m 16.386s",
+  "evidence": ".prometheus/verification/team-recovery/1b95b01b-cf2f-4717-b463-a3a5fcea57e9.json",
+  "failed_step": "When I submit an explicit replacement note and a replacement join over the settled tally artifact",
+  "observed": {
+    "replacement_note_attempt": {
+      "id": "36f28ce5-d110-42dc-b9cf-a0bb18671919",
+      "runId": "1f7d8035-085b-4728-9910-ed2111015960",
+      "status": "failed",
+      "stateReason": "team_tool_application_or_transport_failed",
+      "usage": {
+        "tokens": 60258,
+        "costMicrounits": 18765,
+        "elapsedSeconds": 80
+      }
+    },
+    "model_tool_calls": [
+      "team_roster",
+      "team_delegate (denied by governance policy)",
+      "team_send (denied)",
+      "team_send (denied)",
+      "team_wait (TEAM_SCOPE_DENIED)",
+      "team_delegate (denied)",
+      "team_roster",
+      "final text"
+    ],
+    "cause": "The replacement-note request began 'Replacement for the cancelled volunteer note', unlike the proven C36 note text; the model tried to fetch the tally from the math member through team tools. Denied tool outcomes mark the attempt failed (runtime/team_execution/execution.rs effects_failed branch; denial text from runtime/manager.rs:7524).",
+    "recovery_steps_passed_before_failure": "tally settled; note cancelled (cancellation_requested -> cancelled, accounting reserved-unknown); restart; tally artifact/attempt/calls byte-identical; note calls unchanged (1 call, state pending); recover returned []; original join release probe 409"
+  },
+  "fix": "Use the exact C36 note request text for the replacement note; no product code change."
+}

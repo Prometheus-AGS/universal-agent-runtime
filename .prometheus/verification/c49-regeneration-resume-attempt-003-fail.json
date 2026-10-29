@@ -1,0 +1,13 @@
+{
+  "scenario": "C49",
+  "status": "FAIL",
+  "failure_class": "test oracle (required one exact paragraph seal across a 128-char chunk boundary)",
+  "platform": "Mac",
+  "attempt": 3,
+  "binary_sha256": "57513e9bdf8692a7bcd9e5b31729724fb251facf8a7674666b7bb4b723117654",
+  "change_before_attempt": "Operator-approved product fix in src/uar/persistence/providers/ingestion_records/surreal.rs: bounded immediate jittered retry (8x, 15ms x attempt + jitter) of transition/publish/delete transactions when Surreal reports a retryable commit conflict; Retryable ingestion documents report Pending instead of Failed.",
+  "observed_output": "1 scenario (1 failed); 7 steps (6 passed, 1 failed); 4m 48s",
+  "evidence": ".prometheus/verification/regeneration-resume/a317ed5f-1e8e-4eff-98c6-480842f77688.json",
+  "observed_before_failure": "Interrupt at 1/60; after restart same generation running 6/60, no false complete, all sources retained, KB still previous space. Resumed automatically (no explicit restart needed) to complete 60/60, last_error null, no write-conflict errors; KB indexed_embedding switched to openai/text-embedding-3-small 384 only at completion. Retrieval for note 17 returned note 17's chunk with seal WREN-A7C3F0-17-1 (score 0.726); the asserted -17-2 seal lay past the chunk boundary.",
+  "next": "Accept any of note 17's seals; rerun once."
+}

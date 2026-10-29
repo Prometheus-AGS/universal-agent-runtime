@@ -1,0 +1,32 @@
+{
+  "scenario": "C45",
+  "label": "B47",
+  "behavior": "Sliding-window retains the intended recent groups",
+  "status": "PASS",
+  "attempt": 2,
+  "prior_attempts": "1 FAIL test script: exact answer keys (product behavior already correct). Receipt c45-sliding-window-attempt-001-fail.json",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/context-structural.cucumber.mjs --name 'Sliding-window retains'",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 5 steps (5 passed)",
+  "evidence": ".prometheus/verification/context-structural/c85526cd-d397-4170-bcbf-70678ad7da0d.json",
+  "evidence_review": {
+    "receipt": "sliding_window max_messages 4: source 12 \u2192 prepared 5, changed true",
+    "answer": "{A: UNKNOWN, E: most recent code (correct)} \u2014 old groups left prepared input; most recent group retained and used"
+  },
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "files": [
+    "scripts/behaviors/features/context-structural.feature",
+    "scripts/behaviors/context-structural.cucumber.mjs",
+    "scripts/behaviors/steps/context-structural.steps.mjs"
+  ],
+  "fixture": "Native run with 10 seeded history messages (5 user/assistant groups, one private depot code each) via the run API history field; disposable agent with the strategy in uar.run_policy.context_strategy, memory and KB disabled.",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "cleanup": {
+    "agent_deleted": true,
+    "sessions_deleted": true,
+    "cleanup_errors": []
+  }
+}

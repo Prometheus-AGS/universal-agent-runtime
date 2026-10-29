@@ -1,0 +1,109 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "disable-agent-knowledge-access-without-removing-saved-links;a-disabled-agent-cannot-use-its-still-linked-private-knowledge",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A disabled agent cannot use its still-linked private knowledge",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1094683891
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with enabled KB access and a saved private-fact link",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:59"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 6211163946,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'AGENT-6f6480fd-9968-41d3-9bbf-339a882164bb'\n- 'AGENT-6f6480fd-9968-41d3-9fbf-339a882164bb'\n\n    + expected - actual\n\n    -AGENT-6f6480fd-9968-41d3-9bbf-339a882164bb\n    +AGENT-6f6480fd-9968-41d3-9fbf-339a882164bb\n\n    at prompt (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/kb-disable.steps.mjs:54:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/kb-disable.steps.mjs:123:17)"
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the enabled agent uses the private fact with a matching knowledge citation",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:122"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I disable KB access without changing the saved links",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:132"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the disabled agent answers without KB knowledge while its linked source remains searchable",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-disable.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 112220788
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi1kaXNhYmxlLzUxNTM0YmZhLWJhNDQtNDlhYy1hNDY0LWUxZDg0Mzk5NjkzOC5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@kb-disable",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "disable-agent-knowledge-access-without-removing-saved-links",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Disable agent knowledge access without removing saved links",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@kb-disable",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-disable.feature"
+  }
+]

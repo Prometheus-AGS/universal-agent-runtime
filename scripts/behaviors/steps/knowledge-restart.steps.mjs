@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
+import { citesMarker, parseAnswerJson } from '../support/answer-oracle.mjs';
 import { assertOwnedEndpoint, restartOwnedUar } from '../support/restart-owned-uar.mjs';
 
 setDefaultTimeout(180_000);
@@ -105,9 +106,7 @@ When('I ask the math agent about its retained research profile in a fresh conver
 });
 
 Then('the answer uses the retained document with matching retrieval evidence', function () {
-  const final = this.completion.choices[0].message.content.replace(/^(?:\s*<think>[\s\S]*?<\/think>)+\s*/, '').trim();
-  const fenced = /^```(?:json)?\s*\n([\s\S]*?)\n```$/.exec(final);
-  const answer = JSON.parse(fenced ? fenced[1] : final);
+  const answer = parseAnswerJson(this.completion.choices[0].message.content);
   let previous = 2, current = 1;
   for (let n = 2; n <= 11; n++) [previous, current] = [current, previous + current];
   assert.equal(answer.specialist, this.marker);
@@ -124,8 +123,7 @@ Then('the answer uses the retained document with matching retrieval evidence', f
     .flatMap(event => event.data.citations ?? []);
   this.evidence.matched_citations = citations.filter(citation => citation.knowledge_base_id === this.kbId
     && citation.document_id === this.docId && citation.snippet.includes(this.seal)
-    && (answer.citation === `[${citation.marker}]`
-      || answer.citation === `[${citation.marker}] (${citation.document_name})`));
+    && citesMarker(answer.citation, citation.marker));
   assert.ok(this.evidence.matched_citations.length > 0, 'Require an actual retained-document retrieval matching the answer citation');
   assert.equal(this.evidence.restart.previous_process_exited, true);
   assert.equal(this.evidence.restart.new_process_ready, true);

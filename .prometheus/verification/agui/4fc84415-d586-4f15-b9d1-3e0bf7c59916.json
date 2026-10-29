@@ -1,0 +1,143 @@
+{
+  "scenario": "AGUI-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "AG-UI 1.0 saved-agent SSE",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:227c7dcc77864a6b0fc475fefaf2d9f0009d48e320cd59749b8b50a400a2e323\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"mode\":\"selected\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/ag-ui/agents/math-specialist-db64c2a8",
+      "request": {
+        "threadId": "2fe6be26-791a-4510-bc5d-2ab9eb956e75",
+        "runId": "14308342-fb8b-4a45-be4a-5531333bb66e",
+        "protocolVersion": "1.0",
+        "tools": [],
+        "context": [],
+        "messages": [
+          {
+            "id": "ab6a679c-5e87-4ef5-b32b-efeb587b9869",
+            "role": "user",
+            "content": "What is (47 multiplied by 30) plus 324? Follow your saved specialist/answer JSON instructions."
+          }
+        ],
+        "forwardedProps": {
+          "uar": {
+            "model": "liter/MiniMax-M3"
+          }
+        }
+      },
+      "response": "id: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:0:0\ndata: {\"type\":\"RUN_STARTED\",\"threadId\":\"2fe6be26-791a-4510-bc5d-2ab9eb956e75\",\"runId\":\"14308342-fb8b-4a45-be4a-5531333bb66e\",\"protocolVersion\":\"1.0\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:11:1\ndata: {\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"role\":\"assistant\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:11:2\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"<think>Th\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:12:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"e question is ordinary arithmetic: (47 × 30) + 324 = 1410 +\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:13:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\" 324 = 1734.\\n\\nReturn JSON with specialist and answer.\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:14:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"</think>\\n\\n\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:16:1\ndata: {\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"call_mxb1annO0SF88zRij7YCj6u1\",\"toolCallName\":\"native_echo\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:16:2\ndata: {\"type\":\"TOOL_CALL_ARGS\",\"toolCallId\":\"call_mxb1annO0SF88zRij7YCj6u1\",\"delta\":\"{\\\"message\\\":\\\"(47 * 30) + 324 = 1410 + 324 = 1734\\\"}\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:16:3\ndata: {\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"call_mxb1annO0SF88zRij7YCj6u1\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:17:1\ndata: {\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:result:call_mxb1annO0SF88zRij7YCj6u1\",\"toolCallId\":\"call_mxb1annO0SF88zRij7YCj6u1\",\"role\":\"tool\",\"content\":\"{\\\"echoed\\\":{\\\"message\\\":\\\"(47 * 30) + 324 = 1410 + 324 = 1734\\\"}}\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:23:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"```\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:24:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:25:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 1734\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:26:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\",\"delta\":\"\\n}\\n```\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:28:90\ndata: {\"type\":\"TEXT_MESSAGE_END\",\"messageId\":\"14308342-fb8b-4a45-be4a-5531333bb66e:assistant\"}\n\nid: f23627580fcfc727a6be6b8e924d85b8b5290fd06afbbb8b5aa34c29c0e31416:28:100\ndata: {\"type\":\"RUN_FINISHED\",\"threadId\":\"2fe6be26-791a-4510-bc5d-2ab9eb956e75\",\"runId\":\"14308342-fb8b-4a45-be4a-5531333bb66e\",\"outcome\":{\"type\":\"success\"}}\n\n",
+      "status": 200,
+      "content_type": "text/event-stream"
+    }
+  ],
+  "events": [
+    {
+      "type": "RUN_STARTED",
+      "threadId": "2fe6be26-791a-4510-bc5d-2ab9eb956e75",
+      "runId": "14308342-fb8b-4a45-be4a-5531333bb66e",
+      "protocolVersion": "1.0"
+    },
+    {
+      "type": "TEXT_MESSAGE_START",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "role": "assistant"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "<think>Th"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "e question is ordinary arithmetic: (47 × 30) + 324 = 1410 +"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": " 324 = 1734.\n\nReturn JSON with specialist and answer."
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "</think>\n\n"
+    },
+    {
+      "type": "TOOL_CALL_START",
+      "toolCallId": "call_mxb1annO0SF88zRij7YCj6u1",
+      "toolCallName": "native_echo"
+    },
+    {
+      "type": "TOOL_CALL_ARGS",
+      "toolCallId": "call_mxb1annO0SF88zRij7YCj6u1",
+      "delta": "{\"message\":\"(47 * 30) + 324 = 1410 + 324 = 1734\"}"
+    },
+    {
+      "type": "TOOL_CALL_END",
+      "toolCallId": "call_mxb1annO0SF88zRij7YCj6u1"
+    },
+    {
+      "type": "TOOL_CALL_RESULT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:result:call_mxb1annO0SF88zRij7YCj6u1",
+      "toolCallId": "call_mxb1annO0SF88zRij7YCj6u1",
+      "role": "tool",
+      "content": "{\"echoed\":{\"message\":\"(47 * 30) + 324 = 1410 + 324 = 1734\"}}"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "```"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "json\n{\n  \"specialist\": \"MATH-ce9324ee-"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "0d63-4714-982f-f099e8c8f378\",\n  \"answer\": 1734"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant",
+      "delta": "\n}\n```"
+    },
+    {
+      "type": "TEXT_MESSAGE_END",
+      "messageId": "14308342-fb8b-4a45-be4a-5531333bb66e:assistant"
+    },
+    {
+      "type": "RUN_FINISHED",
+      "threadId": "2fe6be26-791a-4510-bc5d-2ab9eb956e75",
+      "runId": "14308342-fb8b-4a45-be4a-5531333bb66e",
+      "outcome": {
+        "type": "success"
+      }
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1734
+  },
+  "thread_id": "2fe6be26-791a-4510-bc5d-2ab9eb956e75",
+  "run_id": "14308342-fb8b-4a45-be4a-5531333bb66e",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1734
+  },
+  "content_fragments": 8,
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 8190
+}

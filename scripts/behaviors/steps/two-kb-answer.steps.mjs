@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
+import { citesMarker, parseAnswerJson } from '../support/answer-oracle.mjs';
 import { assertOwnedEndpoint } from '../support/restart-owned-uar.mjs';
 
 setDefaultTimeout(600_000);
@@ -129,15 +130,7 @@ When('I ask for the two inventories and their combined total in a fresh conversa
 });
 
 Then('the answer combines both private facts with a matching citation for each knowledge base', async function () {
-  const final = this.completion.choices[0].message.content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-  assert.ok(final && !/<\/?think>/.test(final));
-  let answer;
-  try { answer = JSON.parse(final); }
-  catch {
-    const blocks = [...final.matchAll(/(?:^|\n)```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```(?=\s|$)/g)];
-    assert.equal(blocks.length, 1, 'Require one unambiguous JSON answer outside reasoning');
-    answer = JSON.parse(blocks[0][1]);
-  }
+  const answer = parseAnswerJson(this.completion.choices[0].message.content);
   assert.equal(answer.agent_marker, this.marker);
   assert.equal(answer.total, this.evidence.sources.reduce((sum, source) => sum + source.units, 0));
   const citations = this.evidence.events.events.filter(event => event.eventName === 'agui.rag_citations').flatMap(event => event.data.citations ?? []);
@@ -150,7 +143,7 @@ Then('the answer combines both private facts with a matching citation for each k
     assert.equal(part.seal, source.seal);
     const matched = citations.filter(citation => citation.knowledge_base_id === source.kb_id
       && citation.document_id === source.document_id && citation.snippet.includes(source.seal)
-      && (part.citation === `[${citation.marker}]` || part.citation === `[${citation.marker}] (${citation.document_name})`));
+      && citesMarker(part.citation, citation.marker));
     assert.ok(matched.length > 0, `Require actual ${source.name} KB/document citation matching its answer`);
     this.evidence.matched_citations.push(...matched);
     assert.deepEqual(await request(this, 'GET', source.path), source.kb);

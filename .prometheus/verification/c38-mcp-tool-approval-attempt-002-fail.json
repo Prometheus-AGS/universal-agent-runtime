@@ -1,0 +1,12 @@
+{
+  "scenario": "C38",
+  "status": "FAIL",
+  "failure_class": "test script: per-run MCP input shape; not a product defect",
+  "platform": "Mac",
+  "attempt": 2,
+  "observed_output": "1 scenario (1 failed); 9 steps (5 passed, 3 skipped, 1 failed)",
+  "evidence": ".prometheus/verification/mcp-tool-approval/1a7437cf-2db7-403c-acca-d08bae73c77b.json",
+  "failure": "POST /api/uar/runs with mcp_servers:[{name}] returned 422 run_mcp_server_invalid 'MCP server must select one loopback URL or one trusted destination grant' (src/uar/runtime/turn/host/mcp.rs). A run can be granted a loopback HTTP peer or a trusted destination grant, not a global stdio registration.",
+  "cleanup": "cleanup_errors []",
+  "next": "Serve the owned peer over loopback streamable HTTP and pass {name,url} per run; no global registration. Rerun once."
+}

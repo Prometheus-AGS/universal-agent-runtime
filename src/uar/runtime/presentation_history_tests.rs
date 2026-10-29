@@ -65,6 +65,7 @@ async fn manager_with_run(captured: bool) -> RunManager {
                 status: RunStatus::Running,
                 context: json!({}),
             },
+            caller_handoff_confirmation: Arc::new(Mutex::new(())),
             verified_owner: Some(owner),
             approval_root_run_id: None,
             presentations: captured.then(|| Arc::new(snapshot)),

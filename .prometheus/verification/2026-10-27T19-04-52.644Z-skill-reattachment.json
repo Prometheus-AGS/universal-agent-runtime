@@ -1,0 +1,137 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "active-skill-survives-compaction-within-its-reattachment-budget;a-small-permitted-skill-is-reattached-after-compaction-while-an-oversized-one-cannot-widen-the-budget",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A small permitted skill is reattached after compaction while an oversized one cannot widen the budget",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1611845971
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a small skill reattachment allowance and two attached skills, one small and one oversized",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:26"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22013690252
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "a conversation long enough to be compacted continues with a task needing the small skill's rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:70"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 171478
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the conversation was genuinely compacted",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:100"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 208355
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the small skill body was reattached within the allowance and the oversized body did not widen it",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:107"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 214278
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the answer follows the small skill's private rule",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-reattachment.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 207208979
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1yZWF0dGFjaG1lbnQvZDBmMGJkODEtYmY5My00MmJlLTgwN2EtNWQ4Mzk4ZDM0N2ZhLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@compaction",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "active-skill-survives-compaction-within-its-reattachment-budget",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Active skill survives compaction within its reattachment budget",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@compaction",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-reattachment.feature"
+  }
+]

@@ -1,0 +1,261 @@
+{
+  "scenario": "C38-MCP-TOOL-APPROVAL-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "requests": {
+    "approved": {
+      "label": "approved",
+      "task": "Store the value ORCHID-838A76BA under the key note-1a7437cf with record_write. Then read the key note-1a7437cf back with record_read and tell me the exact value and revision that record_read returned.",
+      "approved": true,
+      "session_id": "6c91e242-e6cf-4e83-9a8a-8d6c14ea34d1",
+      "approvals": [],
+      "statuses": []
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/mcp/servers",
+      "status": 200,
+      "response": "{\"servers\":[]}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/mcp/servers/c38rec1a7437cf",
+      "request": {
+        "name": "c38rec1a7437cf",
+        "enabled": true,
+        "transport": "stdio",
+        "command": "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+        "args": [
+          "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/record-mcp-peer.mjs"
+        ],
+        "env": {
+          "RECORD_FILE": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c38-mcp-peer/1a7437cf-2db7-403c-acca-d08bae73c77b/records.json",
+          "RECORD_LOG": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c38-mcp-peer/1a7437cf-2db7-403c-acca-d08bae73c77b/calls.jsonl"
+        }
+      },
+      "status": 200,
+      "response": "{\"name\":\"c38rec1a7437cf\",\"enabled\":true,\"connected\":false,\"transport\":\"stdio\",\"command\":\"/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node\",\"args\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/record-mcp-peer.mjs\"],\"envKeys\":[\"RECORD_FILE\",\"RECORD_LOG\"],\"sandboxed\":false,\"tools\":[]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/mcp/servers",
+      "status": 200,
+      "response": "{\"servers\":[{\"name\":\"c38rec1a7437cf\",\"enabled\":true,\"connected\":false,\"transport\":\"stdio\",\"command\":\"/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node\",\"args\":[\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/record-mcp-peer.mjs\"],\"envKeys\":[\"RECORD_FILE\",\"RECORD_LOG\"],\"sandboxed\":false,\"tools\":[]}]}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-record-agent-1a7437cf",
+        "metadata": {
+          "title": "Disposable Record Agent",
+          "description": "Stores and reads records through an MCP record peer.",
+          "tags": [
+            "records"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "c38rec1a7437cf__record_write",
+              "c38rec1a7437cf__record_read"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You store and read records only with the record_write and record_read tools. Report only values and revisions returned by the tools. If a tool call is denied or fails, say plainly that the operation was not performed.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.run_policy": {
+            "mcp_servers": {
+              "mode": "selected",
+              "ids": [
+                "c38rec1a7437cf"
+              ]
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-record-agent-1a7437cf\",\"metadata\":{\"title\":\"Disposable Record Agent\",\"description\":\"Stores and reads records through an MCP record peer.\",\"tags\":[\"records\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"c38rec1a7437cf__record_write\",\"c38rec1a7437cf__record_read\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You store and read records only with the record_write and record_read tools. Report only values and revisions returned by the tools. If a tool call is denied or fails, say plainly that the operation was not performed.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"mcp_servers\":{\"mode\":\"selected\",\"ids\":[\"c38rec1a7437cf\"]}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:df8d75335f0ce87ed10f95937489053f52e93483599bf57999f9bc59e89ab6f9\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-record-agent-1a7437cf\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-record-agent-1a7437cf",
+        "input": "Store the value ORCHID-838A76BA under the key note-1a7437cf with record_write. Then read the key note-1a7437cf back with record_read and tell me the exact value and revision that record_read returned.",
+        "session_id": "6c91e242-e6cf-4e83-9a8a-8d6c14ea34d1",
+        "mcp_servers": [
+          {
+            "name": "c38rec1a7437cf"
+          }
+        ]
+      },
+      "status": 422,
+      "response": "{\"code\":\"run_mcp_server_invalid\",\"error\":\"MCP server must select one loopback URL or one trusted destination grant\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-record-agent-1a7437cf",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/6c91e242-e6cf-4e83-9a8a-8d6c14ea34d1",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/mcp/servers/c38rec1a7437cf",
+      "status": 200,
+      "response": "{\"deleted\":true,\"name\":\"c38rec1a7437cf\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/mcp/servers",
+      "status": 200,
+      "response": "{\"servers\":[]}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 24808,
+    "runtime_pid": 77530
+  },
+  "owned_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c38-mcp-peer/1a7437cf-2db7-403c-acca-d08bae73c77b",
+  "server_name": "c38rec1a7437cf",
+  "agent_id": "disposable-record-agent-1a7437cf",
+  "scenario_policy": {
+    "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/policies/c38-mcp-tool-1a7437cf-2db7-403c-acca-d08bae73c77b.cedar",
+    "principal": "disposable-record-agent-1a7437cf",
+    "tools": [
+      "c38rec1a7437cf__record_write",
+      "c38rec1a7437cf__record_read"
+    ]
+  },
+  "restart_enable": {
+    "previous_pid": 77530,
+    "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-050791a8-72c0-4e56-9093-955da1bba915.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 10229,
+    "new_process_ready": true
+  },
+  "registration": {
+    "name": "c38rec1a7437cf",
+    "enabled": true,
+    "connected": false,
+    "transport": "stdio",
+    "command": "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+    "args": [
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/record-mcp-peer.mjs"
+    ],
+    "envKeys": [
+      "RECORD_FILE",
+      "RECORD_LOG"
+    ],
+    "sandboxed": false,
+    "tools": []
+  },
+  "registration_listing": {
+    "name": "c38rec1a7437cf",
+    "enabled": true,
+    "connected": false,
+    "transport": "stdio",
+    "command": "/Users/gqadonis/.volta/tools/image/node/24.18.0/bin/node",
+    "args": [
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/support/record-mcp-peer.mjs"
+    ],
+    "envKeys": [
+      "RECORD_FILE",
+      "RECORD_LOG"
+    ],
+    "sandboxed": false,
+    "tools": []
+  },
+  "restart_restore": {
+    "previous_pid": 10229,
+    "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-407e9a4b-1a27-45b7-981f-8e44d451df68.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 10476,
+    "new_process_ready": true
+  },
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 57925
+}

@@ -1,0 +1,31 @@
+{
+  "scenario": "C54",
+  "label": "B54",
+  "behavior": "A team recovers after cancellation/restart without duplicate work",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 3,
+  "prior_attempts": "1 and 2 FAIL at the replacement note only (writer called governance-denied team_delegate/team_send and a failing team_wait); the recovery behaviour under test passed in both. Receipts c54-team-recovery-attempt-00{1,2}-fail.json",
+  "binary_sha256": "cc1dbb8193b12536e01a1ce9869d70e4cc4fc29f166b1d106539ad4f5bd314b0",
+  "executor": "subagent authored and ran under the operator's standing autonomous-run instruction; evidence reviewed by the lead",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team-recovery.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 14 steps (14 passed); 1m 40.815s",
+  "evidence": ".prometheus/verification/team-recovery/915149b3-dd89-4dab-8da9-ed7360d5c17e.json",
+  "files": ["scripts/behaviors/features/team-recovery.feature", "scripts/behaviors/team-recovery.cucumber.mjs", "scripts/behaviors/steps/team-recovery.steps.mjs"],
+  "evidence_review": {
+    "settled_unchanged": "tally artifact sha256:a1307236… and attempt sha256:53e3c9fd… identical before restart, after restart, after recovery and at the end; tally's 3 settled calls unchanged",
+    "cancelled_honest": "note attempt cancelled (cancellation_requested → cancelled), outcome uncertain team_usage_or_effect_outcome_uncertain, accounting reserved-unknown, no output or artifact; identical after restart; never succeeded; its 1 pending call byte-identical and not repeated",
+    "restart_and_recovery": "owned restart (new PID, same binary/config, store preserved, new execution owner); POST /recover returned [] (no re-dispatch); cancelled task terminal; original join cannot be released (409)",
+    "conclusion": "permitted resume via new explicitly named work: note-retry and join-retry depending on [tally, note-retry]; join-retry succeeded with exactly the tally artifact and the note-retry artifact, stating 486 seed packets and SEEDLOCK-b32979b1"
+  },
+  "findings_not_failures": [
+    "Team turns expose team_delegate, team_send and team_wait as selected tools while governance denies them; a failed team_wait fails the whole task (src/uar/runtime/team_execution/execution.rs:176-192, manager.rs:7517-7524), so outcomes depend on model wording.",
+    "The cancelled attempt's accounting call remains pending with its reservation kept (reserved-unknown) after restart; reported honestly but never reconciled."
+  ],
+  "cleanup": {"actions": "original join cancelled (200)", "errors": [], "retained": "team instance, binding and package (no delete route)"},
+  "uar_health_after": "GET /api/agents 200",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

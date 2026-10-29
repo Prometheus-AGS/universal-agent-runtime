@@ -1,0 +1,357 @@
+{
+  "scenario": "E19-E21-E23-E24-SKILL-CLASSIFIER-BACKENDS",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "zorblat-quintex-vellum7e249829",
+        "description": "zorblat quintex vellum7e249829",
+        "triggers": {
+          "keywords": [
+            "zorblat quintex vellum7e249829"
+          ]
+        },
+        "prompt_overlay": "Private rule: answer only JSON {\"marker\":\"CLASSIFIER-6a8e4477-74af-483b-83a2-5e867b20e8e0\",\"answer\":N} where N is 27 multiplied by 27."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"zorblat-quintex-vellum7e249829\",\"title\":\"zorblat-quintex-vellum7e249829\",\"description\":\"zorblat quintex vellum7e249829\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zorblat quintex vellum7e249829\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private rule: answer only JSON {\\\"marker\\\":\\\"CLASSIFIER-6a8e4477-74af-483b-83a2-5e867b20e8e0\\\",\\\"answer\\\":N} where N is 27 multiplied by 27.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "vellum7e249829-archive-storage",
+        "description": "vellum7e249829 archive storage retention",
+        "triggers": {
+          "keywords": [
+            "archive storage"
+          ]
+        },
+        "prompt_overlay": "Decoy rule: answer only JSON {\"marker\":\"DECOY-ONLY\",\"answer\":0}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"vellum7e249829-archive-storage\",\"title\":\"vellum7e249829-archive-storage\",\"description\":\"vellum7e249829 archive storage retention\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"archive storage\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Decoy rule: answer only JSON {\\\"marker\\\":\\\"DECOY-ONLY\\\",\\\"answer\\\":0}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a",
+        "metadata": {
+          "title": "Disposable classifier assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "classifier-no-tools-7e249829"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Follow the instructions of any skill the runtime has loaded for you and return its requested answer format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a\",\"metadata\":{\"title\":\"Disposable classifier assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"classifier-no-tools-7e249829\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Follow the instructions of any skill the runtime has loaded for you and return its requested answer format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:4707187401364e9bbc6cf87e85efad0e2ed059acc49f06502cb2501514b8983c\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"service\",\"saved\":\"service\",\"effective\":\"service\",\"revision\":\"2026-10-28T21:39:46.300685000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T21:39:46.300685Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"tfidf\",\"saved\":\"tfidf\",\"effective\":\"tfidf\",\"revision\":\"2026-10-28T21:39:46.348288000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-28T21:39:46.348288Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.wasm_component_path",
+      "status": 200,
+      "response": "{\"id\":\"f62e19b2-2e6d-472b-a20f-b81f67af535d\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"WASM Path\",\"key\":\"intent_classifier.wasm_component_path\",\"data\":null,\"saved\":null,\"effective\":null,\"revision\":\"2026-10-26T06:32:43.367799000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367799Z\",\"updated_at\":null,\"source\":\"Default\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/intent_classifier.wasm_component_path",
+      "request": {
+        "value": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm",
+        "expected_revision": "2026-10-26T06:32:43.367799000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"intent_classifier.wasm_component_path\",\"namespace\":\"intent_classifier\",\"setting\":{\"id\":\"f62e19b2-2e6d-472b-a20f-b81f67af535d\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"WASM Path\",\"key\":\"intent_classifier.wasm_component_path\",\"data\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"saved\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"effective\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"revision\":\"2026-10-29T09:44:20.085072000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367799Z\",\"updated_at\":\"2026-10-29T09:44:20.085072Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.wasm_component_path",
+      "status": 200,
+      "response": "{\"id\":\"f62e19b2-2e6d-472b-a20f-b81f67af535d\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"WASM Path\",\"key\":\"intent_classifier.wasm_component_path\",\"data\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"saved\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"effective\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"revision\":\"2026-10-29T09:44:20.085072000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367799Z\",\"updated_at\":\"2026-10-29T09:44:20.085072Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "request": {
+        "value": "wasm",
+        "expected_revision": "2026-10-28T21:39:46.348288000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"intent_classifier.backend\",\"namespace\":\"intent_classifier\",\"setting\":{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"wasm\",\"saved\":\"wasm\",\"effective\":\"wasm\",\"revision\":\"2026-10-29T09:44:20.126252000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-29T09:44:20.126252Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"wasm\",\"saved\":\"wasm\",\"effective\":\"wasm\",\"revision\":\"2026-10-29T09:44:20.126252000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-29T09:44:20.126252Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "request": {
+        "value": "intent_classifier",
+        "expected_revision": "2026-10-28T21:39:46.300685000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"skills.matching.engine\",\"namespace\":\"skills\",\"setting\":{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"intent_classifier\",\"saved\":\"intent_classifier\",\"effective\":\"intent_classifier\",\"revision\":\"2026-10-29T09:44:20.169118000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-29T09:44:20.169118Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"intent_classifier\",\"saved\":\"intent_classifier\",\"effective\":\"intent_classifier\",\"revision\":\"2026-10-29T09:44:20.169118000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-29T09:44:20.169118Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a",
+        "model": "liter/MiniMax-M3",
+        "session_id": "0bafd3a8-2eb6-45af-944b-64fe26661938",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "zorblat quintex vellum7e249829"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-af2aaf44-3ecd-4c9f-b1db-1181741bd844\",\"object\":\"chat.completion\",\"created\":1793267061,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"marker\\\":\\\"CLASSIFIER-6a8e4477-74af-483b-83a2-5e867b20e8e0\\\",\\\"answer\\\":729}\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":13157,\"completion_tokens\":39,\"total_tokens\":13196},\"session_id\":\"0bafd3a8-2eb6-45af-944b-64fe26661938\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/af2aaf44-3ecd-4c9f-b1db-1181741bd844",
+      "status": 200,
+      "response": "{\"run_id\":\"af2aaf44-3ecd-4c9f-b1db-1181741bd844\",\"agent_id\":\"disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a\",\"conversation_id\":\"0bafd3a8-2eb6-45af-944b-64fe26661938\",\"status\":\"done\",\"agent_revision\":\"sha256:4707187401364e9bbc6cf87e85efad0e2ed059acc49f06502cb2501514b8983c\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui-ux\",\"pyo3-bridge\",\"quality-nonconformance\",\"react-vite-stack\",\"redesign-existing-projects\",\"returns-reverse-logistics\",\"security-bounty-hunter\",\"stage-01-planner\",\"stage-02-search\",\"stage-03-retrieve\",\"stage-04-collect\",\"stage-05-verify\",\"stage-06-resolve\",\"stage-07-graph\",\"stage-08-cite\",\"stage-09-report\",\"stage-10-export\",\"start-business-build\",\"stitch-design-taste\",\"tauri-react-vite\",\"typescript-base-patterns\",\"ui-surface\",\"ui-ux-pro-max\",\"upload-to-bossfang\",\"validate-idea\",\"validate-skill\",\"value-scenario-discovery\",\"value-scenario-verify\",\"variant\",\"vellum7e249829-archive-storage\",\"workspace-structure\",\"zorblat-quintex-vellum7e249829\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'classifier-no-tools-7e249829' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"legacy_classifier.wasm\",\"effective_method\":\"legacy_classifier.wasm\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":5,\"candidates\":[{\"skill_id\":\"zorblat-quintex-vellum7e249829\",\"score\":1.0,\"accepted\":true}]},\"activated_skills\":[\"zorblat-quintex-vellum7e249829\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:6e800834b9765a1028b57c263fe4824cba51caf81384e8d23297c566ba3e7fb6\",\"prepared_sha256\":\"sha256:6e800834b9765a1028b57c263fe4824cba51caf81384e8d23297c566ba3e7fb6\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":11399,\"prepared_tokens\":11399,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:6e800834b9765a1028b57c263fe4824cba51caf81384e8d23297c566ba3e7fb6\",\"final_messages\":2,\"final_tokens\":11399,\"input_allowance\":1043093,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":12715,\"request_tokens\":12820,\"rendered_tokens\":102,\"rendered_sha256\":\"sha256:92e2b5dee126564608bb5f20b2b53a414093def2cb6eaa69b6b4835ce87222d2\",\"fragments\":[{\"fragment_id\":\"skill.zorblat-quintex-vellum7e249829\",\"skill_id\":\"zorblat-quintex-vellum7e249829\",\"original_body_tokens\":72,\"retained_body_tokens\":72,\"original_body_sha256\":\"sha256:eb94f56ee176ba6cec93e8c942373992d8cccd5300a980d61e8333f28acb6d03\",\"retained_body_sha256\":\"sha256:eb94f56ee176ba6cec93e8c942373992d8cccd5300a980d61e8333f28acb6d03\",\"original_rendered_tokens\":102,\"retained_rendered_tokens\":102,\"original_rendered_sha256\":\"sha256:92e2b5dee126564608bb5f20b2b53a414093def2cb6eaa69b6b4835ce87222d2\",\"retained_rendered_sha256\":\"sha256:92e2b5dee126564608bb5f20b2b53a414093def2cb6eaa69b6b4835ce87222d2\",\"retained\":true,\"truncated\":false}]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"intent_classifier\",\"saved\":\"intent_classifier\",\"effective\":\"intent_classifier\",\"revision\":\"2026-10-29T09:44:20.169118000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-29T09:44:20.169118Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "request": {
+        "value": "service",
+        "expected_revision": "2026-10-29T09:44:20.169118000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"skills.matching.engine\",\"namespace\":\"skills\",\"setting\":{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"service\",\"saved\":\"service\",\"effective\":\"service\",\"revision\":\"2026-10-29T09:44:32.826419000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-29T09:44:32.826419Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"service\",\"saved\":\"service\",\"effective\":\"service\",\"revision\":\"2026-10-29T09:44:32.826419000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-29T09:44:32.826419Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"wasm\",\"saved\":\"wasm\",\"effective\":\"wasm\",\"revision\":\"2026-10-29T09:44:20.126252000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-29T09:44:20.126252Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "request": {
+        "value": "tfidf",
+        "expected_revision": "2026-10-29T09:44:20.126252000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"intent_classifier.backend\",\"namespace\":\"intent_classifier\",\"setting\":{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"tfidf\",\"saved\":\"tfidf\",\"effective\":\"tfidf\",\"revision\":\"2026-10-29T09:44:32.876925000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-29T09:44:32.876925Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"tfidf\",\"saved\":\"tfidf\",\"effective\":\"tfidf\",\"revision\":\"2026-10-29T09:44:32.876925000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-29T09:44:32.876925Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.wasm_component_path",
+      "status": 200,
+      "response": "{\"id\":\"f62e19b2-2e6d-472b-a20f-b81f67af535d\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"WASM Path\",\"key\":\"intent_classifier.wasm_component_path\",\"data\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"saved\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"effective\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm\",\"revision\":\"2026-10-29T09:44:20.085072000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367799Z\",\"updated_at\":\"2026-10-29T09:44:20.085072Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/intent_classifier.wasm_component_path",
+      "request": {
+        "value": null,
+        "expected_revision": "2026-10-29T09:44:20.085072000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"intent_classifier.wasm_component_path\",\"namespace\":\"intent_classifier\",\"setting\":{\"id\":\"f62e19b2-2e6d-472b-a20f-b81f67af535d\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"WASM Path\",\"key\":\"intent_classifier.wasm_component_path\",\"data\":null,\"saved\":null,\"effective\":null,\"revision\":\"2026-10-29T09:44:32.921869000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367799Z\",\"updated_at\":\"2026-10-29T09:44:32.921869Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.wasm_component_path",
+      "status": 200,
+      "response": "{\"id\":\"f62e19b2-2e6d-472b-a20f-b81f67af535d\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"WASM Path\",\"key\":\"intent_classifier.wasm_component_path\",\"data\":null,\"saved\":null,\"effective\":null,\"revision\":\"2026-10-29T09:44:32.921869000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367799Z\",\"updated_at\":\"2026-10-29T09:44:32.921869Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/vellum7e249829-archive-storage",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/zorblat-quintex-vellum7e249829",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "agent_id": "disposable-skill-classifier-7e249829-13e9-4b5b-8631-501a5780659a",
+  "target_id": "zorblat-quintex-vellum7e249829",
+  "decoy_id": "vellum7e249829-archive-storage",
+  "model": "liter/MiniMax-M3",
+  "scenario_backend": "wasm",
+  "original_engine": "service",
+  "original_backend": "tfidf",
+  "wasm_component": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/uar-user-outcomes-002/classifier-guest/cargo-target/wasm32-unknown-unknown/release/uar_intent_classifier_fixture.wasm",
+    "sha256": "08caaeb24fdc2d9bf2a22ad99302e5218dfb365ed13bed5560926c8429678d8c"
+  },
+  "classifier_backend": "wasm",
+  "run_id": "af2aaf44-3ecd-4c9f-b1db-1181741bd844",
+  "skill_matching": {
+    "requested_method": "legacy_classifier.wasm",
+    "effective_method": "legacy_classifier.wasm",
+    "requested_model": null,
+    "effective_model": null,
+    "threshold": 0.5,
+    "margin": 0.05000000074505806,
+    "top_k": 5,
+    "candidates": [
+      {
+        "skill_id": "zorblat-quintex-vellum7e249829",
+        "score": 1,
+        "accepted": true
+      }
+    ]
+  },
+  "activated_skills": [
+    "zorblat-quintex-vellum7e249829"
+  ],
+  "decoy_candidate": null,
+  "expected": {
+    "marker": "CLASSIFIER-6a8e4477-74af-483b-83a2-5e867b20e8e0",
+    "answer": 729
+  },
+  "answer": {
+    "marker": "CLASSIFIER-6a8e4477-74af-483b-83a2-5e867b20e8e0",
+    "answer": 729
+  },
+  "result": "VERIFIED",
+  "restored_engine": "service",
+  "restored_backend": "tfidf",
+  "restored_wasm_path": null,
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 13175
+}

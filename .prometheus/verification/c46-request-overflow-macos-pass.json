@@ -1,0 +1,24 @@
+{
+  "scenario": "C46",
+  "label": "B48",
+  "behavior": "Whole-request overflow refuses before an over-budget dispatch",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 1,
+  "binary_sha256": "52360269dc045deee9e01e0c7e81d9a7f097781dcd074c66324c12fca641ed53",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/request-overflow.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 6 steps (6 passed)",
+  "evidence": ".prometheus/verification/request-overflow/ccc56507-1af3-4ad6-8c78-817fed18b024.json",
+  "files": ["scripts/behaviors/features/request-overflow.feature", "scripts/behaviors/request-overflow.cucumber.mjs", "scripts/behaviors/steps/request-overflow.steps.mjs"],
+  "fixture": "Disposable keyless loopback provider (same gateway URL) whose MiniMax-M3 entry has context_window 4096 and max_output_tokens 512; any dispatch would be refused unauthenticated, so the scenario could not spend or fabricate. Agent with 320 required instruction rules, default native tools and a tiny linked KB.",
+  "evidence_review": {
+    "refusal": "run status error; agui.error code context_overflow: 'context requires 12424 tokens but the input allowance is 312; the allowance already excludes 3272 tokens of tool definitions and world state and the applicable output/reasoning reserve'",
+    "components": "instructions + history counted (12424), tool definitions and world state (3272) and the output/reasoning reserve excluded from the allowance; retrieval ran (agui.rag_citations present)",
+    "no_dispatch": "accounting calls [] for the run; no message deltas; no success outcome — required instructions were neither trimmed nor sent"
+  },
+  "cleanup": {"agent_deleted": true, "kb_deleted": true, "provider_deleted": true, "sessions_deleted": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

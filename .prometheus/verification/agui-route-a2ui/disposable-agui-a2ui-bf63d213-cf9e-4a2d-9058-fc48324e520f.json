@@ -1,0 +1,63 @@
+{
+  "scenario": "I19-AGUI-ROUTE-A2UI",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "agent_id": "disposable-agui-a2ui-bf63d213-cf9e-4a2d-9058-fc48324e520f",
+  "route": "/api/uar/ag-ui/agents/disposable-agui-a2ui-bf63d213-cf9e-4a2d-9058-fc48324e520f",
+  "client": "@prometheus-ags/a2ui-react@4.3.0 headless + @a2ui/web_core@0.12.0 binder",
+  "authentication_supplied_by_test": false,
+  "streams": {
+    "publish": {
+      "status": 200,
+      "types": [
+        "RUN_STARTED",
+        "TEXT_MESSAGE_START",
+        "TEXT_MESSAGE_CONTENT",
+        "TOOL_CALL_START",
+        "TOOL_CALL_ARGS",
+        "TOOL_CALL_END",
+        "ACTIVITY_SNAPSHOT",
+        "TOOL_CALL_RESULT",
+        "TEXT_MESSAGE_END",
+        "RUN_FINISHED"
+      ],
+      "answer": "I'll publish the ticket surface with the specified surfaceId and heading.The ticket surface `ticket-acfca742` has been prepared for publication with the heading \"Ticket 1edd0a8d\", a Note text field, and a Confirm button wired to the `confirmTicket` event.",
+      "activities": [
+        "a2ui:8cd03b1ed7067cda9be92fa1e57c90a7"
+      ]
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-agui-a2ui-bf63d213-cf9e-4a2d-9058-fc48324e520f\",\"metadata\":{\"title\":\"Disposable AG-UI ticket agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2ui_render\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"When asked for a ticket surface, call the a2ui_render tool exactly once with these A2UI v0.9 messages, using the basic catalog (https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json), the requested surfaceId, and the requested heading: 1. createSurface. 2. updateComponents with components: {\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"heading\\\",\\\"note\\\",\\\"confirm\\\"]}, {\\\""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-agui-a2ui-bf63d213-cf9e-4a2d-9058-fc48324e520f",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "rendered": {
+    "texts": [],
+    "components": [
+      {},
+      {},
+      {},
+      {},
+      {}
+    ]
+  },
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 8548
+}

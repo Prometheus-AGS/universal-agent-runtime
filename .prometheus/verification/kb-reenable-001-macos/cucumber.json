@@ -1,0 +1,95 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "re-enable-agent-knowledge-access-using-retained-links;re-enabled-access-restores-use-of-the-original-linked-knowledge",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Re-enabled access restores use of the original linked knowledge",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1125718851
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent with disabled KB access and its original saved link",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-reenable.steps.mjs:59"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 38362782
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I re-enable KB access without resending the retained links",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-reenable.steps.mjs:129"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7940511138
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "a fresh answer uses the original retained knowledge with matching provenance",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-reenable.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 105741982
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi1yZWVuYWJsZS9hZGMzMDdiZS0xN2RjLTRjODQtYTY3Ni1hMjZhYWQ1MzY5YjkuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@kb-reenable",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "re-enable-agent-knowledge-access-using-retained-links",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Re-enable agent knowledge access using retained links",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@kb-reenable",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-reenable.feature"
+  }
+]

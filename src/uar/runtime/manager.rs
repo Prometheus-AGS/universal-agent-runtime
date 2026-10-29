@@ -45,6 +45,18 @@ use uuid::Uuid;
 
 const EVENT_HISTORY_LIMIT: usize = 512;
 
+/// Default output allowance for a captured (non-team) child turn with no
+/// explicit cap: routed specialists observed reasoning past the 1,000 reserve.
+const DELEGATED_CHILD_OUTPUT_TOKENS: u32 = 8_192;
+
+/// The delegated default, halved for small known windows but never below the
+/// ordinary response reserve a child turn received before.
+fn delegated_child_output_default(capacity: usize) -> u32 {
+    let reserve = crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS as u32;
+    let half_window = u32::try_from(capacity / 2).unwrap_or(u32::MAX);
+    DELEGATED_CHILD_OUTPUT_TOKENS.min(half_window.max(reserve))
+}
+
 #[cfg(test)]
 #[path = "presentation_history_tests.rs"]
 mod presentation_history_tests;
@@ -2520,7 +2532,12 @@ impl RunManager {
 
     /// Whether this artifact enters the configured host-owned graph path.
     pub(crate) fn uses_agent_graph(&self, artifact: &AgentArtifact) -> bool {
-        artifact.id == "orchestrator-agent" && self.agent_graph.is_some()
+        self.uses_agent_graph_for(&artifact.id)
+    }
+
+    /// Same decision keyed by agent id, for callers that have not resolved an artifact.
+    pub(crate) fn uses_agent_graph_for(&self, agent_id: &str) -> bool {
+        agent_id == "orchestrator-agent" && self.agent_graph.is_some()
     }
 
     /// Content-free host diagnostics for retained sandbox operations.
@@ -5768,11 +5785,17 @@ impl RunManager {
                 None => skill_bindings.matching.as_ref().map_or(
                     SkillMatchingEngine::IntentClassifier, |matching| matching.config.engine),
             };
+            // The intent_classifier.* settings apply on the next turn, like the engine above.
+            let classifier_config = match &self.settings_manager {
+                Some(settings) if matches!(engine, SkillMatchingEngine::IntentClassifier) =>
+                    settings.intent_classifier_config_for_admission(&self.classifier_config).await?,
+                _ => self.classifier_config.clone(),
+            };
             let service_config = skill_bindings.matching.as_ref().map(|matching| &matching.config);
             let needs_llm = match engine {
                 SkillMatchingEngine::Service => service_config
                     .ok_or_else(|| anyhow::anyhow!("skill_service_resource_required"))?.algorithm == SkillMatchingAlgorithm::Llm,
-                SkillMatchingEngine::IntentClassifier => self.classifier_config.backend == ClassifierBackend::Llm,
+                SkillMatchingEngine::IntentClassifier => classifier_config.backend == ClassifierBackend::Llm,
             };
             let requested_model = if needs_llm {
                 service_config.and_then(|config| config.model_name.clone())
@@ -5904,25 +5927,25 @@ impl RunManager {
                         crate::uar::runtime::matching::intent::classify_skills_with_driver(
                             &routing_input, &[], &skills, driver.as_ref(), model, allowance).await?
                     } else {
-                        let pinned_vector = if self.classifier_config.backend == ClassifierBackend::LocalEmbedding {
+                        let pinned_vector = if classifier_config.backend == ClassifierBackend::LocalEmbedding {
                             let matcher = self.local_skill_matcher.as_ref()
                                 .ok_or_else(|| anyhow::anyhow!("local_embedding_classifier_resource_required"))?;
                             Some(Arc::new(crate::uar::runtime::matching::vector::VectorMatcher::new(
                                 Arc::new(crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
-                                    matcher.pin_embedding())), self.classifier_config.accept_threshold)))
+                                    matcher.pin_embedding())), classifier_config.accept_threshold)))
                         } else {
                             None
                         };
                         let classifier = crate::uar::runtime::matching::intent::create_classifier_with_resources(
-                            &self.classifier_config, pinned_vector, None);
+                            &classifier_config, pinned_vector, None);
                         classifier.rebuild_index(&registry).await?;
                         classifier.classify(&routing_input, &[], &registry).await?
                     };
                     (result.scores.into_iter().filter_map(|score| score.skill.map(|skill|
                         SkillCandidate { skill, score: score.score })).collect(),
-                        format!("legacy_classifier.{:?}", self.classifier_config.backend).to_lowercase(),
-                        self.classifier_config.accept_threshold, self.classifier_config.margin_threshold,
-                        self.classifier_config.topk)
+                        format!("legacy_classifier.{:?}", classifier_config.backend).to_lowercase(),
+                        classifier_config.accept_threshold, classifier_config.margin_threshold,
+                        classifier_config.topk)
                 }
             };
             Ok::<_, anyhow::Error>((candidates, method, threshold, margin, top_k, requested_model, effective_model))
@@ -5937,7 +5960,9 @@ impl RunManager {
             matching_effective_model,
         ) = match matching_result {
             Ok(result) => result,
-            Err(_) => {
+            Err(error) => {
+                // The client sees a generic code; the server log keeps the internal cause.
+                tracing::warn!(run_id = %run_id, error = %error, "Skill matching failed before admission");
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
                 }
@@ -7153,6 +7178,14 @@ impl RunManager {
         // Native/team callers can omit an explicit output cap. Bind the same
         // finite response reserve already withheld from their known context;
         // never infer an output allowance from the legacy unknown-window estimate.
+        // Captured non-team child turns instead receive the delegated default.
+        let delegated_default = inherited.is_some() && !is_team_attempt;
+        let output_cap_source = match (output_token_cap, &destination_budget_contract) {
+            (Some(_), _) => "caller",
+            (None, Some(_)) => "contract",
+            (None, None) if delegated_default => "delegated_default",
+            (None, None) => "reserve",
+        };
         let bounded_output = (|| -> anyhow::Result<u32> {
             let capacity =
                 model_context_window.ok_or_else(|| anyhow::anyhow!("output_capacity_unknown"))?;
@@ -7166,6 +7199,7 @@ impl RunManager {
                 Some(cap) => cap,
                 None => match &destination_budget_contract {
                     Some(contract) => u32::try_from(contract.limits.output_tokens)?,
+                    None if delegated_default => delegated_child_output_default(capacity),
                     None => crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS as u32,
                 },
             };
@@ -7197,7 +7231,13 @@ impl RunManager {
             Ok(cap)
         })();
         let output_token_cap = match bounded_output {
-            Ok(cap) => Some(cap),
+            Ok(cap) => {
+                if inherited.is_some() {
+                    tracing::info!(run_id = %run_id, output_token_cap = cap, source = output_cap_source,
+                        "delegated output allowance bound");
+                }
+                Some(cap)
+            }
             Err(_) => {
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;

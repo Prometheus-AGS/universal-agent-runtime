@@ -1,0 +1,19 @@
+{
+  "scenario": "C52",
+  "status": "FAIL",
+  "attempt": 4,
+  "failure_class": "script: the fresh store has no model verification record, so the first turn was refused (422 model_not_verified). The owned store's liter models were verified earlier through POST /api/uar/providers/liter/test; the disposable store needs the same product verification before its turns.",
+  "command": "UAR_MODEL=liter/MiniMax-M3 node_modules/.bin/cucumber-js --config scripts/behaviors/startup-retention.cucumber.mjs (operator-approved 2026-10-27)",
+  "script_change": "empty-store check: only Surreal's default namespace 'main' exists and the store namespace 'prompt' is absent",
+  "evidence": "startup-retention/4fa1504d-3c40-4292-9496-9c44440b186a.json",
+  "observed_passing": {
+    "empty_store": "Surreal 3.3.0; namespaces before start: ['main'] only",
+    "initial_startup": "PID 65180; 5 'Built-in agent seeded' lines (default-agent, orchestrator-agent, general-purpose, rust-reviewer, compiler-agent)",
+    "override": "harness.skill_reattachment seeded from ConfigFile {5000, 25000}; saved through REST as Api {4321, 12345}, revision 2026-10-27T22:06:36.645635000Z",
+    "repeat_startup": "PID 65559 replaced 65180; 0 seed lines; built-in definitions unchanged; override still Api {4321, 12345} with the same revision"
+  },
+  "failed_step": "When I create a terminal session and a fresh control session: POST /v1/chat/completions 422 'Selected model is disabled, unverified, or its configuration changed; verify it in UAR settings' (model_not_verified)",
+  "steps": "5 passed, 1 failed, 5 skipped; 38.8 s",
+  "teardown": "proxy, UAR and Surreal stopped; directory removed; no processes left; owned UAR healthy and untouched",
+  "next": "Verify liter/MiniMax-M3 on the disposable instance with POST /api/uar/providers/liter/test (as C33/C51 do) before the session turns, then rerun once."
+}

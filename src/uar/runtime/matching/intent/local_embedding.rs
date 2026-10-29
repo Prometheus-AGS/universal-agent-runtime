@@ -104,12 +104,27 @@ impl IntentClassifier for LocalEmbeddingClassifier {
         _context: &[String],
         registry: &SkillRegistry,
     ) -> anyhow::Result<ClassificationResult> {
-        self.score_skills(query, &registry.list_enabled()).await
+        let raw = self.score_skills(query, &registry.list_enabled()).await?;
+        Ok(ClassificationResult::new(raw.scores.into_iter()
+            .map(|score| IntentScore { score: calibrated_confidence(score.score), ..score })
+            .collect()))
     }
 
     async fn rebuild_index(&self, registry: &SkillRegistry) -> anyhow::Result<()> {
         self.rebuild_skills(&registry.list_enabled()).await
     }
+}
+
+/// Raw cosine similarity between unrelated texts sits near this level with the
+/// pinned FastEmbed model (about 0.57 observed on Mac, 2026-10-28).
+const UNRELATED_COSINE_FLOOR: f32 = 0.5;
+
+/// The legacy classifier shares one accept threshold (default 0.5) with tfidf and
+/// rules, so its raw cosine is rescaled from the unrelated floor: 0.5 then means
+/// raw cosine 0.75, UAR's semantic threshold elsewhere (`rag.semantic_threshold`).
+/// The skill service's `local_embedding` path keeps raw scores and its own threshold.
+fn calibrated_confidence(raw: f32) -> f32 {
+    ((raw - UNRELATED_COSINE_FLOOR) / (1.0 - UNRELATED_COSINE_FLOOR)).clamp(0.0, 1.0)
 }
 
 fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {

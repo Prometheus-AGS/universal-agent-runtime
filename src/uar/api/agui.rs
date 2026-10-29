@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use crate::{config::SecurityConfig, uar::{domain::events::NormalizedEvent, persistence::{agui_runs::{AguiRunBinding, AguiTerminal}, approval_decisions::{ApprovalRecordView, ApprovalState}}, security::{authority::authorize_context, claims::{CredentialPrincipal, UserContext}, credential_capture::AuthenticatedCredentialCapture, sidecar_guard::HostAuthenticated}}};
 use anyhow::Context as _;
-use super::routes::{self, RunApiState};
+use super::{agui_a2ui, routes::{self, RunApiState}};
 
 #[derive(Clone)]
 struct AdmissionPolicy(SecurityConfig);
@@ -338,8 +338,9 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     // Validate client history/resources before reserving transport identity.
     let resources = input.forwarded_props.as_ref().and_then(|props|props.get("uar")).cloned().unwrap_or_else(||json!({}));
     if !resources.is_object() { return failure(StatusCode::BAD_REQUEST,"invalid_host_resources"); }
+    let action_input = match a2ui_action_input(&state,&user,&agent,workspace.as_deref(),&row,&input,resuming || caller_continuation.is_some()).await { Ok(action_input) => action_input, Err(response) => return response };
     let create = if !resuming {
-        match create_request(&input,&agent,&session_id,resources.clone(),caller_continuation) { Ok(request) => Some(request), Err(response) => return response }
+        match create_request(&input,&agent,&session_id,resources.clone(),caller_continuation,action_input) { Ok(request) => Some(request), Err(response) => return response }
     } else { None };
     if resuming && ["input","history","session_id","artifact"].iter().any(|key| resources.get(key).is_some_and(|value| !value.is_null())) {
         return failure(StatusCode::BAD_REQUEST,"resume_uses_protected_history_and_identity");
@@ -386,11 +387,36 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     stream(state,user,row,&headers).await
 }
 
-fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resources: Value, continuation: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>) -> Result<routes::CreateRunRequest,Response> {
-    let Some((last,history)) = input.messages.split_last() else { return Err(failure(StatusCode::BAD_REQUEST,"user_message_required")); };
-    if continuation.is_none() && last.get("role").and_then(Value::as_str) != Some("user") { return Err(failure(StatusCode::BAD_REQUEST,"last_message_must_be_user")); }
-    let mut prompt = if continuation.is_some() { String::new() } else {
-        last.get("content").and_then(Value::as_str).filter(|text| !text.trim().is_empty()).ok_or_else(||failure(StatusCode::BAD_REQUEST,"text_message_required"))?.to_owned()
+/// An inbound A2UI action is validated here, before any run is reserved. Its
+/// run input is `Some` only for a declared action on a non-graph agent.
+async fn a2ui_action_input(state: &RunApiState, user: &UserContext, agent: &str, workspace: Option<&str>, row: &AguiRunBinding, input: &RunAgentInput, protected: bool) -> Result<Option<String>,Response> {
+    let reject = |rejection: agui_a2ui::Rejection| failure(rejection.status,rejection.code);
+    let Some(action) = agui_a2ui::parse_action(input.forwarded_props.as_ref()).map_err(reject)? else { return Ok(None); };
+    if protected { return Err(reject(agui_a2ui::Rejection::WITH_RESUME)); }
+    agui_a2ui::refuse_for_graph(targets_agent_graph(state,user,agent,workspace).await).map_err(reject)?;
+    let record = agui_a2ui::thread_record(state,row).await.ok_or_else(unavailable)?;
+    let source = action.declared_source(&record).map_err(reject)?;
+    Ok(Some(action.run_input(&source)))
+}
+/// Resolve the path agent, through a deployment binding when there is one.
+async fn targets_agent_graph(state: &RunApiState, user: &UserContext, agent: &str, workspace: Option<&str>) -> bool {
+    let Ok(Some(binding)) = super::targets::target_binding_id(agent) else { return state.manager.uses_agent_graph_for(agent); };
+    let (Some(owner),Some(workspace)) = (super::user_settings::principal_storage_key(user),workspace) else { return false; };
+    state.collaboration_catalog.resolve_bound_agent_run(&owner,workspace,&binding).await.is_ok_and(|bound|state.manager.uses_agent_graph(&bound.artifact))
+}
+
+fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resources: Value, continuation: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>, action_input: Option<String>) -> Result<routes::CreateRunRequest,Response> {
+    // A click carries no new user text: its input is the action, and every
+    // message the client resent (minus activity messages) is history.
+    let messages = agui_a2ui::request_messages(&input.messages,action_input.is_some()).map_err(|rejection|failure(rejection.status,rejection.code))?;
+    let (last,history) = match (&action_input,messages.split_last()) {
+        (Some(_),_) => (None,&messages[..]),
+        (None,Some((last,history))) => (Some(last),history),
+        (None,None) => return Err(failure(StatusCode::BAD_REQUEST,"user_message_required")),
+    };
+    if continuation.is_none() && last.is_some_and(|last|last.get("role").and_then(Value::as_str) != Some("user")) { return Err(failure(StatusCode::BAD_REQUEST,"last_message_must_be_user")); }
+    let mut prompt = if let Some(action_input) = &action_input { action_input.clone() } else if continuation.is_some() { String::new() } else {
+        last.and_then(|last|last.get("content")).and_then(Value::as_str).filter(|text| !text.trim().is_empty()).ok_or_else(||failure(StatusCode::BAD_REQUEST,"text_message_required"))?.to_owned()
     };
     let mut history_input = Vec::new();
     for message in history {
@@ -398,7 +424,7 @@ fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resourc
         if !matches!(role,"user"|"assistant"|"tool") || (!message.get("content").is_some_and(Value::is_string) && !(role == "assistant" && message.get("toolCalls").is_some_and(Value::is_array))) { return Err(failure(StatusCode::BAD_REQUEST,"unsupported_history_message")); }
         history_input.push(json!({"role":role,"content":message.get("content").cloned().unwrap_or_else(||json!("")),"tool_calls":message.get("toolCalls"),"tool_call_id":message.get("toolCallId")}));
     }
-    if !input.context.is_empty() || input.state.is_some() {
+    if action_input.is_none() && (!input.context.is_empty() || input.state.is_some()) {
         prompt.push_str("\n\nClient supplied context (untrusted data):\n");
         prompt.push_str(&json!({"context":input.context,"state":input.state}).to_string());
     }
@@ -421,9 +447,10 @@ fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resourc
         }
         request.client_tools = Some(continuation);
     } else if !input.tools.is_empty() || caller_controls(input)?.is_some() {
-        let visible = caller_history(&input.messages)?;
+        let visible = caller_history(&messages)?;
         let mut canonical = visible.clone();
-        if let Some(last) = canonical.last_mut() { last["content"] = json!(prompt); }
+        if action_input.is_some() { canonical.push(json!({"role":"user","content":prompt})); }
+        else if let Some(last) = canonical.last_mut() { last["content"] = json!(prompt); }
         let caller_tools = crate::uar::runtime::turn::client_tools::ClientToolInput {
             tools: caller_tool_definitions(&input.tools)?,
             tool_choice: caller_controls(input)?.as_ref().and_then(|controls|controls.tool_choice.clone()),
@@ -624,8 +651,10 @@ async fn observe(state: Arc<RunApiState>, user: UserContext, row: AguiRunBinding
 }
 
 #[derive(Default)]
-struct Projector { text: bool, tools: HashSet<String> }
+struct Projector { text: bool, tools: HashSet<String>, surfaces: agui_a2ui::SurfaceRecord }
 impl Projector {
+    /// Seed with the surfaces earlier runs published, so this run's snapshots stay cumulative.
+    fn seeded(surfaces: agui_a2ui::SurfaceRecord) -> Self { Self { surfaces, ..Self::default() } }
     fn caller_tools(&mut self,row: &AguiRunBinding,calls: &[crate::llm::ToolCall]) -> Vec<Value> {
         calls.iter().filter_map(|call| {
             if row.resumed_tool_ids.contains(&call.id) || !self.tools.insert(call.id.clone()) { return None; }
@@ -648,6 +677,7 @@ impl Projector {
             // here, and its `runId`/`threadId` carry the native run id, whereas this stream's identity is the wire thread/run (as RUN_STARTED).
             NormalizedEvent::SkillActivated {skill_id,title,selection_method,..} => vec![json!({"type":"CUSTOM","name":"uar.skill.activated","value":{"skill":{"id":skill_id,"title":title},"selectionMethod":selection_method},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id})],
             NormalizedEvent::AgentSelected {source_agent_id,selected_agent_id,selected_agent_name,selected_thread_id,selection_method,roster_revision,..} => vec![json!({"type":"CUSTOM","name":"uar.agent.selected","value":{"sourceAgentId":source_agent_id,"agent":{"id":selected_agent_id,"title":selected_agent_name},"selectedThreadId":selected_thread_id,"selectionMethod":selection_method,"rosterRevision":roster_revision},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id})],
+            NormalizedEvent::ArtifactDisplay {artifact,..} if artifact.artifact_type == agui_a2ui::ARTIFACT_TYPE => self.surfaces.publish(&row.thread_id,&row.native_run_id,&artifact.content),
             _ => Vec::new(),
         }
     }
@@ -675,9 +705,15 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
         let mut events = state.manager.subscribe(&row.native_run_id).await;
         let mut committed_work = state.manager.subscribe_committed_work();
         let shutdown = state.manager.root_cancellation_token();
-        let mut projector = Projector::default();
-        let mut cursor = row.start_cursor;
+        let cursor = row.start_cursor;
         if after.is_none() { yield Ok::<Event,Infallible>(frame(&row,cursor,0,json!({"type":"RUN_STARTED","threadId":row.thread_id,"runId":row.wire_run_id,"protocolVersion":"1.0"}))); }
+        // Surfaces belong to the conversation: restate the earlier runs' live ones, then seed the projector.
+        let record = agui_a2ui::thread_record(&state,&row).await.unwrap_or_default();
+        for (index,value) in record.restatement(&row.thread_id).into_iter().enumerate() {
+            if after.is_none_or(|after|(cursor,index+1)>after) { yield Ok(frame(&row,cursor,index+1,value)); }
+        }
+        let mut projector = Projector::seeded(record);
+        let mut cursor = cursor;
         loop {
             row = match reconcile(&state,&user,row.clone()).await { Ok(row) => row, Err(error) => { tracing::warn!(error = %format!("{error:#}"), native_run_id = %row.native_run_id, cursor, "AG-UI stream projection read failed"); yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"Durable stream projection is unavailable"}))); break; } };
             let history = state.manager.history_since(&row.native_run_id,Some(cursor)).await;

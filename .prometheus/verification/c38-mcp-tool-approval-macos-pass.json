@@ -1,0 +1,25 @@
+{
+  "scenario": "C38",
+  "label": "B39",
+  "behavior": "Real MCP tool discovery, approval and result use",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 5,
+  "prior_attempts": "1 global registration is catalog-only with ambient sharing disabled; 2 per-run grant needs a loopback URL; 3 wrong pending field; 4 wrong delta field. All test-script/fixture issues; receipts c38-mcp-tool-approval-attempt-00{1,2,3,4}-fail.json",
+  "binary_sha256": "b4e68525240ce6f99028176503135ff831d022866bc2fb52ed5d737de8e688be",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/mcp-tool-approval.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 9 steps (9 passed); 0m 47.951s",
+  "evidence": ".prometheus/verification/mcp-tool-approval/2a19df06-afcd-4ee3-932a-04de30cd5a86.json",
+  "files": ["scripts/behaviors/features/mcp-tool-approval.feature", "scripts/behaviors/mcp-tool-approval.cucumber.mjs", "scripts/behaviors/steps/mcp-tool-approval.steps.mjs", "scripts/behaviors/support/record-mcp-peer.mjs"],
+  "product_path": "Native run API POST /api/uar/runs with mcp_servers:[{name,url}] granting an owned loopback streamable-HTTP MCP peer; approvals via /api/uar/runs/{id}/tool-approval. This deployment disables ambient MCP sharing (server.mcp_shared_transports_enabled=false), so global stdio registrations are catalog-only.",
+  "fixture": "Owned record peer (scripts/behaviors/support/record-mcp-peer.mjs, PEER_HTTP=1) with record_write/record_read and a call log; Cedar permit for only the disposable agent's two peer tools in the owned policy directory; owned restart before and after.",
+  "evidence_review": {
+    "approved": "pending approvals for c38rec…__record_write then __record_read, both approved; peer log: one write (revision 1) then one read returning the private value; paired MCP tool results isError:false; answer reports value ORCHID-BC051E79 and revision 1 from record_read",
+    "denied": "pending approval for record_write answered approved:false; tool result 'Rejected by user' (provenance source mcp, terminal_state failed); peer log unchanged; record unchanged at revision 1; answer says the write was not performed and no revision was returned"
+  },
+  "cleanup": {"agent_deleted": true, "sessions_deleted": true, "peer_stopped": true, "scenario_policy_removed": true, "owned_directory_removed": true, "uar_pid_after": 32267, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

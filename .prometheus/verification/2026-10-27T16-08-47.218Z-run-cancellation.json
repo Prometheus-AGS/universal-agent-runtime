@@ -1,0 +1,143 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-user-can-cancel-an-active-run;cancel-a-live-run-and-keep-prompting-afterwards",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Cancel a live run and keep prompting afterwards",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 88436515
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved default agent is available",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:54"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5687015136
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I start a long genuine run and it begins streaming",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:68"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6300470
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "I cancel that run through the cancellation endpoint",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3534027700
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "the run ends cancelled with no later success",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:91"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 7057786,
+              "error_message": "AssertionError [ERR_ASSERTION]: Call 8e3b55f1-36de-4d70-ba36-35f78e88b940 is pending without reconciliation evidence\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/run-cancellation.steps.mjs:115:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "its model calls are settled or explicitly uncertain",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:108"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "a fresh ordinary prompt still succeeds",
+            "match": {
+              "location": "scripts/behaviors/steps/run-cancellation.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 56717808
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydW4tY2FuY2VsbGF0aW9uL2JkZjA3N2MwLWJmMzYtNDEzNy1hOTZjLTMzZTg4MzQ0N2EzMC5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@runs",
+            "line": 1
+          },
+          {
+            "name": "@cancellation",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-user-can-cancel-an-active-run",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A user can cancel an active run",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@runs",
+        "line": 1
+      },
+      {
+        "name": "@cancellation",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/run-cancellation.feature"
+  }
+]

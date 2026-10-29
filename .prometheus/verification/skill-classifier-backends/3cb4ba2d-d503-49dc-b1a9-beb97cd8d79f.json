@@ -1,0 +1,303 @@
+{
+  "scenario": "E19-E21-E23-E24-SKILL-CLASSIFIER-BACKENDS",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "zorblat-quintex-vellum3cb4ba2d",
+        "description": "zorblat quintex vellum3cb4ba2d",
+        "triggers": {
+          "keywords": [
+            "zorblat quintex vellum3cb4ba2d"
+          ]
+        },
+        "prompt_overlay": "Private rule: answer only JSON {\"marker\":\"CLASSIFIER-4e495a54-931c-4b95-8aae-6551acd3f474\",\"answer\":N} where N is 28 multiplied by 34."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"zorblat-quintex-vellum3cb4ba2d\",\"title\":\"zorblat-quintex-vellum3cb4ba2d\",\"description\":\"zorblat quintex vellum3cb4ba2d\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zorblat quintex vellum3cb4ba2d\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Private rule: answer only JSON {\\\"marker\\\":\\\"CLASSIFIER-4e495a54-931c-4b95-8aae-6551acd3f474\\\",\\\"answer\\\":N} where N is 28 multiplied by 34.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "vellum3cb4ba2d-archive-storage",
+        "description": "vellum3cb4ba2d archive storage retention",
+        "triggers": {
+          "keywords": [
+            "archive storage"
+          ]
+        },
+        "prompt_overlay": "Decoy rule: answer only JSON {\"marker\":\"DECOY-ONLY\",\"answer\":0}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"vellum3cb4ba2d-archive-storage\",\"title\":\"vellum3cb4ba2d-archive-storage\",\"description\":\"vellum3cb4ba2d archive storage retention\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"archive storage\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Decoy rule: answer only JSON {\\\"marker\\\":\\\"DECOY-ONLY\\\",\\\"answer\\\":0}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f",
+        "metadata": {
+          "title": "Disposable classifier assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "classifier-no-tools-3cb4ba2d"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Follow the instructions of any skill the runtime has loaded for you and return its requested answer format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f\",\"metadata\":{\"title\":\"Disposable classifier assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"classifier-no-tools-3cb4ba2d\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Follow the instructions of any skill the runtime has loaded for you and return its requested answer format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2f1804cf574acf3bc8e70ae14e85984530c97f796a43db3a80b6fabe11a3cf7e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"service\",\"saved\":\"service\",\"effective\":\"service\",\"revision\":\"2026-10-28T12:11:20.992052000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T12:11:20.992052Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"tfidf\",\"saved\":\"tfidf\",\"effective\":\"tfidf\",\"revision\":\"2026-10-26T06:32:43.367796000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":null,\"source\":\"Default\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "request": {
+        "value": "rules",
+        "expected_revision": "2026-10-26T06:32:43.367796000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"intent_classifier.backend\",\"namespace\":\"intent_classifier\",\"setting\":{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"rules\",\"saved\":\"rules\",\"effective\":\"rules\",\"revision\":\"2026-10-28T20:41:01.334992000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-28T20:41:01.334992Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"rules\",\"saved\":\"rules\",\"effective\":\"rules\",\"revision\":\"2026-10-28T20:41:01.334992000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-28T20:41:01.334992Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "request": {
+        "value": "intent_classifier",
+        "expected_revision": "2026-10-28T12:11:20.992052000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"skills.matching.engine\",\"namespace\":\"skills\",\"setting\":{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"intent_classifier\",\"saved\":\"intent_classifier\",\"effective\":\"intent_classifier\",\"revision\":\"2026-10-28T20:41:01.376122000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T20:41:01.376122Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"intent_classifier\",\"saved\":\"intent_classifier\",\"effective\":\"intent_classifier\",\"revision\":\"2026-10-28T20:41:01.376122000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T20:41:01.376122Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f",
+        "model": "liter/MiniMax-M3",
+        "session_id": "9cb3c1ac-2347-4a13-b299-f4bda0087fa3",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "zorblat quintex vellum3cb4ba2d"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-e1b3a9c3-03f2-4fc9-81b8-caf72ae91c9b\",\"object\":\"chat.completion\",\"created\":1793220062,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The skill instructs: answer only JSON {\\\"marker\\\":\\\"CLASSIFIER-4e495a54-931c-4b95-8aae-6551acd3f474\\\",\\\"answer\\\":N} where N is 28 multiplied by 34.\\n\\n28 * 34 = 952.\\n\\nThe skill is already active (zorblat-quintex-vellum3cb4ba2d is in active skills). The user message \\\"zorblat quintex vellum3cb4ba2d\\\" suggests activating the skill. It's already active. So just answer with the JSON.\\n\\nLet me verify: 28 × 34 = 952.\\n\\nI should probably call activate_skill? The skill is already listed as active. The user invoked the skill name. I'll activate it to comply (it's idempotent). Actually, the active_skills section already contains it. But to be safe, calling activate_skill is harmless.\\n\\nLet me just activate and answer.</think>\\n\\n<think>The skill is already active per the active_skills section. So I just answer with the JSON.\\n\\n28 *34 = 952.</think>\\n\\n{\\\"marker\\\":\\\"CLASSIFIER-4e495a54-931c-4b95-8aae-6551acd3f474\\\",\\\"answer\\\":952}\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":26700,\"completion_tokens\":306,\"total_tokens\":27006},\"session_id\":\"9cb3c1ac-2347-4a13-b299-f4bda0087fa3\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/e1b3a9c3-03f2-4fc9-81b8-caf72ae91c9b",
+      "status": 200,
+      "response": "{\"run_id\":\"e1b3a9c3-03f2-4fc9-81b8-caf72ae91c9b\",\"agent_id\":\"disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f\",\"conversation_id\":\"9cb3c1ac-2347-4a13-b299-f4bda0087fa3\",\"status\":\"done\",\"agent_revision\":\"sha256:2f1804cf574acf3bc8e70ae14e85984530c97f796a43db3a80b6fabe11a3cf7e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui-ux\",\"pyo3-bridge\",\"quality-nonconformance\",\"react-vite-stack\",\"redesign-existing-projects\",\"returns-reverse-logistics\",\"security-bounty-hunter\",\"stage-01-planner\",\"stage-02-search\",\"stage-03-retrieve\",\"stage-04-collect\",\"stage-05-verify\",\"stage-06-resolve\",\"stage-07-graph\",\"stage-08-cite\",\"stage-09-report\",\"stage-10-export\",\"start-business-build\",\"stitch-design-taste\",\"tauri-react-vite\",\"typescript-base-patterns\",\"ui-surface\",\"ui-ux-pro-max\",\"upload-to-bossfang\",\"validate-idea\",\"validate-skill\",\"value-scenario-discovery\",\"value-scenario-verify\",\"variant\",\"vellum3cb4ba2d-archive-storage\",\"workspace-structure\",\"zorblat-quintex-vellum3cb4ba2d\"],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"auto\",\"ids\":[],\"source\":\"legacy\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"legacy\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"legacy\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[\"tool 'classifier-no-tools-3cb4ba2d' is unavailable\"]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"legacy_classifier.tfidf\",\"effective_method\":\"legacy_classifier.tfidf\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":5,\"candidates\":[{\"skill_id\":\"zorblat-quintex-vellum3cb4ba2d\",\"score\":0.9999999403953552,\"accepted\":true},{\"skill_id\":\"vellum3cb4ba2d-archive-storage\",\"score\":0.26609912514686584,\"accepted\":false}]},\"activated_skills\":[\"zorblat-quintex-vellum3cb4ba2d\"],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"sliding_window\",\"max_messages\":20},\"source_sha256\":\"sha256:05b044e738e1f6e493145c125d7ef6dbd0a581b053e04e925ae29d5f8f569f36\",\"prepared_sha256\":\"sha256:05b044e738e1f6e493145c125d7ef6dbd0a581b053e04e925ae29d5f8f569f36\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":11415,\"prepared_tokens\":11415,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:05b044e738e1f6e493145c125d7ef6dbd0a581b053e04e925ae29d5f8f569f36\",\"final_messages\":2,\"final_tokens\":11415,\"input_allowance\":1043089,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048508,\"reserve_tokens\":1000,\"request_input_limit\":1047508,\"history_tokens\":12735,\"request_tokens\":12839,\"rendered_tokens\":101,\"rendered_sha256\":\"sha256:e795a8bd8bcdcb1d6f64c44f7ad9eaea654144d9a36ca915d361a0e6a7adfc63\",\"fragments\":[{\"fragment_id\":\"skill.zorblat-quintex-vellum3cb4ba2d\",\"skill_id\":\"zorblat-quintex-vellum3cb4ba2d\",\"original_body_tokens\":71,\"retained_body_tokens\":71,\"original_body_sha256\":\"sha256:5ef79d5047b9e6b56b16e5c5282d3074e23dfda0d5d2a9d252acf78a6c5c108e\",\"retained_body_sha256\":\"sha256:5ef79d5047b9e6b56b16e5c5282d3074e23dfda0d5d2a9d252acf78a6c5c108e\",\"original_rendered_tokens\":101,\"retained_rendered_tokens\":101,\"original_rendered_sha256\":\"sha256:e795a8bd8bcdcb1d6f64c44f7ad9eaea654144d9a36ca915d361a0e6a7adfc63\",\"retained_rendered_sha256\":\"sha256:e795a8bd8bcdcb1d6f64c44f7ad9eaea654144d9a36ca915d361a0e6a7adfc63\",\"retained\":true,\"truncated\":false}]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"intent_classifier\",\"saved\":\"intent_classifier\",\"effective\":\"intent_classifier\",\"revision\":\"2026-10-28T20:41:01.376122000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T20:41:01.376122Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "request": {
+        "value": "service",
+        "expected_revision": "2026-10-28T20:41:01.376122000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"skills.matching.engine\",\"namespace\":\"skills\",\"setting\":{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"service\",\"saved\":\"service\",\"effective\":\"service\",\"revision\":\"2026-10-28T20:41:09.945347000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T20:41:09.945347Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/skills.matching.engine",
+      "status": 200,
+      "response": "{\"id\":\"94bb3d90-6e50-4435-afe9-d27528daa47f\",\"settings_type_id\":\"b7b9012f-81e4-41ef-99bb-9aa5bc58a00b\",\"name\":\"Matching Engine\",\"key\":\"skills.matching.engine\",\"data\":\"service\",\"saved\":\"service\",\"effective\":\"service\",\"revision\":\"2026-10-28T20:41:09.945347000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367743Z\",\"updated_at\":\"2026-10-28T20:41:09.945347Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"rules\",\"saved\":\"rules\",\"effective\":\"rules\",\"revision\":\"2026-10-28T20:41:01.334992000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-28T20:41:01.334992Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "request": {
+        "value": "tfidf",
+        "expected_revision": "2026-10-28T20:41:01.334992000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"intent_classifier.backend\",\"namespace\":\"intent_classifier\",\"setting\":{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"tfidf\",\"saved\":\"tfidf\",\"effective\":\"tfidf\",\"revision\":\"2026-10-28T20:41:09.990984000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-28T20:41:09.990984Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/intent_classifier.backend",
+      "status": 200,
+      "response": "{\"id\":\"93ad4fbe-2e51-48af-8bd9-ad3d9948f9e5\",\"settings_type_id\":\"cadb73c8-5c08-47c9-9117-91544150365c\",\"name\":\"Backend\",\"key\":\"intent_classifier.backend\",\"data\":\"tfidf\",\"saved\":\"tfidf\",\"effective\":\"tfidf\",\"revision\":\"2026-10-28T20:41:09.990984000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-26T06:32:43.367796Z\",\"updated_at\":\"2026-10-28T20:41:09.990984Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/vellum3cb4ba2d-archive-storage",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/zorblat-quintex-vellum3cb4ba2d",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "agent_id": "disposable-skill-classifier-3cb4ba2d-d503-49dc-b1a9-beb97cd8d79f",
+  "target_id": "zorblat-quintex-vellum3cb4ba2d",
+  "decoy_id": "vellum3cb4ba2d-archive-storage",
+  "model": "liter/MiniMax-M3",
+  "scenario_backend": "rules",
+  "original_engine": "service",
+  "original_backend": "tfidf",
+  "classifier_backend": "rules",
+  "run_id": "e1b3a9c3-03f2-4fc9-81b8-caf72ae91c9b",
+  "skill_matching": {
+    "requested_method": "legacy_classifier.tfidf",
+    "effective_method": "legacy_classifier.tfidf",
+    "requested_model": null,
+    "effective_model": null,
+    "threshold": 0.5,
+    "margin": 0.05000000074505806,
+    "top_k": 5,
+    "candidates": [
+      {
+        "skill_id": "zorblat-quintex-vellum3cb4ba2d",
+        "score": 0.9999999403953552,
+        "accepted": true
+      },
+      {
+        "skill_id": "vellum3cb4ba2d-archive-storage",
+        "score": 0.26609912514686584,
+        "accepted": false
+      }
+    ]
+  },
+  "activated_skills": [
+    "zorblat-quintex-vellum3cb4ba2d"
+  ],
+  "restored_engine": "service",
+  "restored_backend": "tfidf",
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 9033
+}

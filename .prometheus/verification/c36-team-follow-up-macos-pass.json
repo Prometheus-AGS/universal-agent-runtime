@@ -1,0 +1,26 @@
+{
+  "scenario": "C36",
+  "label": "B53",
+  "behavior": "Team follow-up reassembles child context and dependencies",
+  "status": "PASS",
+  "platform": "Mac",
+  "report_date": "2026-10-27",
+  "attempt": 1,
+  "binary_sha256": "cc1dbb8193b12536e01a1ce9869d70e4cc4fc29f166b1d106539ad4f5bd314b0",
+  "executor": "subagent authored and ran once under the operator's standing autonomous-run instruction; evidence reviewed by the lead",
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/team-follow-up.cucumber.mjs",
+  "exit_code": 0,
+  "observed_output": "1 scenario (1 passed); 9 steps (9 passed); 1m 35.859s",
+  "evidence": ".prometheus/verification/team-follow-up/675444c8-6125-48fc-b283-f2afa5005a75.json",
+  "files": ["scripts/behaviors/features/team-follow-up.feature", "scripts/behaviors/team-follow-up.cucumber.mjs", "scripts/behaviors/steps/team-follow-up.steps.mjs"],
+  "evidence_review": {
+    "premature": "join queued (depends on tally and note); claim 409 collaboration_revision_conflict 'only a ready task can be assigned'; admit 409 'task is not ready for its current assigned member'; zero attempts, so no run and no model dispatch",
+    "fact_through_child_thread": "private fact SEEDLOCK-fab99c23 absent from the join's task input, team input and mission; carried only by the note parent's artifact (attempt 13a92a70); final update contains it once with the math result 364",
+    "artifacts_once": "join contextArtifactIds = [artifact-ecb9be22… (tally), artifact-13a92a70… (note)], no duplicates; join ran exactly once",
+    "accounting": "all calls settled on minimax/MiniMax-M3 within reservations"
+  },
+  "observations_not_failures": ["The note parent made 5 model calls (14-message thread) despite instructions not to use tools; not investigated.", "The collaboration API has no route to delete a team instance, binding or package; the disposable team 2b7b82c3-… remains on the server."],
+  "cleanup": {"terminal_tasks": true, "cleanup_errors": []},
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false
+}

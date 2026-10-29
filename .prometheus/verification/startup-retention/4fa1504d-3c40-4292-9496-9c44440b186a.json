@@ -1,0 +1,226 @@
+{
+  "scenario": "C52-STARTUP-RETENTION-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "owned_runtime_touched": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/orchestrator-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"orchestrator-agent\",\"metadata\":{\"title\":\"Orchestrator\",\"description\":\"Classifies requests against the current registered agent roster and returns the selected agent's contribution.\",\"tags\":[\"orchestration\",\"delegation\",\"multi-agent\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"orchestrator\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\",\"spawn_agent\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution.\",\"instructions\":[\"Select the best eligible registered agent for the user's intent. Use the current roster rather than a fixed specialist list.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0da9f09752cb7689ae6dd035b0e6dd6fd4be64710deede75006fa04e842aa500\",\"source\":{\"kind\":\"builtin\",\"id\":\"orchestrator-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/general-purpose",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/rust-reviewer",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"rust-reviewer\",\"metadata\":{\"title\":\"Rust reviewer\",\"description\":\"Reviews Rust implementation, correctness and safety with source evidence.\",\"tags\":[\"rust\",\"review\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\",\"Review Rust correctness, ownership, concurrency and safety. Cite concrete source evidence for findings and state which behavior remains unverified.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0df1aff23bae79a2978132b5e46775ec00f16ba975c7f0aa9c5ec3ba06ac7f92\",\"source\":{\"kind\":\"builtin\",\"id\":\"rust-reviewer\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/compiler-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"02ba84fc-0e84-4446-9953-c47090c96c18\",\"settings_type_id\":\"fa21c418-5cd7-4c2d-bbc4-90b4c24380e6\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"saved\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"effective\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"revision\":\"2026-10-27T22:06:22.827276000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:06:22.827276Z\",\"updated_at\":null,\"source\":\"ConfigFile\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "request": {
+        "value": {
+          "per_skill_tokens": 4321,
+          "total_tokens": 12345
+        },
+        "expected_revision": "2026-10-27T22:06:22.827276000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_reattachment\",\"namespace\":\"harness\",\"setting\":{\"id\":\"02ba84fc-0e84-4446-9953-c47090c96c18\",\"settings_type_id\":\"fa21c418-5cd7-4c2d-bbc4-90b4c24380e6\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:06:36.645635000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:06:22.827276Z\",\"updated_at\":\"2026-10-27T22:06:36.645635Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"02ba84fc-0e84-4446-9953-c47090c96c18\",\"settings_type_id\":\"fa21c418-5cd7-4c2d-bbc4-90b4c24380e6\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:06:36.645635000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:06:22.827276Z\",\"updated_at\":\"2026-10-27T22:06:36.645635Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/orchestrator-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"orchestrator-agent\",\"metadata\":{\"title\":\"Orchestrator\",\"description\":\"Classifies requests against the current registered agent roster and returns the selected agent's contribution.\",\"tags\":[\"orchestration\",\"delegation\",\"multi-agent\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"orchestrator\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\",\"spawn_agent\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution.\",\"instructions\":[\"Select the best eligible registered agent for the user's intent. Use the current roster rather than a fixed specialist list.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0da9f09752cb7689ae6dd035b0e6dd6fd4be64710deede75006fa04e842aa500\",\"source\":{\"kind\":\"builtin\",\"id\":\"orchestrator-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/general-purpose",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"general-purpose\",\"metadata\":{\"title\":\"General-purpose specialist\",\"description\":\"Executes a delegated general-purpose task through the shared turn kernel.\",\"tags\":[\"general\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2a62050a97e466d7a86778bc6281a6f91ace5fd031d62aa2549e53f71ee4aa58\",\"source\":{\"kind\":\"builtin\",\"id\":\"general-purpose\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/rust-reviewer",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"rust-reviewer\",\"metadata\":{\"title\":\"Rust reviewer\",\"description\":\"Reviews Rust implementation, correctness and safety with source evidence.\",\"tags\":[\"rust\",\"review\",\"specialist\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[\"Answer the delegated task using concrete evidence. Distinguish observations from assumptions.\",\"Review Rust correctness, ownership, concurrency and safety. Cite concrete source evidence for findings and state which behavior remains unverified.\"]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0df1aff23bae79a2978132b5e46775ec00f16ba975c7f0aa9c5ec3ba06ac7f92\",\"source\":{\"kind\":\"builtin\",\"id\":\"rust-reviewer\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/compiler-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"compiler-agent\",\"metadata\":{\"title\":\"UAR Compiler Agent\",\"description\":\"Builds and compiles UAR-AGENT-MD specifications through governed compiler tools.\",\"tags\":[\"compiler\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"uar.compile\",\"uar.session.update_section\",\"uar.session.check_completeness\",\"uar.session.compile\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:69545a6fabcfdf004b49d418eb4952493862c0c5c5b789455bac8438618b3e80\",\"source\":{\"kind\":\"builtin\",\"id\":\"compiler-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"02ba84fc-0e84-4446-9953-c47090c96c18\",\"settings_type_id\":\"fa21c418-5cd7-4c2d-bbc4-90b4c24380e6\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"saved\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"effective\":{\"per_skill_tokens\":4321,\"total_tokens\":12345},\"revision\":\"2026-10-27T22:06:36.645635000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T22:06:22.827276Z\",\"updated_at\":\"2026-10-27T22:06:36.645635Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "default-agent",
+        "model": "liter/MiniMax-M3",
+        "session_id": "79dc694b-cbc5-4d61-b1a7-babc20f98f96",
+        "stream": false,
+        "max_completion_tokens": 512,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply with only the word READY."
+          }
+        ]
+      },
+      "status": 422,
+      "response": "{\"error\":{\"message\":\"Selected model is disabled, unverified, or its configuration changed; verify it in UAR settings\",\"type\":\"invalid_request_error\",\"param\":\"model\",\"code\":\"model_not_verified\"}}"
+    }
+  ],
+  "turns": {},
+  "fixture": {
+    "fixture_id": "abc04341-3fbd-4fa1-a2da-9477013ed446",
+    "store": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/abc04341-3fbd-4fa1-a2da-9477013ed446/store",
+    "surreal_pid": 65117,
+    "proxy_pid": 65553,
+    "base_url": "http://127.0.0.1:60718",
+    "runtime_url": "http://127.0.0.1:60716",
+    "binary_sha256": "a0f769d2790d39fef279c5567ea03e2a2ac5f5b5f40382df6ca05bcc8b3891f1",
+    "config_sha256": "4ba4a09d7bf436d017683b3516c2069d1e7ab017fd75f3a1e003ac313806116a",
+    "persisted_ttl_secs": 3600,
+    "surreal_version": "3.3.0 for macos on x86_64",
+    "empty_store_before_start": [
+      {
+        "accesses": {},
+        "config": {
+          "QUERY_TIMEOUT": null
+        },
+        "defaults": {
+          "database": "main",
+          "namespace": "main"
+        },
+        "namespaces": {
+          "main": "DEFINE NAMESPACE main COMMENT 'Default namespace generated by SurrealDB'"
+        },
+        "nodes": {
+          "d0bfa412-7349-4802-a07c-2b75e832a64b": "NODE u'd0bfa412-7349-4802-a07c-2b75e832a64b' SEEN 1793138764637 ACTIVE"
+        },
+        "system": {
+          "available_parallelism": 24,
+          "cpu_usage": 0.909205973148346,
+          "load_average": [
+            9.17333984375,
+            8.25244140625,
+            8.1982421875
+          ],
+          "memory_allocated": 4351054848,
+          "memory_requested": 4347408139,
+          "memory_usage": 65302528,
+          "physical_cores": 12
+        },
+        "users": {
+          "root": "DEFINE USER root ON ROOT PASSHASH '[REDACTED]' PASSSCRAM '[REDACTED]' ROLES OWNER DURATION FOR TOKEN 1h, FOR SESSION NONE"
+        }
+      }
+    ],
+    "startups": [
+      {
+        "label": "initial",
+        "pid": 65180,
+        "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/abc04341-3fbd-4fa1-a2da-9477013ed446/uar-initial.log"
+      },
+      {
+        "label": "repeat",
+        "pid": 65559,
+        "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c52-disposable/abc04341-3fbd-4fa1-a2da-9477013ed446/uar-repeat.log",
+        "previous_pid": 65180
+      }
+    ],
+    "teardown": {
+      "stopped": {
+        "proxy": true,
+        "uar": true,
+        "surreal": true
+      },
+      "directory_removed": true
+    }
+  },
+  "log_lines": {
+    "initial_seeded": [
+      "{\"timestamp\":\"2026-10-27T22:06:28.354297Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"default-agent\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(12)\"}",
+      "{\"timestamp\":\"2026-10-27T22:06:28.380454Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"orchestrator-agent\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(4)\"}",
+      "{\"timestamp\":\"2026-10-27T22:06:28.407394Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"general-purpose\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(4)\"}",
+      "{\"timestamp\":\"2026-10-27T22:06:28.433355Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"rust-reviewer\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(4)\"}",
+      "{\"timestamp\":\"2026-10-27T22:06:28.459240Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Built-in agent seeded\",\"agent_id\":\"compiler-agent\"},\"target\":\"universal_agent_runtime::uar::defaults\",\"line_number\":194,\"threadId\":\"ThreadId(4)\"}"
+    ],
+    "repeat_seeded": []
+  },
+  "initial_seed_lines": 5,
+  "seeded_setting": {
+    "source": "ConfigFile",
+    "effective": {
+      "per_skill_tokens": 5000,
+      "total_tokens": 25000
+    },
+    "revision": "2026-10-27T22:06:22.827276000Z"
+  },
+  "saved_setting": {
+    "source": "Api",
+    "effective": {
+      "per_skill_tokens": 4321,
+      "total_tokens": 12345
+    },
+    "revision": "2026-10-27T22:06:36.645635000Z"
+  },
+  "repeat_seed_lines": 0,
+  "setting_after_repeat": {
+    "source": "Api",
+    "effective": {
+      "per_skill_tokens": 4321,
+      "total_tokens": 12345
+    },
+    "revision": "2026-10-27T22:06:36.645635000Z"
+  },
+  "status": "failed",
+  "error": "AssertionError [ERR_ASSERTION]: POST /v1/chat/completions: 422: {\"error\":{\"message\":\"Selected model is disabled, unverified, or its configuration changed; verify it in UAR settings\",\"type\":\"invalid_request_error\",\"param\":\"model\",\"code\":\"model_not_verified\"}}\n    + expected - actual\n\n    -false\n    +true\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:31:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async turn (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:36:17)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/startup-retention.steps.mjs:100:3)",
+  "cleanup_errors": []
+}

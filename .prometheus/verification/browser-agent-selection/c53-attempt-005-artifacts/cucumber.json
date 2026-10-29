@@ -1,0 +1,118 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "the-browser-shows-orchestrator-agent-selection-before-the-answer;a-writing-task-and-then-a-math-task-show-each-selected-specialist-first",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A writing task and then a math task show each selected specialist first",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math and writing specialists and an orchestrator conversation in the browser",
+            "result": {
+              "status": "passed",
+              "duration": 2439000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send a writing task in that conversation through the browser",
+            "result": {
+              "status": "passed",
+              "duration": 15897000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the browser shows the writing specialist selection before its specialist answer",
+            "result": {
+              "status": "passed",
+              "duration": 1577000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I send a math task in the same conversation through the browser",
+            "result": {
+              "status": "passed",
+              "duration": 9281000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the browser shows the math specialist selection before its specialist answer",
+            "result": {
+              "status": "passed",
+              "duration": 1013000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "each selected specialist matches execution with no duplicate answer or run",
+            "result": {
+              "status": "passed",
+              "duration": 91000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1500000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@orchestrator",
+            "line": 1
+          },
+          {
+            "name": "@routing",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "the-browser-shows-orchestrator-agent-selection-before-the-answer",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "The browser shows orchestrator agent selection before the answer",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@orchestrator",
+        "line": 1
+      },
+      {
+        "name": "@routing",
+        "line": 1
+      }
+    ],
+    "uri": "features/browser-agent-selection.feature"
+  }
+]

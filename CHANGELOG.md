@@ -4,6 +4,25 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.4.0-rc.1 — 2026-10-29 (release candidate; Mac validated, other platforms pending)
+
+- AG-UI route projects A2UI surfaces as `ACTIVITY_SNAPSHOT` events, restates
+  live surfaces on each run, and accepts an A2UI button click as a new run on
+  the same thread (refused for undeclared actions, mixed text, orchestrators).
+- Fixes found by BDD: the TypeScript SDK's streaming no longer crashes in Node;
+  non-streamed ACP `runs/get` returns the answer; `intent_classifier.*`
+  settings take effect per turn; the localembedding classifier calibrates
+  confidence; the llm classifier accepts reasoning-model output.
+- Document extraction moves from kreuzberg 4.10.4 to xberg 1.4.0 (Know-Me-Tools
+  fork, pinned rev). UAR's `kreuzberg` provider and settings names are unchanged.
+- Dependencies at their latest compatible versions, including wasmtime 50,
+  OpenTelemetry 0.33, utoipa 6, sqlx 0.9, argon2 0.6, TypeScript 6 and PEM 4.3.0.
+- Mac validation: 99 of 102 catalog BDD scenarios pass through the real public
+  APIs with no test credentials. E04, E06 and E07 are known limits (no
+  capability-constrained dispatch, no image input). Linux, Windows, PostgreSQL,
+  the desktop app and container images are not yet validated for this release.
+  See [the release candidate note](docs/releases/v1.4.0-rc.1.md).
+
 ## 1.3.0 — unreleased (verification pending)
 
 - Upgrade vendored Parking Lot to exact source

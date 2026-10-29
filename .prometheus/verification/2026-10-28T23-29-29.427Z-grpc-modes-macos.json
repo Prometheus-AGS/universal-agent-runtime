@@ -1,0 +1,103 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions;legacy-grpc-messagestream-snapshots-resolve-to-completed-tasks-and-continue-the-same-task",
+        "keyword": "Scenario",
+        "line": 9,
+        "name": "Legacy gRPC MessageStream snapshots resolve to completed tasks and continue the same task",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 73376282
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 10,
+            "name": "a disposable saved agent with a private instruction marker for gRPC",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7068759600
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I send a fresh calculation and then a dependent follow-up through legacy gRPC MessageStream",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:154"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 516918
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "each legacy gRPC stream is one status snapshot whose task resolves through TaskGet to the agent's marker and the correct answer",
+            "match": {
+              "location": "scripts/behaviors/steps/grpc-modes.steps.mjs:160"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 34149768
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ncnBjLW1vZGVzLzhmZWVlZTg2LWFiNTEtNDFjNy05MThmLWZiNjIwZTU1NzcyNS5qc29uIiwic3RhdHVzIjoiUEFTU0VEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@grpc",
+            "line": 1
+          },
+          {
+            "name": "@a2a",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "legacy-and-v1-a2a-grpc-unary-and-streamed-completions",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Legacy and v1 A2A gRPC unary and streamed completions",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@grpc",
+        "line": 1
+      },
+      {
+        "name": "@a2a",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/grpc-modes.feature"
+  }
+]

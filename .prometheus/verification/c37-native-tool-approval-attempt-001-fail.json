@@ -1,0 +1,15 @@
+{
+  "scenario": "C37",
+  "status": "FAIL",
+  "failure_class": "fixture (owned runtime governance policy) plus test cleanup defect; not a product defect",
+  "platform": "Mac",
+  "recorded_at": "2026-10-27T10:44:00-05:00",
+  "attempt": 1,
+  "command": "UAR_BASE_URL=http://127.0.0.1:60675 UAR_WORKSPACE_ID=uar-user-outcomes-007-supporting-workspace UAR_MODEL=liter/MiniMax-M3 node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/native-tool-approval.cucumber.mjs",
+  "exit_code": 1,
+  "observed_output": "1 scenario (1 failed); 7 steps (2 passed, 3 skipped, 2 failed); 0m 21.13s",
+  "evidence": ".prometheus/verification/native-tool-approval/a07a5e7b-277f-4494-a0a7-142ce3675d4f.json",
+  "failure": "The model called file_write once. UAR rejected it with 'Tool file_write is denied by governance policy' and raised no approval interrupt, so no file was written and the run finished success. The owned runtime loads target/prompt-macos-hbitxj2c/policies/orchestration.cedar, which permits only orchestrator-agent spawn_agent/wait_agents; Cedar denies everything else. Cleanup then failed: DELETE /api/uar/settings/{key} requires an If-Match revision (500 'If-Match revision is required').",
+  "recovery": "Settings reset manually with If-Match (200), owned UAR restarted (PID 44970 -> 47958, binary b4e68525), defaults re-seeded (file_tools_enabled false, file_allowed_paths []). Owned directory removed; agent and sessions deleted by the After hook.",
+  "next": "Scenario provisions a single-agent Cedar permit for its disposable agent's file_write in the owned policy directory and removes it at cleanup; restore sends If-Match. Rerun once."
+}

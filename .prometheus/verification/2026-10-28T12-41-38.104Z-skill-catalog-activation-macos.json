@@ -1,0 +1,170 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "catalog-skill-activation-by-the-model-and-its-count-limit;the-model-explicitly-activates-a-catalog-skill-whose-body-alone-holds-the-rule",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The model explicitly activates a catalog skill whose body alone holds the rule",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 202013267
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "catalog activation mode and a disposable agent with one eligible private catalog skill",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-catalog-activation.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9316452640
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask for a task that needs the skill without attaching it",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-catalog-activation.steps.mjs:126"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 963965,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- 'crate-quote-7f204ab3-7413-4362-b017-c0ffa33e607d'\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-catalog-activation.steps.mjs:139:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the first call sees only the catalog, the model activates the skill, and its private rule reaches the answer",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-catalog-activation.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 288111197
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jYXRhbG9nLWFjdGl2YXRpb24vN2YyMDRhYjMtNzQxMy00MzYyLWIwMTctYzBmZmEzM2U2MDdkLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "catalog-skill-activation-by-the-model-and-its-count-limit;the-activation-count-limit-refuses-a-second-skill-and-keeps-the-first-usable",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The activation count limit refuses a second skill and keeps the first usable",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 188340987
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "catalog activation mode and a disposable agent with max_active one and two eligible private skills",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-catalog-activation.steps.mjs:149"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5988098493
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I attach the first skill and the model attempts to activate the second",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-catalog-activation.steps.mjs:170"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 985055,
+              "error_message": "AssertionError [ERR_ASSERTION]: The model must attempt the second activation\n    + expected - actual\n\n    -false\n    +true\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/skill-catalog-activation.steps.mjs:183:10)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the second activation is refused with limit_reached, its body never loads, and the first skill's rule answers",
+            "match": {
+              "location": "scripts/behaviors/steps/skill-catalog-activation.steps.mjs:176"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 508631869
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9za2lsbC1jYXRhbG9nLWFjdGl2YXRpb24vY2I0YTMxNDUtNDA5NS00NzZkLWJjNDAtNzMyYzI3MjA4ZGRhLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@skills",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "catalog-skill-activation-by-the-model-and-its-count-limit",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Catalog skill activation by the model and its count limit",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@skills",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/skill-catalog-activation.feature"
+  }
+]
