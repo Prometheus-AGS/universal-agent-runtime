@@ -1,0 +1,131 @@
+{
+  "scenario": "I19-AGUI-ROUTE-A2UI",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "agent_id": "disposable-agui-a2ui-f45b499c-711e-41d3-b41d-a89d1ba4e1cd",
+  "route": "/api/uar/ag-ui/agents/disposable-agui-a2ui-f45b499c-711e-41d3-b41d-a89d1ba4e1cd",
+  "client": "@prometheus-ags/a2ui-react@4.3.0 headless + @a2ui/web_core@0.12.0 binder",
+  "authentication_supplied_by_test": false,
+  "streams": {
+    "publish": {
+      "status": 200,
+      "types": [
+        "RUN_STARTED",
+        "TEXT_MESSAGE_START",
+        "TEXT_MESSAGE_CONTENT",
+        "TOOL_CALL_START",
+        "TOOL_CALL_ARGS",
+        "TOOL_CALL_END",
+        "ACTIVITY_SNAPSHOT",
+        "TOOL_CALL_RESULT",
+        "TEXT_MESSAGE_END",
+        "RUN_FINISHED"
+      ],
+      "answer": "Ticket surface \"Ticket 656331fe\" (surfaceId: ticket-f127626f) has been prepared for publication with a note field and a Confirm button.",
+      "activities": [
+        "a2ui:c9868e4fc8f4dd4272f5fc089662b0ec"
+      ]
+    },
+    "first-click": {
+      "status": 200,
+      "types": [
+        "RUN_STARTED",
+        "ACTIVITY_SNAPSHOT",
+        "TEXT_MESSAGE_START",
+        "TEXT_MESSAGE_CONTENT",
+        "TEXT_MESSAGE_END",
+        "RUN_FINISHED"
+      ],
+      "answer": "NOTE: note-9b315454",
+      "activities": [
+        "a2ui:c9868e4fc8f4dd4272f5fc089662b0ec"
+      ]
+    },
+    "second-click": {
+      "status": 200,
+      "types": [
+        "RUN_STARTED",
+        "ACTIVITY_SNAPSHOT",
+        "TEXT_MESSAGE_START",
+        "TEXT_MESSAGE_CONTENT",
+        "TEXT_MESSAGE_END",
+        "RUN_FINISHED"
+      ],
+      "answer": "NOTE: note-4065d4f8",
+      "activities": [
+        "a2ui:c9868e4fc8f4dd4272f5fc089662b0ec"
+      ]
+    },
+    "late-attach": {
+      "status": 200,
+      "types": [
+        "RUN_STARTED",
+        "ACTIVITY_SNAPSHOT",
+        "TEXT_MESSAGE_START",
+        "TEXT_MESSAGE_CONTENT",
+        "TEXT_MESSAGE_END",
+        "RUN_FINISHED"
+      ],
+      "answer": "NOTE: note-4065d4f8",
+      "activities": [
+        "a2ui:c9868e4fc8f4dd4272f5fc089662b0ec"
+      ]
+    },
+    "forged": {
+      "status": 422,
+      "body": "{\"code\":\"a2ui_action_not_declared\"}"
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-agui-a2ui-f45b499c-711e-41d3-b41d-a89d1ba4e1cd\",\"metadata\":{\"title\":\"Disposable AG-UI ticket agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2ui_render\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"When asked for a ticket surface, call the a2ui_render tool exactly once with these A2UI v0.9 messages, using the basic catalog (https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json), the requested surfaceId, and the requested heading: 1. createSurface. 2. updateComponents with components: {\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"heading\\\",\\\"note\\\",\\\"confirm\\\"]}, {\\\""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-agui-a2ui-f45b499c-711e-41d3-b41d-a89d1ba4e1cd",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "rendered": {
+    "texts": [
+      "Ticket 656331fe",
+      "Confirm"
+    ],
+    "components": [
+      {
+        "id": "root",
+        "type": "Column"
+      },
+      {
+        "id": "heading",
+        "type": "Text"
+      },
+      {
+        "id": "note",
+        "type": "TextField"
+      },
+      {
+        "id": "confirm",
+        "type": "Button"
+      },
+      {
+        "id": "confirmLabel",
+        "type": "Text"
+      }
+    ]
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 21303
+}

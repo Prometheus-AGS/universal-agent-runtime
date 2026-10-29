@@ -1,0 +1,218 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "-c",
+      "scripts/behaviors/browser-agent-selection.config.mjs"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/browser-agent-selection.config.mjs",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-a2ui014-deps-gate-2026-10-29-001/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 900000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-a2ui014-deps-gate-2026-10-29-001/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+        "snapshotDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-browser-agent-selection-generated",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 900000,
+        "use": {
+          "baseURL": "http://127.0.0.1:60675",
+          "channel": "chrome",
+          "headless": true,
+          "viewport": {
+            "width": 1280,
+            "height": 900
+          },
+          "video": "off",
+          "screenshot": "on",
+          "trace": "on",
+          "extraHTTPHeaders": {
+            "x-uar-workspace-id": "uar-user-outcomes-007-supporting-workspace"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-a2ui014-deps-gate-2026-10-29-001/playwright.json"
+        }
+      ],
+      [
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/dist/reporter/cucumber/index.js",
+        {
+          "$type": "json",
+          "outputFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-a2ui014-deps-gate-2026-10-29-001/cucumber.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/browser-agent-selection.feature.spec.js",
+      "file": "features/browser-agent-selection.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "The browser shows orchestrator agent selection before the answer",
+          "file": "features/browser-agent-selection.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A writing task and then a math task show each selected specialist first",
+              "ok": true,
+              "tags": [
+                "ui",
+                "orchestrator",
+                "routing"
+              ],
+              "tests": [
+                {
+                  "timeout": 900000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 67706,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "EVIDENCE /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/2e28ff4e-abcc-4a36-bbad-8c57d186be9b.json status=passed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the saved math and writing specialists and an orchestrator conversation in the browser",
+                          "duration": 2515
+                        },
+                        {
+                          "title": "When I send a writing task in that conversation through the browser",
+                          "duration": 49225
+                        },
+                        {
+                          "title": "Then the browser shows the writing specialist selection before its specialist answer",
+                          "duration": 1681
+                        },
+                        {
+                          "title": "When I send a math task in the same conversation through the browser",
+                          "duration": 10151
+                        },
+                        {
+                          "title": "Then the browser shows the math specialist selection before its specialist answer",
+                          "duration": 1165
+                        },
+                        {
+                          "title": "And each selected specialist matches execution with no duplicate answer or run",
+                          "duration": 126
+                        }
+                      ],
+                      "startTime": "2026-10-29T12:41:29.691Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-a2ui014-deps-gate-2026-10-29-001/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/test-finished-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/browser-agent-selection/c53-a2ui014-deps-gate-2026-10-29-001/artifacts/features-browser-agent-sel-941f6-h-selected-specialist-first/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9435d2e72f8e6704d80d-5de06e8077d2a281e00c",
+              "file": "features/browser-agent-selection.feature.spec.js",
+              "line": 6,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-29T12:41:29.021Z",
+    "duration": 71552.022,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
