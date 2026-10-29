@@ -1,0 +1,1146 @@
+{
+  "scenario": "A2UI-BROWSER-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f",
+        "metadata": {
+          "title": "Browser calculator 34b20f66",
+          "description": "Disposable interactive parcel calculator.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "a2ui_render"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "On the initial request call a2ui_render exactly once with this valid template verbatim: {\"messages\":[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"parcel-calculator\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"parcel-calculator\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"heading\",\"parcel\",\"calculate\"]},{\"id\":\"heading\",\"component\":\"Text\",\"text\":\"Parcel calculator\"},{\"id\":\"parcel\",\"component\":\"TextField\",\"label\":\"Parcel number\",\"value\":{\"path\":\"/parcel\"}},{\"id\":\"calculate\",\"component\":\"Button\",\"child\":\"button-label\",\"action\":{\"event\":{\"name\":\"calculate_parcel\"}}},{\"id\":\"button-label\",\"component\":\"Text\",\"text\":\"Calculate parcel\"}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"parcel-calculator\",\"path\":\"/\",\"value\":{\"parcel\":\"\"}}}]}. Preserve JSON arrays exactly: messages, components and children are arrays, NEVER objects with an item property. Use native JSON tool arguments, not XML wrappers. Do not alter the template, use another tool or print it as prose. After publication say only Calculator ready. On an a2ui.user_action follow-up, do not render again. Read the fresh parcel value from interaction.a2uiClientDataModel[interaction.surfaceId].parcel. Return only JSON with marker \"BROWSER-d8111884-0e10-4de3-81ef-b2d2a6d5c84f\" and numeric result equal to that fresh parcel number plus 19.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"metadata\":{\"title\":\"Browser calculator 34b20f66\",\"description\":\"Disposable interactive parcel calculator.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2ui_render\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"On the initial request call a2ui_render exactly once with this valid template verbatim: {\\\"messages\\\":[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"components\\\":[{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"heading\\\",\\\"parcel\\\",\\\"calculate\\\"]},{\\\"id\\\":\\\"heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Parcel calculator\\\"},{\\\"id\\\":\\\"parcel\\\",\\\"component\\\":\\\"TextField\\\",\\\"label\\\":\\\"Parcel number\\\",\\\"value\\\":{\\\"path\\\":\\\"/parcel\\\"}},{\\\"id\\\":\\\"calculate\\\",\\\"component\\\":\\\"Button\\\",\\\"child\\\":\\\"button-label\\\",\\\"action\\\":{\\\"event\\\":{\\\"name\\\":\\\"calculate_parcel\\\"}}},{\\\"id\\\":\\\"button-label\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Calculate parcel\\\"}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"parcel\\\":\\\"\\\"}}}]}. Preserve JSON arrays exactly: messages, components and children are arrays, NEVER objects with an item property. Use native JSON tool arguments, not XML wrappers. Do not alter the template, use another tool or print it as prose. After publication say only Calculator ready. On an a2ui.user_action follow-up, do not render again. Read the fresh parcel value from interaction.a2uiClientDataModel[interaction.surfaceId].parcel. Return only JSON with marker \\\"BROWSER-d8111884-0e10-4de3-81ef-b2d2a6d5c84f\\\" and numeric result equal to that fresh parcel number plus 19.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:24b42ae81c1c16c471929c2abe617855cb5ee282eb674277c0126e0a588db717\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "streams": [
+    {
+      "path": "/api/chat/completion",
+      "status": 200,
+      "request": {
+        "message": "Please render the interactive parcel calculator.",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "agent_id": "disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f"
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 Â· A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode Â· agent\\\",\\\"model\\\":\\\"Model Â· liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent Â· disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"skills\\\":\\\"Skills Â· auto Â· 212 available Â· agent scope\\\",\\\"tools\\\":\\\"Tools Â· selected Â· 1 available Â· agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers Â· auto Â· 0 available Â· legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases Â· none Â· 0 available Â· agent scope\\\",\\\"memory\\\":\\\"Memory Â· on\\\",\\\"promptCaching\\\":\\\"Prompt caching Â· off\\\",\\\"context\\\":\\\"Context Â· sliding window\\\",\\\"approval\\\":\\\"Tool approval Â· auto\\\",\\\"warningsHeading\\\":\\\"Warnings Â· 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"1f6824bf9c5da87d633d3368c5baeaf93cd9338c6c40a4279d57d424791d328b\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"a6f0ba5f850a38152bd75a4cbd5dea5efc67ef37721b893d3dec96908ec7d50f\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"2014a64085b1f02453344ae7a19d71cdbd48ccc2fefdcc2e744161a5e24662e9\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":55928,\\\"rendered_characters\\\":55420,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"1f6824bf9c5da87d633d3368c5baeaf93cd9338c6c40a4279d57d424791d328b\",\"fragment_count\":7},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"input\":{\"agentId\":\"disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"agent_id\":\"disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"status\":\"running\",\"started_at\":\"2026-10-29T12:58:03.367029+00:00\",\"updated_at\":\"2026-10-29T12:58:03.367036+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"conversation_id\":\"1afdb5f5-712f-4618-b643-ee798e6e7300\",\"status\":\"running\"}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916-1\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-29T12:58:03.469162+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"7d6099fe786bb02d6e50900662bca3b3c5049b799be642e5eb84e00342521646\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"a6f0ba5f850a38152bd75a4cbd5dea5efc67ef37721b893d3dec96908ec7d50f\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"2014a64085b1f02453344ae7a19d71cdbd48ccc2fefdcc2e744161a5e24662e9\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":7,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":55697,\\\"rendered_characters\\\":55189,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-d106c3bc-b4df-4bea-8ddd-4c50f5a85916-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":13968,\\\"serialized_bytes\\\":61208,\\\"serialized_sha256\\\":\\\"f0e0b2b19af2483970de9ab72372c9391a6890a8a94537d094023e9274ee985c\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant\",\"role\":\"assistant\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant\",\"delta\":\"I'll\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant\",\"delta\":\" render the parcel calculator surface now.\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TOOL_CALL_START\ndata: {\"type\":\"TOOL_CALL_START\",\"profile\":\"uar.agui/1\",\"toolCallId\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"toolCallName\":\"tool-Some(0)\",\"eventId\":\"12:0\",\"sequence\":192}\nid: 12:0:3\n\nevent: TOOL_CALL_ARGS\ndata: {\"type\":\"TOOL_CALL_ARGS\",\"profile\":\"uar.agui/1\",\"toolCallId\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"delta\":\"\\\"{\\\"\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:1:3\n\nevent: TOOL_CALL_END\ndata: {\"type\":\"TOOL_CALL_END\",\"profile\":\"uar.agui/1\",\"toolCallId\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"toolCallName\":\"a2ui_render\",\"arguments\":{\"messages\":[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"parcel-calculator\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"parcel-calculator\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"heading\",\"parcel\",\"calculate\"]},{\"id\":\"heading\",\"component\":\"Text\",\"text\":\"Parcel calculator\"},{\"id\":\"parcel\",\"component\":\"TextField\",\"label\":\"Parcel number\",\"value\":{\"path\":\"/parcel\"}},{\"id\":\"calculate\",\"component\":\"Button\",\"child\":\"button-label\",\"action\":{\"event\":{\"name\":\"calculate_parcel\"}}},{\"id\":\"button-label\",\"component\":\"Text\",\"text\":\"Calculate parcel\"}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"parcel-calculator\",\"path\":\"/\",\"value\":{\"parcel\":\"\"}}}]},\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: runtime.tool_call\ndata: {\"type\":\"tool_call_started\",\"id\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"call_index\":0,\"tool_call_id\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"name\":\"a2ui_render\",\"arguments_json\":\"{\\\"messages\\\":[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"components\\\":[{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"heading\\\",\\\"parcel\\\",\\\"calculate\\\"]},{\\\"id\\\":\\\"heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Parcel calculator\\\"},{\\\"id\\\":\\\"parcel\\\",\\\"component\\\":\\\"TextField\\\",\\\"label\\\":\\\"Parcel number\\\",\\\"value\\\":{\\\"path\\\":\\\"/parcel\\\"}},{\\\"id\\\":\\\"calculate\\\",\\\"component\\\":\\\"Button\\\",\\\"child\\\":\\\"button-label\\\",\\\"action\\\":{\\\"event\\\":{\\\"name\\\":\\\"calculate_parcel\\\"}}},{\\\"id\\\":\\\"button-label\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Calculate parcel\\\"}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"parcel\\\":\\\"\\\"}}}]}\",\"status\":\"running\",\"updated_at\":\"2026-10-29T12:58:08.354297+00:00\"}\nid: 13:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/a2ui/surfaces/parcel-calculator\",\"value\":{\"surfaceId\":\"parcel-calculator\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":true,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/a2ui/surfaces/parcel-calculator/components\",\"value\":{\"surfaceId\":\"parcel-calculator\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"heading\",\"parcel\",\"calculate\"]},{\"id\":\"heading\",\"component\":\"Text\",\"text\":\"Parcel calculator\"},{\"id\":\"parcel\",\"component\":\"TextField\",\"label\":\"Parcel number\",\"value\":{\"path\":\"/parcel\"}},{\"id\":\"calculate\",\"component\":\"Button\",\"child\":\"button-label\",\"action\":{\"event\":{\"name\":\"calculate_parcel\"}}},{\"id\":\"button-label\",\"component\":\"Text\",\"text\":\"Calculate parcel\"}]}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/a2ui/surfaces/parcel-calculator/dataModel\",\"value\":{\"surfaceId\":\"parcel-calculator\",\"path\":\"/\",\"value\":{\"parcel\":\"\"}}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"a2ui:000cf72c-c139-47ee-8fed-8e84bc00dd50\",\"artifactType\":\"a2ui\",\"title\":\"Interactive UI\",\"content\":\"{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}}\\n{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"components\\\":[{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"heading\\\",\\\"parcel\\\",\\\"calculate\\\"]},{\\\"id\\\":\\\"heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Parcel calculator\\\"},{\\\"id\\\":\\\"parcel\\\",\\\"component\\\":\\\"TextField\\\",\\\"label\\\":\\\"Parcel number\\\",\\\"value\\\":{\\\"path\\\":\\\"/parcel\\\"}},{\\\"id\\\":\\\"calculate\\\",\\\"component\\\":\\\"Button\\\",\\\"child\\\":\\\"button-label\\\",\\\"action\\\":{\\\"event\\\":{\\\"name\\\":\\\"calculate_parcel\\\"}}},{\\\"id\\\":\\\"button-label\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Calculate parcel\\\"}]}}\\n{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"parcel-calculator\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"parcel\\\":\\\"\\\"}}}\",\"language\":\"application/a2ui+json\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"surfaceIds\":[\"parcel-calculator\"],\"sourceTool\":\"a2ui_render\",\"presentation\":null,\"publication_status\":\"published\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: TOOL_CALL_RESULT\ndata: {\"type\":\"TOOL_CALL_RESULT\",\"profile\":\"uar.agui/1\",\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:tool:call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"toolCallId\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"toolCallName\":\"a2ui_render\",\"content\":\"{\\\"status\\\":\\\"prepared\\\",\\\"terminal\\\":true,\\\"instruction\\\":\\\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\\\"}\",\"isError\":false,\"role\":\"tool\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: runtime.tool_call\ndata: {\"type\":\"tool_call_finished\",\"id\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"call_index\":0,\"tool_call_id\":\"call_6oQJ2Zkr4bgx4qluPizDbY0Y\",\"name\":\"a2ui_render\",\"result\":\"{\\\"status\\\":\\\"prepared\\\",\\\"terminal\\\":true,\\\"instruction\\\":\\\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\\\"}\",\"status\":\"completed\",\"updated_at\":\"2026-10-29T12:58:08.885933+00:00\"}\nid: 19:1:3\n\nevent: STEP_FINISHED\ndata: {\"type\":\"STEP_FINISHED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_finished\",\"id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916-1\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"step\":1,\"status\":\"finished\",\"updated_at\":\"2026-10-29T12:58:08.886044+00:00\"}\nid: 20:1:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-2\",\"stepName\":\"step-2\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916-2\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"step\":2,\"status\":\"started\",\"updated_at\":\"2026-10-29T12:58:08.934631+00:00\"}\nid: 21:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":2,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"675eef357dc0a67ce0b7e817622dde06096c6ddd61c15357deab1ac3467d618e\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"}],\\\"counts\\\":{\\\"total\\\":3,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1},\\\"by_authority\\\":{\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":55968,\\\"rendered_characters\\\":55460,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-d106c3bc-b4df-4bea-8ddd-4c50f5a85916-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":14301,\\\"serialized_bytes\\\":62571,\\\"serialized_sha256\\\":\\\"70cc9c78765a9f1bceb0f5964ecd2a7cb68c7ffa4a5ec5f01cdecfaaa0b88431\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\"},\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant\",\"delta\":\"Calculator\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant\",\"delta\":\" ready.\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":true,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"28:0\",\"sequence\":448}\nid: 28:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"runId\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"result\":{\"usage\":{\"inputTokens\":29108,\"outputTokens\":487,\"totalTokens\":29595,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"run_id\":\"d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"status\":\"completed\",\"input_tokens\":29108,\"output_tokens\":487,\"total_tokens\":29595,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-29T12:58:10.336269+00:00\"}\nid: 28:2:3\n\n",
+      "events": [
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+            "artifactType": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-d106c3bc-b4df-4bea-8ddd-4c50f5a85916\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 Â· A2UI v0.9.1\",\"chatMode\":\"Chat mode Â· agent\",\"model\":\"Model Â· liter / MiniMax-M3\",\"agent\":\"Agent Â· disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"skills\":\"Skills Â· auto Â· 212 available Â· agent scope\",\"tools\":\"Tools Â· selected Â· 1 available Â· agent scope\",\"mcpServers\":\"MCP servers Â· auto Â· 0 available Â· legacy scope\",\"knowledgeBases\":\"Knowledge bases Â· none Â· 0 available Â· agent scope\",\"memory\":\"Memory Â· on\",\"promptCaching\":\"Prompt caching Â· off\",\"context\":\"Context Â· sliding window\",\"approval\":\"Tool approval Â· auto\",\"warningsHeading\":\"Warnings Â· 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "1:8",
+          "sequence": 16
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "2:8",
+          "sequence": 32
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "turn-manifest-d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+            "artifactType": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"1f6824bf9c5da87d633d3368c5baeaf93cd9338c6c40a4279d57d424791d328b\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"a6f0ba5f850a38152bd75a4cbd5dea5efc67ef37721b893d3dec96908ec7d50f\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2014a64085b1f02453344ae7a19d71cdbd48ccc2fefdcc2e744161a5e24662e9\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":7,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":55928,\"rendered_characters\":55420,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "1f6824bf9c5da87d633d3368c5baeaf93cd9338c6c40a4279d57d424791d328b",
+              "fragment_count": 7
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "3:8",
+          "sequence": 48
+        },
+        {
+          "type": "RUN_STARTED",
+          "profile": "uar.agui/1",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "input": {
+            "agentId": "disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f"
+          },
+          "eventId": "4:8",
+          "sequence": 64
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+                "conversation_id": "1afdb5f5-712f-4618-b643-ee798e6e7300",
+                "status": "running"
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "5:8",
+          "sequence": 80
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "6:8",
+          "sequence": 96
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"7d6099fe786bb02d6e50900662bca3b3c5049b799be642e5eb84e00342521646\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"a6f0ba5f850a38152bd75a4cbd5dea5efc67ef37721b893d3dec96908ec7d50f\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"2014a64085b1f02453344ae7a19d71cdbd48ccc2fefdcc2e744161a5e24662e9\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":7,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":55697,\"rendered_characters\":55189,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "7:8",
+          "sequence": 112
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-d106c3bc-b4df-4bea-8ddd-4c50f5a85916-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "8:8",
+          "sequence": 128
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":13968,\"serialized_bytes\":61208,\"serialized_sha256\":\"f0e0b2b19af2483970de9ab72372c9391a6890a8a94537d094023e9274ee985c\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "9:8",
+          "sequence": 144
+        },
+        {
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant",
+          "role": "assistant",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "type": "TEXT_MESSAGE_START",
+          "profile": "uar.agui/1",
+          "eventId": "10:0",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant",
+          "delta": "I'll",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "10:8",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant",
+          "delta": " render the parcel calculator surface now.",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "11:8",
+          "sequence": 176
+        },
+        {
+          "type": "TOOL_CALL_START",
+          "profile": "uar.agui/1",
+          "toolCallId": "call_6oQJ2Zkr4bgx4qluPizDbY0Y",
+          "toolCallName": "tool-Some(0)",
+          "eventId": "12:0",
+          "sequence": 192
+        },
+        {
+          "type": "TOOL_CALL_ARGS",
+          "profile": "uar.agui/1",
+          "toolCallId": "call_6oQJ2Zkr4bgx4qluPizDbY0Y",
+          "delta": "\"{\"",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "12:8",
+          "sequence": 192
+        },
+        {
+          "type": "TOOL_CALL_END",
+          "profile": "uar.agui/1",
+          "toolCallId": "call_6oQJ2Zkr4bgx4qluPizDbY0Y",
+          "toolCallName": "a2ui_render",
+          "arguments": {
+            "messages": [
+              {
+                "version": "v0.9.1",
+                "createSurface": {
+                  "surfaceId": "parcel-calculator",
+                  "catalogId": "urn:uar:a2ui:catalog:1"
+                }
+              },
+              {
+                "version": "v0.9.1",
+                "updateComponents": {
+                  "surfaceId": "parcel-calculator",
+                  "components": [
+                    {
+                      "id": "root",
+                      "component": "Column",
+                      "children": [
+                        "heading",
+                        "parcel",
+                        "calculate"
+                      ]
+                    },
+                    {
+                      "id": "heading",
+                      "component": "Text",
+                      "text": "Parcel calculator"
+                    },
+                    {
+                      "id": "parcel",
+                      "component": "TextField",
+                      "label": "Parcel number",
+                      "value": {
+                        "path": "/parcel"
+                      }
+                    },
+                    {
+                      "id": "calculate",
+                      "component": "Button",
+                      "child": "button-label",
+                      "action": {
+                        "event": {
+                          "name": "calculate_parcel"
+                        }
+                      }
+                    },
+                    {
+                      "id": "button-label",
+                      "component": "Text",
+                      "text": "Calculate parcel"
+                    }
+                  ]
+                }
+              },
+              {
+                "version": "v0.9.1",
+                "updateDataModel": {
+                  "surfaceId": "parcel-calculator",
+                  "path": "/",
+                  "value": {
+                    "parcel": ""
+                  }
+                }
+              }
+            ]
+          },
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "13:8",
+          "sequence": 208
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/a2ui/surfaces/parcel-calculator",
+              "value": {
+                "surfaceId": "parcel-calculator",
+                "catalogId": "urn:uar:a2ui:catalog:1"
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "14:8",
+          "sequence": 224
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": true,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "15:8",
+          "sequence": 240
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/a2ui/surfaces/parcel-calculator/components",
+              "value": {
+                "surfaceId": "parcel-calculator",
+                "components": [
+                  {
+                    "id": "root",
+                    "component": "Column",
+                    "children": [
+                      "heading",
+                      "parcel",
+                      "calculate"
+                    ]
+                  },
+                  {
+                    "id": "heading",
+                    "component": "Text",
+                    "text": "Parcel calculator"
+                  },
+                  {
+                    "id": "parcel",
+                    "component": "TextField",
+                    "label": "Parcel number",
+                    "value": {
+                      "path": "/parcel"
+                    }
+                  },
+                  {
+                    "id": "calculate",
+                    "component": "Button",
+                    "child": "button-label",
+                    "action": {
+                      "event": {
+                        "name": "calculate_parcel"
+                      }
+                    }
+                  },
+                  {
+                    "id": "button-label",
+                    "component": "Text",
+                    "text": "Calculate parcel"
+                  }
+                ]
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "16:8",
+          "sequence": 256
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/a2ui/surfaces/parcel-calculator/dataModel",
+              "value": {
+                "surfaceId": "parcel-calculator",
+                "path": "/",
+                "value": {
+                  "parcel": ""
+                }
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "17:8",
+          "sequence": 272
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "a2ui:000cf72c-c139-47ee-8fed-8e84bc00dd50",
+            "artifactType": "a2ui",
+            "title": "Interactive UI",
+            "content": "{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"parcel-calculator\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}}\n{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"parcel-calculator\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"heading\",\"parcel\",\"calculate\"]},{\"id\":\"heading\",\"component\":\"Text\",\"text\":\"Parcel calculator\"},{\"id\":\"parcel\",\"component\":\"TextField\",\"label\":\"Parcel number\",\"value\":{\"path\":\"/parcel\"}},{\"id\":\"calculate\",\"component\":\"Button\",\"child\":\"button-label\",\"action\":{\"event\":{\"name\":\"calculate_parcel\"}}},{\"id\":\"button-label\",\"component\":\"Text\",\"text\":\"Calculate parcel\"}]}}\n{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"parcel-calculator\",\"path\":\"/\",\"value\":{\"parcel\":\"\"}}}",
+            "language": "application/a2ui+json",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "surfaceIds": [
+                "parcel-calculator"
+              ],
+              "sourceTool": "a2ui_render",
+              "presentation": null,
+              "publication_status": "published"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "18:8",
+          "sequence": 288
+        },
+        {
+          "type": "TOOL_CALL_RESULT",
+          "profile": "uar.agui/1",
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:tool:call_6oQJ2Zkr4bgx4qluPizDbY0Y",
+          "toolCallId": "call_6oQJ2Zkr4bgx4qluPizDbY0Y",
+          "toolCallName": "a2ui_render",
+          "content": "{\"status\":\"prepared\",\"terminal\":true,\"instruction\":\"The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.\"}",
+          "isError": false,
+          "role": "tool",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "19:8",
+          "sequence": 304
+        },
+        {
+          "type": "STEP_FINISHED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "20:8",
+          "sequence": 320
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-2",
+          "stepName": "step-2",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "21:8",
+          "sequence": 336
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":2,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"675eef357dc0a67ce0b7e817622dde06096c6ddd61c15357deab1ac3467d618e\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"}],\"counts\":{\"total\":3,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1},\"by_authority\":{\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":55968,\"rendered_characters\":55460,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "22:8",
+          "sequence": 352
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-d106c3bc-b4df-4bea-8ddd-4c50f5a85916-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "23:8",
+          "sequence": 368
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":14301,\"serialized_bytes\":62571,\"serialized_sha256\":\"70cc9c78765a9f1bceb0f5964ecd2a7cb68c7ffa4a5ec5f01cdecfaaa0b88431\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916"
+          },
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "24:8",
+          "sequence": 384
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant",
+          "delta": "Calculator",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "25:8",
+          "sequence": 400
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant",
+          "delta": " ready.",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "26:8",
+          "sequence": 416
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": true,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "eventId": "27:8",
+          "sequence": 432
+        },
+        {
+          "messageId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916:assistant",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "type": "TEXT_MESSAGE_END",
+          "profile": "uar.agui/1",
+          "eventId": "28:0",
+          "sequence": 448
+        },
+        {
+          "type": "RUN_FINISHED",
+          "profile": "uar.agui/1",
+          "threadId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "runId": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+          "result": {
+            "usage": {
+              "inputTokens": 29108,
+              "outputTokens": 487,
+              "totalTokens": 29595,
+              "costUsdEstimate": null,
+              "model": "MiniMax-M3"
+            }
+          },
+          "eventId": "28:8",
+          "sequence": 448
+        }
+      ]
+    },
+    {
+      "path": "/api/uar/runs/5511316b-0785-4ea9-bd50-be50624aa004/stream",
+      "status": 200,
+      "request": null,
+      "response": "event: STATE_SNAPSHOT\nid: 0\ndata: {\"type\":\"STATE_SNAPSHOT\",\"profile\":\"uar.agui/1\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"snapshot\":{\"run\":null,\"a2ui\":{\"surfaces\":{}}},\"eventId\":\"0:1\",\"sequence\":0}\n\nevent: MESSAGES_SNAPSHOT\nid: 0\ndata: {\"type\":\"MESSAGES_SNAPSHOT\",\"profile\":\"uar.agui/1\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"messages\":[],\"eventId\":\"0:2\",\"sequence\":0}\n\nevent: CUSTOM\nid: 1\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 Â· A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode Â· agent\\\",\\\"model\\\":\\\"Model Â· liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent Â· disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"skills\\\":\\\"Skills Â· auto Â· 212 available Â· agent scope\\\",\\\"tools\\\":\\\"Tools Â· selected Â· 1 available Â· agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers Â· auto Â· 0 available Â· legacy scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases Â· none Â· 0 available Â· agent scope\\\",\\\"memory\\\":\\\"Memory Â· on\\\",\\\"promptCaching\\\":\\\"Prompt caching Â· off\\\",\\\"context\\\":\\\"Context Â· sliding window\\\",\\\"approval\\\":\\\"Tool approval Â· auto\\\",\\\"warningsHeading\\\":\\\"Warnings Â· 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"5511316b-0785-4ea9-bd50-be50624aa004\"},\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"1:0\",\"sequence\":16}\n\nevent: STATE_DELTA\nid: 2\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"2:0\",\"sequence\":32}\n\nevent: CUSTOM\nid: 3\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-5511316b-0785-4ea9-bd50-be50624aa004\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"1734e77c7694d88b714b8e06fe59ac5eb45dfe18aab5ff526a6579d8898064b5\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"}],\\\"counts\\\":{\\\"total\\\":3,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1},\\\"by_authority\\\":{\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":50465,\\\"rendered_characters\\\":49957,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"1734e77c7694d88b714b8e06fe59ac5eb45dfe18aab5ff526a6579d8898064b5\",\"fragment_count\":3},\"sourceRunId\":\"5511316b-0785-4ea9-bd50-be50624aa004\"},\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"3:0\",\"sequence\":48}\n\nevent: RUN_STARTED\nid: 4\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"input\":{\"agentId\":\"disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\"},\"eventId\":\"4:0\",\"sequence\":64}\n\nevent: STATE_DELTA\nid: 5\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"conversation_id\":\"1afdb5f5-712f-4618-b643-ee798e6e7300\",\"status\":\"running\"}}],\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"5:0\",\"sequence\":80}\n\nevent: STEP_STARTED\nid: 6\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"6:0\",\"sequence\":96}\n\nevent: CUSTOM\nid: 7\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"8f2a7eb7b509494dc5f084b0dc6cebbe86db5d216d7bb6030caf86387dd71876\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"}],\\\"counts\\\":{\\\"total\\\":3,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"skill_catalog\\\":1},\\\"by_authority\\\":{\\\"policy\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":56286,\\\"rendered_characters\\\":55778,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"5511316b-0785-4ea9-bd50-be50624aa004\"},\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"7:0\",\"sequence\":112}\n\nevent: CUSTOM\nid: 8\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-5511316b-0785-4ea9-bd50-be50624aa004-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"5511316b-0785-4ea9-bd50-be50624aa004\"},\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"8:0\",\"sequence\":128}\n\nevent: CUSTOM\nid: 9\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":14416,\\\"serialized_bytes\\\":62986,\\\"serialized_sha256\\\":\\\"d18eb1c2544372184981fc4c7097b2f2e99f8a3dee3db899afdf43a5c24c5c49\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"5511316b-0785-4ea9-bd50-be50624aa004\"},\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"9:0\",\"sequence\":144}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 10\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\"<think>The\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"10:0\",\"sequence\":160}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 11\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\" user action gives parcel = \\\"587\\\". Result = 587 + \",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"11:0\",\"sequence\":176}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 12\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\"19 = 606. Return only JSON with marker and numeric result.\\n\\nPer instruction: Return only\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"12:0\",\"sequence\":192}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 13\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\" JSON with marker \\\"BROWSER-d8111884-0e10-4de3-\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"13:0\",\"sequence\":208}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 14\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\"81ef-b2d2a6d5c84f\\\" and numeric result equal to fresh parcel\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"14:0\",\"sequence\":224}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 15\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\" number plus 19.\\n\\nSo {\\\"marker\\\":\\\"BROWSER-d8111884-0e10-4\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"15:0\",\"sequence\":240}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 16\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\"de3-81ef-b2d2a6d5c84f\\\",\\\"result\\\":606}\\n\\nShould\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"16:0\",\"sequence\":256}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 17\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\" I include \\\"result\\\" key? It says \\\"numeric result\\\". Let\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"17:0\",\"sequence\":272}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 18\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\" me output JSON with marker and result keys.\\n\\nAlso, I must not render again. Just\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"18:0\",\"sequence\":288}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 19\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\" output the JSON.\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"19:0\",\"sequence\":304}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 20\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\"</think>\\n\\n{\\\"marker\\\":\\\"BROWSER-d8111884-0e10\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"20:0\",\"sequence\":320}\n\nevent: TEXT_MESSAGE_CONTENT\nid: 21\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"5511316b-0785-4ea9-bd50-be50624aa004:assistant\",\"delta\":\"-4de3-81ef-b2d2a6d5c84f\\\",\\\"result\\\":606}\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"21:0\",\"sequence\":336}\n\nevent: STATE_DELTA\nid: 22\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"eventId\":\"22:0\",\"sequence\":352}\n\nevent: RUN_FINISHED\nid: 23\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"runId\":\"5511316b-0785-4ea9-bd50-be50624aa004\",\"result\":{\"usage\":{\"inputTokens\":14937,\"outputTokens\":195,\"totalTokens\":15132,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"23:0\",\"sequence\":368}\n\n",
+      "events": [
+        {
+          "type": "STATE_SNAPSHOT",
+          "profile": "uar.agui/1",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "snapshot": {
+            "run": null,
+            "a2ui": {
+              "surfaces": {}
+            }
+          },
+          "eventId": "0:1",
+          "sequence": 0
+        },
+        {
+          "type": "MESSAGES_SNAPSHOT",
+          "profile": "uar.agui/1",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "messages": [],
+          "eventId": "0:2",
+          "sequence": 0
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "run-policy-5511316b-0785-4ea9-bd50-be50624aa004",
+            "artifactType": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-5511316b-0785-4ea9-bd50-be50624aa004\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 Â· A2UI v0.9.1\",\"chatMode\":\"Chat mode Â· agent\",\"model\":\"Model Â· liter / MiniMax-M3\",\"agent\":\"Agent Â· disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"skills\":\"Skills Â· auto Â· 212 available Â· agent scope\",\"tools\":\"Tools Â· selected Â· 1 available Â· agent scope\",\"mcpServers\":\"MCP servers Â· auto Â· 0 available Â· legacy scope\",\"knowledgeBases\":\"Knowledge bases Â· none Â· 0 available Â· agent scope\",\"memory\":\"Memory Â· on\",\"promptCaching\":\"Prompt caching Â· off\",\"context\":\"Context Â· sliding window\",\"approval\":\"Tool approval Â· auto\",\"warningsHeading\":\"Warnings Â· 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            },
+            "sourceRunId": "5511316b-0785-4ea9-bd50-be50624aa004"
+          },
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "1:0",
+          "sequence": 16
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "2:0",
+          "sequence": 32
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "turn-manifest-5511316b-0785-4ea9-bd50-be50624aa004",
+            "artifactType": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"1734e77c7694d88b714b8e06fe59ac5eb45dfe18aab5ff526a6579d8898064b5\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"}],\"counts\":{\"total\":3,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1},\"by_authority\":{\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":50465,\"rendered_characters\":49957,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "1734e77c7694d88b714b8e06fe59ac5eb45dfe18aab5ff526a6579d8898064b5",
+              "fragment_count": 3
+            },
+            "sourceRunId": "5511316b-0785-4ea9-bd50-be50624aa004"
+          },
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "3:0",
+          "sequence": 48
+        },
+        {
+          "type": "RUN_STARTED",
+          "profile": "uar.agui/1",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "input": {
+            "agentId": "disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f"
+          },
+          "eventId": "4:0",
+          "sequence": 64
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "5511316b-0785-4ea9-bd50-be50624aa004",
+                "conversation_id": "1afdb5f5-712f-4618-b643-ee798e6e7300",
+                "status": "running"
+              }
+            }
+          ],
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "5:0",
+          "sequence": 80
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "6:0",
+          "sequence": 96
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"8f2a7eb7b509494dc5f084b0dc6cebbe86db5d216d7bb6030caf86387dd71876\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"f7967daa376ef8ffba4c303f31e26d8f916cd5c1ab17e237f89242ff0940b9d1\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"2b7a715735fbf6a04f58a96f2d363663bb9a65863952b0d74502b13cb6d95007\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"}],\"counts\":{\"total\":3,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"skill_catalog\":1},\"by_authority\":{\"policy\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":56286,\"rendered_characters\":55778,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\"],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "5511316b-0785-4ea9-bd50-be50624aa004"
+          },
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "7:0",
+          "sequence": 112
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-5511316b-0785-4ea9-bd50-be50624aa004-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "5511316b-0785-4ea9-bd50-be50624aa004"
+          },
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "8:0",
+          "sequence": 128
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":14416,\"serialized_bytes\":62986,\"serialized_sha256\":\"d18eb1c2544372184981fc4c7097b2f2e99f8a3dee3db899afdf43a5c24c5c49\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "5511316b-0785-4ea9-bd50-be50624aa004"
+          },
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "9:0",
+          "sequence": 144
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": "<think>The",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "10:0",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": " user action gives parcel = \"587\". Result = 587 + ",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "11:0",
+          "sequence": 176
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": "19 = 606. Return only JSON with marker and numeric result.\n\nPer instruction: Return only",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "12:0",
+          "sequence": 192
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": " JSON with marker \"BROWSER-d8111884-0e10-4de3-",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "13:0",
+          "sequence": 208
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": "81ef-b2d2a6d5c84f\" and numeric result equal to fresh parcel",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "14:0",
+          "sequence": 224
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": " number plus 19.\n\nSo {\"marker\":\"BROWSER-d8111884-0e10-4",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "15:0",
+          "sequence": 240
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": "de3-81ef-b2d2a6d5c84f\",\"result\":606}\n\nShould",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "16:0",
+          "sequence": 256
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": " I include \"result\" key? It says \"numeric result\". Let",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "17:0",
+          "sequence": 272
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": " me output JSON with marker and result keys.\n\nAlso, I must not render again. Just",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "18:0",
+          "sequence": 288
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": " output the JSON.",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "19:0",
+          "sequence": 304
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": "</think>\n\n{\"marker\":\"BROWSER-d8111884-0e10",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "20:0",
+          "sequence": 320
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "5511316b-0785-4ea9-bd50-be50624aa004:assistant",
+          "delta": "-4de3-81ef-b2d2a6d5c84f\",\"result\":606}",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "21:0",
+          "sequence": 336
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "eventId": "22:0",
+          "sequence": 352
+        },
+        {
+          "type": "RUN_FINISHED",
+          "profile": "uar.agui/1",
+          "threadId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "runId": "5511316b-0785-4ea9-bd50-be50624aa004",
+          "result": {
+            "usage": {
+              "inputTokens": 14937,
+              "outputTokens": 195,
+              "totalTokens": 15132,
+              "costUsdEstimate": null,
+              "model": "MiniMax-M3"
+            }
+          },
+          "eventId": "23:0",
+          "sequence": 368
+        }
+      ]
+    }
+  ],
+  "agent_id": "disposable-a2ui-browser-21ce0cec-a9e2-43a3-9050-f7c242f7a44f",
+  "model": "liter/MiniMax-M3",
+  "page_errors": [],
+  "source_run_id": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+  "fresh_input": 587,
+  "action": {
+    "path": "/api/uar/runs/d106c3bc-b4df-4bea-8ddd-4c50f5a85916/a2ui/actions",
+    "request": {
+      "name": "calculate_parcel",
+      "surfaceId": "parcel-calculator",
+      "sourceComponentId": "calculate",
+      "timestamp": "2026-10-29T12:58:12.077Z",
+      "context": {},
+      "a2uiClientDataModel": {
+        "parcel-calculator": {
+          "parcel": "587"
+        }
+      }
+    },
+    "status": 202,
+    "response": {
+      "run_id": "d106c3bc-b4df-4bea-8ddd-4c50f5a85916",
+      "continuation_run_id": "5511316b-0785-4ea9-bd50-be50624aa004",
+      "status": "continued"
+    }
+  },
+  "answer": {
+    "marker": "BROWSER-d8111884-0e10-4de3-81ef-b2d2a6d5c84f",
+    "result": 606
+  },
+  "continuation_run_id": "5511316b-0785-4ea9-bd50-be50624aa004",
+  "result": "VERIFIED",
+  "disposable_agent_deleted": true,
+  "status": "passed",
+  "duration_ms": 17965
+}
