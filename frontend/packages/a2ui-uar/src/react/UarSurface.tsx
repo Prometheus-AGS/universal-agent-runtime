@@ -89,7 +89,8 @@ export const UarDeferredChild: FC<{
     return null;
   }
 
-  const implementation = surface.catalog.components.get(componentModel.type);
+  // From A2UI v1.0 a surface may have no default catalog; that is an unknown component here.
+  const implementation = surface.catalog?.components.get(componentModel.type);
   if (!implementation) {
     throw new UnknownUarComponentError(componentModel.type, id);
   }
