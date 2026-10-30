@@ -84,6 +84,20 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "200": { "description": "Streaming SSE response" } }
                 }
             },
+            "/v1/embeddings": {
+                "post": {
+                    "summary": "Create embeddings",
+                    "description": "OpenAI-compatible embeddings from the runtime's configured embedding backend. `model` must name the served model (`<backend>/<model>` or `<model>`); `input` is a string or an array of up to 2048 non-empty strings; `dimensions`, when present, must equal the served dimension; `encoding_format` is `float` (default) or `base64`.",
+                    "tags": ["models"],
+                    "responses": {
+                        "200": { "description": "Embedding list: `data[].embedding` in input order, `model`, `usage`" },
+                        "400": { "description": "Invalid input, dimensions or encoding format" },
+                        "404": { "description": "The requested model is not the served embedding model" },
+                        "502": { "description": "The embedding provider failed or answered malformed data" },
+                        "503": { "description": "No embedding backend is available" }
+                    }
+                }
+            },
             "/metrics": {
                 "get": {
                     "summary": "Prometheus metrics",
@@ -559,6 +573,7 @@ mod tests {
         assert_eq!(spec["info"]["version"], env!("CARGO_PKG_VERSION"));
         for path in [
             "/v1/chat/completions",
+            "/v1/embeddings",
             "/api/uar/runs",
             "/api/uar/full-harness/v1/tasks",
             "/api/uar/full-harness/v1/capabilities",

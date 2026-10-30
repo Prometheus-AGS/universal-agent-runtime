@@ -500,6 +500,13 @@ pub fn administration_capabilities(
                         Owner,
                         Read
                     ),
+                    endpoint!(
+                        "models.openai.embeddings",
+                        "POST",
+                        "/v1/embeddings",
+                        Owner,
+                        Live
+                    ),
                 ],
             ),
             surface("runtime-settings", Runtime, Available, runtime_settings),

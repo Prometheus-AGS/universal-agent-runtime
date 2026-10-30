@@ -2792,6 +2792,10 @@ async fn run_server_with_listener(
         .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
         .route("/v1/messages", post(api_messages))
+        .route(
+            "/v1/embeddings",
+            post(uar::api::openai::embeddings::create_embeddings),
+        )
         .route("/v1/models", get(api_v1_models))
         .route("/v1/models/{model_id}", get(api_v1_model_detail))
         .route("/metrics", get(api_metrics));
