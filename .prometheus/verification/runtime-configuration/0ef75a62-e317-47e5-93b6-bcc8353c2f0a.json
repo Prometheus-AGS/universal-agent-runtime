@@ -1,0 +1,131 @@
+{
+  "scenario": "A caller tool call matches across both endpoints",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/providers/openai/test",
+      "request": {
+        "model": "gpt-5.4-mini",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\",\"latency_ms\":317,\"received_text\":true}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "session_id": "704be7eb-b55b-4603-9ccb-66e705c555ad",
+        "max_tokens": 256,
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Parity tool probe: look up code alpha."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup_code",
+              "description": "Look up a code by key.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-8f4493a4-7953-422a-ab18-c8ed365f9493\",\"object\":\"chat.completion\",\"created\":1793371321,\"model\":\"openai/gpt-5.4-mini\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":null,\"tool_calls\":[{\"id\":\"uar_client_4bb8b3d6-aa4f-4b18-b72f-77faef732b7f_46acbda7-4752-4dad-941b-a9731139ddb9\",\"type\":\"function\",\"function\":{\"name\":\"lookup_code\",\"arguments\":\"{\\\"key\\\":\\\"alpha\\\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/messages",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "session_id": "70919520-f80f-47be-868f-c62a68e41024",
+        "max_tokens": 256,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Parity tool probe: look up code alpha."
+          }
+        ],
+        "tools": [
+          {
+            "name": "lookup_code",
+            "description": "Look up a code by key.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key"
+              ]
+            }
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"msg_2932c59f3cf949b0a476282f9e348688\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"openai/gpt-5.4-mini\",\"content\":[{\"type\":\"tool_use\",\"id\":\"uar_client_40ba021c-4dba-4c13-96fd-cabe4b7b7aa7_8b0d380d-c347-4bd2-85ed-e99224f6c397\",\"name\":\"lookup_code\",\"input\":{\"key\":\"alpha\"}}],\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/runtime-configuration/2be36303-50c0-4eae-8189-dceb847ba3de",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-2be36303",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:53473/",
+    "base_url": "http://127.0.0.1:53475/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:53472",
+    "stub_llm": {
+      "model": "openai/gpt-5.4-mini",
+      "fixtures": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/dedicated-runtime-stub-llm.json"
+    },
+    "uar_pid": 92360,
+    "proxy_pid": 92579
+  },
+  "parity": {
+    "chat_tool_call": {
+      "id": "uar_client_4bb8b3d6-aa4f-4b18-b72f-77faef732b7f_46acbda7-4752-4dad-941b-a9731139ddb9",
+      "type": "function",
+      "function": {
+        "name": "lookup_code",
+        "arguments": "{\"key\":\"alpha\"}"
+      }
+    },
+    "messages_tool_use": {
+      "stop_reason": "tool_use",
+      "block": {
+        "type": "tool_use",
+        "id": "uar_client_40ba021c-4dba-4c13-96fd-cabe4b7b7aa7_8b0d380d-c347-4bd2-85ed-e99224f6c397",
+        "name": "lookup_code",
+        "input": {
+          "key": "alpha"
+        }
+      }
+    }
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 27537
+}

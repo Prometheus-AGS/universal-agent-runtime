@@ -957,7 +957,10 @@ async fn resolve_credential_binding(
 }
 
 /// Classify host binding failures without projecting provider, storage, or
-/// constructor details into the run stream or trusted logs.
+/// constructor details into the run stream. The catch-all
+/// `client_capture_failed` category also has its cause written to the trusted
+/// log, but only after the run's secret scrubber has projected it; every other
+/// category is logged by code, stage, and category alone.
 fn run_binding_failure(error: &anyhow::Error) -> (&'static str, &'static str) {
     if let Some(origin) =
         error.downcast_ref::<crate::uar::runtime::cost_budget::BudgetFailureOrigin>()
@@ -6840,8 +6843,17 @@ impl RunManager {
                     "orchestrator_start_failed"
                 };
                 let reference = uuid::Uuid::new_v4();
-                tracing::error!(code, stage, category, diagnostic_reference = %reference,
-                    "Run model capture refused");
+                if category == "client_capture_failed" {
+                    // The catch-all category hides the cause; log it scrubbed
+                    // (with its context chain) so operators can diagnose it.
+                    // The run-stream message below stays generic.
+                    let cause = emitter.secret_scrubber.scrub(&format!("{error:#}"));
+                    tracing::error!(code, stage, category, diagnostic_reference = %reference,
+                        cause = %cause, "Run model capture refused");
+                } else {
+                    tracing::error!(code, stage, category, diagnostic_reference = %reference,
+                        "Run model capture refused");
+                }
                 let message = if is_team_attempt {
                     format!("{code}; diagnostic reference {reference}")
                 } else {

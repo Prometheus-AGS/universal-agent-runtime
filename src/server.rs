@@ -1512,8 +1512,9 @@ async fn run_server_with_listener(
         match MemoryService::new(effective_memory.clone()).await {
             Ok(svc) => {
                 info!(
-                    "MemoryService initialized (embedding_provider={}, auto_capture={}, inject_context={})",
-                    effective_memory.embedding_provider,
+                    "MemoryService initialized (embedding_api={}, embedding_model={}, auto_capture={}, inject_context={})",
+                    effective_memory.resolved_embedding_api(),
+                    effective_memory.embedding_model,
                     effective_memory.auto_capture,
                     effective_memory.inject_context
                 );

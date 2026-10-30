@@ -2213,11 +2213,16 @@ impl ModelCallBudget {
             let info = model.split_once('/').and_then(|(provider, model)| {
                 crate::llm::catalog::ModelCatalog::global().model(provider, model)
             });
-            (
-                info.map(|m| m.limits.context_window).filter(|v| *v > 0),
-                info.map(|m| m.limits.max_output).filter(|v| *v > 0),
-                "catalog_context_and_output",
-            )
+            // An explicit request output cap bounds the output reservation, so a
+            // capped turn is not refused for the model's full output window. The
+            // input side keeps the full catalog context window as its reserve.
+            let context = info.map(|m| m.limits.context_window).filter(|v| *v > 0);
+            let catalog_output = info.map(|m| m.limits.max_output).filter(|v| *v > 0);
+            let request_cap = request.output_token_cap.filter(|cap| *cap > 0).map(u64::from);
+            match request_cap.zip(catalog_output) {
+                Some((cap, max)) => (context, Some(cap.min(max)), "catalog_context_and_request_output_cap"),
+                None => (context, catalog_output, "catalog_context_and_output"),
+            }
         };
         let tokens = input
             .zip(output)

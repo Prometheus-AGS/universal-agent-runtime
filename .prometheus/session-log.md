@@ -7086,3 +7086,25 @@ Operator: "Run the gate". Build attempt 1 (mine, background) stopped while the o
 - Attempt 5: #389 only.
 - Attempt 5 (`scenario-postgres-005.log`): #389 passed, 12/12 steps. Step 4 is complete: all six Postgres 18 scenarios passed (baseline and #393 in attempt 2; #390, #394, #395 in attempt 3; #389 in attempt 5).
 - Step 5: `remote-surreal-restart` once, on the generalized dedicated-runtime fixture.
+- Step 5 (`scenario-surreal-restart-001.log`): `remote-surreal-restart` passed, 1/1 scenario and 6/6 steps, on the generalized fixture. The Batch 1 gate is complete.
+- Committed as `e6425b49` on `feat/postgres18-flint-forge`, pushed, and opened PR #459. Issues #389, #390, #393, #394 and #395 close after merge.
+
+## 2026-10-30 — Batch 2 (#419, #420, #385, #396, #391): implementation-complete inventory
+
+Branch `fix/batch2-small-fixes` from main `6231f903` (after PR #459). Closed #389, #390, #393, #394 and #395 with evidence. Gate is CLOSED until the operator approves the commands below.
+
+- #420 — `src/config.rs` (new `MemoryConfig::resolved_embedding_api`), `src/uar/memory/service.rs` (uses it), `src/server.rs` (init log names `embedding_api` and `embedding_model`). Plan deviation: no `memory.embedding_api` settings overlay. No settings row exists for that key, so the overlay would be dead code.
+- #385 — `src/uar/runtime/manager.rs` (scrubbed `cause` on the `client_capture_failed` ERROR log) and `src/uar/runtime/cost_budget.rs` (output reservation = min(request cap, catalog max_output)). uar-runtime teammate; handoff at `.prometheus/handoffs/batch2-uar-runtime-385-2026-10-30.md`. The lead simplified the match.
+- #391 — `scripts/validate-sdk-runtime-pin.mjs`, `package.json` script `sdk-runtime-pin:validate`.
+- #396 — `docs/ANTHROPIC_MESSAGES.md` (claims checked against `src/server.rs` request struct, stream and error code) and a pointer in `docs/ANTHROPIC.md`.
+- #419 — no code (fixed in 98b50f6e); BDD proof only.
+- BDD — `scripts/behaviors/features/runtime-configuration.feature` (#419, #420, #385), `anthropic-messages-parity.feature` (#396), `steps/runtime-configuration.steps.mjs`, `runtime-configuration.cucumber.mjs`, `scripts/acceptance/fixtures/embedding-stub.mjs`. In the fixture, `restartUar(config, env)` takes env overrides and `logEntries()` was added. The stub has a tool-call fixture.
+- OpenSpec — `openspec/changes/rc2-runtime-fixes`, with ADDED deltas in runtime-configuration, anthropic-messages-agent-mode, dot-durable-budgets and sdk-distribution.
+- Not covered: cancel parity on /v1/messages (documented, not tested), and #385's "refused binding names its stage" on a live failure. No reproducible trigger exists for the catch-all.
+- Operator approved the Batch 2 gate ("Run the gate"), naming the five commands listed.
+- Gate 1 (`target/batch2-gate/build-server-full-001.log`): exit 0, 0 warnings, 17m15s.
+- Gate 2 (`build-postgres-001.log`): exit 0, 0 warnings, 13m54s.
+- Gate 3: `openspec validate rc2-runtime-fixes` valid. Gate 4: `pnpm sdk-runtime-pin:validate` exit 0 (1.4.0-rc.1).
+- Gate 5 attempt 1 (`scenario-runtime-configuration-001.log`): 4/5 passed (#419, #420, #385, caller-tool parity). Text parity failed on usage only. Both answers were "SESSION-OK", but the step expected matching non-zero counts, and the stub LLM (`tests/integration/live/stub_llm.rs`) reports no usage. Chat completions omits `usage`; Messages reports zeros, since its fields are required. Test-design defect. The step now asserts that both endpoints agree no usage was reported. Usage-count parity with real numbers stays unverified (it needs a model that reports usage).
+- Gate 5 attempt 2: the text-parity scenario only (`anthropic-messages-parity.feature:6`).
+- Gate 5 attempt 2 (`scenario-runtime-configuration-002.log`): 4/4 passed, 29/29 steps. Because cucumber-js merges config paths with CLI paths, the run also included the three runtime-configuration scenarios that had already passed, so it was broader than the single failed scenario. All five scenarios have now passed. Doc-only follow-up: `docs/ANTHROPIC_MESSAGES.md` now says the parity feature doesn't compare non-zero usage. Gate complete.

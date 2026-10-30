@@ -1,0 +1,163 @@
+{
+  "scenario": "An output cap keeps a budgeted agent within its per-turn token limit (#385)",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/providers/openai/test",
+      "request": {
+        "model": "gpt-5.4-mini",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\",\"latency_ms\":311,\"received_text\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "rc2-budget-fc858191-4180-42c8-922b-288d92e37990",
+        "metadata": {
+          "title": "Budgeted verification agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "",
+              "model": ""
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "*"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": true,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "budgets": {
+            "max_tokens_per_turn": 450000
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"rc2-budget-fc858191-4180-42c8-922b-288d92e37990\",\"metadata\":{\"title\":\"Budgeted verification agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"budgets\":{\"max_tokens_per_turn\":450000},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:4e47f82c0332672b78d765aa4e97d61a411eaf78339cb80a098907780a7a73d1\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "agent_id": "rc2-budget-fc858191-4180-42c8-922b-288d92e37990",
+        "max_tokens": 1000,
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Postgres session probe: reply with SESSION-OK."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-e5aad664-e187-4810-8dbc-0a5df1b0784e\",\"object\":\"chat.completion\",\"created\":1793371268,\"model\":\"openai/gpt-5.4-mini\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"SESSION-OK\"},\"finish_reason\":\"stop\"}],\"session_id\":\"7f3e3c08-cd7b-42d7-8583-610b9eac55e1\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/rc2-budget-fc858191-4180-42c8-922b-288d92e37990",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/runtime-configuration/bf4cf6eb-2eaa-4787-a8d1-edc55b6d41d3",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-bf4cf6eb",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:53345/",
+    "base_url": "http://127.0.0.1:53347/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:53344",
+    "stub_llm": {
+      "model": "openai/gpt-5.4-mini",
+      "fixtures": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/dedicated-runtime-stub-llm.json"
+    },
+    "uar_pid": 91398,
+    "proxy_pid": 91623
+  },
+  "budget": {
+    "max_tokens_per_turn": 450000,
+    "max_tokens": 1000
+  },
+  "answer": "SESSION-OK",
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 27344
+}
