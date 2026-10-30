@@ -149,7 +149,7 @@ Every entry is required by ≥1 consumer or implemented with a user-facing decis
 | C-11 | **A2UI** — schema registry, per-run surfaces, action round-trip | `a2ui/*` (6) | San Saba (contract), KnowMe |
 | C-12 | **Persistence** — 3 backends: in-memory, SurrealDB, Postgres | `persistence/`, `design_systems/store.rs` | KnowMe (surrealkv on-device) |
 | C-13 | **Sessions and threads** — caller-supplied thread IDs | `/api/sessions/*`, `/threads` | KnowMe, San Saba |
-| C-14 | **OpenAI-compatible surface** | `/v1/chat/completions`, `/v1/models`, `/v1/messages` | **BossFang (only live traffic)** |
+| C-14 | **OpenAI-compatible surface** | `/v1/chat/completions`, `/v1/models`, `/v1/messages`, `/v1/embeddings` | **BossFang (only live traffic)** |
 | C-15 | **Agent descriptor schema** (`uar-agent-descriptor/v1`) | `compiler/ir.rs`, `a2a/types.rs` | **BossFang — most durable requirement** |
 | C-16 | **Governance** — tool approval, run policy | `governance/`, 4 settings refs | San Saba (hard requirement) |
 | C-17 | **Security** — auth, API keys, credential encryption | `security/`, 5 settings refs | all |
