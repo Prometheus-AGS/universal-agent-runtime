@@ -500,6 +500,18 @@ fn error_response(error: CollaborationError) -> Response {
             )
         }
     };
+    // A store that lacks a durable capability refuses with one typed code that
+    // names it, instead of a revision conflict.
+    if let Some(capability) = detail
+        .as_deref()
+        .and_then(|detail| detail.strip_prefix("capability_unsupported:"))
+    {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(crate::uar::persistence::capabilities::refusal_body(capability)),
+        )
+            .into_response();
+    }
     let team_code = detail.as_deref().filter(|d| d.starts_with("TEAM_") && d.bytes().all(|b| b.is_ascii_uppercase() || b == b'_'));
     let diagnostic = team_code.map(|code| json!({"code":code,"retryable":false,"action":match code { "TEAM_RECLAIM_EVIDENCE_REQUIRED" | "TEAM_EFFECTS_UNCERTAIN" => "reconcile", "TEAM_EXECUTION_OWNER_CONFLICT" | "TEAM_EXECUTION_EPOCH_STALE" | "TEAM_RECLAIM_UNAUTHORIZED" => "contact-operator", "TEAM_REASONING_UNSUPPORTED" => "change-settings", _ => "rebind" }}));
     (status, Json(json!({"error":{"code":team_code.unwrap_or(code),"messageKey":message_key,"detail":detail,"diagnostic":diagnostic}}))).into_response()

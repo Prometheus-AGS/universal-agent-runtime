@@ -102,7 +102,7 @@ async fn discover(State(state): State<AssistantApiState>, Extension(user): Exten
         ("schedule.resume", "POST", "/api/uar/schedules/{id}/resume", "schedule_resume"),
         ("schedule.cancel", "POST", "/api/uar/schedules/{id}/cancel", "schedule_cancel"),
     ] {
-        operations.push(operation(id, method, path, state.schedules.supported(), "schedule_unsupported",
+        operations.push(operation(id, method, path, state.schedules.supported(), "capability_unsupported",
             Some(native), None, &names, "verified_owner_and_workspace"));
     }
     let db = app.persistence.as_ref();
@@ -148,7 +148,7 @@ fn followup_operations(state: &AssistantApiState, names: &BTreeSet<String>) -> V
         ("followup.inbox", "GET", "/api/uar/followups/inbox/{conversation}", "followup_inbox"),
         ("followup.acknowledge", "POST", "/api/uar/followups/inbox/{conversation}/{item}/acknowledge", "followup_acknowledge"),
     ].into_iter().map(|(id, method, path, native)| operation(id, method, path,
-        state.followups.supported(), "followup_unsupported", Some(native), None, names,
+        state.followups.supported(), "capability_unsupported", Some(native), None, names,
         "verified_owner_and_workspace")).collect()
 }
 

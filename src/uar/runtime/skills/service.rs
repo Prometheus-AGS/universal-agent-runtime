@@ -324,6 +324,11 @@ impl SkillService {
         let count = skills.len();
         registry.register_builtins(skills).await;
         info!(count, "registered builtin skills");
+        // A changed embedding space must not leave stale vectors behind: they are
+        // excluded from search until rewritten in the active space.
+        if let Err(error) = registry.reembed_stale().await {
+            warn!(%error, "failed to re-embed skills stored in another embedding space");
+        }
     }
 
     /// Initialize the service by loading skills from all providers.

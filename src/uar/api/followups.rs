@@ -33,8 +33,11 @@ fn scope(user: &UserContext, headers: &HeaderMap) -> Result<(ActorOwner, String)
 pub(crate) fn error(error: FollowupError) -> Response {
     let status = match error { FollowupError::Invalid(_) => StatusCode::BAD_REQUEST,
         FollowupError::Conflict(_) => StatusCode::CONFLICT, FollowupError::NotFound => StatusCode::NOT_FOUND,
-        FollowupError::Denied => StatusCode::FORBIDDEN, FollowupError::Unsupported | FollowupError::Storage => StatusCode::SERVICE_UNAVAILABLE };
-    (status, Json(json!({"error":{"code":error.code()}}))).into_response()
+        FollowupError::Denied => StatusCode::FORBIDDEN, FollowupError::Unsupported | FollowupError::CapabilityUnsupported(_) | FollowupError::Storage => StatusCode::SERVICE_UNAVAILABLE };
+    match error.capability() {
+        Some(capability) => (status, Json(crate::uar::persistence::capabilities::refusal_body(capability))).into_response(),
+        None => (status, Json(json!({"error":{"code":error.code()}}))).into_response(),
+    }
 }
 
 async fn create(State(controller): State<Arc<FollowupController>>, Extension(user): Extension<UserContext>,

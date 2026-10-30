@@ -74,6 +74,8 @@ pub struct ChannelCapability {
 pub enum ChannelObserverError {
     #[error("channel-source profile is unsupported: {0}")]
     Unsupported(&'static str),
+    #[error("channel-source persistence needs unsupported store capability {0}")]
+    CapabilityUnsupported(&'static str),
     #[error("channel-source request is invalid: {0}")]
     Invalid(&'static str),
     #[error("channel-source identity or revision conflicts")]
@@ -92,6 +94,7 @@ impl ChannelObserverError {
     pub fn code(&self) -> &'static str {
         match self {
             Self::Unsupported(_) => "channel_profile_unsupported",
+            Self::CapabilityUnsupported(_) => crate::uar::persistence::capabilities::CAPABILITY_UNSUPPORTED,
             Self::Invalid(_) => "channel_profile_invalid",
             Self::Conflict => "channel_profile_conflict",
             Self::NotFound => "channel_profile_not_found",
@@ -103,7 +106,7 @@ impl ChannelObserverError {
 
     pub fn status(&self) -> u16 {
         match self {
-            Self::Unsupported(_) => 503,
+            Self::Unsupported(_) | Self::CapabilityUnsupported(_) => 503,
             Self::Invalid(_) => 400,
             Self::Conflict | Self::Uncertain => 409,
             Self::NotFound => 404,
@@ -153,7 +156,9 @@ impl ChannelObserverController {
 
     fn require_available(&self) -> Result<&ChannelGateClient, ChannelObserverError> {
         if !self.store.supports_channel_observers() {
-            return Err(ChannelObserverError::Unsupported(self.store.channel_observer_unavailable_reason()));
+            return Err(ChannelObserverError::CapabilityUnsupported(
+                crate::uar::persistence::capabilities::CHANNEL_OBSERVERS,
+            ));
         }
         self.gate.as_ref().ok_or(ChannelObserverError::Unsupported("authenticated_gate_binding_missing"))
     }

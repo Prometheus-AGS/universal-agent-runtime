@@ -3,6 +3,7 @@
 //! The registry aggregates skills from all enabled storage providers
 //! and provides fast lookups.
 
+use crate::uar::domain::knowledge::EmbeddingFingerprint;
 use crate::uar::domain::skills::Skill;
 #[cfg(test)]
 use crate::uar::domain::skills::SkillMatch;
@@ -71,9 +72,9 @@ impl SkillRegistry {
     /// independent: persist whenever there is a database, and attach an
     /// embedding when one can be produced.
     pub async fn register(&mut self, skill: Skill) {
-        let embedding = self.embedding_for(&skill).await;
+        let (embedding, space) = self.embedding_for(&skill).await;
         if let Some(db) = &self.persistence
-            && let Err(e) = db.save_skill(&skill, &embedding).await
+            && let Err(e) = Self::persist_skill(db.as_ref(), &skill, &embedding, space.as_ref()).await
         {
             error!("Failed to persist skill {}: {:?}", skill.skill_id, e);
         }
@@ -84,9 +85,9 @@ impl SkillRegistry {
     /// Register and persist a skill, returning persistence failures to callers
     /// that must not claim reconciliation succeeded after a failed write.
     pub(crate) async fn register_checked(&mut self, skill: Skill) -> anyhow::Result<()> {
-        let embedding = self.embedding_for(&skill).await;
+        let (embedding, space) = self.embedding_for(&skill).await;
         if let Some(db) = &self.persistence {
-            db.save_skill(&skill, &embedding).await?;
+            Self::persist_skill(db.as_ref(), &skill, &embedding, space.as_ref()).await?;
         }
         self.skills.insert(skill.skill_id.clone(), skill);
         Ok(())
@@ -99,11 +100,15 @@ impl SkillRegistry {
         &mut self,
         skill: Skill,
     ) -> anyhow::Result<bool> {
-        let embedding = self.embedding_for(&skill).await;
-        if let Some(db) = &self.persistence
-            && !db.create_skill_if_absent(&skill, &embedding).await?
-        {
-            return Ok(false);
+        let (embedding, space) = self.embedding_for(&skill).await;
+        if let Some(db) = &self.persistence {
+            let created = match &space {
+                Some(space) => db.create_skill_if_absent_in_space(&skill, &embedding, space).await?,
+                None => db.create_skill_if_absent(&skill, &embedding).await?,
+            };
+            if !created {
+                return Ok(false);
+            }
         }
         self.skills.insert(skill.skill_id.clone(), skill);
         Ok(true)
@@ -193,15 +198,47 @@ impl SkillRegistry {
         self.persistence.is_some()
     }
 
-    async fn embedding_for(&self, skill: &Skill) -> Vec<f32> {
+    /// Save a skill, recording the embedding space when the vector has one.
+    async fn persist_skill(
+        db: &dyn PersistenceLayer,
+        skill: &Skill,
+        embedding: &[f32],
+        space: Option<&EmbeddingFingerprint>,
+    ) -> anyhow::Result<()> {
+        match space {
+            Some(space) => db.save_skill_in_space(skill, embedding, space).await,
+            None => db.save_skill(skill, embedding).await,
+        }
+    }
+
+    /// Embed a skill and return the space the vector belongs to. A backend swap
+    /// that lands mid-call, or a vector whose length disagrees with the space,
+    /// yields no embedding rather than a vector recorded in the wrong space.
+    async fn embedding_for(&self, skill: &Skill) -> (Vec<f32>, Option<EmbeddingFingerprint>) {
         // Best-effort embedding. `None` (no matcher) and `Err` (matcher failed)
         // both degrade to persisting without one, rather than dropping the skill.
         let Some(vm) = &self.vector_matcher else {
-            return Vec::new();
+            return (Vec::new(), None);
         };
         let text = format!("{}: {}", skill.title, skill.description);
+        let space_before = vm.embedding_fingerprint();
         match vm.embed_batch(vec![text]).await {
-            Ok(embeddings) => embeddings.into_iter().next().unwrap_or_default(),
+            Ok(embeddings) => {
+                let embedding = embeddings.into_iter().next().unwrap_or_default();
+                let space_after = vm.embedding_fingerprint();
+                if embedding.is_empty()
+                    || space_before != space_after
+                    || embedding.len() != space_before.dimension
+                {
+                    error!(
+                        "Embedding for skill {} does not match the active embedding space {} — \
+                         persisting without one; vector search will not match it until it is re-embedded",
+                        skill.skill_id, space_after
+                    );
+                    return (Vec::new(), None);
+                }
+                (embedding, Some(space_before))
+            }
             Err(e) => {
                 error!(
                     "Failed to generate embedding for skill {}: {:?} — \
@@ -209,9 +246,40 @@ impl SkillRegistry {
                      until it is re-embedded",
                     skill.skill_id, e
                 );
-                Vec::new()
+                (Vec::new(), None)
             }
         }
+    }
+
+    /// Re-embed every persisted skill whose stored vector was produced in a
+    /// different embedding space than the active embedder (or in an unrecorded
+    /// one). Only the embedding is rewritten. Returns how many were refreshed.
+    /// With no embedder or no store there is nothing to refresh.
+    ///
+    /// # Errors
+    ///
+    /// Returns the store error when the stale set cannot be read or written.
+    pub(crate) async fn reembed_stale(&self) -> anyhow::Result<usize> {
+        let (Some(db), Some(vm)) = (&self.persistence, &self.vector_matcher) else {
+            return Ok(0);
+        };
+        let space = vm.embedding_fingerprint();
+        let mut refreshed = 0;
+        for skill_id in db.skill_ids_outside_space(&space).await? {
+            let Some(skill) = self.skills.get(&skill_id) else {
+                continue;
+            };
+            let (embedding, Some(embedded_space)) = self.embedding_for(skill).await else {
+                continue;
+            };
+            if db.set_skill_embedding(&skill_id, &embedding, &embedded_space).await? {
+                refreshed += 1;
+            }
+        }
+        if refreshed > 0 {
+            info!(refreshed, %space, "re-embedded skills stored in another embedding space");
+        }
+        Ok(refreshed)
     }
 
     /// Register a skill that has already been loaded from durable storage.
@@ -399,10 +467,13 @@ impl SkillRegistry {
             .ok_or_else(|| anyhow::anyhow!("skill_vector_store_unavailable"))?;
         let matcher = self.vector_matcher.as_ref()
             .ok_or_else(|| anyhow::anyhow!("skill_embedding_backend_unavailable"))?;
+        let space = matcher.embedding_fingerprint();
         let embeddings = matcher.embed_batch(vec![query.to_owned()]).await?;
         anyhow::ensure!(embeddings.len() == 1 && !embeddings[0].is_empty()
             && embeddings[0].iter().all(|value| value.is_finite()), "skill_query_embedding_invalid");
-        let matches = db.search_skills(&embeddings[0], self.vector_candidate_limit()).await?;
+        anyhow::ensure!(matcher.embedding_fingerprint() == space
+            && embeddings[0].len() == space.dimension, "skill_query_embedding_space_changed");
+        let matches = db.search_skills_in_space(&embeddings[0], self.vector_candidate_limit(), &space).await?;
         anyhow::ensure!(matches.iter().all(|candidate| candidate.score.is_finite()),
             "skill_vector_score_invalid");
         Ok(matches.into_iter().filter(|candidate| !candidate.skill.tombstoned)

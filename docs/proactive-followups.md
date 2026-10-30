@@ -57,7 +57,8 @@ approval; reads do not. Only verified native execution context establishes owner
 
 Errors use `followup_invalid` (400), `followup_conflict` (409),
 `followup_not_found` (404), `followup_denied` (403), or
-`followup_unsupported`/`followup_storage_unavailable` (503). Malformed JSON may
+`capability_unsupported` (503, naming the missing `supports_*` capability) or
+`followup_storage_unavailable` (503). Malformed JSON may
 use the framework's 422 response. Unsupported storage never reports success.
 
 ## Authority and persistence

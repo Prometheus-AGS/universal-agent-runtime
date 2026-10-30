@@ -10,6 +10,9 @@
 # Docker-style URL (matches `.env.example` POSTGRES_* defaults):
 #   postgres://uar:changeme@localhost:5432/uar
 #
+# Supported server: the flint-forge PostgreSQL 18 image. UAR uses its own `uar`
+# database there, never Forge's `flint`; see docs/operations/postgres-flint-forge.md.
+#
 # `vector_dimension` must match your embedding model (e.g. 1536 for OpenAI
 # text-embedding-3-small, 384 for BGE-small).
 # =============================================================================

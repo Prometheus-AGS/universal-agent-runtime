@@ -4,6 +4,7 @@ use crate::uar::{compiler::collaboration::CollaborationCatalogService,
     domain::followups::{FollowupAuthority, FollowupDecision, FollowupDisposition, FollowupInboxItem, FollowupRequest, FollowupRule, FollowupView},
     persistence::agent_instances::{AgentInstanceRecord, InstanceLifecycle},
     runtime::{actor::messages::ActorOwner, instance::AgentInstanceController}, security::claims::FollowupOwnerGrant};
+use crate::uar::persistence::capabilities::{DURABLE_AGENT_INSTANCES, DURABLE_OBSERVERS};
 use super::{FollowupError, quiet_hours};
 
 /// Metadata-only delivery into the protected owner conversation inbox. This
@@ -26,8 +27,8 @@ impl FollowupController {
     }
     fn require_store(&self) -> Result<(), FollowupError> {
         self.catalog.require_followup_store()?;
-        self.instances.require_store().map_err(|_| FollowupError::Unsupported)?;
-        if !self.instances.store.supports_durable_observers() { return Err(FollowupError::Unsupported); }
+        self.instances.require_store().map_err(|_| FollowupError::CapabilityUnsupported(DURABLE_AGENT_INSTANCES))?;
+        if !self.instances.store.supports_durable_observers() { return Err(FollowupError::CapabilityUnsupported(DURABLE_OBSERVERS)); }
         Ok(())
     }
     pub fn supported(&self) -> bool { self.require_store().is_ok() }
@@ -149,7 +150,7 @@ impl FollowupController {
             if rule.enabled && !rule.revoked && rule.conversation_id == conversation {
                 match self.authority(owner, &rule).await {
                     Ok(()) => visible.push(item),
-                    Err(FollowupError::Storage | FollowupError::Unsupported) => return Err(FollowupError::Storage),
+                    Err(FollowupError::Storage | FollowupError::Unsupported | FollowupError::CapabilityUnsupported(_)) => return Err(FollowupError::Storage),
                     Err(_) => {},
                 }
             }
@@ -189,7 +190,7 @@ impl FollowupController {
         let authority = self.authority(&owner, listed).await;
         // An outage is not consent revocation and must not permanently consume
         // an occurrence as suppressed.
-        if matches!(authority, Err(FollowupError::Storage | FollowupError::Unsupported)) { return authority; }
+        if matches!(authority, Err(FollowupError::Storage | FollowupError::Unsupported | FollowupError::CapabilityUnsupported(_))) { return authority; }
         let bounds = self.instances.store.instance_occurrence_bounds(&listed.catalog_owner_id, &listed.workspace_id, &listed.source_instance_id)
             .await.map_err(|_| FollowupError::Storage)?;
         let expected_sequence = listed.cursor.map_or(0, |v| v.saturating_add(1));
@@ -230,7 +231,7 @@ impl FollowupController {
         let rule = self.catalog.followup_rule(owner_key, workspace, id).await?;
         let Some(decision) = rule.decisions.iter().find(|d| matches!(d.disposition, FollowupDisposition::Queued | FollowupDisposition::Deferred)) else { return Ok(()); };
         let authority = self.authority(owner, &rule).await;
-        if matches!(authority, Err(FollowupError::Storage | FollowupError::Unsupported)) { return authority; }
+        if matches!(authority, Err(FollowupError::Storage | FollowupError::Unsupported | FollowupError::CapabilityUnsupported(_))) { return authority; }
         self.catalog.change_followup(owner_key, workspace, id, |r, inbox, current_authority| {
             if r.revision != rule.revision { return Ok(false); }
             let Some(index) = r.decisions.iter().position(|d| d.id == decision.id

@@ -1,0 +1,108 @@
+{
+  "scenario": "Skills work with a 1024-dimension embedder (#395)",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "pg18-dimension-2f3fc377",
+        "description": "Reconcile the pg18-dimension-2f3fc377 ledger for quarterly audits",
+        "triggers": {
+          "keywords": [
+            "pg18-dimension-2f3fc377"
+          ]
+        },
+        "prompt_overlay": "Probe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"pg18-dimension-2f3fc377\",\"title\":\"pg18-dimension-2f3fc377\",\"description\":\"Reconcile the pg18-dimension-2f3fc377 ledger for quarterly audits\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-dimension-2f3fc377\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/match?q=Reconcile%20the%20pg18-dimension-2f3fc377%20ledger%20for%20quarterly%20audits",
+      "status": 200,
+      "response": "[{\"skill_id\":\"pg18-dimension-2f3fc377\",\"title\":\"pg18-dimension-2f3fc377\",\"description\":\"Reconcile the pg18-dimension-2f3fc377 ledger for quarterly audits\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-dimension-2f3fc377\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/match?q=Reconcile%20the%20pg18-dimension-2f3fc377%20ledger%20for%20quarterly%20audits",
+      "status": 200,
+      "response": "[{\"skill_id\":\"pg18-dimension-2f3fc377\",\"title\":\"pg18-dimension-2f3fc377\",\"description\":\"Reconcile the pg18-dimension-2f3fc377 ledger for quarterly audits\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-dimension-2f3fc377\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}]"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/pg18-dimension-2f3fc377",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/postgres-flint-forge/5ad20a32-88a5-4d42-b578-72a800378cd4",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-5ad20a32",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:63459/",
+    "base_url": "http://127.0.0.1:63461/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:63458",
+    "uar_pid": 64003,
+    "proxy_pid": 64228
+  },
+  "embedding": {
+    "backend": "openai-compatible stub",
+    "dimension": 1024
+  },
+  "matches": [
+    [
+      {
+        "skill_id": "pg18-dimension-2f3fc377",
+        "title": "pg18-dimension-2f3fc377",
+        "description": "Reconcile the pg18-dimension-2f3fc377 ledger for quarterly audits",
+        "version": "1.0.0",
+        "enabled": true,
+        "origin": "user",
+        "provider_id": "api",
+        "triggers": {
+          "keywords": [
+            "pg18-dimension-2f3fc377"
+          ],
+          "semantic": null
+        },
+        "preferred_tools": [],
+        "prompt_overlay": "Probe.",
+        "execution_config": {}
+      }
+    ],
+    [
+      {
+        "skill_id": "pg18-dimension-2f3fc377",
+        "title": "pg18-dimension-2f3fc377",
+        "description": "Reconcile the pg18-dimension-2f3fc377 ledger for quarterly audits",
+        "version": "1.0.0",
+        "enabled": true,
+        "origin": "user",
+        "provider_id": "api",
+        "triggers": {
+          "keywords": [
+            "pg18-dimension-2f3fc377"
+          ],
+          "semantic": null
+        },
+        "preferred_tools": [],
+        "prompt_overlay": "Probe.",
+        "execution_config": {}
+      }
+    ]
+  ],
+  "restarts": 1,
+  "skill_save_failures": [
+    "Failed to load skill from \"/Users/gqadonis/.agents/skills/source-command-save-session/SKILL.md\": missing field `version` at line 2 column 1",
+    "Failed to load skill from \"/Users/gqadonis/.agents/skills/source-command-save-session/SKILL.md\": missing field `version` at line 2 column 1"
+  ],
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 27837
+}

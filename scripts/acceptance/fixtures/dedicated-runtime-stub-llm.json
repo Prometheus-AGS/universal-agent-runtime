@@ -1,0 +1,82 @@
+[
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Postgres session probe: reply with SESSION-OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "SESSION-OK"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Postgres session probe: reply with SESSION-OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "SESSION-OK"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Postgres session probe: reply with SESSION-OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "SESSION-OK"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Postgres session probe: reply with SESSION-OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "SESSION-OK"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "OK"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "OK"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "OK"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "OK"
+    }
+  }
+]
