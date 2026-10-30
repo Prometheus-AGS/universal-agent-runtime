@@ -198,7 +198,7 @@ export async function startDedicatedRuntime(record, holder, options) {
     persistence: { ...database.persistence, vector_dimension: 384, external_cache_enabled: false },
     memory: { enabled: false },
   }, overrides);
-  const uarEnv = { HOME: process.env.HOME, PATH: process.env.PATH,
+  let uarEnv = { HOME: process.env.HOME, PATH: process.env.PATH,
     UAR_MODELS_DIR: resolve('src/uar/runtime/matching/models'), ...llmEnv, ...extraEnv, ...database.env,
     UAR_SECURITY__JWT_SECRET: secrets.jwt };
 
@@ -222,19 +222,27 @@ export async function startDedicatedRuntime(record, holder, options) {
   Object.assign(record, { uar_pid: handle.uarPid, proxy_pid: handle.proxyPid });
 
   handle.restartDatabase = () => docker(['restart', '--time', '10', handle.container]);
-  /** Stop UAR gracefully and start it again on the same store, optionally with new config. */
-  handle.restartUar = async (configOverrides) => {
+  /**
+   * Stop UAR gracefully and start it again on the same store, optionally with new
+   * config and environment. An environment value of null removes that variable.
+   */
+  handle.restartUar = async (configOverrides, envOverrides) => {
     if (!(await terminate(handle.uarPid))) throw new Error('UAR did not stop gracefully; never force-kill');
     if (configOverrides) currentConfig = merge(currentConfig, configOverrides);
+    if (envOverrides) {
+      uarEnv = Object.fromEntries(Object.entries({ ...uarEnv, ...envOverrides }).filter(([, value]) => value !== null));
+    }
     await startUar();
     return handle.uarPid;
   };
   handle.uarAlive = () => alive(handle.uarPid);
-  handle.logMessages = async () => {
+  /** Every JSON log entry from every UAR launch, oldest first. */
+  handle.logEntries = async () => {
     const lines = (await Promise.all(handle.uarLogs.map(path => readFile(path, 'utf8')))).join('\n').split('\n');
     return lines.flatMap(line => {
-      try { return [JSON.parse(line).fields?.message].filter(Boolean); } catch { return []; }
+      try { return [JSON.parse(line)]; } catch { return []; }
     });
   };
+  handle.logMessages = async () => (await handle.logEntries()).map(entry => entry.fields?.message).filter(Boolean);
   return handle;
 }

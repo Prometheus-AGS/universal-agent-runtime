@@ -447,11 +447,7 @@ impl MemoryService {
         // the request shape. Unrecognized values produce a hard error rather than
         // silently selecting a default (the previous `_ =>` arm silently fell back
         // to `local`, which masked operator intent — see issue #420).
-        let resolved_api = config
-            .embedding_api
-            .clone()
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| config.embedding_provider.clone());
+        let resolved_api = config.resolved_embedding_api().to_owned();
 
         let embedding_svc: Arc<dyn EmbeddingService> = match resolved_api.as_str() {
             "openai" => {

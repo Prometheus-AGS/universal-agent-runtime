@@ -1,0 +1,33 @@
+{
+  "scenario": "UAR_LLM__MODEL outranks LLM_MODEL, which outranks the config file (#419)",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/runtime-configuration/a47a1f44-00c0-46b1-badc-3d7121f9c36c",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-a47a1f44",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:53615/",
+    "base_url": "http://127.0.0.1:53617/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:53614",
+    "uar_pid": 93316,
+    "proxy_pid": 93544
+  },
+  "models": {
+    "config": "openai/gpt-4.1",
+    "LLM_MODEL": "openai/gpt-4o-mini",
+    "UAR_LLM__MODEL": "openai/gpt-5.4-mini",
+    "loaded": [
+      "openai/gpt-5.4-mini",
+      "openai/gpt-4o-mini",
+      "openai/gpt-4.1"
+    ]
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 34695
+}

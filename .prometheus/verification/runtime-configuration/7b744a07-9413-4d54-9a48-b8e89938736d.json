@@ -1,0 +1,86 @@
+{
+  "scenario": "A text answer and its usage match across both endpoints",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/providers/openai/test",
+      "request": {
+        "model": "gpt-5.4-mini",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\",\"latency_ms\":318,\"received_text\":true}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "session_id": "ca538a84-51f1-4b55-9a24-096bed35e7d0",
+        "max_tokens": 256,
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Postgres session probe: reply with SESSION-OK."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-86007db5-e6a3-49f7-8023-9581f4386a30\",\"object\":\"chat.completion\",\"created\":1793371500,\"model\":\"openai/gpt-5.4-mini\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"SESSION-OK\"},\"finish_reason\":\"stop\"}],\"session_id\":\"ca538a84-51f1-4b55-9a24-096bed35e7d0\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/messages",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "session_id": "27f8d5d5-1bd9-409c-96e7-720f4ea1b6a8",
+        "max_tokens": 256,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Postgres session probe: reply with SESSION-OK."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"msg_d2b267d22396417085af97be3ed27f3c\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"openai/gpt-5.4-mini\",\"content\":[{\"type\":\"text\",\"text\":\"SESSION-OK\"}],\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/runtime-configuration/b79292a4-6440-4b1c-9cb7-cd3bab8334ef",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-b79292a4",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:53867/",
+    "base_url": "http://127.0.0.1:53869/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:53866",
+    "stub_llm": {
+      "model": "openai/gpt-5.4-mini",
+      "fixtures": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/dedicated-runtime-stub-llm.json"
+    },
+    "uar_pid": 94937,
+    "proxy_pid": 95172
+  },
+  "parity": {
+    "chat": "SESSION-OK",
+    "messages": "SESSION-OK",
+    "usage": {
+      "chat": null,
+      "messages": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    }
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 28130
+}

@@ -1494,6 +1494,15 @@ impl std::fmt::Debug for MemoryConfig {
 }
 
 impl MemoryConfig {
+    /// The embedding adapter the memory service selects: `embedding_api` when
+    /// set and non-empty, otherwise the legacy `embedding_provider`.
+    pub fn resolved_embedding_api(&self) -> &str {
+        self.embedding_api
+            .as_deref()
+            .filter(|api| !api.is_empty())
+            .unwrap_or(&self.embedding_provider)
+    }
+
     fn default_db_path() -> String {
         "./data/memory.db".to_string()
     }

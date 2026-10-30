@@ -1,0 +1,53 @@
+{
+  "scenario": "Memory uses the Mistral embedding API it is configured with (#420)",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/memory",
+      "request": {
+        "content": "The project code word is RC2-MEMORY-5f99b7ae.",
+        "categories": [
+          "personal_fact"
+        ]
+      },
+      "status": 200,
+      "response": "{\"status\":\"success\",\"id\":\"memory:209dbf78-34ed-46ba-b0e1-9d7beb6cc665\"}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/runtime-configuration/19c0a4ad-d5e9-4639-bd77-2ef38bc6c082",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-19c0a4ad",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:53693/",
+    "base_url": "http://127.0.0.1:53695/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:53692",
+    "uar_pid": 93863,
+    "proxy_pid": 94175
+  },
+  "memory_startup": {
+    "ready": {
+      "message": "Memory embedding service ready",
+      "embedding_api": "mistral",
+      "embedding_model": "mistral-embed",
+      "dimensions": 1024
+    },
+    "initialized": "MemoryService initialized (embedding_api=mistral, embedding_model=mistral-embed, auto_capture=true, inject_context=true)"
+  },
+  "embedding_requests": [
+    {
+      "path": "/v1/embeddings",
+      "model": "mistral-embed",
+      "inputs": 1
+    }
+  ],
+  "rejection_logged": true,
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 45037
+}

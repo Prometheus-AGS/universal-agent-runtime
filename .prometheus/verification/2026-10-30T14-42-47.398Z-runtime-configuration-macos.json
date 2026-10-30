@@ -1,0 +1,429 @@
+[
+  {
+    "description": "  Each scenario starts its own UAR on the flint-forge PostgreSQL 18 image, so the\n  configuration under test is the only configuration in play.",
+    "elements": [
+      {
+        "description": "",
+        "id": "the-runtime-honors-the-model,-embedding-and-budget-configuration-it-is-given;uar_llm__model-outranks-llm_model,-which-outranks-the-config-file-(#419)",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "UAR_LLM__MODEL outranks LLM_MODEL, which outranks the config file (#419)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 565391
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 24400442021
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a dedicated UAR whose config file names model \"openai/gpt-4.1\" with LLM_MODEL \"openai/gpt-4o-mini\" and UAR_LLM__MODEL \"openai/gpt-5.4-mini\"",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:55"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7133565
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "UAR loads model \"openai/gpt-5.4-mini\"",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:62"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4745132982
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "UAR restarts without UAR_LLM__MODEL",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:71"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5199958
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "UAR loads model \"openai/gpt-4o-mini\"",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:62"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4733403712
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "UAR restarts without LLM_MODEL",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:75"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4331876
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "UAR loads model \"openai/gpt-4.1\"",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:62"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 799814501
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydW50aW1lLWNvbmZpZ3VyYXRpb24vODdkZDY4ZjAtYjVkYi00ZDliLWFiOWItNDA4OWE4MmZmZTZiLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "the-runtime-honors-the-model,-embedding-and-budget-configuration-it-is-given;memory-uses-the-mistral-embedding-api-it-is-configured-with-(#420)",
+        "keyword": "Scenario",
+        "line": 14,
+        "name": "Memory uses the Mistral embedding API it is configured with (#420)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 51617
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 39867605693
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 15,
+            "name": "a dedicated UAR with memory using the Mistral embedding API against a stub embedder",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:81"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8364740
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "UAR reports the Mistral embedding API at startup",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:89"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 141806993
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 17,
+            "name": "I save a memory record",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:99"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 184492
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 18,
+            "name": "the stub embedder received a \"mistral-embed\" request",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4511136972
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 19,
+            "name": "UAR restarts with the embedding API \"bogus\"",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:112"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 612935
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 20,
+            "name": "UAR refuses to start and names the unsupported embedding API",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:117"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 507663648
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydW50aW1lLWNvbmZpZ3VyYXRpb24vNmZmNzZkZDEtMWMxYy00NzRmLTkzY2UtODg1YmE3ZGQ2MTk0Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "the-runtime-honors-the-model,-embedding-and-budget-configuration-it-is-given;an-output-cap-keeps-a-budgeted-agent-within-its-per-turn-token-limit-(#385)",
+        "keyword": "Scenario",
+        "line": 22,
+        "name": "An output cap keeps a budgeted agent within its per-turn token limit (#385)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 29370
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 25201648630
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 23,
+            "name": "a dedicated UAR with the stub model",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22231387
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 24,
+            "name": "an agent with a per-turn token limit of 450000",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:136"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1559760641
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 25,
+            "name": "I ask that agent with max_tokens 1000",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 280272
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 26,
+            "name": "the agent answers",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:153"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1150216117
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydW50aW1lLWNvbmZpZ3VyYXRpb24vZTM4YjYwNzYtN2E0Mi00MDJjLWE3YTktNDFmMTRjMmQ2NTE3Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "the-runtime-honors-the-model,-embedding-and-budget-configuration-it-is-given",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "The runtime honors the model, embedding and budget configuration it is given",
+    "tags": [],
+    "uri": "scripts/behaviors/features/runtime-configuration.feature"
+  },
+  {
+    "description": "  /v1/messages and /v1/chat/completions both run the selected agent; only the wire\n  format differs (#396). The keyless stub model makes both answers deterministic.",
+    "elements": [
+      {
+        "description": "",
+        "id": "the-anthropic-messages-endpoint-runs-the-same-agent-turn-as-chat-completions;a-text-answer-and-its-usage-match-across-both-endpoints",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "A text answer and its usage match across both endpoints",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 34664
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 24461711116
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a dedicated UAR with the stub model",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1544247001
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I ask the default agent through chat completions",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:166"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1014359498
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "I ask the default agent through Messages",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:170"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 236998
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "both endpoints return the same answer",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:174"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 108605
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "both endpoints agree that the model reported no token usage",
+            "match": {
+              "location": "scripts/behaviors/steps/runtime-configuration.steps.mjs:185"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1109767957
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9ydW50aW1lLWNvbmZpZ3VyYXRpb24vN2I3NDRhMDctOTQxMy00ZDU0LTlhNDgtYjhlODk5Mzg3MzZkLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "the-anthropic-messages-endpoint-runs-the-same-agent-turn-as-chat-completions",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "The Anthropic Messages endpoint runs the same agent turn as chat completions",
+    "tags": [],
+    "uri": "scripts/behaviors/features/anthropic-messages-parity.feature"
+  }
+]

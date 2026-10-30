@@ -78,5 +78,27 @@
       "kind": "content",
       "text": "OK"
     }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Parity tool probe: look up code alpha.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "tool_call",
+      "name": "lookup_code",
+      "arguments": "{\"key\":\"alpha\"}"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Parity tool probe: look up code alpha.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "tool_call",
+      "name": "lookup_code",
+      "arguments": "{\"key\":\"alpha\"}"
+    }
   }
 ]

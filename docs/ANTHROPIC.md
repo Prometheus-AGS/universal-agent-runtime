@@ -4,6 +4,9 @@ Good context. Now I have a clear picture of the existing `NormalizedEvent` strea
 
 ## UAR: Anthropic Native Driver + Universal Tool Semantics Normalization
 
+> Design history. For the current behavior of `POST /v1/messages`, see
+> [ANTHROPIC_MESSAGES.md](ANTHROPIC_MESSAGES.md).
+
 ### Strategic framing
 
 The goal has two distinct but tightly coupled parts:
