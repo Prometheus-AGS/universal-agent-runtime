@@ -106,7 +106,8 @@ fn read_only_operation(method: &str) -> bool {
         "list_agent_instances" | "get_presentation" | "list_presentations" |
         "load_session" | "list_sessions" | "list_expired_sessions" | "next_persisted_session_expiry" |
         "load_conversation_policy" | "load_principal_conversation_policy" |
-        "load_user_prompt_caching_settings" | "search_skills" | "list_skills" |
+        "load_user_prompt_caching_settings" | "search_skills" | "search_skills_in_space" |
+        "skill_ids_outside_space" | "list_skills" |
         "get_knowledge_base" | "get_knowledge_base_by_name" | "list_knowledge_bases" |
         "search_knowledge" | "search_knowledge_scoped" | "search_knowledge_scoped_in_space" | "get_document" |
         "list_documents" | "count_documents" | "load_agent_thread" | "list_agent_threads" |
@@ -878,6 +879,71 @@ impl PersistenceLayer for ScopedPersistence {
         self.dispatch("search_skills", move |inner| async move {
                 inner.search_skills(&query_vec, limit).await
             }).await
+    }
+
+    async fn save_skill_in_space(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<()> {
+        let skill = skill.clone();
+        let embedding = embedding.to_vec();
+        let space = space.clone();
+        self.dispatch("save_skill_in_space", move |inner| async move {
+            inner.save_skill_in_space(&skill, &embedding, &space).await
+        }).await
+    }
+
+    async fn create_skill_if_absent_in_space(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<bool> {
+        let skill = skill.clone();
+        let embedding = embedding.to_vec();
+        let space = space.clone();
+        self.dispatch("create_skill_if_absent_in_space", move |inner| async move {
+            inner.create_skill_if_absent_in_space(&skill, &embedding, &space).await
+        }).await
+    }
+
+    async fn search_skills_in_space(
+        &self,
+        query_vec: &[f32],
+        limit: usize,
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<SkillMatch>> {
+        let query_vec = query_vec.to_vec();
+        let space = space.clone();
+        self.dispatch("search_skills_in_space", move |inner| async move {
+            inner.search_skills_in_space(&query_vec, limit, &space).await
+        }).await
+    }
+
+    async fn skill_ids_outside_space(
+        &self,
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<String>> {
+        let space = space.clone();
+        self.dispatch("skill_ids_outside_space", move |inner| async move {
+            inner.skill_ids_outside_space(&space).await
+        }).await
+    }
+
+    async fn set_skill_embedding(
+        &self,
+        skill_id: &str,
+        embedding: &[f32],
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<bool> {
+        let skill_id = skill_id.to_owned();
+        let embedding = embedding.to_vec();
+        let space = space.clone();
+        self.dispatch("set_skill_embedding", move |inner| async move {
+            inner.set_skill_embedding(&skill_id, &embedding, &space).await
+        }).await
     }
 
     async fn list_skills(&self) -> Result<Vec<Skill>> {

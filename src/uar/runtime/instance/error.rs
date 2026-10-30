@@ -24,8 +24,17 @@ impl AgentInstanceError {
             Self::NotFound => "instance_not_found",
             Self::Conflict(_) => "instance_conflict",
             Self::Capacity => "instance_capacity",
-            Self::Unavailable => "instance_unavailable",
+            Self::Unavailable => crate::uar::persistence::capabilities::CAPABILITY_UNSUPPORTED,
             Self::Internal(_) => "instance_internal",
+        }
+    }
+
+    /// The store capability a refusal names; `None` for every other failure.
+    #[must_use]
+    pub fn capability(&self) -> Option<&'static str> {
+        match self {
+            Self::Unavailable => Some(crate::uar::persistence::capabilities::DURABLE_AGENT_INSTANCES),
+            _ => None,
         }
     }
 

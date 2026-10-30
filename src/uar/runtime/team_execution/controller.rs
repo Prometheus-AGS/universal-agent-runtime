@@ -185,7 +185,13 @@ impl TeamExecutionRuntime {
         owner: ActorOwner,
         attempt: TeamExecutionAttempt,
     ) -> Result<TeamExecutionAttempt, CollaborationError> {
-        if !self.available || self.cancellation.is_cancelled() {
+        if !self.available {
+            return Err(CollaborationError::Conflict(format!(
+                "capability_unsupported:{}",
+                crate::uar::persistence::capabilities::DURABLE_AGENT_INSTANCES
+            )));
+        }
+        if self.cancellation.is_cancelled() {
             return Err(CollaborationError::Conflict(
                 "Durable team execution is unavailable for this runtime storage".into(),
             ));

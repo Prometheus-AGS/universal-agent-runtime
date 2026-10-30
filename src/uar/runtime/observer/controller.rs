@@ -496,14 +496,18 @@ impl ObserverController {
         if self.store.supports_durable_observers() {
             Ok(())
         } else {
-            Err(ObserverError::Unavailable)
+            Err(ObserverError::CapabilityUnsupported(
+                crate::uar::persistence::capabilities::DURABLE_OBSERVERS,
+            ))
         }
     }
 }
 
 pub(super) fn store_error(error: anyhow::Error) -> ObserverError {
     match error.downcast_ref::<ObserverStoreError>() {
-        Some(ObserverStoreError::Unsupported) => ObserverError::Unavailable,
+        Some(ObserverStoreError::Unsupported) => {
+            ObserverError::CapabilityUnsupported(crate::uar::persistence::capabilities::DURABLE_OBSERVERS)
+        }
         Some(ObserverStoreError::NotFound) => ObserverError::NotFound,
         Some(ObserverStoreError::AlreadyExists | ObserverStoreError::Conflict) => {
             ObserverError::Conflict("subscription revision changed")
@@ -526,7 +530,9 @@ pub(super) fn instance_error(
         AgentInstanceError::NotFound => ObserverError::NotFound,
         AgentInstanceError::Conflict(reason) => ObserverError::Conflict(reason),
         AgentInstanceError::Capacity => ObserverError::Capacity,
-        AgentInstanceError::Unavailable => ObserverError::Unavailable,
+        AgentInstanceError::Unavailable => ObserverError::CapabilityUnsupported(
+            crate::uar::persistence::capabilities::DURABLE_AGENT_INSTANCES,
+        ),
         AgentInstanceError::Invalid(_) => ObserverError::Invalid("instance request is invalid"),
         AgentInstanceError::Internal(error) => ObserverError::Internal(error),
     }

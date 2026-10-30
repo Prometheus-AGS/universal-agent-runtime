@@ -1,0 +1,106 @@
+{
+  "scenario": "Skills work with a 1024-dimension embedder (#395)",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "pg18-dimension-9623a528",
+        "description": "Reconcile the pg18-dimension-9623a528 ledger for quarterly audits",
+        "triggers": {
+          "keywords": [
+            "pg18-dimension-9623a528"
+          ]
+        },
+        "prompt_overlay": "Probe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"pg18-dimension-9623a528\",\"title\":\"pg18-dimension-9623a528\",\"description\":\"Reconcile the pg18-dimension-9623a528 ledger for quarterly audits\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-dimension-9623a528\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/match?q=Reconcile%20the%20pg18-dimension-9623a528%20ledger%20for%20quarterly%20audits",
+      "status": 200,
+      "response": "[{\"skill_id\":\"pg18-dimension-9623a528\",\"title\":\"pg18-dimension-9623a528\",\"description\":\"Reconcile the pg18-dimension-9623a528 ledger for quarterly audits\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-dimension-9623a528\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/match?q=Reconcile%20the%20pg18-dimension-9623a528%20ledger%20for%20quarterly%20audits",
+      "status": 200,
+      "response": "[{\"skill_id\":\"pg18-dimension-9623a528\",\"title\":\"pg18-dimension-9623a528\",\"description\":\"Reconcile the pg18-dimension-9623a528 ledger for quarterly audits\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-dimension-9623a528\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}]"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/pg18-dimension-9623a528",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/postgres-flint-forge/a525af71-4a85-4e1f-b9aa-5cb66ad83c4c",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-a525af71",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:64068/",
+    "base_url": "http://127.0.0.1:64070/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:64067",
+    "uar_pid": 68028,
+    "proxy_pid": 68243
+  },
+  "embedding": {
+    "backend": "openai-compatible stub",
+    "dimension": 1024
+  },
+  "matches": [
+    [
+      {
+        "skill_id": "pg18-dimension-9623a528",
+        "title": "pg18-dimension-9623a528",
+        "description": "Reconcile the pg18-dimension-9623a528 ledger for quarterly audits",
+        "version": "1.0.0",
+        "enabled": true,
+        "origin": "user",
+        "provider_id": "api",
+        "triggers": {
+          "keywords": [
+            "pg18-dimension-9623a528"
+          ],
+          "semantic": null
+        },
+        "preferred_tools": [],
+        "prompt_overlay": "Probe.",
+        "execution_config": {}
+      }
+    ],
+    [
+      {
+        "skill_id": "pg18-dimension-9623a528",
+        "title": "pg18-dimension-9623a528",
+        "description": "Reconcile the pg18-dimension-9623a528 ledger for quarterly audits",
+        "version": "1.0.0",
+        "enabled": true,
+        "origin": "user",
+        "provider_id": "api",
+        "triggers": {
+          "keywords": [
+            "pg18-dimension-9623a528"
+          ],
+          "semantic": null
+        },
+        "preferred_tools": [],
+        "prompt_overlay": "Probe.",
+        "execution_config": {}
+      }
+    ]
+  ],
+  "restarts": 1,
+  "skill_save_failures": [],
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 28644
+}

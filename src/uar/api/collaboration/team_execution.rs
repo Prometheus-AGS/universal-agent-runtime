@@ -146,9 +146,10 @@ async fn admit(
     };
     if !state.runtime.available() {
         return error_response(
-            crate::uar::compiler::collaboration::CollaborationError::Conflict(
-                "Durable team execution is unavailable for this runtime storage".into(),
-            ),
+            crate::uar::compiler::collaboration::CollaborationError::Conflict(format!(
+                "capability_unsupported:{}",
+                crate::uar::persistence::capabilities::DURABLE_AGENT_INSTANCES
+            )),
         );
     }
     match state

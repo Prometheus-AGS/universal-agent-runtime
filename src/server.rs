@@ -2428,6 +2428,7 @@ async fn run_server_with_listener(
         .route("/api/chat", any(legacy_chat_route_disabled))
         .route("/api/chat/{*path}", any(legacy_chat_route_disabled))
         .route("/api/sessions", any(legacy_sessions_route_disabled))
+        .route("/api/uar/persistence/capabilities", get(persistence_capabilities_handler))
         .route("/api/uar/sessions", get(owner_sessions_snapshot))
         .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
         .nest(
@@ -3648,6 +3649,26 @@ async fn uar_config_reload_handler(
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
+}
+
+/// Durable persistence capabilities of the active store and where memory lives,
+/// so an operator can see which features a deployment refuses with
+/// `capability_unsupported` before calling them.
+pub(crate) async fn persistence_capabilities_handler(State(state): State<AppState>) -> Json<Value> {
+    let backend = state.config.persistence.provider.as_str();
+    let capabilities = state
+        .persistence
+        .as_ref()
+        .map_or(Value::Null, |persistence| persistence.capability_matrix());
+    // The memory service keeps its own SurrealDB store, independent of persistence.
+    let memory = match &state.memory_service {
+        Some(_) => json!({"enabled": true, "store": "memory_service_surrealdb"}),
+        None => json!({"enabled": false, "store": Value::Null}),
+    };
+    Json(json!({
+        "persistence": {"backend": backend, "capabilities": capabilities},
+        "memory": memory,
+    }))
 }
 
 /// Readiness probe — verifies core dependencies are operational.

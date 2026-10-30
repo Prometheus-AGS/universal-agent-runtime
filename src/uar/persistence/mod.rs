@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 pub mod accounting;
 pub mod agui_runs;
+pub mod capabilities;
 pub mod client_tools;
 pub mod mcp_elicitations;
 pub mod approval_decisions;
@@ -100,6 +101,27 @@ impl DurableStoreEligibility {
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     fn supports_durable_client_tools(&self) -> bool { false }
+
+    /// Every durable capability flag of this store, keyed by its `supports_*`
+    /// method name. Hosts serve this so clients can see what a store refuses
+    /// before they ask it to do the work.
+    fn capability_matrix(&self) -> serde_json::Value {
+        serde_json::json!({
+            "supports_durable_client_tools": self.supports_durable_client_tools(),
+            "supports_durable_mcp_elicitations": self.supports_durable_mcp_elicitations(),
+            "supports_durable_tool_receipts": self.supports_durable_tool_receipts(),
+            "supports_durable_agui_runs": self.supports_durable_agui_runs(),
+            "supports_durable_a2a_bindings": self.supports_durable_a2a_bindings(),
+            "supports_durable_run_history": self.supports_durable_run_history(),
+            "supports_durable_accounting": self.supports_durable_accounting(),
+            "supports_durable_ingestion": self.supports_durable_ingestion(),
+            "supports_channel_observers": self.supports_channel_observers(),
+            "supports_durable_observers": self.supports_durable_observers(),
+            "supports_durable_agent_instances": self.supports_durable_agent_instances(),
+            "supports_durable_approvals": self.supports_durable_approvals(),
+            "supports_durable_checkpoint_resume": self.supports_durable_checkpoint_resume(),
+        })
+    }
     /// Persist before exposing a caller-tool handoff. Existing batches are never overwritten.
     async fn create_client_tool_continuation(&self, _row: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
     async fn load_client_tool_continuation(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
@@ -486,6 +508,55 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         scoped_config: &[crate::uar::domain::skills::ScopedSkillConfig],
     ) -> Result<bool>;
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>>;
+    /// Persist a skill together with the embedding space its vector belongs to.
+    /// Providers whose store enforces space identity override this; the default
+    /// ignores the space.
+    async fn save_skill_in_space(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        _space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<()> {
+        self.save_skill(skill, embedding).await
+    }
+    /// [`Self::create_skill_if_absent`] recording the vector's embedding space.
+    async fn create_skill_if_absent_in_space(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        _space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<bool> {
+        self.create_skill_if_absent(skill, embedding).await
+    }
+    /// Search only vectors produced in `space`. Rows embedded in another space
+    /// are never compared. The default ignores the space.
+    async fn search_skills_in_space(
+        &self,
+        query_vec: &[f32],
+        limit: usize,
+        _space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<SkillMatch>> {
+        self.search_skills(query_vec, limit).await
+    }
+    /// IDs of skills holding an embedding that was not produced in `space`
+    /// (another space, or one never recorded) and so need re-embedding.
+    /// Providers that do not fence embedding spaces report none.
+    async fn skill_ids_outside_space(
+        &self,
+        _space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<String>> {
+        Ok(Vec::new())
+    }
+    /// Replace only a skill's embedding and its recorded space, leaving every
+    /// other stored field untouched. Returns false when no durable row exists.
+    async fn set_skill_embedding(
+        &self,
+        _skill_id: &str,
+        _embedding: &[f32],
+        _space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<bool> {
+        Ok(false)
+    }
 
     /// List all persisted skills.
     async fn list_skills(&self) -> Result<Vec<Skill>> {

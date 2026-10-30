@@ -10,8 +10,8 @@ pub enum ObserverError {
     Conflict(&'static str),
     #[error("observer inbox is full")]
     Capacity,
-    #[error("durable observer storage is unavailable")]
-    Unavailable,
+    #[error("durable observer storage is unavailable: store capability {0} is unsupported")]
+    CapabilityUnsupported(&'static str),
     #[error("observer operation failed: {0}")]
     Internal(#[source] anyhow::Error),
 }
@@ -24,8 +24,17 @@ impl ObserverError {
             Self::NotFound => "observer_not_found",
             Self::Conflict(_) => "observer_conflict",
             Self::Capacity => "observer_capacity",
-            Self::Unavailable => "observer_unavailable",
+            Self::CapabilityUnsupported(_) => crate::uar::persistence::capabilities::CAPABILITY_UNSUPPORTED,
             Self::Internal(_) => "observer_internal",
+        }
+    }
+
+    /// The store capability a refusal names; `None` for every other failure.
+    #[must_use]
+    pub fn capability(&self) -> Option<&'static str> {
+        match self {
+            Self::CapabilityUnsupported(capability) => Some(*capability),
+            _ => None,
         }
     }
 
@@ -36,7 +45,7 @@ impl ObserverError {
             Self::NotFound => 404,
             Self::Conflict(_) => 409,
             Self::Capacity => 429,
-            Self::Unavailable => 503,
+            Self::CapabilityUnsupported(_) => 503,
             Self::Internal(_) => 500,
         }
     }

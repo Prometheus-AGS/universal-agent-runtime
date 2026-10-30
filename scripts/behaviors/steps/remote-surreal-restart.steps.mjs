@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
-import { startRemoteSurrealRuntime } from '../../acceptance/fixtures/remote-surreal-runtime.mjs';
+import { startDedicatedRuntime } from '../../acceptance/fixtures/dedicated-runtime.mjs';
 
 setDefaultTimeout(180_000);
 const RECOVERY_DEADLINE_MS = 90_000;
@@ -42,14 +42,14 @@ Given('a standalone UAR backed by a remote SurrealDB server and an owned skill',
   this.evidence = { scenario: 'ISSUE-441-REMOTE-SURREAL-RESTART', platform: process.platform,
     authentication_supplied_by_test: false, uar_restarted_by_test: false, exchanges: [], readiness: [] };
   this.evidence.fixture = {};
-  this.runtime = await startRemoteSurrealRuntime(this.evidence.fixture, this.holder);
+  this.runtime = await startDedicatedRuntime(this.evidence.fixture, this.holder, { backend: 'surreal', label: 'remote-surreal-restart' });
   this.uarPid = this.runtime.uarPid;
   this.skill = await saveSkill(this, 'before');
 });
 
 When('the SurrealDB server restarts while UAR keeps running', { timeout: 240_000 }, async function () {
   this.evidence.restart_started_at = new Date().toISOString();
-  this.runtime.restartSurreal();
+  this.runtime.restartDatabase();
   this.evidence.restart_completed_at = new Date().toISOString();
 });
 

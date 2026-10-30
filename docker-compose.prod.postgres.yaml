@@ -10,7 +10,7 @@
 #   docker-compose.prod.yaml
 #
 # Services:
-#   postgres   — PostgreSQL 17 with pgvector + pgmq + UAR migrations
+#   postgres   — PostgreSQL 18 (flint-forge image, pgvector); UAR uses its own `uar` database
 #   redis      — Redis 7 with AOF persistence
 #   surreal    — SurrealDB v2 (memory / knowledge-graph backend for UAR memory)
 #   surrealist — SurrealDB web UI (http://localhost:8080)
@@ -26,22 +26,29 @@ name: uar-prod
 
 services:
 
-  # ── PostgreSQL 17 ────────────────────────────────────────────────────────────
+  # ── PostgreSQL 18 (flint-forge data-plane image) ─────────────────────────────
+  # The image creates its own extensions in `flint` and pins pg_cron there, so
+  # UAR gets a separate role and database from scripts/acceptance/fixtures/flint-forge-uar-db.sh.
+  # See docs/operations/postgres-flint-forge.md.
   postgres:
-    image: tribehealth/uar-postgres:pg17
+    image: tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c
     container_name: uar-postgres
     restart: unless-stopped
     env_file: .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-uar}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-uar}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-changeme}
+      POSTGRES_DB: flint
+      UAR_DB_USER: ${POSTGRES_USER:-uar}
+      UAR_DB_NAME: ${POSTGRES_DB:-uar}
+      UAR_DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # PostgreSQL 18 images keep PGDATA under /var/lib/postgresql/18/docker.
+      - postgres-data:/var/lib/postgresql
+      - ./scripts/acceptance/fixtures/flint-forge-uar-db.sh:/docker-entrypoint-initdb.d/50-uar-database.sh:ro
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-uar} -d ${POSTGRES_DB:-uar}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -d ${POSTGRES_DB:-uar}"]
       interval: 10s
       timeout: 5s
       retries: 5

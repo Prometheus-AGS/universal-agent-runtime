@@ -44,6 +44,22 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 use std::panic::AssertUnwindSafe;
 
+/// `SELECT` over `settings` with `tail` appended. `updated_at` is surfaced only
+/// for rows written through the API (`source = 'api'`), so the settings
+/// manager's "has `updated_at`" ownership test matches the persisted provenance
+/// exactly and a config-driven write can never look API-owned after a restart
+/// (#389). A macro keeps the result a `&'static str`, the only form sqlx 0.9
+/// accepts without an explicit `AssertSqlSafe`.
+macro_rules! select_settings {
+    ($tail:literal) => {
+        concat!(
+            "SELECT id, settings_type_id, name, key, data, parent_id, created_at, ",
+            "CASE WHEN source = 'api' THEN updated_at END AS updated_at FROM settings ",
+            $tail
+        )
+    };
+}
+
 #[derive(Debug)]
 pub struct PostgresProvider {
     pool: PgPool,
@@ -51,6 +67,171 @@ pub struct PostgresProvider {
 }
 
 impl PostgresProvider {
+    /// Upsert a skill with its embedding and the space that embedding belongs to.
+    async fn write_skill(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        space: Option<&crate::uar::domain::knowledge::EmbeddingFingerprint>,
+    ) -> Result<()> {
+        // An EMPTY slice must become SQL NULL, not `'[]'::vector`.
+        //
+        // The column is `vector`, and pgvector rejects a zero-length
+        // value outright:
+        //
+        //     ERROR:  vector must have at least 1 dimension
+        //
+        // A host with no embedding backend — the embedded/mobile case — calls
+        // this with an empty slice by design: an embedding enriches vector
+        // search, it is not a precondition for the skill existing. Writing
+        // `'[]'` failed the whole INSERT, and because `SkillRegistry::register`
+        // logs persist failures without propagating them, the skill vanished
+        // silently. Measured: 0 rows in Postgres while memory and SurrealDB
+        // held all 3.
+        //
+        // NULL is the correct representation of "not embedded yet": the column
+        // is nullable, and vector search simply does not match the row until
+        // something backfills it.
+        let (embedding_vector, fingerprint) = skill_embedding_columns(embedding, space)?;
+        let definition = serde_json::to_value(skill)?;
+
+        sqlx::query(
+            r"
+            INSERT INTO skills (skill_id, name, description, definition, embedding, embedding_fingerprint, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+            ON CONFLICT (skill_id) DO UPDATE SET
+                name = EXCLUDED.name,
+                description = EXCLUDED.description,
+                definition = EXCLUDED.definition,
+                embedding = EXCLUDED.embedding,
+                embedding_fingerprint = EXCLUDED.embedding_fingerprint,
+                updated_at = NOW()
+            ",
+        )
+        .bind(&skill.skill_id)
+        .bind(&skill.title)
+        .bind(&skill.description)
+        .bind(definition)
+        .bind(embedding_vector)
+        .bind(fingerprint)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Insert a skill only when its ID is absent; an existing row is untouched.
+    async fn insert_skill_if_absent(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        space: Option<&crate::uar::domain::knowledge::EmbeddingFingerprint>,
+    ) -> Result<bool> {
+        let (embedding_vector, fingerprint) = skill_embedding_columns(embedding, space)?;
+        let definition = serde_json::to_value(skill)?;
+        let result = sqlx::query(
+            r"
+            INSERT INTO skills (skill_id, name, description, definition, embedding, embedding_fingerprint, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+            ON CONFLICT (skill_id) DO NOTHING
+            ",
+        )
+        .bind(&skill.skill_id)
+        .bind(&skill.title)
+        .bind(&skill.description)
+        .bind(definition)
+        .bind(embedding_vector)
+        .bind(fingerprint)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    /// Nearest-skill search over rows whose vector dimension equals the query's
+    /// (the column is unconstrained, and pgvector cannot compare unequal
+    /// dimensions). With a `space`, only vectors recorded in that exact space
+    /// are compared.
+    async fn search_skills_fenced(
+        &self,
+        query_vec: &[f32],
+        limit: usize,
+        space: Option<&crate::uar::domain::knowledge::EmbeddingFingerprint>,
+    ) -> Result<Vec<SkillMatch>> {
+        let dimensions = i32::try_from(query_vec.len())
+            .map_err(|err| anyhow::anyhow!("query dimension exceeds i32: {err}"))?;
+        let embedding_vector = Vector::from(query_vec.to_vec());
+        let limit_i64 =
+            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
+        let fingerprint = space.map(serde_json::to_value).transpose()?;
+
+        let rows = sqlx::query(
+            r"
+            SELECT definition, 1 - (embedding <=> $1) as score
+            FROM skills
+            WHERE embedding IS NOT NULL
+              AND vector_dims(embedding) = $3
+              AND ($4::jsonb IS NULL OR embedding_fingerprint = $4::jsonb)
+            ORDER BY embedding <=> $1
+            LIMIT $2
+            ",
+        )
+        .bind(embedding_vector) // bind $1
+        .bind(limit_i64)
+        .bind(dimensions)
+        .bind(fingerprint)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut matches = Vec::new();
+        for row in rows {
+            let def_val: serde_json::Value = row.try_get("definition")?;
+            let skill: Skill = serde_json::from_value(def_val)?;
+
+            // Score might be f64 or f32. pgvector operator returns f64 usually.
+            // 1 - distance.
+            let score: f64 = row.try_get("score")?;
+
+            matches.push(SkillMatch {
+                skill,
+                score: score as f32,
+            });
+        }
+        Ok(matches)
+    }
+
+    /// Adopt a pre-partition session row under its canonical key so it can be
+    /// loaded and deleted like any other. Recognised legacy keys are the bare
+    /// session id (anonymous owner only) and `owner::session`. The stored
+    /// owner and id are checked against the request before anything moves.
+    async fn adopt_legacy_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
+        let mut candidates = Vec::with_capacity(2);
+        if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
+            candidates.push(id.to_string());
+        }
+        candidates.push(legacy_session_storage_key(owner_id, id));
+        for legacy_id in candidates {
+            let Some(row) = sqlx::query("SELECT data FROM sessions WHERE id = $1")
+                .bind(&legacy_id)
+                .fetch_optional(&self.pool)
+                .await?
+            else {
+                continue;
+            };
+            let value: serde_json::Value = row.try_get("data")?;
+            let session: Session = serde_json::from_value(value)?;
+            if session.owner_id() != owner_id || session.id() != id {
+                continue;
+            }
+            self.save_session(&session).await?;
+            sqlx::query("DELETE FROM sessions WHERE id = $1")
+                .bind(&legacy_id)
+                .execute(&self.pool)
+                .await?;
+            return Ok(Some(session));
+        }
+        Ok(None)
+    }
+
+
     pub async fn new(connection_string: &str) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .max_connections(5)
@@ -593,7 +774,7 @@ impl PersistenceLayer for PostgresProvider {
         let seconds = idle_timeout.num_seconds();
         if seconds < 0 { return Ok(None); }
         let row = sqlx::query(
-            "SELECT MIN((data->>'last_activity')::timestamptz + ($1 * INTERVAL '1 second')) AS deadline              FROM sessions              WHERE (data->>'last_activity')::timestamptz + ($1 * INTERVAL '1 second') > NOW()",
+            "SELECT MIN(_uar_try_timestamptz(data->>'last_activity') + ($1 * INTERVAL '1 second')) AS deadline              FROM sessions              WHERE _uar_try_timestamptz(data->>'last_activity') + ($1 * INTERVAL '1 second') > NOW()",
         )
         .bind(seconds)
         .fetch_one(&self.pool)
@@ -638,25 +819,8 @@ impl PersistenceLayer for PostgresProvider {
             let session: Session = serde_json::from_value(val)?;
             anyhow::ensure!(session.owner_id() == owner_id && session.id() == id, "Session partition mismatch");
             Ok(Some(session))
-        } else if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
-            let legacy = sqlx::query("SELECT data FROM sessions WHERE id = $1")
-                .bind(id)
-                .fetch_optional(&self.pool)
-                .await?;
-            let Some(legacy) = legacy else {
-                return Ok(None);
-            };
-            let val: serde_json::Value = legacy.try_get("data")?;
-            let session: Session = serde_json::from_value(val)?;
-            if session.owner_id() != crate::session::ANONYMOUS_SESSION_OWNER || session.id() != id { return Ok(None); }
-            self.save_session(&session).await?;
-            sqlx::query("DELETE FROM sessions WHERE id = $1")
-                .bind(id)
-                .execute(&self.pool)
-                .await?;
-            Ok(Some(session))
         } else {
-            Ok(None)
+            self.adopt_legacy_session(owner_id, id).await
         }
     }
 
@@ -717,38 +881,50 @@ impl PersistenceLayer for PostgresProvider {
         &self,
         cutoff: chrono::DateTime<chrono::Utc>,
     ) -> Result<Vec<(String, String)>> {
+        // Expiry is decided in SQL from the stored `last_activity`. Rows whose
+        // timestamp is unreadable are returned flagged so they are counted, not
+        // silently dropped and not allowed to fail the scan.
         let rows = sqlx::query(
-            "SELECT id, data FROM sessions",
+            r"
+            SELECT id, data, (last_activity IS NULL) AS malformed
+            FROM (
+                SELECT id, data, _uar_try_timestamptz(data->>'last_activity') AS last_activity
+                FROM sessions
+            ) AS scanned
+            WHERE last_activity IS NULL OR last_activity < $1
+            ORDER BY id
+            ",
         )
+        .bind(cutoff)
         .fetch_all(&self.pool)
         .await?;
 
-        let mut expired = Vec::new();
+        let mut expired = Vec::with_capacity(rows.len());
+        let mut malformed = 0_usize;
         for row in rows {
             let storage_id: String = row.try_get("id")?;
+            let unreadable_timestamp: bool = row.try_get("malformed")?;
             let data: serde_json::Value = row.try_get("data")?;
-            let Some(last_activity_str) = data.get("last_activity").and_then(|v| v.as_str()) else {
-                continue;
-            };
-            let Ok(last_activity) = chrono::DateTime::parse_from_rfc3339(last_activity_str) else {
-                continue;
-            };
-            if last_activity.with_timezone(&chrono::Utc) < cutoff {
-                // Session keys include a length-prefixed owner and may carry
-                // the principal-session namespace. Read logical identity from
-                // the persisted session, then fence it against its storage key.
-                if let (Some(owner_id), Some(session_id)) = (
-                    data.get("owner_id").and_then(serde_json::Value::as_str),
-                    data.get("id").and_then(serde_json::Value::as_str),
-                ) {
-                    if crate::uar::persistence::session_storage_key(owner_id, session_id)
-                        != storage_id
-                    {
-                        continue;
-                    }
+            let session_id = data.get("id").and_then(serde_json::Value::as_str);
+            let owner_id = data
+                .get("owner_id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(crate::session::ANONYMOUS_SESSION_OWNER);
+            match session_id {
+                Some(session_id)
+                    if !unreadable_timestamp
+                        && session_storage_id_matches(&storage_id, owner_id, session_id) =>
+                {
                     expired.push((owner_id.to_string(), session_id.to_string()));
                 }
+                _ => malformed += 1,
             }
+        }
+        if malformed > 0 {
+            tracing::warn!(
+                malformed,
+                "skipped persisted sessions with an unreadable last_activity or a storage key that does not match the stored owner and id"
+            );
         }
         Ok(expired)
     }
@@ -900,75 +1076,31 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()> {
-        // An EMPTY slice must become SQL NULL, not `'[]'::vector`.
-        //
-        // The column is `vector(384)`, and pgvector rejects a zero-length
-        // value outright:
-        //
-        //     ERROR:  vector must have at least 1 dimension
-        //
-        // A host with no embedding backend — the embedded/mobile case — calls
-        // this with an empty slice by design: an embedding enriches vector
-        // search, it is not a precondition for the skill existing. Writing
-        // `'[]'` failed the whole INSERT, and because `SkillRegistry::register`
-        // logs persist failures without propagating them, the skill vanished
-        // silently. Measured: 0 rows in Postgres while memory and SurrealDB
-        // held all 3.
-        //
-        // NULL is the correct representation of "not embedded yet": the column
-        // is nullable, and vector search simply does not match the row until
-        // something backfills it.
-        let embedding_vector = if embedding.is_empty() {
-            None
-        } else {
-            Some(Vector::from(embedding.to_vec()))
-        };
-        let definition = serde_json::to_value(skill)?;
+        // The embedding's space is unknown here, so none is recorded: the row is
+        // excluded from space-fenced search until it is re-embedded in a known space.
+        self.write_skill(skill, embedding, None).await
+    }
 
-        sqlx::query(
-            r"
-            INSERT INTO skills (skill_id, name, description, definition, embedding, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-            ON CONFLICT (skill_id) DO UPDATE SET
-                name = EXCLUDED.name,
-                description = EXCLUDED.description,
-                definition = EXCLUDED.definition,
-                embedding = EXCLUDED.embedding,
-                updated_at = NOW()
-            ",
-        )
-        .bind(&skill.skill_id)
-        .bind(&skill.title)
-        .bind(&skill.description)
-        .bind(definition)
-        .bind(embedding_vector)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+    async fn save_skill_in_space(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<()> {
+        self.write_skill(skill, embedding, Some(space)).await
     }
 
     async fn create_skill_if_absent(&self, skill: &Skill, embedding: &[f32]) -> Result<bool> {
-        let embedding_vector = if embedding.is_empty() {
-            None
-        } else {
-            Some(Vector::from(embedding.to_vec()))
-        };
-        let definition = serde_json::to_value(skill)?;
-        let result = sqlx::query(
-            r"
-            INSERT INTO skills (skill_id, name, description, definition, embedding, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-            ON CONFLICT (skill_id) DO NOTHING
-            ",
-        )
-        .bind(&skill.skill_id)
-        .bind(&skill.title)
-        .bind(&skill.description)
-        .bind(definition)
-        .bind(embedding_vector)
-        .execute(&self.pool)
-        .await?;
-        Ok(result.rows_affected() == 1)
+        self.insert_skill_if_absent(skill, embedding, None).await
+    }
+
+    async fn create_skill_if_absent_in_space(
+        &self,
+        skill: &Skill,
+        embedding: &[f32],
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<bool> {
+        self.insert_skill_if_absent(skill, embedding, Some(space)).await
     }
 
     async fn update_skill_selection(
@@ -991,38 +1123,58 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>> {
-        let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 =
-            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
+        self.search_skills_fenced(query_vec, limit, None).await
+    }
 
+    async fn search_skills_in_space(
+        &self,
+        query_vec: &[f32],
+        limit: usize,
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<SkillMatch>> {
+        self.search_skills_fenced(query_vec, limit, Some(space)).await
+    }
+
+    async fn skill_ids_outside_space(
+        &self,
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<String>> {
         let rows = sqlx::query(
             r"
-            SELECT definition, 1 - (embedding <=> $1) as score
-            FROM skills
-            ORDER BY embedding <=> $1
-            LIMIT $2
+            SELECT skill_id FROM skills
+            WHERE embedding IS NOT NULL
+              AND embedding_fingerprint IS DISTINCT FROM $1
+            ORDER BY skill_id
             ",
         )
-        .bind(embedding_vector) // bind $1
-        .bind(limit_i64)
+        .bind(serde_json::to_value(space)?)
         .fetch_all(&self.pool)
         .await?;
+        rows.into_iter()
+            .map(|row| row.try_get("skill_id").map_err(anyhow::Error::from))
+            .collect()
+    }
 
-        let mut matches = Vec::new();
-        for row in rows {
-            let def_val: serde_json::Value = row.try_get("definition")?;
-            let skill: Skill = serde_json::from_value(def_val)?;
-
-            // Score might be f64 or f32. pgvector operator returns f64 usually.
-            // 1 - distance.
-            let score: f64 = row.try_get("score")?;
-
-            matches.push(SkillMatch {
-                skill,
-                score: score as f32,
-            });
-        }
-        Ok(matches)
+    async fn set_skill_embedding(
+        &self,
+        skill_id: &str,
+        embedding: &[f32],
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<bool> {
+        let (embedding_vector, fingerprint) = skill_embedding_columns(embedding, Some(space))?;
+        let result = sqlx::query(
+            r"
+            UPDATE skills
+            SET embedding = $2, embedding_fingerprint = $3, updated_at = NOW()
+            WHERE skill_id = $1
+            ",
+        )
+        .bind(skill_id)
+        .bind(embedding_vector)
+        .bind(fingerprint)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() == 1)
     }
 
     async fn list_skills(&self) -> Result<Vec<Skill>> {
@@ -1233,29 +1385,22 @@ impl PersistenceLayer for PostgresProvider {
         Ok(())
     }
 
-    // Memory System — delegates to MemoryService (backed by surreal-memory library)
-    // These stubs satisfy the PersistenceLayer trait. Real memory operations should
-    // go through `AppState::memory_service`.
-    async fn save_memory(&self, memory: &crate::uar::domain::memory::Memory) -> Result<()> {
-        tracing::debug!(
-            "save_memory stub (postgres) — use AppState::memory_service for real persistence"
-        );
-        let _ = memory;
-        Ok(())
+    // A host using PersistenceLayer alone has not attached MemoryService. Memory
+    // lives in the vendored Surreal memory backend, so Postgres refuses instead
+    // of acknowledging a lost write or an empty search (same contract as the
+    // SurrealDB provider).
+    async fn save_memory(&self, _memory: &crate::uar::domain::memory::Memory) -> Result<()> {
+        anyhow::bail!("memory_service_required: attach the runtime MemoryService before saving memory")
     }
 
     async fn search_memory(
         &self,
-        agent_id: Option<&str>,
-        query_vec: &[f32],
-        limit: usize,
-        min_score: f32,
+        _agent_id: Option<&str>,
+        _query_vec: &[f32],
+        _limit: usize,
+        _min_score: f32,
     ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
-        tracing::debug!(
-            "search_memory stub (postgres) — use AppState::memory_service for real queries"
-        );
-        let _ = (agent_id, query_vec, limit, min_score);
-        Ok(vec![])
+        anyhow::bail!("memory_service_required: attach the runtime MemoryService before searching memory")
     }
 
     // =========================================================================
@@ -1705,14 +1850,15 @@ impl PersistenceLayer for PostgresProvider {
 
         sqlx::query(
             r"
-            INSERT INTO settings (id, settings_type_id, name, key, data, parent_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO settings (id, settings_type_id, name, key, data, parent_id, created_at, updated_at, source)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (key) DO UPDATE SET
                 settings_type_id = EXCLUDED.settings_type_id,
                 name             = EXCLUDED.name,
                 data             = EXCLUDED.data,
                 parent_id        = EXCLUDED.parent_id,
-                updated_at       = now()
+                updated_at       = EXCLUDED.updated_at,
+                source           = EXCLUDED.source
             ",
         )
         .bind(setting.id)
@@ -1723,6 +1869,7 @@ impl PersistenceLayer for PostgresProvider {
         .bind(setting.parent_id)
         .bind(setting.created_at)
         .bind(setting.updated_at)
+        .bind(setting_source_for(setting))
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -1732,9 +1879,7 @@ impl PersistenceLayer for PostgresProvider {
         &self,
         key: &str,
     ) -> Result<Option<crate::uar::settings::schema::Settings>> {
-        let row = sqlx::query(
-            "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at FROM settings WHERE key = $1",
-        )
+        let row = sqlx::query(select_settings!("WHERE key = $1"))
         .bind(key)
         .fetch_optional(&self.pool)
         .await?;
@@ -1752,7 +1897,7 @@ impl PersistenceLayer for PostgresProvider {
         selection: &crate::uar::domain::policy::ResourceSelection,
     ) -> Result<bool> {
         let next = presentations::global_policy_with_presentations(expected, selection)?;
-        let result = sqlx::query("UPDATE settings SET data = $1, updated_at = now() WHERE key = 'run_policy.global' AND data = $2")
+        let result = sqlx::query("UPDATE settings SET data = $1, source = 'api', updated_at = now() WHERE key = 'run_policy.global' AND data = $2")
             .bind(next).bind(expected).execute(&self.pool).await?;
         Ok(result.rows_affected() == 1)
     }
@@ -1766,10 +1911,7 @@ impl PersistenceLayer for PostgresProvider {
         let rows = match (type_key, parent_id) {
             (Some(tk), Some(pid)) => {
                 let prefix = format!("{tk}.%");
-                sqlx::query(
-                    "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
-                     FROM settings WHERE key LIKE $1 AND parent_id = $2 ORDER BY key",
-                )
+                sqlx::query(select_settings!("WHERE key LIKE $1 AND parent_id = $2 ORDER BY key"))
                 .bind(&prefix)
                 .bind(pid)
                 .fetch_all(&self.pool)
@@ -1777,27 +1919,22 @@ impl PersistenceLayer for PostgresProvider {
             }
             (Some(tk), None) => {
                 let prefix = format!("{tk}.%");
-                sqlx::query(
-                    "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
-                     FROM settings WHERE key LIKE $1 ORDER BY key",
-                )
+                sqlx::query(select_settings!("WHERE key LIKE $1 ORDER BY key"))
                 .bind(&prefix)
                 .fetch_all(&self.pool)
                 .await?
             }
-            (None, Some(pid)) => sqlx::query(
-                "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
-                     FROM settings WHERE parent_id = $1 ORDER BY key",
-            )
-            .bind(pid)
-            .fetch_all(&self.pool)
-            .await?,
-            (None, None) => sqlx::query(
-                "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
-                     FROM settings ORDER BY key",
-            )
-            .fetch_all(&self.pool)
-            .await?,
+            (None, Some(pid)) => {
+                sqlx::query(select_settings!("WHERE parent_id = $1 ORDER BY key"))
+                .bind(pid)
+                .fetch_all(&self.pool)
+                .await?
+            }
+            (None, None) => {
+                sqlx::query(select_settings!("ORDER BY key"))
+                    .fetch_all(&self.pool)
+                    .await?
+            }
         };
 
         rows.into_iter().map(pg_row_to_setting).collect()
@@ -1916,6 +2053,46 @@ impl PersistenceLayer for PostgresProvider {
 // Postgres helpers
 // =============================================================================
 
+/// Column values for a skill's embedding: an EMPTY slice is SQL NULL (and has
+/// no recorded space), otherwise the vector and the space it was produced in.
+fn skill_embedding_columns(
+    embedding: &[f32],
+    space: Option<&crate::uar::domain::knowledge::EmbeddingFingerprint>,
+) -> Result<(Option<Vector>, Option<serde_json::Value>)> {
+    if embedding.is_empty() {
+        return Ok((None, None));
+    }
+    let fingerprint = space.map(serde_json::to_value).transpose()?;
+    Ok((Some(Vector::from(embedding.to_vec())), fingerprint))
+}
+
+/// Pre-partition session key form `owner::session`.
+fn legacy_session_storage_key(owner_id: &str, session_id: &str) -> String {
+    format!("{owner_id}::{session_id}")
+}
+
+/// Whether `storage_id` is a recognised key for the session identified by the
+/// persisted `owner_id` and `session_id`: the canonical partitioned key, the
+/// bare legacy id (anonymous owner only), or the legacy `owner::session` key.
+/// The logical identity comes from the stored document, so no key is ever
+/// split and decoded ambiguously.
+fn session_storage_id_matches(storage_id: &str, owner_id: &str, session_id: &str) -> bool {
+    storage_id == crate::uar::persistence::session_storage_key(owner_id, session_id)
+        || (owner_id == crate::session::ANONYMOUS_SESSION_OWNER && storage_id == session_id)
+        || storage_id == legacy_session_storage_key(owner_id, session_id)
+}
+
+/// Provenance persisted for a setting write: the manager marks API mutations by
+/// supplying `updated_at`; bootstrap and config reconciliation leave it unset.
+/// This is the same rule SurrealDB applies by storing `updated_at` verbatim.
+fn setting_source_for(setting: &crate::uar::settings::schema::Settings) -> &'static str {
+    if setting.updated_at.is_some() {
+        "api"
+    } else {
+        "config"
+    }
+}
+
 fn pg_row_to_setting(row: sqlx::postgres::PgRow) -> Result<crate::uar::settings::schema::Settings> {
     let id: uuid::Uuid = row.try_get("id")?;
     let settings_type_id: uuid::Uuid = row.try_get("settings_type_id")?;
@@ -1970,4 +2147,57 @@ fn validate_setting_data(
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setting(updated_at: Option<chrono::DateTime<chrono::Utc>>) -> crate::uar::settings::schema::Settings {
+        crate::uar::settings::schema::Settings {
+            id: uuid::Uuid::nil(),
+            settings_type_id: uuid::Uuid::nil(),
+            name: "Port".to_string(),
+            key: "server.port".to_string(),
+            data: serde_json::json!(8080),
+            parent_id: None,
+            created_at: chrono::Utc::now(),
+            updated_at,
+        }
+    }
+
+    #[test]
+    fn config_write_has_config_source_and_api_write_has_api_source() {
+        assert_eq!(setting_source_for(&setting(None)), "config");
+        assert_eq!(setting_source_for(&setting(Some(chrono::Utc::now()))), "api");
+    }
+
+    #[test]
+    fn session_storage_id_accepts_canonical_bare_anonymous_and_legacy_owner_keys() {
+        let canonical = crate::uar::persistence::session_storage_key("alice", "s1");
+        assert!(session_storage_id_matches(&canonical, "alice", "s1"));
+        assert!(session_storage_id_matches("alice::s1", "alice", "s1"));
+        assert!(session_storage_id_matches("s1", crate::session::ANONYMOUS_SESSION_OWNER, "s1"));
+    }
+
+    #[test]
+    fn session_storage_id_rejects_a_key_belonging_to_another_identity() {
+        assert!(!session_storage_id_matches("s1", "alice", "s1"));
+        assert!(!session_storage_id_matches("alice::s2", "alice", "s1"));
+        assert!(!session_storage_id_matches("bob::s1", "alice", "s1"));
+    }
+
+    #[test]
+    fn empty_embedding_has_no_vector_and_no_recorded_space() {
+        let space = crate::uar::domain::knowledge::EmbeddingFingerprint {
+            backend: "test".to_string(),
+            model: "m".to_string(),
+            dimension: 3,
+        };
+        let (vector, fingerprint) = skill_embedding_columns(&[], Some(&space)).unwrap();
+        assert!(vector.is_none() && fingerprint.is_none());
+        let (vector, fingerprint) = skill_embedding_columns(&[0.1, 0.2, 0.3], Some(&space)).unwrap();
+        assert!(vector.is_some());
+        assert_eq!(fingerprint.unwrap()["dimension"], 3);
+    }
 }

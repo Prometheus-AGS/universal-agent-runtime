@@ -7,6 +7,7 @@ use crate::uar::{
     runtime::{actor::messages::ActorOwner, instance::{AgentInstanceController, InstanceCommandStatus, InstanceRecovery}},
     security::claims::ScheduleOwnerGrant,
 };
+use crate::uar::persistence::capabilities::{DURABLE_ACCOUNTING, DURABLE_AGENT_INSTANCES, DURABLE_OBSERVERS};
 use super::{calendar, ScheduleError};
 
 /// Trusted host control plane. The observer wakeup invokes `scan_once`; it
@@ -34,8 +35,9 @@ impl ScheduleController {
 
     fn require_store(&self) -> Result<(), ScheduleError> {
         self.catalog.require_schedule_store()?;
-        self.instances.require_store().map_err(|_| ScheduleError::Unsupported)?;
-        if !self.instances.store.supports_durable_accounting() || !self.instances.store.supports_durable_observers() { return Err(ScheduleError::Unsupported); }
+        self.instances.require_store().map_err(|_| ScheduleError::CapabilityUnsupported(DURABLE_AGENT_INSTANCES))?;
+        if !self.instances.store.supports_durable_accounting() { return Err(ScheduleError::CapabilityUnsupported(DURABLE_ACCOUNTING)); }
+        if !self.instances.store.supports_durable_observers() { return Err(ScheduleError::CapabilityUnsupported(DURABLE_OBSERVERS)); }
         Ok(())
     }
 

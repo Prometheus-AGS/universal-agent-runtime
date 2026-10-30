@@ -157,5 +157,8 @@ fn forbidden() -> Response {
 
 fn error_response(error: ChannelObserverError) -> Response {
     let status = StatusCode::from_u16(error.status()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    if let ChannelObserverError::CapabilityUnsupported(capability) = &error {
+        return (status, Json(crate::uar::persistence::capabilities::refusal_body(capability))).into_response();
+    }
     (status, Json(json!({"error":{"code":error.code(),"message":error.to_string()}}))).into_response()
 }

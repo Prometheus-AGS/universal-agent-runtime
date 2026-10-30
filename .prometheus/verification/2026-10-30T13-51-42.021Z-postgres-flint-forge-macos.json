@@ -1,0 +1,194 @@
+[
+  {
+    "description": "  UAR keeps its data in its own `uar` database on a flint-forge PostgreSQL 18\n  server and behaves the same across restarts as it does on SurrealDB.",
+    "elements": [
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;a-config-driven-setting-follows-the-config-file-across-restarts-(#389)",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "A config-driven setting follows the config file across restarts (#389)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 341486
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 19988401369
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with shutdown timeout 31",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:78"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4530002302
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "UAR restarts with shutdown timeout 32",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4538249434
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "UAR restarts with shutdown timeout 33",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10806108
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the shutdown timeout setting is 33 from the config file",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40015136
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 18,
+            "name": "I override the shutdown timeout to 45 through the API",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4599496254
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "UAR restarts with shutdown timeout 34",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 19920197
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 20,
+            "name": "the shutdown timeout setting stays 45 and is reported as drift",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:160"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 19400638
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 21,
+            "name": "I reset the shutdown timeout setting",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:168"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4586135336
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "UAR restarts with shutdown timeout 34",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9289291
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 23,
+            "name": "the shutdown timeout setting is 34 from the config file",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 757410005
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS80ODc2OGU1Yy0xZTg4LTRiNzUtYTc3Zi0zOWQ5MzM3ODUyMmUuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "uar-on-the-flint-forge-postgresql-18-image",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "UAR on the flint-forge PostgreSQL 18 image",
+    "tags": [
+      {
+        "name": "@postgres",
+        "line": 1
+      },
+      {
+        "name": "@flint-forge",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/postgres-flint-forge.feature"
+  }
+]

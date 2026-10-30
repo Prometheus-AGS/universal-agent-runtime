@@ -1,0 +1,612 @@
+[
+  {
+    "description": "  UAR keeps its data in its own `uar` database on a flint-forge PostgreSQL 18\n  server and behaves the same across restarts as it does on SurrealDB.",
+    "elements": [
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;uar-starts-on-postgresql-18-and-keeps-its-data-across-a-restart",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "UAR starts on PostgreSQL 18 and keeps its data across a restart",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 943723,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'name')\n    at startRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:61:45)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:71:9)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:70"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "readiness reports the postgres persistence backend as ok",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:96"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I save a skill and an agent",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:105"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "UAR restarts on the same database",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the skill and the agent are still there",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 226329
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;a-config-driven-setting-follows-the-config-file-across-restarts-(#389)",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "A config-driven setting follows the config file across restarts (#389)",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 325649,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'name')\n    at startRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:61:45)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:75:9)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with shutdown timeout 31",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:74"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "UAR restarts with shutdown timeout 32",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "UAR restarts with shutdown timeout 33",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the shutdown timeout setting is 33 from the config file",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 18,
+            "name": "I override the shutdown timeout to 45 through the API",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "UAR restarts with shutdown timeout 34",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 20,
+            "name": "the shutdown timeout setting stays 45 and is reported as drift",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:153"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 21,
+            "name": "I reset the shutdown timeout setting",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:161"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 22,
+            "name": "the shutdown timeout setting is 34 from the config file",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 75509
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;persisted-sessions-expire-after-their-ttl-(#390)",
+        "keyword": "Scenario",
+        "line": 24,
+        "name": "Persisted sessions expire after their TTL (#390)",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 234294,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'name')\n    at startRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:61:45)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:79:9)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 25,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with a 20 second session TTL and the stub model",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:78"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 26,
+            "name": "I chat in a new session",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:165"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 27,
+            "name": "the session is listed for its owner",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:178"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 28,
+            "name": "the session disappears within 150 seconds",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:182"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 29,
+            "name": "it stays gone after UAR restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:194"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 68661
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;memory-is-kept-by-the-memory-service,-not-discarded-(#393)",
+        "keyword": "Scenario",
+        "line": 31,
+        "name": "Memory is kept by the memory service, not discarded (#393)",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 193892,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'name')\n    at startRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:61:45)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:84:9)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 32,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with memory enabled",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:82"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 33,
+            "name": "I save a memory record",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:202"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 34,
+            "name": "UAR restarts on the same database",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 35,
+            "name": "the memory record is still readable",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:211"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 36,
+            "name": "the capability matrix names the memory store",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:216"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 56699
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;skills-work-with-a-1024-dimension-embedder-(#395)",
+        "keyword": "Scenario",
+        "line": 38,
+        "name": "Skills work with a 1024-dimension embedder (#395)",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 7104527,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'name')\n    at startRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:61:45)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:91:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 39,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with a 1024-dimension embedder",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:87"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 40,
+            "name": "I save a skill",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:224"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 41,
+            "name": "skill matching finds it",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:239"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 42,
+            "name": "UAR restarts on the same database",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:119"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 43,
+            "name": "skill matching still finds it",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:241"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 117195
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;unsupported-durable-features-are-reported-and-refused-(#394)",
+        "keyword": "Scenario",
+        "line": 45,
+        "name": "Unsupported durable features are reported and refused (#394)",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 197039,
+              "error_message": "TypeError: Cannot read properties of undefined (reading 'name')\n    at startRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:61:45)\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/postgres-flint-forge.steps.mjs:71:9)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 46,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:70"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 47,
+            "name": "the capability matrix reports the team durability features as unsupported",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:249"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 48,
+            "name": "a follow-up request is refused with capability_unsupported",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:256"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40864
+            },
+            "keyword": "After",
+            "hidden": true
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "uar-on-the-flint-forge-postgresql-18-image",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "UAR on the flint-forge PostgreSQL 18 image",
+    "tags": [
+      {
+        "name": "@postgres",
+        "line": 1
+      },
+      {
+        "name": "@flint-forge",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/postgres-flint-forge.feature"
+  }
+]

@@ -31,8 +31,11 @@ fn scope(user: &UserContext, headers: &HeaderMap) -> Result<(ActorOwner, String)
 pub(crate) fn error(error: ScheduleError) -> Response {
     let status = match error { ScheduleError::Invalid(_) => StatusCode::BAD_REQUEST,
         ScheduleError::Conflict(_) => StatusCode::CONFLICT, ScheduleError::NotFound => StatusCode::NOT_FOUND,
-        ScheduleError::Denied => StatusCode::FORBIDDEN, ScheduleError::Unsupported | ScheduleError::Storage => StatusCode::SERVICE_UNAVAILABLE };
-    (status, Json(json!({"error":{"code":error.code()}}))).into_response()
+        ScheduleError::Denied => StatusCode::FORBIDDEN, ScheduleError::Unsupported | ScheduleError::CapabilityUnsupported(_) | ScheduleError::Storage => StatusCode::SERVICE_UNAVAILABLE };
+    match error.capability() {
+        Some(capability) => (status, Json(crate::uar::persistence::capabilities::refusal_body(capability))).into_response(),
+        None => (status, Json(json!({"error":{"code":error.code()}}))).into_response(),
+    }
 }
 
 async fn create(State(controller): State<Arc<ScheduleController>>, Extension(user): Extension<UserContext>,

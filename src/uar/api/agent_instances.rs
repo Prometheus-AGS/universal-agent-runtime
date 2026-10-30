@@ -381,6 +381,10 @@ fn scope(user: &UserContext, headers: &HeaderMap) -> Result<(ActorOwner, String)
 fn error_response(error: AgentInstanceError) -> Response {
     let status =
         StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-    let code = error.code();
-    (status, Json(json!({"error": {"code": code}}))).into_response()
+    match error.capability() {
+        Some(capability) => {
+            (status, Json(crate::uar::persistence::capabilities::refusal_body(capability))).into_response()
+        }
+        None => (status, Json(json!({"error": {"code": error.code()}}))).into_response(),
+    }
 }
