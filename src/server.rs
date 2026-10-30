@@ -83,6 +83,7 @@ use crate::uar::{
 };
 
 type ShutdownCleanup = Arc<dyn Fn() + Send + Sync + 'static>;
+mod lifecycle_auto_reconnect;
 mod lifecycle_control;
 mod lifecycle_reconnect;
 pub use lifecycle_control::{LifecycleRequest, ServerLifecycleControl};
@@ -115,6 +116,8 @@ const SHUTDOWN_GRACEFUL_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=graceful_complete
 struct ShutdownCoordinator {
     supervisor: uar::runtime::lifecycle::RuntimeSupervisor,
     control: ServerLifecycleControl,
+    /// A sidecar host owns reconnect decisions; a standalone server drives its own.
+    host_owns_reconnect: bool,
     started: tokio_util::sync::CancellationToken,
     cleanup_complete: tokio_util::sync::CancellationToken,
     cleanup_failure: Arc<Mutex<Vec<String>>>,
@@ -126,6 +129,7 @@ impl ShutdownCoordinator {
         Self {
             supervisor: uar::runtime::lifecycle::RuntimeSupervisor::new("uar-host"),
             control: ServerLifecycleControl::default(),
+            host_owns_reconnect: false,
             started: tokio_util::sync::CancellationToken::new(),
             cleanup_complete: tokio_util::sync::CancellationToken::new(),
             cleanup_failure: Arc::new(Mutex::new(Vec::new())),
@@ -304,6 +308,7 @@ async fn start_server_with_listener(
     control: Option<ServerLifecycleControl>,
 ) -> anyhow::Result<()> {
     let mut shutdown_coordinator = ShutdownCoordinator::new(enforce_process_deadline);
+    shutdown_coordinator.host_owns_reconnect = control.is_some();
     shutdown_coordinator.control = control.unwrap_or_default();
     shutdown_coordinator.control.attach(shutdown_coordinator.supervisor.handle());
     // Windows service/sidecar hosts own their SCM/inherited-input cancellation.
@@ -995,12 +1000,17 @@ async fn run_server_with_listener(
         shutdown_coordinator.control.register_bus("realtime", Arc::clone(&bus));
         let reconnect_pair = lifecycle_reconnect::ReconnectPair::new(persistence_reconnect_transport.clone(), Arc::clone(&bus));
         if let Some(transport) = persistence_reconnect_transport.take() {
-            shutdown_coordinator.control.register_transport("persistence", transport);
+            shutdown_coordinator.control.register_transport("persistence", Arc::clone(&transport));
             let pair = Arc::clone(&reconnect_pair);
             shutdown_coordinator.supervisor.register_reconnect("persistence", move |generation| {
                 let pair = Arc::clone(&pair);
                 async move { pair.reconnect(true, generation).await }
             }).await?;
+            if !shutdown_coordinator.host_owns_reconnect {
+                lifecycle_auto_reconnect::start(&shutdown_coordinator.supervisor, "persistence",
+                    ["persistence", "realtime"], transport).await?;
+                startup_checkpoint!("persistence auto-reconnect registration");
+            }
         }
         shutdown_coordinator.supervisor.register_reconnect("realtime", move |generation| {
             let pair = Arc::clone(&reconnect_pair);
@@ -1554,7 +1564,7 @@ async fn run_server_with_listener(
             },
         );
         shutdown_coordinator.control.register_transport("memory", Arc::clone(&memory_transport));
-        let reconnect_pair = lifecycle_reconnect::ReconnectPair::new(Some(memory_transport), Arc::clone(&lifecycle));
+        let reconnect_pair = lifecycle_reconnect::ReconnectPair::new(Some(Arc::clone(&memory_transport)), Arc::clone(&lifecycle));
         let subscription_reconnect = Arc::clone(&reconnect_pair);
         shutdown_coordinator.supervisor.register_reconnect("memory-realtime", move |generation| {
             let pair = Arc::clone(&subscription_reconnect);
@@ -1572,6 +1582,11 @@ async fn run_server_with_listener(
             async move { pair.reconnect(true, generation).await }
         }).await?;
         startup_checkpoint!("memory reconnect registration");
+        if !shutdown_coordinator.host_owns_reconnect {
+            lifecycle_auto_reconnect::start(&shutdown_coordinator.supervisor, "memory",
+                ["memory", "memory-realtime"], memory_transport).await?;
+            startup_checkpoint!("memory auto-reconnect registration");
+        }
         let ttl_scope = shutdown_coordinator.supervisor.register("memory-expiry", "uar-host").await?;
         ttl_scope.declare_dependencies(["memory", "memory-realtime"])?;
         startup_checkpoint!("memory expiry worker registration");
@@ -3637,27 +3652,35 @@ async fn uar_config_reload_handler(
 
 /// Readiness probe — verifies core dependencies are operational.
 /// Returns 200 if all configured dependencies are reachable, 503 otherwise.
+///
+/// `persistence` names the configured backend. The legacy `postgres` key is
+/// kept only for a PostgreSQL backend. A failure's cause is logged, never
+/// returned, because it can carry internal endpoint detail.
 pub(crate) async fn readiness_handler(State(state): State<AppState>) -> Response {
     let mut checks = serde_json::Map::new();
     let mut all_ok = true;
 
-    // Check PostgreSQL via persistence layer — attempt a lightweight operation
-    match &state.persistence {
-        Some(p) => {
-            // Use list_skills with limit 0 as a lightweight connectivity test
-            match p.list_skills().await {
-                Ok(_) => {
-                    checks.insert("postgres".into(), json!("ok"));
-                }
-                Err(_) => {
-                    checks.insert("postgres".into(), json!("failed"));
-                    all_ok = false;
-                }
+    // Check the configured persistence backend with a lightweight read.
+    let backend = state.config.persistence.provider.as_str();
+    let persistence_status = match &state.persistence {
+        Some(p) => match p.list_skills().await {
+            Ok(_) => "ok",
+            Err(error) => {
+                tracing::warn!(name: "readiness.persistence_failed", backend, error = %error,
+                    "Readiness persistence check failed");
+                all_ok = false;
+                "failed"
             }
-        }
-        None => {
-            checks.insert("postgres".into(), json!("not_configured"));
-        }
+        },
+        None => "not_configured",
+    };
+    checks.insert(
+        "persistence".into(),
+        json!({"backend": backend, "status": persistence_status}),
+    );
+    // Startup routes every provider other than memory and Surreal to PostgreSQL.
+    if !matches!(backend, "memory" | "surreal" | "surrealdb") {
+        checks.insert("postgres".into(), json!(persistence_status));
     }
 
     // Check SurrealDB via memory service

@@ -601,6 +601,18 @@ completion evidence. Defer broader, specialized, release, and feature-matrix
 checks until the applicable final boundary.
 Read the skill's phase-gated verification reference before the first Cargo command.
 
+### Clean compile: no errors, no warnings — 2026-10-30
+
+Operator instruction, set during the issue #441 work: a build must finish with
+no errors and no warnings. This covers every crate compiled from this
+repository, including the path-patched crates under `vendor/patches/` (for
+example `gemm-common-0.19.0` and `surrealdb-lifecycle`), and warnings that
+existed before the current change. Fix a warning at its source. Where the
+flagged code is intentional, annotate it with
+`#[expect(lint, reason = "...")]`. Never silence warnings with a blanket
+`allow`, a lowered lint level, or `RUSTFLAGS`. A build step that ends with a
+warning is a failed gate step: fix it and rerun only that step.
+
 ## Manual verification: authentication belongs outside tests — 2026-10-26
 Operator instruction: NO functional/manual verification test may require authentication. External infrastructure owns authentication. Test scripts must not require, mint, renew, copy or send JWTs, bearer tokens, API authentication keys, or login credentials. Run behavior scripts against the externally provisioned local identity endpoint; UAR_BASE_URL, model and nonsecret workspace selectors are sufficient. Stable owner context may be provided by the external host/proxy so persisted data remains accessible, but authentication plumbing must never become a test step, scenario, approval or blocker presented to the operator. Do not weaken production/remote identity boundaries or remove unrelated security regression coverage. Preserve actual product assertions. This supersedes earlier manual-fixture JWT instructions and token-expiry gates.
 

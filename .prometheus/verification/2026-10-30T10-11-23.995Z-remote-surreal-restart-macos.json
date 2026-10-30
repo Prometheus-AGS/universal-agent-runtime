@@ -1,0 +1,104 @@
+[
+  {
+    "description": "  A standalone UAR backed by a separate SurrealDB server must become ready\n  again by itself after that server restarts, without restarting UAR (#441).",
+    "elements": [
+      {
+        "description": "",
+        "id": "uar-recovers-when-its-remote-surrealdb-server-restarts;readiness-and-persisted-data-return-after-a-surrealdb-restart",
+        "keyword": "Scenario",
+        "line": 5,
+        "name": "Readiness and persisted data return after a SurrealDB restart",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 9059766848,
+              "error_message": "Error: UAR readiness (log /Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/remote-surreal-restart/b063c425-6147-4850-af75-156528dda58c/uar.log): process exited before it was ready\n    at waitFor (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/remote-surreal-runtime.mjs:54:25)\n    at async startRemoteSurrealRuntime (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/remote-surreal-runtime.mjs:123:3)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/remote-surreal-restart.steps.mjs:45:18)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 6,
+            "name": "a standalone UAR backed by a remote SurrealDB server and an owned skill",
+            "match": {
+              "location": "scripts/behaviors/steps/remote-surreal-restart.steps.mjs:36"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "the SurrealDB server restarts while UAR keeps running",
+            "match": {
+              "location": "scripts/behaviors/steps/remote-surreal-restart.steps.mjs:50"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "readiness returns to ready within 90 seconds without restarting UAR",
+            "match": {
+              "location": "scripts/behaviors/steps/remote-surreal-restart.steps.mjs:56"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the owned skill is still readable and a new skill can be saved",
+            "match": {
+              "location": "scripts/behaviors/steps/remote-surreal-restart.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "the UAR log records the transport loss and its recovery",
+            "match": {
+              "location": "scripts/behaviors/steps/remote-surreal-restart.steps.mjs:82"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 328247274
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9yZW1vdGUtc3VycmVhbC1yZXN0YXJ0L2YzNzEyNjc4LTIxY2QtNGQ2Zi1hODNkLWFjODRjNDQxZjIyZS5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "uar-recovers-when-its-remote-surrealdb-server-restarts",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "UAR recovers when its remote SurrealDB server restarts",
+    "tags": [],
+    "uri": "scripts/behaviors/features/remote-surreal-restart.feature"
+  }
+]

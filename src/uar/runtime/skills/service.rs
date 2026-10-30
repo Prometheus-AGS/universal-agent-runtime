@@ -227,19 +227,6 @@ pub(crate) struct SkillMatchingSnapshot {
 }
 
 impl SkillMatchingSnapshot {
-    pub(crate) async fn match_skills_scoped(
-        &self,
-        query: &str,
-        agent_id: Option<&str>,
-        conversation_id: Option<&str>,
-    ) -> SkillMatchResult {
-        self.match_skills_scoped_checked(query, agent_id, conversation_id, None).await
-            .unwrap_or_else(|error| {
-                warn!(%error, "Skill matching unavailable; compatibility caller receives no candidates");
-                SkillMatchResult::default()
-            })
-    }
-
     /// Require the requested backend, with a captured governed binding for LLM
     /// ranking. Registry state is cloned before model or vector I/O.
     pub(crate) async fn match_skills_scoped_checked(

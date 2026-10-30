@@ -805,9 +805,6 @@ pub struct RunManager {
     skills: Arc<RwLock<SkillRegistry>>,
     vector_matcher: Arc<crate::uar::runtime::matching::VectorMatcher>,
     local_skill_matcher: Option<Arc<crate::uar::runtime::matching::VectorMatcher>>,
-    tag_matcher: Arc<crate::uar::runtime::matching::TagMatcher>,
-    /// Intent classifier for skill matching
-    intent_classifier: Arc<dyn IntentClassifier>,
     /// Classifier configuration
     classifier_config: ClassifierConfig,
     harness_config: crate::config::HarnessConfig,
@@ -1340,9 +1337,8 @@ impl RunManager {
         classifier_config: ClassifierConfig,
         native_skills: Arc<NativeSkillRegistry>,
     ) -> Self {
-        let tag_matcher = Arc::new(crate::uar::runtime::matching::TagMatcher::new());
-
-        // Create intent classifier based on config
+        // Build the configured classifier once at startup so a bad index is
+        // logged early. Turns build their own classifier from current settings.
         let intent_classifier: Arc<dyn IntentClassifier> =
             Arc::from(create_classifier(&classifier_config));
 
@@ -1406,8 +1402,6 @@ impl RunManager {
             skills,
             vector_matcher,
             local_skill_matcher: None,
-            tag_matcher,
-            intent_classifier,
             classifier_config,
             skill_required_roles: BTreeMap::new(),
             harness_config: crate::config::HarnessConfig::default(),

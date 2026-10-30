@@ -295,9 +295,14 @@ fn cache_info() -> Option<[CacheInfo; 3]> {
             }
         }
 
-        #[cfg(any(
-            all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
-            all(target_arch = "x86_64", not(target_env = "sgx"))
+        // The std Apple branch above always returns, so on an Intel Mac this
+        // block would be unreachable; exclude it there to keep the build clean.
+        #[cfg(all(
+            any(
+                all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+                all(target_arch = "x86_64", not(target_env = "sgx"))
+            ),
+            not(all(feature = "std", target_vendor = "apple"))
         ))]
         {
             use raw_cpuid::CpuId;
