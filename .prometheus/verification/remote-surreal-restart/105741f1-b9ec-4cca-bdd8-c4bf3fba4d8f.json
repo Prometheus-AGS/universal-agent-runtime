@@ -1,0 +1,101 @@
+{
+  "scenario": "ISSUE-441-REMOTE-SURREAL-RESTART",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "uar_restarted_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "remote-surreal-before-31721b43",
+        "description": "Restart probe before",
+        "triggers": {
+          "keywords": [
+            "remote-surreal-before-31721b43"
+          ]
+        },
+        "prompt_overlay": "Probe before."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"remote-surreal-before-31721b43\",\"title\":\"remote-surreal-before-31721b43\",\"description\":\"Restart probe before\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"remote-surreal-before-31721b43\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe before.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/remote-surreal-before-31721b43",
+      "status": 200,
+      "response": "{\"skill_id\":\"remote-surreal-before-31721b43\",\"title\":\"remote-surreal-before-31721b43\",\"description\":\"Restart probe before\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"remote-surreal-before-31721b43\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe before.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "remote-surreal-after-8a6d1eb9",
+        "description": "Restart probe after",
+        "triggers": {
+          "keywords": [
+            "remote-surreal-after-8a6d1eb9"
+          ]
+        },
+        "prompt_overlay": "Probe after."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"remote-surreal-after-8a6d1eb9\",\"title\":\"remote-surreal-after-8a6d1eb9\",\"description\":\"Restart probe after\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"remote-surreal-after-8a6d1eb9\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe after.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/remote-surreal-after-8a6d1eb9",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/remote-surreal-before-31721b43",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "readiness": [
+    {
+      "elapsed_ms": 4,
+      "status": 503,
+      "body": "{\"status\":\"not_ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"failed\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    },
+    {
+      "elapsed_ms": 1009,
+      "status": 503,
+      "body": "{\"status\":\"not_ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"failed\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    },
+    {
+      "elapsed_ms": 2512,
+      "status": 200,
+      "body": "{\"status\":\"ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"ok\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/remote-surreal-restart/5b7a95a7-f072-4490-9e3b-4983f50286a9",
+    "surreal_image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20",
+    "container": "uar-bdd-surreal-5b7a95a7",
+    "surreal_url": "http://127.0.0.1:57498",
+    "runtime_url": "http://127.0.0.1:57499/",
+    "base_url": "http://127.0.0.1:57501/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "uar_pid": 98099,
+    "proxy_pid": 98302,
+    "uar_log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/remote-surreal-restart/5b7a95a7-f072-4490-9e3b-4983f50286a9/uar.log"
+  },
+  "restart_started_at": "2026-10-30T10:12:20.430Z",
+  "restart_completed_at": "2026-10-30T10:12:21.367Z",
+  "recovered_after_ms": 2512,
+  "skill_after": "remote-surreal-after-8a6d1eb9",
+  "log": {
+    "lost_index": 2433,
+    "recovered_index": 2449,
+    "reconnect_failures": 2
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 27384
+}

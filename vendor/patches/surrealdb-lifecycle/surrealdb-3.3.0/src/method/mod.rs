@@ -9,7 +9,7 @@ use std::time::Duration;
 use crate::opt::auth::{Credentials, Token};
 use crate::opt::{IntoEndpoint, IntoExportDestination, WaitFor, auth};
 use crate::types::{SurrealValue, Value, Variables};
-use crate::{Connect, Connection, OnceLockExt, SessionClone, Surreal};
+use crate::{Connect, Connection, SessionClone, Surreal};
 
 pub(crate) mod live;
 pub(crate) mod query;

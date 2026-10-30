@@ -1,0 +1,21 @@
+{
+  "scenario": "ISSUE-441-REMOTE-SURREAL-RESTART",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "uar_restarted_by_test": false,
+  "exchanges": [],
+  "readiness": [],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/remote-surreal-restart/b063c425-6147-4850-af75-156528dda58c",
+    "surreal_image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20",
+    "container": "uar-bdd-surreal-b063c425",
+    "surreal_url": "http://127.0.0.1:57419",
+    "runtime_url": "http://127.0.0.1:57420/",
+    "base_url": "http://127.0.0.1:57422/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false
+  },
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 9388
+}

@@ -48,7 +48,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
             "/readyz": {
                 "get": {
                     "summary": "Readiness probe",
-                    "description": "Checks PostgreSQL, SurrealDB, and MCP connectivity",
+                    "description": "Checks the configured persistence backend, the memory service, and the MCP registry",
                     "tags": ["health"],
                     "responses": {
                         "200": { "description": "All dependencies ready" },
