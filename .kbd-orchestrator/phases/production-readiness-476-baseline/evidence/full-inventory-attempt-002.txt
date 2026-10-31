@@ -1,0 +1,307 @@
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+error[E0433]: cannot find `memory` in `providers`
+    --> tests/support/approval_recovery_process.rs:1229:63
+     |
+1229 |         universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider::new();
+     |                                                               ^^^^^^ could not find `memory` in `providers`
+     |
+note: found an item that was configured out
+    --> src/uar/persistence/providers/mod.rs:2:9
+     |
+   1 | #[cfg(any(feature = "in-memory-backend", test))]
+     |          ------------------------------------- the item is gated here
+   2 | pub mod memory;
+     |         ^^^^^^
+
+error[E0308]: mismatched types
+   --> tests/skill_activation_runtime.rs:121:41
+    |
+121 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+  --> tests/prompt_assembly.rs:53:41
+   |
+53 |             Arc::new(VectorMatcher::new(embedding_backend, 0.75)),
+   |                      ------------------ ^^^^^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+   |                      |
+   |                      arguments to this function are incorrect
+   |
+   = note: expected struct `Arc<SwappableEmbeddingBackend>`
+              found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+  --> src/uar/runtime/matching/vector.rs:39:12
+   |
+39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+   |            ^^^
+
+error[E0308]: mismatched types
+  --> tests/uar_integration.rs:72:13
+   |
+71 |         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+   |         ------------------------------------------------------------------- arguments to this function are incorrect
+72 |             unavailable_embedding_backend(),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+   |
+   = note: expected struct `Arc<SwappableEmbeddingBackend>`
+              found struct `Arc<(dyn EmbeddingBackend + 'static)>`
+note: associated function defined here
+  --> src/uar/runtime/matching/vector.rs:39:12
+   |
+39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+   |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/kb_embedding_space.rs:157:62
+    |
+157 |     let ingest = IngestService::new(Arc::clone(persistence), backend, ChunkingStrategy::Document);
+    |                  ------------------                          ^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                  |
+    |                  arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/rag/ingest.rs:33:12
+    |
+ 33 |     pub fn new(
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/kb_embedding_space.rs:176:53
+    |
+176 |         vector_matcher: Arc::new(VectorMatcher::new(query_backend, 0.75)),
+    |                                  ------------------ ^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                                  |
+    |                                  arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/skill_activation_runtime.rs:166:41
+    |
+166 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/uar_integration.rs:120:13
+    |
+119 |         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+    |         ------------------------------------------------------------------- arguments to this function are incorrect
+120 |             unavailable_embedding_backend(),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<(dyn EmbeddingBackend + 'static)>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/kb_embedding_space.rs:267:9
+    |
+265 |     let other = IngestService::new(
+    |                 ------------------ arguments to this function are incorrect
+266 |         Arc::clone(&persistence),
+267 |         HashingBackend::shared("bge-small-en-v1.5", 32),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<(dyn EmbeddingBackend + 'static)>`
+note: associated function defined here
+   --> src/uar/rag/ingest.rs:33:12
+    |
+ 33 |     pub fn new(
+    |            ^^^
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `universal-agent-runtime` (test "kb_embedding_space") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0308]: mismatched types
+   --> tests/skill_activation_runtime.rs:709:41
+    |
+709 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/skill_activation_runtime.rs:803:41
+    |
+803 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error: could not compile `universal-agent-runtime` (test "prompt_assembly") due to 1 previous error
+error: could not compile `universal-agent-runtime` (test "uar_integration") due to 2 previous errors
+error: could not compile `universal-agent-runtime` (test "skill_activation_runtime") due to 4 previous errors
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `universal-agent-runtime` (test "approval_recovery") due to 1 previous error
+error[E0308]: mismatched types
+   --> tests/mcp_projection.rs:326:41
+    |
+326 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/mcp_projection.rs:445:41
+    |
+445 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0061]: this method takes 3 arguments but 2 arguments were supplied
+   --> tests/mcp_projection.rs:523:10
+    |
+523 |         .call_tool("peer-uar__uar_list_agents", serde_json::json!({}))
+    |          ^^^^^^^^^---------------------------------------------------- argument #3 of type `Option<rmcp::model::meta::RequestMetaObject>` is missing
+    |
+note: method defined here
+   --> src/mcp/preflight.rs:115:18
+    |
+115 |     pub async fn call_tool(
+    |                  ^^^^^^^^^
+help: provide the argument
+    |
+523 |         .call_tool("peer-uar__uar_list_agents", serde_json::json!({}), /* Option<rmcp::model::meta::RequestMetaObject> */)
+    |                                                                      ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0308]: mismatched types
+   --> tests/mcp_projection.rs:819:41
+    |
+819 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/mcp_projection.rs:984:41
+    |
+984 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+    --> tests/mcp_projection.rs:1144:41
+     |
+1144 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+     |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+     |                      |
+     |                      arguments to this function are incorrect
+     |
+     = note: expected struct `Arc<SwappableEmbeddingBackend>`
+                found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+    --> src/uar/runtime/matching/vector.rs:39:12
+     |
+  39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+     |            ^^^
+
+error[E0061]: this method takes 3 arguments but 2 arguments were supplied
+    --> tests/mcp_projection.rs:1394:10
+     |
+1394 |           .call_tool(
+     |  __________^^^^^^^^^-
+1395 | |             "stdio-peer__echo",
+1396 | |             serde_json::json!({"text": "peer-roundtrip"}),
+1397 | |         )
+     | |_________- argument #3 of type `Option<rmcp::model::meta::RequestMetaObject>` is missing
+     |
+note: method defined here
+    --> src/mcp/preflight.rs:115:18
+     |
+ 115 |     pub async fn call_tool(
+     |                  ^^^^^^^^^
+help: provide the argument
+     |
+1394 |         .call_tool(
+1395 |             "stdio-peer__echo",
+1396 |             serde_json::json!({"text": "peer-roundtrip"}),
+1397 ~             /* Option<rmcp::model::meta::RequestMetaObject> */,
+1398 ~         )
+     |
+
+Some errors have detailed explanations: E0061, E0308.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `universal-agent-runtime` (test "mcp_projection") due to 7 previous errors

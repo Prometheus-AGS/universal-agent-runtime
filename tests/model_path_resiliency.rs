@@ -33,7 +33,7 @@ use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::defaults::default_agent;
 use universal_agent_runtime::uar::domain::events::NormalizedEvent as RunEvent;
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::context::{
     budget::{
@@ -302,7 +302,10 @@ async fn run_manager_with_policy(
             Arc::new(McpRegistry::new_empty()),
             sessions,
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await

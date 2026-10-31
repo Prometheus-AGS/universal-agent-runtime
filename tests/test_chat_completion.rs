@@ -16,7 +16,9 @@ use universal_agent_runtime::uar::domain::events::NormalizedEvent;
 use universal_agent_runtime::uar::persistence::{
     PersistenceLayer, providers::surreal::SurrealDbProvider,
 };
-use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
+use universal_agent_runtime::uar::rag::embeddings::{
+    EmbeddingBackend, swappable::SwappableEmbeddingBackend,
+};
 use universal_agent_runtime::uar::runtime::graph::{AgentGraph, AgentNode, GraphState, RouterNode};
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
@@ -39,7 +41,9 @@ fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
 fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
     Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
-            unavailable_embedding_backend(),
+            Arc::new(SwappableEmbeddingBackend::new(
+                unavailable_embedding_backend(),
+            )),
             0.75,
         ),
     )

@@ -5,10 +5,13 @@
   "changes": {
     "restore-exact-tree-rust-baseline": {
       "status": "IN_PROGRESS",
-      "tasks_total": 9,
-      "tasks_done": 8,
-      "next_task_pending": "Renewed phase-exit review and failed full inventory gate; current source must receive fresh committed baseline/regressions",
+      "tasks_total": 11,
+      "tasks_done": 10,
+      "next_task_pending": "Fresh final-cohort review; committed3-profile baseline,16regressions, compile-only all-target/approval fixture inventory and safe full-library execution",
       "blockers": []
     }
-  }
+  },
+  "implementation_total": 10,
+  "implementation_completed": 10,
+  "verification_status": "PENDING"
 }

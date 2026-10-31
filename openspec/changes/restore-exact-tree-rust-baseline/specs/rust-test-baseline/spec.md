@@ -32,3 +32,16 @@ Integration fixtures SHALL construct the current production types and preserve t
 - **WHEN** the fixture producer cannot send its release notification
 - **THEN** the failure reaches the existing anyhow result with its declared message
 - **AND** the fixture does not discard the failed send to obtain a passing compile
+
+### Requirement: Baseline does not revive historical opt-in qualification
+The baseline SHALL compile test targets without executing historical installed/recovery qualifiers. Required regression assertions and the library inventory SHALL retain their real execution evidence. A development-only control SHALL retain its original backend and assertions behind its explicit existing feature; its qualifier SHALL reject missing required features before parent-side effects, never fabricate a passing receipt.
+
+#### Scenario: Shipping feature profile compiles legacy fixture target
+- **WHEN** the shipping feature profile does not export the development memory backend
+- **THEN** the legacy target still compiles with an explicit required-feature precondition
+- **AND** the baseline does not execute or count that qualifier as a passing recovery case
+
+#### Scenario: Retained development control compilation
+- **WHEN** approval_recovery is compiled with server-full, postgres-backend and in-memory-backend
+- **THEN** its original memory deadline assertion block is compiled
+- **AND** no historical qualifier or credential setup is executed by the compile-only check

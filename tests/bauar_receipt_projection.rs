@@ -32,7 +32,7 @@ use universal_agent_runtime::{
             },
             providers::surreal::SurrealDbProvider,
         },
-        rag::embeddings::UnavailableEmbeddingBackend,
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{
             manager::RunManager,
             matching::{VectorMatcher, intent::ClassifierConfig},
@@ -95,10 +95,12 @@ impl Fixture {
                 SessionStore::new(),
                 Arc::new(RwLock::new(SkillRegistry::default())),
                 Arc::new(VectorMatcher::new(
-                    Arc::new(UnavailableEmbeddingBackend::new(
-                        384,
-                        "receipt fixture does not use embeddings",
-                    )),
+                    Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+                        UnavailableEmbeddingBackend::new(
+                            384,
+                            "receipt fixture does not use embeddings",
+                        ),
+                    ))),
                     0.75,
                 )),
                 store.clone(),

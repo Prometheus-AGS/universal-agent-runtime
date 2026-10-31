@@ -13,7 +13,7 @@ use universal_agent_runtime::uar::{
     api::knowledge::{KnowledgeApiState, build_router},
     domain::knowledge::{DocumentStatus, EmbeddingFingerprint, KbConfig, KnowledgeBase, KnowledgeChunk, KnowledgeDocument},
     persistence::{PersistenceLayer, ingestion_records::{IngestionPublication, IngestionState}, providers::surreal::SurrealDbProvider},
-    rag::embeddings::{EmbeddingBackend, EmbeddingError},
+    rag::embeddings::{EmbeddingBackend, EmbeddingError, swappable::SwappableEmbeddingBackend},
     runtime::matching::VectorMatcher,
     security::{claims::UserContext, middleware::authenticate_bearer_context},
 };
@@ -61,7 +61,7 @@ async fn provider() -> Arc<dyn PersistenceLayer> {
 async fn app(store: Arc<dyn PersistenceLayer>) -> axum::Router {
     build_router().with_state(Arc::new(KnowledgeApiState {
         persistence: store,
-        vector_matcher: Arc::new(VectorMatcher::new(Arc::new(UnusedEmbedding), 0.75)),
+        vector_matcher: Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(Arc::new(UnusedEmbedding))), 0.75)),
         ingestion_pool: None,
         realtime_bus: None,
     })).layer(Extension(identity().await))

@@ -21,7 +21,7 @@ use universal_agent_runtime::uar::{
     persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
     rag::{
         chunking::ChunkingStrategy,
-        embeddings::{EmbeddingBackend, EmbeddingError},
+        embeddings::{EmbeddingBackend, EmbeddingError, swappable::SwappableEmbeddingBackend},
         ingest::IngestService,
     },
     runtime::matching::VectorMatcher,
@@ -154,7 +154,11 @@ async fn ingest_docs(
     backend: Arc<dyn EmbeddingBackend>,
     kb_id: &str,
 ) {
-    let ingest = IngestService::new(Arc::clone(persistence), backend, ChunkingStrategy::Document);
+    let ingest = IngestService::new(
+        Arc::clone(persistence),
+        Arc::new(SwappableEmbeddingBackend::new(backend)),
+        ChunkingStrategy::Document,
+    );
     for (doc_id, text) in [("doc-rust", RUST_DOC), ("doc-bread", BREAD_DOC)] {
         track_document(persistence.as_ref(), kb_id, doc_id).await;
         ingest
@@ -173,7 +177,10 @@ async fn search(
 ) -> (StatusCode, serde_json::Value) {
     let state = Arc::new(KnowledgeApiState {
         persistence: Arc::clone(persistence),
-        vector_matcher: Arc::new(VectorMatcher::new(query_backend, 0.75)),
+        vector_matcher: Arc::new(VectorMatcher::new(
+            Arc::new(SwappableEmbeddingBackend::new(query_backend)),
+            0.75,
+        )),
         ingestion_pool: None,
         realtime_bus: None,
     });
@@ -264,7 +271,10 @@ async fn ingest_from_another_embedding_space_is_refused() {
 
     let other = IngestService::new(
         Arc::clone(&persistence),
-        HashingBackend::shared("bge-small-en-v1.5", 32),
+        Arc::new(SwappableEmbeddingBackend::new(HashingBackend::shared(
+            "bge-small-en-v1.5",
+            32,
+        ))),
         ChunkingStrategy::Document,
     );
     track_document(persistence.as_ref(), &kb.id, "doc-late").await;

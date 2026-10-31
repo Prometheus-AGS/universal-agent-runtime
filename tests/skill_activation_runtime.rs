@@ -27,7 +27,7 @@ use universal_agent_runtime::uar::defaults::default_agent;
 use universal_agent_runtime::uar::domain::events::NormalizedEvent as RunEvent;
 use universal_agent_runtime::uar::domain::skills::Skill;
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::context::token_service::TokenService;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
@@ -118,7 +118,10 @@ async fn test_manager(skills: Vec<Skill>, driver: Arc<MockLlmDriver>) -> Arc<Run
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -163,7 +166,10 @@ async fn matching_manager(
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -706,7 +712,10 @@ async fn compaction_reattaches_the_latest_skill_body_within_budget() {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -800,7 +809,10 @@ async fn overlay_only_outcomes_and_multi_skill_usage_are_attributed_without_doub
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await

@@ -8,7 +8,9 @@ use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar;
 use universal_agent_runtime::uar::domain::skills::{Skill, SkillConstraints, SkillTriggers};
-use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
+use universal_agent_runtime::uar::rag::embeddings::{
+    EmbeddingBackend, swappable::SwappableEmbeddingBackend,
+};
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 use universal_agent_runtime::uar::runtime::skills::{
     SkillService, storage::FilesystemStorageProvider,
@@ -69,7 +71,9 @@ async fn setup_real_env() -> (Arc<RunManager>, Arc<SessionStore>) {
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vector_matcher = Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
-            unavailable_embedding_backend(),
+            Arc::new(SwappableEmbeddingBackend::new(
+                unavailable_embedding_backend(),
+            )),
             0.75,
         ),
     );
@@ -117,7 +121,9 @@ async fn setup_real_env_with_tools() -> (
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vector_matcher = Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
-            unavailable_embedding_backend(),
+            Arc::new(SwappableEmbeddingBackend::new(
+                unavailable_embedding_backend(),
+            )),
             0.75,
         ),
     );
