@@ -351,3 +351,25 @@ async fn delegated_and_legacy_credentials_cannot_inherit_cross_owner_admin_polic
             .unwrap()
     );
 }
+
+/// #392: the credential-less trusted-local loopback owner shares one storage
+/// owner, but it presented no credential and cannot mint or manage API keys.
+#[tokio::test]
+async fn j10_trusted_local_loopback_owner_cannot_create_or_list_api_keys() {
+    let service = make_service();
+    let local = crate::uar::security::claims::UserContext::trusted_local_loopback("local-user");
+    assert!(local.verified_identity().is_some(), "fixture must be the admitted loopback owner");
+    for roles in [None, Some(Vec::new())] {
+        assert!(
+            service
+                .create_key(
+                    &local,
+                    CreateKeyRequest { name: "denied".to_owned(), roles, expires_in_secs: None }
+                )
+                .await
+                .is_err()
+        );
+    }
+    assert!(service.list_keys(&local).await.is_err());
+    assert!(service.revoke_key(&local, "undisclosed-id").await.is_err());
+}

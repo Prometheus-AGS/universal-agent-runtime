@@ -1,0 +1,183 @@
+[
+  {
+    "description": "  With optional JWT on the TrustedLocal profile and the opt-in\n  security.local_loopback_owner, a caller on the loopback address that sends no\n  credentials is the local-host principal. Its sessions and memory belong to that\n  one owner, which is distinct from a proxied owner. The flag is off by default.",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-local-caller-without-credentials-has-one-stable-owner-(#392);local-no-credential-chat-and-memory-share-one-owner",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "Local no-credential chat and memory share one owner",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 548609
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 53554499682
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a dedicated UAR with local_loopback_owner on, memory enabled and the stub model",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:32"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1021747825
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I save a memory record on the loopback address without credentials",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:68"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1949548628
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "I chat on the loopback address without credentials",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:76"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 12114359
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "the memory record is readable on the loopback address without credentials",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:84"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13293179
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "the session is listed on the loopback address without credentials",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:89"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26331565
+            },
+            "arguments": [],
+            "keyword": "But ",
+            "line": 14,
+            "name": "the proxied owner sees neither the memory record nor the session",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1340792216
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9sb2NhbC1pZGVudGl0eS9hYWRjY2EzMi0zMGE2LTRiMjEtYmE3ZS1mMjJjYmFhNWYyMzIuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "a-local-caller-without-credentials-has-one-stable-owner-(#392);without-the-opt-in,-a-local-caller-without-credentials-stays-anonymous",
+        "keyword": "Scenario",
+        "line": 16,
+        "name": "Without the opt-in, a local caller without credentials stays anonymous",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 44057
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 41474511824
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 17,
+            "name": "a dedicated UAR with memory enabled and local_loopback_owner off",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:50"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2943664
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 18,
+            "name": "saving a memory record on the loopback address without credentials is refused",
+            "match": {
+              "location": "scripts/behaviors/steps/local-identity.steps.mjs:61"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1162877517
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9sb2NhbC1pZGVudGl0eS81YzIxYWEyMi00MGY3LTRhZjgtYTliOC1kODMzMmEwZDUxODMuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-local-caller-without-credentials-has-one-stable-owner-(#392)",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "A local caller without credentials has one stable owner (#392)",
+    "tags": [],
+    "uri": "scripts/behaviors/features/local-identity.feature"
+  }
+]

@@ -106,6 +106,7 @@ async fn user() -> UserContext {
         jwt_validate_nbf: true,
         settings_mutation_auth_required: true,
         settings_admin_key: None,
+        local_loopback_owner: false,
     };
     // The production verifier owns process-provider initialization. Raw fixture
     // signing must follow it, while malformed credentials remain unauthorized.

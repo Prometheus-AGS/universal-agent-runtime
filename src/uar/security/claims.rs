@@ -42,8 +42,10 @@ impl TenantId {
 }
 
 /// Signed credential provenance; absence never implies issuer privilege.
+/// `LocalLoopback` is not a credential: it marks the single trusted-local owner
+/// admitted by peer address, so credential-minting paths can refuse it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::uar::security) enum CredentialKind { Unclassified, Issuer, ApiKey }
+pub(in crate::uar::security) enum CredentialKind { Unclassified, Issuer, ApiKey, LocalLoopback }
 
 impl CredentialKind {
     #[cfg(feature = "server")]
@@ -91,6 +93,9 @@ impl VerifiedIdentity {
     pub(in crate::uar::security) fn api_key_id(&self) -> Option<&str> { self.api_key_id.as_deref() }
 
     pub(in crate::uar::security) fn is_issuer_credential(&self) -> bool { self.credential_kind == CredentialKind::Issuer }
+
+    /// True for the trusted-local loopback owner, which presented no credential.
+    pub(in crate::uar::security) fn is_local_loopback(&self) -> bool { self.credential_kind == CredentialKind::LocalLoopback }
 
     pub fn issuer(&self) -> Option<&str> { self.issuer.as_deref() }
     pub fn subject(&self) -> &str { &self.subject }
@@ -179,6 +184,28 @@ impl UserContext {
     pub fn verified_identity(&self) -> Option<&VerifiedIdentity> {
         self.authority.as_ref().filter(|authority| authority.matches(self))
     }
+
+    /// The single owner of a trusted-local installation, for a caller that
+    /// presented no credential over a loopback TCP connection. It resolves to
+    /// the same `local-host` principal as an authenticated sidecar launch, so
+    /// history, memory, knowledge and tool credentials share one owner key.
+    /// It carries no host authority, no roles and no tenant: administrative
+    /// host operations and API-key minting stay unavailable to it.
+    #[cfg(feature = "server")]
+    pub(in crate::uar::security) fn trusted_local_loopback(subject: &str) -> Self {
+        let claims = UserClaims {
+            sub: subject.to_owned(),
+            name: None,
+            roles: None,
+            tenant_id: None,
+            uar_instance_id: None,
+            // far-future expiry for an internal, credential-less context
+            exp: usize::MAX,
+        };
+        let mut identity = VerifiedIdentity::new(None, &claims, None, CredentialKind::LocalLoopback);
+        identity.captured_principal = Some(CredentialPrincipal::local_host(subject));
+        Self { host_authority: None, authority: Some(identity), user_id: subject.to_owned(), tenant_id: None, claims }
+    }
 }
 
 /// Complete credential owner captured at a trusted authentication boundary.
@@ -220,14 +247,19 @@ impl CredentialPrincipal {
             });
         }
         if context.trusted_host_id().is_some() && context.tenant_id.is_none() {
-            return Ok(Self {
-                issuer_kind: "local-host",
-                issuer: "urn:uar:local:host".to_owned(),
-                tenant: None,
-                subject: context.user_id.clone(),
-            });
+            return Ok(Self::local_host(&context.user_id));
         }
         anyhow::bail!("verified credential principal required")
+    }
+
+    /// The installation-local host owner namespace, never tenant-scoped.
+    fn local_host(subject: &str) -> Self {
+        Self {
+            issuer_kind: "local-host",
+            issuer: "urn:uar:local:host".to_owned(),
+            tenant: None,
+            subject: subject.to_owned(),
+        }
     }
 
     /// Canonical versioned owner key. Length framing prevents delimiter collisions;
