@@ -4,18 +4,16 @@
   "project": "universal-agent-runtime",
   "activePhase": "production-readiness-476-baseline",
   "phase": "production-readiness-476-baseline",
-  "status": "WAITING_FOR_SHARED_CARGO",
+  "status": "IMPLEMENTED_ACCEPTANCE_PENDING",
   "stageId": "verify",
   "change": "restore-exact-tree-rust-baseline",
   "phasePath": ".kbd-orchestrator/phases/production-readiness-476-baseline",
   "priorWaypoint": ".kbd-orchestrator/phases/production-readiness-476-baseline/prior-waypoint.json",
   "authorization": "Operator request 2026-10-31: bounded useful phases, phase-exit acceptance, no tests during investigation/implementation",
-  "exactNextCommand": "Queued shell waits for all current Cargo/rustc writers to finish, then runs ordinary git commit hooks. Inspect target/production-readiness-476/commit-attempt-001.log; after successful commit run exact-commit safeguard and retained regressions serially.",
-  "verification": "PHASE_EXIT_AUTHORIZED",
-  "blockers": [
-    "Original checkout has an active Cargo writer sharing host-global build directory; do not run overlapping compile/commit hook gates.",
-    "Exact committed candidate and real profile/regression acceptance not yet produced."
-  ],
+  "exactNextCommand": "Obtain isolated final-artifact Rust/scope review, then ordinary commit and serial exact-source baseline/regressions plus failed full inventory gate.",
+  "verification": "PHASE_EXIT_AUTHORIZED_AFTER_WHOLE_COHORT_COMPLETE",
+  "blockers": [],
   "policyDecision": "Retain current Liter source; policy aligned to0d74c566",
-  "inventory": ".kbd-orchestrator/phases/production-readiness-476-baseline/implementation-inventory-002.json"
+  "inventory": ".kbd-orchestrator/phases/production-readiness-476-baseline/implementation-inventory-003.json",
+  "testedSource": "a3bceb9a412d86f23c4ad30dee450872b34e36bd"
 }

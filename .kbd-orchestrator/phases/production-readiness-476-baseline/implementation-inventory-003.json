@@ -1,0 +1,121 @@
+{
+  "phase": "production-readiness-476-baseline",
+  "implementation_complete": true,
+  "remaining_implementation": [],
+  "source_base": "a3bceb9a412d86f23c4ad30dee450872b34e36bd",
+  "files": [
+    {
+      "path": "docs/development/rust-test-baseline.md",
+      "sha256": "3b22faaa0f1169ec5dcb491d93875f269f48a1e13b134da9ab5a33feb622acdf"
+    },
+    {
+      "path": "lefthook.yml",
+      "sha256": "6615ae3751828bca3e4d149d2086eb3d4c46efb26cbe55426df363b9f74dcafa"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/.openspec.yaml",
+      "sha256": "c6ab3a95d8d0fd469ca8750ef79234025bf4a8356d5d57856e97d7e47fc8b6c2"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/design.md",
+      "sha256": "8845c2deb6c457aae2bc70741a8730916663e76c2c895d496b8c8a3473b1935c"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/proposal.md",
+      "sha256": "4215d8eecdb3230b14cd7c76e530058a3717a9ec8accc2b28bd079c11578ebc1"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/specs/rust-test-baseline/spec.md",
+      "sha256": "abeb6d246e835320bc507be69da30a832c0996d80b5d8fdceaf02a87ca504c32"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/tasks.md",
+      "sha256": "48c7e6e1d723ed95d11520a1358c38cbf4e3a5facc924be7222d79c77a877ea5"
+    },
+    {
+      "path": "scripts/verify-rust-test-baseline.sh",
+      "sha256": "9520ccad22409240f15f23e424ef4941f9ef5b0627a26a40ba7c4236bd555c65"
+    },
+    {
+      "path": "src/uar/runtime/presentation_history_tests.rs",
+      "sha256": "7f6658b2c8805812b99b447040d639187ff93a2d41ab97cddb8f5412ce527e09"
+    },
+    {
+      "path": "tests/bauar_full_harness_cursor.rs",
+      "sha256": "961ee764058d327d7507a9d2ad4d98a5f8e71a966702906ba631250381616f2e"
+    },
+    {
+      "path": "tests/bauar_resource_grants.rs",
+      "sha256": "2c8daedcff3793015b6629fb3b3f4a774029f26817f687884e6d028ca9122598"
+    },
+    {
+      "path": "tests/common/ollama.rs",
+      "sha256": "d84c2da5e900f6b7fdfce774495f3b024eec2415e6121d5c3521018443e04c71"
+    },
+    {
+      "path": "tests/context_history_integrity.rs",
+      "sha256": "268be636ab6b2f86243b40b3e4b8a6c0005688bd972dcb04ecd492e994220504"
+    },
+    {
+      "path": "tests/integration.rs",
+      "sha256": "5fe60ca2dd6c817f840c3e41bf443b08de6bcdffd8f5a64663902bab2732d90d"
+    },
+    {
+      "path": "tests/jwks_es256_verification.rs",
+      "sha256": "1d0e2b707dfef70f68d0a270118d49812dd3ba4a5560205200412e19b3afe511"
+    },
+    {
+      "path": "tests/lifecycle_owned_resources.rs",
+      "sha256": "cdc2af95303400f580c51ad2fb0df1332d0f0108dfc3ccc451dee7fddc7243f0"
+    },
+    {
+      "path": "tests/support/sidecar_process.rs",
+      "sha256": "c572a13911aaca26b158c4a48c5fdb69ba7c2192aa774a28adc5131d1db3a0a6"
+    },
+    {
+      "path": "tests/support/uar_1_1_1_runtime_fixture.rs",
+      "sha256": "61b39147634ed5f4cdee789dd6dd89d79e906e3a96a32ab9c5ed3c7af5e7da13"
+    },
+    {
+      "path": "tests/test_mcp_optional.rs",
+      "sha256": "3f2b2bbaee8500a8f4acc9e3866df10dcef4a8ff91e2e5bbd838b11644ff5311"
+    },
+    {
+      "path": "tests/turn_shadow_parity.rs",
+      "sha256": "d0c25d5476b10728fe3558bdeb9a13be90d903179bb3f144d8f4b39c72fe29cc"
+    },
+    {
+      "path": "tests/typed_turn_assembly.rs",
+      "sha256": "3f2c06b969dd6fcaf582c845237096b8baea90481c17ade75b992f733fa6b8d2"
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "0e353df1172c464da3cf7326bf4e84db657201caf23a108fc3fd2c5f8edf305d"
+    }
+  ],
+  "handoffs": [
+    ".agent-team/uar-core/production-readiness-baseline-compile-repair.md",
+    ".agent-team/uar-core/production-readiness-baseline-warning-repair.md"
+  ],
+  "delta": "Test fixture constructors/default/error conversion and target-scoped warning expectations only. No production behavior/dependency changes. No assertions removed or weakened.",
+  "new_guards": "No runtime guard. Intentional shared-fixture dead-code expectations trace to actual compiler warnings.",
+  "checks_during_cohort": "None. Writers used only source inspection and implementation/handoff writing.",
+  "verification_authority": "Operator 2026-10-31 bounded phase-exit rule and explicit resume: all cohort implementation complete; review then exact-source serial acceptance is authorized.",
+  "remaining_verification": [
+    "isolated Rust and scope review",
+    "ordinary commit hooks and clean committed three-profile library baseline",
+    "retained history/embeddings/OpenAPI regressions on new candidate",
+    "failed full server-full inventory; unrelated runtime/external fixture failures recorded separately, no broad certification claim"
+  ],
+  "source_scope": "All changed runtime/test/tool/config/spec/usage inputs plus prior baseline implementation inputs. Governance/progress, append-only history, handoff/review reports and generated evidence are separate outputs, following existing source_inventory.py separation. The eventual clean-commit safeguard binds the full Git tree.",
+  "handoff_digests": [
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-compile-repair.md",
+      "sha256": "f7a0721597554efbecf9d61960f31a50fd7c6b2aa18001658b3d6e5a22cf2eb2"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-warning-repair.md",
+      "sha256": "67ccc044c2f73763952e858ffe5868284b4a8dd762145faea4d7cfe2393be00b"
+    }
+  ]
+}

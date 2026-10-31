@@ -1,0 +1,230 @@
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+warning: unused import: `Instant`
+  --> tests/support/sidecar_process.rs:20:27
+   |
+20 | use std::time::{Duration, Instant};
+   |                           ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0063]: missing field `execution_profile` in initializer of `ModelConfig`
+   --> tests/common/ollama.rs:104:22
+    |
+104 |         models: vec![ModelConfig {
+    |                      ^^^^^^^^^^^ missing `execution_profile`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `universal-agent-runtime` (test "embedded_sdk") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+warning: unused import: `std::io::Write`
+  --> tests/support/sidecar_process.rs:16:5
+   |
+16 | use std::io::Write as _;
+   |     ^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+  --> tests/typed_turn_assembly.rs:49:41
+   |
+49 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+   |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+   |                      |
+   |                      arguments to this function are incorrect
+   |
+   = note: expected struct `Arc<SwappableEmbeddingBackend>`
+              found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+  --> src/uar/runtime/matching/vector.rs:39:12
+   |
+39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+   |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/jwks_es256_verification.rs:178:41
+    |
+178 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+    |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+    = note: expected struct `Arc<SwappableEmbeddingBackend>`
+               found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+   --> src/uar/runtime/matching/vector.rs:39:12
+    |
+ 39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+    |            ^^^
+
+error[E0308]: mismatched types
+  --> tests/turn_shadow_parity.rs:36:41
+   |
+36 |             Arc::new(VectorMatcher::new(embeddings, 0.75)),
+   |                      ------------------ ^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+   |                      |
+   |                      arguments to this function are incorrect
+   |
+   = note: expected struct `Arc<SwappableEmbeddingBackend>`
+              found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+  --> src/uar/runtime/matching/vector.rs:39:12
+   |
+39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+   |            ^^^
+
+error[E0308]: mismatched types
+  --> tests/test_mcp_optional.rs:31:13
+   |
+30 |         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+   |         ------------------------------------------------------------------- arguments to this function are incorrect
+31 |             unavailable_embedding_backend(),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+   |
+   = note: expected struct `Arc<SwappableEmbeddingBackend>`
+              found struct `Arc<(dyn EmbeddingBackend + 'static)>`
+note: associated function defined here
+  --> src/uar/runtime/matching/vector.rs:39:12
+   |
+39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+   |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/context_history_integrity.rs:757:26
+    |
+757 |                   Arc::new(UnavailableEmbeddingBackend::new(
+    |  _________________--------_^
+    | |                 |
+    | |                 arguments to this function are incorrect
+758 | |                     384,
+759 | |                     "embeddings are not exercised by this test",
+760 | |                 )),
+    | |_________________^ expected `SwappableEmbeddingBackend`, found `UnavailableEmbeddingBackend`
+    |
+note: associated function defined here
+   --> /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-x86_64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:428:12
+    |
+428 |     pub fn new(data: T) -> Arc<T> {
+    |            ^^^
+
+error[E0308]: mismatched types
+   --> tests/bauar_full_harness_cursor.rs:116:30
+    |
+116 |                       Arc::new(UnavailableEmbeddingBackend::new(
+    |  _____________________--------_^
+    | |                     |
+    | |                     arguments to this function are incorrect
+117 | |                         384,
+118 | |                         "cursor fixture does not use embeddings",
+119 | |                     )),
+    | |_____________________^ expected `SwappableEmbeddingBackend`, found `UnavailableEmbeddingBackend`
+    |
+note: associated function defined here
+   --> /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-x86_64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:428:12
+    |
+428 |     pub fn new(data: T) -> Arc<T> {
+    |            ^^^
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `universal-agent-runtime` (test "test_mcp_optional") due to 1 previous error
+error[E0599]: the method `context` exists for enum `Result<(), ()>`, but its trait bounds were not satisfied
+   --> tests/lifecycle_owned_resources.rs:227:10
+    |
+225 | /     release_producer
+226 | |         .send(())
+227 | |         .context("release database-dependent producer")?;
+    | |_________-^^^^^^^
+    |
+   ::: /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-x86_64-apple-darwin/lib/rustlib/src/rust/library/core/src/result.rs:557:1
+    |
+557 |   pub enum Result<T, E> {
+    |   --------------------- doesn't satisfy `Result<(), ()>: anyhow::Context<(), ()>`
+    |
+    = note: the following trait bounds were not satisfied:
+            `(): anyhow::context::ext::StdError`
+            which is required by `Result<(), ()>: anyhow::Context<(), ()>`
+    = help: items from traits can only be used if the trait is in scope
+help: trait `ResultExt` which provides `context` is implemented but not in scope; perhaps you want to import it
+    |
+  8 + use quick_error::ResultExt;
+    |
+
+error[E0308]: mismatched types
+   --> tests/support/uar_1_1_1_runtime_fixture.rs:64:46
+    |
+ 64 |         Arc::new(VectorMatcher::new(Arc::new(UnavailableEmbeddingBackend::new(384,"phase fixture has no embeddings")),0.75)),
+    |                                     -------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `SwappableEmbeddingBackend`, found `UnavailableEmbeddingBackend`
+    |                                     |
+    |                                     arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-x86_64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/sync.rs:428:12
+    |
+428 |     pub fn new(data: T) -> Arc<T> {
+    |            ^^^
+
+error: could not compile `universal-agent-runtime` (test "turn_shadow_parity") due to 1 previous error
+error[E0308]: mismatched types
+    --> tests/context_history_integrity.rs:2203:37
+     |
+2203 |         Arc::new(VectorMatcher::new(embedding_backend, 0.75)), Some(persistence.clone()),
+     |                  ------------------ ^^^^^^^^^^^^^^^^^ expected `Arc<SwappableEmbeddingBackend>`, found `Arc<dyn EmbeddingBackend>`
+     |                  |
+     |                  arguments to this function are incorrect
+     |
+     = note: expected struct `Arc<SwappableEmbeddingBackend>`
+                found struct `Arc<dyn EmbeddingBackend>`
+note: associated function defined here
+    --> src/uar/runtime/matching/vector.rs:39:12
+     |
+  39 |     pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
+     |            ^^^
+
+error: could not compile `universal-agent-runtime` (test "typed_turn_assembly") due to 1 previous error
+error: could not compile `universal-agent-runtime` (test "jwks_es256_verification") due to 1 previous error
+warning: variant `DelayedContent` is never constructed
+  --> tests/integration/live/stub_llm.rs:38:5
+   |
+34 | pub enum FixtureResponse {
+   |          --------------- variant in this enum
+...
+38 |     DelayedContent {
+   |     ^^^^^^^^^^^^^^
+   |
+   = note: `FixtureResponse` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `with_prompt_prefix` is never used
+   --> tests/integration/live/stub_llm.rs:136:12
+    |
+122 | impl FixtureSet {
+    | --------------- method in this implementation
+...
+136 |     pub fn with_prompt_prefix(mut self, prefix: impl Into<String>, response: FixtureResponse) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `universal-agent-runtime` (test "lifecycle_owned_resources") due to 1 previous error
+error: could not compile `universal-agent-runtime` (test "bauar_full_harness_cursor") due to 2 previous errors
+error: could not compile `universal-agent-runtime` (test "context_history_integrity") due to 2 previous errors
+warning: method `run_scoped` is never used
+   --> tests/integration/live/harness.rs:221:18
+    |
+212 | impl TestServerHandle {
+    | --------------------- method in this implementation
+...
+221 |     pub async fn run_scoped<F, T>(self, body: F) -> T
+    |                  ^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: variant `DelayedContent` is never constructed
+  --> tests/integration/live/stub_llm.rs:38:5
+   |
+34 | pub enum FixtureResponse {
+   |          --------------- variant in this enum
+...
+38 |     DelayedContent {
+   |     ^^^^^^^^^^^^^^
+   |
+   = note: `FixtureResponse` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: `universal-agent-runtime` (test "bauar_resource_grants") generated 4 warnings (run `cargo fix --test "bauar_resource_grants" -p universal-agent-runtime` to apply 1 suggestion)
+warning: `universal-agent-runtime` (test "integration") generated 3 warnings (1 duplicate)

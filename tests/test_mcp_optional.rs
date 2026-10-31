@@ -5,7 +5,9 @@ use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
-use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
+use universal_agent_runtime::uar::rag::embeddings::{
+    EmbeddingBackend, swappable::SwappableEmbeddingBackend,
+};
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 
@@ -28,7 +30,9 @@ fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
 fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
     Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
-            unavailable_embedding_backend(),
+            Arc::new(SwappableEmbeddingBackend::new(
+                unavailable_embedding_backend(),
+            )),
             0.75,
         ),
     )

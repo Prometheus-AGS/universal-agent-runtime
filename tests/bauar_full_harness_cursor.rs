@@ -30,7 +30,7 @@ use universal_agent_runtime::{
         compiler::collaboration::CollaborationCatalogService,
         defaults::default_agent,
         domain::events::NormalizedEvent,
-        rag::embeddings::UnavailableEmbeddingBackend,
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{manager::RunManager, matching::VectorMatcher, skills::SkillRegistry},
         security::claims::{UserClaims, UserContext},
         service_instance::ServiceInstanceAuthority,
@@ -113,10 +113,12 @@ impl Fixture {
                 SessionStore::new(),
                 Arc::new(RwLock::new(SkillRegistry::default())),
                 Arc::new(VectorMatcher::new(
-                    Arc::new(UnavailableEmbeddingBackend::new(
-                        384,
-                        "cursor fixture does not use embeddings",
-                    )),
+                    Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+                        UnavailableEmbeddingBackend::new(
+                            384,
+                            "cursor fixture does not use embeddings",
+                        ),
+                    ))),
                     0.75,
                 )),
                 None,

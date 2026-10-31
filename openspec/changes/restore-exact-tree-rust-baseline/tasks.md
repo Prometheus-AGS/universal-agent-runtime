@@ -5,6 +5,9 @@
 
 - [x] 1.4 Align Liter policy commit to retained current source per operator decision, without changing version or dependency bytes.
 
+- [x] 1.5 Adapt observed stale integration fixture constructors/error conversion without changing assertions.
+- [x] 1.6 Remove observed unused imports and scope intentional shared-fixture dead-code expectations.
+
 ## 2. Phase-exit acceptance
 - [ ] 2.1 Freeze exact committed source and implementation-complete inventory.
 - [ ] 2.2 Compile minimal, server-full and server-full,postgres-backend library test targets serially.

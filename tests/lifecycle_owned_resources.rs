@@ -224,7 +224,7 @@ async fn producer_drains_before_owned_embedded_engine_close_and_one_reopen() -> 
 
     release_producer
         .send(())
-        .context("release database-dependent producer")?;
+        .map_err(|()| anyhow::anyhow!("release database-dependent producer"))?;
     provider_query_finished_receipt
         .await
         .context("producer query completed before engine finalization")?;

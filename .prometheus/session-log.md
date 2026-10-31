@@ -7119,3 +7119,7 @@ Synthetic safeguard controls passed5/5. Hook positive selectors passed6/6; READM
 
 ## 2026-10-31 — Retain current Liter source
 Resumed production-readiness-476 after operator selected current Liter source. Added bounded #466 policy alignment to #462 phase plan before editing versions.toml; no dependency source or lockfile change. Original Cargo PID69032 finished, but a new original-checkout batch PID40283 now occupies host-global build directory. Preserve it; no overlapping compiler gate started.
+
+
+## #476 baseline acceptance and observed fixture repair
+Clean committed a3bceb9a passed3library profiles and16specified regression assertions. Full server-full inventory exit101 before execution exposed integration fixture API drift and shared helper warnings; raw diagnostic receipt retained. Added one bounded fixture compatibility cohort to the same #462 phase. Gate closed for implementation; no temporary source patches or warning suppression. Local per-worktree build-dir/cache settings resolve observed shared path file-open stalls; no other chat process was killed or source reset.

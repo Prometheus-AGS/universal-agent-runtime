@@ -1,17 +1,14 @@
 {
   "phase": "production-readiness-476-baseline",
   "last_updated_by": "codex",
-  "status": "BLOCKED",
+  "status": "IMPLEMENTED_ACCEPTANCE_PENDING",
   "changes": {
     "restore-exact-tree-rust-baseline": {
-      "status": "BLOCKED",
-      "tasks_total": 6,
-      "tasks_done": 5,
-      "next_task_pending": "Pin review, then ordinary commit hooks and exact-commit Rust matrix/regressions after shared Cargo writer finishes.",
-      "blockers": [
-        "Original checkout has an active Cargo writer sharing host-global build directory; do not run overlapping compile/commit hook gates.",
-        "Exact committed candidate and real profile/regression acceptance not yet produced."
-      ]
+      "status": "IN_PROGRESS",
+      "tasks_total": 9,
+      "tasks_done": 8,
+      "next_task_pending": "Renewed phase-exit review and failed full inventory gate; current source must receive fresh committed baseline/regressions",
+      "blockers": []
     }
   }
 }

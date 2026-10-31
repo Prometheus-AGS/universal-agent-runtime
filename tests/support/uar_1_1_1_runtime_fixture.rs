@@ -10,7 +10,7 @@ use universal_agent_runtime::{
     session::SessionStore,
     uar::{defaults::default_agent, domain::{events::NormalizedEvent, runs::RunStatus},
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
-        rag::embeddings::UnavailableEmbeddingBackend,
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{manager::RunManager, matching::{ClassifierConfig, VectorMatcher}, native_skill::{NativeSkill, NativeSkillRegistry}, skills::SkillRegistry, turn::RunExecutionRequest},
         security::{claims::UserContext, middleware::authenticate_bearer_context},
         tools::descriptor::ToolEffect},
@@ -61,7 +61,7 @@ async fn manager(peer: &Peer, store: Arc<dyn PersistenceLayer>, native: Arc<Nati
     RunManager::with_classifier_config(LlmConfig {model:"openai/gpt-4o-mini".into(),base_url:Some(endpoint.unwrap_or_else(|| peer.base.clone())),
         api_key:Some("phase-synthetic-provider-key".into()),host_supplied_connection:true,max_retries:0,..LlmConfig::default()},
         Arc::new(McpRegistry::new_empty()),SessionStore::new(),Arc::new(RwLock::new(SkillRegistry::default())),
-        Arc::new(VectorMatcher::new(Arc::new(UnavailableEmbeddingBackend::new(384,"phase fixture has no embeddings")),0.75)),
+        Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(Arc::new(UnavailableEmbeddingBackend::new(384,"phase fixture has no embeddings")))),0.75)),
         Some(store),ClassifierConfig::default(),native).await
 }
 

@@ -725,7 +725,9 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     use universal_agent_runtime::session::SessionStore;
     use universal_agent_runtime::uar::defaults;
     use universal_agent_runtime::uar::domain::runs::RunStatus;
-    use universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend;
+    use universal_agent_runtime::uar::rag::embeddings::{
+        UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
+    };
     use universal_agent_runtime::uar::runtime::manager::RunManager;
     use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
     use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
@@ -754,10 +756,12 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
             sessions.clone(),
             Arc::new(RwLock::new(SkillRegistry::new(None, None))),
             Arc::new(VectorMatcher::new(
-                Arc::new(UnavailableEmbeddingBackend::new(
-                    384,
-                    "embeddings are not exercised by this test",
-                )),
+                Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+                    UnavailableEmbeddingBackend::new(
+                        384,
+                        "embeddings are not exercised by this test",
+                    ),
+                ))),
                 0.75,
             )),
             None,
@@ -2172,7 +2176,7 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     use universal_agent_runtime::uar::compiler::collaboration::CollaborationCatalogService;
     use universal_agent_runtime::uar::defaults;
     use universal_agent_runtime::uar::persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider};
-    use universal_agent_runtime::uar::rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend};
+    use universal_agent_runtime::uar::rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend};
     use universal_agent_runtime::uar::runtime::checkpoint::Checkpoint;
     use universal_agent_runtime::uar::runtime::graph::{AgentGraph, GraphState};
     use universal_agent_runtime::uar::runtime::manager::RunManager;
@@ -2200,7 +2204,7 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
         LlmConfig { model: "openai/gpt-4o".into(), api_key: Some("test-key".into()), ..LlmConfig::default() },
         Arc::new(McpRegistry::new_empty()), sessions.clone(),
         Arc::new(RwLock::new(SkillRegistry::new(None, None))),
-        Arc::new(VectorMatcher::new(embedding_backend, 0.75)), Some(persistence.clone()),
+        Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(embedding_backend)), 0.75)), Some(persistence.clone()),
     ).await.with_llm_driver(driver.clone()).with_agent_graph(graph));
     let secret = "legacy-checkpoint-signed-fixture";
     let security = SecurityConfig {

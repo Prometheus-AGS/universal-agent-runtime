@@ -19,3 +19,16 @@ The baseline SHALL retain and execute existing presentation-history replay/prove
 - **WHEN** relevant Rust source or manifest changes are committed using the existing hook
 - **THEN** the hook invokes the library compilation safeguard
 - **AND** working-tree compilation alone does not produce a release qualification claim
+
+### Requirement: Current fixture construction without weakened assertions
+Integration fixtures SHALL construct the current production types and preserve their existing behavior assertions. Shared fixture code that is intentionally unused in one including target SHALL use a reasoned lint expectation scoped to that target; warnings SHALL NOT be hidden with blanket allowances or compiler flags.
+
+#### Scenario: Runtime embedding backend becomes swappable
+- **WHEN** the matcher requires a swappable backend but a test owns a concrete or trait-object backend
+- **THEN** the fixture adapts that same backend to the current wrapper contract
+- **AND** its embedding behavior and assertions remain unchanged
+
+#### Scenario: Test producer send fails
+- **WHEN** the fixture producer cannot send its release notification
+- **THEN** the failure reaches the existing anyhow result with its declared message
+- **AND** the fixture does not discard the failed send to obtain a passing compile

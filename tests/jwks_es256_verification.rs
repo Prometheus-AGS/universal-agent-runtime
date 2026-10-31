@@ -35,7 +35,7 @@ use universal_agent_runtime::uar::persistence::{
     PersistenceLayer, providers::surreal::SurrealDbProvider,
 };
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::{
     actor::system::ActorCollaboration, manager::RunManager, matching::VectorMatcher,
@@ -175,7 +175,10 @@ async fn harness(keys: impl FnOnce() -> Vec<Jwk>) -> Harness {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             Some(persistence),
         )
         .await
