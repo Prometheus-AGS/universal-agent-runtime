@@ -2693,3 +2693,39 @@ Decision: replace the single plan with (1) `a2ui-surface-state-patches`, (2) a d
   - The MCP specification forbids token passthrough, hence the opt-in
     forwarding.
 - **Next:** KBD child phase `identity-pass-through`, Assess and Plan only.
+
+## 2026-10-30 — JWT validator (#422) and local loopback owner (#392), batch3-identity
+
+Recorded by uar-trust-tools. Source-only change; nothing compiled or run at the
+time of recording (verification lock CLOSED).
+
+- **Decision (operator, binding):** the loopback `local-host` owner ships as an
+  opt-in flag, `security.local_loopback_owner`, default `false`. It is honored
+  only with `deployment_profile: trusted_local` and `jwt_required: false`.
+  - **Rationale:** turned on by default, it flipped existing live-harness
+    assertions that expect credential-less requests to be refused
+    (`tests/integration/live/baseline_cases.rs:645-656`;
+    `capability_cases.rs` C-04, C-02 and C-21).
+  - **Rationale:** it is unsafe behind any same-host proxy or mesh sidecar.
+    Istio forwards from 127.0.0.6, and a client can send `Host: localhost`.
+  - **Data note:** history stored under `anonymous` before the flag is
+    enabled is not migrated to the `local-host` owner.
+- **Decision (trust-tools judgement):** an unknown `kid` returns 401, not 503.
+  - **Rationale:** when the configured JWKS fetched successfully and lacks the
+    key, the key source is available and the credential is defective.
+  - Only failure to obtain the key set returns 503: unavailable, timeout,
+    invalid set, or past the hard age (`VerificationError::is_key_source_unavailable`).
+  - **Rationale:** this keeps `jwks_unknown_kid_maps_to_unauthorized`.
+- **Decision (trust-tools judgement):** an explicit `typ: application/jwt` is
+  accepted alongside `JWT`, `at+jwt` and `application/at+jwt`.
+  - **Rationale:** RFC 7515 §4.1.9 lets the `application/` prefix be omitted,
+    so it is the same type as `JWT`, in parallel with `application/at+jwt`.
+- **Decision (trust-tools judgement):** a loopback owner request must also name
+  a loopback `Host`, and either send no `Origin` or a loopback `Origin`.
+  Repeated `Host` or `Origin` headers are refused.
+  - **Rationale:** DNS-rebinding and cross-origin browser pages also reach a
+    loopback socket, as `src/uar/security/sidecar_guard.rs:1-10` already
+    documents.
+  - Headers only ever refuse. The peer address comes from the socket alone
+    (`ConnectInfo`). This does not protect against a proxy, which is why the
+    flag defaults off.

@@ -42,7 +42,7 @@ use universal_agent_runtime::{
             providers::surreal::SurrealDbProvider,
             tool_admission::ToolAdmissionEvidenceState,
         },
-        rag::embeddings::UnavailableEmbeddingBackend,
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{
             manager::RunManager,
             matching::{VectorMatcher, intent::ClassifierConfig},
@@ -572,10 +572,10 @@ async fn direct_run(root: &Path, store: &Arc<dyn PersistenceLayer>, mode: &str) 
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
             Arc::new(VectorMatcher::new(
-                Arc::new(UnavailableEmbeddingBackend::new(
+                Arc::new(SwappableEmbeddingBackend::new(Arc::new(UnavailableEmbeddingBackend::new(
                     384,
                     "outcome fixture does not use embeddings",
-                )),
+                )))),
                 0.75,
             )),
             Some(store.clone()),

@@ -1,0 +1,40 @@
+{
+  "scenario": "Without the opt-in, a local caller without credentials stays anonymous",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/memory",
+      "request": {
+        "content": "Anonymous callers must not own memory.",
+        "categories": [
+          "personal_fact"
+        ]
+      },
+      "status": 401,
+      "response": "Verified memory owner required"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/local-identity/2ba5bf92-6f87-4f90-9bfb-4c0ec98c68a8",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-2ba5bf92",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:54296/",
+    "base_url": "http://127.0.0.1:54298/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:54295",
+    "uar_pid": 22967,
+    "proxy_pid": 23696
+  },
+  "refusal": {
+    "error": "Verified memory owner required"
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 42640
+}
