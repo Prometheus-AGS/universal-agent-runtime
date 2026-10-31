@@ -2693,3 +2693,11 @@ Decision: replace the single plan with (1) `a2ui-surface-state-patches`, (2) a d
   - The MCP specification forbids token passthrough, hence the opt-in
     forwarding.
 - **Next:** KBD child phase `identity-pass-through`, Assess and Plan only.
+
+
+## 2026-10-31 — Production readiness #476 baseline
+Production-readiness #476 uses bounded useful KBD phases and operator-authorized phase-exit acceptance. Prior identity-pass-through projection preserved; no assertion of completing its pending 26 tasks. Primary service/sidecar lanes and restricted PG contract reuse current decisions. #462 adds exact committed library-test compilation, without certifying runtime behavior.
+
+
+## 2026-10-31 — Retain current Liter source
+Operator selected “Retain current Liter source” in the pending provenance question. Aligned versions.toml liter_llm_commit to current HEAD gitlink/materialized submodule 0d74c56659943e3fa44a3c8e6d51a27514f3b35c. Liter remains2.3.0; source is unchanged. Supersedes this session’s pending policy/source decision. Rationale: retain the committed prepared-streaming-body accounting repair. Qualification is still pending; policy alignment is not runtime evidence.

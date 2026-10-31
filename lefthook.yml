@@ -7,6 +7,16 @@ pre-commit:
   commands:
     github-actions-policy:
       run: pnpm github-actions-policy:validate
+    rust-test-baseline:
+      run: bash scripts/verify-rust-test-baseline.sh
+      glob:
+        - "*.rs"
+        - "**/*.rs"
+        - "Cargo.{toml,lock}"
+        - "**/Cargo.{toml,lock}"
+        - "rust-toolchain{,.toml}"
+        - ".cargo/config{,.toml}"
+        - "scripts/verify-rust-test-baseline.sh"
     frontend-lint:
       run: pnpm -C frontend lint
       glob: "frontend/**/*.{ts,tsx}"

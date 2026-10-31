@@ -79,7 +79,6 @@ async fn manager_with_run(captured: bool) -> RunManager {
                 pending_client_handoff: None,
                 client_handoff_failed: false,
             })),
-            caller_handoff_confirmation: Arc::new(Mutex::new(())),
             completion: None,
             delegation: None,
             tool_admission: None,

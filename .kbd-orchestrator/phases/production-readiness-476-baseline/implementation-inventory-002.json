@@ -1,0 +1,52 @@
+{
+  "phase": "production-readiness-476-baseline",
+  "implementation_complete": true,
+  "source_base": "964e816854411cd12b3c85e5e0f11f03b0bf4892",
+  "files": [
+    {
+      "path": "docs/development/rust-test-baseline.md",
+      "sha256": "3b22faaa0f1169ec5dcb491d93875f269f48a1e13b134da9ab5a33feb622acdf"
+    },
+    {
+      "path": "lefthook.yml",
+      "sha256": "6615ae3751828bca3e4d149d2086eb3d4c46efb26cbe55426df363b9f74dcafa"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/.openspec.yaml",
+      "sha256": "c6ab3a95d8d0fd469ca8750ef79234025bf4a8356d5d57856e97d7e47fc8b6c2"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/design.md",
+      "sha256": "8845c2deb6c457aae2bc70741a8730916663e76c2c895d496b8c8a3473b1935c"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/proposal.md",
+      "sha256": "4215d8eecdb3230b14cd7c76e530058a3717a9ec8accc2b28bd079c11578ebc1"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/specs/rust-test-baseline/spec.md",
+      "sha256": "e8add124e8e200d6c4636661b54bdd10767e14f37eab569df0edaddd9e427da3"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/tasks.md",
+      "sha256": "343b8c892eac310732b919f695b75ffc29754d57feae5509a69fdbceb7e321d3"
+    },
+    {
+      "path": "scripts/verify-rust-test-baseline.sh",
+      "sha256": "9520ccad22409240f15f23e424ef4941f9ef5b0627a26a40ba7c4236bd555c65"
+    },
+    {
+      "path": "src/uar/runtime/presentation_history_tests.rs",
+      "sha256": "7f6658b2c8805812b99b447040d639187ff93a2d41ab97cddb8f5412ce527e09"
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "0e353df1172c464da3cf7326bf4e84db657201caf23a108fc3fd2c5f8edf305d"
+    }
+  ],
+  "remaining_implementation": [],
+  "operator_decision": "Retain current Liter source; align policy pin to committed gitlink 0d74c56659943e3fa44a3c8e6d51a27514f3b35c. Version2.3.0 and dependency source unchanged.",
+  "verification": "Planned phase-exit checks authorized; no real Rust compile/test result. Shared build writer remains prerequisite. Pin equality and artifact-only review pending.",
+  "guards": "No new runtime guards; original safeguard guards trace to #462 temporary-source acceptance, warning-free and single-writer requirements.",
+  "prior_inventory": "implementation-inventory.json retained as historical before policy alignment."
+}

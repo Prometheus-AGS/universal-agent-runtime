@@ -1,0 +1,13 @@
+{
+  "claim": "Installed Lefthook selector controls in synthetic Git repo, fake Cargo/rustc; no Rust compilation",
+  "results": [
+    {
+      "file": "README.md",
+      "exit_code": 1,
+      "compile_calls": 0,
+      "passed": true,
+      "stdout": "\u001b[38;2;56;56;56m\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\u001b[m\n\u001b[38;2;56;56;56m\u2502\u001b[m lefthook  v2.2.2   hook:  \u001b[1mpre-commit\u001b[m \u001b[38;2;56;56;56m\u2502\u001b[m\n\u001b[38;2;56;56;56m\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\u001b[m\n\u2502  rust-test-baseline (skip) no matching staged files\n",
+      "stderr": "Error: failed to run the hook: no job matching rust-test-baseline found in hook \"pre-commit\"\n"
+    }
+  ]
+}

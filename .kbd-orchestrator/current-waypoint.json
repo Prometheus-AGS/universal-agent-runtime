@@ -1,44 +1,21 @@
 {
-  "schemaVersion": "5",
-  "generatedBy": "kbd-runtime",
-  "projectionContractVersion": 2,
-  "sourceRevision": 700,
-  "derivedRevision": 700,
-  "frontier": {
-    "1e35869a-ca3a-4cc7-b8e8-e09356f33fbf": 588,
-    "64ec9b3e-806f-4537-a1a5-b3e560485e8e": 112
-  },
-  "conflictCount": 0,
-  "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
-  "runId": "uar-outstanding-issues-v1-1-1-20261021T115743Z",
-  "path": [
-    "uar-post-lifecycle-verification-readiness",
-    "uar-verification-simplification",
-    "identity-pass-through"
+  "schemaVersion": "1",
+  "generatedBy": "codex-kbd-workflow",
+  "project": "universal-agent-runtime",
+  "activePhase": "production-readiness-476-baseline",
+  "phase": "production-readiness-476-baseline",
+  "status": "WAITING_FOR_SHARED_CARGO",
+  "stageId": "verify",
+  "change": "restore-exact-tree-rust-baseline",
+  "phasePath": ".kbd-orchestrator/phases/production-readiness-476-baseline",
+  "priorWaypoint": ".kbd-orchestrator/phases/production-readiness-476-baseline/prior-waypoint.json",
+  "authorization": "Operator request 2026-10-31: bounded useful phases, phase-exit acceptance, no tests during investigation/implementation",
+  "exactNextCommand": "Queued shell waits for all current Cargo/rustc writers to finish, then runs ordinary git commit hooks. Inspect target/production-readiness-476/commit-attempt-001.log; after successful commit run exact-commit safeguard and retained regressions serially.",
+  "verification": "PHASE_EXIT_AUTHORIZED",
+  "blockers": [
+    "Original checkout has an active Cargo writer sharing host-global build directory; do not run overlapping compile/commit hook gates.",
+    "Exact committed candidate and real profile/regression acceptance not yet produced."
   ],
-  "phaseIds": [
-    "uar-post-lifecycle-verification-readiness",
-    "uar-verification-simplification",
-    "uar-verification-simplification::identity-pass-through"
-  ],
-  "activePhaseId": "uar-verification-simplification::identity-pass-through",
-  "activePhase": "identity-pass-through",
-  "phase": "uar-post-lifecycle-verification-readiness",
-  "parentPhase": "uar-verification-simplification",
-  "childPointer": "identity-pass-through",
-  "change": null,
-  "currentTask": null,
-  "status": "ready",
-  "lifecycle": "ready",
-  "stageId": null,
-  "stageStatus": null,
-  "completionMetric": "implementation",
-  "implementationCompleted": 144,
-  "implementationTotal": 170,
-  "planRevision": 178,
-  "revision": 700,
-  "exactNextCommand": "/kbd-assess uar-post-lifecycle-verification-readiness› identity-pass-through",
-  "nextChange": null,
-  "nextTask": null,
-  "updatedAt": "2026-10-28T10:59:39.603112Z"
+  "policyDecision": "Retain current Liter source; policy aligned to0d74c566",
+  "inventory": ".kbd-orchestrator/phases/production-readiness-476-baseline/implementation-inventory-002.json"
 }
