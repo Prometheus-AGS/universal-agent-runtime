@@ -33,14 +33,14 @@
     "test:e2e:chromatic": "playwright test && chromatic --playwright --exit-zero-on-changes"
   },
   "dependencies": {
-    "@assistant-ui/react": "0.15.31",
+    "@assistant-ui/react": "0.15.32",
     "@assistant-ui/react-markdown": "0.14.24",
     "@base-ui/react": "1.9.0",
     "@electric-sql/pglite": "^0.5.12",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource-variable/space-grotesk": "^5.3.0",
-    "@hookform/resolvers": "^6.0.1",
+    "@hookform/resolvers": "^6.0.2",
     "@prometheus-ags/a2ui-core": "workspace:*",
     "@prometheus-ags/a2ui-uar": "workspace:*",
     "@prometheus-ags/entity-graph-core": "4.3.0",
