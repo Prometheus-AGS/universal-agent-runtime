@@ -1,0 +1,96 @@
+{
+  "scope": "Text screening only; does not validate source/runtime",
+  "results": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": ".agent-team/uar-core/reviews/production-readiness-capability/corrective-code-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T18:24:09.341667Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [\n    {\n      \"location\": null,\n      \"pattern_id\": \"S-07\",\n      \"rationale\": \"Response is 861 words — substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.\",\n      \"severity\": \"low\"\n    }\n  ],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"Score: 0.02. 1 pattern(s) detected (detect_only mode — no correction applied):\\n[S-07] Low — Response is 861 words — substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.\",\n  \"sycophancy_score\": 0.01785714365541935\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": ".agent-team/uar-core/reviews/production-readiness-capability/corrective-js-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T18:24:09.348567Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": ".agent-team/uar-core/reviews/production-readiness-capability/corrective-python-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T18:24:09.353550Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": ".agent-team/uar-core/reviews/production-readiness-destination-binding/code-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T18:24:09.358217Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": ".agent-team/uar-core/reviews/production-readiness-destination-binding/js-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T18:24:09.363522Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": ".agent-team/uar-core/reviews/production-readiness-destination-binding/python-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T18:24:09.370668Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    }
+  ],
+  "manualDisposition": "No mandatory corrections. Low S-07 length note on corrective Rust report retained because it documents concrete limits and inspected surfaces. Review verdicts apply to source only; no report is a runtime PASS. Original findings and reports unchanged."
+}

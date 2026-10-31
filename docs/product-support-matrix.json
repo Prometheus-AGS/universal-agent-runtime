@@ -1,10 +1,15 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
+  "product_version": "1.4.0-rc.1",
+  "version_semantics": "version is the matrix contract revision; product_version follows Cargo.toml; SDK/package/schema versions remain independent",
+  "claim_reviewed_at": "2026-10-31",
+  "verified_at_semantics": "Historical inventory date, not fresh verification of the current source or container",
+  "qualification": {"selected_lane": "linux/amd64 container APIs", "status": "unverified", "default_persistence": "SurrealDB 3.3.0; owned persistent volume", "secondary_persistence": "PostgreSQL18/pgvector restricted by runtime capability document; no parity or checkpoint-resume claim", "memory": "independent service-owned store", "current_source_evidence": "#462 scoped library baseline on5aa36a40; does not certify current image/dispatch edits or installed container", "pending": "#463/#464 actual mounted transport/dispatch; #466 evidence alignment; #465 actual release image/selected lanes", "excluded_lanes": ["arm64", "windows", "mobile", "native archives", "browser/native WASM-AOT certification", "every-provider quality"], "vision_evidence": "source authored; NOT_EXERCISED; no genuine-model understanding qualification", "recovery_contract": "product-support-matrix.md#execution-and-recovery-guarantees"},
   "verified_at": "2026-07-14",
   "features": [
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "stable", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
+    { "id": "server-full", "status": "preview", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "Exact selected Linux amd64 artifact build and bounded applicable local API qualification under#476/#465; compile alone is insufficient" },
     { "id": "desktop-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features desktop-full" },
     { "id": "embedded-mobile", "status": "experimental", "default": false, "platforms": ["android", "ios"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features embedded-mobile" },
     { "id": "host-persistence", "status": "internal", "default": false, "platforms": ["linux", "macos", "windows", "android", "ios"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features host-persistence" },
@@ -29,7 +34,7 @@
   ],
   "bundles": [
     { "id": "minimal", "status": "stable", "license": "MIT", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "stable", "distribution": true, "license": "MIT", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
+    { "id": "server-full", "status": "preview", "distribution": true, "license": "MIT", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "Exact selected Linux amd64 artifact build and bounded applicable local API qualification under#476/#465; compile alone is insufficient" },
     { "id": "desktop-full", "status": "preview", "license": "MIT", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
     { "id": "embedded-mobile", "status": "experimental", "license": "MIT", "features": ["host-persistence"], "gate": "cargo check --locked --no-default-features --features embedded-mobile" },
     { "id": "server-postgres", "status": "preview", "license": "MIT", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
@@ -41,25 +46,25 @@
     { "id": "sdk-typescript", "path": "sdks/typescript", "license": "MIT" }
   ],
   "providers": [
-    { "id": "openai-compatible", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision", "structured"], "gate": "tests/bdd + provider route real-server E2E", "verified_at": "2026-07-11" },
-    { "id": "anthropic", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision"], "gate": "anthropic streaming/cache unit suite", "verified_at": "2026-07-11" },
-    { "id": "catalog-native", "tier": 2, "capabilities": ["chat", "stream"], "gate": "registry resolution and provider health tests", "verified_at": "2026-07-11" },
-    { "id": "catalog-only", "tier": 3, "capabilities": [], "gate": "catalog schema only; no execution promise", "verified_at": "2026-07-11" },
-    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10" },
-    { "id": "candle-local", "tier": 2, "capabilities": ["embedding"], "gate": "cargo check --lib --features server-full,candle-embeddings", "verified_at": "2026-07-14" },
-    { "id": "openai-embeddings", "tier": 1, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" },
-    { "id": "voyage-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" },
-    { "id": "cohere-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" }
+    { "id": "openai-compatible", "tier": 1, "capabilities": ["chat", "stream", "tools", "structured"], "gate": "tests/bdd + provider route real-server E2E", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified", "unqualified_capabilities": ["vision"], "vision_scope": "New ordinary OpenAI inline PNG/JPEG slice source-authored only; existing direct Anthropic conversion implemented but independently unqualified. No catalog-only or fake-peer vision certification." },
+    { "id": "anthropic", "tier": 1, "capabilities": ["chat", "stream", "tools"], "gate": "anthropic streaming/cache unit suite", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified", "unqualified_capabilities": ["vision"], "vision_scope": "New ordinary OpenAI inline PNG/JPEG slice source-authored only; existing direct Anthropic conversion implemented but independently unqualified. No catalog-only or fake-peer vision certification." },
+    { "id": "catalog-native", "tier": 2, "capabilities": ["chat", "stream"], "gate": "registry resolution and provider health tests", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "catalog-only", "tier": 3, "capabilities": [], "gate": "catalog schema only; no execution promise", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "candle-local", "tier": 2, "capabilities": ["embedding"], "gate": "cargo check --lib --features server-full,candle-embeddings", "verified_at": "2026-07-14", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "openai-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14", "current_candidate_evidence": "Request-shape/key-resolution tests are adapter evidence, not mounted nonempty embedding qualification; #470 remains" },
+    { "id": "voyage-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "cohere-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" }
   ],
   "persistence": [
     { "deployment": "web-default", "authority": "embedded-surrealdb", "client_cache": "pglite", "sync": "server events reconcile graph; PGlite persists local threads/messages", "conflict": "server entity version wins; local unsent chat remains client-owned", "status": "stable", "gate": "cargo test --lib + frontend graph/store tests" },
-    { "deployment": "server-postgres", "authority": "postgresql-pgvector", "client_cache": "pglite", "sync": "server events reconcile graph", "conflict": "database transaction/version wins", "status": "preview", "gate": "cargo test --features postgres-backend" },
+    { "deployment": "server-postgres", "authority": "postgresql-pgvector", "client_cache": "pglite", "sync": "server events reconcile graph", "conflict": "database transaction/version wins", "status": "preview", "gate": "cargo test --features postgres-backend", "limitations": "No durable agent instances/teams/followups/schedules/observers/checkpoint resume; runtime capability_unsupported refusal; independent memory service" },
     { "deployment": "desktop", "authority": "embedded-surrealdb", "client_cache": "pglite-webview", "sync": "local loopback event stream", "conflict": "runtime authority; client drafts remain local", "status": "preview", "gate": "desktop bundle certification pending" }
   ],
   "routing": [
-    { "level": "catalog", "status": "stable", "meaning": "filter declared model capabilities", "gate": "catalog/router unit tests" },
-    { "level": "availability", "status": "stable", "meaning": "exclude disabled or cooldown providers", "gate": "health and targeted routing tests" },
-    { "level": "policy", "status": "stable", "meaning": "apply preferred provider, cost and capability constraints", "gate": "targeted eval routing suite" },
+    { "level": "catalog", "status": "stable", "meaning": "filter declared model metadata; no execution or capability certification", "gate": "catalog/router unit tests" },
+    { "level": "availability", "status": "preview", "meaning": "exclude disabled or cooldown providers", "gate": "health and targeted routing tests", "current_candidate_evidence": "Actual constrained dispatch source-authored under#464; NOT_EXERCISED on selected container; advisory query is not a run" },
+    { "level": "policy", "status": "preview", "meaning": "apply preferred provider, cost and capability constraints", "gate": "targeted eval routing suite", "current_candidate_evidence": "Actual constrained dispatch source-authored under#464; NOT_EXERCISED on selected container; advisory query is not a run" },
     { "level": "adaptive", "status": "experimental", "meaning": "learn from runtime quality/latency history", "gate": "no GA gate; not a release promise" }
   ],
   "tools": [
@@ -68,12 +73,13 @@
     { "mode": "wasm", "status": "preview", "default_policy": "disabled unless wasm-runtime enabled", "controls": ["WASI capability boundary", "Cedar", "approval"], "gate": "cargo check --features wasm-runtime" }
   ],
   "platforms": [
-    { "id": "web", "status": "stable", "sandbox": "server process; browser renders declarative artifacts", "gate": "frontend unit/build/browser/BDD suites" },
-    { "id": "desktop", "status": "preview", "sandbox": "Tauri shell with supervised local runtime", "gate": "platform artifact gate pending" },
-    { "id": "mobile", "status": "experimental", "sandbox": "undeclared", "gate": "none" },
-    { "id": "native-wasm", "status": "preview", "sandbox": "Wasmtime/WASI", "gate": "cargo check --features wasm-runtime" },
-    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none" },
-    { "id": "windows-native-archive", "status": "experimental", "sandbox": "native process; archive certification deferred", "gate": "non-blocking release workflow job until promoted" }
+    { "id": "web", "status": "stable", "sandbox": "server process; browser renders declarative artifacts", "gate": "frontend unit/build/browser/BDD suites", "current_candidate_qualification": "API-only promotion does not qualify interactive browser workflows" },
+    { "id": "desktop", "status": "preview", "sandbox": "Tauri shell with supervised local runtime", "gate": "platform artifact gate pending", "current_candidate_qualification": "not-selected" },
+    { "id": "mobile", "status": "experimental", "sandbox": "undeclared", "gate": "none", "current_candidate_qualification": "not-selected" },
+    { "id": "native-wasm", "status": "preview", "sandbox": "Wasmtime/WASI", "gate": "cargo check --features wasm-runtime", "current_candidate_qualification": "not-selected" },
+    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none", "current_candidate_qualification": "not-selected" },
+    { "id": "windows-native-archive", "status": "experimental", "sandbox": "native process; archive certification deferred", "gate": "Not selected; actual local installed-archive qualification required before promotion", "current_candidate_qualification": "not-selected" },
+    { "id": "linux-amd64-container-api", "status": "preview", "sandbox": "existing non-root rootDockerfile API image; owned persistent volume", "gate": "Exact image/source/config and bounded mounted API qualification under#465/#476", "current_candidate_qualification": "selected but unverified" }
   ],
   "integrations": [
     { "id": "bossfang", "mode": "supervised-service", "status": "recommended", "contract": "OpenAI-compatible first; A2A and AG-UI for richer semantics", "reason": "isolated faults/security/upgrades; current crate is monolithic", "library_reconsideration": "only after narrow dependency-light kernel extraction and measured IPC bottleneck" },

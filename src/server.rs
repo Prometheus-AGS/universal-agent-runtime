@@ -5924,8 +5924,8 @@ async fn api_messages(
         .into_response()
 }
 
-/// OpenAI-style message payload.
-#[derive(Debug, Deserialize)]
+/// OpenAI-style message payload. Raw content deliberately has no Debug projection.
+#[derive(Deserialize)]
 struct OpenAiMessageInput {
     role: String,
     #[serde(default)]
@@ -5980,7 +5980,8 @@ impl StreamMode {
 }
 
 /// OpenAI-compatible completion request with UAR extensions.
-#[derive(Debug, Deserialize)]
+/// Raw caller content deliberately has no Debug projection.
+#[derive(Deserialize)]
 pub(crate) struct ChatCompletionRequest {
     #[serde(default)]
     response_format: Option<crate::llm::response_format::ResponseFormat>,
@@ -6187,92 +6188,155 @@ fn openai_error_response(status: StatusCode, message: &str, code: Option<&str>) 
         .into_response()
 }
 
-fn extract_text_content(value: &serde_json::Value) -> Option<String> {
+/// Parse only typed current-turn parts. Strings, including JSON-looking strings,
+/// remain text; unknown keys/forms are not silently erased by deserialization.
+fn parse_current_chat_content(value: &Value) -> Result<crate::llm::MessageContent, Response> {
+    use crate::llm::{ContentPart, ImageUrl, MessageContent};
+
+    let invalid = || openai_error_response(StatusCode::BAD_REQUEST,
+        "Content must be text or ordered text/image_url parts with supported fields",
+        Some("invalid_content_part"));
     match value {
-        serde_json::Value::String(s) => Some(s.clone()),
-        serde_json::Value::Array(parts) => {
-            let mut text = String::new();
+        Value::String(text) => Ok(MessageContent::text(text.clone())),
+        Value::Array(parts) => {
+            let mut content = Vec::with_capacity(parts.len());
             for part in parts {
-                if let Some(part_type) = part.get("type").and_then(serde_json::Value::as_str)
-                    && part_type == "text"
-                    && let Some(t) = part.get("text").and_then(serde_json::Value::as_str)
-                {
-                    if !text.is_empty() {
-                        text.push('\n');
+                let object = part.as_object().ok_or_else(&invalid)?;
+                match object.get("type").and_then(Value::as_str) {
+                    Some("text") if object.len() == 2 => {
+                        let text = object.get("text").and_then(Value::as_str).ok_or_else(&invalid)?;
+                        content.push(ContentPart::text(text));
                     }
-                    text.push_str(t);
+                    Some("image_url") if object.len() == 2 => {
+                        let image = object.get("image_url").and_then(Value::as_object).ok_or_else(&invalid)?;
+                        if image.keys().any(|key| key != "url" && key != "detail") {
+                            return Err(invalid());
+                        }
+                        let url = image.get("url").and_then(Value::as_str).ok_or_else(&invalid)?;
+                        let detail = match image.get("detail") {
+                            None => None,
+                            Some(Value::String(detail)) => Some(detail.clone()),
+                            Some(_) => return Err(invalid()),
+                        };
+                        content.push(ContentPart::ImageUrl { image_url: ImageUrl { url: url.to_owned(), detail } });
+                    }
+                    _ => return Err(invalid()),
                 }
             }
-            if text.is_empty() { None } else { Some(text) }
+            Ok(MessageContent::parts(content))
         }
-        _ => None,
+        _ => Err(invalid()),
     }
 }
 
-fn extract_input_message(req: &ChatCompletionRequest) -> Option<String> {
-    if let Some(message) = &req.message
-        && !message.trim().is_empty()
-    {
-        return Some(message.clone());
+/// Admit one current user turn; earlier caller history is not a multimodal replay
+/// API. Never discard an image while accepting the remaining text as success.
+async fn admit_current_chat_content(req: &ChatCompletionRequest) -> Result<(crate::llm::MessageContent, String), Response> {
+    use crate::llm::{ContentPart, MessageContent};
+    use crate::llm::inline_image::{MAX_INLINE_IMAGE_BYTES, MAX_INLINE_IMAGES, validate_inline_image};
+
+    // Preserve legacy text precedence: a nonblank convenience message wins;
+    // a blank one falls through to the last user message. Ignored multimodal
+    // input still refuses below rather than being silently discarded.
+    let convenience_message = req.message.as_ref().filter(|message| !message.trim().is_empty());
+    if req.attachments.iter().any(|attachment| attachment.content_type.to_ascii_lowercase().starts_with("image/")) {
+        return Err(openai_error_response(StatusCode::BAD_REQUEST,
+            "Image attachments are unsupported; use inline current-user image_url parts",
+            Some("unsupported_image_attachment")));
     }
-
-    req.messages
-        .iter()
-        .rev()
-        .find(|m| m.role.eq_ignore_ascii_case("user"))
-        .and_then(|m| extract_text_content(&m.content))
-        .filter(|s| !s.trim().is_empty())
-}
-
-/// Build a JSON string representing an OpenAI-style multipart content array.
-///
-/// Layout:
-///   1. For each non-image attachment: `{ type:"text", text:"[filename]\n<content>" }`
-///   2. User message text: `{ type:"text", text:"..." }`
-///   3. For each image attachment: `{ type:"image_url", image_url:{ url:"/api/attachments/{id}", detail:"auto" } }`
-///
-/// Returns `None` if there are no attachments (caller uses plain text instead).
-fn build_multipart_content(
-    user_text: &str,
-    attachments: &[crate::uar::api::upload::AttachmentInput],
-) -> Option<String> {
-    if attachments.is_empty() {
-        return None;
-    }
-    let mut parts: Vec<serde_json::Value> = Vec::new();
-
-    // Document text blocks first (context before the question).
-    for att in attachments {
-        if !att.content_type.starts_with("image/") {
-            if let Some(text) = &att.text_content {
-                parts.push(serde_json::json!({
-                    "type": "text",
-                    "text": format!("[{}]\n{}", att.filename, text)
-                }));
+    let current_index = if convenience_message.is_some() {
+        None
+    } else {
+        req.messages.iter().rposition(|message| message.role.eq_ignore_ascii_case("user"))
+    };
+    for (index, message) in req.messages.iter().enumerate() {
+        if Some(index) == current_index {
+            continue;
+        }
+        let text_only = match &message.content {
+            Value::Null | Value::String(_) => true,
+            Value::Array(parts) => parts.iter().all(|part| part.as_object().is_some_and(|object|
+                object.len() == 2 && object.get("type").and_then(Value::as_str) == Some("text")
+                    && object.get("text").is_some_and(Value::is_string))),
+            _ => false,
+        };
+        if !text_only {
+            if convenience_message.is_some() {
+                return Err(openai_error_response(StatusCode::BAD_REQUEST,
+                    "Convenience message would discard supplied image or unsupported content",
+                    Some("ambiguous_message_input")));
             }
+            return Err(openai_error_response(StatusCode::BAD_REQUEST,
+                "Only the current user message may contain images; caller multimodal history replay is unsupported",
+                Some("unsupported_multimodal_history")));
         }
     }
+    let mut content = if let Some(message) = convenience_message {
+        MessageContent::text(message.clone())
+    } else if let Some(index) = current_index {
+        parse_current_chat_content(&req.messages[index].content)?
+    } else {
+        return Err(openai_error_response(StatusCode::BAD_REQUEST,
+            "Request must include message or a current user message in messages", Some("invalid_request")));
+    };
 
-    // User message text.
-    if !user_text.is_empty() {
-        parts.push(serde_json::json!({ "type": "text", "text": user_text }));
+    // Document text remains context before the user's original ordered parts.
+    let mut attachments: Vec<ContentPart> = req.attachments.iter().filter_map(|attachment|
+        attachment.text_content.as_ref().map(|text|
+            ContentPart::text(format!("[{}]\n{}", attachment.filename, text))))
+        .collect();
+    if !attachments.is_empty() {
+        match content {
+            MessageContent::Text { content } => attachments.push(ContentPart::text(content)),
+            MessageContent::Parts { content } => attachments.extend(content),
+        }
+        content = MessageContent::parts(attachments);
     }
-
-    // Image parts last.
-    for att in attachments {
-        if att.content_type.starts_with("image/") {
-            parts.push(serde_json::json!({
-                "type": "image_url",
-                "image_url": { "url": att.url, "detail": "auto" }
-            }));
+    let text = match &content {
+        MessageContent::Text { content } => content.clone(),
+        MessageContent::Parts { content } => content.iter().filter_map(|part| match part {
+            ContentPart::Text { text } => Some(text.as_str()),
+            ContentPart::ImageUrl { .. } => None,
+        }).collect::<Vec<_>>().join("\n"),
+    };
+    if text.trim().is_empty() && !content.has_images() {
+        return Err(openai_error_response(StatusCode::BAD_REQUEST,
+            "Current user content must contain text or an inline image", Some("invalid_request")));
+    }
+    if let MessageContent::Parts { content: parts } = &content {
+        let images: Vec<_> = parts.iter().filter_map(|part| match part {
+            ContentPart::ImageUrl { image_url } => Some(image_url),
+            ContentPart::Text { .. } => None,
+        }).collect();
+        if images.len() > MAX_INLINE_IMAGES {
+            return Err(openai_error_response(StatusCode::BAD_REQUEST,
+                "Current user content permits at most 8 images", Some("too_many_images")));
+        }
+        // Bound the combined encoded input before any decoding, including for
+        // internal callers that do not pass through the HTTP body limit.
+        let encoded_bytes = images.iter().try_fold(0usize, |sum, image| sum.checked_add(image.url.len()));
+        if encoded_bytes.is_none_or(|bytes| bytes > MAX_INLINE_IMAGE_BYTES) {
+            return Err(openai_error_response(StatusCode::BAD_REQUEST,
+                "Inline images exceed the 10 MiB encoded limit", Some("image_too_large")));
+        }
+        for image in images {
+            let metadata = validate_inline_image(image).await.map_err(|error| {
+                let status = if matches!(error.code, "image_decoder_busy" | "image_decoder_unavailable") {
+                    StatusCode::SERVICE_UNAVAILABLE
+                } else {
+                    StatusCode::BAD_REQUEST
+                };
+                openai_error_response(status, error.message, Some(error.code))
+            })?;
+            tracing::debug!(
+                mime_type = metadata.mime_type,
+                encoded_bytes = metadata.encoded_bytes,
+                decoded_bytes = metadata.decoded_bytes,
+                "Admitted inline image"
+            );
         }
     }
-
-    if parts.is_empty() {
-        return None;
-    }
-
-    serde_json::to_string(&parts).ok()
+    Ok((content, text))
 }
 
 fn extract_cookie_session_id(headers: &HeaderMap) -> Option<String> {
@@ -6571,19 +6635,9 @@ pub(crate) async fn api_chat_completion(
             None,
         )
     } else {
-        let Some(input_message) = extract_input_message(&req) else {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": {
-                        "message": "Request must include `message` or a user message in `messages`",
-                        "type": "invalid_request_error",
-                        "param": "messages",
-                        "code": "invalid_request"
-                    }
-                })),
-            )
-                .into_response();
+        let (current_user_content, input_message) = match admit_current_chat_content(&req).await {
+            Ok(admitted) => admitted,
+            Err(response) => return response,
         };
 
         // Input guardrails: screen for prompt-injection / PII before the LLM call.
@@ -6783,10 +6837,9 @@ pub(crate) async fn api_chat_completion(
             "Resolved effective resilience policy"
         );
 
-        // If attachments were uploaded, assemble an OpenAI-style multipart content string
-        // (document context blocks + user text + image_url parts).  Otherwise pass plain text.
-        let effective_input =
-            build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
+        // Text-only projection feeds memory/run context. The independently admitted
+        // typed content is attached to the host request below without serialization.
+        let effective_input = input_message;
 
         // --- Prompt caching: resolve effective setting for this request ---
         let global_prompt_caching = match &state.settings_manager {
@@ -6911,6 +6964,7 @@ pub(crate) async fn api_chat_completion(
                 uar::api::targets::workspace(&headers).unwrap_or_default().to_owned(),Arc::clone(&state.collaboration_catalog)),
             None => uar::runtime::turn::RunExecutionRequest::new(agent,effective_input.clone()),
         };
+        let candidate = candidate.with_admitted_current_user_content(current_user_content);
         let mut run_request = match candidate.with_user_context(&user_ctx) {
             Ok(request)=>request,
             Err(_)=>return openai_error_response(StatusCode::UNAUTHORIZED,"Invalid run principal",Some("invalid_run_principal")),

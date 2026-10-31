@@ -67,6 +67,10 @@ struct DestinationBudgetDriver {
     inner: Arc<dyn LlmDriver>,
     contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
     output_token_cap: u32,
+    admission: Arc<crate::llm::router::DestinationAdmission>,
+    destination: String,
+    explicit_reasoning: bool,
+    finite_accounting_requires_proven_image_bound: bool,
 }
 
 #[async_trait::async_trait]
@@ -89,6 +93,22 @@ impl LlmDriver for DestinationBudgetDriver {
                 .output_token_cap
                 .map_or(self.output_token_cap, |cap| cap.min(self.output_token_cap)),
         );
+        let requirements = crate::llm::router::requirements_for_final_request_with_explicit_reasoning(
+            &request,
+            self.explicit_reasoning,
+        )
+        .map_err(|_| crate::llm::router::DestinationAdmissionError::InvalidFinalRequest)?;
+        if self.finite_accounting_requires_proven_image_bound && requirements.needs_vision {
+            return Err(
+                crate::llm::router::DestinationAdmissionError::UnprovenImageBoundForFiniteAccounting
+                    .into(),
+            );
+        }
+        self.admission
+            .admit(&self.destination, &requirements)
+            .await
+            .map_err(anyhow::Error::from)?
+            .restrict_output(&mut request);
         self.inner.stream(request).await
     }
 }
@@ -649,6 +669,11 @@ fn checkpoint_request_identity(
         "user_id": request.user_id,
         "session_id": request.session_id,
         "input": request.input,
+        "current_user_content": request
+            .current_user_content
+            .as_ref()
+            .map(crate::uar::runtime::checkpoint::raw_digest)
+            .unwrap_or_else(|| "none".into()),
         "response_format": request.response_format,
         "state": serde_json::to_value(&resume.state)?,
         "history": serde_json::to_value(&resume.history)?,
@@ -3475,6 +3500,7 @@ impl RunManager {
         self.execute_request(crate::uar::runtime::turn::RunExecutionRequest {
             artifact,
             input,
+            current_user_content: None,
             session_id,
             user_id,
             memory_hits,
@@ -4236,6 +4262,7 @@ impl RunManager {
         let crate::uar::runtime::turn::RunExecutionRequest {
             mut artifact,
             input,
+            current_user_content,
             session_id,
             user_id,
             mut memory_hits,
@@ -4332,7 +4359,19 @@ impl RunManager {
             .or(client_history.as_ref());
         let append_input = plan.append_input && client_tools.is_none();
         let skill_attachments = plan.requested_skill_ids;
+        // The typed ordinary ingress marks the complete session route, not
+        // only this turn's parts: a later text turn can retain an admitted
+        // image from warm history. Final admission applies the qualified
+        // adapter constraint only when the prepared request needs vision.
+        let canonical_typed_image_route = current_user_content.is_some();
         let input = input.unwrap_or_default();
+        let admitted_current_message = Message {
+            role: MessageRole::User,
+            content: current_user_content
+                .unwrap_or_else(|| crate::llm::MessageContent::text(input.clone())),
+            tool_call_id: None,
+            tool_calls: None,
+        };
         tracing::Span::current().record("run_id", &run_id);
         tracing::info!("Starting new run");
         let (tx, _) = broadcast::channel(256); // Buffer size 256
@@ -5132,7 +5171,7 @@ impl RunManager {
 
         // 2. Add User Message
         if append_input {
-            session.add_user_message(&input);
+            session.add_message(admitted_current_message.clone());
         }
 
         // Capture identity for credential resolution before `user_id` is moved
@@ -6095,6 +6134,9 @@ impl RunManager {
             .as_ref()
             .map_or(&self.global_mcp, |bindings| &bindings.mcp);
         let native_descriptors = native_skills.descriptors().await;
+        let preselection_needs_native_tools = native_descriptors.iter().any(|descriptor| {
+            descriptor.exposure != crate::uar::tools::descriptor::Exposure::Hidden
+        });
         // Elicitation is a governed host interaction, never a tool approval.
         // Children inherit the root's frozen connection/channel projection.
         if !child_run
@@ -6373,6 +6415,34 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
+        let preselection_needs_mcp_tools = activation_context
+            .lock()
+            .await
+            .mcp_descriptors()
+            .iter()
+            .any(|descriptor| {
+                descriptor.exposure != crate::uar::tools::descriptor::Exposure::Hidden
+            });
+        let preselection_needs_vision = session
+            .messages()
+            .iter()
+            .any(|message| message.content.has_images());
+        let preselection_needs_tools = client_tools
+            .as_ref()
+            .is_some_and(|tools| {
+                !tools.tools.is_empty()
+                    || matches!(
+                        tools.tool_choice.as_ref(),
+                        Some(crate::llm::ToolChoice::Required | crate::llm::ToolChoice::Named(_))
+                    )
+            })
+            || preselection_needs_native_tools
+            || preselection_needs_mcp_tools;
+        let preselection_needs_structured_output = response_format
+            .as_ref()
+            .is_some_and(crate::llm::response_format::ResponseFormat::is_structured);
+        let preselection_needs_reasoning = reasoning_effort
+            .is_some_and(|effort| effort.thinking_budget().is_some());
         let policy_llm_config = if inherited.is_none()
             && let Some(ref registry) = self.provider_registry
         {
@@ -6446,6 +6516,11 @@ impl RunManager {
         let model_bindings_result = if let Some(bindings) = &inherited {
             bindings.models.for_policy(&bindings.policy)
         } else {
+            let mut hard_route_no_match = self.provider_registry.is_none()
+                && (preselection_needs_tools
+                    || preselection_needs_vision
+                    || preselection_needs_structured_output
+                    || preselection_needs_reasoning);
             let mut preferred_llm_config =
                 policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
             let skill_preferred_model = (collaboration_binding.is_none()
@@ -6501,6 +6576,10 @@ impl RunManager {
                 let router = crate::llm::ModelRouter::new(Arc::clone(registry));
                 let requirements = crate::llm::router::RouteRequirements {
                     preferred_provider: Some(preferred_provider),
+                    needs_tools: preselection_needs_tools,
+                    needs_vision: preselection_needs_vision,
+                    needs_structured_output: preselection_needs_structured_output,
+                    needs_reasoning: preselection_needs_reasoning,
                     ..crate::llm::router::RouteRequirements::default()
                 };
                 match router
@@ -6523,18 +6602,20 @@ impl RunManager {
                                 apply_routed_connection(preferred_llm_config, routed)
                             }
                             None => {
+                                hard_route_no_match = requirements.has_hard_capability_requirement();
                                 tracing::warn!(
                                     selected_model = %selected_model,
-                                    "Routed model became unavailable during resolution; using policy-resolved configuration"
+                                    "Routed model became unavailable during resolution"
                                 );
                                 preferred_llm_config
                             }
                         }
                     }
                     None => {
+                        hard_route_no_match = requirements.has_hard_capability_requirement();
                         tracing::warn!(
                             preferred_model = %preferred_model,
-                            "No healthy registered model matched the run; using policy-resolved configuration"
+                            "No healthy registered model matched the run"
                         );
                         preferred_llm_config
                     }
@@ -6603,7 +6684,13 @@ impl RunManager {
                 failover.enabled = false;
                 failover.fallback_models.clear();
                 failover
-            } else if run_credentials.is_some() || collaboration_binding.is_some() {
+            } else if !artifact.policy.provider.fallbacks.is_empty()
+                || run_credentials.is_some()
+                || collaboration_binding.is_some()
+            {
+                // A nonempty artifact list is the run's explicit fallback
+                // authority. Preserve global operational retry/health settings,
+                // but never merge an outside destination into that capture.
                 let mut failover = self.failover_config.clone();
                 failover.fallback_models = artifact
                     .policy
@@ -6718,23 +6805,50 @@ impl RunManager {
 
             let model_budget = Ok::<_, anyhow::Error>(shared_model_budget.clone());
 
-            let fallback_credential_decisions = async {
-                let mut decisions = std::collections::BTreeMap::new();
+            let fallback_credential_bindings = async {
+                let mut bindings = std::collections::BTreeMap::new();
                 if !run_failover_config.enabled {
-                    return Ok(decisions);
+                    return Ok(bindings);
                 }
+                let mut retained_fallbacks = Vec::new();
                 for fallback in &run_failover_config.fallback_models {
-                    let fallback_config =
-                        crate::llm::Orchestrator::fallback_llm_config(&run_llm_config, fallback);
-                    let (fallback_provider, _) =
+                    let (fallback_provider, fallback_model) =
                         crate::llm::registry::split_model_string_pub(&fallback.model);
+                    let fallback_config = if run_credentials.is_none()
+                        && !is_team_attempt
+                        && !artifact.policy.provider.fallbacks.is_empty()
+                    {
+                        let registry = self.provider_registry.as_deref().ok_or_else(|| {
+                            anyhow::anyhow!("artifact fallback requires registered provider config")
+                        })?;
+                        let Some(fallback_config) = registry
+                            .resolve_to_llm_config(&fallback_provider, &fallback_model)
+                            .await
+                        else {
+                            tracing::info!(
+                                model = %fallback.model,
+                                provider = %fallback_provider,
+                                "Skipping unavailable artifact fallback before binding capture"
+                            );
+                            continue;
+                        };
+                        fallback_config
+                    } else {
+                        let mut fallback_config =
+                            crate::llm::Orchestrator::fallback_llm_config(&run_llm_config, fallback);
+                        // Legacy failover entries have no catalog pricing identity.
+                        // Do not carry the primary route's price onto a distinct
+                        // configured fallback.
+                        fallback_config.catalog_pricing_model = None;
+                        fallback_config
+                    };
                     let fallback_config = match &run_credentials {
                         Some(credentials) => credentials
                             .config_for(&fallback_provider, Some(&fallback.model), fallback_config)
                             .map_err(anyhow::Error::from)?,
                         None => fallback_config,
                     };
-                    let (_, decision) = resolve_credential_binding(
+                    let (fallback_config, decision) = resolve_credential_binding(
                         fallback_config,
                         self.credential_policy.as_ref(),
                         self.provider_service.as_ref(),
@@ -6744,26 +6858,32 @@ impl RunManager {
                         run_credentials.is_some(),
                     )
                     .await?;
-                    decisions.insert(fallback.model.clone(), decision);
+                    bindings.insert(fallback.model.clone(), (fallback_config, decision));
+                    retained_fallbacks.push(fallback.clone());
                 }
-                Ok::<_, anyhow::Error>(decisions)
+                run_failover_config.fallback_models = retained_fallbacks;
+                run_failover_config.enabled = !run_failover_config.fallback_models.is_empty();
+                Ok::<_, anyhow::Error>(bindings)
             }
             .await;
 
             // Capture once before any summarization or model execution. Rebuilding
             // a client from the same config can resolve different environment or
             // provider credentials, and cannot serve as an inherited binding.
-            match (
+            if hard_route_no_match {
+                Err(anyhow::anyhow!("no captured route satisfies required capabilities"))
+            } else {
+                match (
                 model_budget,
                 team_profiles,
                 primary_credential_binding,
-                fallback_credential_decisions,
+                fallback_credential_bindings,
             ) {
                 (
                     Ok(model_budget),
                     Ok((profiles, pricing_models)),
                     Some(Ok((bound_config, primary_credential_decision))),
-                    Ok(fallback_credential_decisions),
+                    Ok(fallback_credential_bindings),
                 ) => {
                     if self.primary_driver.is_some()
                         && self.credential_policy.is_shared()
@@ -6782,7 +6902,7 @@ impl RunManager {
                                 self.primary_driver.clone()
                             },
                             primary_credential_decision,
-                            fallback_credential_decisions,
+                            fallback_credential_bindings,
                             run_failover_config,
                             if run_credentials.is_some() {
                                 None
@@ -6805,6 +6925,7 @@ impl RunManager {
                 (_, _, Some(Err(error)), _) => Err(error),
                 (_, _, _, Err(error)) => Err(error),
                 (_, _, None, _) => Err(anyhow::anyhow!("credential binding unavailable")),
+                }
             }
         };
         let model_bindings = match model_bindings_result {
@@ -6877,6 +6998,32 @@ impl RunManager {
         };
 
         let run_llm_config = model_bindings.config().clone();
+        let destination_scope = model_bindings.destination_scope(target_selection.is_some());
+        let admitted_inline_image_destinations =
+            model_bindings.admitted_inline_image_destinations();
+        let admitted_run_local_plaintext_destinations =
+            model_bindings.admitted_run_local_plaintext_destinations();
+        let finite_accounting_requires_proven_image_bound =
+            model_bindings.budget().has_configured_limits();
+        let destination_admission = Arc::new(match &self.provider_registry {
+            Some(registry) => crate::llm::router::DestinationAdmission::new(
+                destination_scope,
+                admitted_inline_image_destinations,
+                Arc::clone(registry),
+            )
+            .with_admitted_inline_image_adapter_required(canonical_typed_image_route)
+            .with_admitted_run_local_plaintext_destinations(
+                admitted_run_local_plaintext_destinations,
+            ),
+            None => crate::llm::router::DestinationAdmission::without_registry(
+                destination_scope,
+                admitted_inline_image_destinations,
+            )
+            .with_admitted_inline_image_adapter_required(canonical_typed_image_route)
+            .with_admitted_run_local_plaintext_destinations(
+                admitted_run_local_plaintext_destinations,
+            ),
+        });
 
         // The retained artifact is execution authority, not a display copy.
         // Refuse this unsupported case instead of changing its revision/content.
@@ -6923,8 +7070,24 @@ impl RunManager {
             .bind_retained_session(retained_session.clone(), emitter.secret_scrubber.clone());
         let world_state = Arc::new(world_state);
         let mut projected_history = session.messages();
-        for message in &mut projected_history {
-            emitter.secret_scrubber.project_message(message);
+        if projected_history
+            .iter_mut()
+            .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+            .is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history contains an unsupported inline image".into(),
+                })
+                .await;
+            emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         let projected_system = session
             .system_prompt()
@@ -6948,13 +7111,49 @@ impl RunManager {
             }
         } else {
             if let Some(mut seed) = staged_seed {
-                for message in &mut seed {
-                    emitter.secret_scrubber.project_message(message);
+                if seed
+                    .iter_mut()
+                    .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+                    .is_err()
+                {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "canonical_history_invalid".into(),
+                            message: "Canonical history contains an unsupported inline image".into(),
+                        })
+                        .await;
+                    emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
                 }
                 retained_session.seed_if_empty(&seed);
             }
             if append_input {
-                retained_session.add_user_message(emitter.secret_scrubber.scrub(&input));
+                let mut projected_current_message = admitted_current_message.clone();
+                if emitter
+                    .secret_scrubber
+                    .project_canonical_message(&mut projected_current_message)
+                    .is_err()
+                {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "canonical_history_invalid".into(),
+                            message: "Canonical history contains an unsupported inline image".into(),
+                        })
+                        .await;
+                    emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+                retained_session.add_message(projected_current_message);
             }
         }
         emitter
@@ -7308,18 +7507,29 @@ impl RunManager {
                     .filter(|message| message.role != MessageRole::System),
             );
             if append_input {
-                messages.push(Message {
-                    role: MessageRole::User,
-                    content: crate::llm::MessageContent::text(input.clone()),
-                    tool_call_id: None,
-                    tool_calls: None,
-                });
+                messages.push(admitted_current_message.clone());
             }
         } else {
             messages.extend(session.messages());
         }
-        for message in &mut messages {
-            emitter.secret_scrubber.project_message(message);
+        if messages
+            .iter_mut()
+            .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+            .is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history contains an unsupported inline image".into(),
+                })
+                .await;
+            emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         emitter
             .secret_scrubber
@@ -7826,8 +8036,24 @@ impl RunManager {
         if let Some(update) = &world_update {
             world_state.commit(update).await;
         }
-        for message in &mut messages {
-            emitter.secret_scrubber.project_message(message);
+        if messages
+            .iter_mut()
+            .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+            .is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history contains an unsupported inline image".into(),
+                })
+                .await;
+            emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         if let Some(act) = reduce_report.context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
@@ -8019,6 +8245,10 @@ impl RunManager {
             inner: model_bindings.primary(),
             contract: destination_budget_contract.clone(),
             output_token_cap: output_token_cap.unwrap_or(0),
+            admission: Arc::clone(&destination_admission),
+            destination: model_bindings.primary_model().to_string(),
+            explicit_reasoning: preselection_needs_reasoning,
+            finite_accounting_requires_proven_image_bound,
         });
 
         // Capture the resolved model id so the final RunDoneWithUsage event can
@@ -8169,6 +8399,10 @@ impl RunManager {
                 .with_client_tool_budget(Arc::new(model_bindings.budget().clone()))
                 .with_canonical_receipt_store(self.persistence.clone())
                 .with_secret_scrubber(emitter.secret_scrubber.clone())
+                .with_destination_admission(Arc::clone(&destination_admission))
+                .with_finite_accounting_requires_proven_image_bound(
+                    finite_accounting_requires_proven_image_bound,
+                )
                 .with_team_model_handoff(
                     collaboration_binding
                         .clone()

@@ -1,0 +1,112 @@
+[38;2;56;56;56m╭──────────────────────────────────────╮[m
+[38;2;56;56;56m│[m lefthook  v2.2.2   hook:  [1mpre-commit[m [38;2;56;56;56m│[m
+[38;2;56;56;56m╰──────────────────────────────────────╯[m
+│  frontend-lint (skip) no matching staged files
+│  frontend-typecheck (skip) no matching staged files
+┃  github-actions-policy ❯ 
+$ node scripts/validate-github-actions-policy.mjs
+GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml).
+
+┃  rust-test-baseline ❯ 
+WORKING_TREE_ONLY: compiles unstaged changes too; does not certify the staged commit.
+mode=working-tree
+repository=/Users/gqadonis/.claude/worktrees/production-readiness-476
+target_directory=/Users/gqadonis/.claude/worktrees/production-readiness-476/target
+cargo_profile=test
+toolchain:
+cargo 1.99.0-nightly (59800466c 2026-07-07)
+rustc 1.99.0-nightly (b6839f4d0 2026-07-17)
+binary: rustc
+commit-hash: b6839f4d0e2bd63b960bbff8619c6fdea27d81e5
+commit-date: 2026-07-17
+host: x86_64-apple-darwin
+release: 1.99.0-nightly
+LLVM version: 22.1.8
+command: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+warning: the item `Arc` is imported redundantly
+   --> src/llm/router.rs:506:9
+    |
+503 |     use super::*;
+    |         -------- the item `Arc` is already imported here
+...
+506 |     use std::sync::Arc;
+    |         ^^^^^^^^^^^^^^
+    |
+    = note: requested on the command line with `-W redundant-imports`
+
+error[E0382]: borrow of moved value: `native_descriptors`
+    --> src/uar/runtime/manager.rs:6428:16
+     |
+6136 |         let native_descriptors = native_skills.descriptors().await;
+     |             ------------------ move occurs because `native_descriptors` has type `Vec<std::sync::Arc<ToolDescriptor>>`, which does not implement the `Copy` trait
+...
+6204 |                 native_descriptors,
+     |                 ------------------ value moved here
+...
+6219 |                     native_descriptors,
+     |                     ------------------ value moved here
+...
+6428 |             || native_descriptors.iter().any(|descriptor| {
+     |                ^^^^^^^^^^^^^^^^^^ value borrowed here after move
+     |
+note: consider changing this parameter type in method `new` to borrow instead if owning the value isn't necessary
+    --> src/uar/runtime/skills/activation.rs:210:29
+     |
+ 201 |     pub fn new(
+     |            --- in this method
+...
+ 210 |         native_descriptors: Vec<Arc<ToolDescriptor>>,
+     |                             ^^^^^^^^^^^^^^^^^^^^^^^^ this parameter takes ownership of the value
+note: consider changing this parameter type in method `new_projected` to borrow instead if owning the value isn't necessary
+    --> src/uar/runtime/skills/activation.rs:243:29
+     |
+ 237 |     pub async fn new_projected(
+     |                  ------------- in this method
+...
+ 243 |         native_descriptors: Vec<Arc<ToolDescriptor>>,
+     |                             ^^^^^^^^^^^^^^^^^^^^^^^^ this parameter takes ownership of the value
+     = note: borrow occurs due to deref coercion to `[std::sync::Arc<ToolDescriptor>]`
+note: deref defined here
+    --> /Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-x86_64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:3853:5
+     |
+3853 |     type Target = [T];
+     |     ^^^^^^^^^^^
+help: consider cloning the value if the performance cost is acceptable
+     |
+6219 |                     native_descriptors.clone(),
+     |                                       ++++++++
+help: consider cloning the value if the performance cost is acceptable
+     |
+6204 |                 native_descriptors.clone(),
+     |                                   ++++++++
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>>: LowerHex` is not satisfied
+   --> src/llm/mod.rs:266:44
+    |
+266 |             .field("url_sha256", &format!("{digest:x}"))
+    |                                            ^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<_, B0>, B0>, B0>, B0>, B0>>`
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Braced
+              BytesMut
+              Dot<'_, G>
+              EventKindMask
+              GenericArray<u8, T>
+              Hyphenated
+            and 261 others
+    = note: the full name for the type has been written to '/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build/debug/deps/universal_agent_runtime-e07fe3128eb75e0f.long-type-15667685442866334840.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+Some errors have detailed explanations: E0277, E0382.
+For more information about an error, try `rustc --explain E0277`.
+warning: `universal-agent-runtime` (lib test) generated 1 warning
+error: could not compile `universal-agent-runtime` (lib test) due to 2 previous errors; 1 warning emitted
+
+exit status 101
+[38;2;56;56;56m  ────────────────────────────────────[m
+summary: (done in 175.62 seconds)
+✓ github-actions-policy (0.66 seconds)
+✗ rust-test-baseline (174.96 seconds)

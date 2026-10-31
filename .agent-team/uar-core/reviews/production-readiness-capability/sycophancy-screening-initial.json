@@ -1,0 +1,67 @@
+{
+  "scope": "Original artifact-only review reports; detection is text screening, not source/runtime correctness evidence",
+  "results": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "code-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T17:36:39.159621Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "artifact-critic.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T17:36:39.138776Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "js-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T17:36:39.168443Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [\n    {\n      \"location\": null,\n      \"pattern_id\": \"S-07\",\n      \"rationale\": \"Response is 869 words — substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.\",\n      \"severity\": \"low\"\n    }\n  ],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"Score: 0.02. 1 pattern(s) detected (detect_only mode — no correction applied):\\n[S-07] Low — Response is 869 words — substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.\",\n  \"sycophancy_score\": 0.01785714365541935\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "python-review.md",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-31T17:36:39.191327Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"No changes needed: score below clean threshold and no sycophancy patterns were detected.\",\n  \"sycophancy_score\": 0.0\n}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    }
+  ],
+  "manualDisposition": "No mandatory corrections. JS low S-07 length note retained with factual reproducer/limitations; no invented findings or praise found. Original reports preserved unchanged.",
+  "reviewIsolation": "Fresh native same-family source critics, weaker than independent-family. Python original incidental README narrative exposure disclosed. Specialized Rust role workflow unavailable."
+}

@@ -6,6 +6,7 @@ runner owns launch, readiness, release and joined process exit. Only counters,
 case labels and digests are recorded; request headers/content are not logged.
 """
 import argparse
+import base64
 import collections
 import hashlib
 import http.server
@@ -25,6 +26,82 @@ HOLD = re.compile(r"UAR_HOLD:([A-Za-z0-9_-]{1,64}):")
 MODES = {"success", "provider_failure", "disconnect", "tool", "child"}
 
 
+def safe_chat_observation(body, case):
+    """Hash payloads in memory; emit neither headers nor raw text/image content."""
+    def digest(value):
+        return hashlib.sha256(value).hexdigest()
+
+    def text_part(text):
+        encoded = text.encode("utf-8")
+        return {"type": "text", "sha256": digest(encoded), "bytes": len(encoded)}
+
+    source_messages = body.get("messages")
+    message_rows = source_messages if isinstance(source_messages, list) else []
+    messages = []
+    # Observation does not validate or mutate the original body. Fixed shape
+    # markers preserve configured success/failure behavior for accepted metadata.
+    for message in message_rows[:64]:
+        if not isinstance(message, dict):
+            messages.append({"role": "unknown", "parts": [{"type": "invalid_shape"}], "truncated": False})
+            continue
+        content = message.get("content")
+        parts = []
+        if isinstance(content, str):
+            parts.append(text_part(content))
+        elif isinstance(content, list):
+            for part in content[:64]:
+                if not isinstance(part, dict):
+                    parts.append({"type": "invalid_shape"})
+                elif part.get("type") == "text" and isinstance(part.get("text"), str):
+                    parts.append(text_part(part["text"]))
+                elif part.get("type") == "image_url":
+                    image = part.get("image_url")
+                    if not isinstance(image, dict) or not isinstance(image.get("url"), str):
+                        parts.append({"type": "invalid_shape"})
+                        continue
+                    match = re.fullmatch(r"data:(image/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)", image["url"])
+                    try:
+                        raw = base64.b64decode(match.group(2), validate=True) if match else None
+                    except ValueError:
+                        raw = None
+                    parts.append({"type": "image_url", "mime": match.group(1) if match else "unsupported",
+                                  "sha256": digest(raw) if raw is not None else None,
+                                  "bytes": len(raw) if raw is not None else 0,
+                                  "detail": image.get("detail") if image.get("detail") in ("auto", "low", "high") else None})
+                else:
+                    parts.append({"type": "unsupported"})
+        elif content is not None:
+            parts.append({"type": "invalid_shape"})
+        messages.append({"role": message.get("role") if message.get("role") in
+                         ("system", "user", "assistant", "tool", "developer") else "unknown", "parts": parts,
+                         "truncated": isinstance(content, list) and len(content) > 64})
+    model = body.get("model")
+    source_tools = body.get("tools")
+    tools = source_tools if isinstance(source_tools, list) else []
+    tool_rows = []
+    for tool in tools[:64]:
+        function = tool.get("function") if isinstance(tool, dict) else None
+        if not isinstance(function, dict):
+            tool_rows.append({"type": "invalid_shape"})
+        else:
+            tool_rows.append({"name_sha256": digest(str(function.get("name")).encode("utf-8"))})
+    response_format = body.get("response_format")
+    return {"case": case, "model": model if isinstance(model, str) and LABEL.fullmatch(model) else None,
+            "model_sha256": digest(str(model).encode("utf-8")),
+            "messages": messages, "truncated": len(message_rows) > 64,
+            "messages_shape": "array" if isinstance(source_messages, list) else "invalid_shape",
+            "tools": tool_rows, "tool_count": len(tools),
+            "tools_shape": "array" if isinstance(source_tools, list) else "absent_or_null" if source_tools is None else "invalid_shape",
+            "tool_choice_sha256": digest(json.dumps(body.get("tool_choice"), sort_keys=True).encode("utf-8")),
+            "format_type": response_format.get("type") if isinstance(response_format, dict) and
+            response_format.get("type") in ("json_object", "json_schema", "text") else None,
+            "format_sha256": digest(json.dumps(response_format, sort_keys=True, separators=(",", ":")).encode("utf-8")),
+            "max_tokens": body.get("max_tokens") if type(body.get("max_tokens")) is int else None,
+            "max_completion_tokens": body.get("max_completion_tokens") if type(body.get("max_completion_tokens")) is int else None,
+            "temperature": body.get("temperature") if type(body.get("temperature")) in (float, int) else None,
+            "stream": body.get("stream") is True}
+
+
 class State:
     def __init__(self, args):
         self.args = args
@@ -33,6 +110,8 @@ class State:
         self.held = {}
         self.counts = collections.Counter()
         self.case_counts = {}
+        self.observations = collections.deque(maxlen=128)
+        self.observation_count = 0
         self.stopping = False
         self.sequence = 0
         self.log_lock = threading.Lock()
@@ -49,11 +128,13 @@ class State:
         with self.condition:
             return {"kind": "uar.controlled-peer-status/v1",
                     "counts": {key: self.counts[key] for key in (
-                        "model_requests", "embedding_requests",
+                        "model_requests", "chat_arrivals", "embedding_requests",
                         "embedding_inputs", "embedding_responses")},
                     "cases": {key: {field: value[field] for field in (
                         "model_requests", "tool_intents")}
                               for key, value in self.case_counts.items()},
+                    "observation_count": self.observation_count,
+                    "observations": list(self.observations),
                     "held": {key: dict(value) for key, value in self.held.items()},
                     "stopping": self.stopping}
 
@@ -103,6 +184,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(404, {"error": "unknown fixture route"})
 
     def do_POST(self):
+        if self.path in ("/v1/chat/completions", "/chat/completions"):
+            with self.state.condition:
+                self.state.counts["chat_arrivals"] += 1
+            self.state.record("chat_arrival")
         try:
             body = self.read_json()
             if self.path == "/__uar_fixture/control":
@@ -127,9 +212,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 arguments = body.get("arguments", {})
                 if not isinstance(arguments, dict):
                     raise ValueError("invalid tool arguments")
+                if case not in self.state.cases and len(self.state.cases) >= 256:
+                    raise ValueError("bounded case table is full")
+                response_json = body.get("response_json")
+                if response_json is not None and (not isinstance(response_json, dict)
+                        or len(json.dumps(response_json)) > 4096):
+                    raise ValueError("invalid fixed JSON response")
                 self.state.cases[case] = {"mode": mode, "tool": body.get("tool"),
                                           "arguments": arguments,
-                                          "wait_tool": body.get("wait_tool")}
+                                          "wait_tool": body.get("wait_tool"),
+                                          "response_json": response_json}
                 self.state.case_counts.setdefault(case, collections.Counter())
                 result = {"configured": case, "mode": mode}
             elif action == "arm_embeddings":
@@ -220,13 +312,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
             counts["model_requests"] += 1
             self.state.counts["model_requests"] += 1
         mode = settings["mode"]
-        self.state.record("model_request", case=case, mode=mode)
+        observation = safe_chat_observation(body, case)
+        with self.state.condition:
+            self.state.observation_count += 1
+            observation["ordinal"] = self.state.observation_count
+            self.state.observations.append(observation)
+        self.state.record("model_request", case=case, mode=mode, observation=observation)
         if mode == "provider_failure":
             self.reply(503, {"error": {"type": "server_error", "code": "fixture_provider_failure",
                                         "message": "controlled unrelated provider failure"}})
             return
         model = body.get("model", "fixture")
         delta = {"role": "assistant", "content": "controlled-success:" + case}
+        if settings.get("response_json") is not None:
+            delta["content"] = json.dumps(settings["response_json"], separators=(",", ":"))
         finish = "stop"
         tool_results = [message for message in messages if message.get("role") == "tool"]
         has_tool_result = bool(tool_results)
@@ -313,6 +412,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--bind-host", choices=("127.0.0.1", "0.0.0.0"), default="127.0.0.1",
+                        help="Fixture-only listener; all-interface mode is for an owned isolated container with host-loopback publication")
     parser.add_argument("--port-file", required=True)
     parser.add_argument("--receipt-file", required=True)
     parser.add_argument("--dimensions", type=int, required=True)
@@ -324,7 +425,7 @@ def main():
         parser.error("fixture output already exists; preserve previous evidence")
     Path(args.receipt_file).parent.mkdir(parents=True, exist_ok=True)
     Path(args.receipt_file).touch(exist_ok=False)
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    server = http.server.ThreadingHTTPServer((args.bind_host, args.port), Handler)
     server.daemon_threads = False
     server.block_on_close = True
     server.state = State(args)
@@ -335,7 +436,7 @@ def main():
         threading.Thread(target=server.shutdown, daemon=True).start()
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    server.state.record("started", host="127.0.0.1", port=server.server_port,
+    server.state.record("started", host=args.bind_host, port=server.server_port,
                         dimensions=args.dimensions, hold_seconds=args.hold_seconds)
     port_file = Path(args.port_file)
     port_file.parent.mkdir(parents=True, exist_ok=True)

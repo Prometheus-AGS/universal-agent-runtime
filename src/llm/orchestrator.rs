@@ -318,6 +318,12 @@ pub struct Orchestrator {
     /// Exact model/template/settings contracts used to rebuild every provider
     /// attempt from canonical history.
     destination_preparations: Option<Arc<DestinationRequestPreparations>>,
+    /// Immutable host-captured authority and live admission evaluator for
+    /// every public provider send in this run.
+    destination_admission: Option<Arc<super::router::DestinationAdmission>>,
+    /// The trusted host has a finite accounting envelope that requires a
+    /// proven image bound before any provider stream can open.
+    finite_accounting_requires_proven_image_bound: bool,
     /// Settings-only exact profiles captured on the leaf clients for this run.
     endpoint_settings_profiles: BTreeMap<String, super::EndpointRequestProfile>,
     /// Unrendered, unreduced messages captured by the trusted host. Completed
@@ -958,6 +964,8 @@ impl Orchestrator {
             cache_strategy: None,
             request_budget_contract: None,
             destination_preparations: None,
+            destination_admission: None,
+            finite_accounting_requires_proven_image_bound: false,
             endpoint_settings_profiles: BTreeMap::new(),
             canonical_history: None,
             canonical_fragments: None,
@@ -1033,6 +1041,63 @@ impl Orchestrator {
         self
     }
 
+    /// Attach the host-captured destination authority used after every final
+    /// attempt preparation and immediately before opening a driver stream.
+    #[must_use]
+    pub(crate) fn with_destination_admission(
+        mut self,
+        admission: Arc<super::router::DestinationAdmission>,
+    ) -> Self {
+        self.destination_admission = Some(admission);
+        self
+    }
+
+    /// Carry the host's finite-accounting rule to every final prepared send.
+    /// This is a policy input, not an inference from image encoding or model
+    /// metadata.
+    #[must_use]
+    pub(crate) fn with_finite_accounting_requires_proven_image_bound(
+        mut self,
+        required: bool,
+    ) -> Self {
+        self.finite_accounting_requires_proven_image_bound = required;
+        self
+    }
+
+    async fn admit_prepared_user_attempt(
+        &self,
+        destination: &str,
+        request: &mut LlmRequest,
+    ) -> anyhow::Result<()> {
+        let requirements = super::router::requirements_for_final_request_with_explicit_reasoning(
+            request,
+            self.llm_config
+                .reasoning_effort
+                .is_some_and(|effort| effort.thinking_budget().is_some()),
+        )
+            .map_err(|_| super::router::DestinationAdmissionError::InvalidFinalRequest)?;
+        if self.finite_accounting_requires_proven_image_bound && requirements.needs_vision {
+            return Err(
+                super::router::DestinationAdmissionError::UnprovenImageBoundForFiniteAccounting
+                    .into(),
+            );
+        }
+        let Some(admission) = &self.destination_admission else {
+            return Ok(());
+        };
+        admission
+            .admit(destination, &requirements)
+            .await?
+            .restrict_output(request);
+        Ok(())
+    }
+
+    fn is_destination_admission_failure(error: &anyhow::Error) -> bool {
+        error
+            .downcast_ref::<super::router::DestinationAdmissionError>()
+            .is_some()
+    }
+
     /// Bind opaque provider continuity retained by the trusted host.
     #[must_use]
     pub fn with_protected_continuity(mut self, continuity: ProtectedContinuity) -> Self {
@@ -1057,11 +1122,11 @@ impl Orchestrator {
         fragments: &[crate::uar::runtime::prompt::PromptFragment],
     ) -> anyhow::Result<LlmRequest> {
         for message in &mut request.messages {
-            self.secret_scrubber.project_message_json(message);
+            self.secret_scrubber.project_canonical_message_json(message)?;
         }
         let mut canonical_messages = canonical_messages.to_vec();
         for message in &mut canonical_messages {
-            self.secret_scrubber.project_message_json(message);
+            self.secret_scrubber.project_canonical_message_json(message)?;
         }
         let mut fragments = fragments.to_vec();
         self.secret_scrubber.project_fragments(&mut fragments);
@@ -2433,7 +2498,7 @@ impl Orchestrator {
 
                 if orchestrator.endpoint_settings_profiles.is_empty() {
                     tracing::debug!(request_id = %request_id, iteration,
-                        messages = ?req.messages, tool_count = req.tools.len(),
+                        message_count = req.messages.len(), tool_count = req.tools.len(),
                         "Sending request to LLM driver");
                 } else {
                     tracing::debug!(request_id = %request_id, iteration,
@@ -2487,7 +2552,7 @@ impl Orchestrator {
                         let model = retry_model.clone();
                         async move {
                             let profiled = !orchestrator.endpoint_settings_profiles.is_empty();
-                            let request = orchestrator.prepare_user_attempt(
+                            let mut request = orchestrator.prepare_user_attempt(
                                 &model,
                                 source,
                                 &canonical,
@@ -2495,6 +2560,7 @@ impl Orchestrator {
                             ).map_err(|error| super::team_failure::at_stage(
                                 error, super::team_failure::TeamFailureStage::Preparation, profiled,
                             ))?;
+                            orchestrator.admit_prepared_user_attempt(&model, &mut request).await?;
                             let manifest = orchestrator.attempt_manifest(&model, &request);
                             if let Some(binding) = &orchestrator.team_model_handoff {
                                 if let Some(attempt) = &binding.team_attempt {
@@ -2584,6 +2650,13 @@ impl Orchestrator {
                             yield orchestrator.provider_failure(&e, false);
                             break;
                         }
+                        Err(e) if Orchestrator::is_destination_admission_failure(&e) => {
+                            // Admission failures occur before a provider send.
+                            // They must not cool down the primary or manufacture
+                            // fallback authority from a rejected destination.
+                            yield orchestrator.provider_failure(&e, false);
+                            break;
+                        }
                         Err(e) if orchestrator.failover_config.enabled => {
                             if let Some(health) = &orchestrator.health_monitor {
                                 health
@@ -2622,10 +2695,11 @@ impl Orchestrator {
                                     &canonical_message_json,
                                     &step_fragments,
                                 ) {
-                                    Ok(request) => {
-                                        let manifest = orchestrator
-                                            .attempt_manifest(&fallback.model, &request);
+                                    Ok(mut request) => {
                                         async {
+                                            orchestrator.admit_prepared_user_attempt(&fallback.model, &mut request).await?;
+                                            let manifest = orchestrator
+                                                .attempt_manifest(&fallback.model, &request);
                                             if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.validate_team_model_handoff(attempt).await?;}}
                                             let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout).await?;
                                             if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.record_team_model_handoff(attempt).await?;}}
@@ -2643,6 +2717,15 @@ impl Orchestrator {
                                         skill_usage.model = fallback.model.clone();
                                         fallback_stream = Some(s);
                                         break;
+                                    }
+                                    Err(fe) if Orchestrator::is_destination_admission_failure(&fe) => {
+                                        tracing::info!(
+                                            request_id = %request_id,
+                                            fallback_model = %fallback.model,
+                                            error = %orchestrator.provider_log_summary(&fe),
+                                            "Skipping fallback rejected by destination admission"
+                                        );
+                                        fallback_errors.push(format!("{}: admission rejected", fallback.model));
                                     }
                                     Err(fe) => {
                                         if let Some(health) = &orchestrator.health_monitor {
@@ -3593,7 +3676,9 @@ impl Orchestrator {
 
         let canonical = req.messages.clone();
         let fragments = self.canonical_fragments.as_deref().unwrap_or(&[]);
-        let req = self.prepare_attempt(&self.llm_config.model, req, &canonical, fragments)?;
+        let mut req = self.prepare_attempt(&self.llm_config.model, req, &canonical, fragments)?;
+        self.admit_prepared_user_attempt(&self.llm_config.model, &mut req)
+            .await?;
 
         // Stream from the driver and collect message deltas
         let mut stream = self.driver.stream(req).await?;

@@ -1,0 +1,359 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 1906,
+    "grpc_port": 50051,
+    "ingest_directory": "/var/lib/uar/ingest",
+    "cors_allowed_origins": []
+  },
+  "persistence": {
+    "provider": "surreal",
+    "database_url": "surrealkv:///var/lib/uar/data/uar.db",
+    "surreal_ns": "__CAPABILITY_NAMESPACE__",
+    "surreal_db": "capability_dispatch",
+    "vector_dimension": 384,
+    "external_cache_enabled": false
+  },
+  "models": {
+    "models_dir": "/opt/uar/models"
+  },
+  "llm": {
+    "model": "__CAPABILITY_NAMESPACE__-capable/capable",
+    "base_url": "http://127.0.0.1:4601/v1",
+    "protocol": "chat",
+    "max_retries": 0,
+    "timeout_secs": 90,
+    "embedding": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "models_dir": "/opt/uar/models",
+      "vector_dimension": 384
+    }
+  },
+  "providers": [
+    {
+      "id": "__CAPABILITY_NAMESPACE__-capable",
+      "display_name": "Owned synthetic capable",
+      "base_url": "http://127.0.0.1:4601/v1",
+      "protocol": "chat",
+      "default_model": "capable",
+      "models": [
+        {
+          "id": "capable",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-text_only",
+      "display_name": "Owned synthetic text_only",
+      "base_url": "http://127.0.0.1:4602/v1",
+      "protocol": "chat",
+      "default_model": "text_only",
+      "models": [
+        {
+          "id": "text_only",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": false,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-no_tools",
+      "display_name": "Owned synthetic no_tools",
+      "base_url": "http://127.0.0.1:4603/v1",
+      "protocol": "chat",
+      "default_model": "no_tools",
+      "models": [
+        {
+          "id": "no_tools",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": false,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-no_structured",
+      "display_name": "Owned synthetic no_structured",
+      "base_url": "http://127.0.0.1:4604/v1",
+      "protocol": "chat",
+      "default_model": "no_structured",
+      "models": [
+        {
+          "id": "no_structured",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": false,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-tiny",
+      "display_name": "Owned synthetic tiny",
+      "base_url": "http://127.0.0.1:4605/v1",
+      "protocol": "chat",
+      "default_model": "tiny",
+      "models": [
+        {
+          "id": "tiny",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 128,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 32,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-disabled",
+      "display_name": "Owned synthetic disabled",
+      "base_url": "http://127.0.0.1:4606/v1",
+      "protocol": "chat",
+      "default_model": "disabled",
+      "models": [
+        {
+          "id": "disabled",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": false
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-cooldown",
+      "display_name": "Owned synthetic cooldown",
+      "base_url": "http://127.0.0.1:4607/v1",
+      "protocol": "chat",
+      "default_model": "cooldown",
+      "models": [
+        {
+          "id": "cooldown",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-failure_primary",
+      "display_name": "Owned synthetic failure_primary",
+      "base_url": "http://127.0.0.1:4608/v1",
+      "protocol": "chat",
+      "default_model": "failure_primary",
+      "models": [
+        {
+          "id": "failure_primary",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-fallback",
+      "display_name": "Owned synthetic fallback",
+      "base_url": "http://127.0.0.1:4609/v1",
+      "protocol": "chat",
+      "default_model": "fallback",
+      "models": [
+        {
+          "id": "fallback",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 8192,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 32,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-failure_exact",
+      "display_name": "Owned synthetic failure_exact",
+      "base_url": "http://127.0.0.1:4610/v1",
+      "protocol": "chat",
+      "default_model": "failure_exact",
+      "models": [
+        {
+          "id": "failure_exact",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-failure_scope",
+      "display_name": "Owned synthetic failure_scope",
+      "base_url": "http://127.0.0.1:4611/v1",
+      "protocol": "chat",
+      "default_model": "failure_scope",
+      "models": [
+        {
+          "id": "failure_scope",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": "__CAPABILITY_NAMESPACE__-outside",
+      "display_name": "Owned synthetic outside",
+      "base_url": "http://127.0.0.1:4612/v1",
+      "protocol": "chat",
+      "default_model": "outside",
+      "models": [
+        {
+          "id": "outside",
+          "pricing_identity": {
+            "provider_id": "openai",
+            "model_id": "gpt-4o-mini"
+          },
+          "context_window": 32768,
+          "supports_vision": true,
+          "supports_tools": true,
+          "supports_reasoning": false,
+          "supports_structured_output": true,
+          "supports_streaming": true,
+          "max_output_tokens": 256,
+          "enabled": true
+        }
+      ],
+      "enabled": true
+    }
+  ],
+  "failover": {
+    "enabled": true,
+    "strategy": "priority",
+    "error_threshold": 3,
+    "cooldown_secs": 60,
+    "fallback_models": [
+      {
+        "model": "__CAPABILITY_NAMESPACE__-outside/outside",
+        "base_url": "http://127.0.0.1:4612/v1"
+      }
+    ]
+  },
+  "memory": {
+    "enabled": false,
+    "db_path": "/var/lib/uar/data/memory.db"
+  },
+  "sycophancy": {
+    "enabled": false,
+    "auto_correct": false
+  },
+  "resilience": {
+    "retries_enabled": false,
+    "retry_max_attempts": 1
+  }
+}

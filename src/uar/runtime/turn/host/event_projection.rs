@@ -163,6 +163,56 @@ impl RunSecretScrubber {
         }
     }
 
+    /// Project canonical protected history without turning validated inline
+    /// images into generic secret-redaction placeholders. Image URLs remain
+    /// eligible only when they still satisfy the strict ingress syntax rule.
+    pub(crate) fn project_canonical_message(
+        &self,
+        message: &mut crate::llm::Message,
+    ) -> anyhow::Result<()> {
+        use crate::llm::{ContentPart, MessageContent};
+
+        match &mut message.content {
+            MessageContent::Text { content } => *content = self.scrub(content),
+            MessageContent::Parts { content } => {
+                for part in content {
+                    match part {
+                        ContentPart::Text { text } => *text = self.scrub(text),
+                        ContentPart::ImageUrl { image_url } => {
+                            // The ordinary typed ingress has already validated
+                            // supported inline images. Preserve those bytes for
+                            // canonical history. Legacy image transports retain
+                            // the prior generic projection rather than gaining
+                            // a new global rejection path here.
+                            if crate::llm::inline_image::inline_image_metadata(image_url).is_err() {
+                                image_url.url = self.scrub(&image_url.url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(calls) = &mut message.tool_calls {
+            for call in calls {
+                call.function.arguments = self.project_json_text(&call.function.arguments);
+            }
+        }
+        Ok(())
+    }
+
+    /// JSON canonical-history adapter for provider and graph checkpoint seams.
+    /// It accepts only serialized [`crate::llm::Message`] values, so arbitrary
+    /// JSON cannot use the inline-image preservation path.
+    pub(crate) fn project_canonical_message_json(
+        &self,
+        message: &mut serde_json::Value,
+    ) -> anyhow::Result<()> {
+        let mut typed = serde_json::from_value::<crate::llm::Message>(std::mem::take(message))?;
+        self.project_canonical_message(&mut typed)?;
+        *message = serde_json::to_value(typed)?;
+        Ok(())
+    }
+
     pub fn project_fragments(&self, fragments: &mut [crate::uar::runtime::prompt::PromptFragment]) {
         for fragment in fragments {
             fragment.content = self.scrub(&fragment.content);

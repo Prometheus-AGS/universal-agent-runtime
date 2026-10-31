@@ -1,4 +1,4 @@
-use crate::llm::Message;
+use crate::llm::{ContentPart, Message, MessageContent};
 use crate::uar::domain::{
     artifact::AgentArtifact,
     collaboration::EffectiveBindingReceipt,
@@ -88,6 +88,10 @@ pub struct CheckpointResume {
 pub struct RunExecutionRequest {
     pub artifact: AgentArtifact,
     pub input: Option<String>,
+    /// Current user content admitted by a trusted host. This remains typed so
+    /// canonical history can preserve admitted inline images; `input` holds
+    /// only its complete ordered text projection.
+    pub(crate) current_user_content: Option<MessageContent>,
     pub session_id: Option<String>,
     pub user_id: Option<String>,
     /// Host-verified user and tenant identity for executable resource bindings.
@@ -167,10 +171,20 @@ impl RunExecutionRequest {
         self
     }
 
+    /// Retain trusted-host-admitted current user content without allowing it to
+    /// become a JSON or data-URI transport for text-only consumers.
+    #[must_use]
+    pub(crate) fn with_admitted_current_user_content(mut self, content: MessageContent) -> Self {
+        self.input = Some(current_user_text_projection(&content));
+        self.current_user_content = Some(content);
+        self
+    }
+
     pub fn new(artifact: AgentArtifact, input: String) -> Self {
         Self {
             artifact,
             input: Some(input),
+            current_user_content: None,
             session_id: None,
             user_id: None,
             verified_owner: None,
@@ -337,5 +351,19 @@ impl RunExecutionRequest {
         Ok(self.with_verified_owner(
             crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?,
         ))
+    }
+}
+
+pub(crate) fn current_user_text_projection(content: &MessageContent) -> String {
+    match content {
+        MessageContent::Text { content } => content.clone(),
+        MessageContent::Parts { content } => content
+            .iter()
+            .filter_map(|part| match part {
+                ContentPart::Text { text } => Some(text.as_str()),
+                ContentPart::ImageUrl { .. } => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
     }
 }

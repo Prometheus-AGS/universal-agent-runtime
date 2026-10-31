@@ -107,15 +107,21 @@ impl LiterLlmDriver {
         config.load_env = false;
         config.redact_base_url = true;
         config.transport = config.transport.with_redirects_disabled(true);
-        // Liter pins generic chat when an explicit URL and a non-native hint are supplied.
+        // The successful constructor branch is the adapter fact: its constant
+        // hint selects Liter's generic endpoint handling independently of the
+        // configured wire model's provider spelling.
         let client = Arc::new(DefaultClient::new(config, Some("uar-settings-profile"))?);
-        Self::from_client(
+        let mut driver = Self::from_client(
             client,
             profile.qualified_model.clone(),
             parallel_tool_calls,
             fingerprint,
-        )
-        .with_endpoint_profile(profile)
+        );
+        // `from_client` is deliberately opaque. This constructor owns the
+        // successful generic-compatible branch, so it alone may record that
+        // concrete adapter fact for the captured endpoint profile.
+        driver.generic_chat_adapter = true;
+        driver.with_endpoint_profile(profile)
     }
     /// Create a new driver from a `ClientConfig` and model identifier.
     ///
@@ -668,6 +674,20 @@ fn build_chat_request(
     })
 }
 
+fn request_contains_image_parts(request: &LlmRequest) -> bool {
+    request.messages.iter().any(|message| {
+        message
+            .get("content")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|parts| {
+                parts.iter().any(|part| {
+                    part.get("type").and_then(serde_json::Value::as_str) == Some("image_url")
+                        && part.get("image_url").is_some()
+                })
+            })
+    })
+}
+
 /// Prove that a budgeted request fits the supported final-wire contract before
 /// handing it to a driver. The leaf repeats this check with its actual endpoint
 /// binding immediately before dispatch; this early pass lets host-owned helper
@@ -739,6 +759,14 @@ fn record_call_latency(model: &str, call_start: std::time::Instant) {
 
 #[async_trait::async_trait]
 impl LlmDriver for LiterLlmDriver {
+    fn supports_admitted_inline_images(&self) -> bool {
+        // `new` and `from_endpoint_profile` set this only after their pinned
+        // `DefaultClient::new` branch succeeds. `from_client` remains opaque
+        // and false, so this reports captured adapter construction rather than
+        // a catalog or provider-name capability claim.
+        self.generic_chat_adapter
+    }
+
     fn with_bound_model(&self, model: &str) -> anyhow::Result<Arc<dyn LlmDriver>> {
         let (provider, _) = self.model.split_once('/').ok_or_else(|| {
             anyhow::anyhow!("Inherited driver has no qualified provider identity")
@@ -778,6 +806,7 @@ impl LlmDriver for LiterLlmDriver {
         req: LlmRequest,
     ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
     {
+        let has_image_parts = request_contains_image_parts(&req);
         let prepared = build_chat_request(
             &self.model,
             self.parallel_tool_calls,
@@ -811,7 +840,10 @@ impl LlmDriver for LiterLlmDriver {
                 "counted_input_tokens":count.tokens, "serialized_bytes":wire.len(),
                 "serialized_sha256":Sha256::digest(&wire).iter().map(|byte| format!("{byte:02x}")).collect::<String>(),
                 "tools_included":true, "instructions_included":true,
-                "fit_guarantee":req.budget_contract.is_some(),
+                // A final JSON count bounds the serialized wire body, not a
+                // real provider's image-token accounting. No inspected
+                // destination contract establishes that missing evidence.
+                "fit_guarantee":req.budget_contract.is_some() && !has_image_parts,
                 "reserved_output_tokens":req.budget_contract.as_ref().map(|contract| contract.limits.output_tokens),
                 "output_ceiling_enforced":prepared.request.max_tokens.is_some() || prepared.request.max_completion_tokens.is_some(),
             }))

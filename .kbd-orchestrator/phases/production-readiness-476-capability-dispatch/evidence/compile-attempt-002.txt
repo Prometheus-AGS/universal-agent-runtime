@@ -1,0 +1,37 @@
+[38;2;56;56;56m╭──────────────────────────────────────╮[m
+[38;2;56;56;56m│[m lefthook  v2.2.2   hook:  [1mpre-commit[m [38;2;56;56;56m│[m
+[38;2;56;56;56m╰──────────────────────────────────────╯[m
+│  frontend-lint (skip) no matching staged files
+│  frontend-typecheck (skip) no matching staged files
+┃  github-actions-policy ❯ 
+$ node scripts/validate-github-actions-policy.mjs
+GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml).
+
+┃  rust-test-baseline ❯ 
+WORKING_TREE_ONLY: compiles unstaged changes too; does not certify the staged commit.
+mode=working-tree
+repository=/Users/gqadonis/.claude/worktrees/production-readiness-476
+target_directory=/Users/gqadonis/.claude/worktrees/production-readiness-476/target
+cargo_profile=test
+toolchain:
+cargo 1.99.0-nightly (59800466c 2026-07-07)
+rustc 1.99.0-nightly (b6839f4d0 2026-07-17)
+binary: rustc
+commit-hash: b6839f4d0e2bd63b960bbff8619c6fdea27d81e5
+commit-date: 2026-07-17
+host: x86_64-apple-darwin
+release: 1.99.0-nightly
+LLVM version: 22.1.8
+command: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 56s
+  Executable unittests src/lib.rs (target/build/debug/deps/universal_agent_runtime-e07fe3128eb75e0f)
+command: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features server-full --lib --no-run
+   Compiling xberg v1.4.0 (https://github.com/Know-Me-Tools/xberg.git?rev=ffb3b1a25b6c14c13858142997dd82a16d5b2f35#ffb3b1a2)
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+
+exit status 130
+[38;2;56;56;56m  ────────────────────────────────────[m
+summary: (done in 720.36 seconds)
+✓ github-actions-policy (0.75 seconds)
+✗ rust-test-baseline (719.61 seconds)

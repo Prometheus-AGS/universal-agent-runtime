@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-FF6A3D" /></a>
-  <img alt="Version: 1.0.0" src="https://img.shields.io/badge/version-1.0.0-141C26" />
+  <img alt="Version: 1.4.0-rc.1" src="https://img.shields.io/badge/version-1.4.0--rc.1-141C26" />
   <a href="https://prometheus-ags.github.io/universal-agent-runtime/"><img alt="Documentation portal" src="https://img.shields.io/badge/docs-portal-2563EB" /></a>
 </p>
 
@@ -14,15 +14,15 @@
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
-UAR is at version **1.0.0**. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
+UAR is at Rust product version **1.4.0-rc.1** (release candidate). SDK/package/schema versions are independent. The first selected production qualification lane is Linux amd64 container APIs; it remains unverified until exact installed-artifact evidence is complete. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
 The [GitHub Pages documentation portal](https://prometheus-ags.github.io/universal-agent-runtime/) covers installation, architecture, SDKs, skills, deployment, and security; begin with the [introduction](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro). Its live routes are verified by the final documentation publication change.
 
 ## What is supported
 
-- OpenAI-compatible and Anthropic execution paths have named Tier 1 capability evidence. Local FastEmbed embeddings are also Tier 1.
-- The committed catalog contains metadata for 316 providers. A catalog entry is discovery data, not proof that execution is certified.
-- Catalog, availability, and policy routing are Stable. Adaptive learned routing is Experimental.
+- Named historical OpenAI-compatible/Anthropic and FastEmbed evidence is capability/source-specific. Vision and the current Linux container are not certified by catalog metadata, unit tests or an earlier binary.
+- The compiled provider catalog is discovery metadata, not proof of execution certification.
+- Catalog filtering is metadata. Actual constrained primary/retry/fallback/graph dispatch is being qualified under #464; route-query success is advisory. Adaptive learned routing is Experimental.
 - MCP-discovered and native tools share schema validation, Cedar policy, approval, hard-deny, and audit controls. Native WASM tools are Preview and opt-in.
 - Web is Stable. Desktop/Tauri and native WASM are Preview. Mobile is Experimental. Browser-side arbitrary WASM execution is unsupported.
 
@@ -314,7 +314,7 @@ Release evidence includes source-bound security-audit results and signed supply-
 
 ## License
 
-UAR is version 1.0.0.
+The Rust product version is 1.4.0-rc.1; supported deployment and recovery claims follow the evidence-scoped [support matrix](docs/product-support-matrix.md).
 
 - **Code** — the runtime server, the SDKs (`sdks/python`, `sdks/rust`, `sdks/typescript`), and everything else in this repository: `MIT`. See [LICENSE](LICENSE).
 - **Documentation** (`docs/`, and Markdown elsewhere not covered by a more specific license): `CC-BY-4.0`. See [LICENSE-CC-BY-4.0.md](LICENSE-CC-BY-4.0.md).

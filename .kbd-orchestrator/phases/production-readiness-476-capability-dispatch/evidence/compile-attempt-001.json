@@ -1,0 +1,22 @@
+{
+  "status": "FAILED",
+  "gate": "ordinary commit hook / Rust baseline first minimal profile",
+  "exit_code": 101,
+  "commit_created": false,
+  "base_commit": "629f570239654717a59b6a3db5793c9bcd34d846",
+  "staged_tree_at_attempt": "9944aa0c072879a35cb929b2a62ec095941011bb",
+  "source_inventory": "implementation-inventory-004.json",
+  "command": "cargo test --locked --no-default-features --features minimal --lib --no-run",
+  "diagnostics": [
+    "E0382 native_descriptors moved before new preselection read",
+    "E0277 SHA2 Array digest lacks LowerHex",
+    "redundant Arc import warning"
+  ],
+  "completed_other_gate": "GitHub Actions deployment-only policy validator PASS",
+  "later_profiles": "NOT_EXERCISED",
+  "test_bodies": "NOT_EXECUTED",
+  "log": "compile-attempt-001.txt",
+  "exit_code_scope": "Nested Cargo/Rust baseline gate",
+  "cargo_exit_code": 101,
+  "git_commit_exit_code": 1
+}

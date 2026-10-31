@@ -4,7 +4,11 @@
 //! reasoning, vision, context window, cost) using the compile-time catalog
 //! and the runtime provider registry.
 
-use std::sync::Arc;
+use std::{
+    collections::BTreeSet,
+    fmt,
+    sync::Arc,
+};
 
 use serde::Deserialize;
 
@@ -14,6 +18,202 @@ use super::catalog::{
     ProviderInfo,
 };
 use super::registry::ProviderRegistry;
+
+/// Immutable destination identities captured by the trusted host for one run.
+///
+/// This is authority plumbing, not a routing preference or a provider policy.
+/// A destination never becomes permitted because it appears in catalog metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum DestinationScope {
+    /// An explicit or team-selected target with no permitted substitute.
+    Exact { primary: String },
+    /// The captured primary and already-authorized fallback identities.
+    PrimaryWithFallbacks {
+        primary: String,
+        fallbacks: BTreeSet<String>,
+    },
+}
+
+impl DestinationScope {
+    #[must_use]
+    pub(crate) fn permits(&self, destination: &str) -> bool {
+        match self {
+            Self::Exact { primary } => primary == destination,
+            Self::PrimaryWithFallbacks { primary, fallbacks } => {
+                primary == destination || fallbacks.contains(destination)
+            }
+        }
+    }
+}
+
+/// Why a captured destination cannot receive the prepared request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum DestinationAdmissionError {
+    MalformedDestination,
+    OutsideCapturedScope,
+    InvalidFinalRequest,
+    RuntimeMetadataUnavailable,
+    ProviderDisabled,
+    ModelDisabled,
+    ProviderInCooldown,
+    UnprovenImageBoundForFiniteAccounting,
+    MissingRequiredCapability { capability: &'static str },
+}
+
+impl fmt::Display for DestinationAdmissionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MalformedDestination => formatter.write_str("destination admission rejected malformed destination"),
+            Self::OutsideCapturedScope => formatter.write_str("destination admission rejected destination outside captured scope"),
+            Self::InvalidFinalRequest => formatter.write_str("destination admission rejected invalid final request controls"),
+            Self::RuntimeMetadataUnavailable => formatter.write_str("destination admission requires unavailable runtime metadata"),
+            Self::ProviderDisabled => formatter.write_str("destination admission rejected disabled provider"),
+            Self::ModelDisabled => formatter.write_str("destination admission rejected disabled model"),
+            Self::ProviderInCooldown => formatter.write_str("destination admission rejected provider in cooldown"),
+            Self::UnprovenImageBoundForFiniteAccounting => formatter
+                .write_str("destination admission rejected unproven image bound for finite accounting"),
+            Self::MissingRequiredCapability { capability } => {
+                write!(formatter, "destination admission rejected missing required capability: {capability}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for DestinationAdmissionError {}
+
+/// A fresh live admission result, carrying only a destination-specific
+/// restriction that must be applied before the send.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct AdmittedDestination {
+    maximum_output_tokens: Option<u32>,
+}
+
+impl AdmittedDestination {
+    /// Apply only the live registered destination's downward output limit.
+    /// This never creates a budget contract or raises an existing request or
+    /// contract limit, so destination preparations remain authoritative.
+    pub(crate) fn restrict_output(&self, request: &mut super::LlmRequest) {
+        let Some(maximum) = self.maximum_output_tokens else {
+            return;
+        };
+        request.output_token_cap = Some(
+            request
+                .output_token_cap
+                .map_or(maximum, |current| current.min(maximum)),
+        );
+        if let Some(contract) = &mut request.budget_contract {
+            contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(maximum));
+        }
+    }
+}
+
+/// Send-boundary admission over immutable authority and live runtime metadata.
+#[derive(Debug)]
+pub(crate) struct DestinationAdmission {
+    scope: DestinationScope,
+    admitted_inline_image_destinations: BTreeSet<String>,
+    admitted_run_local_plaintext_destinations: BTreeSet<String>,
+    admitted_inline_image_adapter_required: bool,
+    router: Option<ModelRouter>,
+}
+
+impl DestinationAdmission {
+    #[must_use]
+    pub(crate) fn new(
+        scope: DestinationScope,
+        admitted_inline_image_destinations: BTreeSet<String>,
+        registry: Arc<ProviderRegistry>,
+    ) -> Self {
+        Self {
+            scope,
+            admitted_inline_image_destinations,
+            admitted_run_local_plaintext_destinations: BTreeSet::new(),
+            admitted_inline_image_adapter_required: false,
+            router: Some(ModelRouter::new(registry)),
+        }
+    }
+
+    /// Preserve scoped text-only external-driver behavior without inventing a
+    /// capability claim when the host has no runtime registry.
+    #[must_use]
+    pub(crate) fn without_registry(
+        scope: DestinationScope,
+        admitted_inline_image_destinations: BTreeSet<String>,
+    ) -> Self {
+        Self {
+            scope,
+            admitted_inline_image_destinations,
+            admitted_run_local_plaintext_destinations: BTreeSet::new(),
+            admitted_inline_image_adapter_required: false,
+            router: None,
+        }
+    }
+
+    /// Carry trusted ordinary typed-image route provenance without exposing a
+    /// routing input that callers could use to grant transport authority.
+    #[must_use]
+    pub(crate) fn with_admitted_inline_image_adapter_required(mut self, required: bool) -> Self {
+        self.admitted_inline_image_adapter_required = required;
+        self
+    }
+
+    /// Carry exact host-captured explicit-request destinations that may send
+    /// plain text when global model metadata is absent. This records no
+    /// capability or registry authority.
+    #[must_use]
+    pub(crate) fn with_admitted_run_local_plaintext_destinations(
+        mut self,
+        destinations: BTreeSet<String>,
+    ) -> Self {
+        self.admitted_run_local_plaintext_destinations = destinations;
+        self
+    }
+
+    /// Re-evaluate an already-selected literal destination immediately before
+    /// dispatch. This never routes, acquires credentials, or expands scope.
+    pub(crate) async fn admit(
+        &self,
+        destination: &str,
+        requirements: &RouteRequirements,
+    ) -> Result<AdmittedDestination, DestinationAdmissionError> {
+        if !self.scope.permits(destination) {
+            return Err(DestinationAdmissionError::OutsideCapturedScope);
+        }
+        if self.admitted_inline_image_adapter_required
+            && requirements.needs_vision
+            && !self.admitted_inline_image_destinations.contains(destination)
+        {
+            return Err(DestinationAdmissionError::MissingRequiredCapability {
+                capability: "admitted_inline_image_adapter",
+            });
+        }
+        let maximum_output_tokens = match &self.router {
+            Some(router) => match router.evaluate_destination(destination, requirements).await {
+                Ok(maximum) => maximum,
+                Err(DestinationAdmissionError::RuntimeMetadataUnavailable)
+                    if self
+                        .admitted_run_local_plaintext_destinations
+                        .contains(destination)
+                        && requirements.is_plain_text_without_runtime_metadata() =>
+                {
+                    // The captured explicit-request binding supplies only this
+                    // literal connection. A registry miss still observes its
+                    // current cooldown state before dispatch.
+                    router.ensure_provider_not_in_cooldown(destination).await?;
+                    None
+                }
+                Err(error) => return Err(error),
+            },
+            None if requirements.has_hard_capability_requirement() => {
+                return Err(DestinationAdmissionError::RuntimeMetadataUnavailable);
+            }
+            None => None,
+        };
+        Ok(AdmittedDestination {
+            maximum_output_tokens,
+        })
+    }
+}
 
 /// Routes requests to the most appropriate model based on capability requirements.
 #[derive(Debug)]
@@ -128,11 +328,31 @@ impl ModelRouter {
             {
                 continue;
             }
-            if self.registry.is_configured(&provider.id).await
-                && self.registry.health().is_available(&provider.id).await
+            let Some(runtime_provider) = self.registry.get(&provider.id).await else {
+                continue;
+            };
+            if !runtime_provider.enabled
+                || !self.registry.health().is_available(&provider.id).await
             {
-                candidates.push((provider.clone(), model.clone()));
+                continue;
             }
+            if runtime_provider
+                .models
+                .iter()
+                .any(|runtime_model| runtime_model.id == model.id)
+            {
+                // A registration is the live source of facts for its exact
+                // identity. Catalog discovery cannot restore a disabled,
+                // filtered, low-context, or context-unknown registration.
+                continue;
+            }
+            if requirements.has_hard_capability_requirement() || requirements.min_context.is_some() {
+                // Catalog values support only legacy text discovery for an
+                // unregistered provider model. They cannot establish a hard
+                // payload capability or destination capacity for final send.
+                continue;
+            }
+            candidates.push((provider.clone(), model.clone()));
         }
 
         // Apply cost filter
@@ -197,6 +417,94 @@ impl ModelRouter {
 
         selection
     }
+
+    async fn evaluate_destination(
+        &self,
+        destination: &str,
+        requirements: &RouteRequirements,
+    ) -> Result<Option<u32>, DestinationAdmissionError> {
+        let Some((provider_id, model_id)) = destination.split_once('/') else {
+            return Err(DestinationAdmissionError::MalformedDestination);
+        };
+        if provider_id.trim().is_empty() || model_id.trim().is_empty() {
+            return Err(DestinationAdmissionError::MalformedDestination);
+        }
+        let provider = self
+            .registry
+            .get(provider_id)
+            .await
+            .ok_or(DestinationAdmissionError::RuntimeMetadataUnavailable)?;
+        if !provider.enabled {
+            return Err(DestinationAdmissionError::ProviderDisabled);
+        }
+        if !self.registry.health().is_available(provider_id).await {
+            return Err(DestinationAdmissionError::ProviderInCooldown);
+        }
+        let model = provider
+            .models
+            .iter()
+            .find(|candidate| candidate.id == model_id)
+            .ok_or(DestinationAdmissionError::RuntimeMetadataUnavailable)?;
+        if !model.enabled {
+            return Err(DestinationAdmissionError::ModelDisabled);
+        }
+        if requirements.needs_tools && !model.supports_tools {
+            return Err(DestinationAdmissionError::MissingRequiredCapability {
+                capability: "tools",
+            });
+        }
+        if requirements.needs_reasoning && !model.supports_reasoning {
+            return Err(DestinationAdmissionError::MissingRequiredCapability {
+                capability: "reasoning",
+            });
+        }
+        if requirements.needs_vision && !model.supports_vision {
+            return Err(DestinationAdmissionError::MissingRequiredCapability {
+                capability: "vision",
+            });
+        }
+        if requirements.needs_structured_output && !model.supports_structured_output {
+            return Err(DestinationAdmissionError::MissingRequiredCapability {
+                capability: "structured_output",
+            });
+        }
+        if let Some(minimum) = requirements.min_context
+            && model.context_window.map_or(true, |available| u64::from(available) < minimum)
+        {
+            return Err(DestinationAdmissionError::MissingRequiredCapability {
+                capability: "context",
+            });
+        }
+        if let Some(maximum) = requirements.max_cost_per_1m_input {
+            let catalog_cost = self
+                .catalog
+                .model(provider_id, model_id)
+                .and_then(|entry| entry.cost.as_ref())
+                .map(|cost| cost.input);
+            if catalog_cost.is_none_or(|cost| cost > maximum) {
+                return Err(DestinationAdmissionError::MissingRequiredCapability {
+                    capability: "cost",
+                });
+            }
+        }
+        Ok(model.max_output_tokens)
+    }
+
+    async fn ensure_provider_not_in_cooldown(
+        &self,
+        destination: &str,
+    ) -> Result<(), DestinationAdmissionError> {
+        let Some((provider_id, model_id)) = destination.split_once('/') else {
+            return Err(DestinationAdmissionError::MalformedDestination);
+        };
+        if provider_id.trim().is_empty() || model_id.trim().is_empty() {
+            return Err(DestinationAdmissionError::MalformedDestination);
+        }
+        if !self.registry.health().is_available(provider_id).await {
+            return Err(DestinationAdmissionError::ProviderInCooldown);
+        }
+        Ok(())
+    }
 }
 
 /// Ordering for candidate `(provider, model)` pairs: cheapest cost first,
@@ -240,6 +548,7 @@ fn compare_candidates(
 mod compare_candidates_tests {
     use super::*;
     use crate::llm::catalog::ModelCost;
+    use crate::llm::registry::{ModelConfig, ProtocolSetting, ProviderConfig};
 
     fn provider(id: &str) -> ProviderInfo {
         ProviderInfo {
@@ -336,6 +645,129 @@ mod compare_candidates_tests {
             "neither candidate has benchmark data -- must not be silently penalized to 0.0"
         );
     }
+
+    #[tokio::test]
+    async fn disabled_runtime_catalog_model_is_not_reentered_or_preferred() {
+        // Select an actual embedded catalog entry instead of constructing a
+        // look-alike: the regression is the catalog-overlay path itself.
+        let (provider_id, provider_name, provider_base_url, model_id) = {
+            let (catalog_provider, catalog_model) = ModelCatalog::global()
+                .models_with_capabilities(&CapabilityFilter::default())
+                .into_iter()
+                .next()
+                .expect("embedded model catalog has a selectable entry");
+            (
+                catalog_provider.id.clone(),
+                catalog_provider.display_name.clone(),
+                catalog_provider.base_url.clone().unwrap_or_default(),
+                catalog_model.id.clone(),
+            )
+        };
+        let registry = Arc::new(ProviderRegistry::new());
+        registry
+            .register(ProviderConfig {
+                id: provider_id.clone(),
+                display_name: provider_name,
+                base_url: provider_base_url,
+                api_key: None,
+                protocol: ProtocolSetting::Auto,
+                default_model: Some(model_id.clone()),
+                models: vec![ModelConfig {
+                    id: model_id.clone(),
+                    pricing_identity: None,
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: None,
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: false,
+                }],
+                enabled: true,
+            })
+            .await
+            .expect("disabled runtime catalog model registers");
+
+        let router = ModelRouter::new(registry);
+        let requirements = RouteRequirements::default();
+        let destination = format!("{provider_id}/{model_id}");
+
+        assert_eq!(router.route(&requirements).await, None);
+        assert_eq!(
+            router
+                .route_with_preferred_model(&requirements, Some(&destination))
+                .await,
+            None,
+            "a preferred catalog identity must not resurrect a disabled runtime model"
+        );
+    }
+
+    #[tokio::test]
+    async fn registered_context_limit_is_not_reentered_from_catalog_or_preference() {
+        let required_context = 8_192_u64;
+        let (provider_id, provider_name, provider_base_url, model_id) = {
+            let (catalog_provider, catalog_model) = ModelCatalog::global()
+                .models_with_capabilities(&CapabilityFilter {
+                    min_context: Some(required_context),
+                    ..CapabilityFilter::default()
+                })
+                .into_iter()
+                .next()
+                .expect("embedded model catalog has an 8192-token entry");
+            (
+                catalog_provider.id.clone(),
+                catalog_provider.display_name.clone(),
+                catalog_provider.base_url.clone().unwrap_or_default(),
+                catalog_model.id.clone(),
+            )
+        };
+        let registry = Arc::new(ProviderRegistry::new());
+        registry
+            .register(ProviderConfig {
+                id: provider_id.clone(),
+                display_name: provider_name,
+                base_url: provider_base_url,
+                api_key: None,
+                protocol: ProtocolSetting::Auto,
+                default_model: Some(model_id.clone()),
+                models: vec![ModelConfig {
+                    id: model_id.clone(),
+                    pricing_identity: None,
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: Some(4_096),
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: true,
+                }],
+                enabled: true,
+            })
+            .await
+            .expect("low-context runtime catalog model registers");
+
+        let router = ModelRouter::new(registry);
+        let requirements = RouteRequirements {
+            min_context: Some(required_context),
+            ..RouteRequirements::default()
+        };
+        let destination = format!("{provider_id}/{model_id}");
+
+        assert_eq!(router.route(&requirements).await, None);
+        assert_eq!(
+            router
+                .route_with_preferred_model(&requirements, Some(&destination))
+                .await,
+            None,
+            "catalog context metadata must not resurrect a filtered runtime identity"
+        );
+    }
 }
 
 /// Requirements for model selection.
@@ -356,6 +788,74 @@ pub struct RouteRequirements {
     pub max_cost_per_1m_input: Option<f64>,
     /// Preferred provider ID (used as tie-breaker).
     pub preferred_provider: Option<String>,
+}
+
+impl RouteRequirements {
+    #[must_use]
+    pub(crate) fn has_hard_capability_requirement(&self) -> bool {
+        self.needs_tools
+            || self.needs_reasoning
+            || self.needs_vision
+            || self.needs_structured_output
+    }
+
+    /// A metadata-absent run-local binding may carry only ordinary text. It
+    /// cannot stand in for declared capability, context, or catalog-cost data.
+    fn is_plain_text_without_runtime_metadata(&self) -> bool {
+        !self.has_hard_capability_requirement()
+            && self.min_context.is_none()
+            && self.max_cost_per_1m_input.is_none()
+    }
+}
+
+/// Derive hard capability demand from the fully prepared request that will be
+/// sent, rather than from an advisory route query or a partial caller payload.
+/// Provider dialect defaults and disabled fields are not capability requests.
+pub(crate) fn requirements_for_final_request_with_explicit_reasoning(
+    request: &super::LlmRequest,
+    explicit_reasoning: bool,
+) -> anyhow::Result<RouteRequirements> {
+    let needs_vision = request.messages.iter().any(|message| {
+        message
+            .get("content")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|parts| {
+                parts.iter().any(|part| {
+                    part.get("type").and_then(serde_json::Value::as_str) == Some("image_url")
+                        && part.get("image_url").is_some()
+                })
+            })
+    });
+    let needs_tools = !request.tools.is_empty()
+        || matches!(
+            request.tool_choice.as_ref(),
+            Some(super::ToolChoice::Required | super::ToolChoice::Named(_))
+        );
+    let needs_structured_output = match request
+        .extra_params
+        .as_ref()
+        .and_then(serde_json::Value::as_object)
+        .and_then(|params| params.get("response_format"))
+    {
+        Some(value) => {
+            let response_format: super::response_format::ResponseFormat =
+                serde_json::from_value(value.clone())?;
+            response_format.validate()?;
+            response_format.is_structured()
+        }
+        None => false,
+    };
+    Ok(RouteRequirements {
+        needs_tools,
+        needs_reasoning: explicit_reasoning,
+        needs_vision,
+        needs_structured_output,
+        min_context: request
+            .budget_contract
+            .as_ref()
+            .and_then(|contract| u64::try_from(contract.limits.context_tokens).ok()),
+        ..RouteRequirements::default()
+    })
 }
 
 /// Approximate cost ceiling (USD per 1M input tokens) for each model-class
