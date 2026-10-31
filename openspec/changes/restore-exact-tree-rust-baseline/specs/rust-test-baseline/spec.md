@@ -45,3 +45,12 @@ The baseline SHALL compile test targets without executing historical installed/r
 - **WHEN** approval_recovery is compiled with server-full, postgres-backend and in-memory-backend
 - **THEN** its original memory deadline assertion block is compiled
 - **AND** no historical qualifier or credential setup is executed by the compile-only check
+
+### Requirement: Warning-free inherited-input compilation preserves ownership
+The affected sidecar compilation SHALL use the pinned supported Unix asynchronous descriptor registration contract without deprecation suppression. The inherited input SHALL keep its sole owned file, existing nonblocking/read semantics and error propagation. Windows behavior SHALL remain unchanged by this Unix repair.
+
+#### Scenario: Register owned inherited Unix input
+- **WHEN** the sidecar transfers its owned nonblocking inherited input into asynchronous registration
+- **THEN** registration uses the supported API with its lifetime/descriptor invariants justified at the unsafe boundary
+- **AND** registration failure propagates its I/O cause and releases the owned file without a fabricated success
+- **AND** the affected compile-only approval/sidecar gate emits no Rust warnings

@@ -1,6 +1,10 @@
 //! Dot07 uses the actual binary and independent API/readback child processes.
 
 #[path = "fresh_process_resume_process.rs"]
+#[expect(
+    dead_code,
+    reason = "Approval recovery reuses process helpers but supplies its own qualifier and readback scenarios"
+)]
 mod resume;
 
 use axum::{

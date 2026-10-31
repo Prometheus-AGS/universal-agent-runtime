@@ -8,3 +8,11 @@
 
 ## Superseding disposition
 Operator selected retaining current Liter source. The pending policy/source mismatch above is resolved by aligning versions.toml to0d74c56659943e3fa44a3c8e6d51a27514f3b35c. Qualification remains pending; no dependency source was changed.
+
+## Candidate8e0602ee affected inventory failures
+
+Full-target compile-only inventory failed before execution: settings_persistence fixture lacks ResilienceConfig.admission_timeout_ms, PersistenceConfig.surreal_auth_level, AppConfig.service_instance and upsert_provider_config force/flag argument. These are unrelated API fixture drift, not the #462 duplicate initializer; retained raw diagnostic in evidence/full-inventory-attempt-003.txt. Do not guess the Boolean meaning or add a default silently. No settings fixture edits authorized in the active warning cohort.
+
+Full-library inventory:857passed,8failed,1ignored. Two Liter prompt-cache stream fixtures assume a first content/error event but encounter preserved #388 budget_receipt; context hierarchical tier fixture expects6 and observes7; two native-identity manager assertions fail; three remote thread-admission fixtures fail root readiness with skill_matching_unavailable/skill_service_resource_required. Exact panic summaries in evidence/full-library-attempt-003-failures.txt. These are observed failures; root causes beyond the explicit error are unverified. Do not remove budget receipts, loosen identity/approval gates, automatically copy the other chat's changes, or claim these runtime guarantees are certified. Reconsider relevant fixtures in their actual next capability/state slices; preserve separate source provenance.
+
+Proper-feature retained approval compilation emitted17intentional shared-helper dead-code warnings and1sidecar deprecated registration warning. These are the only new repair cohort. Cargo exit0 is not a warning-free pass. No historical qualifier body ran.

@@ -1,0 +1,39 @@
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+error[E0063]: missing field `admission_timeout_ms` in initializer of `ResilienceConfig`
+   --> tests/settings_persistence.rs:165:21
+    |
+165 |         resilience: ResilienceConfig {
+    |                     ^^^^^^^^^^^^^^^^ missing `admission_timeout_ms`
+
+error[E0063]: missing field `surreal_auth_level` in initializer of `PersistenceConfig`
+   --> tests/settings_persistence.rs:186:22
+    |
+186 |         persistence: PersistenceConfig {
+    |                      ^^^^^^^^^^^^^^^^^ missing `surreal_auth_level`
+
+error[E0063]: missing field `service_instance` in initializer of `AppConfig`
+   --> tests/settings_persistence.rs:133:5
+    |
+133 |     AppConfig {
+    |     ^^^^^^^^^ missing `service_instance`
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+    --> tests/settings_persistence.rs:1134:9
+     |
+1134 |     mgr.upsert_provider_config(&pc).await?;
+     |         ^^^^^^^^^^^^^^^^^^^^^^----- argument #2 of type `bool` is missing
+     |
+note: method defined here
+    --> src/uar/settings/manager.rs:1021:18
+     |
+1021 |     pub async fn upsert_provider_config(
+     |                  ^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1134 |     mgr.upsert_provider_config(&pc, /* bool */).await?;
+     |                                   ++++++++++++
+
+Some errors have detailed explanations: E0061, E0063.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `universal-agent-runtime` (test "settings_persistence") due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...

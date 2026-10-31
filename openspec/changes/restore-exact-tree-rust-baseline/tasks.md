@@ -11,6 +11,9 @@
 - [x] 1.7 Complete later swappable matcher/ingester and MCP metadata fixture compatibility repairs.
 - [x] 1.8 Preserve development-backend fixture assertions with explicit applicability and fail-fast preconditions.
 
+- [x] 1.9 Replace observed deprecated Unix inherited-input registration, preserving sole owner and error semantics.
+- [x] 1.10 Scope intentional shared qualifier helper expectations to affected including target.
+
 ## 2. Phase-exit acceptance
 - [ ] 2.1 Freeze exact committed source and implementation-complete inventory.
 - [ ] 2.2 Compile minimal, server-full and server-full,postgres-backend library test targets serially.

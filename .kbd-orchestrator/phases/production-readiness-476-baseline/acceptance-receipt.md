@@ -38,3 +38,9 @@ Exact build environment for these checks: CARGO_BUILD_BUILD_DIR=/Users/gqadonis/
 ## Clean9ed71e93 baseline and second inventory disposition
 
 Clean unchanged9ed71e93 passed the3-profile guard and16specified assertions again. Artifact/source/config/log hashes recorded at target/production-readiness-476/committed-baseline-002.receipt.json. Full inventory002 exited101 before execution, exposing later fixture API and development-feature construction mismatches; no test body/legacy qualifier ran. Raw log copied to evidence/full-inventory-attempt-002.txt. The phase plan now uses full-target compile-only inventory plus full library execution and the specified regressions, so it will not revive historical opt-in installed/recovery runners. No runtime/security behavior or assertion was weakened.
+
+## Candidate8e0602ee acceptance003
+
+Clean committed8e0602eecbd37504e8cdf8945f2f1c5537ff6701 (tree40ed8e541e27d3432c87eb8434acf85b65295770) passed all3library harness profiles warning-free and4history+11embeddings+1OpenAPI assertions, unchanged source/recursive pins. Full receipt: target/production-readiness-476/committed-baseline-003.receipt.json. Full-target --no-run failed101, four unrelated settings_persistence fixture API errors, before test execution. Full --lib finished101:857passed,8failed,1ignored; complete log full-library-003.log. Failures remain unqualified, not hidden or relabelled PASS.
+
+Proper-feature approval_recovery --no-run finished Cargo0 but emitted18warnings, so zero-warning gate FAILED; executable approval_recovery-5725fad1c89ff6ec exists, no qualifier body ran. A bounded warning repair cohort is in plan; prior results do not certify its future source. OpenSpec validation passed for8e0602ee artifacts. The first commit command failed127 because PATH was unquoted (spaces in host path); it launched no git/Cargo and earned no acceptance. Corrected command passed normal hooks; no bypass.

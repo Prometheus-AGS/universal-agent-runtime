@@ -1,0 +1,206 @@
+{
+  "phase": "production-readiness-476-baseline",
+  "source_base": "8e0602eecbd37504e8cdf8945f2f1c5537ff6701",
+  "implementation_complete": true,
+  "remaining_implementation": [],
+  "implementation_count": {
+    "completed": 12,
+    "total": 12
+  },
+  "files": [
+    {
+      "path": "docs/development/rust-test-baseline.md",
+      "sha256": "3b22faaa0f1169ec5dcb491d93875f269f48a1e13b134da9ab5a33feb622acdf"
+    },
+    {
+      "path": "lefthook.yml",
+      "sha256": "6615ae3751828bca3e4d149d2086eb3d4c46efb26cbe55426df363b9f74dcafa"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/.openspec.yaml",
+      "sha256": "c6ab3a95d8d0fd469ca8750ef79234025bf4a8356d5d57856e97d7e47fc8b6c2"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/design.md",
+      "sha256": "8845c2deb6c457aae2bc70741a8730916663e76c2c895d496b8c8a3473b1935c"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/proposal.md",
+      "sha256": "4215d8eecdb3230b14cd7c76e530058a3717a9ec8accc2b28bd079c11578ebc1"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/specs/rust-test-baseline/spec.md",
+      "sha256": "c3296e214d7d26238579e1f2fdad7f961c03a695e21b2f1633dca254ad7b7ba2"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/tasks.md",
+      "sha256": "60df289ce5f29d54461cd3a5a88bc9f62a9e0c5edbd9e6ec8ef4b01e4da843a6"
+    },
+    {
+      "path": "scripts/verify-rust-test-baseline.sh",
+      "sha256": "9520ccad22409240f15f23e424ef4941f9ef5b0627a26a40ba7c4236bd555c65"
+    },
+    {
+      "path": "src/bin/uar-sidecar/inherited_input.rs",
+      "sha256": "c0a2a18bc9355b12e61703960a71603c994e1cb19a638c856d775c99479fbeaa"
+    },
+    {
+      "path": "src/uar/runtime/presentation_history_tests.rs",
+      "sha256": "7f6658b2c8805812b99b447040d639187ff93a2d41ab97cddb8f5412ce527e09"
+    },
+    {
+      "path": "tests/bauar_full_harness_cursor.rs",
+      "sha256": "961ee764058d327d7507a9d2ad4d98a5f8e71a966702906ba631250381616f2e"
+    },
+    {
+      "path": "tests/bauar_receipt_projection.rs",
+      "sha256": "b350e1519df3a7f82abdbc87c39378520b2915f3118a4425ba0717231de41ad5"
+    },
+    {
+      "path": "tests/bauar_resource_grants.rs",
+      "sha256": "2c8daedcff3793015b6629fb3b3f4a774029f26817f687884e6d028ca9122598"
+    },
+    {
+      "path": "tests/common/ollama.rs",
+      "sha256": "d84c2da5e900f6b7fdfce774495f3b024eec2415e6121d5c3521018443e04c71"
+    },
+    {
+      "path": "tests/context_history_integrity.rs",
+      "sha256": "268be636ab6b2f86243b40b3e4b8a6c0005688bd972dcb04ecd492e994220504"
+    },
+    {
+      "path": "tests/durable_ingestion.rs",
+      "sha256": "5c00e29a15cc35406a4fdf91aa87a212548c7b1e63089b1271beb3c4f7fd48ef"
+    },
+    {
+      "path": "tests/integration.rs",
+      "sha256": "5fe60ca2dd6c817f840c3e41bf443b08de6bcdffd8f5a64663902bab2732d90d"
+    },
+    {
+      "path": "tests/jwks_es256_verification.rs",
+      "sha256": "1d0e2b707dfef70f68d0a270118d49812dd3ba4a5560205200412e19b3afe511"
+    },
+    {
+      "path": "tests/kb_chunk_strategy_ingest.rs",
+      "sha256": "fe8bb4e4a598056542b43d4a3e84c8ef338f75e1f3b1f699cc83a83049938a5b"
+    },
+    {
+      "path": "tests/kb_embedding_space.rs",
+      "sha256": "34099ce1c38a705a440fcb3a3901da5ff1975bf964608e58b17ca326c3e5762d"
+    },
+    {
+      "path": "tests/lifecycle_owned_resources.rs",
+      "sha256": "cdc2af95303400f580c51ad2fb0df1332d0f0108dfc3ccc451dee7fddc7243f0"
+    },
+    {
+      "path": "tests/mcp_preapproved_tools.rs",
+      "sha256": "9836d42f3e150459a2feae13fc752950815283dcb85d4a57480cfa603c735d78"
+    },
+    {
+      "path": "tests/mcp_projection.rs",
+      "sha256": "6e9c42669394173a275da22367c7184b7f53430756f43e17ac31eff003a78417"
+    },
+    {
+      "path": "tests/model_path_resiliency.rs",
+      "sha256": "5006ad40d90eb4d3d941990d6ea00951b4e86e0f45db27915b6b3344b3db3fd3"
+    },
+    {
+      "path": "tests/prompt_assembly.rs",
+      "sha256": "67c54b3e97a809d18d29560f64958e81b586f9b95afeadf34c7a4600ec824ce8"
+    },
+    {
+      "path": "tests/skill_activation_runtime.rs",
+      "sha256": "67cc511b400d030ca8b95d93e05397e2fde4fa12e73fe7bc46de8c7f4ffcd4ac"
+    },
+    {
+      "path": "tests/support/approval_recovery_process.rs",
+      "sha256": "676f3e5eae360ac8969c24c1c0e294e704f5f622d55c6e8472a004601270fadc"
+    },
+    {
+      "path": "tests/support/sidecar_process.rs",
+      "sha256": "c572a13911aaca26b158c4a48c5fdb69ba7c2192aa774a28adc5131d1db3a0a6"
+    },
+    {
+      "path": "tests/support/uar_1_1_1_runtime_fixture.rs",
+      "sha256": "61b39147634ed5f4cdee789dd6dd89d79e906e3a96a32ab9c5ed3c7af5e7da13"
+    },
+    {
+      "path": "tests/test_chat_completion.rs",
+      "sha256": "77aa6bcc5598e339044cf214916d4a18113a4621c18f9a4525c821679f4bd9a3"
+    },
+    {
+      "path": "tests/test_mcp_optional.rs",
+      "sha256": "3f2b2bbaee8500a8f4acc9e3866df10dcef4a8ff91e2e5bbd838b11644ff5311"
+    },
+    {
+      "path": "tests/test_provider_resolution.rs",
+      "sha256": "7565e79c5e1d6e94c92f018f20c2c6b30aa05eba5f0eb0218f01c982402161d1"
+    },
+    {
+      "path": "tests/truthful_tool_outcomes.rs",
+      "sha256": "d4d2652a8164b53bb004aaba6220b61e7fa144c5529744d34398fb0dcf75c90c"
+    },
+    {
+      "path": "tests/turn_shadow_parity.rs",
+      "sha256": "d0c25d5476b10728fe3558bdeb9a13be90d903179bb3f144d8f4b39c72fe29cc"
+    },
+    {
+      "path": "tests/typed_turn_assembly.rs",
+      "sha256": "3f2c06b969dd6fcaf582c845237096b8baea90481c17ade75b992f733fa6b8d2"
+    },
+    {
+      "path": "tests/uar_integration.rs",
+      "sha256": "343d48b25e7affc0210a80803826a582d460391f71629088a51eb2c8baeee5fe"
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "0e353df1172c464da3cf7326bf4e84db657201caf23a108fc3fd2c5f8edf305d"
+    }
+  ],
+  "handoffs": [
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-implementation.md",
+      "sha256": "75376438a5e8b63ca69e902cca51fd0a3eac2759492c103b06f960109fa65f27"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-compile-repair.md",
+      "sha256": "f7a0721597554efbecf9d61960f31a50fd7c6b2aa18001658b3d6e5a22cf2eb2"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-warning-repair.md",
+      "sha256": "67ccc044c2f73763952e858ffe5868284b4a8dd762145faea4d7cfe2393be00b"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-final-api-repair.md",
+      "sha256": "c9aad9e01edfe3902f25146f2cced6b92db6572d4ac038055698e88cf86b9e5a"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-baseline-additional-api-repair.md",
+      "sha256": "1068905b25407c5b73259657c6091d24d4885a2367bee7b83309ef28192cf090"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-approval-fixture-compatibility.md",
+      "sha256": "283f29a8067bf45d849bc87082150548600fc8d02d2a0bf1ddd6ecd6603dc6fa"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-sidecar-warning-repair.md",
+      "sha256": "d7107324e04388e106830cf0a3ced7c87b154db7eff072706424f7e19915658e"
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-approval-warning-repair.md",
+      "sha256": "940ee5f929e0035c95f369436dd2c4282c2d7793799b65b0dfdd313fda1b5dae"
+    }
+  ],
+  "scope": "All affected runtime/test/tool/config/spec/usage inputs. Governance/progress/history/review/evidence outputs separate. Clean committed gate will bind complete Git tree.",
+  "preserved": "All prior backends/assertions/effect/authority/budget controls. Unix sole File ownership/nonblocking/read/error behavior; Windows untouched. One supported registration substitution and one inclusion-local intentional dead-code expectation.",
+  "guards": "No new runtime guard. New unsafe API states existing concrete File descriptor ownership; intentional shared helper annotation traces to17observed warnings. Earlier required-feature precondition retained.",
+  "verification_during_cohort": "None by lead or writers. Only source inspection/authorized code/spec/governance/history writing. Both complete handoffs read; no unresolved implementation tasks.",
+  "remaining_checks": [
+    "isolated artifact-only Rust/security/scope review",
+    "ordinary commit/hook and clean3-profile guard",
+    "same16specified regressions",
+    "affected proper-feature approval_recovery --no-run with explicit zero-warning requirement",
+    "amended OpenSpec validation",
+    "exact-source receipts and carry limits for unrelated prior failed inventories"
+  ]
+}

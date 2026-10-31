@@ -1,0 +1,122 @@
+   Compiling universal-agent-runtime v1.4.0-rc.1 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+warning: use of deprecated associated function `tokio::io::unix::AsyncFd::<T>::new`: unsound due to lack of I/O safety; use `AsyncFd::register` instead (see https://github.com/tokio-rs/tokio/pull/8587)
+  --> src/bin/uar-sidecar/inherited_input.rs:76:53
+   |
+76 |             Ok(AsyncInput(tokio::io::unix::AsyncFd::new(self.file)?))
+   |                                                     ^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: associated items `start` and `saw` are never used
+   --> tests/support/fresh_process_resume_process.rs:158:25
+    |
+157 | impl Peer {
+    | --------- associated items in this implementation
+158 |     pub(super) async fn start(root: &Path) -> Self {
+    |                         ^^^^^
+...
+178 |     fn saw(&self, mode: &str) -> bool {
+    |        ^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `completion` is never used
+   --> tests/support/fresh_process_resume_process.rs:195:10
+    |
+195 | async fn completion(State(seen): State<Arc<Seen>>, Json(body): Json<Value>) -> Response {
+    |          ^^^^^^^^^^
+
+warning: function `source` is never used
+   --> tests/support/fresh_process_resume_process.rs:580:10
+    |
+580 | async fn source(
+    |          ^^^^^^
+
+warning: function `envelopes` is never used
+   --> tests/support/fresh_process_resume_process.rs:630:10
+    |
+630 | async fn envelopes(db: &SurrealDbProvider, run: &str) -> Vec<CheckpointResumeEnvelope> {
+    |          ^^^^^^^^^
+
+warning: function `proof` is never used
+   --> tests/support/fresh_process_resume_process.rs:659:10
+    |
+659 | async fn proof(
+    |          ^^^^^
+
+warning: enum `ReadbackOperation` is never used
+   --> tests/support/fresh_process_resume_process.rs:683:6
+    |
+683 | enum ReadbackOperation {
+    |      ^^^^^^^^^^^^^^^^^
+
+warning: struct `ReadbackJob` is never constructed
+   --> tests/support/fresh_process_resume_process.rs:693:8
+    |
+693 | struct ReadbackJob {
+    |        ^^^^^^^^^^^
+
+warning: struct `ReadbackResult` is never constructed
+   --> tests/support/fresh_process_resume_process.rs:701:8
+    |
+701 | struct ReadbackResult {
+    |        ^^^^^^^^^^^^^^
+
+warning: function `run_readback_child` is never used
+   --> tests/support/fresh_process_resume_process.rs:742:14
+    |
+742 | pub async fn run_readback_child() -> bool {
+    |              ^^^^^^^^^^^^^^^^^^
+
+warning: struct `ReadbackChild` is never constructed
+   --> tests/support/fresh_process_resume_process.rs:813:8
+    |
+813 | struct ReadbackChild(Child);
+    |        ^^^^^^^^^^^^^
+
+warning: function `readback` is never used
+   --> tests/support/fresh_process_resume_process.rs:824:10
+    |
+824 | async fn readback(
+    |          ^^^^^^^^
+
+warning: function `inspect_cold_run` is never used
+   --> tests/support/fresh_process_resume_process.rs:902:10
+    |
+902 | async fn inspect_cold_run(
+    |          ^^^^^^^^^^^^^^^^
+
+warning: function `wait_for` is never used
+   --> tests/support/fresh_process_resume_process.rs:977:10
+    |
+977 | async fn wait_for(node: &Node, run: &str, condition: impl Fn() -> bool) {
+    |          ^^^^^^^^
+
+warning: function `corrupted_envelope` is never used
+    --> tests/support/fresh_process_resume_process.rs:1004:10
+     |
+1004 | async fn corrupted_envelope(root: &Path, profile: &str) {
+     |          ^^^^^^^^^^^^^^^^^^
+
+warning: function `scenario` is never used
+    --> tests/support/fresh_process_resume_process.rs:1064:10
+     |
+1064 | async fn scenario(root: &Path, profile: &str, case: &str) {
+     |          ^^^^^^^^
+
+warning: function `unsupported` is never used
+    --> tests/support/fresh_process_resume_process.rs:1430:10
+     |
+1430 | async fn unsupported(root: &Path, profile: &str, attested: bool) {
+     |          ^^^^^^^^^^^
+
+warning: function `qualify` is never used
+    --> tests/support/fresh_process_resume_process.rs:1525:14
+     |
+1525 | pub async fn qualify() {
+     |              ^^^^^^^
+
+warning: `universal-agent-runtime` (bin "uar-sidecar") generated 1 warning
+warning: `universal-agent-runtime` (test "approval_recovery") generated 17 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7m 45s
+  Executable tests/approval_recovery.rs (target/build/debug/deps/approval_recovery-5725fad1c89ff6ec)

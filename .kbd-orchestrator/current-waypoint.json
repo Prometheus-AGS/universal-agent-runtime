@@ -10,10 +10,10 @@
   "phasePath": ".kbd-orchestrator/phases/production-readiness-476-baseline",
   "priorWaypoint": ".kbd-orchestrator/phases/production-readiness-476-baseline/prior-waypoint.json",
   "authorization": "Operator request 2026-10-31: bounded useful phases, phase-exit acceptance, no tests during investigation/implementation",
-  "exactNextCommand": "Fresh final-artifact Rust/scope review, ordinary commit, then corrected serial compile-only inventory and requested/library regression checks.",
-  "verification": "PHASE_EXIT_AUTHORIZED_AFTER_ALL_FINAL_COHORT_HANDOFFS",
+  "exactNextCommand": "Isolated Rust/security/scope review of complete warning repair; then serial planned acceptance",
+  "verification": "PHASE_EXIT_AUTHORIZED_AFTER_COMPLETE_WARNING_COHORT",
   "blockers": [],
   "policyDecision": "Retain current Liter source; policy aligned to0d74c566",
-  "inventory": ".kbd-orchestrator/phases/production-readiness-476-baseline/implementation-inventory-004.json",
-  "testedSource": "9ed71e93cb2b3e130ff2c042a04b6ed3bcbd51ca"
+  "inventory": ".kbd-orchestrator/phases/production-readiness-476-baseline/implementation-inventory-005.json",
+  "testedSource": "8e0602eecbd37504e8cdf8945f2f1c5537ff6701"
 }

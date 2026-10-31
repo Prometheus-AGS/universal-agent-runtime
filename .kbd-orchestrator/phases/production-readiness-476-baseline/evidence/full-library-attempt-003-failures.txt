@@ -1,0 +1,33 @@
+failures:
+
+thread 'llm::liter_driver::prompt_caching_tests::failed_provider_stream_records_latency_before_error_is_yielded' (70525664) panicked at src/llm/liter_driver.rs:1393:14:
+invalid provider chunks must remain typed stream errors: Custom { source: "uar.request", event_name: "budget_receipt", payload: Object {"schema_version": String("uar.request-budget.v1"), "representation": String("final_provider_request"), "destination_model": String("openai/metric-error-test"), "serialized_request": Bool(true), "count_quality": String("approximate"), "counting_revision": String("approximate-cl100k-json-v1"), "counted_input_tokens": Number(42), "serialized_bytes": Number(176), "serialized_sha256": String("8c30bb4de165851d5632ea0187282cb870518e784cf9d962d1f097e688c49b88"), "tools_included": Bool(true), "instructions_included": Bool(true), "fit_guarantee": Bool(false), "reserved_output_tokens": Null, "output_ceiling_enforced": Bool(false)} }
+
+thread 'llm::liter_driver::prompt_caching_tests::driver_returns_before_provider_stream_finishes' (70525662) panicked at src/llm/liter_driver.rs:1310:9:
+unexpected first normalized event: Custom { source: "uar.request", event_name: "budget_receipt", payload: Object {"schema_version": String("uar.request-budget.v1"), "representation": String("final_provider_request"), "destination_model": String("openai/test"), "serialized_request": Bool(true), "count_quality": String("approximate"), "counting_revision": String("approximate-cl100k-json-v1"), "counted_input_tokens": Number(40), "serialized_bytes": Number(163), "serialized_sha256": String("563ae26b9a1de2a59fd62b19f33241ae386f40c8971e541a7a1e881333498857"), "tools_included": Bool(true), "instructions_included": Bool(true), "fit_guarantee": Bool(false), "reserved_output_tokens": Null, "output_ceiling_enforced": Bool(false)} }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'uar::context::strategy::tests::hierarchical_with_driver_produces_three_tiers' (70526572) panicked at src/uar/context/strategy.rs:928:9:
+assertion `left == right` failed
+  left: 7
+ right: 6
+
+thread 'uar::runtime::manager::native_identity_tests::native_identity_manager_correlates_live_events_dialogues_and_receipts' (70527440) panicked at src/uar/runtime/manager.rs:10818:21:
+assertion failed: events.iter().all(|event|
+        !matches!(event.event, NormalizedEvent::Error { .. }))
+
+thread 'uar::runtime::manager::native_identity_tests::native_identity_manager_rejects_late_conflict_and_duplicates_without_dialogue_calls' (70527441) panicked at src/uar/runtime/manager.rs:10863:21:
+assertion failed: events.iter().any(|event|
+        matches!(&event.event, NormalizedEvent::Error { code, .. } if code ==
+            "provider_stream_failed"))
+
+thread 'uar::runtime::thread::service::tests::remote_admission_refusal_does_not_lease_root_budget' (70528716) panicked at src/uar/runtime/thread/service_tests.rs:862:27:
+fixture failed: root failed before model readiness: skill_matching_unavailable: Run admission failed before protected content publication; cleanup: []
+
+thread 'uar::runtime::thread::service::tests::remote_pending_cancellation_releases_capacity_before_any_dispatch' (70528924) panicked at src/uar/runtime/thread/service_tests.rs:862:27:
+fixture failed: root failed before model readiness: skill_matching_unavailable: Run admission failed before protected content publication; cleanup: []
+
+thread 'uar::runtime::thread::service::tests::remote_persisted_launch_refusal_releases_capacity_and_shutdown_settles_record' (70533021) panicked at src/uar/runtime/thread/service_tests.rs:862:27:
+fixture failed: root failed before model readiness: skill_matching_unavailable: Run admission failed before protected content publication; cleanup: []
+
+test result: FAILED. 857 passed; 8 failed; 1 ignored; 0 measured; 0 filtered out; finished in 114.81s

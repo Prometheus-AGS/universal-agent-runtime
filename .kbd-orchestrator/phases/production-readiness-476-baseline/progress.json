@@ -5,13 +5,13 @@
   "changes": {
     "restore-exact-tree-rust-baseline": {
       "status": "IN_PROGRESS",
-      "tasks_total": 11,
-      "tasks_done": 10,
-      "next_task_pending": "Fresh final-cohort review; committed3-profile baseline,16regressions, compile-only all-target/approval fixture inventory and safe full-library execution",
+      "tasks_total": 13,
+      "tasks_done": 12,
+      "next_task_pending": "Isolated final artifact reviews, commit/core baseline and failed warning gate; exact receipts",
       "blockers": []
     }
   },
-  "implementation_total": 10,
-  "implementation_completed": 10,
-  "verification_status": "PENDING"
+  "implementation_total": 12,
+  "implementation_completed": 12,
+  "verification_status": "PHASE_EXIT_PENDING_REVIEW"
 }

@@ -7123,3 +7123,8 @@ Resumed production-readiness-476 after operator selected current Liter source. A
 
 ## #476 baseline acceptance and observed fixture repair
 Clean committed a3bceb9a passed3library profiles and16specified regression assertions. Full server-full inventory exit101 before execution exposed integration fixture API drift and shared helper warnings; raw diagnostic receipt retained. Added one bounded fixture compatibility cohort to the same #462 phase. Gate closed for implementation; no temporary source patches or warning suppression. Local per-worktree build-dir/cache settings resolve observed shared path file-open stalls; no other chat process was killed or source reset.
+
+
+### 2026-10-31 — #476/#462 resumed phase-exit acceptance
+
+Operator asked to inspect shared Cargo availability and resume bounded phases without routine approvals. Source/process inspection found no active Cargo/rustc or shared lock holder; original checkout/processes preserved. Final fixture reviews had no actionable findings. Ordinary hook produced8e0602ee; clean3-profile guard and16specified regressions passed, exact hashes in ignored receipt003. Full-target compile inventory failed in unrelated settings fixtures; full-library857pass/8fail/1ignored. These are retained separately, no global PASS. Proper-feature approval control compiles but18warnings fail zero-warning rule, so one two-file warning cohort was recorded and delegated with CLOSED verification lock. All running acceptance processes finished before source edits resumed; no early gate or paid/external effect.
