@@ -15,7 +15,7 @@
 - [x] 1.10 Scope intentional shared qualifier helper expectations to affected including target.
 
 ## 2. Phase-exit acceptance
-- [ ] 2.1 Freeze exact committed source and implementation-complete inventory.
-- [ ] 2.2 Compile minimal, server-full and server-full,postgres-backend library test targets serially.
-- [ ] 2.3 Run retained presentation-history and embeddings/OpenAPI regressions plus affected check inventory.
-- [ ] 2.4 Record safeguard negative controls and phase receipts; report unrelated failures and blocked/unverified claims.
+- [x] 2.1 Freeze exact committed source and implementation-complete inventory.
+- [x] 2.2 Compile minimal, server-full and server-full,postgres-backend library test targets serially.
+- [x] 2.3 Run retained presentation-history and embeddings/OpenAPI regressions plus affected check inventory.
+- [x] 2.4 Record safeguard negative controls and phase receipts; report unrelated failures and blocked/unverified claims.

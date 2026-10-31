@@ -1,4 +1,9 @@
-## ADDED Requirements
+# rust-test-baseline Specification
+
+## Purpose
+Define local exact-source Rust library compilation and preserved regression evidence. Compilation alone does not establish installed-runtime, recovery, provider or release qualification.
+
+## Requirements
 
 ### Requirement: Exact-source library test baseline
 Local acceptance SHALL compile the library test target with locked dependency resolution and no default features for minimal, server-full and server-full,postgres-backend on one unchanged committed candidate. Temporary source patches SHALL NOT count as candidate acceptance.

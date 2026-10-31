@@ -4,16 +4,17 @@
   "project": "universal-agent-runtime",
   "activePhase": "production-readiness-476-baseline",
   "phase": "production-readiness-476-baseline",
-  "status": "IMPLEMENTED_ACCEPTANCE_PENDING",
-  "stageId": "verify",
+  "status": "COMPLETED_WITH_RECORDED_UNRELATED_FAILURES",
+  "stageId": "reflect",
   "change": "restore-exact-tree-rust-baseline",
   "phasePath": ".kbd-orchestrator/phases/production-readiness-476-baseline",
   "priorWaypoint": ".kbd-orchestrator/phases/production-readiness-476-baseline/prior-waypoint.json",
   "authorization": "Operator request 2026-10-31: bounded useful phases, phase-exit acceptance, no tests during investigation/implementation",
-  "exactNextCommand": "Isolated Rust/security/scope review of complete warning repair; then serial planned acceptance",
-  "verification": "PHASE_EXIT_AUTHORIZED_AFTER_COMPLETE_WARNING_COHORT",
+  "exactNextCommand": "Record next bounded capability-dispatch Spec/Plan then implement; no routine approval required",
+  "verification": "SCOPED_EXIT_SATISFIED; NO_GLOBAL_OR_RELEASE_PASS",
   "blockers": [],
   "policyDecision": "Retain current Liter source; policy aligned to0d74c566",
   "inventory": ".kbd-orchestrator/phases/production-readiness-476-baseline/implementation-inventory-005.json",
-  "testedSource": "8e0602eecbd37504e8cdf8945f2f1c5537ff6701"
+  "testedSource": "5aa36a40ac0661ad358f50db8a066b5f5a1c4263",
+  "archivedChange": "openspec/changes/archive/2026-10-31-restore-exact-tree-rust-baseline"
 }

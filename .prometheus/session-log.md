@@ -7128,3 +7128,8 @@ Clean committed a3bceb9a passed3library profiles and16specified regression asser
 ### 2026-10-31 — #476/#462 resumed phase-exit acceptance
 
 Operator asked to inspect shared Cargo availability and resume bounded phases without routine approvals. Source/process inspection found no active Cargo/rustc or shared lock holder; original checkout/processes preserved. Final fixture reviews had no actionable findings. Ordinary hook produced8e0602ee; clean3-profile guard and16specified regressions passed, exact hashes in ignored receipt003. Full-target compile inventory failed in unrelated settings fixtures; full-library857pass/8fail/1ignored. These are retained separately, no global PASS. Proper-feature approval control compiles but18warnings fail zero-warning rule, so one two-file warning cohort was recorded and delegated with CLOSED verification lock. All running acceptance processes finished before source edits resumed; no early gate or paid/external effect.
+
+
+### 2026-10-31 — #462 scoped phase boundary
+
+5aa36a40 clean committed three-profile library compilation,4history+11embeddings+1OpenAPI assertions and retained proper-feature approval-control compile all pass warning-free. Receipt is .kbd-orchestrator/phases/production-readiness-476-baseline/evidence/acceptance-5aa36a40.json. Full historical inventories still have unrelated settings compilation and8library assertion failures; no global/release PASS. No tests during complete repair cohorts; no original-checkout/process/config edits, paid calls or external publication. Next bounded work is typed ordinary-chat image transport plus actual capability/destination admission, preserving #388; final platform lane choice remains operator-owned and qualification-specific.

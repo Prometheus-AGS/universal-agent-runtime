@@ -1,17 +1,18 @@
 {
   "phase": "production-readiness-476-baseline",
   "last_updated_by": "codex",
-  "status": "IMPLEMENTED_ACCEPTANCE_PENDING",
+  "status": "COMPLETED_WITH_RECORDED_UNRELATED_FAILURES",
   "changes": {
     "restore-exact-tree-rust-baseline": {
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "tasks_total": 13,
-      "tasks_done": 12,
-      "next_task_pending": "Isolated final artifact reviews, commit/core baseline and failed warning gate; exact receipts",
+      "tasks_done": 13,
+      "next_task_pending": null,
       "blockers": []
     }
   },
   "implementation_total": 12,
   "implementation_completed": 12,
-  "verification_status": "PHASE_EXIT_PENDING_REVIEW"
+  "verification_status": "SCOPED_EXIT_PASS",
+  "tested_source": "5aa36a40ac0661ad358f50db8a066b5f5a1c4263"
 }
