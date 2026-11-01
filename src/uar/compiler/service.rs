@@ -12,6 +12,7 @@ use tracing::{info, warn};
 
 use super::completeness::CompletenessAnalyzer;
 use super::ir::AgentDescriptorIR;
+use super::owner::CompilerOwner;
 use super::parser;
 use super::pipeline::{self, CompileOutput};
 use super::registries::{InMemoryEndpointRegistry, InMemorySchemaRegistry};
@@ -53,49 +54,56 @@ impl CompilerService {
 
     // ── Spec management ───────────────────────────────────────────────────────
 
-    /// Store a new spec document. Extracts the agent name from the Markdown if possible.
-    pub async fn store_spec(&self, content: String) -> Result<SpecRecord> {
+    /// Store a new spec document owned by `owner`. Extracts the agent name from
+    /// the Markdown if possible.
+    pub async fn store_spec(&self, owner: &CompilerOwner, content: String) -> Result<SpecRecord> {
         let name = extract_agent_name(&content).unwrap_or_else(|| "unnamed-agent".to_string());
-        let record = SpecRecord::new(name, content);
+        let record = SpecRecord::new(name, content).with_owner(owner);
         self.storage.create_spec(record).await
     }
 
-    /// Retrieve a spec by ID.
-    pub async fn get_spec(&self, id: &str) -> Result<Option<SpecRecord>> {
-        self.storage.get_spec(id).await
+    /// Retrieve a spec by ID if `owner` owns it.
+    pub async fn get_spec(&self, owner: &CompilerOwner, id: &str) -> Result<Option<SpecRecord>> {
+        self.storage.get_spec(id, owner).await
     }
 
-    /// List all stored specs.
-    pub async fn list_specs(&self) -> Result<Vec<SpecRecord>> {
-        self.storage.list_specs().await
+    /// List the specs `owner` owns.
+    pub async fn list_specs(&self, owner: &CompilerOwner) -> Result<Vec<SpecRecord>> {
+        self.storage.list_specs(owner).await
     }
 
-    /// Update the content of an existing spec.
-    pub async fn update_spec(&self, id: &str, content: String) -> Result<Option<SpecRecord>> {
-        self.storage.update_spec(id, content).await
+    /// Update the content of an existing spec `owner` owns.
+    pub async fn update_spec(
+        &self,
+        owner: &CompilerOwner,
+        id: &str,
+        content: String,
+    ) -> Result<Option<SpecRecord>> {
+        self.storage.update_spec(id, owner, content).await
     }
 
-    /// Delete a spec and its associated reports.
-    pub async fn delete_spec(&self, id: &str) -> Result<bool> {
-        self.storage.delete_spec(id).await
+    /// Delete a spec `owner` owns and its associated reports.
+    pub async fn delete_spec(&self, owner: &CompilerOwner, id: &str) -> Result<bool> {
+        self.storage.delete_spec(id, owner).await
     }
 
     // ── Compilation ───────────────────────────────────────────────────────────
 
-    /// Compile a stored spec by ID. Stores the resulting report.
+    /// Compile a stored spec by ID if `owner` owns it. Stores the resulting report.
     ///
     /// Returns the full [`CompileOutput`] on success.
-    pub async fn compile_spec(&self, spec_id: &str) -> Result<CompileOutput> {
+    pub async fn compile_spec(&self, owner: &CompilerOwner, spec_id: &str) -> Result<CompileOutput> {
         let spec = self
             .storage
-            .get_spec(spec_id)
+            .get_spec(spec_id, owner)
             .await?
             .with_context(|| format!("spec '{spec_id}' not found"))?;
 
         let output = self.compile_content(&spec.content).await?;
 
         // Persist the report
-        let report_record = ReportRecord::new(spec_id, output.clone());
+        let report_record =
+            ReportRecord::new(spec_id, output.clone()).with_owner_key(spec.owner.clone());
         self.storage.save_report(report_record).await?;
 
         info!(
@@ -128,21 +136,29 @@ impl CompilerService {
 
     // ── Report retrieval ──────────────────────────────────────────────────────
 
-    /// Retrieve a compile report by ID.
-    pub async fn get_report(&self, report_id: &str) -> Result<Option<ReportRecord>> {
-        self.storage.get_report(report_id).await
+    /// Retrieve a compile report by ID if `owner` owns it.
+    pub async fn get_report(
+        &self,
+        owner: &CompilerOwner,
+        report_id: &str,
+    ) -> Result<Option<ReportRecord>> {
+        self.storage.get_report(report_id, owner).await
     }
 
-    /// List all compile reports for a given spec.
-    pub async fn list_reports(&self, spec_id: &str) -> Result<Vec<ReportRecord>> {
-        self.storage.list_reports_for_spec(spec_id).await
+    /// List the compile reports of a given spec that `owner` owns.
+    pub async fn list_reports(
+        &self,
+        owner: &CompilerOwner,
+        spec_id: &str,
+    ) -> Result<Vec<ReportRecord>> {
+        self.storage.list_reports_for_spec(spec_id, owner).await
     }
 
     // ── Conversational sessions ───────────────────────────────────────────────
 
-    /// Create a new conversational compiler session.
-    pub async fn create_session(&self) -> CompilerSession {
-        let session = CompilerSession::new();
+    /// Create a new conversational compiler session owned by `owner`.
+    pub async fn create_session(&self, owner: &CompilerOwner) -> CompilerSession {
+        let session = CompilerSession::new().with_owner(owner);
         match self.session_storage.save_session(session.clone()).await {
             Ok(_) => {
                 info!(session_id = %session.id, "compiler session created");
@@ -158,10 +174,14 @@ impl CompilerService {
         }
     }
 
-    /// Get a session by ID.
-    pub async fn get_session(&self, session_id: &str) -> Option<CompilerSession> {
+    /// Get a session by ID if `owner` owns it.
+    pub async fn get_session(
+        &self,
+        owner: &CompilerOwner,
+        session_id: &str,
+    ) -> Option<CompilerSession> {
         self.session_storage
-            .get_session(session_id)
+            .get_session(session_id, owner)
             .await
             .unwrap_or_else(|e| {
                 warn!(session_id, error = %e, "failed to get session");
@@ -169,10 +189,10 @@ impl CompilerService {
             })
     }
 
-    /// List all active sessions.
-    pub async fn list_sessions(&self) -> Vec<CompilerSession> {
+    /// List the sessions `owner` owns.
+    pub async fn list_sessions(&self, owner: &CompilerOwner) -> Vec<CompilerSession> {
         self.session_storage
-            .list_sessions()
+            .list_sessions(owner)
             .await
             .unwrap_or_else(|e| {
                 warn!(error = %e, "failed to list sessions");
@@ -180,9 +200,9 @@ impl CompilerService {
             })
     }
 
-    /// Cancel a session.
-    pub async fn cancel_session(&self, session_id: &str) -> bool {
-        if let Some(mut session) = self.get_session(session_id).await {
+    /// Cancel a session `owner` owns.
+    pub async fn cancel_session(&self, owner: &CompilerOwner, session_id: &str) -> bool {
+        if let Some(mut session) = self.get_session(owner, session_id).await {
             session.status = SessionStatus::Cancelled;
             if let Err(e) = self.session_storage.save_session(session).await {
                 warn!(session_id, error = %e, "failed to save cancelled session");
@@ -198,9 +218,13 @@ impl CompilerService {
     ///
     /// Promotes the `PartialAgentDescriptorIR` to a full IR and runs the pipeline.
     /// Returns an error if required fields are missing.
-    pub async fn compile_session(&self, session_id: &str) -> Result<CompileOutput> {
+    pub async fn compile_session(
+        &self,
+        owner: &CompilerOwner,
+        session_id: &str,
+    ) -> Result<CompileOutput> {
         let session = self
-            .get_session(session_id)
+            .get_session(owner, session_id)
             .await
             .with_context(|| format!("session '{session_id}' not found"))?;
 
@@ -320,29 +344,37 @@ mod tests {
     #[tokio::test]
     async fn test_store_and_retrieve_spec() {
         let svc = CompilerService::in_memory();
+        let owner = CompilerOwner::for_test("alice", false);
         let content = "# Test Agent\n\n## Identity\nname: test";
-        let spec = svc.store_spec(content.to_string()).await.unwrap();
+        let spec = svc.store_spec(&owner, content.to_string()).await.unwrap();
         assert_eq!(spec.name, "Test Agent");
 
-        let fetched = svc.get_spec(&spec.id).await.unwrap();
+        let fetched = svc.get_spec(&owner, &spec.id).await.unwrap();
         assert!(fetched.is_some());
         assert_eq!(fetched.unwrap().content, content);
+
+        let other = CompilerOwner::for_test("bob", false);
+        assert!(svc.get_spec(&other, &spec.id).await.unwrap().is_none());
     }
 
     #[tokio::test]
     async fn test_session_lifecycle() {
         let svc = CompilerService::in_memory();
+        let owner = CompilerOwner::for_test("alice", false);
+        let other = CompilerOwner::for_test("bob", false);
 
-        let session = svc.create_session().await;
+        let session = svc.create_session(&owner).await;
         assert_eq!(session.status, SessionStatus::Active);
 
-        let fetched = svc.get_session(&session.id).await;
+        let fetched = svc.get_session(&owner, &session.id).await;
         assert!(fetched.is_some());
+        assert!(svc.get_session(&other, &session.id).await.is_none());
+        assert!(!svc.cancel_session(&other, &session.id).await);
 
-        let cancelled = svc.cancel_session(&session.id).await;
+        let cancelled = svc.cancel_session(&owner, &session.id).await;
         assert!(cancelled);
 
-        let after = svc.get_session(&session.id).await.unwrap();
+        let after = svc.get_session(&owner, &session.id).await.unwrap();
         assert_eq!(after.status, SessionStatus::Cancelled);
     }
 }

@@ -102,7 +102,7 @@ When('I ask the mathematics agent about the private research profile', async fun
   assert.ok(!this.question.includes(this.seal));
   this.completion = await request(this, 'POST', '/v1/chat/completions', {
     model: process.env.UAR_MODEL, agent_id: this.agentId, session_id: randomUUID(),
-    stream: false, memory_enabled: false, max_completion_tokens: 512,
+    stream: false, memory_enabled: false, max_completion_tokens: 2048,
     messages: [{ role: 'user', content: this.question }],
   });
   this.evidence.question = this.question;

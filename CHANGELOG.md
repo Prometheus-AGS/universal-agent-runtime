@@ -4,6 +4,39 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.4.0-rc.2 — unreleased (release candidate; Mac validated)
+
+- PostgreSQL 18 on the flint-forge image (`tribehealth/flint-forge-pg:18`) is a
+  supported UAR store, in its own `uar` database. Settings keep their source
+  across restarts (#389), session expiry reads canonical owner keys (#390),
+  memory on Postgres runs through the memory service instead of claiming
+  success (#393), skill embeddings accept any configured dimension (#395), and
+  `GET /api/uar/persistence/capabilities` reports what the active store
+  supports (#394).
+- `POST /v1/embeddings` serves OpenAI-compatible embeddings.
+- Configuration: `UAR_LLM__MODEL` and YAML `llm.model` are honored (#419); the
+  configured memory embedding API is used, not silently replaced (#420); a
+  request's output cap sizes the budget reservation (#385); the Rust SDK pin
+  must equal the runtime version (#391). Agent mode on `/v1/messages` is
+  documented (#396).
+- Identity: JWT validation is frozen to one documented access-token profile
+  (#422); a JWKS outage gets 503. With JWT optional, a malformed, expired or
+  unverifiable bearer now gets 401 instead of anonymous access (#392).
+  `security.local_loopback_owner` (off by default; requires the `trusted_local`
+  profile) lets no-credential loopback callers act as the local-host owner.
+  SSE parsing survives arbitrary byte splits (#380).
+- Compiler specs and authoring sessions are owner-scoped; another owner's
+  records answer 404, and records stored before this release stay visible only
+  to the local-host owner (#387).
+- Two turns arriving together on a new conversation share one session; before,
+  the later save could overwrite the earlier turn's messages.
+- On failover, each fallback model gets a request fitted to its own context
+  window: optional history is displaced by the agent's strategy, and a request
+  that still cannot fit is refused with `context_overflow` before it is sent
+  (#388, partial).
+- See [the release candidate note](docs/releases/v1.4.0-rc.2.md), which also
+  carries the 1.4.0 final checklist.
+
 ## 1.4.0-rc.1 — 2026-10-29 (release candidate; Mac validated, other platforms pending)
 
 - AG-UI route projects A2UI surfaces as `ACTIVITY_SNAPSHOT` events, restates

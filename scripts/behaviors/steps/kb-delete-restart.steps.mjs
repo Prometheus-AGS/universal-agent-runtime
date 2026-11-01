@@ -64,7 +64,8 @@ Given('a disposable agent linked to a knowledge base containing a private fact',
   assert.equal(this.evidence.embedding.status, 'serving');
   this.profile = `lab-profile-${this.id}`;
   this.seal = `KNOWLEDGE-${randomUUID()}`;
-  this.marker = `AGENT-${randomUUID()}`;
+  // Short enough to copy reliably; the model dropped a character from a full UUID.
+  this.marker = `AGENT-${randomUUID().slice(0, 8)}`;
   this.left = randomInt(100, 500); this.right = randomInt(100, 500);
   this.documentText = `Laboratory profile ${this.profile} has the private retrieval seal ${this.seal}. This exact seal is available only in this laboratory knowledge document.`;
   const kb = await request(this, 'POST', root, { name: `KB deletion restart ${this.id}`, config: {

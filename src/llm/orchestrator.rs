@@ -162,6 +162,23 @@ impl std::fmt::Display for ToolDispatchBlocked {
 
 impl std::error::Error for ToolDispatchBlocked {}
 
+/// A failover destination whose own context window cannot hold the request
+/// even after optional history is displaced. Raised before any provider call.
+#[derive(Debug)]
+struct FallbackBudgetRefusal {
+    /// Stable reduction code, the same one the primary budget path emits.
+    code: &'static str,
+    message: String,
+}
+
+impl std::fmt::Display for FallbackBudgetRefusal {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "{}: {}", self.code, self.message)
+    }
+}
+
+impl std::error::Error for FallbackBudgetRefusal {}
+
 async fn open_driver_stream(
     driver: &dyn LlmDriver,
     request: LlmRequest,
@@ -318,6 +335,9 @@ pub struct Orchestrator {
     /// Exact model/template/settings contracts used to rebuild every provider
     /// attempt from canonical history.
     destination_preparations: Option<Arc<DestinationRequestPreparations>>,
+    /// Known context window of each failover destination, keyed by qualified
+    /// model. A destination absent here is dispatched without a budget check.
+    fallback_context_windows: BTreeMap<String, usize>,
     /// Settings-only exact profiles captured on the leaf clients for this run.
     endpoint_settings_profiles: BTreeMap<String, super::EndpointRequestProfile>,
     /// Unrendered, unreduced messages captured by the trusted host. Completed
@@ -958,6 +978,7 @@ impl Orchestrator {
             cache_strategy: None,
             request_budget_contract: None,
             destination_preparations: None,
+            fallback_context_windows: BTreeMap::new(),
             endpoint_settings_profiles: BTreeMap::new(),
             canonical_history: None,
             canonical_fragments: None,
@@ -1038,6 +1059,118 @@ impl Orchestrator {
     pub fn with_protected_continuity(mut self, continuity: ProtectedContinuity) -> Self {
         self.protected_continuity = Some(continuity);
         self
+    }
+
+    /// Record the context window of each failover destination so a fallback
+    /// request is fitted to its own window, or refused, before dispatch.
+    #[must_use]
+    pub fn with_fallback_context_windows(mut self, windows: BTreeMap<String, usize>) -> Self {
+        self.fallback_context_windows = windows;
+        self
+    }
+
+    /// Fit a failover request to the destination's own context window.
+    ///
+    /// The primary's request was reduced to the primary's window. This applies
+    /// the same history reducer to the fallback's window: optional history is
+    /// displaced by the declared strategy, the pinned system message and tool
+    /// groups are preserved, and a request that still cannot fit is refused
+    /// before any provider call. Destinations with an exact installed contract
+    /// are counted by their leaf driver, and destinations with no known window
+    /// keep the unbudgeted behavior. Counts are tokenizer estimates, not a
+    /// final-wire guarantee. Reduction never calls a model during failover.
+    ///
+    /// # Errors
+    /// [`FallbackBudgetRefusal`] when the request cannot fit the window.
+    async fn fit_fallback_request(
+        &self,
+        model: &str,
+        source: &LlmRequest,
+    ) -> anyhow::Result<(LlmRequest, Option<serde_json::Value>)> {
+        use crate::uar::runtime::context::reduce::{
+            RESPONSE_RESERVE_TOKENS, ReduceHistoryError, reduce_history_with_input_allowance,
+            tool_definition_tokens,
+        };
+        use crate::uar::runtime::context::token_service::TokenService;
+
+        let has_exact_contract = self
+            .destination_preparations
+            .as_ref()
+            .and_then(|preparations| preparations.budget_contract(model))
+            .is_some();
+        let Some(window) = self.fallback_context_windows.get(model).copied() else {
+            return Ok((source.clone(), None));
+        };
+        if has_exact_contract {
+            return Ok((source.clone(), None));
+        }
+        let refuse = |error: &ReduceHistoryError| {
+            anyhow::Error::new(FallbackBudgetRefusal {
+                code: error.code(),
+                message: error.to_string(),
+            })
+        };
+        let reserved_output = source
+            .output_token_cap
+            .map_or(RESPONSE_RESERVE_TOKENS, |cap| cap as usize);
+        let tool_tokens = tool_definition_tokens(model, &source.tools);
+        let fixed_tokens = reserved_output.saturating_add(tool_tokens);
+        if fixed_tokens >= window {
+            return Err(refuse(&ReduceHistoryError::FixedRequestOverflow {
+                required_tokens: fixed_tokens,
+                tool_tokens,
+                world_tokens: 0,
+                output_tokens: reserved_output,
+                context_limit: window,
+            }));
+        }
+        let input_allowance = window - fixed_tokens;
+        let messages = serde_json::from_value::<Vec<Message>>(serde_json::Value::Array(
+            source.messages.clone(),
+        ))?;
+        let required_before = TokenService::count_messages(model, &messages);
+        let report = |required_tokens: usize, removed: usize, saved: usize| {
+            serde_json::json!({
+                "context_window": window,
+                "input_allowance": input_allowance,
+                "reserved_output_tokens": reserved_output,
+                "tool_definition_tokens": tool_tokens,
+                "required_input_tokens": required_tokens,
+                "counting": "estimated",
+                "displaced": removed > 0,
+                "messages_removed": removed,
+                "tokens_saved": saved,
+            })
+        };
+        if required_before <= input_allowance {
+            return Ok((source.clone(), Some(report(required_before, 0, 0))));
+        }
+        let strategy = self.skill_activation.as_ref().map_or(
+            crate::uar::context::ContextStrategy::Auto,
+            |activation| activation.strategy.clone(),
+        );
+        let (reduced, reduction) = reduce_history_with_input_allowance(
+            messages,
+            &strategy,
+            model,
+            input_allowance,
+            None,
+            None,
+            &[],
+        )
+        .await
+        .map_err(|error| refuse(&error))?;
+        let required_after = TokenService::count_messages(model, &reduced);
+        let (removed, saved) = reduction.context_action.map_or(
+            (0, required_before.saturating_sub(required_after)),
+            |action| (action.messages_removed, action.tokens_saved),
+        );
+        let mut fitted = source.clone();
+        fitted.messages = reduced
+            .iter()
+            .map(|message| serde_json::json!(message))
+            .collect();
+        Ok((fitted, Some(report(required_after, removed, saved))))
     }
 
     #[must_use]
@@ -2596,6 +2729,8 @@ impl Orchestrator {
                             }
                             let mut fallback_stream = None;
                             let mut fallback_errors = Vec::new();
+                            let mut budget_refusals = 0usize;
+                            let mut budget_refusal_code: Option<&'static str> = None;
                             for fallback in &orchestrator.fallback_drivers {
                                 if let Some(health) = &orchestrator.health_monitor
                                     && !health.is_available(&fallback.provider_id).await
@@ -2616,15 +2751,42 @@ impl Orchestrator {
                                     fallback_model = %fallback.model,
                                     "Primary LLM driver failed; attempting fallback",
                                 );
+                                let (fallback_source, fallback_fit) = match orchestrator
+                                    .fit_fallback_request(&fallback.model, &attempt_source)
+                                    .await
+                                {
+                                    Ok(fitted) => fitted,
+                                    Err(refusal) => {
+                                        // A local refusal precedes any dispatch and says
+                                        // nothing about provider health.
+                                        if let Some(budget) = refusal.downcast_ref::<FallbackBudgetRefusal>() {
+                                            budget_refusals += 1;
+                                            if budget_refusal_code.is_none() {
+                                                budget_refusal_code = Some(budget.code);
+                                            }
+                                        }
+                                        tracing::warn!(
+                                            request_id = %request_id,
+                                            fallback_model = %fallback.model,
+                                            refusal = %refusal,
+                                            "Fallback destination refused before dispatch",
+                                        );
+                                        fallback_errors.push(format!("{}: {refusal}", fallback.model));
+                                        continue;
+                                    }
+                                };
                                 let fallback_result = match orchestrator.prepare_user_attempt(
                                     &fallback.model,
-                                    attempt_source.clone(),
+                                    fallback_source,
                                     &canonical_message_json,
                                     &step_fragments,
                                 ) {
                                     Ok(request) => {
-                                        let manifest = orchestrator
+                                        let mut manifest = orchestrator
                                             .attempt_manifest(&fallback.model, &request);
+                                        if let Some(fit) = fallback_fit {
+                                            manifest["context_fit"] = fit;
+                                        }
                                         async {
                                             if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.validate_team_model_handoff(attempt).await?;}}
                                             let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout).await?;
@@ -2680,7 +2842,14 @@ impl Orchestrator {
                                 } else {
                                     fallback_errors.join("; ")
                                 };
-                                yield if orchestrator.endpoint_settings_profiles.is_empty()
+                                yield if budget_refusals > 0 && budget_refusals == fallback_errors.len() {
+                                    // Every candidate was refused locally, so nothing
+                                    // reached a fallback provider.
+                                    NormalizedEvent::Error {
+                                        message: format!("primary: {e}; fallbacks: {fallback_detail}"),
+                                        code: Some(budget_refusal_code.unwrap_or("context_overflow").to_owned()),
+                                    }
+                                } else if orchestrator.endpoint_settings_profiles.is_empty()
                                     && crate::uar::runtime::cost_budget::client_failure(&e).is_none() {
                                     NormalizedEvent::Error {
                                         message: format!("primary: {e}; fallbacks: {fallback_detail}"),

@@ -1,11 +1,17 @@
 //! Compiler REST API — spec management, compilation, reports, and sessions.
 //!
-//! Mounted at `/api/uar/compiler`.
+//! Mounted at `/api/uar/compiler` (and the `/api/compiler` alias).
+//!
+//! Specs, reports and authoring sessions are owner-scoped (#387): every
+//! spec/report/session endpoint resolves the verified credential owner and
+//! refuses a request without one (401). A record that belongs to another owner
+//! is reported as not found (404). Records written before owner scoping are
+//! visible only to the installation-local `local-host` owner.
 //!
 //! | Endpoint                         | Method | Description                              |
 //! |----------------------------------|--------|------------------------------------------|
 //! | `/specs`                         | POST   | Submit + store a UAR-AGENT-MD document   |
-//! | `/specs`                         | GET    | List stored specifications               |
+//! | `/specs`                         | GET    | List the caller's stored specifications  |
 //! | `/specs/{id}`                    | GET    | Retrieve a stored spec                   |
 //! | `/specs/{id}`                    | DELETE | Delete a stored spec                     |
 //! | `/specs/{id}/compile`            | POST   | Compile a stored spec (single-shot)      |
@@ -13,7 +19,7 @@
 //! | `/compile-and-register`          | POST   | Compile + register a runtime artifact    |
 //! | `/reports/{id}`                  | GET    | Retrieve a compile report                |
 //! | `/sessions`                      | POST   | Start a conversational session           |
-//! | `/sessions`                      | GET    | List all sessions                        |
+//! | `/sessions`                      | GET    | List the caller's sessions               |
 //! | `/sessions/{id}`                 | GET    | Get session state + completeness         |
 //! | `/sessions/{id}/cancel`          | POST   | Cancel a session                         |
 //! | `/sessions/{id}/compile`         | POST   | Force-compile session's partial IR       |
@@ -23,7 +29,7 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     body::Body,
-    extract::{Path, State},
+    extract::{Extension, Path, State},
     http::{Request, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -33,10 +39,12 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::uar::compiler::completeness::CompletenessAnalyzer;
+use crate::uar::compiler::owner::CompilerOwner;
 use crate::uar::compiler::service::CompilerService;
 use crate::uar::compiler::session::CompilerSession;
 use crate::uar::domain::{agent_store, artifact::AgentArtifact};
 use crate::uar::persistence::PersistenceLayer;
+use crate::uar::security::claims::UserContext;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -131,7 +139,8 @@ pub struct CompletenessResponse {
 
 /// Build the compiler API router with availability derived from trusted host configuration.
 ///
-/// Ownerless compiler resources are available only in a local single-owner profile.
+/// The REST surface stays available only in a local single-owner profile; within it
+/// every spec, report and session is additionally scoped to the verified owner (#387).
 pub fn build_router(rest_available: bool) -> Router<Arc<CompilerApiState>> {
     Router::new()
         // Spec management
@@ -177,15 +186,42 @@ async fn compiler_profile_boundary(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Owner resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Resolve the verified owner of a request, or the 401 refusal to return.
+///
+/// Anonymous and synthetic contexts carry no credential principal and are
+/// refused, as the memory and accounting APIs do.
+fn verified_owner(user: Option<Extension<UserContext>>) -> Result<CompilerOwner, Response> {
+    user.and_then(|Extension(user)| CompilerOwner::from_context(&user).ok())
+        .ok_or_else(|| {
+            (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({
+                    "code": "verified_compiler_owner_required",
+                    "error": "Verified compiler owner required"
+                })),
+            )
+                .into_response()
+        })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Spec handlers
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// `POST /specs` — store a new spec document.
 async fn submit_spec(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Json(req): Json<SubmitSpecRequest>,
 ) -> impl IntoResponse {
-    match state.compiler_service.store_spec(req.content).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.store_spec(&owner, req.content).await {
         Ok(spec) => (StatusCode::CREATED, Json(spec)).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -196,8 +232,15 @@ async fn submit_spec(
 }
 
 /// `GET /specs` — list all stored specs.
-async fn list_specs(State(state): State<Arc<CompilerApiState>>) -> impl IntoResponse {
-    match state.compiler_service.list_specs().await {
+async fn list_specs(
+    State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
+) -> impl IntoResponse {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.list_specs(&owner).await {
         Ok(specs) => Json(specs).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -210,9 +253,14 @@ async fn list_specs(State(state): State<Arc<CompilerApiState>>) -> impl IntoResp
 /// `GET /specs/{id}` — retrieve a stored spec.
 async fn get_spec(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match state.compiler_service.get_spec(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.get_spec(&owner, &id).await {
         Ok(Some(spec)) => Json(spec).into_response(),
         Ok(None) => (
             StatusCode::NOT_FOUND,
@@ -230,9 +278,14 @@ async fn get_spec(
 /// `DELETE /specs/{id}` — delete a stored spec.
 async fn delete_spec(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match state.compiler_service.delete_spec(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.delete_spec(&owner, &id).await {
         Ok(true) => StatusCode::NO_CONTENT.into_response(),
         Ok(false) => (
             StatusCode::NOT_FOUND,
@@ -250,9 +303,14 @@ async fn delete_spec(
 /// `POST /specs/{id}/compile` — compile a stored spec.
 async fn compile_spec(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match state.compiler_service.compile_spec(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.compile_spec(&owner, &id).await {
         Ok(output) => Json(output).into_response(),
         Err(e) => {
             let status = if e.to_string().contains("not found") {
@@ -433,9 +491,14 @@ fn decode_hex<const N: usize>(value: &str) -> Result<[u8; N], String> {
 /// `GET /reports/{id}` — retrieve a compile report.
 async fn get_report(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match state.compiler_service.get_report(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.get_report(&owner, &id).await {
         Ok(Some(report)) => Json(report).into_response(),
         Ok(None) => (
             StatusCode::NOT_FOUND,
@@ -455,23 +518,42 @@ async fn get_report(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// `POST /sessions` — create a new conversational compiler session.
-async fn create_session(State(state): State<Arc<CompilerApiState>>) -> impl IntoResponse {
-    let session = state.compiler_service.create_session().await;
+async fn create_session(
+    State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
+) -> impl IntoResponse {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    let session = state.compiler_service.create_session(&owner).await;
     (StatusCode::CREATED, Json(session)).into_response()
 }
 
 /// `GET /sessions` — list all sessions.
-async fn list_sessions(State(state): State<Arc<CompilerApiState>>) -> impl IntoResponse {
-    let sessions = state.compiler_service.list_sessions().await;
+async fn list_sessions(
+    State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
+) -> impl IntoResponse {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    let sessions = state.compiler_service.list_sessions(&owner).await;
     Json(sessions).into_response()
 }
 
 /// `GET /sessions/{id}` — get session state with completeness analysis.
 async fn get_session(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match state.compiler_service.get_session(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.get_session(&owner, &id).await {
         Some(session) => {
             let completeness_state = CompletenessAnalyzer::analyze(&session.partial_ir);
             let response = SessionStateResponse {
@@ -497,9 +579,14 @@ async fn get_session(
 /// `POST /sessions/{id}/cancel` — cancel a session.
 async fn cancel_session(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    if state.compiler_service.cancel_session(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    if state.compiler_service.cancel_session(&owner, &id).await {
         StatusCode::NO_CONTENT.into_response()
     } else {
         (
@@ -513,9 +600,14 @@ async fn cancel_session(
 /// `POST /sessions/{id}/compile` — force-compile a session's partial IR.
 async fn compile_session(
     State(state): State<Arc<CompilerApiState>>,
+    user: Option<Extension<UserContext>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    match state.compiler_service.compile_session(&id).await {
+    let owner = match verified_owner(user) {
+        Ok(owner) => owner,
+        Err(refusal) => return refusal,
+    };
+    match state.compiler_service.compile_session(&owner, &id).await {
         Ok(output) => Json(output).into_response(),
         Err(e) => {
             let status = if e.to_string().contains("not found") {

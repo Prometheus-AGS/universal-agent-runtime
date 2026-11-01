@@ -528,8 +528,26 @@ impl SessionStore {
             }
         }
 
-        // Create if not exists
-        self.create_with_id_for_user(id, owner_id)
+        // Re-check under the write lock. Concurrent first turns of one new
+        // conversation must share a single session; a replaced session would
+        // let the later save overwrite the earlier turn.
+        let mut guard = self.inner.sessions.write().unwrap();
+        let session = guard
+            .entry((owner_id.to_string(), id.to_string()))
+            .or_insert_with(|| {
+                Session::new_with_activity(
+                    id.to_string(),
+                    owner_id.to_string(),
+                    Some(self.inner.activity_generation.clone()),
+                )
+            })
+            .clone();
+        session.touch();
+        #[allow(clippy::cast_precision_loss)]
+        crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        drop(guard);
+        self.notify_activity();
+        session
     }
 
     /// Remove a session by ID.
