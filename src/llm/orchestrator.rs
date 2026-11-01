@@ -3038,6 +3038,7 @@ impl Orchestrator {
                                     }
                                 }
                                 NormalizedEvent::ToolCallComplete { call_index, id, name, arguments_json } => {
+                                    let completion_only = !tool_accumulators.contains_key(call_index);
                                     let acc = tool_accumulators.entry(*call_index).or_default();
                                     if let Err(reason) = super::tool_call_identity::merge(&mut acc.id, Some(id.as_str())) {
                                         yield orchestrator.provider_failure(&super::tool_call_identity::failure(reason), true);
@@ -3046,6 +3047,18 @@ impl Orchestrator {
                                     acc.name = Some(name.clone()); acc.arguments = arguments_json.clone();
                                     has_tool_calls = true;
                                     finish_reason = Some("tool_calls".to_string());
+                                    // Completion-only adapters still observed a pending call if
+                                    // the stream later fails. Give the native host the same
+                                    // partial observation as a delta adapter, without publishing
+                                    // a completion or authorizing execution before validation.
+                                    if completion_only && orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_none() {
+                                        yield NormalizedEvent::ToolCallDelta {
+                                            call_index: *call_index,
+                                            id: acc.id.as_ref().filter(|id| !id.trim().is_empty()).cloned(),
+                                            name: Some(name.clone()),
+                                            arguments_delta: Some(arguments_json.clone()),
+                                        };
+                                    }
                                 }
                                 NormalizedEvent::Done => {
                                     saw_terminal = true;
@@ -4710,7 +4723,7 @@ mod tests {
 
     #[tokio::test]
     async fn native_identity_failed_or_incomplete_streams_discard_pending_completions() {
-        for caller_tools in [false, true] {
+        for (caller_tools, completion_only) in [(false, false), (false, true), (true, false), (true, true)] {
             for (kind, terminal) in [
                 ("normalized", false),
                 ("normalized", true),
@@ -4718,7 +4731,12 @@ mod tests {
                 ("typed", true),
                 ("eof", false),
             ] {
-                let mut batch = vec![Ok(identity_complete(3, "retained-private-id"))];
+                let mut batch = if completion_only {
+                    Vec::new()
+                } else {
+                    vec![Ok(identity_delta(3, Some("retained-private-id")))]
+                };
+                batch.push(Ok(identity_complete(3, "retained-private-id")));
                 if terminal {
                     batch.push(Ok(NormalizedEvent::Done));
                 }
@@ -4775,6 +4793,15 @@ mod tests {
                         | NormalizedEvent::ClientToolsRequested { .. }
                         | NormalizedEvent::Done
                 )));
+                let observations = events.iter().filter_map(|event| match event {
+                    NormalizedEvent::ToolCallDelta { call_index: 3, id, name, arguments_delta } => {
+                        Some((id.as_deref(), name.as_deref(), arguments_delta.as_deref()))
+                    }
+                    _ => None,
+                }).collect::<Vec<_>>();
+                assert_eq!(observations, if caller_tools { Vec::new() } else {
+                    vec![(Some("retained-private-id"), Some("search_web"), Some(r#"{"query":"identity fixture"}"#))]
+                }, "native partial observation is complete once, while caller metadata stays private");
                 assert_eq!(calls.load(Ordering::SeqCst), 0);
                 assert_eq!(approvals.load(Ordering::SeqCst), 0);
                 assert_eq!(driver.requests.lock().unwrap().len(), 1);

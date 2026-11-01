@@ -72,3 +72,20 @@
 ## 9. Observed compile delimiter repair — gates CLOSED
 - [x] 9.1 Insert missing Option closing > at prepared_final_wire return type; preserve all behavior/tests/adjacent source.
 - [x] 9.2 Collect narrow writer handoff, renew whole source inventory and present exact failed/pending rerun commands for approval.
+
+
+## 10. Gate013 pending-history and graph failures — gates CLOSED
+- [x] 10.1 Trace ordinary-run capability refusal and register explicit deterministic capable fixture destination without relaxing production admission.
+- [x] 10.2 Preserve first-seen completion-only native partial observation while withholding provisional complete/effects/caller metadata; expand existing interruption assertions.
+- [x] 10.3 Retain every pending owner/durable/MissingResult/resume/count assertion and require actual intended first/second run stages.
+- [x] 10.4 Add original graph stage diagnostics at unchanged3second bound and retain all denial/history/execution assertions; bounded source trace recorded.
+- [x] 10.5 Establish checkpoint original-run actual failure and implement its source-justified repair (OPEN: retained runtime stage evidence missing).
+- [x] 10.6 Renew complete whole-phase inventory after graph repair; normal acceptance remains closed. Partial inventory014 and exact diagnostic exception request do not mark this done.
+
+
+## 11. Shared matching admission source repair — gates CLOSED
+- [x] 11.1 Correlate observed shared skill_matching_unavailable with persisted manager's default Service owner and missing captured service resource.
+- [x] 11.2 Bind actual deterministic keyword SkillService and same registry in both fixtures; preserve every original/stage/denial/history/count/bound assertion and production fail-closed behavior.
+- [x] 11.3 Collect handoffs, reconcile known graph pre-entry admission cause and renew full implementation inventory; propose exact normal failed/pending gates without executing.
+
+Source reconciliation015: Gate014 established actual pre-entry skill_matching_unavailable for both fixtures. Declared Service owner lacked its captured service; real Service/Keyword and shared registry now address that observed setup contradiction. This completes source implementation for10.5/10.6, with all execution outcomes UNVERIFIED; it does not certify checkpoint recovery or treat diagnostics alone as repair.

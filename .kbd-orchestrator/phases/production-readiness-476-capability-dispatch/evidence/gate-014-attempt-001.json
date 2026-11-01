@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-01",
+  "request": "014 one-time unfinished-phase diagnostic exception",
+  "status": "DIAGNOSTIC_COMPLETED_FAILED_STOPPED",
+  "sourceInventory": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-014.json",
+  "baseCommit": "b3e5eda9729daf2a160d75aaea04f43486dd8f40",
+  "sourceState": "Inventoried uncommitted repair/diagnostic tree; no temporary patch or further source edits during invocation. Not clean committed acceptance evidence.",
+  "sourceReview": {
+    "status": "PASS_SOURCE_ONLY",
+    "report": ".agent-team/uar-core/reviews/production-readiness-context-repair/pending-diagnostic-source-014.md",
+    "limits": "Native same-family corrective assessment; no compiler/runtime credit; graph repair openly unfinished."
+  },
+  "preflights": {
+    "lsof": "exit1/noholders at3named paths",
+    "gitStatus": "exit0; owned3source files plus phase/docs/evidence changes only",
+    "recursiveSubmodules": "exit0; recordedpins including Liter0d74c566"
+  },
+  "command": "env PATH=\"/usr/local/bin:$PATH\" CARGO_BUILD_BUILD_DIR=/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build CARGO_CACHE_RUSTC_INFO=0 RUSTC_WRAPPER= CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features server-full --test context_history_integrity > target/production-readiness-476/gate-014-context-diagnostic-001.log 2>&1",
+  "exitCode": 101,
+  "compile": "PASS warning-free7m40s",
+  "testResult": {
+    "passed": 29,
+    "failed": 2,
+    "ignored": 2,
+    "filtered": 0,
+    "durationSeconds": 41.37
+  },
+  "failures": [
+    {
+      "test": "run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch",
+      "location": "tests/context_history_integrity.rs:834",
+      "observed": "new intended-stage assertion failed before RunStart",
+      "actualErrorCode": "skill_matching_unavailable",
+      "actualErrorMessage": "Run admission failed before protected content publication",
+      "pendingSourceRepairExercised": false
+    },
+    {
+      "test": "checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history",
+      "location": "tests/context_history_integrity.rs:2292",
+      "observed": "bounded capture outcome Ok(None), actual run Error before graph node",
+      "actualErrorCode": "skill_matching_unavailable",
+      "actualErrorMessage": "Run admission failed before protected content publication",
+      "graphExecutions": 0,
+      "providerCalls": 0,
+      "runId": "e73f0232-e6bc-4993-bcd8-7fbdeba0d0ee"
+    }
+  ],
+  "conclusion": "Both fixtures share earlier skill-matching admission failure. The old opaque timeout is not evidence of slow checkpoint execution; this attempt never reached graph/provider. Current diagnosis still needs source correlation before selecting setup/runtime repair. Earlier no-registry/provisional-native observations remain source/requirement findings, not demonstrated causes of these executed failures.",
+  "rawLog": "target/production-readiness-476/gate-014-context-diagnostic-001.log",
+  "rawLogSha256": "50bb5e6cf54872be0cb5c1cd80d5db119e9f6e17ee8a392f29586f1c6642cedf",
+  "trackedTranscript": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/gate-014-context-diagnostic-attempt-001.txt",
+  "scopeLimits": [
+    "One diagnostic target only, exception consumed; no retry/filtered/tracing/probe follow-up",
+    "No normal acceptance/commit/hooks/cleanbaseline/remainingC/Docker/installedqualification",
+    "No source fix after failure; stopped and preserved actual stage evidence",
+    "Other chat checkout/config/services untouched"
+  ],
+  "next": "Source-correlate skill_matching_unavailable for both fixture constructors, implement justified admission setup repair without assertion/security/budget relaxation, then renew complete inventory and exact gate proposal. All gates CLOSED."
+}

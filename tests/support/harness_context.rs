@@ -7,6 +7,25 @@ pub const PAYLOAD_HEAD: &str = "receipt-head\r\n";
 pub const PAYLOAD_MIDDLE: &str = "PROTECTED-MIDDLE-雪🙂é";
 pub const PAYLOAD_TAIL: &str = "\r\nreceipt-tail";
 
+/// Supply live capability metadata while the history fixture streams synthetic events.
+pub async fn tool_capable_provider_registry() -> std::sync::Arc<universal_agent_runtime::llm::ProviderRegistry> {
+    use universal_agent_runtime::llm::registry::{ModelConfig, ProtocolSetting, ProviderConfig};
+
+    let registry = std::sync::Arc::new(universal_agent_runtime::llm::ProviderRegistry::new());
+    registry.register(ProviderConfig {
+        id: "openai".into(), display_name: "History fixture".into(),
+        base_url: String::new(), api_key: Some("test-key".into()),
+        protocol: ProtocolSetting::Chat, default_model: Some("gpt-4o".into()), enabled: true,
+        models: vec![ModelConfig {
+            id: "gpt-4o".into(), pricing_identity: None, execution_profile: None,
+            display_name: None, context_window: None, supports_vision: false,
+            supports_tools: true, supports_reasoning: false, supports_structured_output: false,
+            supports_streaming: true, max_output_tokens: None, enabled: true,
+        }],
+    }).await.expect("register history fixture capable destination");
+    registry
+}
+
 pub async fn verified_fixture_user(
     subject: &str,
 ) -> universal_agent_runtime::uar::security::claims::UserContext {

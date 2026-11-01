@@ -1,0 +1,55 @@
+# Gate013 pending/checkpoint runtime source trace
+
+Phase: production-readiness-476-capability-dispatch / Execute.
+Gate: CLOSED_OPERATOR_LOCK. No tests, checks, builds, compiler probes, API calls, review gates, commits, or hooks ran in this task. All compiler/runtime repair outcomes remain UNVERIFIED.
+Source basis: retained Gate013 receipt identifies b3e5eda9729daf2a160d75aaea04f43486dd8f40, tree 4ac3aabaf32693c64858793c8f19d4e1740dac67. Inspection used the shared worktree source; no standalone source-identity command was run. Other writers share this checkout.
+
+## Files changed
+
+Only this handoff. No production file changed. Conditional production ownership was not exercised because the retained failure output does not establish a necessary production repair.
+
+## Observed evidence
+
+The retained Gate013 transcript reports pending assertion failure at tests/context_history_integrity.rs:842 and CaptureResumeNode receive timeout at :2256, with 29 passed / 2 failed / 2 historically ignored. It contains no failed-run history, error code, driver call count, graph execution count, or trusted runtime error. The first fixture observes RunStatus::Error; that alone does not identify which path failed.
+
+## Pending-tool source path
+
+RunManager::new constructs an empty NativeSkillRegistry (manager.rs:1344-1353; native_skill.rs:403-419). McpRegistry::new_empty delegates to empty, whose descriptors/tools are empty (registry.rs:1557-1575,1785). The early native capability snapshot at manager.rs:6136-6139 therefore precedes built-in registration and is empty. Default wildcard policy alone does not establish hard_route_no_match at :6519. The initially proposed early routing explanation is rejected by this chronology.
+
+The default skill policy is Auto when no preferences exist (domain/policy.rs:225-233). Auto remains Auto over an empty universe (resolve_resources:815-899). The manager forces empty tools.ids to tools.mode=None at :5063, but allows_model_control_tool("activate_skill",...) separately follows the skill selection (:461 onward). It registers activate_skill at manager.rs:6305; this built-in is Exposure::ModelOnly and ToolSource::BuiltIn (native_skills/activate_skill.rs:66-72). The final assembled request therefore carries a tool even though the early snapshot was empty. Orchestrator::admit_prepared_user_attempt (orchestrator.rs:1088-1113) checks the actual final request before open_driver_stream (:2699). DestinationAdmission::without_registry has no router and refuses a hard capability request with RuntimeMetadataUnavailable (router.rs:139-153,207-208). This establishes a fixture setup incompatibility before its canned ToolCallComplete can reach the manager; its exact historical emitted public event is not retained.
+
+The durable session does not itself imply an unsupported final-wire-proof request in this fixture. The manager's destination_budget_contract comes only from host-installed destination_preparations (:7341-7345), absent in these constructors. BudgetedModelDriver requests prepared_final_wire_budget only when both durable accounting and budget_contract are present (cost_budget.rs:1729-1740). Contract absence takes begin_call's catalog context/output reservation branch (:2310 onward). Do not invent a proof implementation or weaken the existing unsupported-proof refusal.
+
+If the stream does reach the manager, ToolCallComplete accumulates at :9623 and pending calls are appended/saved at :9936-9956 after joined terminal/sandbox/actor cleanup. Status becomes terminal later (:10022 onward). A first emitted Error is not durable-finalization proof; the fixture must retain terminal status/history and actual dispatch observations. Canonical session ownership uses session_owner_key at manager.rs:4720, with durable load/save bound to that session. The fixture now queries that owner and should retain it.
+
+## Checkpoint source path and unresolved cause
+
+The graph fixture uses artifact id orchestrator-agent, so request_admission routes through GraphRootSupervisor (:3571). graph_host.rs:100-194 requires the verified owner, persistence and exact request identity, then actor_host.rs:327-418 persists a new root and enters start_hosted_root_turn. Manager :7210-7308 captures the retained kernel and attaches ThreadService. Named visible refusal at that seam is thread_attachment_failed; pre-worker failure can become graph_root_failed (:3854).
+
+Root attachment checks owner/run identity, persisted live root, captured model/credential/tool bindings, and fresh tree state (thread/kernel.rs:86-129,191-251,411-440; thread/service.rs:202-245). The policy model is backfilled at manager.rs:5069 from configured openai/gpt-4o, so missing-model-route is not established. The default initial native registry remains empty here as above. Root control factories are added to the policy universe for actor roots (:3033), then installed after attachment (:7259). No source-determined failing invariant was identified in these checks.
+
+The graph branch starts at manager.rs:9010; it constructs initial state and calls execute_with_checkpoint_host (:9103). The engine calls the selected node before handling checkpoint intents (graph/engine.rs:134); CaptureResumeNode immediately sends state and returns Finished (tests/context_history_integrity.rs:447-465). It does not call the driver, and Finished causes no checkpoint save. Consequently neither final model admission nor unsupported Mock final-wire preparation explains the original capture timeout. Adding a provider registry alone cannot be claimed to repair this failure.
+
+The uncomfortable limitation: Gate013 retained only a timeout, so an exact original graph error cannot be reconstructed honestly from that transcript. Preserve the unchanged capture/assertion/security behavior and add bounded failure diagnostics (original run status/history, actual driver calls and executions) in the fixture's owned files before a renewed authorized gate. Do not replace it with a longer timeout, remove the assertion, or relabel it infrastructure. Fixture owner has this recommendation.
+
+## Verification and scope
+
+Only source-inspection commands (cat/sed/rg) and this documentation write ran. No acceptance credit is claimed. No guards or unrelated code were added. E1b unsupported-proof refusal, owner checks, approvals, replay, uncertain-outcome controls and exact budget caps remain unchanged. Pending fixture setup repair and graph diagnostics belong to the fixture teammate; integration and renewed inventory belong to the lead.
+
+## Continuation correction: completion-only interruption propagation
+
+This section supersedes the earlier conclusion that only fixture setup repair was justified. The lead required continued diagnosis and the fixture teammate identified a second, production semantic cause after final destination admission: orchestrator.rs:3040 accumulates ToolCallComplete privately; :3072 immediately returns on a subsequent provider Error, while :3083 deliberately suppresses actual Complete until EOF and whole-batch validation. A completion-only adapter therefore gave the manager no partial call observation, even after valid destination setup. The pending-history assertion could not pass from registry repair alone.
+
+Lead authorized a narrow repair in src/llm/orchestrator.rs. On a completion that creates the first accumulator for that index, after successful immutable identity merge, the native-only path now emits ToolCallDelta carrying the observed id/name/arguments. This is the same partial-observation channel already used by delta adapters; the manager's existing partial-call finalizer persists it when the stream fails. An actual ToolCallComplete is still withheld until EOF and whole-batch validation. Caller-tool turns retain private metadata until their existing durable handoff. A prior delta accumulator suppresses this synthetic partial observation, avoiding a second append of full completion arguments. This does not expand snapshot replacement semantics or manufacture completion/execution/approval.
+
+The existing native_identity_failed_or_incomplete_streams_discard_pending_completions case now covers completion-only and delta-plus-completion inputs across normalized failure, typed failure, and incomplete EOF, with caller-tool turns present and absent. Added assertions require exactly one full native partial observation, zero caller partial metadata, and the existing zero Complete/tool result/client handoff/Done/effect/approval assertions remain. Existing malformed-batch immutable-ID and deferred-completion assertions remain unchanged.
+
+Current changed files for this writer: src/llm/orchestrator.rs and this handoff. All tests, formatting, compiler behavior and runtime outcomes are UNVERIFIED. No test/check/build/review command ran.
+
+Graph item remains OPEN, not repaired by diagnostic additions. Continued source trace also inspected AgentThread::root/new_root validation, Surreal agent_thread_payload/create/load/list exact serialized records, ThreadPolicy::for_root/narrow/intersect_resources, CapturedThreadKernel::check_bindings/require_root, ThreadService::attach/root_controls/live_root, captured provider grants and exact model reuse, producer completion ownership and PreparationLifetime readiness. No deterministic violating fixture input has been established at those boundaries. Default classifier is TF-IDF, not an auxiliary model call. The graph fixture's current timeout diagnostics do not by themselves satisfy the requested graph repair. The lead must retain this unresolved implementation item in the authoritative ledger and inventory.
+
+## Current delivery at lead handoff
+
+The initial "Only this handoff" / "No production file changed" statements above are historical and superseded by the continuation delivery. Current owned changed files are exactly src/llm/orchestrator.rs and this handoff. The production change is first-accumulator completion-only native ToolCallDelta observation after successful identity merge. The expanded assertion function is llm::orchestrator::tests::native_identity_failed_or_incomplete_streams_discard_pending_completions; its four combinations are native completion-only, native delta-plus-completion, caller-private completion-only, and caller-private delta-plus-completion. Each covers normalized and typed failures with/without Done and missing-terminal EOF. It retains complete-event/dispatch/approval gating and requires one unduplicated native observation or no caller observation.
+
+No speculative graph repair was authored. Both this writer and the lead's fresh pre-node trace found no deterministic violating graph fixture input; graph repair remains OPEN. Diagnostics authored by the fixture teammate are evidence acquisition preparation, not graph acceptance or completion. Current source has not been compiled, formatted, tested, reviewed or behavior-verified; the CLOSED lock remains in effect. No unrequested production change, guard, new dependency, or service/config mutation was added. The sole new observation branch traces to the explicit Complete-then-Error pending-persistence failure.

@@ -87,3 +87,28 @@ Estimated fallback fitting SHALL apply the captured destination's downward outpu
 - **GIVEN** a caller output cap below the fallback maximum
 - **WHEN** that permitted fallback is fitted
 - **THEN** the lower caller cap remains and the fit diagnostics use that effective reserve
+
+
+### Requirement: Preserve native pending observations without provisional completion
+
+A completion-only native provider call observed before stream interruption SHALL reach the trusted host's existing partial-history retention path after immutable ID merge. It SHALL NOT publish a completed call, authorize effects or caller-tool handoff before terminal whole-batch validation. Mixed delta/completion streams SHALL NOT append duplicate full arguments to the host's partial observation. Caller-tool metadata SHALL retain its existing private handoff boundary.
+
+#### Scenario: Completion-only native stream fails
+- **WHEN** a native provider emits a tool completion and then an error before validated batch dispatch
+- **THEN** the host retains the unresolved call through the existing partial observation path
+- **AND** complete/effect/approval/caller handoff events remain gated
+
+#### Scenario: Mixed stream and private caller tools
+- **WHEN** deltas already describe the native call or the call belongs to a caller-private tool batch
+- **THEN** completion processing adds no duplicate native arguments and exposes no caller-private partial metadata
+
+
+### Requirement: Use the selected matching owner's actual resource in run fixtures
+
+Owned persisted run verification SHALL bind the actual matching owner selected by committed settings and declared defaults. An intent-classifier configuration SHALL NOT silently override the selected Skill Service owner. Missing selected resources SHALL retain production fail-closed behavior. Deterministic history/checkpoint fixtures may supply the existing keyword Skill Service and its same shared registry without vectors or provider ranking.
+
+#### Scenario: Persisted owned fixture uses default service owner
+- **GIVEN** fresh local persistence, declared default Service matching and an existing keyword Skill Service bound to the manager's registry
+- **WHEN** the owned pending-tool or graph fixture enters run admission
+- **THEN** matching metadata identifies service keyword matching without an auxiliary model
+- **AND** original persistence, history validation, denial, execution-count and timeout assertions remain in force

@@ -1,0 +1,19 @@
+# Gate013 checkpoint pre-node source trace
+
+Phase: `production-readiness-476-capability-dispatch`, Execute. Verification gate: **CLOSED_OPERATOR_LOCK**. This is a bounded source investigation only. I ran no tests, checks, compilers, builds, reviews, commits, hooks, or external calls. The retained receipt names source commit `b3e5eda9729daf2a160d75aaea04f43486dd8f40` and tree `4ac3aabaf32693c64858793c8f19d4e1740dac67`; I did not run a source-identity command. Shared-worktree edits were preserved.
+
+## Scope and source path
+
+The checkpoint test's artifact id `orchestrator-agent` selects `RunManager::request_admission`'s graph branch (`src/uar/runtime/manager.rs:3565-3585`). That branch delegates to `GraphRootSupervisor::start` (`src/uar/runtime/thread/graph_host.rs:78-125`), which requires a verified owner, matching user id, and persistence, then starts `ActorThreadSession::execute_request` (`graph_host.rs:131-194`). The actor checks owner, user, artifact, and session identity before persisting a root and calling `start_hosted_root_turn` (`src/uar/runtime/thread/actor_host.rs:327-418`). The fixture handoff reports those admission inputs were already traced as satisfying the inspected guards; the retained failure receipt itself does not contain their runtime outcomes.
+
+In the manager's hosted graph execution, it clones the active run as `checkpoint_source` and constructs `CheckpointHost` (`src/uar/runtime/manager.rs:8889-8924`). `CheckpointHost::new` only projects selected run-context fields and captures owner-derived storage identity, cancellation, policy digest, and optional binding (`src/uar/runtime/checkpoint_host.rs:28-53`). The graph branch makes `GraphContext`, loads optional client/resumed state or defaults it, sets the host digest, replaces messages with assembled history, then calls `execute_with_checkpoint_host` (`manager.rs:9017-9108`). On this fixture's fresh run, the graph has one entry node named `capture`; `AgentGraph::execute_inner` resolves that node and awaits it before handling any checkpoint intent (`src/uar/runtime/graph/engine.rs:69-125`). `CaptureResumeNode::execute` sends a state and returns `Finished`; it does not call the driver (`tests/context_history_integrity.rs:439-465`). `Finished` returns from the graph directly without checkpoint persistence (`graph/engine.rs:147-154`).
+
+## Finding and limit
+
+I found no deterministic mismatch in checkpoint-host construction, GraphContext, or initial graph state that explains the missing capture message. The specific checkpoint path that can fail during `GraphRootSupervisor` preparation, actor/root setup, kernel/thread attachment, or run cancellation cannot be selected from source alone: the retained Gate013 output records only `Elapsed(())` at the capture wait. It has no original run status, event history, graph execution count, provider count, or trusted failure detail. The currently edited fixture adds those observations to the failure report, but they were not present in the original receipt.
+
+Therefore the observed timeout cannot honestly be attributed to a checkpoint-host or graph-engine defect from the available evidence. No production repair is justified by this trace. The graph cause remains unresolved pending the specifically authorized diagnostic path; do not infer a cause or acceptance from the elapsed timeout. This trace does not verify runtime behavior or establish that every admission guard succeeded in the failing execution.
+
+## Handoff
+
+Only this handoff file was written. All other source and teammate edits remain untouched. No verification ran; all behavior remains unverified under the operator lock. The next evidence needed is the bounded failure report's original-run status and event history plus graph execution and provider-call counts, then a source-correlated cause. If those diagnostics still do not establish a cause, keep the graph implementation item open rather than claiming completion.

@@ -1,15 +1,15 @@
 {
   "phase": "production-readiness-476-capability-dispatch",
-  "status": "GATE_013_B_COMMIT_HOOKS_IN_PROGRESS",
-  "implementation_total": 20,
-  "implementation_completed": 20,
-  "verification_status": "OPERATOR_AUTHORIZED_GATE_013_A_THROUGH_C_SERIAL_ONLY",
+  "status": "GATE_015_B_COMMIT_HOOKS_IN_PROGRESS",
+  "implementation_total": 22,
+  "implementation_completed": 22,
+  "verification_status": "OPERATOR_AUTHORIZED_GATE_015_A_THROUGH_C_SERIAL_ONLY",
   "changes": {
     "carry-inline-images-and-constrain-dispatch": {
       "status": "IMPLEMENTATION_COMPLETE_ACCEPTANCE_PENDING",
       "tasks_total": 10,
       "tasks_done": 9,
-      "next_task_pending": "Explicit approval of gate-request-013.md",
+      "next_task_pending": "Operator approval of gate-request015; no verification authorized",
       "blockers": []
     }
   },
@@ -59,10 +59,16 @@
     "E6 explicit stream-result match; no success Debug bound",
     "E7 actual no-contract profile validation and authored positive/negative regressions",
     "RC2 af37c2f8 integration; merged admission/fallback fit; explicit false shared fixture; metadata/docs",
-    "E8 estimated fallback fit narrows destination output first; fresh final admission and exact/unknown-window branches retained; six-case orchestration regression authored"
+    "E8 estimated fallback fit narrows destination output first; fresh final admission and exact/unknown-window branches retained; six-case orchestration regression authored",
+    "Native completion-only interrupted call source partial-observation repair plus real capable ordinary-run fixture and preserved/stronger assertions; all UNVERIFIED",
+    "Gate014 shared skill_matching_unavailable source-correlated to persisted Service-selected owner/missing SkillService; both fixtures bind actual Keyword Service/shared registry and retain all assertions; unverified"
   ],
-  "merge_status": "RESOLVED_WORKING_TREE_PENDING_NORMAL_COMMIT_HOOK_APPROVAL",
+  "merge_status": "COMMITTED_B3E5EDA9_WITH_NORMAL_HOOKS",
   "gate_012_A": "PASS_SOURCE_ONLY",
   "gate_012_B": "FAIL_MINIMAL_COMPILE",
-  "gate_013_A": "PASS_NARROW_SOURCE_ONLY"
+  "gate_013_A": "PASS_NARROW_SOURCE_ONLY",
+  "gate_013_B": "PASS_WARNING_FREE_EXACT_COMPILE_ONLY",
+  "gate_013_C": "FAIL_CONTEXT_HISTORY_29PASS_2FAIL_2HISTORICAL_IGNORED",
+  "diagnostic_014": "FAIL_29PASS_2FAIL_2HISTORICAL_IGNORED_SHARED_SKILL_MATCHING_ADMISSION",
+  "gate_015_A": "PASS_TWO_SERIAL_SOURCE_ASSESSMENTS_ONLY"
 }

@@ -741,7 +741,6 @@ async fn iterative_tool_loop_dispatches_a_typed_terminal_error_result() {
 async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     use std::sync::Arc;
 
-    use tokio::sync::RwLock;
     use universal_agent_runtime::config::LlmConfig;
     use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
     use universal_agent_runtime::mcp::registry::McpRegistry;
@@ -757,7 +756,8 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     };
     use universal_agent_runtime::uar::runtime::manager::RunManager;
     use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
-    use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+    use universal_agent_runtime::uar::runtime::skills::{SkillMatchingAlgorithm, SkillMatchingConfig, SkillService};
+    use universal_agent_runtime::uar::runtime::skills::service::SkillMatchingEngine;
     use universal_agent_runtime::uar::runtime::turn::RunExecutionRequest;
 
     let sessions = SessionStore::new();
@@ -769,6 +769,11 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     );
     let user = harness_context::verified_fixture_user("pending-owner").await;
     let session_owner = user.session_owner_key().expect("verified pending history owner");
+    let skill_service = Arc::new(SkillService::new(Some(persistence.clone()), None));
+    skill_service.set_matching_config(SkillMatchingConfig {
+        engine: SkillMatchingEngine::Service, algorithm: SkillMatchingAlgorithm::Keyword,
+        ..SkillMatchingConfig::default()
+    }).await;
     let driver = Arc::new(MockLlmDriver::new(vec![vec![
         NormalizedEvent::ToolCallComplete {
             call_index: 0,
@@ -790,7 +795,7 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
             },
             Arc::new(McpRegistry::new_empty()),
             sessions.clone(),
-            Arc::new(RwLock::new(SkillRegistry::new(None, None))),
+            Arc::clone(skill_service.registry()),
             Arc::new(VectorMatcher::new(
                 Arc::new(SwappableEmbeddingBackend::new(Arc::new(
                     UnavailableEmbeddingBackend::new(
@@ -803,11 +808,16 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
             Some(persistence.clone()),
         )
         .await
+        .with_skill_service(skill_service)
+        .with_provider_registry(harness_context::tool_capable_provider_registry().await)
         .with_llm_driver(driver.clone()),
     );
 
+    let mut artifact = defaults::default_agent();
+    artifact.policy.provider.default.provider = "openai".into();
+    artifact.policy.provider.default.model = "gpt-4o".into();
     let mut first_request = RunExecutionRequest::new(
-        defaults::default_agent(), "start pending tool".to_string(),
+        artifact.clone(), "start pending tool".to_string(),
     ).with_user_context(&user).expect("admit pending history owner");
     first_request.session_id = Some("pending-session".to_string());
     let first_run = manager.execute_request(first_request).await;
@@ -825,6 +835,21 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     })
     .await
     .expect("interrupted run reaches Error");
+
+    let first_state = manager.get_run(&first_run).await.expect("first run matching context");
+    assert_eq!(first_state.context["skill_matching"]["requested_method"], "skill_service.keyword");
+    assert_eq!(first_state.context["skill_matching"]["effective_method"], "skill_service.keyword");
+    assert!(first_state.context["skill_matching"]["requested_model"].is_null());
+    assert!(first_state.context["skill_matching"]["effective_model"].is_null());
+    let first_events = manager.history_since(&first_run, None).await.expect("first run stage evidence");
+    assert!(first_events.iter().any(|event| matches!(&event.event,
+        universal_agent_runtime::uar::domain::events::NormalizedEvent::RunStart { .. })),
+        "pending fixture must enter execution: {first_events:?}");
+    assert!(first_events.iter().any(|event| matches!(&event.event,
+        universal_agent_runtime::uar::domain::events::NormalizedEvent::Error { code, message, .. }
+            if code == "PROVIDER_INTERRUPTED" && message == "provider stream interrupted before execution")),
+        "pending fixture must reach its synthetic interruption: {first_events:?}");
+    assert_eq!(driver.call_count(), 1, "first run reaches exactly one synthetic provider call");
 
     let session = sessions
         .get_for_user("pending-session", &session_owner)
@@ -857,7 +882,7 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     );
 
     let mut second_request = RunExecutionRequest::new(
-        defaults::default_agent(), "resume".to_string(),
+        artifact, "resume".to_string(),
     ).with_user_context(&user).expect("admit same pending history owner");
     second_request.session_id = Some("pending-session".to_string());
     let second_run = manager.execute_request(second_request).await;
@@ -875,6 +900,11 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     })
     .await
     .expect("resume blocks on invalid pending history");
+    let second_events = manager.history_since(&second_run, None).await.expect("resume refusal evidence");
+    assert!(second_events.iter().any(|event| matches!(&event.event,
+        universal_agent_runtime::uar::domain::events::NormalizedEvent::Error { code, message, .. }
+            if code == "invalid_history" && message.contains("pending-1"))),
+        "resume must refuse the unresolved pending call: {second_events:?}");
     assert_eq!(
         driver.requests().len(),
         1,
@@ -2206,7 +2236,6 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
 
     use axum::Extension;
     use axum_test::TestServer;
-    use tokio::sync::RwLock;
     use universal_agent_runtime::config::{LlmConfig, ServiceInstanceConfig};
     use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
     use universal_agent_runtime::mcp::registry::McpRegistry;
@@ -2221,7 +2250,8 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     use universal_agent_runtime::uar::runtime::graph::{AgentGraph, GraphState};
     use universal_agent_runtime::uar::runtime::manager::RunManager;
     use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
-    use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+    use universal_agent_runtime::uar::runtime::skills::{SkillMatchingAlgorithm, SkillMatchingConfig, SkillService};
+    use universal_agent_runtime::uar::runtime::skills::service::SkillMatchingEngine;
     use universal_agent_runtime::uar::service_instance::ServiceInstanceAuthority;
 
     let tempdir = tempfile::tempdir().expect("checkpoint tempdir");
@@ -2229,6 +2259,11 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     let persistence: Arc<dyn PersistenceLayer> = Arc::new(
         SurrealDbProvider::new(&url, None, None, None, None).await.expect("checkpoint store"),
     );
+    let skill_service = Arc::new(SkillService::new(Some(persistence.clone()), None));
+    skill_service.set_matching_config(SkillMatchingConfig {
+        engine: SkillMatchingEngine::Service, algorithm: SkillMatchingAlgorithm::Keyword,
+        ..SkillMatchingConfig::default()
+    }).await;
     let (capture_tx, mut capture_rx) = tokio::sync::mpsc::unbounded_channel();
     let executions = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let graph = AgentGraph::builder("capture").add_node(CaptureResumeNode {
@@ -2242,9 +2277,9 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     let manager = Arc::new(RunManager::new(
         LlmConfig { model: "openai/gpt-4o".into(), api_key: Some("test-key".into()), ..LlmConfig::default() },
         Arc::new(McpRegistry::new_empty()), sessions.clone(),
-        Arc::new(RwLock::new(SkillRegistry::new(None, None))),
+        Arc::clone(skill_service.registry()),
         Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(embedding_backend)), 0.75)), Some(persistence.clone()),
-    ).await.with_llm_driver(driver.clone()).with_agent_graph(graph));
+    ).await.with_skill_service(skill_service).with_llm_driver(driver.clone()).with_agent_graph(graph));
     let user = harness_context::verified_fixture_user("alice").await;
     let session_owner = user.session_owner_key().expect("verified checkpoint session owner");
     let mut artifact = defaults::default_agent(); artifact.id = "orchestrator-agent".into(); artifact.memory.kb.enabled = false;
@@ -2253,7 +2288,38 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     ).with_user_context(&user).unwrap();
     request.session_id = Some("thread-1".to_owned());
     let original_run_id = manager.execute_request(request).await;
-    let state = tokio::time::timeout(std::time::Duration::from_secs(3), capture_rx.recv()).await.unwrap().unwrap();
+    let captured = tokio::time::timeout(std::time::Duration::from_secs(3), async {
+        loop {
+            match capture_rx.try_recv() {
+                Ok(state) => break Some(state),
+                Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => break None,
+                Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {}
+            }
+            if manager.get_run(&original_run_id).await.is_some_and(|run| matches!(run.status,
+                universal_agent_runtime::uar::domain::runs::RunStatus::Error
+                    | universal_agent_runtime::uar::domain::runs::RunStatus::Cancelled)) {
+                break None;
+            }
+            tokio::task::yield_now().await;
+        }
+    }).await;
+    let state = match captured {
+        Ok(Some(state)) => state,
+        outcome => panic!(
+            "original checkpoint graph must reach capture within 3s; outcome={outcome:?}; run={:?}; events={:?}; executions={}; provider_calls={}",
+            manager.get_run(&original_run_id).await,
+            manager.history_since(&original_run_id, None).await,
+            executions.load(std::sync::atomic::Ordering::SeqCst), driver.call_count(),
+        ),
+    };
+    assert_eq!(executions.load(std::sync::atomic::Ordering::SeqCst), 1,
+        "original graph reaches its capture node exactly once");
+    assert_eq!(driver.call_count(), 0, "capture graph does not dispatch a provider");
+    let original_state = manager.get_run(&original_run_id).await.expect("graph matching context");
+    assert_eq!(original_state.context["skill_matching"]["requested_method"], "skill_service.keyword");
+    assert_eq!(original_state.context["skill_matching"]["effective_method"], "skill_service.keyword");
+    assert!(original_state.context["skill_matching"]["requested_model"].is_null());
+    assert!(original_state.context["skill_matching"]["effective_model"].is_null());
     manager.shutdown_graph_roots().await.unwrap();
     let authorization = state.get::<String>(universal_agent_runtime::uar::runtime::checkpoint::CHECKPOINT_AUTHORIZATION_DIGEST_KEY).unwrap();
     let checkpoint_messages = vec![text(MessageRole::User, "protected legacy dialogue"),
