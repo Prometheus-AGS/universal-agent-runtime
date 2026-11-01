@@ -1,0 +1,173 @@
+{
+  "scenario": "UAR starts on PostgreSQL 18 and keeps its data across a restart",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "pg18-baseline-68460fda",
+        "description": "PostgreSQL 18 baseline probe",
+        "triggers": {
+          "keywords": [
+            "pg18-baseline-68460fda"
+          ]
+        },
+        "prompt_overlay": "Probe."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"pg18-baseline-68460fda\",\"title\":\"pg18-baseline-68460fda\",\"description\":\"PostgreSQL 18 baseline probe\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-baseline-68460fda\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "pg18-baseline-a712e09c-96f3-427b-9775-1cca53f739f8",
+        "metadata": {
+          "title": "PostgreSQL 18 baseline agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "",
+              "model": ""
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "*"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": true,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"pg18-baseline-a712e09c-96f3-427b-9775-1cca53f739f8\",\"metadata\":{\"title\":\"PostgreSQL 18 baseline agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:e02905094fd2745b68f4255f6320cf9e07adccff3d639377ecc97f2e70bdd90b\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/pg18-baseline-68460fda",
+      "status": 200,
+      "response": "{\"skill_id\":\"pg18-baseline-68460fda\",\"title\":\"pg18-baseline-68460fda\",\"description\":\"PostgreSQL 18 baseline probe\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"pg18-baseline-68460fda\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/pg18-baseline-a712e09c-96f3-427b-9775-1cca53f739f8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"pg18-baseline-a712e09c-96f3-427b-9775-1cca53f739f8\",\"metadata\":{\"title\":\"PostgreSQL 18 baseline agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:e02905094fd2745b68f4255f6320cf9e07adccff3d639377ecc97f2e70bdd90b\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/pg18-baseline-a712e09c-96f3-427b-9775-1cca53f739f8",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/pg18-baseline-68460fda",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/postgres-flint-forge/f551c70f-277f-414d-ac62-f919d5c47711",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-f551c70f",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:56884/",
+    "base_url": "http://127.0.0.1:56886/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:56883",
+    "uar_pid": 98340,
+    "proxy_pid": 98665
+  },
+  "readiness": {
+    "status": "ready",
+    "checks": {
+      "persistence": {
+        "backend": "postgres",
+        "status": "ok"
+      },
+      "postgres": "ok",
+      "surrealdb": "not_configured",
+      "mcp": {
+        "status": "ok",
+        "tools": 7
+      }
+    }
+  },
+  "restarts": 1,
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 31714
+}

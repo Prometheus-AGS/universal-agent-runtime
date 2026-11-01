@@ -1,0 +1,547 @@
+{
+  "scenario": "C43-SKILL-REATTACHMENT-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "budget": {
+    "per_skill_tokens": 120,
+    "total_tokens": 150
+  },
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"d4c19c1d-77fb-4c8e-beb4-353f28763527\",\"settings_type_id\":\"f411f1fa-137a-46b2-8114-eec9c85ae631\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"saved\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"effective\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"revision\":\"2026-10-27T19:05:16.510587000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T18:25:02.843134Z\",\"updated_at\":\"2026-10-27T19:05:16.510587Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "request": {
+        "value": {
+          "per_skill_tokens": 120,
+          "total_tokens": 150
+        },
+        "expected_revision": "2026-10-27T19:05:16.510587000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_reattachment\",\"namespace\":\"harness\",\"setting\":{\"id\":\"d4c19c1d-77fb-4c8e-beb4-353f28763527\",\"settings_type_id\":\"f411f1fa-137a-46b2-8114-eec9c85ae631\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"saved\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"effective\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"revision\":\"2026-10-31T20:53:31.973093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T18:25:02.843134Z\",\"updated_at\":\"2026-10-31T20:53:31.973093Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"d4c19c1d-77fb-4c8e-beb4-353f28763527\",\"settings_type_id\":\"f411f1fa-137a-46b2-8114-eec9c85ae631\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"saved\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"effective\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"revision\":\"2026-10-31T20:53:31.973093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T18:25:02.843134Z\",\"updated_at\":\"2026-10-31T20:53:31.973093Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "c43-small-adeb0ff3",
+        "description": "Private rule.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-c43-small-adeb0ff3"
+          ]
+        },
+        "prompt_overlay": "Crate tariff rule (private): tariff = crates x 16. Reply with only the number."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"c43-small-adeb0ff3\",\"title\":\"c43-small-adeb0ff3\",\"description\":\"Private rule.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-c43-small-adeb0ff3\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Crate tariff rule (private): tariff = crates x 16. Reply with only the number.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "c43-large-adeb0ff3",
+        "description": "Private rule.",
+        "triggers": {
+          "keywords": [
+            "zz-unmatched-c43-large-adeb0ff3"
+          ]
+        },
+        "prompt_overlay": "Pallet fee rule (private): fee = pallets x 997. Appendix clause 1: oversized reference material that must not widen the reattachment budget. Appendix clause 2: oversized reference material that must not widen the reattachment budget. Appendix clause 3: oversized reference material that must not widen the reattachment budget. Appendix clause 4: oversized reference material that must not widen the reattachment budget. Appendix clause 5: oversized reference material that must not widen the reattachment budget. Appendix clause 6: oversized reference material that must not widen the reattachment budget. Appendix clause 7: oversized reference material that must not widen the reattachment budget. Appendix clause 8: oversized reference material that must not widen the reattachment budget. Appendix clause 9: oversized reference material that must not widen the reattachment budget. Appendix clause 10: oversized reference material that must not widen the reattachment budget. Appendix clause 11: oversized reference material that must not widen the reattachment budget. Appendix clause 12: oversized reference material that must not widen the reattachment budget. Appendix clause 13: oversized reference material that must not widen the reattachment budget. Appendix clause 14: oversized reference material that must not widen the reattachment budget. Appendix clause 15: oversized reference material that must not widen the reattachment budget. Appendix clause 16: oversized reference material that must not widen the reattachment budget. Appendix clause 17: oversized reference material that must not widen the reattachment budget. Appendix clause 18: oversized reference material that must not widen the reattachment budget. Appendix clause 19: oversized reference material that must not widen the reattachment budget. Appendix clause 20: oversized reference material that must not widen the reattachment budget. Appendix clause 21: oversized reference material that must not widen the reattachment budget. Appendix clause 22: oversized reference material that must not widen the reattachment budget. Appendix clause 23: oversized reference material that must not widen the reattachment budget. Appendix clause 24: oversized reference material that must not widen the reattachment budget. Appendix clause 25: oversized reference material that must not widen the reattachment budget. Appendix clause 26: oversized reference material that must not widen the reattachment budget. Appendix clause 27: oversized reference material that must not widen the reattachment budget. Appendix clause 28: oversized reference material that must not widen the reattachment budget. Appendix clause 29: oversized reference material that must not widen the reattachment budget. Appendix clause 30: oversized reference material that must not widen the reattachment budget. Appendix clause 31: oversized reference material that must not widen the reattachment budget. Appendix clause 32: oversized reference material that must not widen the reattachment budget. Appendix clause 33: oversized reference material that must not widen the reattachment budget. Appendix clause 34: oversized reference material that must not widen the reattachment budget. Appendix clause 35: oversized reference material that must not widen the reattachment budget. Appendix clause 36: oversized reference material that must not widen the reattachment budget. Appendix clause 37: oversized reference material that must not widen the reattachment budget. Appendix clause 38: oversized reference material that must not widen the reattachment budget. Appendix clause 39: oversized reference material that must not widen the reattachment budget. Appendix clause 40: oversized reference material that must not widen the reattachment budget. Appendix clause 41: oversized reference material that must not widen the reattachment budget. Appendix clause 42: oversized reference material that must not widen the reattachment budget. Appendix clause 43: oversized reference material that must not widen the reattachment budget. Appendix clause 44: oversized reference material that must not widen the reattachment budget. Appendix clause 45: oversized reference material that must not widen the reattachment budget. Appendix clause 46: oversized reference material that must not widen the reattachment budget. Appendix clause 47: oversized reference material that must not widen the reattachment budget. Appendix clause 48: oversized reference material that must not widen the reattachment budget. Appendix clause 49: oversized reference material that must not widen the reattachment budget. Appendix clause 50: oversized reference material that must not widen the reattachment budget. Appendix clause 51: oversized reference material that must not widen the reattachment budget. Appendix clause 52: oversized reference material that must not widen the reattachment budget. Appendix clause 53: oversized reference material that must not widen the reattachment budget. Appendix clause 54: oversized reference material that must not widen the reattachment budget. Appendix clause 55: oversized reference material that must not widen the reattachment budget. Appendix clause 56: oversized reference material that must not widen the reattachment budget. Appendix clause 57: oversized reference material that must not widen the reattachment budget. Appendix clause 58: oversized reference material that must not widen the reattachment budget. Appendix clause 59: oversized reference material that must not widen the reattachment budget. Appendix clause 60: oversized reference material that must not widen the reattachment budget. Appendix clause 61: oversized reference material that must not widen the reattachment budget. Appendix clause 62: oversized reference material that must not widen the reattachment budget. Appendix clause 63: oversized reference material that must not widen the reattachment budget. Appendix clause 64: oversized reference material that must not widen the reattachment budget. Appendix clause 65: oversized reference material that must not widen the reattachment budget. Appendix clause 66: oversized reference material that must not widen the reattachment budget. Appendix clause 67: oversized reference material that must not widen the reattachment budget. Appendix clause 68: oversized reference material that must not widen the reattachment budget. Appendix clause 69: oversized reference material that must not widen the reattachment budget. Appendix clause 70: oversized reference material that must not widen the reattachment budget. Appendix clause 71: oversized reference material that must not widen the reattachment budget. Appendix clause 72: oversized reference material that must not widen the reattachment budget. Appendix clause 73: oversized reference material that must not widen the reattachment budget. Appendix clause 74: oversized reference material that must not widen the reattachment budget. Appendix clause 75: oversized reference material that must not widen the reattachment budget. Appendix clause 76: oversized reference material that must not widen the reattachment budget. Appendix clause 77: oversized reference material that must not widen the reattachment budget. Appendix clause 78: oversized reference material that must not widen the reattachment budget. Appendix clause 79: oversized reference material that must not widen the reattachment budget. Appendix clause 80: oversized reference material that must not widen the reattachment budget. Appendix clause 81: oversized reference material that must not widen the reattachment budget. Appendix clause 82: oversized reference material that must not widen the reattachment budget. Appendix clause 83: oversized reference material that must not widen the reattachment budget. Appendix clause 84: oversized reference material that must not widen the reattachment budget. Appendix clause 85: oversized reference material that must not widen the reattachment budget. Appendix clause 86: oversized reference material that must not widen the reattachment budget. Appendix clause 87: oversized reference material that must not widen the reattachment budget. Appendix clause 88: oversized reference material that must not widen the reattachment budget. Appendix clause 89: oversized reference material that must not widen the reattachment budget. Appendix clause 90: oversized reference material that must not widen the reattachment budget. Appendix clause 91: oversized reference material that must not widen the reattachment budget. Appendix clause 92: oversized reference material that must not widen the reattachment budget. Appendix clause 93: oversized reference material that must not widen the reattachment budget. Appendix clause 94: oversized reference material that must not widen the reattachment budget. Appendix clause 95: oversized reference material that must not widen the reattachment budget. Appendix clause 96: oversized reference material that must not widen the reattachment budget. Appendix clause 97: oversized reference material that must not widen the reattachment budget. Appendix clause 98: oversized reference material that must not widen the reattachment budget. Appendix clause 99: oversized reference material that must not widen the reattachment budget. Appendix clause 100: oversized reference material that must not widen the reattachment budget. Appendix clause 101: oversized reference material that must not widen the reattachment budget. Appendix clause 102: oversized reference material that must not widen the reattachment budget. Appendix clause 103: oversized reference material that must not widen the reattachment budget. Appendix clause 104: oversized reference material that must not widen the reattachment budget. Appendix clause 105: oversized reference material that must not widen the reattachment budget. Appendix clause 106: oversized reference material that must not widen the reattachment budget. Appendix clause 107: oversized reference material that must not widen the reattachment budget. Appendix clause 108: oversized reference material that must not widen the reattachment budget. Appendix clause 109: oversized reference material that must not widen the reattachment budget. Appendix clause 110: oversized reference material that must not widen the reattachment budget. Appendix clause 111: oversized reference material that must not widen the reattachment budget. Appendix clause 112: oversized reference material that must not widen the reattachment budget. Appendix clause 113: oversized reference material that must not widen the reattachment budget. Appendix clause 114: oversized reference material that must not widen the reattachment budget. Appendix clause 115: oversized reference material that must not widen the reattachment budget. Appendix clause 116: oversized reference material that must not widen the reattachment budget. Appendix clause 117: oversized reference material that must not widen the reattachment budget. Appendix clause 118: oversized reference material that must not widen the reattachment budget. Appendix clause 119: oversized reference material that must not widen the reattachment budget. Appendix clause 120: oversized reference material that must not widen the reattachment budget."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"c43-large-adeb0ff3\",\"title\":\"c43-large-adeb0ff3\",\"description\":\"Private rule.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"zz-unmatched-c43-large-adeb0ff3\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Pallet fee rule (private): fee = pallets x 997. Appendix clause 1: oversized reference material that must not widen the reattachment budget. Appendix clause 2: oversized reference material that must not widen the reattachment budget. Appendix clause 3: oversized reference material that must not widen the reattachment budget. Appendix clause 4: oversized reference material that must not widen the reattachment budget. Appendix clause 5: oversized reference material that must not widen the reattachment budget. Appendix clause 6: oversized reference material that must not widen the reattachment budget. Appendix clause 7: oversized reference material that must not widen the reattachment budget. Appendix clause 8: oversized reference material that must not widen the reattachment budget. Appendix clause 9: oversized reference material that must not widen the reattachment budget. Appendix clause 10: oversized reference material that must not widen the reattachment budget. Appendix clause 11: oversized reference material that must not widen the reattachment budget. Appendix clause 12: oversized reference material that must not widen the reattachment budget. Appendix clause 13: oversized reference material that must not widen the reattachment budget. Appendix clause 14: oversized reference material that must not widen the reattachment budget. Appendix clause 15: oversized reference material that must not widen the reattachment budget. Appendix clause 16: oversized reference material that must not widen the reattachment budget. Appendix clause 17: oversized reference material that must not widen the reattachment budget. Appendix clause 18: oversized reference material that must not widen the reattachment budget. Appendix clause 19: oversized reference material that must not widen the reattachment budget. Appendix clause 20: oversized reference material that must not widen the reattachment budget. Appendix clause 21: oversized reference material that must not widen the reattachment budget. Appendix clause 22: oversized reference material that must not widen the reattachment budget. Appendix clause 23: oversized reference material that must not widen the reattachment budget. Appendix clause 24: oversized reference material that must not widen the reattachment budget. Appendix clause 25: oversized reference material that must not widen the reattachment budget. Appendix clause 26: oversized reference material that must not widen the reattachment budget. Appendix clause 27: oversized reference material that must not widen the reattachment budget. Appendix clause 28: oversized reference material that must not widen the reattachment budget. Appendix clause 29: oversized reference material that"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-reattach-adeb0ff3",
+        "metadata": {
+          "title": "Disposable reattachment assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer briefly. Follow an activated skill instruction exactly.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": false
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.run_policy": {
+            "tools": {
+              "mode": "none"
+            },
+            "context_strategy": {
+              "type": "summarize",
+              "threshold": 6,
+              "summary_max_tokens": 1000
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-reattach-adeb0ff3\",\"metadata\":{\"title\":\"Disposable reattachment assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer briefly. Follow an activated skill instruction exactly.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":false},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"tools\":{\"mode\":\"none\"},\"context_strategy\":{\"type\":\"summarize\",\"threshold\":6,\"summary_max_tokens\":1000}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-reattach-adeb0ff3\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-reattach-adeb0ff3",
+        "session_id": "f6a46701-7bad-4e64-a00e-482157713c11",
+        "input": "What is the crate tariff for 7 crates? Reply with only the number.",
+        "skill_attachments": [
+          "c43-large-adeb0ff3",
+          "c43-small-adeb0ff3"
+        ],
+        "history": {
+          "session_id": "f6a46701-7bad-4e64-a00e-482157713c11",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Earlier topic 1: describe weather pattern 1 at the harbor in detail."
+            },
+            {
+              "role": "assistant",
+              "content": "Pattern 1, observation 1: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 2: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 3: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 4: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 5: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 6: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 7: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 8: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 9: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 10: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 11: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 1, observation 12: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor."
+            },
+            {
+              "role": "user",
+              "content": "Earlier topic 2: describe weather pattern 2 at the harbor in detail."
+            },
+            {
+              "role": "assistant",
+              "content": "Pattern 2, observation 1: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 2: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 3: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 4: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 5: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 6: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 7: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 8: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 9: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 10: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 11: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 2, observation 12: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor."
+            },
+            {
+              "role": "user",
+              "content": "Earlier topic 3: describe weather pattern 3 at the harbor in detail."
+            },
+            {
+              "role": "assistant",
+              "content": "Pattern 3, observation 1: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 2: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 3: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 4: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 5: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 6: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 7: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 8: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 9: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 10: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 11: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 3, observation 12: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor."
+            },
+            {
+              "role": "user",
+              "content": "Earlier topic 4: describe weather pattern 4 at the harbor in detail."
+            },
+            {
+              "role": "assistant",
+              "content": "Pattern 4, observation 1: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 2: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 3: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 4: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 5: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 6: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 7: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 8: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 9: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 10: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 11: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 4, observation 12: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor."
+            },
+            {
+              "role": "user",
+              "content": "Earlier topic 5: describe weather pattern 5 at the harbor in detail."
+            },
+            {
+              "role": "assistant",
+              "content": "Pattern 5, observation 1: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 2: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 3: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 4: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 5: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 6: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 7: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 8: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 9: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 10: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 11: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 5, observation 12: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor."
+            },
+            {
+              "role": "user",
+              "content": "Earlier topic 6: describe weather pattern 6 at the harbor in detail."
+            },
+            {
+              "role": "assistant",
+              "content": "Pattern 6, observation 1: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 2: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 3: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 4: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 5: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 6: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 7: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 8: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 9: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 10: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 11: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor. Pattern 6, observation 12: steady winds from the west, light rain, moderate swell and clearing skies by evening at the harbor."
+            }
+          ]
+        }
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"stream_url\":\"/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495/stream\",\"history\":\"seeded\",\"seeded_messages\":12}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"running\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottlen"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"running\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottlen"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"running\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottlen"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"running\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottlen"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"running\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottlen"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"done\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495",
+      "status": 200,
+      "response": "{\"run_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"conversation_id\":\"f6a46701-7bad-4e64-a00e-482157713c11\",\"status\":\"done\",\"agent_revision\":\"sha256:4e7eae2b588b6d59a4332a3e6c90c58aa8f74ef2ab44a83c7f0cff9d5dd49b14\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-reattach-adeb0ff3\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"c43-large-adeb0ff3\",\"c43-small-adeb0ff3\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/2b9469e9-621f-4907-a88c-2a310c18a495/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"after\":0,\"cursor\":37,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"2b9469e9-621f-4907-a88c-2a310c18a495\",\"artifact_id\":\"run-policy-2b9469e9-621f-4907-a88c-2a310c18a495\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-2b9469e9-621f-4907-a88c-2a310c18a495\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-2b9469e9-621f-4907-a88c-2a310c18a495\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-co"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/f6a46701-7bad-4e64-a00e-482157713c11",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-reattach-adeb0ff3",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/c43-large-adeb0ff3",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/c43-small-adeb0ff3",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"d4c19c1d-77fb-4c8e-beb4-353f28763527\",\"settings_type_id\":\"f411f1fa-137a-46b2-8114-eec9c85ae631\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"saved\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"effective\":{\"per_skill_tokens\":120,\"total_tokens\":150},\"revision\":\"2026-10-31T20:53:31.973093000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T18:25:02.843134Z\",\"updated_at\":\"2026-10-31T20:53:31.973093Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "request": {
+        "value": {
+          "per_skill_tokens": 5000,
+          "total_tokens": 25000
+        },
+        "expected_revision": "2026-10-31T20:53:31.973093000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"harness.skill_reattachment\",\"namespace\":\"harness\",\"setting\":{\"id\":\"d4c19c1d-77fb-4c8e-beb4-353f28763527\",\"settings_type_id\":\"f411f1fa-137a-46b2-8114-eec9c85ae631\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"saved\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"effective\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"revision\":\"2026-10-31T20:53:47.881485000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T18:25:02.843134Z\",\"updated_at\":\"2026-10-31T20:53:47.881485Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/harness.skill_reattachment",
+      "status": 200,
+      "response": "{\"id\":\"d4c19c1d-77fb-4c8e-beb4-353f28763527\",\"settings_type_id\":\"f411f1fa-137a-46b2-8114-eec9c85ae631\",\"name\":\"Skill Reattachment Budget\",\"key\":\"harness.skill_reattachment\",\"data\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"saved\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"effective\":{\"per_skill_tokens\":5000,\"total_tokens\":25000},\"revision\":\"2026-10-31T20:53:47.881485000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T18:25:02.843134Z\",\"updated_at\":\"2026-10-31T20:53:47.881485Z\",\"source\":\"Api\",\"is_drift\":false}"
+    }
+  ],
+  "original_setting": {
+    "saved": {
+      "per_skill_tokens": 5000,
+      "total_tokens": 25000
+    },
+    "source": "Api"
+  },
+  "create": {
+    "seeded": 12,
+    "activation_failures": []
+  },
+  "run_id": "2b9469e9-621f-4907-a88c-2a310c18a495",
+  "status": "PASSED",
+  "context_reduction": {
+    "schema_version": 1,
+    "requested_strategy": {
+      "type": "summarize",
+      "threshold": 6,
+      "summary_max_tokens": 1000,
+      "model": "liter/MiniMax-M3"
+    },
+    "source_sha256": "sha256:08894d23611cf4a485e0088c991367ea1a4f4fbc1f76611ddcf7e82cb71908af",
+    "prepared_sha256": "sha256:b711005c3f18d85881ead031e56b4c71460d839b4f9ac7601bfef72d565c58fa",
+    "source_messages": 14,
+    "prepared_messages": 14,
+    "source_tokens": 13505,
+    "prepared_tokens": 12587,
+    "eligible_spans": 13,
+    "changed": true,
+    "summary_generated": true,
+    "tier_calls": [
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 64,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 96,
+        "input_sha256": "sha256:2126b1e59af9a6231420d987c12d2303651064278970dec8c0605b88d0288df2",
+        "output_sha256": "sha256:2b708a1e8721001ecf8399a31ecb7064e5c9d49d42c769514cfdc85d20c7c02c"
+      },
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 384,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 79,
+        "input_sha256": "sha256:febbd915a4c52a622ee1535fe844fb8aed73b5188bd5174aaf70dc91bd0f43e0",
+        "output_sha256": "sha256:8a14e3780e8803d7bc15ad7c3d195a40000ee55c31f4a227161d115dab36fc0a"
+      },
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 64,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 136,
+        "input_sha256": "sha256:36df1826aa6fd30bf19c70d47fcee5d3d0f1a579642bc4ec878315cc7962eb96",
+        "output_sha256": "sha256:88112a717dbf6d63cd9df8ce114e0b0b22859539fdb2401c7f7071e699306b96"
+      },
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 384,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 156,
+        "input_sha256": "sha256:1bb476d1e965ee6b7eab31078d7f6f93780da714de6de02c5db671578649bee7",
+        "output_sha256": "sha256:c39c3106c63f3d8c6a01b0e8f29b32c7c83d54519e70c7eb2142b1c3765af752"
+      },
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 64,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 133,
+        "input_sha256": "sha256:21ca691297d2f7ae967f409b557db19c46a411abc50807eb417808311e080781",
+        "output_sha256": "sha256:345a46cb67c3ba552a784422ee584c3a615120e554638be4d03e2b5659064421"
+      },
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 384,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 99,
+        "input_sha256": "sha256:9f5aee83e6f962b71b0491aaf8e2bf6ad6dbfb84e8b302fa5489bc044962aafc",
+        "output_sha256": "sha256:b4e7ceba1fadc9186265f2199d0d6fe723e98b8d994380f44fc739fbc2657f51"
+      },
+      {
+        "tier": "summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 64,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 110,
+        "input_sha256": "sha256:2d253651333ee48ca9b55f926fe83601d60e3838d54019ecd303add8ec48073f",
+        "output_sha256": "sha256:4a2f1d432b3ebeadc44c36dd562e56154d2318ba56ee2ea7b95552cdb94c81f1"
+      }
+    ],
+    "final_sha256": "sha256:b711005c3f18d85881ead031e56b4c71460d839b4f9ac7601bfef72d565c58fa",
+    "final_messages": 14,
+    "final_tokens": 12587,
+    "input_allowance": 1046193,
+    "protected_groups": 0,
+    "protected_groups_preserved": true,
+    "skill_reattachment": {
+      "schema_version": 1,
+      "scope": "initial_assembly",
+      "model": "liter/MiniMax-M3",
+      "count_quality": "approximate",
+      "counting_revision": "token-service-model-estimate-v1",
+      "per_skill_tokens": 120,
+      "total_tokens": 150,
+      "context_limit": 1048508,
+      "reserve_tokens": 1000,
+      "request_input_limit": 1047508,
+      "history_tokens": 13899,
+      "request_tokens": 14051,
+      "rendered_tokens": 149,
+      "rendered_sha256": "sha256:fb36832f2bd80b42a4c8363a8942d68ae668d0469f1f1d626d37b81c884cd0c0",
+      "fragments": [
+        {
+          "fragment_id": "skill.c43-large-adeb0ff3",
+          "skill_id": "c43-large-adeb0ff3",
+          "original_body_tokens": 2069,
+          "retained_body_tokens": 55,
+          "original_body_sha256": "sha256:2fb3605b2cec802a50f18daaeda5a01d496217129bed4a84dc909161351a6f68",
+          "retained_body_sha256": "sha256:35ba92a801dc9f8fdd3efa4dea3e5d1a0446f07bcf565dc065fdcf5c7207b689",
+          "original_rendered_tokens": 2099,
+          "retained_rendered_tokens": 85,
+          "original_rendered_sha256": "sha256:fdf2c5c542d9b23a6b23f6805dc8a4efc87ee34bdf51aec7e518c85b5250f882",
+          "retained_rendered_sha256": "sha256:a5c7ec73591cc8a6d0cd7142d1a6a3eb0259bcf8d7f2e8de7a45b5a04339bcff",
+          "retained": true,
+          "truncated": true
+        },
+        {
+          "fragment_id": "skill.c43-small-adeb0ff3",
+          "skill_id": "c43-small-adeb0ff3",
+          "original_body_tokens": 34,
+          "retained_body_tokens": 34,
+          "original_body_sha256": "sha256:b7fe3d498c74c7b4b814175e06b5c9e6f2238209cd29e646e094563baa7e2072",
+          "retained_body_sha256": "sha256:b7fe3d498c74c7b4b814175e06b5c9e6f2238209cd29e646e094563baa7e2072",
+          "original_rendered_tokens": 64,
+          "retained_rendered_tokens": 64,
+          "original_rendered_sha256": "sha256:9c06997e7dc79e3aa250424899b019e4aae79b89e96996634058e9c0bf294a21",
+          "retained_rendered_sha256": "sha256:9c06997e7dc79e3aa250424899b019e4aae79b89e96996634058e9c0bf294a21",
+          "retained": true,
+          "truncated": false
+        }
+      ]
+    }
+  },
+  "activated_skills": [
+    "c43-large-adeb0ff3",
+    "c43-small-adeb0ff3"
+  ],
+  "answer": "112",
+  "reattachment": {
+    "schema_version": 1,
+    "scope": "initial_assembly",
+    "model": "liter/MiniMax-M3",
+    "count_quality": "approximate",
+    "counting_revision": "token-service-model-estimate-v1",
+    "per_skill_tokens": 120,
+    "total_tokens": 150,
+    "context_limit": 1048508,
+    "reserve_tokens": 1000,
+    "request_input_limit": 1047508,
+    "history_tokens": 13899,
+    "request_tokens": 14051,
+    "rendered_tokens": 149,
+    "rendered_sha256": "sha256:fb36832f2bd80b42a4c8363a8942d68ae668d0469f1f1d626d37b81c884cd0c0",
+    "fragments": [
+      {
+        "fragment_id": "skill.c43-large-adeb0ff3",
+        "skill_id": "c43-large-adeb0ff3",
+        "original_body_tokens": 2069,
+        "retained_body_tokens": 55,
+        "original_body_sha256": "sha256:2fb3605b2cec802a50f18daaeda5a01d496217129bed4a84dc909161351a6f68",
+        "retained_body_sha256": "sha256:35ba92a801dc9f8fdd3efa4dea3e5d1a0446f07bcf565dc065fdcf5c7207b689",
+        "original_rendered_tokens": 2099,
+        "retained_rendered_tokens": 85,
+        "original_rendered_sha256": "sha256:fdf2c5c542d9b23a6b23f6805dc8a4efc87ee34bdf51aec7e518c85b5250f882",
+        "retained_rendered_sha256": "sha256:a5c7ec73591cc8a6d0cd7142d1a6a3eb0259bcf8d7f2e8de7a45b5a04339bcff",
+        "retained": true,
+        "truncated": true
+      },
+      {
+        "fragment_id": "skill.c43-small-adeb0ff3",
+        "skill_id": "c43-small-adeb0ff3",
+        "original_body_tokens": 34,
+        "retained_body_tokens": 34,
+        "original_body_sha256": "sha256:b7fe3d498c74c7b4b814175e06b5c9e6f2238209cd29e646e094563baa7e2072",
+        "retained_body_sha256": "sha256:b7fe3d498c74c7b4b814175e06b5c9e6f2238209cd29e646e094563baa7e2072",
+        "original_rendered_tokens": 64,
+        "retained_rendered_tokens": 64,
+        "original_rendered_sha256": "sha256:9c06997e7dc79e3aa250424899b019e4aae79b89e96996634058e9c0bf294a21",
+        "retained_rendered_sha256": "sha256:9c06997e7dc79e3aa250424899b019e4aae79b89e96996634058e9c0bf294a21",
+        "retained": true,
+        "truncated": false
+      }
+    ]
+  },
+  "result": "VERIFIED",
+  "restored_setting": {
+    "per_skill_tokens": 5000,
+    "total_tokens": 25000
+  },
+  "cleanup_errors": [],
+  "duration_ms": 15992
+}

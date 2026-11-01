@@ -1,0 +1,45 @@
+{
+  "scenario": "KNOWLEDGE-REGENERATION-01",
+  "platform": "darwin",
+  "started_at": "2026-10-31T21:57:28.193Z",
+  "command": [
+    "node",
+    "node_modules/@cucumber/cucumber/bin/cucumber.js",
+    "--config",
+    "scripts/behaviors/knowledge-regeneration.cucumber.mjs"
+  ],
+  "child_credential_variables": [],
+  "preparation": {
+    "previous_pid": 43773,
+    "binary_sha256": "999c7e8a25553f0e432f0ae13a9f271a2bf0f024c2f6a650afa7b1c2b3769ada",
+    "config_sha256": "6f0da8efb28e8f1e8e8c237aaa7757d94f5e58ec13a5ce55f074fd3333d153e5",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-dd4221a9-3621-49e6-8d5e-fa75213542bf.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "replaced_config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "previous_process_exited": true,
+    "new_pid": 47718,
+    "new_process_ready": true
+  },
+  "restoration": {
+    "previous_pid": 47718,
+    "binary_sha256": "999c7e8a25553f0e432f0ae13a9f271a2bf0f024c2f6a650afa7b1c2b3769ada",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-6a8272dc-6c2e-4970-bde1-30a5fae0e86f.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "replaced_config_sha256": "6f0da8efb28e8f1e8e8c237aaa7757d94f5e58ec13a5ce55f074fd3333d153e5",
+    "previous_process_exited": true,
+    "new_pid": 48276,
+    "new_process_ready": true
+  },
+  "output": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/knowledge-regeneration-host/35ad1723-f566-49ef-9003-ad5edfe3e4c9",
+  "signal": null,
+  "exit_code": 0,
+  "completed_at": "2026-10-31T21:58:10.608Z",
+  "status": "PASSED"
+}

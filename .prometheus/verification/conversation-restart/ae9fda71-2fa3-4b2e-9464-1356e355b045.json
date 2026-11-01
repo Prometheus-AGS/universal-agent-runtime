@@ -1,0 +1,1061 @@
+{
+  "scenario": "CONVERSATION-RESTART-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "client_replays_history": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+        "metadata": {
+          "title": "Disposable durable conversation assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "*"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Remember the facts the user gives you for subsequent questions in this conversation. Acknowledge the initial facts with only READY, without repeating them. Answer later questions using the earlier user facts and the exact JSON fields requested.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "context_strategy": {
+              "type": "none"
+            },
+            "memory_enabled": false,
+            "skills": {
+              "mode": "none"
+            },
+            "tools": {
+              "mode": "none"
+            },
+            "mcp_servers": {
+              "mode": "none"
+            },
+            "knowledge_bases": {
+              "mode": "none"
+            },
+            "presentations": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"metadata\":{\"title\":\"Disposable durable conversation assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Remember the facts the user gives you for subsequent questions in this conversation. Acknowledge the initial facts with only READY, without repeating them. Answer later questions using the earlier user facts and the exact JSON fields requested.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"version\":1,\"context_strategy\":{\"type\":\"none\"},\"memory_enabled\":false,\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"presentations\":{\"mode\":\"none\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"metadata\":{\"title\":\"Disposable durable conversation assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Remember the facts the user gives you for subsequent questions in this conversation. Acknowledge the initial facts with only READY, without repeating them. Answer later questions using the earlier user facts and the exact JSON fields requested.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"context_strategy\":{\"type\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"memory_enabled\":false,\"presentations\":{\"mode\":\"none\"},\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"version\":1},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+        "model": "liter/MiniMax-M3",
+        "session_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Remember for this conversation: reference CASE-70532e2c-0d3c-4749-888e-4b084e1772ea; first quantity 322; second quantity 556. Acknowledge only READY without repeating any facts."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · none\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\"},\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"353b4440a29fcadc3b1425f5f278b00055fedd723abfbd194fb8edce2f4e8ecb\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"831741070f4a02eb802ceb797ca7989c9421d45bebc9c133cf9191b50317fc86\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2545,\\\"rendered_characters\\\":2545,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"353b4440a29fcadc3b1425f5f278b00055fedd723abfbd194fb8edce2f4e8ecb\",\"fragment_count\":6},\"sourceRunId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\"},\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"input\":{\"agentId\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"run_id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"agent_id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"status\":\"running\",\"started_at\":\"2026-10-31T20:20:59.489069+00:00\",\"updated_at\":\"2026-10-31T20:20:59.489078+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"conversation_id\":\"ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"status\":\"running\"}}],\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e-1\",\"run_id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-31T20:20:59.489267+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"77d3f41ebc86896319da16fb861478e2bcd2d796a9ab0eebb7e847d65d707b4b\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"831741070f4a02eb802ceb797ca7989c9421d45bebc9c133cf9191b50317fc86\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2443,\\\"rendered_characters\\\":2443,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\"},\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-c9f0db95-7b0a-4aed-a790-6cd013dc733e-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\"},\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":727,\\\"serialized_bytes\\\":2974,\\\"serialized_sha256\\\":\\\"974dcacbbd90b5cdcd1012b4e4388cbaec9e323084a725219ca8a35f03026f1f\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\"},\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e:assistant\",\"role\":\"assistant\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e:assistant\",\"delta\":\"READY\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e:assistant\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"12:0\",\"sequence\":192}\nid: 12:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"runId\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"result\":{\"usage\":{\"inputTokens\":853,\"outputTokens\":3,\"totalTokens\":856,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"run_id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"status\":\"completed\",\"input_tokens\":853,\"output_tokens\":3,\"total_tokens\":856,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-31T20:21:03.324845+00:00\"}\nid: 12:2:3\n\n",
+      "status": 200,
+      "events": [
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+            "artifactType": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"skills\":\"Skills · none · 0 available · agent scope\",\"tools\":\"Tools · none · 0 available · agent scope\",\"mcpServers\":\"MCP servers · none · 0 available · agent scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · none\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            },
+            "sourceRunId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e"
+          },
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "1:8",
+          "sequence": 16
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "2:8",
+          "sequence": 32
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "turn-manifest-c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+            "artifactType": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"353b4440a29fcadc3b1425f5f278b00055fedd723abfbd194fb8edce2f4e8ecb\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"831741070f4a02eb802ceb797ca7989c9421d45bebc9c133cf9191b50317fc86\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":2545,\"rendered_characters\":2545,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "353b4440a29fcadc3b1425f5f278b00055fedd723abfbd194fb8edce2f4e8ecb",
+              "fragment_count": 6
+            },
+            "sourceRunId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e"
+          },
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "3:8",
+          "sequence": 48
+        },
+        {
+          "type": "RUN_STARTED",
+          "profile": "uar.agui/1",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "input": {
+            "agentId": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045"
+          },
+          "eventId": "4:8",
+          "sequence": 64
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+                "conversation_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+                "status": "running"
+              }
+            }
+          ],
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "5:8",
+          "sequence": 80
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "6:8",
+          "sequence": 96
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"77d3f41ebc86896319da16fb861478e2bcd2d796a9ab0eebb7e847d65d707b4b\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"831741070f4a02eb802ceb797ca7989c9421d45bebc9c133cf9191b50317fc86\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":2443,\"rendered_characters\":2443,\"context_window_tokens\":1045480},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e"
+          },
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "7:8",
+          "sequence": 112
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-c9f0db95-7b0a-4aed-a790-6cd013dc733e-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e"
+          },
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "8:8",
+          "sequence": 128
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":727,\"serialized_bytes\":2974,\"serialized_sha256\":\"974dcacbbd90b5cdcd1012b4e4388cbaec9e323084a725219ca8a35f03026f1f\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e"
+          },
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "9:8",
+          "sequence": 144
+        },
+        {
+          "messageId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e:assistant",
+          "role": "assistant",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "type": "TEXT_MESSAGE_START",
+          "profile": "uar.agui/1",
+          "eventId": "10:0",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e:assistant",
+          "delta": "READY",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "10:8",
+          "sequence": 160
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "eventId": "11:8",
+          "sequence": 176
+        },
+        {
+          "messageId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e:assistant",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "type": "TEXT_MESSAGE_END",
+          "profile": "uar.agui/1",
+          "eventId": "12:0",
+          "sequence": 192
+        },
+        {
+          "type": "RUN_FINISHED",
+          "profile": "uar.agui/1",
+          "threadId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "runId": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+          "result": {
+            "usage": {
+              "inputTokens": 853,
+              "outputTokens": 3,
+              "totalTokens": 856,
+              "costUsdEstimate": null,
+              "model": "MiniMax-M3"
+            }
+          },
+          "eventId": "12:8",
+          "sequence": 192
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+      "status": 200,
+      "response": "{\"run_id\":\"c9f0db95-7b0a-4aed-a790-6cd013dc733e\",\"agent_id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"conversation_id\":\"ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"status\":\"done\",\"agent_revision\":\"sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:7319e306507e4f857322f6f28b89ebb5acbf51fe66bd3b64181b5c5e57f5f13b\",\"prepared_sha256\":\"sha256:7319e306507e4f857322f6f28b89ebb5acbf51fe66bd3b64181b5c5e57f5f13b\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":344,\"prepared_tokens\":344,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:7319e306507e4f857322f6f28b89ebb5acbf51fe66bd3b64181b5c5e57f5f13b\",\"final_messages\":2,\"final_tokens\":344,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":606,\"request_tokens\":606,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"metadata\":{\"title\":\"Disposable durable conversation assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Remember the facts the user gives you for subsequent questions in this conversation. Acknowledge the initial facts with only READY, without repeating them. Answer later questions using the earlier user facts and the exact JSON fields requested.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"context_strategy\":{\"type\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"memory_enabled\":false,\"presentations\":{\"mode\":\"none\"},\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"version\":1}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+        "model": "liter/MiniMax-M3",
+        "session_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What reference did I previously give you, and what is the sum of the two quantities? Return only JSON with reference and total."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · none\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\"},\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"6b77a238c286786f4da43f8734dd6a51a2b83597622ec6ea019c5d3e5fbd0b0b\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"cb06b344b996bba653a5cf406bc0f8f5eafc5741457c2c342fae84149581ed8b\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2545,\\\"rendered_characters\\\":2545,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"6b77a238c286786f4da43f8734dd6a51a2b83597622ec6ea019c5d3e5fbd0b0b\",\"fragment_count\":6},\"sourceRunId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\"},\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"input\":{\"agentId\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"run_id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"agent_id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"status\":\"running\",\"started_at\":\"2026-10-31T20:21:19.151610+00:00\",\"updated_at\":\"2026-10-31T20:21:19.151617+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"conversation_id\":\"ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"status\":\"running\"}}],\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505-1\",\"run_id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-31T20:21:19.179272+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"ee1ba9dd1836196bc78370bcbfd3055c8532b1619d5a03127b0040bbaa9157be\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"cb06b344b996bba653a5cf406bc0f8f5eafc5741457c2c342fae84149581ed8b\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":3674,\\\"rendered_characters\\\":3674,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\"},\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-4aae2506-cb9d-42f2-996d-b04ee1f33505-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\"},\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":1084,\\\"serialized_bytes\\\":4480,\\\"serialized_sha256\\\":\\\"1f95cd520ba1380f1a924c153e780860ef0445d4d42b2c2e1cc423501570bfc2\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\"},\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"role\":\"assistant\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"<think>W\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"e need answer only JSON reference and total. We have facts from prior user message in conversation: reference CASE\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"-70532e2c-0d3c-4749-888e-4b084e1772ea; quantitie\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"s 322 and 556. Sum 878. Need ensure exact JSON fields requested likely\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\" {\\\"referenc\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"e\\\":\\\"...\\\",\\\"total\\\":878}. No extra.\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"</think>\\n\\n{\\\"referenc\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"e\\\":\\\"CASE-70532e2c-0d3c-4749-888e-4b084e1772ea\\\",\\\"\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"delta\":\"total\\\":878}\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"20:0\",\"sequence\":320}\nid: 20:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"runId\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"result\":{\"usage\":{\"inputTokens\":1207,\"outputTokens\":114,\"totalTokens\":1321,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"run_id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"status\":\"completed\",\"input_tokens\":1207,\"output_tokens\":114,\"total_tokens\":1321,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-31T20:21:20.788743+00:00\"}\nid: 20:2:3\n\n",
+      "status": 200,
+      "events": [
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505",
+            "artifactType": "effective_run_policy",
+            "title": "Effective run policy",
+            "content": "[{\"version\":\"v0.9.1\",\"createSurface\":{\"surfaceId\":\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"catalogId\":\"urn:uar:a2ui:catalog:1\"}},{\"version\":\"v0.9.1\",\"updateComponents\":{\"surfaceId\":\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"components\":[{\"id\":\"title\",\"component\":\"Text\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"id\":\"subtitle\",\"component\":\"Text\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"id\":\"overview-heading\",\"component\":\"Text\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"id\":\"chat-mode\",\"component\":\"Text\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"id\":\"model\",\"component\":\"Text\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"id\":\"agent\",\"component\":\"Text\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"id\":\"overview-column\",\"component\":\"Column\",\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"]},{\"id\":\"overview-card\",\"component\":\"Card\",\"child\":\"overview-column\"},{\"id\":\"capabilities-heading\",\"component\":\"Text\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"id\":\"skills\",\"component\":\"Text\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"id\":\"tools\",\"component\":\"Text\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"id\":\"mcp-servers\",\"component\":\"Text\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"id\":\"knowledge-bases\",\"component\":\"Text\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"id\":\"capabilities-column\",\"component\":\"Column\",\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"]},{\"id\":\"capabilities-card\",\"component\":\"Card\",\"child\":\"capabilities-column\"},{\"id\":\"runtime-heading\",\"component\":\"Text\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"id\":\"memory\",\"component\":\"Text\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"id\":\"prompt-caching\",\"component\":\"Text\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"id\":\"context\",\"component\":\"Text\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"id\":\"approval\",\"component\":\"Text\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"id\":\"runtime-column\",\"component\":\"Column\",\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"]},{\"id\":\"runtime-card\",\"component\":\"Card\",\"child\":\"runtime-column\"},{\"id\":\"warnings-heading\",\"component\":\"Text\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"id\":\"warnings\",\"component\":\"Text\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"id\":\"warnings-column\",\"component\":\"Column\",\"children\":[\"warnings-heading\",\"warnings\"]},{\"id\":\"warnings-card\",\"component\":\"Card\",\"child\":\"warnings-column\"},{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"]}]}},{\"version\":\"v0.9.1\",\"updateDataModel\":{\"surfaceId\":\"run-policy-4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"path\":\"/\",\"value\":{\"title\":\"Effective run policy\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"chatMode\":\"Chat mode · agent\",\"model\":\"Model · liter / MiniMax-M3\",\"agent\":\"Agent · disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"skills\":\"Skills · none · 0 available · agent scope\",\"tools\":\"Tools · none · 0 available · agent scope\",\"mcpServers\":\"MCP servers · none · 0 available · agent scope\",\"knowledgeBases\":\"Knowledge bases · none · 0 available · agent scope\",\"memory\":\"Memory · off\",\"promptCaching\":\"Prompt caching · off\",\"context\":\"Context · none\",\"approval\":\"Tool approval · auto\",\"warningsHeading\":\"Warnings · 0\",\"warnings\":\"No policy warnings.\"}}}]",
+            "language": "a2ui",
+            "metadata": {
+              "profile": "uar.a2ui/1",
+              "protocol_version": "v0.9.1",
+              "catalog_id": "urn:uar:a2ui:catalog:1",
+              "version": 1,
+              "warnings": []
+            },
+            "sourceRunId": "4aae2506-cb9d-42f2-996d-b04ee1f33505"
+          },
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "1:8",
+          "sequence": 16
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "running",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "2:8",
+          "sequence": 32
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "turn-manifest-4aae2506-cb9d-42f2-996d-b04ee1f33505",
+            "artifactType": "turn_manifest",
+            "title": "Turn manifest",
+            "content": "{\"schema_version\":1,\"manifest_hash\":\"6b77a238c286786f4da43f8734dd6a51a2b83597622ec6ea019c5d3e5fbd0b0b\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"cb06b344b996bba653a5cf406bc0f8f5eafc5741457c2c342fae84149581ed8b\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":2545,\"rendered_characters\":2545,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}",
+            "language": "json",
+            "metadata": {
+              "schema_version": 1,
+              "manifest_hash": "6b77a238c286786f4da43f8734dd6a51a2b83597622ec6ea019c5d3e5fbd0b0b",
+              "fragment_count": 6
+            },
+            "sourceRunId": "4aae2506-cb9d-42f2-996d-b04ee1f33505"
+          },
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "3:8",
+          "sequence": 48
+        },
+        {
+          "type": "RUN_STARTED",
+          "profile": "uar.agui/1",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "input": {
+            "agentId": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045"
+          },
+          "eventId": "4:8",
+          "sequence": 64
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "replace",
+              "path": "/run",
+              "value": {
+                "run_id": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+                "conversation_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+                "status": "running"
+              }
+            }
+          ],
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "5:8",
+          "sequence": 80
+        },
+        {
+          "type": "STEP_STARTED",
+          "profile": "uar.agui/1",
+          "stepId": "step-1",
+          "stepName": "step-1",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "6:8",
+          "sequence": 96
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.turn:resolved_step",
+            "artifactType": "provider_event",
+            "title": "resolved_step",
+            "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"ee1ba9dd1836196bc78370bcbfd3055c8532b1619d5a03127b0040bbaa9157be\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"37cfc681cda8f116945b86f56941533388f97cb53a9d64d412fc62f1e66f0bb0\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"7c24766dfe9bed3f254ee22ea7679cde1b1aab096a0ca76ccaccbea27e7b369c\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"cb06b344b996bba653a5cf406bc0f8f5eafc5741457c2c342fae84149581ed8b\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"}],\"counts\":{\"total\":6,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":3674,\"rendered_characters\":3674,\"context_window_tokens\":1045480},\"selected_skills\":[],\"selected_tools\":[],\"warnings\":[]}}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "4aae2506-cb9d-42f2-996d-b04ee1f33505"
+          },
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "7:8",
+          "sequence": 112
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "attempt-manifest-4aae2506-cb9d-42f2-996d-b04ee1f33505-MiniMax-M3",
+            "artifactType": "attempt_manifest",
+            "title": "Provider attempt manifest",
+            "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+            "language": "json",
+            "metadata": {
+              "source": "uar.request",
+              "budgeting_label": "legacy_unbudgeted"
+            },
+            "sourceRunId": "4aae2506-cb9d-42f2-996d-b04ee1f33505"
+          },
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "8:8",
+          "sequence": 128
+        },
+        {
+          "type": "CUSTOM",
+          "profile": "uar.agui/1",
+          "name": "uar.artifact.available",
+          "value": {
+            "artifactId": "uar.request:budget_receipt",
+            "artifactType": "provider_event",
+            "title": "budget_receipt",
+            "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":1084,\"serialized_bytes\":4480,\"serialized_sha256\":\"1f95cd520ba1380f1a924c153e780860ef0445d4d42b2c2e1cc423501570bfc2\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+            "language": "json",
+            "metadata": {
+              "source": "external_llm_driver"
+            },
+            "sourceRunId": "4aae2506-cb9d-42f2-996d-b04ee1f33505"
+          },
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "9:8",
+          "sequence": 144
+        },
+        {
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "role": "assistant",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "type": "TEXT_MESSAGE_START",
+          "profile": "uar.agui/1",
+          "eventId": "10:0",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "<think>W",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "10:8",
+          "sequence": 160
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "e need answer only JSON reference and total. We have facts from prior user message in conversation: reference CASE",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "11:8",
+          "sequence": 176
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "-70532e2c-0d3c-4749-888e-4b084e1772ea; quantitie",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "12:8",
+          "sequence": 192
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "s 322 and 556. Sum 878. Need ensure exact JSON fields requested likely",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "13:8",
+          "sequence": 208
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": " {\"referenc",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "14:8",
+          "sequence": 224
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "e\":\"...\",\"total\":878}. No extra.",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "15:8",
+          "sequence": 240
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "</think>\n\n{\"referenc",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "16:8",
+          "sequence": 256
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "e\":\"CASE-70532e2c-0d3c-4749-888e-4b084e1772ea\",\"",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "17:8",
+          "sequence": 272
+        },
+        {
+          "type": "TEXT_MESSAGE_CONTENT",
+          "profile": "uar.agui/1",
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "delta": "total\":878}",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "18:8",
+          "sequence": 288
+        },
+        {
+          "type": "STATE_DELTA",
+          "profile": "uar.agui/1",
+          "delta": [
+            {
+              "op": "add",
+              "path": "/presentation",
+              "value": {
+                "version": 1,
+                "requested_mode": null,
+                "effective_mode": "legacy",
+                "admission_fallback_reason": null,
+                "fallback_reason": null,
+                "run_outcome": "finished",
+                "eligible_templates": [],
+                "published_templates": [],
+                "surface_published": false,
+                "generation_failed": false,
+                "receipt_status": "available",
+                "client_display": "unconfirmed"
+              }
+            }
+          ],
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "eventId": "19:8",
+          "sequence": 304
+        },
+        {
+          "messageId": "4aae2506-cb9d-42f2-996d-b04ee1f33505:assistant",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "type": "TEXT_MESSAGE_END",
+          "profile": "uar.agui/1",
+          "eventId": "20:0",
+          "sequence": 320
+        },
+        {
+          "type": "RUN_FINISHED",
+          "profile": "uar.agui/1",
+          "threadId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "runId": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+          "result": {
+            "usage": {
+              "inputTokens": 1207,
+              "outputTokens": 114,
+              "totalTokens": 1321,
+              "costUsdEstimate": null,
+              "model": "MiniMax-M3"
+            }
+          },
+          "eventId": "20:8",
+          "sequence": 320
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/4aae2506-cb9d-42f2-996d-b04ee1f33505",
+      "status": 200,
+      "response": "{\"run_id\":\"4aae2506-cb9d-42f2-996d-b04ee1f33505\",\"agent_id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"conversation_id\":\"ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"status\":\"done\",\"agent_revision\":\"sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:1ce176dbdf9646353d9fedafe31cbc8a044843bbeba4836fe0ab644a9f8a070a\",\"prepared_sha256\":\"sha256:1ce176dbdf9646353d9fedafe31cbc8a044843bbeba4836fe0ab644a9f8a070a\",\"source_messages\":8,\"prepared_messages\":8,\"source_tokens\":639,\"prepared_tokens\":639,\"eligible_spans\":3,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:1ce176dbdf9646353d9fedafe31cbc8a044843bbeba4836fe0ab644a9f8a070a\",\"final_messages\":8,\"final_tokens\":639,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":901,\"request_tokens\":901,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 73188
+  },
+  "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+  "session_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+  "model": "liter/MiniMax-M3",
+  "expected": {
+    "reference": "CASE-70532e2c-0d3c-4749-888e-4b084e1772ea",
+    "total": 878
+  },
+  "initial_run_id": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+  "before_run": {
+    "run_id": "c9f0db95-7b0a-4aed-a790-6cd013dc733e",
+    "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+    "conversation_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+    "status": "done",
+    "agent_revision": "sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "none"
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "agent",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "none"
+      },
+      "source_sha256": "sha256:7319e306507e4f857322f6f28b89ebb5acbf51fe66bd3b64181b5c5e57f5f13b",
+      "prepared_sha256": "sha256:7319e306507e4f857322f6f28b89ebb5acbf51fe66bd3b64181b5c5e57f5f13b",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 344,
+      "prepared_tokens": 344,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:7319e306507e4f857322f6f28b89ebb5acbf51fe66bd3b64181b5c5e57f5f13b",
+      "final_messages": 2,
+      "final_tokens": 344,
+      "input_allowance": 1044215,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1048576,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1047576,
+        "history_tokens": 606,
+        "request_tokens": 606,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "restart": {
+    "previous_pid": 73188,
+    "binary_sha256": "30c7f8067e517d5707dfd55e5510f6faf079586454da5765a707dc3f2225a603",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-b43850b7-a901-4d3c-a572-0e2d39017118.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 76021,
+    "new_process_ready": true
+  },
+  "after_endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 76021
+  },
+  "follow_up_run_id": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+  "after_run": {
+    "run_id": "4aae2506-cb9d-42f2-996d-b04ee1f33505",
+    "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+    "conversation_id": "ae9fda71-2fa3-4b2e-9464-1356e355b045",
+    "status": "done",
+    "agent_revision": "sha256:bfc15085a72197530c17ecfe70cbf403942fe88a977e3f94aa9b90fa60a80ec1",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-conversation-restart-ae9fda71-2fa3-4b2e-9464-1356e355b045",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "none"
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "agent",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "none"
+      },
+      "source_sha256": "sha256:1ce176dbdf9646353d9fedafe31cbc8a044843bbeba4836fe0ab644a9f8a070a",
+      "prepared_sha256": "sha256:1ce176dbdf9646353d9fedafe31cbc8a044843bbeba4836fe0ab644a9f8a070a",
+      "source_messages": 8,
+      "prepared_messages": 8,
+      "source_tokens": 639,
+      "prepared_tokens": 639,
+      "eligible_spans": 3,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:1ce176dbdf9646353d9fedafe31cbc8a044843bbeba4836fe0ab644a9f8a070a",
+      "final_messages": 8,
+      "final_tokens": 639,
+      "input_allowance": 1044215,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1048576,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1047576,
+        "history_tokens": 901,
+        "request_tokens": 901,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "answer": {
+    "reference": "CASE-70532e2c-0d3c-4749-888e-4b084e1772ea",
+    "total": 878
+  },
+  "result": "VERIFIED",
+  "disposable_agent_deleted": true,
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 22099
+}

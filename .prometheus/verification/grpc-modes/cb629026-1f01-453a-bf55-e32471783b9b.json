@@ -1,0 +1,497 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-cb629026-1f01-453a-bf55-e32471783b9b",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-cb629026-1f01-453a-bf55-e32471783b9b",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-cb629026"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-cb629026-1f01-453a-bf55-e32471783b9b\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-cb629026\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:2bba7ce15b83ddbb074f9df2e09a29e26aadc5acfae01ef0a9a4ef2e7006287c\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "What is (43 multiplied by 13) plus 177?"
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (43 multiplied by 13) plus 177?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question. 43 * 13 = 559. 559 + 177 = 736.\n\nThe agent identity fragment requires returning only a JSON object with keys marker and answer.\n\nNo tool needed. Just answer.\n\n43 * 13 = 559. 559 + 177 = 736.\n\nLet me double check: 43 * 13 = 43*10 + 43*3 = 430 + 129 = 559. 559 + 177 = 736. Yes.\n\nThe policy says \"Return only a JSON object with keys marker and answer.\" So I should output only JSON.\n\nShould I activate a skill? No, not needed.\n\nI'll respond with the JSON only.</think>\n\n{\"marker\": \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\", \"answer\": 736}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "completed"
+      }
+    },
+    {
+      "grpc": "MessageStream",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Add 23 to your previous answer."
+            }
+          ]
+        }
+      },
+      "events": [
+        {
+          "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+          "event_type": "status_update",
+          "state": {
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "What is (43 multiplied by 13) plus 177?",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              },
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "<think>The user asks a simple arithmetic question. 43 * 13 = 559. 559 + 177 = 736.\n\nThe agent identity fragment requires returning only a JSON object with keys marker and answer.\n\nNo tool needed. Just answer.\n\n43 * 13 = 559. 559 + 177 = 736.\n\nLet me double check: 43 * 13 = 43*10 + 43*3 = 430 + 129 = 559. 559 + 177 = 736. Yes.\n\nThe policy says \"Return only a JSON object with keys marker and answer.\" So I should output only JSON.\n\nShould I activate a skill? No, not needed.\n\nI'll respond with the JSON only.</think>\n\n{\"marker\": \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\", \"answer\": 736}",
+                    "content": "text"
+                  }
+                ],
+                "role": "agent"
+              },
+              {
+                "parts": [
+                  {
+                    "content_type": "text/plain",
+                    "text": "Add 23 to your previous answer.",
+                    "content": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "artifacts": [],
+            "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+            "status": "working"
+          }
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question. 43 * 13 = 559. 559 + 177 = 736.\n\nThe agent identity fragment requires returning only a JSON object with keys marker and answer.\n\nNo tool needed. Just answer.\n\n43 * 13 = 559. 559 + 177 = 736.\n\nLet me double check: 43 * 13 = 43*10 + 43*3 = 430 + 129 = 559. 559 + 177 = 736. Yes.\n\nThe policy says \"Return only a JSON object with keys marker and answer.\" So I should output only JSON.\n\nShould I activate a skill? No, not needed.\n\nI'll respond with the JSON only.</think>\n\n{\"marker\": \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\", \"answer\": 736}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 23 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question. 43 * 13 = 559. 559 + 177 = 736.\n\nThe agent identity fragment requires returning only a JSON object with keys marker and answer.\n\nNo tool needed. Just answer.\n\n43 * 13 = 559. 559 + 177 = 736.\n\nLet me double check: 43 * 13 = 43*10 + 43*3 = 430 + 129 = 559. 559 + 177 = 736. Yes.\n\nThe policy says \"Return only a JSON object with keys marker and answer.\" So I should output only JSON.\n\nShould I activate a skill? No, not needed.\n\nI'll respond with the JSON only.</think>\n\n{\"marker\": \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\", \"answer\": 736}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 23 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (43 multiplied by 13) plus 177?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question. 43 * 13 = 559. 559 + 177 = 736.\n\nThe agent identity fragment requires returning only a JSON object with keys marker and answer.\n\nNo tool needed. Just answer.\n\n43 * 13 = 559. 559 + 177 = 736.\n\nLet me double check: 43 * 13 = 43*10 + 43*3 = 430 + 129 = 559. 559 + 177 = 736. Yes.\n\nThe policy says \"Return only a JSON object with keys marker and answer.\" So I should output only JSON.\n\nShould I activate a skill? No, not needed.\n\nI'll respond with the JSON only.</think>\n\n{\"marker\": \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\", \"answer\": 736}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 23 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>736 + 23 = 759.\n\nReturn JSONonly.</think>\n\n{\"marker\": \"GRPC-f77df0ab-57be-4af2-ba11-76e93c48526d\", \"answer\": 759}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+        "status": "completed"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-cb629026-1f01-453a-bf55-e32471783b9b",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    736,
+    759
+  ],
+  "streams": [
+    {
+      "events": [
+        "status_update:working"
+      ],
+      "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+      "status": "completed"
+    },
+    {
+      "events": [
+        "status_update:working"
+      ],
+      "task_id": "b3f24d2e-20fe-4126-a571-2628c4011af3",
+      "status": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-legacy-stream",
+  "scenario_status": "PASSED",
+  "duration_ms": 7120
+}

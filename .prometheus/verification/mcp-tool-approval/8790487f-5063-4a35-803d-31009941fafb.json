@@ -1,0 +1,971 @@
+{
+  "scenario": "C38-MCP-TOOL-APPROVAL-01",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "requests": {
+    "approved": {
+      "label": "approved",
+      "task": "Store the value ORCHID-60AC91FE under the key note-8790487f with record_write. Then read the key note-8790487f back with record_read and tell me the exact value and revision that record_read returned.",
+      "approved": true,
+      "session_id": "d4b572cf-6941-42d0-8098-f19bad922d69",
+      "approvals": [
+        {
+          "approval_id": "6c3ce728-d4ed-45ed-bda5-c011350e63dc",
+          "tool": "c38rec8790487f__record_write",
+          "approved": true
+        },
+        {
+          "approval_id": "7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9",
+          "tool": "c38rec8790487f__record_read",
+          "approved": true
+        }
+      ],
+      "statuses": [
+        "running",
+        "done"
+      ],
+      "run_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "event_names": [
+        "agui.artifact",
+        "agui.state.patch",
+        "agui.mcp.state",
+        "agui.stream.start",
+        "agui.message.delta",
+        "agui.tool_call.delta",
+        "agui.tool_call.complete",
+        "agui.tool_call.approval_required",
+        "agui.tool_result",
+        "agui.done"
+      ],
+      "status": "done",
+      "tool_events": [
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"{\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"\\\"key\\\":\\\"note-8790487f\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"\\\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\",\\\"value\\\":\\\"OR\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"CHID-60AC91FE\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"\\\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "delta": {
+              "arguments": "\"}\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.complete",
+          "data": {
+            "kind": "tool_call",
+            "phase": "complete",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "name": "c38rec8790487f__record_write",
+            "arguments_json": "{\"key\":\"note-8790487f\",\"value\":\"ORCHID-60AC91FE\"}"
+          }
+        },
+        {
+          "name": "agui.tool_call.approval_required",
+          "data": {
+            "kind": "tool_call",
+            "phase": "approval_required",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "approval_id": "6c3ce728-d4ed-45ed-bda5-c011350e63dc",
+            "admission_id": "bf1991e6-275e-4eb3-a5fa-6eea9189e351",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "name": "c38rec8790487f__record_write",
+            "arguments_json": "{\"operation\":\"c38rec8790487f__record_write\",\"detailsAvailable\":false}",
+            "risk_reason": "Tool 'c38rec8790487f__record_write' requires approval under its descriptor"
+          }
+        },
+        {
+          "name": "agui.tool_result",
+          "data": {
+            "kind": "tool_result",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a71b1b7276a40bd49f",
+            "name": "c38rec8790487f__record_write",
+            "content": "{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"stored\\\":true,\\\"key\\\":\\\"note-8790487f\\\",\\\"revision\\\":1}\"}],\"isError\":false}",
+            "success": true
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "delta": {
+              "arguments": "\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "delta": {
+              "arguments": "\"{\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "delta": {
+              "arguments": "\"\\\"key\\\":\\\"note-879\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "delta": {
+              "arguments": "\"0487f\\\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "delta": {
+              "arguments": "\"}\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.complete",
+          "data": {
+            "kind": "tool_call",
+            "phase": "complete",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "name": "c38rec8790487f__record_read",
+            "arguments_json": "{\"key\":\"note-8790487f\"}"
+          }
+        },
+        {
+          "name": "agui.tool_call.approval_required",
+          "data": {
+            "kind": "tool_call",
+            "phase": "approval_required",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "approval_id": "7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9",
+            "admission_id": "90a1322a-81d7-49a5-acfb-0730e5ea4ed8",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "name": "c38rec8790487f__record_read",
+            "arguments_json": "{\"operation\":\"c38rec8790487f__record_read\",\"detailsAvailable\":false}",
+            "risk_reason": "Tool 'c38rec8790487f__record_read' requires approval under its descriptor"
+          }
+        },
+        {
+          "name": "agui.tool_result",
+          "data": {
+            "kind": "tool_result",
+            "request_id": "b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+            "call_index": 0,
+            "id": "call_01a193a728207545b531c9ab",
+            "name": "c38rec8790487f__record_read",
+            "content": "{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"found\\\":true,\\\"key\\\":\\\"note-8790487f\\\",\\\"value\\\":\\\"ORCHID-60AC91FE\\\",\\\"revision\\\":1}\"}],\"isError\":false}",
+            "success": true
+          }
+        }
+      ],
+      "answer": "I'll write the value first, then read it back.Done. Both operations succeeded.\n\n**record_write** returned: `{\"stored\":true,\"key\":\"note-8790487f\",\"revision\":1}`\n\n**record_read** returned:\n- **Value:** `ORCHID-60AC91FE`\n- **Revision:** `1`\n- (also `found: true`, `key: note-8790487f`)",
+      "peer_records_after": {
+        "note-8790487f": {
+          "value": "ORCHID-60AC91FE",
+          "revision": 1
+        }
+      },
+      "peer_log_after": [
+        {
+          "at": "2026-10-31T20:29:25.383Z",
+          "tool": "record_write",
+          "arguments": {
+            "key": "note-8790487f",
+            "value": "ORCHID-60AC91FE"
+          },
+          "result": {
+            "stored": true,
+            "key": "note-8790487f",
+            "revision": 1
+          }
+        },
+        {
+          "at": "2026-10-31T20:29:28.515Z",
+          "tool": "record_read",
+          "arguments": {
+            "key": "note-8790487f"
+          },
+          "result": {
+            "found": true,
+            "key": "note-8790487f",
+            "value": "ORCHID-60AC91FE",
+            "revision": 1
+          }
+        }
+      ]
+    },
+    "denied": {
+      "label": "denied",
+      "task": "Store the value CACTUS-CF0D9A58 under the key note-8790487f with record_write and tell me the revision it returns.",
+      "approved": false,
+      "session_id": "27f26b67-b2cd-4789-858e-191366406dc8",
+      "approvals": [
+        {
+          "approval_id": "79616944-4b71-4107-8586-456d97cccee5",
+          "tool": "c38rec8790487f__record_write",
+          "approved": false
+        }
+      ],
+      "statuses": [
+        "running",
+        "done"
+      ],
+      "run_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+      "event_names": [
+        "agui.artifact",
+        "agui.state.patch",
+        "agui.mcp.state",
+        "agui.stream.start",
+        "agui.message.delta",
+        "agui.tool_call.delta",
+        "agui.tool_call.complete",
+        "agui.tool_call.approval_required",
+        "agui.tool_result",
+        "agui.done"
+      ],
+      "status": "done",
+      "tool_events": [
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"{\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"\\\"key\\\":\\\"note-\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"8790487f\\\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\",\\\"value\\\":\\\"CACTUS-CF\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"0D9A58\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"\\\"\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.delta",
+          "data": {
+            "kind": "tool_call",
+            "phase": "delta",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "delta": {
+              "arguments": "\"}\""
+            }
+          }
+        },
+        {
+          "name": "agui.tool_call.complete",
+          "data": {
+            "kind": "tool_call",
+            "phase": "complete",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "name": "c38rec8790487f__record_write",
+            "arguments_json": "{\"key\":\"note-8790487f\",\"value\":\"CACTUS-CF0D9A58\"}"
+          }
+        },
+        {
+          "name": "agui.tool_call.approval_required",
+          "data": {
+            "kind": "tool_call",
+            "phase": "approval_required",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "approval_id": "79616944-4b71-4107-8586-456d97cccee5",
+            "admission_id": "8c135a9a-09c8-4dd0-8921-64fd5da75b80",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "name": "c38rec8790487f__record_write",
+            "arguments_json": "{\"operation\":\"c38rec8790487f__record_write\",\"detailsAvailable\":false}",
+            "risk_reason": "Tool 'c38rec8790487f__record_write' requires approval under its descriptor"
+          }
+        },
+        {
+          "name": "agui.tool_result",
+          "data": {
+            "kind": "tool_result",
+            "request_id": "80ceceb2-f75a-4765-80fa-ee125b90573d",
+            "call_index": 0,
+            "id": "call_01a193a73e787343a6c0d3d7",
+            "name": "c38rec8790487f__record_write",
+            "content": "{\"status\":\"error\",\"tool_call_id\":\"call_01a193a73e787343a6c0d3d7\",\"tool\":\"c38rec8790487f__record_write\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"message\":\"Tool call rejected: Rejected by user\"}",
+            "success": false
+          }
+        }
+      ],
+      "answer": "I'll store that value for you.\n\nThe write was not performed — the `record_write` call was rejected (tool call `call_01a193a73e787343a6c0d3d7`, terminal state `failed`, message: \"Tool call rejected: Rejected by user\").\n\nSo there's no revision to report: nothing was stored under `note-8790487f`, and the record store is unchanged. Let me know if you'd like me to try again (e.g. if the rejection was accidental).",
+      "peer_records_after": {
+        "note-8790487f": {
+          "value": "ORCHID-60AC91FE",
+          "revision": 1
+        }
+      },
+      "peer_log_after": [
+        {
+          "at": "2026-10-31T20:29:25.383Z",
+          "tool": "record_write",
+          "arguments": {
+            "key": "note-8790487f",
+            "value": "ORCHID-60AC91FE"
+          },
+          "result": {
+            "stored": true,
+            "key": "note-8790487f",
+            "revision": 1
+          }
+        },
+        {
+          "at": "2026-10-31T20:29:28.515Z",
+          "tool": "record_read",
+          "arguments": {
+            "key": "note-8790487f"
+          },
+          "result": {
+            "found": true,
+            "key": "note-8790487f",
+            "value": "ORCHID-60AC91FE",
+            "revision": 1
+          }
+        }
+      ]
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-record-agent-8790487f",
+        "metadata": {
+          "title": "Disposable Record Agent",
+          "description": "Stores and reads records through an MCP record peer.",
+          "tags": [
+            "records"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "c38rec8790487f__record_write",
+              "c38rec8790487f__record_read"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "You store and read records only with the record_write and record_read tools. Report only values and revisions returned by the tools. If a tool call is denied or fails, say plainly that the operation was not performed.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.run_policy": {
+            "mcp_servers": {
+              "mode": "selected",
+              "ids": [
+                "c38rec8790487f"
+              ]
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-record-agent-8790487f\",\"metadata\":{\"title\":\"Disposable Record Agent\",\"description\":\"Stores and reads records through an MCP record peer.\",\"tags\":[\"records\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"c38rec8790487f__record_write\",\"c38rec8790487f__record_read\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You store and read records only with the record_write and record_read tools. Report only values and revisions returned by the tools. If a tool call is denied or fails, say plainly that the operation was not performed.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-record-agent-8790487f\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"mcp_servers\":{\"mode\":\"selected\",\"ids\":[\"c38rec8790487f\"]}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-record-agent-8790487f",
+        "input": "Store the value ORCHID-60AC91FE under the key note-8790487f with record_write. Then read the key note-8790487f back with record_read and tell me the exact value and revision that record_read returned.",
+        "session_id": "d4b572cf-6941-42d0-8098-f19bad922d69",
+        "mcp_servers": [
+          {
+            "name": "c38rec8790487f",
+            "url": "http://127.0.0.1:56044/mcp"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"stream_url\":\"/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":{\"version\":1,\"eventId\":\"6c3ce728-d4ed-45ed-bda5-c011350e63dc\",\"cursor\":26,\"rootRunId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"approvalId\":\"6c3ce728-d4ed-45ed-bda5-c011350e63dc\",\"issuerId\":\"adaf6779-0b5c-4a89-a07a-7d7c880bb646\",\"challengeId\":\"6c3ce728-d4ed-45ed-bda5-c011350e63dc\",\"admissionId\":\"bf1991e6-275e-4eb3-a5fa-6eea9189e351\",\"admissionOwner\":\"paired-host\",\"decisionOwner\":\"uar-runtime\",\"callIndex\":0,\"toolCallId\":\"call_01a193a71b1b7276a40bd49f\",\"name\":\"c38rec8790487f__record_write\",\"argumentsJson\":\"{\\\"operation\\\":\\\"c38rec8790487f__record_write\\\",\\\"detailsAvailable\\\":false}\",\"riskReason\":\"Tool 'c38rec8790487f__record_write' requires approval under its descriptor\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval",
+      "request": {
+        "approved": true,
+        "approval_id": "6c3ce728-d4ed-45ed-bda5-c011350e63dc"
+      },
+      "status": 200,
+      "response": "{\"resolved\":true,\"decision\":\"allow\",\"record\":{\"version\":1,\"issuerId\":\"adaf6779-0b5c-4a89-a07a-7d7c880bb646\",\"challengeId\":\"6c3ce728-d4ed-45ed-bda5-c011350e63dc\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"admissionId\":\"bf1991e6-275e-4eb3-a5fa-6eea9189e351\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_01a193a71b1b7276a40bd49f\",\"toolName\":\"c38rec8790487f__record_write\",\"createdAt\":\"2026-10-31T20:29:25.115968Z\",\"expiresAt\":\"2026-10-31T20:34:25.115947Z\",\"state\":\"approved\",\"decision\":{\"decisionId\":\"7cee33ea-742f-4282-afdb-dc180adf3cd3\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":true,\"decidedAt\":\"2026-10-31T20:29:25.311993Z\"},\"updatedAt\":\"2026-10-31T20:29:25.311996Z\",\"continuation\":{\"checkpointId\":\"0f6ac05a-277f-4fce-a14e-d268a704459f\",\"checkpointRevision\":\"b100c165d13c84813af351defc43669b1dece16d52450ff4a1316d350fbc4046\",\"bindingDigest\":\"d666a580d95141d9837a9f8ac8b7f0ff25a54ae8db1d205be00fc5726e3ae153\",\"callIndex\":0},\"resolvable\":false,\"recoveryAvailable\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":{\"version\":1,\"eventId\":\"7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9\",\"cursor\":41,\"rootRunId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"approvalId\":\"7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9\",\"issuerId\":\"adaf6779-0b5c-4a89-a07a-7d7c880bb646\",\"challengeId\":\"7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9\",\"admissionId\":\"90a1322a-81d7-49a5-acfb-0730e5ea4ed8\",\"admissionOwner\":\"paired-host\",\"decisionOwner\":\"uar-runtime\",\"callIndex\":0,\"toolCallId\":\"call_01a193a728207545b531c9ab\",\"name\":\"c38rec8790487f__record_read\",\"argumentsJson\":\"{\\\"operation\\\":\\\"c38rec8790487f__record_read\\\",\\\"detailsAvailable\\\":false}\",\"riskReason\":\"Tool 'c38rec8790487f__record_read' requires approval under its descriptor\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval",
+      "request": {
+        "approved": true,
+        "approval_id": "7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9"
+      },
+      "status": 200,
+      "response": "{\"resolved\":true,\"decision\":\"allow\",\"record\":{\"version\":1,\"issuerId\":\"adaf6779-0b5c-4a89-a07a-7d7c880bb646\",\"challengeId\":\"7cb0f5cb-8af0-4ca3-96cd-2a54b0ba01d9\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"admissionId\":\"90a1322a-81d7-49a5-acfb-0730e5ea4ed8\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_01a193a728207545b531c9ab\",\"toolName\":\"c38rec8790487f__record_read\",\"createdAt\":\"2026-10-31T20:29:28.233205Z\",\"expiresAt\":\"2026-10-31T20:34:28.233186Z\",\"state\":\"approved\",\"decision\":{\"decisionId\":\"a09d0957-6e93-4f95-8ddf-698912b6ec34\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":true,\"decidedAt\":\"2026-10-31T20:29:28.381742Z\"},\"updatedAt\":\"2026-10-31T20:29:28.381743Z\",\"continuation\":{\"checkpointId\":\"5e008e4c-3b5b-46f2-8277-109e4089f95c\",\"checkpointRevision\":\"7166ef18dfcd3304e1bdc7bd164897338fb596da86c295c217d8dd0d95c226b7\",\"bindingDigest\":\"ea2e1f6e9555bc0e9bd0ade48ed602267caf86f38d7bd4697916401c2a25dbc5\",\"callIndex\":0},\"resolvable\":false,\"recoveryAvailable\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b",
+      "status": 200,
+      "response": "{\"run_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"d4b572cf-6941-42d0-8098-f19bad922d69\",\"status\":\"done\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"after\":0,\"cursor\":69,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"artifact_id\":\"run-policy-b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-b6e3c25f-64d2-4faf-8dec-a0cc8d7b969b\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-record-agent-8790487f\\\",\\\"skills\\\":\\\"Skills · auto · 212 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selec"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-record-agent-8790487f",
+        "input": "Store the value CACTUS-CF0D9A58 under the key note-8790487f with record_write and tell me the revision it returns.",
+        "session_id": "27f26b67-b2cd-4789-858e-191366406dc8",
+        "mcp_servers": [
+          {
+            "name": "c38rec8790487f",
+            "url": "http://127.0.0.1:56044/mcp"
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"stream_url\":\"/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/stream\",\"history\":\"none\",\"seeded_messages\":0}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d",
+      "status": 200,
+      "response": "{\"run_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"27f26b67-b2cd-4789-858e-191366406dc8\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d",
+      "status": 200,
+      "response": "{\"run_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"27f26b67-b2cd-4789-858e-191366406dc8\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"pending\":{\"version\":1,\"eventId\":\"79616944-4b71-4107-8586-456d97cccee5\",\"cursor\":27,\"rootRunId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"approvalId\":\"79616944-4b71-4107-8586-456d97cccee5\",\"issuerId\":\"adaf6779-0b5c-4a89-a07a-7d7c880bb646\",\"challengeId\":\"79616944-4b71-4107-8586-456d97cccee5\",\"admissionId\":\"8c135a9a-09c8-4dd0-8921-64fd5da75b80\",\"admissionOwner\":\"paired-host\",\"decisionOwner\":\"uar-runtime\",\"callIndex\":0,\"toolCallId\":\"call_01a193a73e787343a6c0d3d7\",\"name\":\"c38rec8790487f__record_write\",\"argumentsJson\":\"{\\\"operation\\\":\\\"c38rec8790487f__record_write\\\",\\\"detailsAvailable\\\":false}\",\"riskReason\":\"Tool 'c38rec8790487f__record_write' requires approval under its descriptor\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval",
+      "request": {
+        "approved": false,
+        "approval_id": "79616944-4b71-4107-8586-456d97cccee5"
+      },
+      "status": 200,
+      "response": "{\"resolved\":true,\"decision\":\"deny\",\"record\":{\"version\":1,\"issuerId\":\"adaf6779-0b5c-4a89-a07a-7d7c880bb646\",\"challengeId\":\"79616944-4b71-4107-8586-456d97cccee5\",\"ownerKey\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"workspaceId\":null,\"rootRunId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"admissionId\":\"8c135a9a-09c8-4dd0-8921-64fd5da75b80\",\"admissionOwner\":\"paired-host\",\"toolCallId\":\"call_01a193a73e787343a6c0d3d7\",\"toolName\":\"c38rec8790487f__record_write\",\"createdAt\":\"2026-10-31T20:29:34.860811Z\",\"expiresAt\":\"2026-10-31T20:34:34.860793Z\",\"state\":\"denied\",\"decision\":{\"decisionId\":\"ad76a614-2059-42a8-bc6c-d4e251e787b6\",\"actor\":\"v1:k:issuer:i:39:urn:uar:acceptance:5d3ed9f4d4218e05b533:t:39:uar-fixture-tenant-5d3ed9f4d4218e05b533:s:24:uar-supporting-owner-007\",\"approved\":false,\"decidedAt\":\"2026-10-31T20:29:34.946328Z\"},\"updatedAt\":\"2026-10-31T20:29:34.946329Z\",\"continuation\":{\"checkpointId\":\"a7614541-297f-4617-a436-9f7f70b23fce\",\"checkpointRevision\":\"4cb0aad2f6652ce69479d9826521977131529167159cb5cedf6088b5dcf76c29\",\"bindingDigest\":\"3cd42c5cf5efe65c4027cf8298e28cf70ddbe699fdea0dcaf185413e7fa60d17\",\"callIndex\":0},\"resolvable\":false,\"recoveryAvailable\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d",
+      "status": 200,
+      "response": "{\"run_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"27f26b67-b2cd-4789-858e-191366406dc8\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d",
+      "status": 200,
+      "response": "{\"run_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"27f26b67-b2cd-4789-858e-191366406dc8\",\"status\":\"running\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/tool-approval/pending",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"pending\":null}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d",
+      "status": 200,
+      "response": "{\"run_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"agent_id\":\"disposable-record-agent-8790487f\",\"conversation_id\":\"27f26b67-b2cd-4789-858e-191366406dc8\",\"status\":\"done\",\"agent_revision\":\"sha256:5f02bc221d2a53e3eea310a0863f3da99253256bc036075c33b5468d919fc2dc\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-record-agent-8790487f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-execute\",\"kbd-goal\",\"kbd-goal-check\",\"kbd-handoff\",\"kbd-init\",\"kbd-inject-agent-rules\",\"kbd-memory-recall\",\"kbd-new-child\",\"kbd-new-phase\",\"kbd-next-child\",\"kbd-next-phase\",\"kbd-pause\",\"kbd-plan\",\"kbd-process-orchestrator\",\"kbd-reflect\",\"kbd-resume\",\"kbd-spec\",\"kbd-status\",\"kreuzberg\",\"kustomize-overlay\",\"learn-about-system\",\"learn-certify\",\"learn-goal\",\"learn-grade\",\"learn-harness\",\"learn-kb\",\"learn-plan\",\"learn-practice\",\"learn-retain\",\"learn-survey\",\"librefang-wasm-skill\",\"liter-llm-bridge\",\"llm-trading-agent-security\",\"llm-wiki\",\"logistics-exception-management\",\"mcp-server\",\"minimalist-ui\",\"motion-advanced\",\"motion-foundations\",\"motion-patterns\",\"native-agent\",\"nodejs-keccak256\",\"performance\",\"plan-canvas\",\"pmpo-elicit\",\"pmpo-evolver\",\"pmpo-outer-loop\",\"pmpo-skill-creator\",\"production-scheduling\",\"prometheus-context-bootstrap\",\"prometheus-entity-skills\",\"prometheus-impeccable-core\",\"prometheus-rust-auditor\",\"prometheus-ui-review\",\"prometheus-ui"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/80ceceb2-f75a-4765-80fa-ee125b90573d/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"after\":0,\"cursor\":70,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"80ceceb2-f75a-4765-80fa-ee125b90573d\",\"artifact_id\":\"run-policy-80ceceb2-f75a-4765-80fa-ee125b90573d\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-80ceceb2-f75a-4765-80fa-ee125b90573d\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-80ceceb2-f75a-4765-80fa-ee125b90573d\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-80ceceb2-f75a-4765-80fa-ee125b90573d\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-record-agent-8790487f\\\",\\\"skills\\\":\\\"Skills · auto · 212 available · agent scope\\\",\\\"tools\\\":\\\"Tools · selec"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-record-agent-8790487f",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/d4b572cf-6941-42d0-8098-f19bad922d69",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/27f26b67-b2cd-4789-858e-191366406dc8",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 83479
+  },
+  "owned_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/c38-mcp-peer/8790487f-5063-4a35-803d-31009941fafb",
+  "server_name": "c38rec8790487f",
+  "agent_id": "disposable-record-agent-8790487f",
+  "scenario_policy": {
+    "file": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/policies/c38-mcp-tool-8790487f-5063-4a35-803d-31009941fafb.cedar",
+    "principal": "disposable-record-agent-8790487f",
+    "tools": [
+      "c38rec8790487f__record_write",
+      "c38rec8790487f__record_read"
+    ]
+  },
+  "restart_enable": {
+    "previous_pid": 83479,
+    "binary_sha256": "30c7f8067e517d5707dfd55e5510f6faf079586454da5765a707dc3f2225a603",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-f38df12e-00a3-4893-9aa4-3a858d4f7b63.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 87721,
+    "new_process_ready": true
+  },
+  "peer": {
+    "url": "http://127.0.0.1:56044/mcp",
+    "pid": 87913,
+    "transport": "streamable_http_loopback",
+    "tools": [
+      "record_write",
+      "record_read"
+    ]
+  },
+  "result": "VERIFIED",
+  "restart_restore": {
+    "previous_pid": 87721,
+    "binary_sha256": "30c7f8067e517d5707dfd55e5510f6faf079586454da5765a707dc3f2225a603",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-1ce32655-da1d-40d7-88f5-08b16c39481a.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 88127,
+    "new_process_ready": true
+  },
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 46063
+}

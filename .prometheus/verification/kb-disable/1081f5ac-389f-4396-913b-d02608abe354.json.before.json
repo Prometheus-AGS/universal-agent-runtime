@@ -1,0 +1,54 @@
+{
+  "scenario": "KB-DISABLE-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "history_replayed": false,
+  "global_configuration_changes": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "KB disabling 1081f5ac-389f-4396-913b-d02608abe354",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"da546b1f-02bf-4225-a1aa-4fb4116d019e\",\"name\":\"KB disabling 1081f5ac-389f-4396-913b-d02608abe354\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-31T20:22:51.803287+00:00\",\"updated_at\":\"2026-10-31T20:22:51.803287+00:00\",\"document_count\":0}"
+    }
+  ],
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 77733
+  },
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "knowledge_base_id": "da546b1f-02bf-4225-a1aa-4fb4116d019e",
+  "profile": "lab-profile-1081f5ac-389f-4396-913b-d02608abe354",
+  "expected_seal": "KNOWLEDGE-97da29bb-cd03-49bf-9245-2ec4aa1dcd3a"
+}

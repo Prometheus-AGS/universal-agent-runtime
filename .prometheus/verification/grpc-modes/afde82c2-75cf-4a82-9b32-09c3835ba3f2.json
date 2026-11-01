@@ -1,0 +1,551 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-afde82c2"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-70d80439-d15a-4b9d-b0bf-95fd533b939c\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-afde82c2\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-70d80439-d15a-4b9d-b0bf-95fd533b939c\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:694b5b6839e74310c59db21ea4e0734a5e8bbf051479c9a88265908d41bc333f\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "SendStreamingMessage",
+      "request": {
+        "message": {
+          "message_id": "9bfe11f4-76e9-4f88-bbf1-10d271abcf89",
+          "role": "ROLE_USER",
+          "parts": [
+            {
+              "text": "What is (30 multiplied by 25) plus 301?"
+            }
+          ],
+          "context_id": ""
+        },
+        "configuration": {
+          "return_immediately": false
+        }
+      },
+      "events": [
+        {
+          "task": {
+            "artifacts": [],
+            "history": [
+              {
+                "parts": [
+                  {
+                    "metadata": null,
+                    "filename": "",
+                    "media_type": "text/plain",
+                    "text": "What is (30 multiplied by 25) plus 301?",
+                    "content": "text"
+                  }
+                ],
+                "extensions": [],
+                "reference_task_ids": [],
+                "message_id": "9bfe11f4-76e9-4f88-bbf1-10d271abcf89",
+                "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+                "task_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+                "role": "ROLE_USER",
+                "metadata": null
+              }
+            ],
+            "id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "status": {
+              "state": "TASK_STATE_WORKING",
+              "message": null,
+              "timestamp": {
+                "seconds": "1793478151",
+                "nanos": 785607000
+              }
+            },
+            "metadata": {
+              "fields": {
+                "agent_id": {
+                  "stringValue": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+                  "kind": "stringValue"
+                },
+                "canonical_path": {
+                  "stringValue": "/root",
+                  "kind": "stringValue"
+                },
+                "root_run_id": {
+                  "stringValue": "01ccb23c-19e4-41a5-ac9a-21b04b0a9be6",
+                  "kind": "stringValue"
+                },
+                "run_id": {
+                  "stringValue": "01ccb23c-19e4-41a5-ac9a-21b04b0a9be6",
+                  "kind": "stringValue"
+                },
+                "thread_id": {
+                  "stringValue": "ff7344c6-87f4-4b54-aa6d-325f04f68705",
+                  "kind": "stringValue"
+                },
+                "uar.approvals": {
+                  "listValue": {
+                    "values": []
+                  },
+                  "kind": "listValue"
+                }
+              }
+            }
+          },
+          "payload": "task"
+        },
+        {
+          "artifact_update": {
+            "task_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "artifact": {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>The task: compute (30 * 25) + 301 = 750 + 301 = 1051. Return JSON with marker and answer.</think>\n\n<think>No skill needed. Just answer.\n\n(30 * 25) + 301 = 750 + 301 = 1051.\n\nReturn JSON withmarker and answer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-70d80439-d15a-4b9d-b0bf-95fd533b939c\",\n  \"answer\": 1051\n}\n```\n\n**Calculation:** 30 × 25 = 750, then 750 + 301 = **1051**",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "artifact_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81:output",
+              "name": "",
+              "description": "",
+              "metadata": null
+            },
+            "append": false,
+            "last_chunk": true,
+            "metadata": {
+              "fields": {
+                "agent_id": {
+                  "stringValue": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+                  "kind": "stringValue"
+                },
+                "canonical_path": {
+                  "stringValue": "/root",
+                  "kind": "stringValue"
+                },
+                "root_run_id": {
+                  "stringValue": "01ccb23c-19e4-41a5-ac9a-21b04b0a9be6",
+                  "kind": "stringValue"
+                },
+                "run_id": {
+                  "stringValue": "01ccb23c-19e4-41a5-ac9a-21b04b0a9be6",
+                  "kind": "stringValue"
+                },
+                "thread_id": {
+                  "stringValue": "ff7344c6-87f4-4b54-aa6d-325f04f68705",
+                  "kind": "stringValue"
+                },
+                "uar.approvals": {
+                  "listValue": {
+                    "values": []
+                  },
+                  "kind": "listValue"
+                }
+              }
+            }
+          },
+          "payload": "artifact_update"
+        },
+        {
+          "status_update": {
+            "task_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "status": {
+              "state": "TASK_STATE_COMPLETED",
+              "message": {
+                "parts": [
+                  {
+                    "metadata": null,
+                    "filename": "",
+                    "media_type": "text/plain",
+                    "text": "<think>The task: compute (30 * 25) + 301 = 750 + 301 = 1051. Return JSON with marker and answer.</think>\n\n<think>No skill needed. Just answer.\n\n(30 * 25) + 301 = 750 + 301 = 1051.\n\nReturn JSON withmarker and answer.</think>\n\n```json\n{\n  \"marker\": \"GRPC-70d80439-d15a-4b9d-b0bf-95fd533b939c\",\n  \"answer\": 1051\n}\n```\n\n**Calculation:** 30 × 25 = 750, then 750 + 301 = **1051**",
+                    "content": "text"
+                  }
+                ],
+                "extensions": [],
+                "reference_task_ids": [],
+                "message_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81:status",
+                "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+                "task_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+                "role": "ROLE_AGENT",
+                "metadata": null
+              },
+              "timestamp": {
+                "seconds": "1793478158",
+                "nanos": 294333000
+              }
+            },
+            "metadata": {
+              "fields": {
+                "agent_id": {
+                  "stringValue": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+                  "kind": "stringValue"
+                },
+                "canonical_path": {
+                  "stringValue": "/root",
+                  "kind": "stringValue"
+                },
+                "root_run_id": {
+                  "stringValue": "01ccb23c-19e4-41a5-ac9a-21b04b0a9be6",
+                  "kind": "stringValue"
+                },
+                "run_id": {
+                  "stringValue": "01ccb23c-19e4-41a5-ac9a-21b04b0a9be6",
+                  "kind": "stringValue"
+                },
+                "thread_id": {
+                  "stringValue": "ff7344c6-87f4-4b54-aa6d-325f04f68705",
+                  "kind": "stringValue"
+                },
+                "uar.approvals": {
+                  "listValue": {
+                    "values": []
+                  },
+                  "kind": "listValue"
+                }
+              }
+            }
+          },
+          "payload": "status_update"
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "grpc": "SendStreamingMessage",
+      "request": {
+        "message": {
+          "message_id": "3018d652-83b0-427b-a4c8-9e920a7976ed",
+          "role": "ROLE_USER",
+          "parts": [
+            {
+              "text": "Add 53 to your previous answer."
+            }
+          ],
+          "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81"
+        },
+        "configuration": {
+          "return_immediately": false
+        }
+      },
+      "events": [
+        {
+          "task": {
+            "artifacts": [],
+            "history": [
+              {
+                "parts": [
+                  {
+                    "metadata": null,
+                    "filename": "",
+                    "media_type": "text/plain",
+                    "text": "Add 53 to your previous answer.",
+                    "content": "text"
+                  }
+                ],
+                "extensions": [],
+                "reference_task_ids": [],
+                "message_id": "3018d652-83b0-427b-a4c8-9e920a7976ed",
+                "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+                "task_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e",
+                "role": "ROLE_USER",
+                "metadata": null
+              }
+            ],
+            "id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e",
+            "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "status": {
+              "state": "TASK_STATE_WORKING",
+              "message": null,
+              "timestamp": {
+                "seconds": "1793478158",
+                "nanos": 443323000
+              }
+            },
+            "metadata": {
+              "fields": {
+                "agent_id": {
+                  "stringValue": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+                  "kind": "stringValue"
+                },
+                "canonical_path": {
+                  "stringValue": "/root",
+                  "kind": "stringValue"
+                },
+                "root_run_id": {
+                  "stringValue": "66b01525-c81e-4116-9de8-42ecd17e247f",
+                  "kind": "stringValue"
+                },
+                "run_id": {
+                  "stringValue": "66b01525-c81e-4116-9de8-42ecd17e247f",
+                  "kind": "stringValue"
+                },
+                "thread_id": {
+                  "stringValue": "cfe80413-1020-40c7-a3b4-134ada1052ec",
+                  "kind": "stringValue"
+                },
+                "uar.approvals": {
+                  "listValue": {
+                    "values": []
+                  },
+                  "kind": "listValue"
+                }
+              }
+            }
+          },
+          "payload": "task"
+        },
+        {
+          "artifact_update": {
+            "task_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e",
+            "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "artifact": {
+              "parts": [
+                {
+                  "metadata": null,
+                  "filename": "",
+                  "media_type": "text/plain",
+                  "text": "<think>1051 + 53 = 1104.</think>\n\n```json\n{\n  \"marker\": \"GRPC-70d80439-d15a-4b9d-b0bf-95fd533b939c\",\n  \"answer\": 1104\n}\n```\n\n**Calculation:** 1051 + 53 = **1104**",
+                  "content": "text"
+                }
+              ],
+              "extensions": [],
+              "artifact_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e:output",
+              "name": "",
+              "description": "",
+              "metadata": null
+            },
+            "append": false,
+            "last_chunk": true,
+            "metadata": {
+              "fields": {
+                "agent_id": {
+                  "stringValue": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+                  "kind": "stringValue"
+                },
+                "canonical_path": {
+                  "stringValue": "/root",
+                  "kind": "stringValue"
+                },
+                "root_run_id": {
+                  "stringValue": "66b01525-c81e-4116-9de8-42ecd17e247f",
+                  "kind": "stringValue"
+                },
+                "run_id": {
+                  "stringValue": "66b01525-c81e-4116-9de8-42ecd17e247f",
+                  "kind": "stringValue"
+                },
+                "thread_id": {
+                  "stringValue": "cfe80413-1020-40c7-a3b4-134ada1052ec",
+                  "kind": "stringValue"
+                },
+                "uar.approvals": {
+                  "listValue": {
+                    "values": []
+                  },
+                  "kind": "listValue"
+                }
+              }
+            }
+          },
+          "payload": "artifact_update"
+        },
+        {
+          "status_update": {
+            "task_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e",
+            "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+            "status": {
+              "state": "TASK_STATE_COMPLETED",
+              "message": {
+                "parts": [
+                  {
+                    "metadata": null,
+                    "filename": "",
+                    "media_type": "text/plain",
+                    "text": "<think>1051 + 53 = 1104.</think>\n\n```json\n{\n  \"marker\": \"GRPC-70d80439-d15a-4b9d-b0bf-95fd533b939c\",\n  \"answer\": 1104\n}\n```\n\n**Calculation:** 1051 + 53 = **1104**",
+                    "content": "text"
+                  }
+                ],
+                "extensions": [],
+                "reference_task_ids": [],
+                "message_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e:status",
+                "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+                "task_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e",
+                "role": "ROLE_AGENT",
+                "metadata": null
+              },
+              "timestamp": {
+                "seconds": "1793478161",
+                "nanos": 305862000
+              }
+            },
+            "metadata": {
+              "fields": {
+                "agent_id": {
+                  "stringValue": "disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+                  "kind": "stringValue"
+                },
+                "canonical_path": {
+                  "stringValue": "/root",
+                  "kind": "stringValue"
+                },
+                "root_run_id": {
+                  "stringValue": "66b01525-c81e-4116-9de8-42ecd17e247f",
+                  "kind": "stringValue"
+                },
+                "run_id": {
+                  "stringValue": "66b01525-c81e-4116-9de8-42ecd17e247f",
+                  "kind": "stringValue"
+                },
+                "thread_id": {
+                  "stringValue": "cfe80413-1020-40c7-a3b4-134ada1052ec",
+                  "kind": "stringValue"
+                },
+                "uar.approvals": {
+                  "listValue": {
+                    "values": []
+                  },
+                  "kind": "listValue"
+                }
+              }
+            }
+          },
+          "payload": "status_update"
+        }
+      ],
+      "status": {
+        "code": 0
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-afde82c2-75cf-4a82-9b32-09c3835ba3f2",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    1051,
+    1104
+  ],
+  "streams": [
+    {
+      "task_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+      "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+      "events": [
+        "task",
+        "artifact_update",
+        "status_update"
+      ]
+    },
+    {
+      "task_id": "a2a-c84cd7f7ef6dd90510a8c2b01ef7ac4031ebbd86919a463bc2f018c90abbdc2e",
+      "context_id": "a2a-84bcb827964cf00efa3a44a82b9156d26a1d7e451a112c8d09876d69bf28fa81",
+      "events": [
+        "task",
+        "artifact_update",
+        "status_update"
+      ]
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-v1-stream",
+  "scenario_status": "PASSED",
+  "duration_ms": 9765
+}

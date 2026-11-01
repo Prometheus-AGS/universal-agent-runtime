@@ -1,0 +1,168 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "non-streamed-acp-request-returns-the-agent's-answer;a-non-streaming-acp-client-gets-the-default-agent's-answer",
+        "keyword": "Scenario Outline",
+        "line": 10,
+        "name": "A non-streaming ACP client gets the default agent's answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 36199296
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "an ACP session targets the default agent",
+            "match": {
+              "location": "scripts/behaviors/steps/acp-json.steps.mjs:51"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1741969320
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the client sends a fresh calculation with a non-streamed ACP runs/create",
+            "match": {
+              "location": "scripts/behaviors/steps/acp-json.steps.mjs:73"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3033506752
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "an ACP response delivers the completed run's correct answer to the client",
+            "match": {
+              "location": "scripts/behaviors/steps/acp-json.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6411237
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hY3AtanNvbi84MTdhN2FjMi04ZWMxLTQ5ZjUtYmUwNC0yOTQ2ZTQ0MDQzOTEuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@acp",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "non-streamed-acp-request-returns-the-agent's-answer;a-non-streaming-acp-client-gets-the-custom-agent's-answer",
+        "keyword": "Scenario Outline",
+        "line": 11,
+        "name": "A non-streaming ACP client gets the custom agent's answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 43102407
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "an ACP session targets the custom agent",
+            "match": {
+              "location": "scripts/behaviors/steps/acp-json.steps.mjs:51"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1480808970
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "the client sends a fresh calculation with a non-streamed ACP runs/create",
+            "match": {
+              "location": "scripts/behaviors/steps/acp-json.steps.mjs:73"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2057294440
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "an ACP response delivers the completed run's correct answer to the client",
+            "match": {
+              "location": "scripts/behaviors/steps/acp-json.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 65185074
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hY3AtanNvbi82Mjc2NjMwMy0xMGI4LTQwMGItOGI2Yi1hNGI5NmU4ZjMyNDkuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@acp",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "non-streamed-acp-request-returns-the-agent's-answer",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Non-streamed ACP request returns the agent's answer",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@acp",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/acp-json.feature"
+  }
+]

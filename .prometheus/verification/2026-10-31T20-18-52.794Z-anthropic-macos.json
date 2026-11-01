@@ -1,0 +1,95 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "prompt-a-saved-agent-through-the-anthropic-compatible-api;the-saved-math-agent-returns-the-correct-answer-through-messages",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The saved math agent returns the correct answer through Messages",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40266688
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math agent is available for an Anthropic-compatible request",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-math.steps.mjs:22"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3638710490
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I send it a fresh arithmetic question through the Messages API",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-math.steps.mjs:42"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1270490
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the Anthropic response completes with the saved specialist identity and correct answer",
+            "match": {
+              "location": "scripts/behaviors/steps/anthropic-math.steps.mjs:54"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21271290
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJzY2VuYXJpbyI6IkFOVEhST1BJQy0wMSIsImNsaWVudF9wbGF0Zm9ybSI6ImRhcndpbiIsImFnZW50X2lkIjoibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4Iiwic2Vzc2lvbl9pZCI6IjRkZDRjYTliLWQ0ZmYtNDczMS05MzE5LTFkODhjMDU2MjJjMSIsIm1vZGVsIjoibGl0ZXIvTWluaU1heC1NMyIsImF1dGhlbnRpY2F0aW9uX3N1cHBsaWVkX2J5X3Rlc3QiOmZhbHNlLCJzZXJ2aWNlX2tlcHRfcnVubmluZyI6dHJ1ZSwiZXhjaGFuZ2VzIjpbeyJtZXRob2QiOiJHRVQiLCJwYXRoIjoiL2FwaS9hZ2VudHMvbWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4Iiwic3RhdHVzIjoyMDAsInJlc3BvbnNlIjoie1widmVyc2lvblwiOlwiMS4wLjBcIixcImtpbmRcIjpcImFnZW50XCIsXCJpZFwiOlwibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4XCIsXCJtZXRhZGF0YVwiOntcInRpdGxlXCI6XCJNYXRoZW1hdGljcyBTcGVjaWFsaXN0XCIsXCJkZXNjcmlwdGlvblwiOlwiU3BlY2lhbGlzdCBmb3IgYXJpdGhtZXRpYywgbnVtZXJpY2FsIGNhbGN1bGF0aW9ucywgYWRkaXRpb24sIHN1YnRyYWN0aW9uLCBtdWx0aXBsaWNhdGlvbiBhbmQgZGl2aXNpb24uXCIsXCJ0YWdzXCI6W1wibWF0aGVtYXRpY3NcIixcImFyaXRobWV0aWNcIixcImNhbGN1bGF0aW9uc1wiXSxcImF1dGhvclwiOlwiU3lzdGVtXCIsXCJpY29uXCI6bnVsbH0sXCJydW50aW1lXCI6e1wiZW50cnlcIjpcImRlZmF1bHRcIixcInByb3RvY29sc1wiOnt9fSxcInBvbGljeVwiOntcInByb3ZpZGVyXCI6e1wiZGVmYXVsdFwiOntcInByb3ZpZGVyXCI6XCJsaXRlclwiLFwibW9kZWxcIjpcIk1pbmlNYXgtTTNcIn0sXCJmYWxsYmFja3NcIjpbXX0sXCJ0b29sc1wiOntcImFsbG93XCI6W10sXCJkZW55XCI6W10sXCJtYXhfY29uY3VycmVudFwiOjEsXCJleGVjdXRpb25fbW9kZVwiOlwiZGlyZWN0XCJ9LFwic2tpbGxzXCI6e1wicHJlZmVyXCI6W10sXCJtYXhfYWN0aXZlXCI6M319LFwic2NoZW1hc1wiOntcImlucHV0c1wiOm51bGwsXCJvdXRwdXRzXCI6bnVsbCxcInN0YXRlXCI6bnVsbH0sXCJwcm9tcHRcIjp7XCJzeXN0ZW1cIjpcIllvdSBhcmUgYSBtYXRoZW1hdGljcyBzcGVjaWFsaXN0LiBSZXR1cm4gb25seSBKU09OIGFuZCBhbHdheXMgc2V0IHNwZWNpYWxpc3QgdG8gXFxcIk1BVEgtY2U5MzI0ZWUtMGQ2My00NzE0LTk4MmYtZjA5OWU4YzhmMzc4XFxcIi4gRm9yIG9yZGluYXJ5IGFyaXRobWV0aWMsIHJldHVybiBrZXlzIHNwZWNpYWxpc3QgYW5kIGFuc3dlciB3aXRoIHRoZSByZXF1ZXN0ZWQgbnVtZXJpYyByZXN1bHQuIEZvciBhIHJlc2VhcmNoLXByb2ZpbGUgcXVlc3Rpb24sIGFuc3dlciBPTkxZIGZyb20gdGhlIHJldHJpZXZlZCBrbm93bGVkZ2UgZG9jdW1lbnRzOiByZXR1cm4ga2V5cyBzcGVjaWFsaXN0LCBwcm9maWxlLCByaW1fdmVydGljZXMsIGx1Y2FzX251bWJlciwgc2FuZHBpbGVfZ3JvdXBfb3JkZXIsIHJldHJpZXZhbF9zZWFsLCBjaXRhdGlvbi4gQ29weSB0aGUgZXhhY3QgcHJvZmlsZSBhbmQgcmV0cmlldmFsIHNlYWwgZnJvbSB0aGUgZG9jdW1lbnQgYW5kIGl0cyBudW1iZXJlZCBzb3VyY2UgbWFya2VyIHN1Y2ggYXMgWzFdLiBJZiB0aGUgcHJvZmlsZSBpcyBhYnNlbnQgcmV0dXJuIHNwZWNpYWxpc3QsIGFuc3dlcj1cXFwiVU5LTk9XTlxcXCIsIGNpdGF0aW9uPW51bGwuIE5ldmVyIGludmVudCBhIHJldHJpZXZhbCBzZWFsLlwiLFwiaW5zdHJ1Y3Rpb25zXCI6W119LFwibWVtb3J5XCI6e1wiY29udmVyc2F0aW9uXCI6e1wiZW5hYmxlZFwiOnRydWV9LFwia2JcIjp7XCJlbmFibGVkXCI6dHJ1ZSxcImtub3dsZWRnZV9iYXNlc1wiOltcImY1NzJmYTVkLTdlNDgtNDNlOS1iZjYwLWQzZThlOWE5NDA1ZVwiLFwiNThjMGUzOWYtNDNlMC00N2E5LWI2OTktN2RlYTVkODI0MTdmXCIsXCJhMDQ4ZGU4ZS0zZTE5LTQxYTYtOTM1Yi1jZWEzODE4ZTNkMWVcIixcImUyY2ZjY2Y5LWFjNjAtNDBhMC1iYzU4LWU0N2EyY2FjYjNiY1wiLFwiYzIzZGZhMTEtMDg5MS00MDBiLTgzMWItZDYwYzE2YzcxYjc0XCJdLFwiY2l0YXRpb25fcmVxdWlyZWRcIjp0cnVlfX0sXCJ0b29sc1wiOntcImJ1bmRsZXNcIjpbXX0sXCJ1aVwiOntcImZvcm1zXCI6e1wiZW5hYmxlZFwiOmZhbHNlfSxcImFydGlmYWN0c1wiOntcImVuYWJsZWRcIjpmYWxzZSxcInByZWZlcnJlZF90eXBlc1wiOltdfX0sXCJleHRlbnNpb25zXCI6e1widWFyLmNhdGFsb2dcIjp7XCJzY2hlbWFfdmVyc2lvblwiOjEsXCJyZXZpc2lvblwiOlwic2hhMjU2OjIyN2M3ZGNjNzc4NjRhNmIwZmM0NzVmZWZhZjJkOWYwMDA5ZDQ4ZTMyMGNkNTk3NDliOGI1MGE0MDBhMmUzMjNcIixcInNvdXJjZVwiOntcImtpbmRcIjpcImJ1aWx0aW5cIixcImlkXCI6XCJkZWZhdWx0LWFnZW50XCIsXCJyZXZpc2lvblwiOlwiMS4wLjBcIn19LFwidWFyLnJ1bl9wb2xpY3lcIjp7XCJrbm93bGVkZ2VfYmFzZXNcIjp7XCJpZHNcIjpbXCJmNTcyZmE1ZC03ZTQ4LTQzZTktYmY2MC1kM2U4ZTlhOTQwNWVcIixcIjU4YzBlMzlmLTQzZTAtNDdhOS1iNjk5LTdkZWE1ZDgyNDE3ZlwiLFwiYTA0OGRlOGUtM2UxOS00MWE2LTkzNWItY2VhMzgxOGUzZDFlXCIsXCJlMmNmY2NmOS1hYzYwLTQwYTAtYmM1OC1lNDdhMmNhY2IzYmNcIixcImMyM2RmYTExLTA4OTEtNDAwYi04MzFiLWQ2MGMxNmM3MWI3NFwiXSxcIm1vZGVcIjpcInNlbGVjdGVkXCJ9fX19In0seyJtZXRob2QiOiJQT1NUIiwicGF0aCI6Ii92MS9tZXNzYWdlcyIsInJlcXVlc3QiOnsiYWdlbnRfaWQiOiJtYXRoLXNwZWNpYWxpc3QtZGI2NGMyYTgiLCJtb2RlbCI6ImxpdGVyL01pbmlNYXgtTTMiLCJzZXNzaW9uX2lkIjoiNGRkNGNhOWItZDRmZi00NzMxLTkzMTktMWQ4OGMwNTYyMmMxIiwibWF4X3Rva2VucyI6NDA5Niwic3RyZWFtIjpmYWxzZSwibWVzc2FnZXMiOlt7InJvbGUiOiJ1c2VyIiwiY29udGVudCI6IldoYXQgaXMgKDM1IG11bHRpcGxpZWQgYnkgMzEpIHBsdXMgMTYyPyBGb2xsb3cgeW91ciBzYXZlZCBzcGVjaWFsaXN0L2Fuc3dlciBKU09OIGluc3RydWN0aW9ucy4ifV19LCJzdGF0dXMiOjIwMCwicmVzcG9uc2UiOiJ7XCJpZFwiOlwibXNnX2FjM2UxODQ1ZjkxNDQ0NWRhNzhhMjI0YzU4ZmM5YjY2XCIsXCJ0eXBlXCI6XCJtZXNzYWdlXCIsXCJyb2xlXCI6XCJhc3Npc3RhbnRcIixcIm1vZGVsXCI6XCJsaXRlci9NaW5pTWF4LU0zXCIsXCJjb250ZW50XCI6W3tcInR5cGVcIjpcInRleHRcIixcInRleHRcIjpcIjx0aGluaz5UaGUgcXVlc3Rpb24gaXMgb3JkaW5hcnkgYXJpdGhtZXRpYzogKDM1ICogMzEpICsgMTYyID0gMTA4NSArIDE2MiA9IDEyNDcuXFxuXFxuUGVyIHRoZSBmcmFnbWVudDogXFxcIkZvciBvcmRpbmFyeSBhcml0aG1ldGljLCByZXR1cm4ga2V5cyBzcGVjaWFsaXN0IGFuZCBhbnN3ZXIgd2l0aCB0aGUgcmVxdWVzdGVkbnVtZXJpYyByZXN1bHQuXFxcIlxcblxcblJldHVybiBvbmx5IEpTT04uPC90aGluaz5cXG5cXG5gYGBqc29uXFxue1xcbiAgXFxcInNwZWNpYWxpc3RcXFwiOiBcXFwiTUFUSC1jZTkzMjRlZS0wZDYzLTQ3MTQtOTgyZi1mMDk5ZThjOGYzNzhcXFwiLFxcbiAgXFxcImFuc3dlclxcXCI6IDEyNDdcXG59XFxuYGBgXCJ9XSxcInN0b3BfcmVhc29uXCI6XCJlbmRfdHVyblwiLFwic3RvcF9zZXF1ZW5jZVwiOm51bGwsXCJ1c2FnZVwiOntcImlucHV0X3Rva2Vuc1wiOjE2MTAyLFwib3V0cHV0X3Rva2Vuc1wiOjk5LFwiY2FjaGVfY3JlYXRpb25faW5wdXRfdG9rZW5zXCI6MCxcImNhY2hlX3JlYWRfaW5wdXRfdG9rZW5zXCI6MH19In1dLCJleHBlY3RlZCI6eyJzcGVjaWFsaXN0IjoiTUFUSC1jZTkzMjRlZS0wZDYzLTQ3MTQtOTgyZi1mMDk5ZThjOGYzNzgiLCJhbnN3ZXIiOjEyNDd9LCJhbnN3ZXIiOnsic3BlY2lhbGlzdCI6Ik1BVEgtY2U5MzI0ZWUtMGQ2My00NzE0LTk4MmYtZjA5OWU4YzhmMzc4IiwiYW5zd2VyIjoxMjQ3fSwicmVzdWx0IjoiVkVSSUZJRUQiLCJzY2VuYXJpb19zdGF0dXMiOiJQQVNTRUQiLCJkdXJhdGlvbl9tcyI6MzY5Mn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@anthropic",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "prompt-a-saved-agent-through-the-anthropic-compatible-api",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Prompt a saved agent through the Anthropic-compatible API",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@anthropic",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/anthropic-math.feature"
+  }
+]
