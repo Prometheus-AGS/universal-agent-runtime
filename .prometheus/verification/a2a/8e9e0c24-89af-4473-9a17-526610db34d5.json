@@ -1,0 +1,55 @@
+{
+  "scenario": "A2A-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "A2A v1 JSON-RPC SendMessage",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"mode\":\"selected\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:227c7dcc77864a6b0fc475fefaf2d9f0009d48e320cd59749b8b50a400a2e323\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/v1/agents/math-specialist-db64c2a8",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "8e9e0c24-89af-4473-9a17-526610db34d5",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "messageId": "54fea863-07f9-4360-9732-895da08d97a9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "What is (48 multiplied by 28) plus 371? Follow your saved specialist/answer JSON instructions."
+              }
+            ]
+          },
+          "configuration": {
+            "returnImmediately": false
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"8e9e0c24-89af-4473-9a17-526610db34d5\",\"result\":{\"task\":{\"id\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"contextId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"status\":{\"state\":\"TASK_STATE_COMPLETED\",\"timestamp\":\"2026-10-31T20:16:58.226Z\",\"message\":{\"messageId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64:status\",\"taskId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"contextId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"role\":\"ROLE_AGENT\",\"parts\":[{\"text\":\"<think>The question is simple arithmetic: 48 * 28 = 1344; 1344 + 371 = 1715.\\n\\nPer the specialist instructions, for ordinary arithmetic return keys specialist and answer with the requested numeric result.\\n\\nAlso the question says \\\"Follow your saved specialist/answer JSON instructions.\\\" Let me check memory recall? The instructions say return only JSON with specialist and answer. Let me also check memory for saved instructions — but the fragment already specifies. I'll just return the JSON.\\n\\nMaybe I should check native__memory_recall for saved instructions. The fragment says \\\"saved specialist/answer JSON instructions\\\" — the agent identity fragment covers it. But to be safe, I could recall memory. Let me do a quick recall to verify there aren't conflicting saved instructions.\\n\\nLet me do the recall and memory list in parallel.</think>\\n\\n<think>Memory is disabled. So rely on the identity fragment.\\n\\n48 * 28 = 1344. 1344 + 371 = 1715.\\n\\nReturn JSON withspecialist and answer.</think>\\n\\n```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 1715\\n}\\n```\\n\\n**Work:** 48 × 28 = 1344; 1344 + 371 = **1715**.\\n\\n(Note: the native memory tools returned `memory_disabled`, so the saved instructions were taken from the active specialist profile rather than recalled memory.)\"}],\"metadata\":{}}},\"history\":[{\"messageId\":\"54fea863-07f9-4360-9732-895da08d97a9\",\"taskId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"contextId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"role\":\"ROLE_USER\",\"parts\":[{\"text\":\"What is (48 multiplied by 28) plus 371? Follow your saved specialist/answer JSON instructions.\"}],\"metadata\":{}},{\"messageId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64:1\",\"taskId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"contextId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64\",\"role\":\"ROLE_AGENT\",\"parts\":[{\"text\":\"<think>The question is simple arithmetic: 48 * 28 = 1344; 1344 + 371 = 1715.\\n\\nPer the specialist instructions, for ordinary arithmetic return keys specialist and answer with the requested numeric result.\\n\\nAlso the question says \\\"Follow your saved specialist/answer JSON instructions.\\\" Let me check memory recall? The instructions say return only JSON with specialist and answer. Let me also check memory for saved instructions — but the fragment already specifies. I'll just return the JSON.\\n\\nMaybe I should check native__memory_recall for saved instructions. The fragment says \\\"saved specialist/answer JSON instructions\\\" — the agent identity fragment covers it. But to be safe, I could recall memory. Let me do a quick recall to verify there aren't conflicting saved instructions.\\n\\nLet me do the recall and memory list in parallel.</think>\\n\\n<think>Memory is disabled. So rely on the identity fragment.\\n\\n48 * 28 = 1344. 1344 + 371 = 1715.\\n\\nReturn JSON withspecialist and answer.</think>\\n\\n```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 1715\\n}\\n```\\n\\n**Work:** 48 × 28 = 1344; 1344 + 371 = **1715**.\\n\\n(Note: the native memory tools returned `memory_disabled`, so the saved instructions were taken from the active specialist profile rather than recalled memory.)\"}],\"metadata\":{}}],\"artifacts\":[{\"artifactId\":\"a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64:output\",\"parts\":[{\"text\":\"<think>The question is simple arithmetic: 48 * 28 = 1344; 1344 + 371 = 1715.\\n\\nPer the specialist instructions, for ordinary arithmetic return keys specialist and answer with the requested numeric result.\\n\\nAlso the question says \\\"Follow your saved specialist/answer JSON instructions.\\\" Let me check memory recall? The instructions say return only JSON with specialist and answer. Let me also check memory for saved instructions — but the fragment already specifies. I'll just return the JSON.\\n\\nMaybe I should check native__memory_recall for saved instructions. The fragment says \\\"saved specialist/answer JSON instructions\\\" — the agent identity fragment covers it. But to be safe, I could recall memory. Let me do a quick recall to verify there aren't conflicting saved instructions.\\n\\nLet me do the recall and memory list in parallel.</think>\\n\\n<think>Memory is disabled. So rely on the identity fragment.\\n\\n48 * 28 = 1344. 1344 + 371 = 1715.\\n\\nReturn JSON withspecialist and answer.</think>\\n\\n```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 1715\\n}\\n```\\n\\n**Work:** 48 × 28 = 1344; 1344 + 371 = **1715**.\\n\\n(Note: the native memory tools returned `memory_disabled`, so the saved instructions were taken from the active specialist profile rather than recalled memory.)\"}]}],\"metadata\":{\"agent_id\":\"math-specialist-db64c2a8\",\"thread_id\":\"756332fd-76d2-43c0-bebb-d679d3e79dc0\",\"canonical_path\":\"/root\",\"root_run_id\":\"89af08a9-3c1b-4f65-a885-a0e62510e521\",\"uar.approvals\":[],\"run_id\":\"89af08a9-3c1b-4f65-a885-a0e62510e521\"}}}}"
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1715
+  },
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1715
+  },
+  "task_id": "a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64",
+  "context_id": "a2a-121d954e5110e37368cab54ea943f3f781a2b1f0fc9ed4d442ae7a6e55d2ba64",
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 8448
+}

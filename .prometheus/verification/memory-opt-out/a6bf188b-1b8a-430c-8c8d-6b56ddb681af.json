@@ -1,0 +1,576 @@
+{
+  "scenario": "E03-MEMORY-OPT-OUT-RESTART",
+  "scope": "opt-out-survives-restart half; retention expiry deferred until genuinely aged data exists",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "conversations": {
+    "tell_first": {
+      "session_id": "bc83083d-a67b-4adc-a8bb-750d0cf40a19",
+      "memory_context": [],
+      "errors": [],
+      "answer": "Nothing in my memory about your locker, so here's a general scheme you can adapt — using **LOCKER-D992FC** as the label prefix so anything taken out is traceable back to its home.\n\n**1. Label everything with the code**\n- `LOCKER-D992FC / A-03` → zone + bin number.\n- Label the front *and* the back of each container, so you can read it from either direction.\n- Keep a single index sheet (or a photo of it on your phone) mapping `A-01 → seasonal gear`.\n\n**2. Divide into zones by frequency of use**\n| Zone | Contents | Rule |\n|---|---|---|\n| A | In-season / currently in use | Restock weekly, everything else is a violation |\n| B | Off-season (by category: summer, winter, sports…) | Label the bin with the season |\n| C | Archive / overflow | Box, tape shut, no rummaging |\n| D | Bulky & irregular (gear, tools, suitcase) | Floor level only |\n\n**3. Containers, not bags**\n- Uniform clear totes with clip lids — you can't label a duffel meaningfully and you can't see into it.\n- One category per tote, "
+    },
+    "ask_first": {
+      "session_id": "302440e0-6044-4bdb-a51b-29890719853b",
+      "memory_context": [],
+      "errors": [],
+      "answer": "Your storage locker code is **LOCKER-D992FC**."
+    },
+    "warmup_after_after_opt_out": {
+      "session_id": "a35d94e4-688f-47b0-81f6-e92083ac0423",
+      "memory_context": [],
+      "errors": [],
+      "answer": "Hello! What can I help you with today?"
+    },
+    "tell_second": {
+      "session_id": "d81e4489-8bb3-460f-b065-fa20f34457d4",
+      "memory_context": [],
+      "errors": [],
+      "answer": "Noted on the gate code — I'll leave it out of any stored notes and won't repeat it back.\n\nNo stored context on your shed, so here's a general-purpose layout that works for most ones:\n\n**Zone by how often and how dirty things get**\n- **Front/active zone** (nearest door): current-season tools, mower fuel, things used weekly.\n- **Middle zone**: general tools, hardware, materials.\n- **Back/one-way zone**: seasonal overflow, rarely used, duplicates.\n\n**Zone by category within each area**\nPower tools / hand tools / fasteners / soil & compost / irrigation / pots & trays / chemicals & pest control / children's stuff. Keeping categories in separate zones means you're not digging through a bin of screws to find a spade.\n\n**Vertical space is the real win**\n- Pegboard or slatwall on the back wall for hand tools (hanging beats stacking — no duplicates, no rust).\n- Shelf brackets for lumber and long timber stored horizontally on wall-mounted brackets, not on the floor.\n- Overhead rafters for light, "
+    },
+    "ask_second": {
+      "session_id": "e1846e1d-730f-44fc-b19d-a5e8271c021b",
+      "memory_context": [],
+      "errors": [],
+      "answer": "UNKNOWN"
+    }
+  },
+  "restarts": {
+    "enable": {
+      "previous_pid": 90823,
+      "binary_sha256": "30c7f8067e517d5707dfd55e5510f6faf079586454da5765a707dc3f2225a603",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-d2bbee35-ce40-45fb-b2c0-3188f11e6a58.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 91880,
+      "new_process_ready": true
+    },
+    "after_opt_out": {
+      "previous_pid": 91880,
+      "binary_sha256": "30c7f8067e517d5707dfd55e5510f6faf079586454da5765a707dc3f2225a603",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-9ccbacbe-a25a-4809-afc6-215405c6a11d.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 92852,
+      "new_process_ready": true
+    },
+    "restore": {
+      "previous_pid": 92852,
+      "binary_sha256": "30c7f8067e517d5707dfd55e5510f6faf079586454da5765a707dc3f2225a603",
+      "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+      "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+      "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+      "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-49d639f1-a65a-41db-8dd1-a1ec82625cb0.log",
+      "stop_signal": "SIGTERM",
+      "store_preserved": true,
+      "previous_process_exited": true,
+      "new_pid": 95034,
+      "new_process_ready": true
+    }
+  },
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-31T20:31:21.919781000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:21.919781Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:31:21.962778000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:21.962778Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-31T20:31:21.919781000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:21.919781Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-31T20:31:21.919781000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:31:38.501123000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:38.501123Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:31:21.962778000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:21.962778Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-31T20:31:21.962778000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:31:38.569435000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:38.569435Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":17,\"consent_epoch\":10,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-opt-out-agent-a6bf188b",
+        "metadata": {
+          "title": "Disposable Memory Agent",
+          "description": "Remembers what the user tells it.",
+          "tags": [
+            "memory"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {}
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-opt-out-agent-a6bf188b\",\"metadata\":{\"title\":\"Disposable Memory Agent\",\"description\":\"Remembers what the user tells it.\",\"tags\":[\"memory\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered. When asked about the user, use only facts from memory. If memory does not contain the answer, reply exactly UNKNOWN. Never guess.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:90c4e729231afe64d44576326b8e45e5f511a2cd8e3974e91a12f9ee7534ca4e\",\"source\":{\"kind\":\"uar_api\",\"id\":\"disposable-opt-out-agent-a6bf188b\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": true,
+        "retention": {
+          "kind": "days",
+          "days": 30
+        }
+      },
+      "status": 200,
+      "response": "{\"enabled\":true,\"retention\":{\"kind\":\"days\",\"days\":30},\"revision\":18,\"consent_epoch\":10,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":19,\"consent_epoch\":11,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/policy",
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":19,\"consent_epoch\":11,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/memory/records/memory:capture-5c3e9c18dd62f51d23871e1dd6eddf447b3a7564cbd8660bcece4b5ddea50143",
+      "status": 200,
+      "response": "{\"id\":\"memory:capture-5c3e9c18dd62f51d23871e1dd6eddf447b3a7564cbd8660bcece4b5ddea50143\",\"deleted\":true,\"purge\":\"pending\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/records",
+      "status": 200,
+      "response": "{\"memories\":[{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"capture-1d19e58084645d5462b43e106d04503eb9bf2b29eea940cf9fb2e03fad0f9484\"}},\"content\":\"<think>The user just said \\\"Hello.\\\" Simple greeting. Respond briefly and friendly. No need for tools.\\n\\nNote the policy: \\\"Answer briefly. Never save or delete memories yourself; the host decides what is remembered.\\\"\\n\\nJust reply with a greeting and offer help.</think>\\n\\nHello! What can I help you with today?\",\"embedding\":[-0.0937550738453865,0.055445827543735504,0.06332074105739594,-0.04132133349776268,-0.0013193472987040877,-0.04770945385098457,0.08575230091810226,0.017781255766749382,0.010417453944683075,-0.01888320967555046,0.00790475308895111,0.013415460474789143,0.05384962260723114,0.06748702377080917,0.014336328953504562,0.0323713943362236,0.01689079962670803,-0.0019002297194674611,-0.04566662386059761,0.05096558853983879,0.030913179740309715,-0.02617517299950123,-0.03402851149439812,0.017245611175894737,-0.032430026680231094,-0.01992776058614254,-0.035680633038282394,-0.022755229845643044,-0.010464528575539589,-0.11769632995128632,0.0032240678556263447,0.0036989578511565924,0.0076860846020281315,-0.048266805708408356,-0.011489134281873703,0.017843302339315414,0.02954442799091339,-0.02585599571466446,-0.06862664967775345,0.0430627204477787,0.029351579025387764,0.010217148810625076,0.02065396122634411,0.02720433846116066,-0.005180145148187876,-0.04539518803358078,0.06041348725557327,-0.013659625314176083,0.042411819100379944,-0.033913712948560715,0.006251923739910126,0.048858921974897385,-0.035453371703624725,-0.04576656594872475,0.024976743385195732,0.08514183014631271,0.05537639185786247,0.0013532019220292568,-0.004991824738681316,-0.0005857190699316561,0.05514442175626755,0.007668116129934788,-0.10514798015356064,0.08724264800548553,-0.051255542784929276,0.02471376582980156,-0.021484026685357094,0.04431275278329849,-0.05660024285316467,0.07196921110153198,-0.045692648738622665,0.01662004552781582,-0.00984116829931"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/memory/policy",
+      "request": {
+        "enabled": false,
+        "retention": null
+      },
+      "status": 200,
+      "response": "{\"enabled\":false,\"retention\":null,\"revision\":20,\"consent_epoch\":12,\"host_capture_enabled\":true}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-opt-out-agent-a6bf188b",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/bc83083d-a67b-4adc-a8bb-750d0cf40a19",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/302440e0-6044-4bdb-a51b-29890719853b",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/a35d94e4-688f-47b0-81f6-e92083ac0423",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/d81e4489-8bb3-460f-b065-fa20f34457d4",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/e1846e1d-730f-44fc-b19d-a5e8271c021b",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.enabled",
+      "status": 200,
+      "response": "{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:31:38.501123000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:38.501123Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.enabled",
+      "request": {
+        "value": false,
+        "expected_revision": "2026-10-31T20:31:38.501123000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.enabled\",\"namespace\":\"memory\",\"setting\":{\"id\":\"48a91d98-5a1b-4758-8ddc-4b3de186b957\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Enable Memory\",\"key\":\"memory.enabled\",\"data\":false,\"saved\":false,\"effective\":false,\"revision\":\"2026-10-31T20:34:35.956691000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:34:35.956691Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.enabled\":\"restart_required\"}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "status": 200,
+      "response": "{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:31:38.569435000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:31:38.569435Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/memory.auto_capture",
+      "request": {
+        "value": true,
+        "expected_revision": "2026-10-31T20:31:38.569435000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"memory.auto_capture\",\"namespace\":\"memory\",\"setting\":{\"id\":\"0c362b11-f05b-4b9a-901c-7c1cfb142bdc\",\"settings_type_id\":\"7292e512-4e60-4748-a554-ba94f4edf8db\",\"name\":\"Auto-capture\",\"key\":\"memory.auto_capture\",\"data\":true,\"saved\":true,\"effective\":true,\"revision\":\"2026-10-31T20:34:35.999299000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-27T16:04:33.150521Z\",\"updated_at\":\"2026-10-31T20:34:35.999299Z\",\"source\":\"Api\",\"is_drift\":false},\"activation\":{\"memory.auto_capture\":\"restart_required\"}}"
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 90823
+  },
+  "original_policy": {
+    "enabled": false,
+    "retention": null,
+    "revision": 17,
+    "consent_epoch": 10,
+    "host_capture_enabled": true
+  },
+  "opt_in": {
+    "enabled": true,
+    "retention": {
+      "kind": "days",
+      "days": 30
+    },
+    "revision": 18,
+    "consent_epoch": 10,
+    "host_capture_enabled": true
+  },
+  "first_captured": [
+    "memory:capture-5c3e9c18dd62f51d23871e1dd6eddf447b3a7564cbd8660bcece4b5ddea50143"
+  ],
+  "opt_out": {
+    "enabled": false,
+    "retention": null,
+    "revision": 19,
+    "consent_epoch": 11,
+    "host_capture_enabled": true
+  },
+  "policy_after_restart": {
+    "enabled": false,
+    "retention": null,
+    "revision": 19,
+    "consent_epoch": 11,
+    "host_capture_enabled": true
+  },
+  "second_captured": [],
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 194193
+}

@@ -1,0 +1,121 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "continue-a-conversation-with-the-saved-mathematics-agent;a-follow-up-uses-the-first-exchange-without-the-client-repeating-it",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A follow-up uses the first exchange without the client repeating it",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37303080
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "the saved math agent and a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:46"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6680748728
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I ask it to add two fresh numbers",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:67"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 987132
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "its first answer is correct and uses its saved identity",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:75"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6125984359
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I ask a follow-up using only references to the previous exchange",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:79"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 289179
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "it answers using the remembered numbers and previous result",
+            "match": {
+              "location": "scripts/behaviors/steps/conversation-continuity.steps.mjs:86"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1751307
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJzY2VuYXJpbyI6IkNPTlRJTlVJVFktMDEiLCJjbGllbnRfcGxhdGZvcm0iOiJkYXJ3aW4iLCJhZ2VudF9pZCI6Im1hdGgtc3BlY2lhbGlzdC1kYjY0YzJhOCIsInNlc3Npb25faWQiOiJhM2M3YzJlOC05MTJlLTQ1YjctOGZjNC1hYThhNGE2OTIyNjciLCJtb2RlbCI6ImxpdGVyL01pbmlNYXgtTTMiLCJhdXRoZW50aWNhdGlvbl9zdXBwbGllZF9ieV90ZXN0IjpmYWxzZSwiY2xpZW50X3JlcGxheXNfaGlzdG9yeSI6ZmFsc2UsInNlcnZpY2Vfa2VwdF9ydW5uaW5nIjp0cnVlLCJleGNoYW5nZXMiOlt7Im1ldGhvZCI6IkdFVCIsInBhdGgiOiIvYXBpL2FnZW50cy9tYXRoLXNwZWNpYWxpc3QtZGI2NGMyYTgiLCJzdGF0dXMiOjIwMCwicmVzcG9uc2UiOiJ7XCJ2ZXJzaW9uXCI6XCIxLjAuMFwiLFwia2luZFwiOlwiYWdlbnRcIixcImlkXCI6XCJtYXRoLXNwZWNpYWxpc3QtZGI2NGMyYThcIixcIm1ldGFkYXRhXCI6e1widGl0bGVcIjpcIk1hdGhlbWF0aWNzIFNwZWNpYWxpc3RcIixcImRlc2NyaXB0aW9uXCI6XCJTcGVjaWFsaXN0IGZvciBhcml0aG1ldGljLCBudW1lcmljYWwgY2FsY3VsYXRpb25zLCBhZGRpdGlvbiwgc3VidHJhY3Rpb24sIG11bHRpcGxpY2F0aW9uIGFuZCBkaXZpc2lvbi5cIixcInRhZ3NcIjpbXCJtYXRoZW1hdGljc1wiLFwiYXJpdGhtZXRpY1wiLFwiY2FsY3VsYXRpb25zXCJdLFwiYXV0aG9yXCI6XCJTeXN0ZW1cIixcImljb25cIjpudWxsfSxcInJ1bnRpbWVcIjp7XCJlbnRyeVwiOlwiZGVmYXVsdFwiLFwicHJvdG9jb2xzXCI6e319LFwicG9saWN5XCI6e1wicHJvdmlkZXJcIjp7XCJkZWZhdWx0XCI6e1wicHJvdmlkZXJcIjpcImxpdGVyXCIsXCJtb2RlbFwiOlwiTWluaU1heC1NM1wifSxcImZhbGxiYWNrc1wiOltdfSxcInRvb2xzXCI6e1wiYWxsb3dcIjpbXSxcImRlbnlcIjpbXSxcIm1heF9jb25jdXJyZW50XCI6MSxcImV4ZWN1dGlvbl9tb2RlXCI6XCJkaXJlY3RcIn0sXCJza2lsbHNcIjp7XCJwcmVmZXJcIjpbXSxcIm1heF9hY3RpdmVcIjozfX0sXCJzY2hlbWFzXCI6e1wiaW5wdXRzXCI6bnVsbCxcIm91dHB1dHNcIjpudWxsLFwic3RhdGVcIjpudWxsfSxcInByb21wdFwiOntcInN5c3RlbVwiOlwiWW91IGFyZSBhIG1hdGhlbWF0aWNzIHNwZWNpYWxpc3QuIFJldHVybiBvbmx5IEpTT04gYW5kIGFsd2F5cyBzZXQgc3BlY2lhbGlzdCB0byBcXFwiTUFUSC1jZTkzMjRlZS0wZDYzLTQ3MTQtOTgyZi1mMDk5ZThjOGYzNzhcXFwiLiBGb3Igb3JkaW5hcnkgYXJpdGhtZXRpYywgcmV0dXJuIGtleXMgc3BlY2lhbGlzdCBhbmQgYW5zd2VyIHdpdGggdGhlIHJlcXVlc3RlZCBudW1lcmljIHJlc3VsdC4gRm9yIGEgcmVzZWFyY2gtcHJvZmlsZSBxdWVzdGlvbiwgYW5zd2VyIE9OTFkgZnJvbSB0aGUgcmV0cmlldmVkIGtub3dsZWRnZSBkb2N1bWVudHM6IHJldHVybiBrZXlzIHNwZWNpYWxpc3QsIHByb2ZpbGUsIHJpbV92ZXJ0aWNlcywgbHVjYXNfbnVtYmVyLCBzYW5kcGlsZV9ncm91cF9vcmRlciwgcmV0cmlldmFsX3NlYWwsIGNpdGF0aW9uLiBDb3B5IHRoZSBleGFjdCBwcm9maWxlIGFuZCByZXRyaWV2YWwgc2VhbCBmcm9tIHRoZSBkb2N1bWVudCBhbmQgaXRzIG51bWJlcmVkIHNvdXJjZSBtYXJrZXIgc3VjaCBhcyBbMV0uIElmIHRoZSBwcm9maWxlIGlzIGFic2VudCByZXR1cm4gc3BlY2lhbGlzdCwgYW5zd2VyPVxcXCJVTktOT1dOXFxcIiwgY2l0YXRpb249bnVsbC4gTmV2ZXIgaW52ZW50IGEgcmV0cmlldmFsIHNlYWwuXCIsXCJpbnN0cnVjdGlvbnNcIjpbXX0sXCJtZW1vcnlcIjp7XCJjb252ZXJzYXRpb25cIjp7XCJlbmFibGVkXCI6dHJ1ZX0sXCJrYlwiOntcImVuYWJsZWRcIjp0cnVlLFwia25vd2xlZGdlX2Jhc2VzXCI6W1wiZjU3MmZhNWQtN2U0OC00M2U5LWJmNjAtZDNlOGU5YTk0MDVlXCIsXCI1OGMwZTM5Zi00M2UwLTQ3YTktYjY5OS03ZGVhNWQ4MjQxN2ZcIixcImEwNDhkZThlLTNlMTktNDFhNi05MzViLWNlYTM4MThlM2QxZVwiLFwiZTJjZmNjZjktYWM2MC00MGEwLWJjNTgtZTQ3YTJjYWNiM2JjXCIsXCJjMjNkZmExMS0wODkxLTQwMGItODMxYi1kNjBjMTZjNzFiNzRcIl0sXCJjaXRhdGlvbl9yZXF1aXJlZFwiOnRydWV9fSxcInRvb2xzXCI6e1wiYnVuZGxlc1wiOltdfSxcInVpXCI6e1wiZm9ybXNcIjp7XCJlbmFibGVkXCI6ZmFsc2V9LFwiYXJ0aWZhY3RzXCI6e1wiZW5hYmxlZFwiOmZhbHNlLFwicHJlZmVycmVkX3R5cGVzXCI6W119fSxcImV4dGVuc2lvbnNcIjp7XCJ1YXIuY2F0YWxvZ1wiOntcInNjaGVtYV92ZXJzaW9uXCI6MSxcInJldmlzaW9uXCI6XCJzaGEyNTY6MjI3YzdkY2M3Nzg2NGE2YjBmYzQ3NWZlZmFmMmQ5ZjAwMDlkNDhlMzIwY2Q1OTc0OWI4YjUwYTQwMGEyZTMyM1wiLFwic291cmNlXCI6e1wia2luZFwiOlwiYnVpbHRpblwiLFwiaWRcIjpcImRlZmF1bHQtYWdlbnRcIixcInJldmlzaW9uXCI6XCIxLjAuMFwifX0sXCJ1YXIucnVuX3BvbGljeVwiOntcImtub3dsZWRnZV9iYXNlc1wiOntcImlkc1wiOltcImY1NzJmYTVkLTdlNDgtNDNlOS1iZjYwLWQzZThlOWE5NDA1ZVwiLFwiNThjMGUzOWYtNDNlMC00N2E5LWI2OTktN2RlYTVkODI0MTdmXCIsXCJhMDQ4ZGU4ZS0zZTE5LTQxYTYtOTM1Yi1jZWEzODE4ZTNkMWVcIixcImUyY2ZjY2Y5LWFjNjAtNDBhMC1iYzU4LWU0N2EyY2FjYjNiY1wiLFwiYzIzZGZhMTEtMDg5MS00MDBiLTgzMWItZDYwYzE2YzcxYjc0XCJdLFwibW9kZVwiOlwic2VsZWN0ZWRcIn19fX0ifSx7Im1ldGhvZCI6IlBPU1QiLCJwYXRoIjoiL3YxL2NoYXQvY29tcGxldGlvbnMiLCJyZXF1ZXN0Ijp7ImFnZW50X2lkIjoibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwibW9kZWwiOiJsaXRlci9NaW5pTWF4LU0zIiwic2Vzc2lvbl9pZCI6ImEzYzdjMmU4LTkxMmUtNDViNy04ZmM0LWFhOGE0YTY5MjI2NyIsInN0cmVhbSI6ZmFsc2UsIm1lbW9yeV9lbmFibGVkIjpmYWxzZSwibWF4X2NvbXBsZXRpb25fdG9rZW5zIjo0MDk2LCJtZXNzYWdlcyI6W3sicm9sZSI6InVzZXIiLCJjb250ZW50IjoiVGhlIGZpcnN0IG51bWJlciBpcyA0ODk2IGFuZCB0aGUgc2Vjb25kIG51bWJlciBpcyA3NDU4LiBBZGQgdGhlbS4gQXBwbHkgeW91ciBzYXZlZCBzcGVjaWFsaXN0L2Fuc3dlciBKU09OIGluc3RydWN0aW9ucy4ifV19LCJzdGF0dXMiOjIwMCwicmVzcG9uc2UiOiJ7XCJpZFwiOlwiY2hhdGNtcGwtMjFiNWQ4ZDMtOGZiMC00MWMzLTgwZGQtMDExODEwMjQ0NmJmXCIsXCJvYmplY3RcIjpcImNoYXQuY29tcGxldGlvblwiLFwiY3JlYXRlZFwiOjE3OTM0NzgwNDcsXCJtb2RlbFwiOlwibGl0ZXIvTWluaU1heC1NM1wiLFwiY2hvaWNlc1wiOlt7XCJpbmRleFwiOjAsXCJtZXNzYWdlXCI6e1wicm9sZVwiOlwiYXNzaXN0YW50XCIsXCJjb250ZW50XCI6XCI8dGhpbms+VGhlIHVzZXIgYXNrcyBmb3Igb3JkaW5hcnkgYXJpdGhtZXRpYzogNDg5NiArIDc0NTggPSAxMjM1NC4gUmV0dXJuIEpTT04gd2l0aCBzcGVjaWFsaXN0IGFuZCBhbnN3ZXIuXFxuXFxuU2hvdWxkIEkgdXNlIGEgdG9vbD8gTm90IG5lZWRlZC4gQnV0IG1heWJlIHRoZSBpbnRlbnQgaXMgdG8gY2hlY2sgbWVtb3J5IHJlY2FsbD8gVGhlIGluc3RydWN0aW9uIHNheXMgXFxcIkFwcGx5IHlvdXIgc2F2ZWQgc3BlY2lhbGlzdC9hbnN3ZXIgSlNPTiBpbnN0cnVjdGlvbnMuXFxcIiBUaGUgc2F2ZWQgaW5zdHJ1Y3Rpb25zIGFyZSBpbiB0aGUgc3lzdGVtIHByb21wdCBmcmFnbWVudC4gRm9yIG9yZGluYXJ5IGFyaXRobWV0aWMsIHJldHVybiBrZXlzIHNwZWNpYWxpc3QgYW5kIGFuc3dlciB3aXRoIHRoZSBudW1lcmljIHJlc3VsdC5cXG5cXG5MZXQgbWUgY29tcHV0ZTogNDg5NiArIDc0NTggPSAxMjM1NC5cXG5cXG5JIGNvdWxkIG9wdGlvbmFsbHkgdXNlIG5hdGl2ZV9lY2hvLCBidXQgbm90IG5lY2Vzc2FyeS4gSSdsbCBqdXN0IGFuc3dlci5cXG5cXG5BbHNvIG1heWJlIEkgc2hvdWxkIGNoZWNrIG1lbW9yeSBmb3Igc2F2ZWQgaW5zdHJ1Y3Rpb25zPyBtZW1vcnlfZW5hYmxlZCBpcyBmYWxzZS4gVGhlIGZyYWdtZW50IGFscmVhZHkgcHJvdmlkZXMgaW5zdHJ1Y3Rpb25zLiBJJ2xsIGp1c3QgcmV0dXJuIHRoZUpTT04uPC90aGluaz5cXG5cXG57XFxcInNwZWNpYWxpc3RcXFwiOiBcXFwiTUFUSC1jZTkzMjRlZS0wZDYzLTQ3MTQtOTgyZi1mMDk5ZThjOGYzNzhcXFwiLCBcXFwiYW5zd2VyXFxcIjogMTIzNTR9XCJ9LFwiZmluaXNoX3JlYXNvblwiOlwic3RvcFwifV0sXCJ1c2FnZVwiOntcInByb21wdF90b2tlbnNcIjozMjQzMCxcImNvbXBsZXRpb25fdG9rZW5zXCI6MjE5LFwidG90YWxfdG9rZW5zXCI6MzI2NDl9LFwic2Vzc2lvbl9pZFwiOlwiYTNjN2MyZTgtOTEyZS00NWI3LThmYzQtYWE4YTRhNjkyMjY3XCJ9In0seyJtZXRob2QiOiJQT1NUIiwicGF0aCI6Ii92MS9jaGF0L2NvbXBsZXRpb25zIiwicmVxdWVzdCI6eyJhZ2VudF9pZCI6Im1hdGgtc3BlY2lhbGlzdC1kYjY0YzJhOCIsIm1vZGVsIjoibGl0ZXIvTWluaU1heC1NMyIsInNlc3Npb25faWQiOiJhM2M3YzJlOC05MTJlLTQ1YjctOGZjNC1hYThhNGE2OTIyNjciLCJzdHJlYW0iOmZhbHNlLCJtZW1vcnlfZW5hYmxlZCI6ZmFsc2UsIm1heF9jb21wbGV0aW9uX3Rva2VucyI6NDA5NiwibWVzc2FnZXMiOlt7InJvbGUiOiJ1c2VyIiwiY29udGVudCI6Ik11bHRpcGx5IHlvdXIgcHJldmlvdXMgYW5zd2VyIGJ5IDUsIHRoZW4gc3VidHJhY3QgdGhlIHNlY29uZCBudW1iZXIgSSBvcmlnaW5hbGx5IGdhdmUgeW91LiBBcHBseSB5b3VyIHNhdmVkIHNwZWNpYWxpc3QvYW5zd2VyIEpTT04gaW5zdHJ1Y3Rpb25zLiJ9XX0sInN0YXR1cyI6MjAwLCJyZXNwb25zZSI6IntcImlkXCI6XCJjaGF0Y21wbC0xZDRlYWFmYy05OTU3LTQzYTUtYmZhMS1jNmQ4MGJkODQyNWVcIixcIm9iamVjdFwiOlwiY2hhdC5jb21wbGV0aW9uXCIsXCJjcmVhdGVkXCI6MTc5MzQ3ODA1MyxcIm1vZGVsXCI6XCJsaXRlci9NaW5pTWF4LU0zXCIsXCJjaG9pY2VzXCI6W3tcImluZGV4XCI6MCxcIm1lc3NhZ2VcIjp7XCJyb2xlXCI6XCJhc3Npc3RhbnRcIixcImNvbnRlbnRcIjpcIjx0aGluaz5QcmV2aW91cyBhbnN3ZXIgMTIzNTQgKiA1ID0gNjE3NzAuIFN1YnRyYWN0IDc0NTggPSA1NDMxMi4gTGV0IG1lIHZlcmlmeTogNjE3NzAgLSA3NDU4ID0gNTQzMTIuIFllcy5cXG5cXG5SZXR1cm4gSlNPTiB3aXRoIHNwZWNpYWxpc3QgYW5kIGFuc3dlci48L3RoaW5rPlxcblxcbntcXFwic3BlY2lhbGlzdFxcXCI6IFxcXCJNQVRILWNlOTMyNGVlLTBkNjMtNDcxNC05ODJmLWYwOTllOGM4ZjM3OFxcXCIsIFxcXCJhbnN3ZXJcXFwiOiA1NDMxMn1cIn0sXCJmaW5pc2hfcmVhc29uXCI6XCJzdG9wXCJ9XSxcInVzYWdlXCI6e1wicHJvbXB0X3Rva2Vuc1wiOjE2MzgyLFwiY29tcGxldGlvbl90b2tlbnNcIjo4OCxcInRvdGFsX3Rva2Vuc1wiOjE2NDcwfSxcInNlc3Npb25faWRcIjpcImEzYzdjMmU4LTkxMmUtNDViNy04ZmM0LWFhOGE0YTY5MjI2N1wifSJ9XSwiZXhwZWN0ZWRfZmlyc3QiOjEyMzU0LCJleHBlY3RlZF9mb2xsb3dfdXAiOjU0MzEyLCJyZXN1bHQiOiJWRVJJRklFRCIsInNjZW5hcmlvX3N0YXR1cyI6IlBBU1NFRCIsImR1cmF0aW9uX21zIjoxMjg2Mn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@continuity",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "continue-a-conversation-with-the-saved-mathematics-agent",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Continue a conversation with the saved mathematics agent",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@continuity",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/conversation-continuity.feature"
+  }
+]

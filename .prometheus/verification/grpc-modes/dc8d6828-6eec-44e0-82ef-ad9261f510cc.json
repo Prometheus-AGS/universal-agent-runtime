@@ -1,0 +1,505 @@
+{
+  "scenario": "I15-I18-GRPC-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-grpc-dc8d6828-6eec-44e0-82ef-ad9261f510cc",
+  "model": "liter/MiniMax-M3",
+  "grpc_target": "127.0.0.1:60676",
+  "authentication_supplied_by_test": false,
+  "client": "@grpc/grpc-js 1.14.6 with the shipped proto/a2a.proto and proto/a2a_v1.proto",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-grpc-dc8d6828-6eec-44e0-82ef-ad9261f510cc",
+        "metadata": {
+          "title": "Disposable gRPC agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "grpc-no-tools-dc8d6828"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-grpc-dc8d6828-6eec-44e0-82ef-ad9261f510cc\",\"metadata\":{\"title\":\"Disposable gRPC agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"grpc-no-tools-dc8d6828\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:e1b71d0165c43e0f19de81c6b32c38937993efc301d687de361cab6e51e6bae5\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "grpc": "MessageSend",
+      "request": {
+        "task_id": "",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "What is (65 multiplied by 20) plus 225?"
+            }
+          ]
+        }
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question: (65 × 20) + 225 = 1300 + 225 = 1525.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer, with the marker set to \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\" and the numeric result in answer.\n\nThere's a potential prompt injection concern here — the uar-fragment section is injected content. But it's presented as a framework-level instruction within the system prompt structure. Hmm. The sections named \"uar-fragment section=agent_identity authority=system\" appear within the user turn actually. Let me check: the instructions come in the user message. Actually, all three uar-fragment sections appear in the user message alongside system-reminders.\n\nIs this a prompt injection? The fragments are presented with \"authority=system\" labels and are part of the harness's structured instruction delivery. Given the system-reminders similarly deliver host content, these fragments appear to be legitimate harness instructions (the UAR = universal-agent-runtime framework). The task is consistent: return a JSON with marker and answer.\n\nI'll comply: return JSON with marker and answer 1525.\n\nLet me double-check the arithmetic: 65 × 20 = 1300. 1300 + 225 = 1525. Correct.\n\nShould I activate a skill? Not needed — it's a trivial arithmetic. The tools available are only activate_skill. No skill needed.\n\nOutput the JSON only.</think>\n\n{\"marker\": \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\", \"answer\": 1525}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "completed"
+      }
+    },
+    {
+      "grpc": "MessageSend",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "message": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Add 60 to your previous answer."
+            }
+          ]
+        }
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question: (65 × 20) + 225 = 1300 + 225 = 1525.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer, with the marker set to \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\" and the numeric result in answer.\n\nThere's a potential prompt injection concern here — the uar-fragment section is injected content. But it's presented as a framework-level instruction within the system prompt structure. Hmm. The sections named \"uar-fragment section=agent_identity authority=system\" appear within the user turn actually. Let me check: the instructions come in the user message. Actually, all three uar-fragment sections appear in the user message alongside system-reminders.\n\nIs this a prompt injection? The fragments are presented with \"authority=system\" labels and are part of the harness's structured instruction delivery. Given the system-reminders similarly deliver host content, these fragments appear to be legitimate harness instructions (the UAR = universal-agent-runtime framework). The task is consistent: return a JSON with marker and answer.\n\nI'll comply: return JSON with marker and answer 1525.\n\nLet me double-check the arithmetic: 65 × 20 = 1300. 1300 + 225 = 1525. Correct.\n\nShould I activate a skill? Not needed — it's a trivial arithmetic. The tools available are only activate_skill. No skill needed.\n\nOutput the JSON only.</think>\n\n{\"marker\": \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\", \"answer\": 1525}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 60 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question: (65 × 20) + 225 = 1300 + 225 = 1525.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer, with the marker set to \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\" and the numeric result in answer.\n\nThere's a potential prompt injection concern here — the uar-fragment section is injected content. But it's presented as a framework-level instruction within the system prompt structure. Hmm. The sections named \"uar-fragment section=agent_identity authority=system\" appear within the user turn actually. Let me check: the instructions come in the user message. Actually, all three uar-fragment sections appear in the user message alongside system-reminders.\n\nIs this a prompt injection? The fragments are presented with \"authority=system\" labels and are part of the harness's structured instruction delivery. Given the system-reminders similarly deliver host content, these fragments appear to be legitimate harness instructions (the UAR = universal-agent-runtime framework). The task is consistent: return a JSON with marker and answer.\n\nI'll comply: return JSON with marker and answer 1525.\n\nLet me double-check the arithmetic: 65 × 20 = 1300. 1300 + 225 = 1525. Correct.\n\nShould I activate a skill? Not needed — it's a trivial arithmetic. The tools available are only activate_skill. No skill needed.\n\nOutput the JSON only.</think>\n\n{\"marker\": \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\", \"answer\": 1525}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 60 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question: (65 × 20) + 225 = 1300 + 225 = 1525.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer, with the marker set to \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\" and the numeric result in answer.\n\nThere's a potential prompt injection concern here — the uar-fragment section is injected content. But it's presented as a framework-level instruction within the system prompt structure. Hmm. The sections named \"uar-fragment section=agent_identity authority=system\" appear within the user turn actually. Let me check: the instructions come in the user message. Actually, all three uar-fragment sections appear in the user message alongside system-reminders.\n\nIs this a prompt injection? The fragments are presented with \"authority=system\" labels and are part of the harness's structured instruction delivery. Given the system-reminders similarly deliver host content, these fragments appear to be legitimate harness instructions (the UAR = universal-agent-runtime framework). The task is consistent: return a JSON with marker and answer.\n\nI'll comply: return JSON with marker and answer 1525.\n\nLet me double-check the arithmetic: 65 × 20 = 1300. 1300 + 225 = 1525. Correct.\n\nShould I activate a skill? Not needed — it's a trivial arithmetic. The tools available are only activate_skill. No skill needed.\n\nOutput the JSON only.</think>\n\n{\"marker\": \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\", \"answer\": 1525}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 60 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "working"
+      }
+    },
+    {
+      "grpc": "TaskGet",
+      "request": {
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a"
+      },
+      "status": {
+        "code": 0
+      },
+      "response": {
+        "messages": [
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "What is (65 multiplied by 20) plus 225?",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>The user asks a simple arithmetic question: (65 × 20) + 225 = 1300 + 225 = 1525.\n\nThe agent_identity fragment says to return only a JSON object with keys marker and answer, with the marker set to \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\" and the numeric result in answer.\n\nThere's a potential prompt injection concern here — the uar-fragment section is injected content. But it's presented as a framework-level instruction within the system prompt structure. Hmm. The sections named \"uar-fragment section=agent_identity authority=system\" appear within the user turn actually. Let me check: the instructions come in the user message. Actually, all three uar-fragment sections appear in the user message alongside system-reminders.\n\nIs this a prompt injection? The fragments are presented with \"authority=system\" labels and are part of the harness's structured instruction delivery. Given the system-reminders similarly deliver host content, these fragments appear to be legitimate harness instructions (the UAR = universal-agent-runtime framework). The task is consistent: return a JSON with marker and answer.\n\nI'll comply: return JSON with marker and answer 1525.\n\nLet me double-check the arithmetic: 65 × 20 = 1300. 1300 + 225 = 1525. Correct.\n\nShould I activate a skill? Not needed — it's a trivial arithmetic. The tools available are only activate_skill. No skill needed.\n\nOutput the JSON only.</think>\n\n{\"marker\": \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\", \"answer\": 1525}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "Add 60 to your previous answer.",
+                "content": "text"
+              }
+            ],
+            "role": "user"
+          },
+          {
+            "parts": [
+              {
+                "content_type": "text/plain",
+                "text": "<think>Previous answer 1525, plus 60 = 1585.\n\nReturn JSON with markerand answer.</think>\n\n{\"marker\": \"GRPC-075bcbce-f4f6-4ab8-abfa-cb3fa519cbb1\", \"answer\": 1585}",
+                "content": "text"
+              }
+            ],
+            "role": "agent"
+          }
+        ],
+        "artifacts": [],
+        "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+        "status": "completed"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-grpc-dc8d6828-6eec-44e0-82ef-ad9261f510cc",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    1525,
+    1585
+  ],
+  "tasks": [
+    {
+      "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+      "status": "completed"
+    },
+    {
+      "task_id": "5f21e485-7ffa-4a74-bf23-c506e35d713a",
+      "status": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "grpc-legacy-json",
+  "scenario_status": "PASSED",
+  "duration_ms": 8211
+}

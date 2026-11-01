@@ -1,0 +1,114 @@
+{
+  "scenario": "A config-driven setting follows the config file across restarts (#389)",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"id\":\"346eaf65-ccd9-4365-a3ea-1d67711b9280\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":33,\"saved\":33,\"effective\":33,\"revision\":\"2026-10-31T20:37:13.588673000Z\",\"apply\":\"restart\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:37:13.588673Z\",\"updated_at\":null,\"source\":\"ConfigFile\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"id\":\"346eaf65-ccd9-4365-a3ea-1d67711b9280\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":33,\"saved\":33,\"effective\":33,\"revision\":\"2026-10-31T20:37:13.588673000Z\",\"apply\":\"restart\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:37:13.588673Z\",\"updated_at\":null,\"source\":\"ConfigFile\",\"is_drift\":false}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "request": {
+        "value": 45,
+        "expected_revision": "2026-10-31T20:37:13.588673000Z"
+      },
+      "status": 200,
+      "response": "{\"status\":\"updated\",\"key\":\"server.shutdown_timeout_secs\",\"namespace\":\"server\",\"setting\":{\"id\":\"116bf8e5-9694-4261-863a-ffdf20fdca24\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":45,\"saved\":45,\"effective\":33,\"revision\":\"2026-10-31T20:37:15.630309000Z\",\"apply\":\"restart\",\"application_status\":\"restart_required\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:36:45.225011Z\",\"updated_at\":\"2026-10-31T20:37:15.630309Z\",\"source\":\"Api\",\"is_drift\":false}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"id\":\"116bf8e5-9694-4261-863a-ffdf20fdca24\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":45,\"saved\":45,\"effective\":33,\"revision\":\"2026-10-31T20:37:15.630309000Z\",\"apply\":\"restart\",\"application_status\":\"restart_required\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:36:45.225011Z\",\"updated_at\":\"2026-10-31T20:37:15.630309Z\",\"source\":\"Api\",\"is_drift\":false}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"id\":\"116bf8e5-9694-4261-863a-ffdf20fdca24\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":45,\"saved\":45,\"effective\":45,\"revision\":\"2026-10-31T20:37:15.791453000Z\",\"apply\":\"restart\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:36:45.225011Z\",\"updated_at\":\"2026-10-31T20:37:15.791453Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/drift",
+      "status": 200,
+      "response": "[{\"id\":\"116bf8e5-9694-4261-863a-ffdf20fdca24\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":45,\"saved\":45,\"effective\":45,\"revision\":\"2026-10-31T20:37:15.791453000Z\",\"apply\":\"restart\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:36:45.225011Z\",\"updated_at\":\"2026-10-31T20:37:15.791453Z\",\"source\":\"Api\",\"is_drift\":true}]"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"id\":\"116bf8e5-9694-4261-863a-ffdf20fdca24\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":45,\"saved\":45,\"effective\":45,\"revision\":\"2026-10-31T20:37:15.791453000Z\",\"apply\":\"restart\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:36:45.225011Z\",\"updated_at\":\"2026-10-31T20:37:15.791453Z\",\"source\":\"Api\",\"is_drift\":true}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"status\":\"reset\",\"key\":\"server.shutdown_timeout_secs\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/server.shutdown_timeout_secs",
+      "status": 200,
+      "response": "{\"id\":\"3123de47-263d-4d70-8a9d-dc0a10d3f389\",\"settings_type_id\":\"54c9d411-c689-4248-afef-89d4031daf75\",\"name\":\"Legacy Shutdown Timeout (unused)\",\"key\":\"server.shutdown_timeout_secs\",\"data\":34,\"saved\":34,\"effective\":34,\"revision\":\"2026-10-31T20:37:23.455566000Z\",\"apply\":\"restart\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-10-31T20:37:23.455566Z\",\"updated_at\":null,\"source\":\"ConfigFile\",\"is_drift\":false}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/postgres-flint-forge/6ecc56e9-d404-4a3f-9c1a-5347506ee7e2",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-6ecc56e9",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:56960/",
+    "base_url": "http://127.0.0.1:56962/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:56959",
+    "uar_pid": 98965,
+    "proxy_pid": 99709
+  },
+  "settings": [
+    {
+      "effective": 33,
+      "source": "ConfigFile",
+      "is_drift": false
+    },
+    {
+      "effective": 33,
+      "source": "ConfigFile",
+      "is_drift": false
+    },
+    {
+      "effective": 33,
+      "source": "Api",
+      "is_drift": false
+    },
+    {
+      "effective": 45,
+      "source": "Api",
+      "is_drift": true
+    },
+    {
+      "effective": 45,
+      "source": "Api",
+      "is_drift": true
+    },
+    {
+      "effective": 34,
+      "source": "ConfigFile",
+      "is_drift": false
+    }
+  ],
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 49096
+}

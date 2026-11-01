@@ -1,0 +1,180 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "legacy-ag-ui-and-dual-chat-stream-framing;the-legacy-ag-ui-chat-stream-answers-and-continues-a-session",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "The legacy AG-UI chat stream answers and continues a session",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 71790202
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable saved agent with a private instruction marker for chat streaming",
+            "match": {
+              "location": "scripts/behaviors/steps/chat-stream-modes.steps.mjs:49"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9052465764
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I stream a fresh calculation and then a dependent follow-up with stream_mode agui on /api/chat/completion",
+            "match": {
+              "location": "scripts/behaviors/steps/chat-stream-modes.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 41630592
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "each legacy AG-UI stream delivers incremental text, completes, and answers correctly in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/chat-stream-modes.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 78673666
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jaGF0LXN0cmVhbS1tb2Rlcy82ZGJlZTM4MC1iY2FkLTQxMjktYjdhOS01OGY2NzBiOTEwNDAuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "legacy-ag-ui-and-dual-chat-stream-framing;the-dual-chat-stream-carries-both-vocabularies-for-one-run-without-doubling-the-answer",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "The dual chat stream carries both vocabularies for one run without doubling the answer",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 36817191
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a disposable saved agent with a private instruction marker for chat streaming",
+            "match": {
+              "location": "scripts/behaviors/steps/chat-stream-modes.steps.mjs:49"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6419914507
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I stream a fresh calculation and then a dependent follow-up with stream_mode dual on /v1/chat/completions",
+            "match": {
+              "location": "scripts/behaviors/steps/chat-stream-modes.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 57852031
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "each dual stream's OpenAI and AG-UI text agree, belong to one run, and answer correctly in one session",
+            "match": {
+              "location": "scripts/behaviors/steps/chat-stream-modes.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 124321405
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jaGF0LXN0cmVhbS1tb2Rlcy8yMmRlYTFkYS1kNWE1LTQ5MTUtODM0Mi1iNzU4NmE3NWIyYTUuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@streaming",
+            "line": 1
+          },
+          {
+            "name": "@agui",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "legacy-ag-ui-and-dual-chat-stream-framing",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Legacy AG-UI and dual chat stream framing",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@streaming",
+        "line": 1
+      },
+      {
+        "name": "@agui",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/chat-stream-modes.feature"
+  }
+]

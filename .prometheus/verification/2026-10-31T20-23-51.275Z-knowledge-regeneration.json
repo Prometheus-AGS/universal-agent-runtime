@@ -1,0 +1,122 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "retrieve-knowledge-after-changing-the-embedding-model;regenerate-a-retained-document-in-a-different-embedding-space",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Regenerate a retained document in a different embedding space",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 694108586
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable knowledge base indexed with the original embedding model",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-regeneration.steps.mjs:54"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 175579291
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I change the active embedding model to a different vector dimension",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-regeneration.steps.mjs:99"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 7295325
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the old knowledge index refuses incompatible retrieval",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-regeneration.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 120073950878,
+              "error_message": "Error: Regeneration deadline exceeded\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/knowledge-regeneration.steps.mjs:136:9)"
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I regenerate the knowledge index from its retained document",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-regeneration.steps.mjs:115"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "retrieval returns the original private fact using the new embedding space",
+            "match": {
+              "location": "scripts/behaviors/steps/knowledge-regeneration.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2249765125
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rbm93bGVkZ2UtcmVnZW5lcmF0aW9uLzdhOWRmYzIzLTVjNWItNDI1Mi05OTNjLTJmYzFmMDRmOTg2ZC5qc29uIiwic3RhdHVzIjoiRkFJTEVEIn0=",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge-regeneration",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "retrieve-knowledge-after-changing-the-embedding-model",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Retrieve knowledge after changing the embedding model",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge-regeneration",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/knowledge-regeneration.feature"
+  }
+]

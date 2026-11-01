@@ -1,0 +1,178 @@
+{
+  "scenario": "E26-ALL-SKILLS-POLICY",
+  "platform": "darwin",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "orchard-crate-quote-eac5a07d-601c-46a1-9b2c-6af212a65db8",
+        "description": "Quote the price of an orchard crate shipment with the private company formula.",
+        "triggers": {
+          "keywords": [
+            "orchard crate quote"
+          ]
+        },
+        "prompt_overlay": "Orchard crate quote formula: multiply the crate count by 17 and add 34. Return only JSON {\"marker\":\"CRATE-e94a8f2a-e86a-46cc-8b56-ca44eb2b39da\",\"quote\":<number>}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"orchard-crate-quote-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"title\":\"orchard-crate-quote-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"description\":\"Quote the price of an orchard crate shipment with the private company formula.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"orchard crate quote\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Orchard crate quote formula: multiply the crate count by 17 and add 34. Return only JSON {\\\"marker\\\":\\\"CRATE-e94a8f2a-e86a-46cc-8b56-ca44eb2b39da\\\",\\\"quote\\\":<number>}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "greenhouse-watering-eac5a07d-601c-46a1-9b2c-6af212a65db8",
+        "description": "Plan a watering schedule for greenhouse orchids.",
+        "triggers": {
+          "keywords": [
+            "greenhouse watering schedule"
+          ]
+        },
+        "prompt_overlay": "For any request, return only JSON {\"marker\":\"WATERING\",\"litres\":12}."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"greenhouse-watering-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"title\":\"greenhouse-watering-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"description\":\"Plan a watering schedule for greenhouse orchids.\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"greenhouse watering schedule\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"For any request, return only JSON {\\\"marker\\\":\\\"WATERING\\\",\\\"litres\\\":12}.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-all-skills-eac5a07d-601c-46a1-9b2c-6af212a65db8",
+        "metadata": {
+          "title": "Disposable all-skills assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "e26-no-tools-eac5a07d"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Follow any loaded skill instructions exactly and return only the JSON they request. Do not call tools.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-all-skills-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"metadata\":{\"title\":\"Disposable all-skills assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"e26-no-tools-eac5a07d\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Follow any loaded skill instructions exactly and return only the JSON they request. Do not call tools.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:8a4d08b9d509f514993033443a8996886ed9a4aae1583131a04a4b389522b723\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/0a455972-4d8a-4889-b0bf-82620e3bda4c",
+      "status": 200,
+      "response": "{\"run_id\":\"0a455972-4d8a-4889-b0bf-82620e3bda4c\",\"agent_id\":\"disposable-all-skills-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"conversation_id\":\"c2be13df-2f3b-4bb8-ac29-2d664a2734c2\",\"status\":\"done\",\"agent_revision\":\"sha256:8a4d08b9d509f514993033443a8996886ed9a4aae1583131a04a4b389522b723\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-all-skills-eac5a07d-601c-46a1-9b2c-6af212a65db8\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"all\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"ev"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/c2be13df-2f3b-4bb8-ac29-2d664a2734c2",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-all-skills-eac5a07d-601c-46a1-9b2c-6af212a65db8",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/greenhouse-watering-eac5a07d-601c-46a1-9b2c-6af212a65db8",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/orchard-crate-quote-eac5a07d-601c-46a1-9b2c-6af212a65db8",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "run_id": "0a455972-4d8a-4889-b0bf-82620e3bda4c",
+  "effective_skills_mode": "all",
+  "eligible_skill_count": 214,
+  "activated_skills": [
+    "orchard-crate-quote-eac5a07d-601c-46a1-9b2c-6af212a65db8"
+  ],
+  "accepted": [
+    "orchard-crate-quote-eac5a07d-601c-46a1-9b2c-6af212a65db8"
+  ],
+  "answer_text": "<think>The skill is already loaded (active_skills). The formula: multiply crate count by 17 and add 34. For 4 crates: 4*17 = 68 + 34 = 102.\n\nReturn onlyJSON.</think>\n\n{\"marker\":\"CRATE-e94a8f2a-e86a-46cc-8b56-ca44eb2b39da\",\"quote\":102}",
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 3801
+}

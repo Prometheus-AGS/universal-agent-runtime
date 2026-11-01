@@ -1,0 +1,15 @@
+{
+  "behavior": "Query the previously persisted agent",
+  "status": "PASSED",
+  "service_kept_running": true,
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "agent_record": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/verification/agents/math-specialist-db64c2a8.knowledge.json",
+  "restarted": false,
+  "question": "What is 27 + 47? Apply your saved instructions.",
+  "expected_sum": 74,
+  "answer": "{\"specialist\":\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\",\"answer\":74}",
+  "model": "liter/MiniMax-M3",
+  "provider_reasoning_present": false,
+  "duration_ms": 4824
+}

@@ -1,0 +1,114 @@
+{
+  "scenario": "I08-ACP-JSON-DEFAULT",
+  "client_platform": "darwin",
+  "agent_id": "default-agent",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "protocol": "ACP JSON-RPC POST /acp/ sessions/create, runs/create (no stream), runs/get",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "dfc302d9-d8a8-4eb2-ae94-8fef02646ea2",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "default-agent"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"dfc302d9-d8a8-4eb2-ae94-8fef02646ea2\",\"result\":{\"session_id\":\"97462949-da3c-440d-b196-f69d9787b4c6\",\"agent_id\":\"default-agent\",\"created_at\":\"2026-10-31T20:17:06.074766Z\",\"last_active\":\"2026-10-31T20:17:06.074766Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "9bd0752a-a91d-4ddf-984c-35d05af18799",
+        "method": "runs/create",
+        "params": {
+          "session_id": "97462949-da3c-440d-b196-f69d9787b4c6",
+          "input": "What is (35 multiplied by 23) plus 261? Reply with only a JSON object {\"answer\": <number>}."
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"9bd0752a-a91d-4ddf-984c-35d05af18799\",\"result\":{\"run_id\":\"9607aa4c-c1d1-4be1-840e-ed1509495126\",\"status\":\"running\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "3cbfe2dd-f737-4eed-a238-71ea88e0aaae",
+        "method": "runs/get",
+        "params": {
+          "run_id": "9607aa4c-c1d1-4be1-840e-ed1509495126"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"3cbfe2dd-f737-4eed-a238-71ea88e0aaae\",\"result\":{\"run_id\":\"9607aa4c-c1d1-4be1-840e-ed1509495126\",\"status\":\"Running\",\"agent_id\":\"default-agent\",\"conversation_id\":\"97462949-da3c-440d-b196-f69d9787b4c6\",\"output\":null,\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "739bf64d-ac88-495b-9677-5bdc14cc55a4",
+        "method": "runs/get",
+        "params": {
+          "run_id": "9607aa4c-c1d1-4be1-840e-ed1509495126"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"739bf64d-ac88-495b-9677-5bdc14cc55a4\",\"result\":{\"run_id\":\"9607aa4c-c1d1-4be1-840e-ed1509495126\",\"status\":\"Running\",\"agent_id\":\"default-agent\",\"conversation_id\":\"97462949-da3c-440d-b196-f69d9787b4c6\",\"output\":null,\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "34feb639-7db2-49a4-a56e-091b4bd306a5",
+        "method": "runs/get",
+        "params": {
+          "run_id": "9607aa4c-c1d1-4be1-840e-ed1509495126"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"34feb639-7db2-49a4-a56e-091b4bd306a5\",\"result\":{\"run_id\":\"9607aa4c-c1d1-4be1-840e-ed1509495126\",\"status\":\"Done\",\"agent_id\":\"default-agent\",\"conversation_id\":\"97462949-da3c-440d-b196-f69d9787b4c6\",\"output\":\"<think>35 × 23 = 805. 805 + 261 = 1066.</think>\\n\\n{\\\"answer\\\": 1066}\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "261aa14d-a095-4dd1-8a12-6ee54dd1c018",
+        "method": "sessions/delete",
+        "params": {
+          "session_id": "97462949-da3c-440d-b196-f69d9787b4c6"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"261aa14d-a095-4dd1-8a12-6ee54dd1c018\",\"result\":{\"deleted\":true,\"session_id\":\"97462949-da3c-440d-b196-f69d9787b4c6\"}}"
+    }
+  ],
+  "session_id": "97462949-da3c-440d-b196-f69d9787b4c6",
+  "expected": 1066,
+  "run_id": "9607aa4c-c1d1-4be1-840e-ed1509495126",
+  "create_status": "running",
+  "final_run": {
+    "run_id": "9607aa4c-c1d1-4be1-840e-ed1509495126",
+    "status": "Done",
+    "agent_id": "default-agent",
+    "conversation_id": "97462949-da3c-440d-b196-f69d9787b4c6",
+    "output": "<think>35 × 23 = 805. 805 + 261 = 1066.</think>\n\n{\"answer\": 1066}",
+    "pending_client_tools": null,
+    "client_tool_continuation": null
+  },
+  "answer": {
+    "answer": 1066
+  },
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 4836
+}

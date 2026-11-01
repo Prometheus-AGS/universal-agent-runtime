@@ -166,7 +166,8 @@ Given('the saved mathematics specialist is available in the running UAR', async 
   const saved = JSON.parse(await readFile(this.record, 'utf8'));
   this.agentId = saved.agent_id;
   this.instructions = saved.agent.prompt.system;
-  const marker = this.instructions.match(/Set specialist to "([^"]+)"/);
+  // The knowledge scenario keeps the specialist with a revised prompt ("always set specialist to").
+  const marker = this.instructions.match(/set specialist to "([^"]+)"/i);
   assert.ok(marker, 'Saved specialist marker is missing');
   this.marker = marker[1];
   const loaded = await request(this, 'GET', `/api/agents/${encodeURIComponent(this.agentId)}`);

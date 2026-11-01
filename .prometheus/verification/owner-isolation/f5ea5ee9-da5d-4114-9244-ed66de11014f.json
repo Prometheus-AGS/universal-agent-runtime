@@ -1,0 +1,671 @@
+{
+  "scenario": "E09-OWNER-ISOLATION",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "exchanges": [
+    {
+      "owner": "A",
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "owner": "A",
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "metadata": {
+          "title": "Disposable owner-isolation assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "*"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Remember the facts the user gives you for subsequent questions in this conversation. Acknowledge the initial facts with only READY, without repeating them. Answer later questions using only facts given earlier in this conversation and the exact JSON fields requested; if no such facts were given, set unknown fields to null.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "context_strategy": {
+              "type": "none"
+            },
+            "memory_enabled": false,
+            "skills": {
+              "mode": "none"
+            },
+            "tools": {
+              "mode": "none"
+            },
+            "mcp_servers": {
+              "mode": "none"
+            },
+            "knowledge_bases": {
+              "mode": "none"
+            },
+            "presentations": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"metadata\":{\"title\":\"Disposable owner-isolation assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Remember the facts the user gives you for subsequent questions in this conversation. Acknowledge the initial facts with only READY, without repeating them. Answer later questions using only facts given earlier in this conversation and the exact JSON fields requested; if no such facts were given, set unknown fields to null.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"version\":1,\"context_strategy\":{\"type\":\"none\"},\"memory_enabled\":false,\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"presentations\":{\"mode\":\"none\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "owner": "A",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "model": "liter/MiniMax-M3",
+        "session_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Remember for this conversation: reference CASE-6e124024-ed27-40e0-9384-62ac248f36bf; first quantity 138; second quantity 735. Acknowledge only READY without repeating any facts."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-9a649520-0c4f-4fe3-9bd0-120daf8388f1\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-9a649520-0c4f-4fe3-9bd0-120daf8388f1\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-9a649520-0c4f-4fe3-9bd0-120daf8388f1\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · none\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\"},\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"8f1c0f75e6468d9c8ceee134233e90265a03edd0eea998848cbdcd8a2f9abeae\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"887074ae08fb98d5536ed7036879ff8b4d30c7efa5f898d5e87f6da51d4e7b2d\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5638809153b46966165cebc30ccfb83f8c0c29ef09bf9bb9d0360e5edb0e770c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"05b0e0f8af8171df00445e635622f68b1ce62461df228db476dd427296f72cd6\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2620,\\\"rendered_characters\\\":2620,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"8f1c0f75e6468d9c8ceee134233e90265a03edd0eea998848cbdcd8a2f9abeae\",\"fragment_count\":6},\"sourceRunId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\"},\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"input\":{\"agentId\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"run_id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"running\",\"started_at\":\"2026-10-31T21:54:07.130379+00:00\",\"updated_at\":\"2026-10-31T21:54:07.130386+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"running\"}}],\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1-1\",\"run_id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-31T21:54:07.134417+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"775dd35139a02f78de7ad1032c37a7e456e0973f4fed8fa3975c5a911370beb0\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"887074ae08fb98d5536ed7036879ff8b4d30c7efa5f898d5e87f6da51d4e7b2d\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5638809153b46966165cebc30ccfb83f8c0c29ef09bf9bb9d0360e5edb0e770c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"05b0e0f8af8171df00445e635622f68b1ce62461df228db476dd427296f72cd6\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2518,\\\"rendered_characters\\\":2518,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\"},\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-9a649520-0c4f-4fe3-9bd0-120daf8388f1-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\"},\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":734,\\\"serialized_bytes\\\":3049,\\\"serialized_sha256\\\":\\\"a3888ea15f9db7673c675ecd7bc853952e61fac83c9b54c1a6b1414d75b6e128\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\"},\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1:assistant\",\"role\":\"assistant\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1:assistant\",\"delta\":\"<think>W\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1:assistant\",\"delta\":\"e need answer only READY,\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1:assistant\",\"delta\":\"no repeating facts. Need obey.\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1:assistant\",\"delta\":\"</think>\\n\\nREADY\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1:assistant\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"15:0\",\"sequence\":240}\nid: 15:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"runId\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"result\":{\"usage\":{\"inputTokens\":860,\"outputTokens\":18,\"totalTokens\":878,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"run_id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"status\":\"completed\",\"input_tokens\":860,\"output_tokens\":18,\"total_tokens\":878,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-31T21:54:08.041032+00:00\"}\nid: 15:2:3\n\n",
+      "status": 200
+    },
+    {
+      "owner": "A",
+      "method": "GET",
+      "path": "/api/uar/runs/9a649520-0c4f-4fe3-9bd0-120daf8388f1",
+      "status": 200,
+      "response": "{\"run_id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"done\",\"agent_revision\":\"sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043\",\"prepared_sha256\":\"sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":351,\"prepared_tokens\":351,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043\",\"final_messages\":2,\"final_tokens\":351,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":613,\"request_tokens\":613,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "owner": "B",
+      "method": "GET",
+      "path": "/api/uar/runs/9a649520-0c4f-4fe3-9bd0-120daf8388f1",
+      "status": 404,
+      "response": ""
+    },
+    {
+      "owner": "B",
+      "method": "GET",
+      "path": "/api/uar/runs/9a649520-0c4f-4fe3-9bd0-120daf8388f1/events",
+      "status": 404,
+      "response": ""
+    },
+    {
+      "owner": "B",
+      "method": "POST",
+      "path": "/api/uar/runs/9a649520-0c4f-4fe3-9bd0-120daf8388f1/cancel",
+      "request": {},
+      "status": 404,
+      "response": "{\"cancelled\":false}"
+    },
+    {
+      "owner": "A",
+      "method": "GET",
+      "path": "/api/uar/runs/9a649520-0c4f-4fe3-9bd0-120daf8388f1",
+      "status": 200,
+      "response": "{\"run_id\":\"9a649520-0c4f-4fe3-9bd0-120daf8388f1\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"done\",\"agent_revision\":\"sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043\",\"prepared_sha256\":\"sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":351,\"prepared_tokens\":351,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043\",\"final_messages\":2,\"final_tokens\":351,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":613,\"request_tokens\":613,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "owner": "B",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "model": "liter/MiniMax-M3",
+        "session_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What reference did I previously give you, and what is the sum of the two quantities? Return only JSON with reference and total."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-2426eb99-dcb3-4790-a31b-f22d75285df8\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-2426eb99-dcb3-4790-a31b-f22d75285df8\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-2426eb99-dcb3-4790-a31b-f22d75285df8\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-2426eb99-dcb3-4790-a31b-f22d75285df8\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · none\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\"},\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-2426eb99-dcb3-4790-a31b-f22d75285df8\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"8f1c0f75e6468d9c8ceee134233e90265a03edd0eea998848cbdcd8a2f9abeae\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"887074ae08fb98d5536ed7036879ff8b4d30c7efa5f898d5e87f6da51d4e7b2d\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5638809153b46966165cebc30ccfb83f8c0c29ef09bf9bb9d0360e5edb0e770c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"05b0e0f8af8171df00445e635622f68b1ce62461df228db476dd427296f72cd6\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2620,\\\"rendered_characters\\\":2620,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"8f1c0f75e6468d9c8ceee134233e90265a03edd0eea998848cbdcd8a2f9abeae\",\"fragment_count\":6},\"sourceRunId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\"},\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"input\":{\"agentId\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"run_id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"running\",\"started_at\":\"2026-10-31T21:54:08.630785+00:00\",\"updated_at\":\"2026-10-31T21:54:08.630792+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"running\"}}],\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8-1\",\"run_id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-31T21:54:08.655831+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"f7f89ad685b0c1d00bc8ba1287753cbe0cf8bca2b8c18d5c6dc3dabb2e403b8c\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"887074ae08fb98d5536ed7036879ff8b4d30c7efa5f898d5e87f6da51d4e7b2d\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5638809153b46966165cebc30ccfb83f8c0c29ef09bf9bb9d0360e5edb0e770c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"05b0e0f8af8171df00445e635622f68b1ce62461df228db476dd427296f72cd6\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2468,\\\"rendered_characters\\\":2468,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\"},\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-2426eb99-dcb3-4790-a31b-f22d75285df8-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\"},\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":712,\\\"serialized_bytes\\\":2999,\\\"serialized_sha256\\\":\\\"bfbae072cb4925bcc88ef262be4f0ec8afdaecee62b634b64352e935231785da\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\"},\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"role\":\"assistant\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"<think>W\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e need answer only JSON referenc\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e total\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\". Need infer\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" prior fact\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"? Conversation\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" only thi\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"s user ask\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"s. No referenc\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e given earlier\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\". Developer\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" says remember facts user\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" gives, acknowledge initial facts only READ\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"Y. But user\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" ask\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"s \\\"What referenc\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e did I previously give you, and what\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" is sum\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" of two quantities?\\\" Ther\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e ar\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"29:8\",\"sequence\":464}\nid: 29:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e no prior facts in conversation. We need\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"30:8\",\"sequence\":480}\nid: 30:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" use only\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"31:8\",\"sequence\":496}\nid: 31:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" facts given earlier and\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"32:8\",\"sequence\":512}\nid: 32:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" exact JSON field\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"33:8\",\"sequence\":528}\nid: 33:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"s;\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"34:8\",\"sequence\":544}\nid: 34:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" unknown null\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"35:8\",\"sequence\":560}\nid: 35:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\". So {\\\"\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"36:8\",\"sequence\":576}\nid: 36:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"reference\\\":null,\\\"total\\\":null}.\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"37:8\",\"sequence\":592}\nid: 37:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\" Need ensur\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"38:8\",\"sequence\":608}\nid: 38:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"e only JSON\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"39:8\",\"sequence\":624}\nid: 39:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\".\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"40:8\",\"sequence\":640}\nid: 40:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"</think>\\n\\n{\\\"\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"41:8\",\"sequence\":656}\nid: 41:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"delta\":\"reference\\\":null,\\\"total\\\":null}\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"42:8\",\"sequence\":672}\nid: 42:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"eventId\":\"43:8\",\"sequence\":688}\nid: 43:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8:assistant\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"44:0\",\"sequence\":704}\nid: 44:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"runId\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"result\":{\"usage\":{\"inputTokens\":837,\"outputTokens\":108,\"totalTokens\":945,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"44:8\",\"sequence\":704}\nid: 44:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"run_id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"status\":\"completed\",\"input_tokens\":837,\"output_tokens\":108,\"total_tokens\":945,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-31T21:54:09.676727+00:00\"}\nid: 44:2:3\n\n",
+      "status": 200
+    },
+    {
+      "owner": "B",
+      "method": "GET",
+      "path": "/api/uar/runs/2426eb99-dcb3-4790-a31b-f22d75285df8",
+      "status": 200,
+      "response": "{\"run_id\":\"2426eb99-dcb3-4790-a31b-f22d75285df8\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"done\",\"agent_revision\":\"sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:fba4c8ec3b2703234c9e369f3f6e8817478650c18593c501a74fd9e7353b861a\",\"prepared_sha256\":\"sha256:fba4c8ec3b2703234c9e369f3f6e8817478650c18593c501a74fd9e7353b861a\",\"source_messages\":2,\"prepared_messages\":2,\"source_tokens\":329,\"prepared_tokens\":329,\"eligible_spans\":1,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:fba4c8ec3b2703234c9e369f3f6e8817478650c18593c501a74fd9e7353b861a\",\"final_messages\":2,\"final_tokens\":329,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":591,\"request_tokens\":591,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "owner": "A",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "model": "liter/MiniMax-M3",
+        "session_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What reference did I previously give you, and what is the sum of the two quantities? Return only JSON with reference and total."
+          }
+        ]
+      },
+      "response": "event: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"run-policy-0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"artifactType\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/knowledgeBases\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"capabilities-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"capabilities-heading\\\",\\\"skills\\\",\\\"tools\\\",\\\"mcp-servers\\\",\\\"knowledge-bases\\\"]},{\\\"id\\\":\\\"capabilities-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"capabilities-column\\\"},{\\\"id\\\":\\\"runtime-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Runtime controls\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"memory\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/memory\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"prompt-caching\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/promptCaching\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"context\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/context\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"approval\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/approval\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"runtime-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"runtime-heading\\\",\\\"memory\\\",\\\"prompt-caching\\\",\\\"context\\\",\\\"approval\\\"]},{\\\"id\\\":\\\"runtime-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"runtime-column\\\"},{\\\"id\\\":\\\"warnings-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warningsHeading\\\"},\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"warnings\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/warnings\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"warnings-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"warnings-heading\\\",\\\"warnings\\\"]},{\\\"id\\\":\\\"warnings-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"warnings-column\\\"},{\\\"id\\\":\\\"root\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"title\\\",\\\"subtitle\\\",\\\"overview-card\\\",\\\"capabilities-card\\\",\\\"runtime-card\\\",\\\"warnings-card\\\"]}]}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateDataModel\\\":{\\\"surfaceId\\\":\\\"run-policy-0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\\\",\\\"path\\\":\\\"/\\\",\\\"value\\\":{\\\"title\\\":\\\"Effective run policy\\\",\\\"subtitle\\\":\\\"Resolved policy v1 · A2UI v0.9.1\\\",\\\"chatMode\\\":\\\"Chat mode · agent\\\",\\\"model\\\":\\\"Model · liter / MiniMax-M3\\\",\\\"agent\\\":\\\"Agent · disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"skills\\\":\\\"Skills · none · 0 available · agent scope\\\",\\\"tools\\\":\\\"Tools · none · 0 available · agent scope\\\",\\\"mcpServers\\\":\\\"MCP servers · none · 0 available · agent scope\\\",\\\"knowledgeBases\\\":\\\"Knowledge bases · none · 0 available · agent scope\\\",\\\"memory\\\":\\\"Memory · off\\\",\\\"promptCaching\\\":\\\"Prompt caching · off\\\",\\\"context\\\":\\\"Context · none\\\",\\\"approval\\\":\\\"Tool approval · auto\\\",\\\"warningsHeading\\\":\\\"Warnings · 0\\\",\\\"warnings\\\":\\\"No policy warnings.\\\"}}}]\",\"language\":\"a2ui\",\"metadata\":{\"profile\":\"uar.a2ui/1\",\"protocol_version\":\"v0.9.1\",\"catalog_id\":\"urn:uar:a2ui:catalog:1\",\"version\":1,\"warnings\":[]},\"sourceRunId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\"},\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"1:8\",\"sequence\":16}\nid: 1:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"running\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"2:8\",\"sequence\":32}\nid: 2:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"turn-manifest-0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"artifactType\":\"turn_manifest\",\"title\":\"Turn manifest\",\"content\":\"{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"8f1c0f75e6468d9c8ceee134233e90265a03edd0eea998848cbdcd8a2f9abeae\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"887074ae08fb98d5536ed7036879ff8b4d30c7efa5f898d5e87f6da51d4e7b2d\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5638809153b46966165cebc30ccfb83f8c0c29ef09bf9bb9d0360e5edb0e770c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"05b0e0f8af8171df00445e635622f68b1ce62461df228db476dd427296f72cd6\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":2620,\\\"rendered_characters\\\":2620,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}\",\"language\":\"json\",\"metadata\":{\"schema_version\":1,\"manifest_hash\":\"8f1c0f75e6468d9c8ceee134233e90265a03edd0eea998848cbdcd8a2f9abeae\",\"fragment_count\":6},\"sourceRunId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\"},\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"3:8\",\"sequence\":48}\nid: 3:0:3\n\nevent: RUN_STARTED\ndata: {\"type\":\"RUN_STARTED\",\"profile\":\"uar.agui/1\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"input\":{\"agentId\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\"},\"eventId\":\"4:8\",\"sequence\":64}\nid: 4:0:3\n\nevent: runtime.run\ndata: {\"type\":\"run_started\",\"id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"run_id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"running\",\"started_at\":\"2026-10-31T21:54:26.560306+00:00\",\"updated_at\":\"2026-10-31T21:54:26.560313+00:00\"}\nid: 4:1:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"running\"}}],\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"5:8\",\"sequence\":80}\nid: 5:0:3\n\nevent: STEP_STARTED\ndata: {\"type\":\"STEP_STARTED\",\"profile\":\"uar.agui/1\",\"stepId\":\"step-1\",\"stepName\":\"step-1\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"6:8\",\"sequence\":96}\nid: 6:0:3\n\nevent: runtime.step\ndata: {\"type\":\"step_started\",\"id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b-1\",\"run_id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"step\":1,\"status\":\"started\",\"updated_at\":\"2026-10-31T21:54:26.587065+00:00\"}\nid: 6:1:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.turn:resolved_step\",\"artifactType\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"a2f33e4a653bf0c57f3b0e38e7607f98e257b1792e48ec574b8d10553c94c255\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"887074ae08fb98d5536ed7036879ff8b4d30c7efa5f898d5e87f6da51d4e7b2d\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"5638809153b46966165cebc30ccfb83f8c0c29ef09bf9bb9d0360e5edb0e770c\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"05b0e0f8af8171df00445e635622f68b1ce62461df228db476dd427296f72cd6\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"1086bd5826885dcb64b18e69a018500cec2e60dcae9d0473139c3ca6d1a9425a\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"}],\\\"counts\\\":{\\\"total\\\":6,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":3822,\\\"rendered_characters\\\":3822,\\\"context_window_tokens\\\":1045480},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\"},\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"7:8\",\"sequence\":112}\nid: 7:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"attempt-manifest-0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b-MiniMax-M3\",\"artifactType\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"},\"sourceRunId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\"},\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"8:8\",\"sequence\":128}\nid: 8:0:3\n\nevent: CUSTOM\ndata: {\"type\":\"CUSTOM\",\"profile\":\"uar.agui/1\",\"name\":\"uar.artifact.available\",\"value\":{\"artifactId\":\"uar.request:budget_receipt\",\"artifactType\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":1109,\\\"serialized_bytes\\\":4630,\\\"serialized_sha256\\\":\\\"139a45cb6d969264b5d92800615afc3b7bcf1e80c16a523f37bd7c6bea451ba3\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"},\"sourceRunId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\"},\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"9:8\",\"sequence\":144}\nid: 9:0:3\n\nevent: TEXT_MESSAGE_START\ndata: {\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"role\":\"assistant\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"type\":\"TEXT_MESSAGE_START\",\"profile\":\"uar.agui/1\",\"eventId\":\"10:0\",\"sequence\":160}\nid: 10:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"<think>W\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"10:8\",\"sequence\":160}\nid: 10:1:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"e need answer exact JSON field\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"11:8\",\"sequence\":176}\nid: 11:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"s reference and total. Fact\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"12:8\",\"sequence\":192}\nid: 12:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"s earlier\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"13:8\",\"sequence\":208}\nid: 13:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\": reference CASE-6e124\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"14:8\",\"sequence\":224}\nid: 14:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"024-ed\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"15:8\",\"sequence\":240}\nid: 15:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"27-40\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"16:8\",\"sequence\":256}\nid: 16:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"e0\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"17:8\",\"sequence\":272}\nid: 17:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"-9384\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"18:8\",\"sequence\":288}\nid: 18:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"-62a\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"19:8\",\"sequence\":304}\nid: 19:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"c248f36bf\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"20:8\",\"sequence\":320}\nid: 20:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"; quantitie\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"21:8\",\"sequence\":336}\nid: 21:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"s 138,\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"22:8\",\"sequence\":352}\nid: 22:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"735\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"23:8\",\"sequence\":368}\nid: 23:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\". Sum 873.\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"24:8\",\"sequence\":384}\nid: 24:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\" Need only JSON,\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"25:8\",\"sequence\":400}\nid: 25:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\" likely\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"26:8\",\"sequence\":416}\nid: 26:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\" {\\\"reference\\\":\\\"...\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"27:8\",\"sequence\":432}\nid: 27:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"\\\",\\\"total\\\":873}. Ensur\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"28:8\",\"sequence\":448}\nid: 28:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"eno markdown.\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"29:8\",\"sequence\":464}\nid: 29:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"</think>\\n\\n{\\\"\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"30:8\",\"sequence\":480}\nid: 30:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"reference\\\":\\\"CASE-6\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"31:8\",\"sequence\":496}\nid: 31:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"e124024-ed27-40\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"32:8\",\"sequence\":512}\nid: 32:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"e0-9384-62ac248\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"33:8\",\"sequence\":528}\nid: 33:0:3\n\nevent: TEXT_MESSAGE_CONTENT\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"profile\":\"uar.agui/1\",\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"delta\":\"f36bf\\\",\\\"total\\\":873}\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"34:8\",\"sequence\":544}\nid: 34:0:3\n\nevent: STATE_DELTA\ndata: {\"type\":\"STATE_DELTA\",\"profile\":\"uar.agui/1\",\"delta\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}],\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"eventId\":\"35:8\",\"sequence\":560}\nid: 35:0:3\n\nevent: TEXT_MESSAGE_END\ndata: {\"messageId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b:assistant\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"type\":\"TEXT_MESSAGE_END\",\"profile\":\"uar.agui/1\",\"eventId\":\"36:0\",\"sequence\":576}\nid: 36:0:3\n\nevent: RUN_FINISHED\ndata: {\"type\":\"RUN_FINISHED\",\"profile\":\"uar.agui/1\",\"threadId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"runId\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"result\":{\"usage\":{\"inputTokens\":1229,\"outputTokens\":98,\"totalTokens\":1327,\"costUsdEstimate\":null,\"model\":\"MiniMax-M3\"}},\"eventId\":\"36:8\",\"sequence\":576}\nid: 36:1:3\n\nevent: runtime.run\ndata: {\"type\":\"run_finished\",\"id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"run_id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"status\":\"completed\",\"input_tokens\":1229,\"output_tokens\":98,\"total_tokens\":1327,\"cost_usd_estimate\":null,\"updated_at\":\"2026-10-31T21:54:27.646595+00:00\"}\nid: 36:2:3\n\n",
+      "status": 200
+    },
+    {
+      "owner": "A",
+      "method": "GET",
+      "path": "/api/uar/runs/0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b",
+      "status": 200,
+      "response": "{\"run_id\":\"0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"conversation_id\":\"f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"status\":\"done\",\"agent_revision\":\"sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:0082e7db2f1f1a2357310899cf1ed9109ba981c49c1c902851d111d76f12737c\",\"prepared_sha256\":\"sha256:0082e7db2f1f1a2357310899cf1ed9109ba981c49c1c902851d111d76f12737c\",\"source_messages\":8,\"prepared_messages\":8,\"source_tokens\":662,\"prepared_tokens\":662,\"eligible_spans\":3,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:0082e7db2f1f1a2357310899cf1ed9109ba981c49c1c902851d111d76f12737c\",\"final_messages\":8,\"final_tokens\":662,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model-estimate-v1\",\"per_skill_tokens\":5000,\"total_tokens\":25000,\"context_limit\":1048576,\"reserve_tokens\":1000,\"request_input_limit\":1047576,\"history_tokens\":924,\"request_tokens\":924,\"rendered_tokens\":0,\"rendered_sha256\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"fragments\":[]}}}"
+    },
+    {
+      "owner": "A",
+      "method": "GET",
+      "path": "/api/uar/runs/2426eb99-dcb3-4790-a31b-f22d75285df8",
+      "status": 404,
+      "response": ""
+    },
+    {
+      "owner": "A",
+      "method": "DELETE",
+      "path": "/api/agents/disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 21159
+  },
+  "owner_b_endpoint": {
+    "base_url": "http://127.0.0.1:60677",
+    "subject": "bdd-owner-b-rc2",
+    "pid": 41568
+  },
+  "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+  "session_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+  "model": "liter/MiniMax-M3",
+  "expected": {
+    "reference": "CASE-6e124024-ed27-40e0-9384-62ac248f36bf",
+    "total": 873
+  },
+  "owner_a_run_id": "9a649520-0c4f-4fe3-9bd0-120daf8388f1",
+  "owner_a_run_before": {
+    "run_id": "9a649520-0c4f-4fe3-9bd0-120daf8388f1",
+    "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+    "conversation_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+    "status": "done",
+    "agent_revision": "sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "none"
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "agent",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "none"
+      },
+      "source_sha256": "sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043",
+      "prepared_sha256": "sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 351,
+      "prepared_tokens": 351,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043",
+      "final_messages": 2,
+      "final_tokens": 351,
+      "input_allowance": 1044215,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1048576,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1047576,
+        "history_tokens": 613,
+        "request_tokens": 613,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "foreign_operations": {
+    "read": 404,
+    "events": 404,
+    "cancel": 404
+  },
+  "owner_a_run_after_foreign": {
+    "run_id": "9a649520-0c4f-4fe3-9bd0-120daf8388f1",
+    "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+    "conversation_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+    "status": "done",
+    "agent_revision": "sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "none"
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "agent",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "none"
+      },
+      "source_sha256": "sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043",
+      "prepared_sha256": "sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 351,
+      "prepared_tokens": 351,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:52e59f9bbcfea5ffd32014ca859bc72aaa19e2b80524fb067231ad76fccea043",
+      "final_messages": 2,
+      "final_tokens": 351,
+      "input_allowance": 1044215,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1048576,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1047576,
+        "history_tokens": 613,
+        "request_tokens": 613,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "owner_b_run_id": "2426eb99-dcb3-4790-a31b-f22d75285df8",
+  "owner_b_final": "{\"reference\":null,\"total\":null}",
+  "owner_b_run": {
+    "run_id": "2426eb99-dcb3-4790-a31b-f22d75285df8",
+    "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+    "conversation_id": "f5ea5ee9-da5d-4114-9244-ed66de11014f",
+    "status": "done",
+    "agent_revision": "sha256:480bdb8553881a69607ce412b7992c50ccc7279d0b9accd0e9e3505de5fc5ee5",
+    "effective_model": {
+      "provider_id": "liter",
+      "model_id": "MiniMax-M3"
+    },
+    "effective_run_policy": {
+      "version": 1,
+      "chat_mode": "agent",
+      "agent_id": "disposable-owner-isolation-f5ea5ee9-da5d-4114-9244-ed66de11014f",
+      "model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      },
+      "skills": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "tools": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "mcp_servers": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "knowledge_bases": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "presentations": {
+        "mode": "none",
+        "ids": [],
+        "source": "agent"
+      },
+      "memory_enabled": false,
+      "prompt_caching_enabled": false,
+      "context_strategy": {
+        "type": "none"
+      },
+      "tool_approval": "auto",
+      "provenance": {
+        "agent_id": "turn",
+        "chat_mode": "turn",
+        "context_strategy": "agent",
+        "memory_enabled": "turn",
+        "model": "turn",
+        "prompt_caching_enabled": "global",
+        "tool_approval": "legacy"
+      },
+      "warnings": []
+    },
+    "presentation_selection": {
+      "requested_mode": null,
+      "effective_mode": "legacy",
+      "fallback_reason": null
+    },
+    "host_resources": {
+      "artifact_inline": false
+    },
+    "effective_service_binding": null,
+    "skill_matching": {
+      "requested_method": "skill_service.keyword",
+      "effective_method": "skill_service.keyword",
+      "requested_model": null,
+      "effective_model": null,
+      "threshold": 0.5,
+      "margin": 0.05000000074505806,
+      "top_k": 3,
+      "candidates": []
+    },
+    "activated_skills": [],
+    "context_reduction": {
+      "schema_version": 1,
+      "requested_strategy": {
+        "type": "none"
+      },
+      "source_sha256": "sha256:fba4c8ec3b2703234c9e369f3f6e8817478650c18593c501a74fd9e7353b861a",
+      "prepared_sha256": "sha256:fba4c8ec3b2703234c9e369f3f6e8817478650c18593c501a74fd9e7353b861a",
+      "source_messages": 2,
+      "prepared_messages": 2,
+      "source_tokens": 329,
+      "prepared_tokens": 329,
+      "eligible_spans": 1,
+      "changed": false,
+      "summary_generated": false,
+      "tier_calls": [],
+      "final_sha256": "sha256:fba4c8ec3b2703234c9e369f3f6e8817478650c18593c501a74fd9e7353b861a",
+      "final_messages": 2,
+      "final_tokens": 329,
+      "input_allowance": 1044215,
+      "protected_groups": 0,
+      "protected_groups_preserved": true,
+      "skill_reattachment": {
+        "schema_version": 1,
+        "scope": "initial_assembly",
+        "model": "liter/MiniMax-M3",
+        "count_quality": "approximate",
+        "counting_revision": "token-service-model-estimate-v1",
+        "per_skill_tokens": 5000,
+        "total_tokens": 25000,
+        "context_limit": 1048576,
+        "reserve_tokens": 1000,
+        "request_input_limit": 1047576,
+        "history_tokens": 591,
+        "request_tokens": 591,
+        "rendered_tokens": 0,
+        "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "fragments": []
+      }
+    }
+  },
+  "restart": {
+    "previous_pid": 21159,
+    "binary_sha256": "999c7e8a25553f0e432f0ae13a9f271a2bf0f024c2f6a650afa7b1c2b3769ada",
+    "config_sha256": "8726e43a48c4e16e95666142adcc22ca22db455deb105e9bf597df89926254fc",
+    "working_directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c",
+    "config_path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/config.json",
+    "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/server-conversation-restart-c912e463-1015-4b50-9ee4-5f1b6b395091.log",
+    "stop_signal": "SIGTERM",
+    "store_preserved": true,
+    "previous_process_exited": true,
+    "new_pid": 41903,
+    "new_process_ready": true
+  },
+  "after_endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 41903
+  },
+  "owner_a_follow_up_run_id": "0527ddef-a7cb-4a8a-8d5f-8a4df4f01e7b",
+  "owner_a_answer": {
+    "reference": "CASE-6e124024-ed27-40e0-9384-62ac248f36bf",
+    "total": 873
+  },
+  "owner_b_run_seen_by_a": 404,
+  "result": "VERIFIED",
+  "disposable_agent_deleted": true,
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 21221
+}

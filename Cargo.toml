@@ -59,7 +59,7 @@ libc = "=0.2.191"
 
 [package]
 name = "universal-agent-runtime"
-version = "1.4.0-rc.1"
+version = "1.4.0-rc.2"
 edition = "2024"
 license = "MIT"
 

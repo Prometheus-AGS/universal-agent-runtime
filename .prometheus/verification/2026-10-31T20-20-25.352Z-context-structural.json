@@ -1,0 +1,206 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "structural-context-strategies-remove-the-intended-history;sliding-window-retains-the-intended-recent-groups",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "Sliding-window retains the intended recent groups",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 70543192
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent using a sliding window of 4 messages",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14688727906
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I continue a seeded 10-message conversation that names an old and a recent depot code",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:111"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 151128
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the reduction receipt shows old groups left the prepared input",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 210148
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "the answer uses the recent fact and cannot see the old one",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:124"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 71880986
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LXN0cnVjdHVyYWwvNjBlYWEwN2QtOTkwMy00Y2I0LWFhYzEtY2YxMTE3ODljOGY3Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@structural",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "structural-context-strategies-remove-the-intended-history;truncate-middle-actually-removes-the-middle",
+        "keyword": "Scenario",
+        "line": 9,
+        "name": "Truncate-middle actually removes the middle",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 35965591
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 10,
+            "name": "a disposable agent using truncate-middle keeping the first 2 and last 2 messages",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 3634430442
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I continue a seeded 10-message conversation that names first, middle and latest depot codes",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:135"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 195627
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "the reduction receipt shows the middle removed and the first and latest groups retained",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 231390
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "the answer uses the first and latest facts and cannot see the middle one",
+            "match": {
+              "location": "scripts/behaviors/steps/context-structural.steps.mjs:147"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 67618875
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb250ZXh0LXN0cnVjdHVyYWwvN2Y2YTM4NGEtNWRlNS00MmY3LTkwNDItYmRkYTY3MTZjNDc2Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@structural",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "structural-context-strategies-remove-the-intended-history",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Structural context strategies remove the intended history",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@structural",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/context-structural.feature"
+  }
+]

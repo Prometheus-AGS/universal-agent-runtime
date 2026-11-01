@@ -1,0 +1,251 @@
+{
+  "scenario": "ACP-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "ACP JSON-RPC sessions/create and runs/create stream",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"mode\":\"selected\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:227c7dcc77864a6b0fc475fefaf2d9f0009d48e320cd59749b8b50a400a2e323\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "9c2519aa-322d-4736-bb49-535a4f44a9aa",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "math-specialist-db64c2a8"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"9c2519aa-322d-4736-bb49-535a4f44a9aa\",\"result\":{\"session_id\":\"73d81075-b713-413f-92ec-9218ffbbc0a7\",\"agent_id\":\"math-specialist-db64c2a8\",\"created_at\":\"2026-10-31T20:17:15.595809Z\",\"last_active\":\"2026-10-31T20:17:15.595809Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/stream",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "9f674b00-8ee9-4120-9265-753cc72b48e2",
+        "method": "runs/create",
+        "params": {
+          "session_id": "73d81075-b713-413f-92ec-9218ffbbc0a7",
+          "stream": true,
+          "input": "What is (37 multiplied by 21) plus 496? Follow your saved specialist/answer JSON instructions."
+        }
+      },
+      "response": "data: {\"type\":\"RunStart\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"agent_id\":\"math-specialist-db64c2a8\"}}\n\ndata: {\"type\":\"StatePatch\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"patch\":[{\"op\":\"replace\",\"path\":\"/run\",\"value\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"conversation_id\":\"73d81075-b713-413f-92ec-9218ffbbc0a7\",\"status\":\"running\"}}]}}\n\ndata: {\"type\":\"RuntimeStep\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"step\":1,\"kind\":\"started\"}}\n\ndata: {\"type\":\"Artifact\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"artifact\":{\"artifact_id\":\"uar.turn:resolved_step\",\"artifact_type\":\"provider_event\",\"title\":\"resolved_step\",\"content\":\"{\\\"source\\\":\\\"uar.turn\\\",\\\"payload\\\":{\\\"step\\\":1,\\\"model\\\":\\\"MiniMax-M3\\\",\\\"mcp_catalog\\\":[],\\\"manifest\\\":{\\\"schema_version\\\":1,\\\"manifest_hash\\\":\\\"4ef55f97ef8c8e71ddef338272def08ba126affaa41869a0042fd5c7569384e7\\\",\\\"fragments\\\":[{\\\"id\\\":\\\"agent.identity\\\",\\\"section\\\":\\\"agent_identity\\\",\\\"source\\\":\\\"artifact:math-specialist-db64c2a8\\\",\\\"authority\\\":\\\"system\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\\\"},{\\\"id\\\":\\\"policy.effective\\\",\\\"section\\\":\\\"enforced_policy\\\",\\\"source\\\":\\\"effective_run_policy\\\",\\\"authority\\\":\\\"policy\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"f7ff1433014fcb46cdb597c803cdd7ad40b02dd31028a9c0a3f84c946911b40f\\\"},{\\\"id\\\":\\\"skills.catalog\\\",\\\"section\\\":\\\"skill_catalog\\\",\\\"source\\\":\\\"eligible_skill_registry\\\",\\\"authority\\\":\\\"skill\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\\\"},{\\\"id\\\":\\\"world_state.current_time\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"88ec590b39f31217bcb1af9a414d5327e8d3ba2542b5bc6bc32a834d31d4a268\\\"},{\\\"id\\\":\\\"world_state.environment\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\\\"},{\\\"id\\\":\\\"world_state.permissions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"d68205770c554111ae973a65a62df7d7071de4a054e07df489eb9726bfac071d\\\"},{\\\"id\\\":\\\"world_state.project_instructions\\\",\\\"section\\\":\\\"world_state\\\",\\\"source\\\":\\\"host.world_state\\\",\\\"authority\\\":\\\"host\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"session\\\",\\\"content_hash\\\":\\\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\\\"},{\\\"id\\\":\\\"retrieved.rag\\\",\\\"section\\\":\\\"memory_and_retrieval\\\",\\\"source\\\":\\\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,a048de8e-3e19-41a6-935b-cea3818e3d1e,c23dfa11-0891-400b-831b-d60c16c71b74,e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\\\",\\\"authority\\\":\\\"retrieved\\\",\\\"role\\\":\\\"system\\\",\\\"retention\\\":\\\"turn\\\",\\\"content_hash\\\":\\\"febfe7460a03d40c824890919b1467ce9c184e7e79bea6ae2a776d597cb0f56f\\\"}],\\\"counts\\\":{\\\"total\\\":8,\\\"by_section\\\":{\\\"agent_identity\\\":1,\\\"enforced_policy\\\":1,\\\"memory_and_retrieval\\\":1,\\\"skill_catalog\\\":1,\\\"world_state\\\":4},\\\"by_authority\\\":{\\\"host\\\":4,\\\"policy\\\":1,\\\"retrieved\\\":1,\\\"skill\\\":1,\\\"system\\\":1}},\\\"budgets\\\":{\\\"rendered_bytes\\\":57019,\\\"rendered_characters\\\":56511,\\\"context_window_tokens\\\":1048576},\\\"selected_skills\\\":[],\\\"selected_tools\\\":[\\\"a2ui_render\\\",\\\"activate_skill\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"warnings\\\":[]}}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}}}\n\ndata: {\"type\":\"Artifact\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"artifact\":{\"artifact_id\":\"attempt-manifest-b935202a-2b88-4f4b-a235-30f123604b3b-MiniMax-M3\",\"artifact_type\":\"attempt_manifest\",\"title\":\"Provider attempt manifest\",\"content\":\"{\\\"schema_version\\\":\\\"uar.attempt-manifest.v1\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"budgeting\\\":{\\\"label\\\":\\\"legacy_unbudgeted\\\",\\\"contract_present\\\":false,\\\"fit_guarantee\\\":false},\\\"warning\\\":\\\"Provider dispatch is using the legacy unbudgeted path\\\"}\",\"language\":\"json\",\"metadata\":{\"source\":\"uar.request\",\"budgeting_label\":\"legacy_unbudgeted\"}}}}\n\ndata: {\"type\":\"Artifact\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"artifact\":{\"artifact_id\":\"uar.request:budget_receipt\",\"artifact_type\":\"provider_event\",\"title\":\"budget_receipt\",\"content\":\"{\\\"source\\\":\\\"uar.request\\\",\\\"payload\\\":{\\\"schema_version\\\":\\\"uar.request-budget.v1\\\",\\\"representation\\\":\\\"final_provider_request\\\",\\\"destination_model\\\":\\\"MiniMax-M3\\\",\\\"serialized_request\\\":true,\\\"count_quality\\\":\\\"approximate\\\",\\\"counting_revision\\\":\\\"approximate-cl100k-json-v1\\\",\\\"counted_input_tokens\\\":15580,\\\"serialized_bytes\\\":67805,\\\"serialized_sha256\\\":\\\"7dd67a46f39b09000c802af4c3c2c93fdb01a3eb6864a14be449660ec31bab74\\\",\\\"tools_included\\\":true,\\\"instructions_included\\\":true,\\\"fit_guarantee\\\":false,\\\"reserved_output_tokens\\\":null,\\\"output_ceiling_enforced\\\":true}}\",\"language\":\"json\",\"metadata\":{\"source\":\"external_llm_driver\"}}}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"<think>Th\"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"e question is ordinary arithmetic: (37 * 21) + 496 = 777 + 496 = \"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"1273.\\n\\nReturn only JSON with specialist and answer.\\n\\nNote the agent\"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"_identity fragment says: \\\"For ordinary arithmetic, return keys specialist and answer with the requested numeric result.\\\"\\n\\nSo\"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\" output JSON.\"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"</think>\\n\\n```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce932\"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"4ee-0d63-4714-982f-f099e8c8f378\"}}\n\ndata: {\"type\":\"ChatDelta\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"text_delta\":\"\\\",\\n  \\\"answer\\\": 1273\\n}\\n```\"}}\n\ndata: {\"type\":\"StatePatch\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"patch\":[{\"op\":\"add\",\"path\":\"/presentation\",\"value\":{\"version\":1,\"requested_mode\":null,\"effective_mode\":\"legacy\",\"admission_fallback_reason\":null,\"fallback_reason\":null,\"run_outcome\":\"finished\",\"eligible_templates\":[],\"published_templates\":[],\"surface_published\":false,\"generation_failed\":false,\"receipt_status\":\"available\",\"client_display\":\"unconfirmed\"}}]}}\n\ndata: {\"type\":\"RunDoneWithUsage\",\"data\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"input_tokens\":16102,\"output_tokens\":109,\"total_tokens\":16211,\"cost_usd_estimate\":null,\"model\":\"MiniMax-M3\"}}\n\n",
+      "status": 200,
+      "content_type": "text/event-stream"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "3a69c9e0-4d4b-42ed-bb0e-73e81ac40c04",
+        "method": "runs/get",
+        "params": {
+          "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"3a69c9e0-4d4b-42ed-bb0e-73e81ac40c04\",\"result\":{\"run_id\":\"b935202a-2b88-4f4b-a235-30f123604b3b\",\"status\":\"Done\",\"agent_id\":\"math-specialist-db64c2a8\",\"conversation_id\":\"73d81075-b713-413f-92ec-9218ffbbc0a7\",\"output\":\"<think>The question is ordinary arithmetic: (37 * 21) + 496 = 777 + 496 = 1273.\\n\\nReturn only JSON with specialist and answer.\\n\\nNote the agent_identity fragment says: \\\"For ordinary arithmetic, return keys specialist and answer with the requested numeric result.\\\"\\n\\nSo output JSON.</think>\\n\\n```json\\n{\\n  \\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\",\\n  \\\"answer\\\": 1273\\n}\\n```\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    }
+  ],
+  "events": [
+    {
+      "type": "RunStart",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "agent_id": "math-specialist-db64c2a8"
+      }
+    },
+    {
+      "type": "StatePatch",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "patch": [
+          {
+            "op": "replace",
+            "path": "/run",
+            "value": {
+              "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+              "conversation_id": "73d81075-b713-413f-92ec-9218ffbbc0a7",
+              "status": "running"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "RuntimeStep",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "step": 1,
+        "kind": "started"
+      }
+    },
+    {
+      "type": "Artifact",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "artifact": {
+          "artifact_id": "uar.turn:resolved_step",
+          "artifact_type": "provider_event",
+          "title": "resolved_step",
+          "content": "{\"source\":\"uar.turn\",\"payload\":{\"step\":1,\"model\":\"MiniMax-M3\",\"mcp_catalog\":[],\"manifest\":{\"schema_version\":1,\"manifest_hash\":\"4ef55f97ef8c8e71ddef338272def08ba126affaa41869a0042fd5c7569384e7\",\"fragments\":[{\"id\":\"agent.identity\",\"section\":\"agent_identity\",\"source\":\"artifact:math-specialist-db64c2a8\",\"authority\":\"system\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"fb7d48635242178eaef609081ae7efcc564799b73f44f808b5a8d4c996e0ef0c\"},{\"id\":\"policy.effective\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\",\"authority\":\"policy\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"f7ff1433014fcb46cdb597c803cdd7ad40b02dd31028a9c0a3f84c946911b40f\"},{\"id\":\"skills.catalog\",\"section\":\"skill_catalog\",\"source\":\"eligible_skill_registry\",\"authority\":\"skill\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"29aeac8823912a40b7441bca5fa964c875001f9b72671cd7e4c6d4ec80e246d3\"},{\"id\":\"world_state.current_time\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"88ec590b39f31217bcb1af9a414d5327e8d3ba2542b5bc6bc32a834d31d4a268\"},{\"id\":\"world_state.environment\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"60dd57dd0b5613817cff0f9517e6e5ec987d6ee6cd6e0bc93bbfbd5d65d5e859\"},{\"id\":\"world_state.permissions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"d68205770c554111ae973a65a62df7d7071de4a054e07df489eb9726bfac071d\"},{\"id\":\"world_state.project_instructions\",\"section\":\"world_state\",\"source\":\"host.world_state\",\"authority\":\"host\",\"role\":\"system\",\"retention\":\"session\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\"},{\"id\":\"retrieved.rag\",\"section\":\"memory_and_retrieval\",\"source\":\"knowledge_bases:58c0e39f-43e0-47a9-b699-7dea5d82417f,a048de8e-3e19-41a6-935b-cea3818e3d1e,c23dfa11-0891-400b-831b-d60c16c71b74,e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc,f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"authority\":\"retrieved\",\"role\":\"system\",\"retention\":\"turn\",\"content_hash\":\"febfe7460a03d40c824890919b1467ce9c184e7e79bea6ae2a776d597cb0f56f\"}],\"counts\":{\"total\":8,\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"memory_and_retrieval\":1,\"skill_catalog\":1,\"world_state\":4},\"by_authority\":{\"host\":4,\"policy\":1,\"retrieved\":1,\"skill\":1,\"system\":1}},\"budgets\":{\"rendered_bytes\":57019,\"rendered_characters\":56511,\"context_window_tokens\":1048576},\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_capture_policy\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      }
+    },
+    {
+      "type": "Artifact",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "artifact": {
+          "artifact_id": "attempt-manifest-b935202a-2b88-4f4b-a235-30f123604b3b-MiniMax-M3",
+          "artifact_type": "attempt_manifest",
+          "title": "Provider attempt manifest",
+          "content": "{\"schema_version\":\"uar.attempt-manifest.v1\",\"destination_model\":\"MiniMax-M3\",\"budgeting\":{\"label\":\"legacy_unbudgeted\",\"contract_present\":false,\"fit_guarantee\":false},\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}",
+          "language": "json",
+          "metadata": {
+            "source": "uar.request",
+            "budgeting_label": "legacy_unbudgeted"
+          }
+        }
+      }
+    },
+    {
+      "type": "Artifact",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "artifact": {
+          "artifact_id": "uar.request:budget_receipt",
+          "artifact_type": "provider_event",
+          "title": "budget_receipt",
+          "content": "{\"source\":\"uar.request\",\"payload\":{\"schema_version\":\"uar.request-budget.v1\",\"representation\":\"final_provider_request\",\"destination_model\":\"MiniMax-M3\",\"serialized_request\":true,\"count_quality\":\"approximate\",\"counting_revision\":\"approximate-cl100k-json-v1\",\"counted_input_tokens\":15580,\"serialized_bytes\":67805,\"serialized_sha256\":\"7dd67a46f39b09000c802af4c3c2c93fdb01a3eb6864a14be449660ec31bab74\",\"tools_included\":true,\"instructions_included\":true,\"fit_guarantee\":false,\"reserved_output_tokens\":null,\"output_ceiling_enforced\":true}}",
+          "language": "json",
+          "metadata": {
+            "source": "external_llm_driver"
+          }
+        }
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "<think>Th"
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "e question is ordinary arithmetic: (37 * 21) + 496 = 777 + 496 = "
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "1273.\n\nReturn only JSON with specialist and answer.\n\nNote the agent"
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "_identity fragment says: \"For ordinary arithmetic, return keys specialist and answer with the requested numeric result.\"\n\nSo"
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": " output JSON."
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "</think>\n\n```json\n{\n  \"specialist\": \"MATH-ce932"
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "4ee-0d63-4714-982f-f099e8c8f378"
+      }
+    },
+    {
+      "type": "ChatDelta",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "text_delta": "\",\n  \"answer\": 1273\n}\n```"
+      }
+    },
+    {
+      "type": "StatePatch",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "patch": [
+          {
+            "op": "add",
+            "path": "/presentation",
+            "value": {
+              "version": 1,
+              "requested_mode": null,
+              "effective_mode": "legacy",
+              "admission_fallback_reason": null,
+              "fallback_reason": null,
+              "run_outcome": "finished",
+              "eligible_templates": [],
+              "published_templates": [],
+              "surface_published": false,
+              "generation_failed": false,
+              "receipt_status": "available",
+              "client_display": "unconfirmed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "RunDoneWithUsage",
+      "data": {
+        "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+        "input_tokens": 16102,
+        "output_tokens": 109,
+        "total_tokens": 16211,
+        "cost_usd_estimate": null,
+        "model": "MiniMax-M3"
+      }
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "session_id": "73d81075-b713-413f-92ec-9218ffbbc0a7",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1273
+  },
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1273
+  },
+  "run_id": "b935202a-2b88-4f4b-a235-30f123604b3b",
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 4234
+}

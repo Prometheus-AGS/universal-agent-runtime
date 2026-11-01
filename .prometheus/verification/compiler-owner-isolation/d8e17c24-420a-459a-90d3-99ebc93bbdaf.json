@@ -1,0 +1,46 @@
+{
+  "scenario": "Without the opt-in, a loopback caller without credentials cannot create compiler records",
+  "backend": "postgres",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/compiler/specs",
+      "request": {
+        "content": "# Agent: owner-iso-anonymous-1b352526\n\n## Metadata\n```yaml\nversion: \"1.0\"\ndescription: \"Compiler owner isolation probe\"\n```\n\n## Identity\n```yaml\nname: \"owner-iso-anonymous-1b352526\"\nrole: \"assistant\"\npersona: \"Owner isolation probe\"\nsystem_prompt: \"Reply briefly.\"\n```\n"
+      },
+      "status": 401,
+      "response": "{\"code\":\"verified_compiler_owner_required\",\"error\":\"Verified compiler owner required\"}"
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions",
+      "status": 401,
+      "response": "{\"code\":\"verified_compiler_owner_required\",\"error\":\"Verified compiler owner required\"}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/compiler-owner-isolation/1b3ff9a6-22c6-4fc7-8c00-3e56cfd34417",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-1b3ff9a6",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:58820/",
+    "base_url": "http://127.0.0.1:58822/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:58819",
+    "uar_pid": 57936,
+    "proxy_pid": 58168
+  },
+  "refusal": {
+    "spec": "verified_compiler_owner_required",
+    "session": "verified_compiler_owner_required"
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 25992
+}

@@ -1,0 +1,260 @@
+[
+  {
+    "description": "  When the primary model is unavailable and a configured fallback has a smaller\n  context window than the request was prepared for, the fallback request is\n  either displaced to fit that window by the agent's declared strategy, or it is\n  refused with a typed budget error before any request reaches the fallback.\n  The test never sends credentials: the caller is the loopback owner.",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-failover-destination-is-compiled-against-its-own-context-window-(#388);a-smaller-fallback-window-receives-a-displaced-request-that-fits",
+        "keyword": "Scenario",
+        "line": 10,
+        "name": "A smaller fallback window receives a displaced request that fits",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 330185
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 30174962440
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 11,
+            "name": "a dedicated UAR with an unavailable primary and a fallback with a 4096-token window",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22194186
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "a disposable agent using the keep-first-and-latest strategy",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:173"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 15091946971
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "I continue a seeded 60-message conversation that exceeds the fallback window",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:181"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 340078
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "the run is answered by the fallback",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:216"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 337626
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the fallback request was displaced to fit its own window",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:222"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1205844067
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9mYWxsYmFjay1kZXN0aW5hdGlvbi1idWRnZXQvMmIxMGFkNTQtOGY2YS00NDM1LWFkYjYtZmVhNGFkZGIzNTM2Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@budget",
+            "line": 1
+          },
+          {
+            "name": "@failover",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "a-failover-destination-is-compiled-against-its-own-context-window-(#388);a-fallback-that-cannot-hold-the-request-is-refused-before-dispatch",
+        "keyword": "Scenario",
+        "line": 17,
+        "name": "A fallback that cannot hold the request is refused before dispatch",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 33762
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 27745139889
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 18,
+            "name": "a dedicated UAR with an unavailable primary and a fallback with a 4096-token window",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:116"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21144416
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "a disposable agent that never displaces history",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:177"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13538053085
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 20,
+            "name": "I continue a seeded 60-message conversation that exceeds the fallback window",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:181"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 169817
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 21,
+            "name": "the run ends with a typed context overflow refusal",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:246"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 75717
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the fallback provider received no request",
+            "match": {
+              "location": "scripts/behaviors/steps/fallback-destination-budget.steps.mjs:254"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1128510962
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9mYWxsYmFjay1kZXN0aW5hdGlvbi1idWRnZXQvNjcwNWI3MjQtNjE5Yi00ZjYwLTgwNzEtMmNjZGQ3ZWE5ZGZmLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@context",
+            "line": 1
+          },
+          {
+            "name": "@budget",
+            "line": 1
+          },
+          {
+            "name": "@failover",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-failover-destination-is-compiled-against-its-own-context-window-(#388)",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A failover destination is compiled against its own context window (#388)",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@context",
+        "line": 1
+      },
+      {
+        "name": "@budget",
+        "line": 1
+      },
+      {
+        "name": "@failover",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/fallback-destination-budget.feature"
+  }
+]

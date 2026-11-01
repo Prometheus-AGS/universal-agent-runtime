@@ -1,0 +1,16 @@
+{
+  "scenario": "E09-OWNER-ISOLATION",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "exchanges": [],
+  "endpoint_binding": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 97073
+  },
+  "cleanup_errors": [],
+  "status": "FAILED",
+  "duration_ms": 58
+}

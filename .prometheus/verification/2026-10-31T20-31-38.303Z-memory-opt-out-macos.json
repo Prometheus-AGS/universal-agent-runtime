@@ -1,0 +1,147 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-memory-opt-out-survives-restart-and-stops-new-capture;after-opting-out-and-a-restart,-a-new-private-fact-is-never-remembered",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "After opting out and a restart, a new private fact is never remembered",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 17830910191
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "durable memory with automatic capture is enabled for a disposable agent after an owned restart",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26538378635
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 5,
+            "name": "I opt in, tell the agent a private fact, and ask about it in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:130"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 168978
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 6,
+            "name": "the agent recalls the fact from memory",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:139"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 19130350152
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I opt out of memory capture and the runtime restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 6567953
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "my opt-out is still in effect",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:150"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 113566135997
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I tell the agent a new private fact and ask about it in a fresh conversation",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:155"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 160279
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the new fact was never captured and the agent cannot recall it",
+            "match": {
+              "location": "scripts/behaviors/steps/memory-opt-out.steps.mjs:162"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 17104362718
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9tZW1vcnktb3B0LW91dC9hNmJmMTg4Yi0xYjhhLTQzMGMtOGM4ZC02YjU2ZGRiNjgxYWYuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@memory",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-memory-opt-out-survives-restart-and-stops-new-capture",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A memory opt-out survives restart and stops new capture",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@memory",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/memory-opt-out.feature"
+  }
+]

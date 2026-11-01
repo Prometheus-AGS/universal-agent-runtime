@@ -1,0 +1,201 @@
+{
+  "scenario": "I08-ACP-JSON-CUSTOM",
+  "client_platform": "darwin",
+  "agent_id": "disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "protocol": "ACP JSON-RPC POST /acp/ sessions/create, runs/create (no stream), runs/get",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249",
+        "metadata": {
+          "title": "Disposable ACP agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "acp-no-tools-62766303"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"ACPJSON-03ad8bdb-ca4e-4937-bb91-1caf3e20e13d\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249\",\"metadata\":{\"title\":\"Disposable ACP agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"acp-no-tools-62766303\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"ACPJSON-03ad8bdb-ca4e-4937-bb91-1caf3e20e13d\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:cb753bdf5dc65f51dc805dc4f89395782905344bccdf11522b3187baf7a524c7\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "d5138f2d-4a17-439d-ab25-3ba3eb96683b",
+        "method": "sessions/create",
+        "params": {
+          "agent_id": "disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"d5138f2d-4a17-439d-ab25-3ba3eb96683b\",\"result\":{\"session_id\":\"ea2f5445-393c-46a4-9dd2-5e40e33b88c6\",\"agent_id\":\"disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249\",\"created_at\":\"2026-10-31T20:17:10.923677Z\",\"last_active\":\"2026-10-31T20:17:10.923677Z\",\"metadata\":{}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "13199d38-2334-41be-be52-8b32bb15618d",
+        "method": "runs/create",
+        "params": {
+          "session_id": "ea2f5445-393c-46a4-9dd2-5e40e33b88c6",
+          "input": "What is (28 multiplied by 24) plus 381?"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"13199d38-2334-41be-be52-8b32bb15618d\",\"result\":{\"run_id\":\"b1e850ca-9384-4573-87f4-1aaec7a26b52\",\"status\":\"running\"}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "b71c9888-f9b0-4ced-8cf5-28e6d170dc6f",
+        "method": "runs/get",
+        "params": {
+          "run_id": "b1e850ca-9384-4573-87f4-1aaec7a26b52"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"b71c9888-f9b0-4ced-8cf5-28e6d170dc6f\",\"result\":{\"run_id\":\"b1e850ca-9384-4573-87f4-1aaec7a26b52\",\"status\":\"Running\",\"agent_id\":\"disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249\",\"conversation_id\":\"ea2f5445-393c-46a4-9dd2-5e40e33b88c6\",\"output\":null,\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "4b83ea65-b1d0-4ae6-8f52-edac61838963",
+        "method": "runs/get",
+        "params": {
+          "run_id": "b1e850ca-9384-4573-87f4-1aaec7a26b52"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"4b83ea65-b1d0-4ae6-8f52-edac61838963\",\"result\":{\"run_id\":\"b1e850ca-9384-4573-87f4-1aaec7a26b52\",\"status\":\"Done\",\"agent_id\":\"disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249\",\"conversation_id\":\"ea2f5445-393c-46a4-9dd2-5e40e33b88c6\",\"output\":\"<think>The user asks a simple arithmetic question: (28 * 24) + 381 = 672 + 381 = 1053.\\n\\nThe agent identity fragment requires returning only a JSON object with keys marker and answer, with marker set to the given UUID and the numeric result in answer.\\n\\nLet me compute: 28 * 24 = 672. 672 + 381 = 1053.\\n\\nI should output only the JSON object.\\n\\nShould I activate a skill? No, not needed.\\n\\nOutput JSONonly.</think>\\n\\n{\\\"marker\\\": \\\"ACPJSON-03ad8bdb-ca4e-4937-bb91-1caf3e20e13d\\\", \\\"answer\\\": 1053}\",\"pending_client_tools\":null,\"client_tool_continuation\":null}}"
+    },
+    {
+      "method": "POST",
+      "path": "/acp/",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "4026bfa1-bfcf-4913-a7ca-539fa276f044",
+        "method": "sessions/delete",
+        "params": {
+          "session_id": "ea2f5445-393c-46a4-9dd2-5e40e33b88c6"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"4026bfa1-bfcf-4913-a7ca-539fa276f044\",\"result\":{\"deleted\":true,\"session_id\":\"ea2f5445-393c-46a4-9dd2-5e40e33b88c6\"}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "session_id": "ea2f5445-393c-46a4-9dd2-5e40e33b88c6",
+  "expected": 1053,
+  "run_id": "b1e850ca-9384-4573-87f4-1aaec7a26b52",
+  "create_status": "running",
+  "final_run": {
+    "run_id": "b1e850ca-9384-4573-87f4-1aaec7a26b52",
+    "status": "Done",
+    "agent_id": "disposable-acp-json-62766303-10b8-400b-8b6b-a4b96e8f3249",
+    "conversation_id": "ea2f5445-393c-46a4-9dd2-5e40e33b88c6",
+    "output": "<think>The user asks a simple arithmetic question: (28 * 24) + 381 = 672 + 381 = 1053.\n\nThe agent identity fragment requires returning only a JSON object with keys marker and answer, with marker set to the given UUID and the numeric result in answer.\n\nLet me compute: 28 * 24 = 672. 672 + 381 = 1053.\n\nI should output only the JSON object.\n\nShould I activate a skill? No, not needed.\n\nOutput JSONonly.</think>\n\n{\"marker\": \"ACPJSON-03ad8bdb-ca4e-4937-bb91-1caf3e20e13d\", \"answer\": 1053}",
+    "pending_client_tools": null,
+    "client_tool_continuation": null
+  },
+  "answer": {
+    "marker": "ACPJSON-03ad8bdb-ca4e-4937-bb91-1caf3e20e13d",
+    "answer": 1053
+  },
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 3675
+}
