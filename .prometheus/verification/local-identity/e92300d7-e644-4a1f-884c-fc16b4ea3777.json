@@ -1,0 +1,110 @@
+{
+  "scenario": "Local no-credential chat and memory share one owner",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/providers/openai/test",
+      "request": {
+        "model": "gpt-5.4-mini",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\",\"latency_ms\":317,\"received_text\":true}"
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/memory",
+      "request": {
+        "content": "The local code word is LOCAL-OWNER-22de4408.",
+        "categories": [
+          "personal_fact"
+        ]
+      },
+      "status": 200,
+      "response": "{\"status\":\"success\",\"id\":\"memory:64684dab-a46d-4f9b-af32-ca069e5569c5\"}"
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "session_id": "d0051bed-7941-45af-a8cf-ff67ca907c3c",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Postgres session probe: reply with SESSION-OK."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-45db4c68-1860-405d-80b7-1a383ee857e5\",\"object\":\"chat.completion\",\"created\":1793454481,\"model\":\"openai/gpt-5.4-mini\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"SESSION-OK\"},\"finish_reason\":\"stop\"}],\"session_id\":\"d0051bed-7941-45af-a8cf-ff67ca907c3c\"}"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/memory/records/memory:64684dab-a46d-4f9b-af32-ca069e5569c5",
+      "status": 200,
+      "response": "{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"64684dab-a46d-4f9b-af32-ca069e5569c5\"}},\"content\":\"The local code word is LOCAL-OWNER-22de4408.\",\"embedding\":[0.013974283,-0.057259385,0.019924756,0.022418745,-0.00947775,-0.03533528,0.074884504,0.0543566,-0.017134974,-0.03911162,-0.05121244,-0.0019125245,0.035368264,0.009939596,0.027087284,0.0020130405,0.014507746,-0.047137856,-0.014451517,0.004832311,0.11543744,-0.03773325,-0.009861083,0.03988557,0.015224186,0.025179233,0.014632897,0.034498475,-0.040577587,-0.1048476,-0.05501984,0.003840448,0.07130307,0.07272031,0.07418406,-0.04590787,-0.04981241,0.03478898,-0.0423506,0.069532424,-0.013617911,0.055856146,0.023262015,0.028502613,-0.015541026,0.008734115,0.020983092,0.030792676,0.053705953,-0.049206953,0.029646143,-0.029336335,-0.048178457,0.04142263,0.018008376,0.024395265,0.045525976,0.048328105,-0.004572721,0.013970846,0.054557275,0.04444652,-0.22708793,0.0601473,-0.028213719,0.006121696,-0.011428414,-0.028818576,-0.035451643,-0.016219437,0.029356923,0.009587514,0.02527317,0.046901967,0.042395804,-0.025116922,-0.0037751966,0.009500382,0.031754296,-0.066668876,-0.009849943,-0.07774727,-0.015780957,-0.050342385,-0.0677188,-0.021395432,0.0540761,0.04006888,0.008181001,0.012878579,-0.052761592,-0.037801206,0.023744876,-0.016943334,-0.06834106,-0.060864292,-0.004029614,0.039524816,-0.066690035,0.12853362,-0.050282214,0.0025638347,-0.085287414,-0.07344132,0.06563584,-0.027364546,-0.06301124,0.004065396,-0.0840578,-0.003919445,-0.02285594,-0.013602714,0.04231472,0.018967494,0.038508415,0.07053985,0.068285584,0.027696392,-0.00011135572,0.022094216,-0.012657113,0.016438792,-0.02795332,0.020432837,-0.0023531737,0.04107016,0.07733844,0.07950494,0.032623027,0.07788441,0.04380923,0.012954649,-0.024988737,0.011386411,0.0062649087,-0.022965739,0.023617368,0.01312054,0.013783248,-0.05132199,-0.036150962,-0.12988956,-0.05440281,-0.021342235,0.0055615306,0.03189882,-0.09374803,-0.005751095,-0.009851839,-0.005226183,0.0017834642,0.01471882,-0.03670053,-0.070260085,-0.020150883,0.042780016,0.12756976,0.06251319,-0.0064060576,-0.0018961033,0.08135358,-0.013025839,-0.031837504,0.0766325,0.0027909519,-0.10015064,-0.049161382,0.021335294,0.046172157,-0.05031606,0.07269876,-0.0025113719,-0.04856771,0.0862286,0.033647068,-0.0024622849,-0.039406583,0.08345692,-0.0317182,0.025458876,-0.07352217,-0.0029163666,-0.036221717,-0.04046574,0.034621287,-0.0084068375,0.010550711,-0.016226627,0.04576957,-0.005172689,-0.014430911,0.025608579,-0.0029125407,-0.07880278,-0.008076987,-0.031294227,-0.07697682,-0.051792983,0.03203161,-0.05920432,0.09354695,0.06301243,-0.013082135,-0.016277168,0.022675222,0.021337112,0.039143793,0.042242445,0.02398076,-0.054671094,-0.01142096,0.015365703,0.053046204,0.004804434,-0.027210392,-0.0014088117,-0.060494848,0.053475603,0.03780854,0.027992813,-0.013452884,0.046886932,-0.012102085,-0.21812817,-0.022933155,-0.025274899,-0.021180531,-0.06415615,-0.016144462,0.05831121,-0.008875872,0.056185607,0.08700876,0.06323551,-0.06302988,0.050169766,0.01833186,0.025828635,0.075341165,0.083947554,0.03259463,-0.02075996,0.002693326,0.00978396,0.014143638,-0.017859181,-0.00019969752,0.058898557,0.01632704,0.1708138,0.01651636,0.11688054,-0.066730924,0.040650632,-0.039825343,-0.019467836,-0.0925029,0.036503475,-0.019854862,-0.028918954,0.057987384,0.030258218,-0.008069226,-0.068392135,0.041975904,0.0088746715,-0.036180712,0.07363731,-0.019392794,-0.033658773,-0.027355148,-0.078792736,-0.000977445,0.02248639,0.026389943,0.06811917,0.09524049,0.02856267,-0.04358473,0.0045383805,0.0042566336,-0.01030423,0.006780998,-0.011224557,0.0022129032,-0.03755975,-0.037595246,0.014975174,0.0049339174,-0.049071047,0.019756258,0.02993886,0.012303596,-0.029929362,0.0094969,0.003399539,-0.0626096,-0.075690314,0.017744947,-0.0005440712,-0.058398534,-0.027380504,-0.025077773,0.0852566,-0.0019937577,0.051397033,0.03980285,-0.00004684585,-0.0024746312,0.060674544,0.083068326,-0.00018219338,0.011968193,0.029641915,-0.0025261755"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/sessions",
+      "status": 200,
+      "response": "[{\"id\":\"d0051bed-7941-45af-a8cf-ff67ca907c3c\",\"owner_id\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\",\"messages\":[{\"role\":\"user\",\"content\":\"Postgres session probe: reply with SESSION-OK.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29890908,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/local-identity/34f90015-fe75-4c61-b222-de2061adedb4\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"session_search\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-typography\\\",\\\"better-ui\\\",\\\"better-writing\\\",\\\"break\\\",\\\"carrier-relationship-management\\\",\\\"ck\\\",\\\"clean-architecture\\\",\\\"clone-skill\\\",\\\"continuous-learning-v2\\\",\\\"cowork-management\\\",\\\"create-native-agent\\\",\\\"create-skill\\\",\\\"customs-trade-compliance\\\",\\\"dashboard-builder\\\",\\\"deep-research\\\",\\\"defi-amm-security\\\",\\\"delivery-gate\\\",\\\"design-taste-frontend\\\",\\\"design-taste-frontend-v1\\\",\\\"disk-space-guardian\\\",\\\"ecc-recipes\\\",\\\"energy-procurement\\\",\\\"entity-audit\\\",\\\"entity-crud-form\\\",\\\"entity-crud-page\\\",\\\"entity-crud-relations\\\",\\\"entity-crud-table\\\",\\\"entity-gc\\\",\\\"entity-gql-hooks\\\",\\\"entity-gql-setup\\\",\\\"entity-gql-subscription\\\",\\\"entity-graph-crud\\\",\\\"entity-graph-detect\\\",\\\"entity-graph-graphql\\\",\\\"entity-graph-init\\\",\\\"entity-graph-migrate\\\",\\\"entity-graph-optimize\\\",\\\"entity-graph-prisma\\\",\\\"entity-graph-realtime\\\",\\\"entity-graph-setup\\\",\\\"entity-perf\\\",\\\"entity-prisma-api\\\",\\\"entity-prisma-generator\\\",\\\"entity-prisma-migrate\\\",\\\"entity-prisma-setup\\\",\\\"entity-realtime-channel\\\",\\\"entity-realtime-local-first\\\",\\\"entity-realtime-setup\\\",\\\"entity-realtime-surreal-live\\\",\\\"error-handling\\\",\\\"evm-token-decimals\\\",\\\"evolve\\\",\\\"evolve-analyze\\\",\\\"evolve-assess\\\",\\\"evolve-execute\\\",\\\"evolve-plan\\\",\\\"evolve-report\\\",\\\"evolve-status\\\",\\\"explain-interface\\\",\\\"expo-animation\\\",\\\"expo-design-system\\\",\\\"expo-native-ui\\\",\\\"expo-router\\\",\\\"expo-ui\\\",\\\"extend-skill\\\",\\\"fabric-integration\\\",\\\"feynman-loop\\\",\\\"flint-sdk-csharp\\\",\\\"flint-sdk-dart\\\",\\\"flint-sdk-go\\\",\\\"flint-sdk-kotlin\\\",\\\"flint-sdk-swift\\\",\\\"flint-sdk-ts\\\",\\\"flutter-build-responsive-layout\\\",\\\"flutter-fix-layout-issues\\\",\\\"flutter-rust-ffi\\\",\\\"flutter-setup-declarative-routing\\\",\\\"flutter-setup-localization\\\",\\\"full-output-enforcement\\\",\\\"gitops-bootstrap\\\",\\\"gitops-transform\\\",\\\"go-base-patterns\\\",\\\"gpt-taste\\\",\\\"growth-log\\\",\\\"healthcare-cdss-patterns\\\",\\\"healthcare-emr-patterns\\\",\\\"healthcare-eval-harness\\\",\\\"healthcare-phi-compliance\\\",\\\"high-end-visual-design\\\",\\\"hipaa-compliance\\\",\\\"htmx-alpine-lit\\\",\\\"ideation-mindm"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/memory/records/memory:64684dab-a46d-4f9b-af32-ca069e5569c5",
+      "status": 404,
+      "response": ""
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/sessions",
+      "status": 200,
+      "response": "[]"
+    },
+    {
+      "via": "local",
+      "method": "DELETE",
+      "path": "/api/memory/records/memory:64684dab-a46d-4f9b-af32-ca069e5569c5",
+      "status": 200,
+      "response": "{\"id\":\"memory:64684dab-a46d-4f9b-af32-ca069e5569c5\",\"deleted\":true,\"purge\":\"pending\"}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/local-identity/34f90015-fe75-4c61-b222-de2061adedb4",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-34f90015",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:52096/",
+    "base_url": "http://127.0.0.1:52098/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:52095",
+    "stub_llm": {
+      "model": "openai/gpt-5.4-mini",
+      "fixtures": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/dedicated-runtime-stub-llm.json"
+    },
+    "uar_pid": 82896,
+    "proxy_pid": 84197
+  },
+  "answer": "SESSION-OK",
+  "isolation": {
+    "proxied_memory_status": "refused",
+    "proxied_lists_session": false
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 54796
+}

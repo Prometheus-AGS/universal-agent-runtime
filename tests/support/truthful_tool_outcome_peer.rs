@@ -46,6 +46,7 @@ pub async fn user() -> UserContext {
         jwt_required: true, jwt_secret: secret.to_owned().into(), jwks_url: None,
         jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
         settings_mutation_auth_required: true, settings_admin_key: None,
+        local_loopback_owner: false,
     };
     // Initialize crypto through the production verifier before signing, and
     // obtain identity only by verifying the resulting fixture credential.

@@ -114,6 +114,7 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("test-admin-key".to_string().into()),
+            local_loopback_owner: false,
         },
         base_url: format!("http://127.0.0.1:{port}"),
         grpc_url: None,

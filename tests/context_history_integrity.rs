@@ -2211,6 +2211,7 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
         trusted_host_principals: Vec::new(), jwt_required: true, jwt_secret: secret.to_owned().into(),
         jwks_url: None, jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
         settings_mutation_auth_required: true, settings_admin_key: None,
+        local_loopback_owner: false,
     };
     let token = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &UserClaims {
         sub: "alice".into(), name: None, roles: Some(vec!["user".into()]), tenant_id: None, uar_instance_id: None,

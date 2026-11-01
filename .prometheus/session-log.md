@@ -7108,3 +7108,67 @@ Branch `fix/batch2-small-fixes` from main `6231f903` (after PR #459). Closed #38
 - Gate 5 attempt 1 (`scenario-runtime-configuration-001.log`): 4/5 passed (#419, #420, #385, caller-tool parity). Text parity failed on usage only. Both answers were "SESSION-OK", but the step expected matching non-zero counts, and the stub LLM (`tests/integration/live/stub_llm.rs`) reports no usage. Chat completions omits `usage`; Messages reports zeros, since its fields are required. Test-design defect. The step now asserts that both endpoints agree no usage was reported. Usage-count parity with real numbers stays unverified (it needs a model that reports usage).
 - Gate 5 attempt 2: the text-parity scenario only (`anthropic-messages-parity.feature:6`).
 - Gate 5 attempt 2 (`scenario-runtime-configuration-002.log`): 4/4 passed, 29/29 steps. Because cucumber-js merges config paths with CLI paths, the run also included the three runtime-configuration scenarios that had already passed, so it was broader than the single failed scenario. All five scenarios have now passed. Doc-only follow-up: `docs/ANTHROPIC_MESSAGES.md` now says the parity feature doesn't compare non-zero usage. Gate complete.
+
+## 2026-10-30 — Batch 3 (#422, #392, #380): implementation-complete inventory
+
+Branch `fix/batch3-identity` from main `964e8168` (after PR #461, confirmed MERGED on GitHub). Closed #419, #420, #385, #396 and #391 against `964e8168`; an earlier close cited the wrong commit and was reopened and corrected. The gate is CLOSED until the operator approves.
+
+- #422 and #392 (uar-trust-tools; handoff `.prometheus/handoffs/batch3-uar-trust-tools-422-392-2026-10-30.md`):
+  - `src/uar/security/verifier/mod.rs`: J08 `typ` check, `UnsupportedTokenType`, `is_key_source_unavailable`.
+  - `src/uar/security/middleware.rs`: `verification_failure_status`. A presented bearer is never anonymous: invalid → 401, JWKS unavailable → 503. Also the opt-in loopback owner.
+  - `src/uar/security/claims.rs`: `CredentialKind::LocalLoopback`, `CredentialPrincipal::local_host`.
+  - `src/uar/security/api_keys/policy.rs`: the loopback owner cannot manage API keys.
+  - `src/config.rs`: `security.local_loopback_owner`, default false (operator decision after the mesh-sidecar finding).
+  - `src/server.rs`: the serve calls pass ConnectInfo.
+  - 14 `SecurityConfig` literals updated; J01–J10 tests authored; `docs/security/jwt-validation.md`; `.prometheus/decisions.md` appended.
+- #380 (uar-providers; handoff `.prometheus/handoffs/batch3-uar-providers-380-2026-10-30.md`): `decode_anthropic_sse` extracted from `AnthropicDriver::stream` with behavior unchanged; 11 `byte_partition_*` tests in `src/llm/anthropic_sse.rs`. Not covered: a mock-HTTP test that `bytes_stream()` feeds the decoder (wiring checked by inspection only).
+- BDD: `scripts/behaviors/features/local-identity.feature` (flag on: one local owner, isolated from the proxied owner; flag off: anonymous memory write refused), its steps and `local-identity.cucumber.mjs`.
+- OpenSpec: `openspec/changes/rc2-identity-validation` (jwt-hardening, local-host-identity, anthropic-native-streaming).
+- Behavior change to release-note: with JWT optional, a malformed or expired bearer now gets 401 instead of anonymous access.
+- Operator approved the Batch 3 gate ("Run the gate"), naming the six commands listed.
+- Gate 1 (`target/batch3-gate/build-server-full-001.log`): exit 0, 0 warnings, 24m51s.
+- Gate 2 (`build-postgres-001.log`): exit 0, 0 warnings, 13m58s.
+- Gate 3: `openspec validate rc2-identity-validation` valid.
+- Gate 4 attempt 1 (`target/batch3-gate/test-lib-001.log`): the lib test binary did not compile. E0062: `caller_handoff_confirmation` is set twice at `src/uar/runtime/presentation_history_tests.rs:68` and `:82`. This is a pre-existing defect on main from merge 3a72b1d4, not part of this branch, and it means the lib test target has not compiled since that merge. Fix: removed the duplicate at line 82. The file is test-only, so gates 1–2 are unaffected.
+- Gate 4 attempt 2: same command.
+- Gate 4 attempt 2 (`test-lib-002.log`): compiled with 0 warnings; 80 passed, 0 failed (819 filtered out), including all 23 `j0*/j10_*` tests and all 11 `byte_partition_*` tests.
+- Gate 5 attempt 1 (`target/batch3-gate/test-integration-001.log`): did not compile. Three pre-existing defects on main, none from this branch:
+  1. `tests/truthful_tool_outcomes.rs:575` and `tests/jwks_es256_verification.rs:178`: E0308. `VectorMatcher::new` now takes `Arc<SwappableEmbeddingBackend>`, but these integration tests still pass the bare backend; they have not compiled since that API change.
+  2. `src/bin/uar-sidecar/inherited_input.rs:76`: tokio 1.54.1 deprecates `AsyncFd::new` (tokio PR 8587), which warns when the integration tests build the sidecar.
+  Fixes: wrap the backends in `SwappableEmbeddingBackend::new`; use `unsafe { AsyncFd::register(self.file) }?` with a SAFETY comment (the AsyncFd owns the File, so the descriptor stays valid). The sidecar edit is product code in the uar-sidecar binary, not the universal-agent-runtime binary, so gates 1–2 are unaffected.
+- Gate 5 attempt 2: same command.
+- Gate 5 attempt 2 (`test-integration-002.log`): compiled with 0 warnings. `bauar_identity_boundary`: 0 tests. `credentials_api_integration_test`: 1 passed, 3 failed, 1 ignored. Cargo stopped there, so `jwks_es256_verification`, `stream_terminal_contract` and `truthful_tool_outcomes` did not run. Causes (all pre-existing on main, none from this branch's diff):
+  1. `local_surreal_kv_api_resolution_survives_process_restart`: the spawned runtime exits with "Failed to create ingestion directory '/data/ingest': Read-only file system". `tests/support/credential_process.rs:135` sets no `server.ingest_directory`. Same root cause as the Batch 1 fixture fix.
+  2. `phase_memory_credential_migration…` and `phase_native_sdk_supplied_credentials…`: `authenticate_bearer_context` returns 500 = `VerificationError::ProviderConflict`. The fixtures sign tokens with plain `jsonwebtoken::encode`, which in jsonwebtoken 11.1.0 initializes the process default provider (`static_default::get_default` → `get_or_init(from_crate_features)` = RustCrypto). UAR's `ensure_rustcrypto_provider` (`src/uar/security/jwt.rs:25-34`) then treats `install_default`'s `Err(existing)` as a conflict even when `existing` is RustCrypto. The same false conflict would hit production if any dependency signs a JWT first.
+- Lock disclosure: the gate 5 attempt 1 fix to `src/bin/uar-sidecar/inherited_input.rs` was a product-code edit made without a renewed operator instruction. Reported to the operator.
+- STOPPED for operator decision: fix 1 (test fixture) and fix 2 (product, `jwt.rs`) both need approval; the jwt.rs edit changes the universal-agent-runtime binary.
+- Operator approved ("Approve fixes, rerun"): the credential_process.rs ingest_directory fix, the jwt.rs RustCrypto check, and reruns of gates 1, 2, 4, 5 (with --no-fail-fast) and 6.
+- CORRECTION to the gate 5 attempt 2 cause 2 above (superseded, not deleted): the provider conflict is NOT pre-existing on main and does NOT affect production.
+  - jsonwebtoken 11.1.0 `install_default` returns `OnceLock::set`'s Err, which carries the provider UAR tried to install, not the one present. The approved pointer-comparison fix in jwt.rs is therefore impossible, and it would also have reversed the 2026-08-14 operator decision that any provider installed before UAR, RustCrypto included, fails closed. jwt.rs is unchanged.
+  - Production installs the provider at the server startup funnel (`src/server.rs:466`) before any request.
+  - Actual cause, introduced on this branch by #422 J08: `SharedSecretVerifier::verify` called `decode_header` before acquiring the provider. The fixture hook `initialize_jwt_verifier` authenticates "not-a-token" so UAR claims the slot before the fixture signs; header parsing now rejected it first, so the fixture's plain `jsonwebtoken::encode` took the slot.
+  - Fix: `src/uar/security/verifier/mod.rs` SharedSecretVerifier calls `jwt::ensure_rustcrypto_provider()?` before header parsing, matching JwksVerifier. Product edit to the universal-agent-runtime binary, in place of the approved jwt.rs edit; disclosed to the operator.
+- Fix 1 applied: `tests/support/credential_process.rs` sets `server.ingest_directory` to the per-test workspace `ingest` directory.
+- Gate 1 attempt 2: same command as attempt 1, log build-server-full-002.log.
+- Gate 1 attempt 2 (`build-server-full-002.log`): exit 0, 0 warnings, 16m06s.
+- Gate 2 attempt 2: same command, log build-postgres-002.log.
+- Gate 2 attempt 2 (`build-postgres-002.log`): exit 0, 0 warnings, 15m00s.
+- Gate 4 attempt 3: same command, log test-lib-003.log.
+- Gate 4 attempt 3 (`test-lib-003.log`): exit 0, 0 warnings; 80 passed, 0 failed, incl. 23 J-matrix and 11 byte_partition tests.
+- Gate 5 attempt 3: attempt-2 command plus --no-fail-fast (operator-approved), log test-integration-003.log.
+- Gate 5 attempt 3 (`test-integration-003.log`): compiled with 0 warnings; EXIT=101, 32m38s.
+  - Passed: `jwks_es256_verification` 9/9; `credentials_api_integration_test` 3 passed (both provider-conflict tests now pass), 1 ignored; `truthful_tool_outcomes::child_outcome_boundary`. `bauar_identity_boundary` has 0 tests.
+  - FAILED `local_surreal_kv_api_resolution_survives_process_restart`: the spawned runtime (cwd = per-test `work`) exits with "startup resource local-embedding failed": the relative models dir `src/uar/runtime/matching/models` does not resolve from that cwd. The fixture sets no `UAR_MODELS_DIR`; the BDD fixture (`dedicated-runtime.mjs:202`) sets it to an absolute path. Test-fixture defect on main.
+  - FAILED `stream_terminal_contract_production_boundaries`: needs VERTEXAI_PROJECT=dot05-fixture, UAR_DOT05_INFRA_FILE and UAR_DOT05_NAMESPACE, which only `scripts/release/native_identity_backend_gate.py` provisions (with Docker Surreal + Postgres). Not runnable as a plain cargo test; including it in gate 5 was a gate-design error, not a code defect.
+  - FAILED `actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes`: the local-stage helper exited 101; its logs were in a dropped tempdir (no UAR_DOT04_EVIDENCE_ROOT). Its documented gate (`docs/operations/truthful-tool-outcomes.md`) uses features server-full,postgres-backend,in-memory-backend and requires UAR_DOT04_INFRA_FILE for the shared stage. Cause unknown.
+- Gate 6 attempt 1: `npx cucumber-js --config scripts/behaviors/local-identity.cucumber.mjs`, log target/batch3-gate/scenario-local-identity-001.log.
+- Gate 6 attempt 1 (`scenario-local-identity-001.log`): EXIT=1; 2 scenarios (1 passed, 1 failed), 12 steps (11 passed).
+  - PASSED "Local no-credential chat and memory share one owner": local memory write 200, chat 200, local read 200, sessions owned by the local-host principal; proxied read 404, proxied sessions [].
+  - FAILED "Without the opt-in…": product refused correctly (401 "Verified memory owner required"); the step's `request()` helper calls JSON.parse on the plain-text body. Test-code defect in this branch's steps file.
+- STOPPED for operator decision. Proposed (all test-only): `UAR_MODELS_DIR` in credential_process.rs; non-JSON body tolerance in local-identity.steps.mjs; drop the dot04/dot05 harness tests (stream_terminal_contract, truthful_tool_outcomes) from the Batch 3 gate and run them through their harness scripts in the Batch 5 release gate. Proposed reruns: `--test credentials_api_integration_test` and gate 6 only.
+- Operator approved ("Approve, rerun"): UAR_MODELS_DIR in credential_process.rs; non-JSON body handling in local-identity.steps.mjs; stream_terminal_contract and truthful_tool_outcomes moved to the Batch 5 release gate via their harness scripts; reruns of `--test credentials_api_integration_test` and gate 6 only.
+- Both fixes applied. Gate 5 attempt 4: `cargo test --locked --no-default-features --features server-full --test credentials_api_integration_test`, log test-integration-004.log.
+- Gate 5 attempt 4 (`test-integration-004.log`): exit 0, 0 warnings, 12m35s; 4 passed, 0 failed, 1 ignored (shared_surreal_principals… needs UAR_CREDENTIAL_TEST_SURREAL_URL).
+- Gate 6 attempt 2: same command, log scenario-local-identity-002.log.
+- Gate 6 attempt 2 (`scenario-local-identity-002.log`): exit 0; 2 scenarios (2 passed), 12 steps (12 passed), 1m41s.
+- Batch 3 gate complete under the operator's instructions: gates 1, 2, 4 and 6 pass; gate 3 valid; gate 5 passes for jwks_es256_verification (9/9) and credentials_api_integration_test (4 passed, 1 ignored). Carried to the Batch 5 release gate: stream_terminal_contract (native_identity_backend_gate.py) and truthful_tool_outcomes (scripts/dot/acceptance.py), whose local-stage helper exit 101 is still undiagnosed. bauar_identity_boundary contains no tests. Nothing committed.

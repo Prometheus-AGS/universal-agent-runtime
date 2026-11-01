@@ -81,6 +81,7 @@ fn security() -> SecurityConfig {
         jwt_validate_nbf: true,
         settings_mutation_auth_required: true,
         settings_admin_key: Some("a2a-thread-test-admin".to_owned().into()),
+        local_loopback_owner: false,
     }
 }
 

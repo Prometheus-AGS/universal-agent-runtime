@@ -97,7 +97,10 @@ impl KeyPolicy {
         let identity = caller
             .verified_identity()
             .ok_or(ApiKeyAuthorityError::CallerRequired)?;
-        if identity.subject().trim().is_empty()
+        // The trusted-local loopback owner presented no credential, so it may
+        // not mint or manage credentials that would outlive that connection.
+        if identity.is_local_loopback()
+            || identity.subject().trim().is_empty()
             || identity.subject() == "anonymous"
             || identity.issuer() != self.issuer.as_deref()
             || (self.remote

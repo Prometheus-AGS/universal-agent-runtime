@@ -132,7 +132,8 @@ impl Node {
             "persistence":{"provider":"surreal","database_url":database.url,"surreal_ns":database.namespace,
                 "surreal_db":database.database,"surreal_user":database.user,"surreal_pass":database.password},
             "llm":{"model":"openai/gpt-5.4-mini","base_url":provider.url,"api_key":"credential-test-house"},
-            "server":{"host":"127.0.0.1","port":port,"grpc_port":grpc,"shutdown_timeout_secs":5},
+            "server":{"host":"127.0.0.1","port":port,"grpc_port":grpc,"shutdown_timeout_secs":5,
+                "ingest_directory":workspace.path().join("ingest")},
             "memory":{"enabled":false}});
         let path = workspace.path().join("config.yaml");
         std::fs::write(&path, serde_json::to_vec_pretty(&config).unwrap()).unwrap();
@@ -147,6 +148,12 @@ impl Node {
             .env("PATH", std::env::var_os("PATH").unwrap_or_default())
             .env("HOME", workspace.path().join("home"))
             .env("UAR_BUILTIN_SKILLS_DIR", workspace.path().join("no-skills"))
+            // The runtime's cwd is the per-test workspace, so the default
+            // relative models directory would not resolve.
+            .env(
+                "UAR_MODELS_DIR",
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/uar/runtime/matching/models"),
+            )
             .env(
                 "CREDENTIAL_ENCRYPTION_KEY",
                 std::str::from_utf8(TEST_KEY).unwrap(),
